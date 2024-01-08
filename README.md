@@ -1,6 +1,6 @@
 # The Cyberiada Hierarchical State Machines Editor
 
-![The Cyberiada Logo](images/logo.png **=200x200**)
+![The Cyberiada Logo](images/logo.png=200x200)
 
 The visual editor program for Cyberiada HSM graphs based on the Qt Framework.
 
