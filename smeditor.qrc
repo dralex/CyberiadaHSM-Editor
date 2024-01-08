@@ -1,0 +1,13 @@
+<RCC>
+  <qresource prefix="Icons">
+    <file>images/cyberiada.png</file>
+    <file>images/sm-root.png</file>
+    <file>images/state-root.png</file>
+    <file>images/trans-root.png</file>
+    <file>images/state.png</file>
+    <file>images/init-state.png</file>
+    <file>images/trans.png</file>
+    <file>images/action.png</file>
+    <file>images/comment.png</file>
+  </qresource>
+</RCC>
