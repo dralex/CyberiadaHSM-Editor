@@ -43,18 +43,14 @@ struct CyberiadaSMSize {
 class CyberiadaSMItem: public CyberiadaVisibleItem {
 public:
 	CyberiadaSMItem(CyberiadaItemType t, const QString& id,
-					const QString& title, bool has_action,
-					const QString& action,
-					CyberiadaAbstractItem* parent = NULL);
+					const QString& title, bool title_editable,
+					bool has_action, const QString& action, CyberiadaAbstractItem* parent = NULL);
 
 	int findChild(const QString& id) const;
 	const QString& getID() const { return id; }
-	QString getAction() const;
+	virtual QString getAction() const;
+	virtual bool setAction(const QString& new_action);
 
-	virtual QString getTitle() const {
-		return CyberiadaVisibleItem::getTitle() + QString("[%1]").arg(id); 
-	}
-	
 protected:
 
 	bool	has_action;

@@ -23,15 +23,19 @@
 
 #include "cyberiadasm_item.h"
 #include "myassert.h"
+#include "cyberiada_constants.h"
 
 CyberiadaSMItem::CyberiadaSMItem(CyberiadaItemType t, const QString& _id,
-								 const QString& title, bool _has_action,
-								 const QString& action,
+								 const QString& title, bool title_editable,
+								 bool _has_action, const QString& _action,
 								 CyberiadaAbstractItem* parent):
-	CyberiadaVisibleItem(t, title, parent), has_action(_has_action), id(_id)
+	CyberiadaVisibleItem(t, title, title_editable, false, parent),
+	has_action(_has_action), id(_id)
 {
+	addChild(new CyberiadaTextPropertyItem(PROPERTIES_HEADER_ID, _id, false, false, this));
 	if (has_action) {
-		addChild(new CyberiadaVisibleItem(nodeAction, action, this));
+		addChild(new CyberiadaTextPropertyItem(PROPERTIES_HEADER_ACTION, _action,
+											   true, true, this));
 	}
 }
 
@@ -51,10 +55,21 @@ int CyberiadaSMItem::findChild(const QString& id) const
 QString CyberiadaSMItem::getAction() const
 {
 	if (has_action) {
-		MY_ASSERT(children.size() >= 1);
-		const CyberiadaAbstractItem* child = children.at(0);
-		return child->getTitle();
+		MY_ASSERT(children.size() >= 2);
+		const CyberiadaPropertyItem* child = static_cast<CyberiadaPropertyItem*>(children.at(1));
+		return child->getValue();
 	} else {
 		return "";
 	}
+}
+
+bool CyberiadaSMItem::setAction(const QString& new_action)
+{
+	if (has_action) {
+		MY_ASSERT(children.size() >= 2);
+		CyberiadaTextPropertyItem* child = static_cast<CyberiadaTextPropertyItem*>(children.at(1));
+		return child->setValue(new_action);
+	} else {
+		return false;
+	}	
 }

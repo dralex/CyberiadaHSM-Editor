@@ -27,18 +27,23 @@
 #include "cyberiada_constants.h"
 
 CyberiadaRootItem::CyberiadaRootItem():
-	CyberiadaAbstractItem(NULL)
+	CyberiadaAbstractItem(nodeRoot, NULL)
 {
-	node_type = nodeRoot;
 	CyberiadaVisibleItem* sm = new CyberiadaVisibleItem(nodeSM,
 														SM_DEFAULT_TITLE,
+														false,
+														false,
 														this);
 	addChild(sm);
 	sm->addChild(new CyberiadaVisibleItem(nodeStatesAggr,
 										  STATES_AGGREGATOR_TITLE,
+										  false,
+										  false,
 										  this));
 	sm->addChild(new CyberiadaVisibleItem(nodeTransitionsAggr,
 										  TRANSITIONS_AGGREGATOR_TITLE,
+										  false,
+										  false,
 										  this));
 }
 

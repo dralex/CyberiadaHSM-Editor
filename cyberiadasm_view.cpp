@@ -21,12 +21,14 @@
  *
  * ----------------------------------------------------------------------------- */
 
+#include <QDebug>
 #include <QDrag>
 #include <QCursor>
 
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_view.h"
 #include "myassert.h"
+#include "cyberiadasm_tree_proxy_model.h"
 
 CyberiadaSMView::CyberiadaSMView(QWidget* parent):
 	QTreeView(parent)
@@ -40,15 +42,33 @@ CyberiadaSMView::CyberiadaSMView(QWidget* parent):
 //	setSelectionMode(QAbstractItemView::MultiSelection);
 }
 
+void CyberiadaSMView::currentChanged(const QModelIndex &current, const QModelIndex &previous)
+{
+	QTreeView::currentChanged(current, previous);
+	qDebug() << "current changed" << current.row() << current.column() << (void*)current.internalPointer();
+	emit currentIndexActivated(current);
+}
+
 void CyberiadaSMView::startDrag(Qt::DropActions)
 {
 	QDrag* drag = new QDrag(this);
 	QModelIndexList indexes;
 	QModelIndex current = currentIndex();
 	indexes.append(current);
-	CyberiadaSMModel* m = reinterpret_cast<CyberiadaSMModel*>(model());
+	CyberiadaSMModel* m = static_cast<CyberiadaSMModel*>(model());
 	drag->setMimeData(m->mimeData(indexes));
 	drag->setPixmap(m->getIndexIcon(current).pixmap(32, 32));
 	drag->setDragCursor(QCursor(Qt::ClosedHandCursor).pixmap(), Qt::MoveAction);
 	drag->exec(Qt::MoveAction);
+}
+
+void CyberiadaSMView::slotSourceDataChanged(const QModelIndex& topLeft,
+											const QModelIndex&)
+{
+	//qDebug() << "data changed";
+	if (topLeft.isValid()) {
+		CyberiadaSMTreeProxyModel* proxyModel = static_cast<CyberiadaSMTreeProxyModel*>(model());
+		//qDebug() << "update" << topLeft.row() << topLeft.column() << (void*)topLeft.internalPointer();
+		update(proxyModel->mapFromSource(topLeft));
+	}
 }

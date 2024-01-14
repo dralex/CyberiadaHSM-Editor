@@ -35,20 +35,30 @@ enum CyberiadaItemType {
 	nodeComment,
 	nodeTransition,
 	nodeInitialState,
-	nodeAction
+	nodeTextProperty,
+	nodeNumProperty,
+	nodeGeomPointProperty,
+	nodeGeomRectProperty,
+	nodeGeomPathProperty,
+	nodeGeomTransProperty,
+	nodeStateLink
 };
 
 class CyberiadaAbstractItem {
 public:
-	CyberiadaAbstractItem(CyberiadaAbstractItem* parent = NULL);
+	CyberiadaAbstractItem(CyberiadaItemType t, CyberiadaAbstractItem* parent = NULL);
 	virtual ~CyberiadaAbstractItem();
 
-	int childCount() const { return children.size(); }	
+	int childCount() const { return children.size(); }
+	int childCountNoProperties() const;
 	CyberiadaAbstractItem* child(int index) const;
 	CyberiadaAbstractItem* parent() const { return parent_item; }
 	int row() const;
-
+	int rowNoProperties() const;
 	CyberiadaItemType getType() const { return node_type; }
+	virtual QString getTitle() const = 0;
+	virtual bool rename(const QString&) const { return false; };
+	
 	bool isRoot() const { return parent_item == NULL; }
 	bool isSMAggregate() const { return node_type == nodeSM; }
 	bool isStatesAggregate() const { return node_type == nodeStatesAggr; }
@@ -56,14 +66,22 @@ public:
 	bool isState() const { return node_type == nodeState; }
 	bool isInitialState() const { return node_type == nodeInitialState; }
 	bool isTransition() const { return node_type == nodeTransition; }
-	bool isAction() const { return node_type == nodeAction; }
+	bool isProperty() const { return isTextProperty() || isNumProperty() || isGeometry(); }
+	bool isTextProperty() const { return node_type == nodeTextProperty; }
+	bool isNumProperty() const { return node_type == nodeNumProperty; }
+	bool isGeometry() const { return (node_type == nodeGeomPointProperty ||
+									  node_type == nodeGeomRectProperty ||
+									  node_type == nodeGeomPathProperty ||
+									  node_type == nodeGeomTransProperty); }
+	bool isPointGeometry() const { return node_type == nodeGeomPointProperty; }
+	bool isRectGeometry() const { return node_type == nodeGeomRectProperty; }
+	bool isPathGeometry() const { return node_type == nodeGeomPathProperty; }
+	bool isTransGeometry() const { return node_type == nodeGeomTransProperty; }
+	bool isStateLink() const { return node_type == nodeStateLink; }
 
 	void addChild(CyberiadaAbstractItem* child);
 	void removeChild(CyberiadaAbstractItem* child);
 	void moveParent(CyberiadaAbstractItem* new_parent);
-
-	virtual QString getTitle() const = 0;
-	virtual void rename(const QString& new_title) = 0;
 
 protected:
 	void removeAllChildren();

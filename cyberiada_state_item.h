@@ -27,62 +27,88 @@
 #include "cyberiadasm_item.h"
 #include "cyberiada_constants.h"
 
-struct CyberiadaStateGeometry {
-	CyberiadaStateGeometry() {}
-	CyberiadaStateGeometry(const CyberiadaSMPoint& _pos,
-						   const CyberiadaSMSize& _size = CyberiadaSMSize(0, 0)):
-		pos(_pos), size(_size) {}
-	
-	CyberiadaSMPoint	pos;
-	CyberiadaSMSize	    size;
+class CyberiadaGeometryPointPropertyItem: public CyberiadaPropertyItem {
+public:
+	CyberiadaGeometryPointPropertyItem(const QString& _name,
+									   const CyberiadaSMPoint& pos,
+									   CyberiadaAbstractItem* parent);
+
+	virtual QString getValue() const;
 };
 
-class CyberiadaGeometryItem: public CyberiadaSMItem {
+class CyberiadaGeometryRectPropertyItem: public CyberiadaPropertyItem {
 public:
-	CyberiadaGeometryItem(CyberiadaItemType t,
-						  const QString& id, const QString& title,
-						  bool has_action, const QString& action,
-						  const CyberiadaStateGeometry& g,
-						  CyberiadaAbstractItem* parent = NULL):
-		CyberiadaSMItem(t, id, title, has_action, action, parent), geometry(g)
+	CyberiadaGeometryRectPropertyItem(const QString& _name,
+									  const CyberiadaSMPoint& pos,
+									  const CyberiadaSMSize& size,
+									  CyberiadaAbstractItem* parent);
+	virtual QString getValue() const;
+};
+
+class CyberiadaSceneItem: public CyberiadaSMItem {
+public:
+	CyberiadaSceneItem(CyberiadaItemType t, const QString& id,
+					   const QString& title, bool title_editable,
+					   bool has_action, const QString& action,
+					   CyberiadaAbstractItem* parent = NULL):
+		CyberiadaSMItem(t, id, title, title_editable, has_action, action, parent)
 		{
 		}
-
-	const CyberiadaSMPoint& getPosition() const { return geometry.pos; }
-	void changePosition(const CyberiadaSMPoint& new_pos) { geometry.pos = new_pos; }
-	
-protected:
-	
-	CyberiadaStateGeometry geometry;
 };
 
-class CyberiadaStateItem: public CyberiadaGeometryItem {
+class CyberiadaScenePointItem: public CyberiadaSceneItem {
+public:
+	CyberiadaScenePointItem(CyberiadaItemType t, const QString& id,
+							const QString& title, bool title_editable,
+							bool has_action, const QString& action,
+							const CyberiadaSMPoint& pos,
+							CyberiadaAbstractItem* parent = NULL);
+};
+
+class CyberiadaSceneRectItem: public CyberiadaSceneItem {
+public:
+	CyberiadaSceneRectItem(CyberiadaItemType t, const QString& id,
+						   const QString& title, bool title_editable,
+						   bool has_action, const QString& action,
+						   const CyberiadaSMPoint& pos,
+						   const CyberiadaSMSize& size,
+						   CyberiadaAbstractItem* parent = NULL);	
+};
+
+class CyberiadaStateItem: public CyberiadaSceneRectItem {
 public:
 	CyberiadaStateItem(const QString& id, const QString& title, const QString& action,
-					   const CyberiadaStateGeometry& g,
+					   const CyberiadaSMPoint& pos,
+					   const CyberiadaSMSize& size,
 					   CyberiadaAbstractItem* parent = NULL):
-		CyberiadaGeometryItem(nodeState, id, title, true, action, g, parent)	
+		CyberiadaSceneRectItem(nodeState, id, title, true, true,
+							   action, pos, size, parent)
 		{
 		}
 };
 
-class CyberiadaInitialStateItem: public CyberiadaGeometryItem {
+class CyberiadaInitialStateItem: public CyberiadaScenePointItem {
 public:
-	CyberiadaInitialStateItem(const QString& id, const CyberiadaSMPoint& position,
+	CyberiadaInitialStateItem(const QString& id,
+							  const CyberiadaSMPoint& pos,
 							  CyberiadaAbstractItem* parent = NULL):
-		CyberiadaGeometryItem(nodeInitialState, id, CYBERIADA_INITIAL_NODE_TITLE, false, "",
-							  CyberiadaStateGeometry(position), parent)
+		CyberiadaScenePointItem(nodeInitialState, id,
+								CYBERIADA_INITIAL_NODE_TITLE,
+								false, false, "", pos, parent)
 		{
 		}
 };
 
-class CyberiadaCommentItem: public CyberiadaGeometryItem {
+class CyberiadaCommentItem: public CyberiadaSceneRectItem {
 public:
 	CyberiadaCommentItem(const QString& id,
-						 const QString& title,
-						 const CyberiadaStateGeometry& g,
+						 const QString& action,
+						 const CyberiadaSMPoint& pos,
+						 const CyberiadaSMSize& size,
 						 CyberiadaAbstractItem* parent = NULL):
-		CyberiadaGeometryItem(nodeComment, id, title, false, "", g, parent)	
+		CyberiadaSceneRectItem(nodeComment, id,
+							   CYBERIADA_COMMENT_NODE_TITLE,
+							   false, true, action, pos, size, parent)	
 		{
 		}
 };

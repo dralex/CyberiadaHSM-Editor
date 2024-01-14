@@ -30,6 +30,16 @@ class CyberiadaSMView: public QTreeView {
 Q_OBJECT
 public:
 	CyberiadaSMView(QWidget* parent);
+
+public slots:
+	void slotSourceDataChanged(const QModelIndex &topLeft,
+							   const QModelIndex &bottomRight);
+									
+protected slots:
+	void currentChanged(const QModelIndex &current, const QModelIndex &previous);
+
+signals:
+	void currentIndexActivated(const QModelIndex& current);
 	
 protected:
 	void startDrag(Qt::DropActions);

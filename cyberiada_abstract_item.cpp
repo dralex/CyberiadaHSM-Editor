@@ -24,8 +24,8 @@
 #include "cyberiada_abstract_item.h"
 #include "myassert.h"
 
-CyberiadaAbstractItem::CyberiadaAbstractItem(CyberiadaAbstractItem* parent):
-	parent_item(parent)
+CyberiadaAbstractItem::CyberiadaAbstractItem(CyberiadaItemType t, CyberiadaAbstractItem* parent):
+	node_type(t), parent_item(parent)
 {
 }
 
@@ -49,6 +49,34 @@ int CyberiadaAbstractItem::row() const
 	MY_ASSERT(parent_item);
 	MY_ASSERT(parent_item->childCount() > 0);
 	return parent_item->children.indexOf(const_cast<CyberiadaAbstractItem*>(this));
+}
+
+int CyberiadaAbstractItem::rowNoProperties() const
+{
+	if(isRoot()) return 0;
+	MY_ASSERT(parent_item);
+	MY_ASSERT(parent_item->childCount() > 0);
+	int index = 0;
+	foreach(const CyberiadaAbstractItem* item,  parent_item->children) {
+		if (item == this) {
+			break;
+		}
+		if (!item->isProperty()) {
+			index++;
+		}
+	}
+	return index;
+}
+
+int CyberiadaAbstractItem::childCountNoProperties() const
+{
+	int num = 0;
+	foreach(const CyberiadaAbstractItem* item, children) {
+		if (!item->isProperty()) {
+			num++;
+		}
+	}
+	return num;
 }
 
 CyberiadaAbstractItem* CyberiadaAbstractItem::child(int index) const

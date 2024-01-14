@@ -36,6 +36,9 @@
     </property>
     <item row="0" column="0">
      <widget class="CyberiadaSMView" name="SMView">
+      <property name="editTriggers">
+       <set>QAbstractItemView::NoEditTriggers</set>
+      </property>
       <property name="iconSize">
        <size>
         <width>32</width>
@@ -48,6 +51,13 @@
       <attribute name="headerVisible">
        <bool>false</bool>
       </attribute>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <widget class="CyberiadaSMPropertiesView" name="propertiesView">
+      <property name="alternatingRowColors">
+       <bool>true</bool>
+      </property>
      </widget>
     </item>
    </layout>
@@ -87,6 +97,18 @@
    <class>CyberiadaSMView</class>
    <extends>QTreeView</extends>
    <header>cyberiadasm_view.h</header>
+   <slots>
+    <signal>currentIndexActivated(QModelIndex)</signal>
+    <slot>slotIndexActivated(QModelIndex)</slot>
+   </slots>
+  </customwidget>
+  <customwidget>
+   <class>CyberiadaSMPropertiesView</class>
+   <extends>QTreeView</extends>
+   <header>cyberiadasm_prop_view.h</header>
+   <slots>
+    <slot>slotIndexActivated(QModelIndex)</slot>
+   </slots>
   </customwidget>
  </customwidgets>
  <resources>
@@ -122,6 +144,22 @@
     <hint type="destinationlabel">
      <x>511</x>
      <y>383</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>SMView</sender>
+   <signal>currentIndexActivated(QModelIndex)</signal>
+   <receiver>propertiesView</receiver>
+   <slot>slotIndexActivated(QModelIndex)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>511</x>
+     <y>215</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>511</x>
+     <y>583</y>
     </hint>
    </hints>
   </connection>

@@ -2,7 +2,7 @@
  * The Cyberiada State Machine Editor
  * -----------------------------------------------------------------------------
  * 
- * The State Machine Editor Window
+ * The State Machine Properties View
  *
  * Copyright (C) 2024 Alexey Fedoseev <aleksey@fedoseev.net>
  *
@@ -21,27 +21,29 @@
  *
  * ----------------------------------------------------------------------------- */
 
-#ifndef CYBERIADA_SM_WINDOW
-#define CYBERIADA_SM_WINDOW
+#ifndef CYBERIADA_SM_PROPERTIES_VIEW
+#define CYBERIADA_SM_PROPERTIES_VIEW
 
-#include <QMainWindow>
-#include "ui_smeditor_window.h"
+#include <QTreeView>
+#include <QSortFilterProxyModel>
 #include "cyberiadasm_model.h"
-#include "cyberiadasm_tree_proxy_model.h"
-#include "cyberiadasm_prop_proxy_model.h"
 
-class CyberiadaSMEditorWindow: public QMainWindow, public Ui_SMEditorWindow {
+class CyberiadaSMPropertiesView: public QTreeView {
 Q_OBJECT
 public:
-	CyberiadaSMEditorWindow(QWidget* parent = 0);
-
+	CyberiadaSMPropertiesView(QWidget* parent);
+	void setModels(QSortFilterProxyModel* _prop_model,
+				   QSortFilterProxyModel* _tree_model,
+				   CyberiadaSMModel* _source_model);
+											  
 public slots:
-	void slotFileOpen();
-
+	void slotIndexActivated(const QModelIndex& index);
+	void setRootIndex(const QModelIndex& index);
+	
 private:
-	CyberiadaSMModel* model;
-	CyberiadaSMTreeProxyModel* treeModel;
-	CyberiadaSMPropertyProxyModel* propertiesModel;
+	QSortFilterProxyModel* prop_model;
+	QSortFilterProxyModel* tree_model;
+	CyberiadaSMModel* source_model;
 };
 
 #endif

@@ -77,7 +77,7 @@ public:
 	bool		isInitialStateIndex(const QModelIndex& index) const;
 	bool		isStateIndex(const QModelIndex& index) const;
 	bool		isTransitionIndex(const QModelIndex& index) const;
-	bool		isActionIndex(const QModelIndex& index) const;
+	bool		isPropertyIndex(const QModelIndex& index) const;
 	const CyberiadaSMItem* idToItem(const QString& id) const;
 	CyberiadaSMItem* idToItem(const QString& id);
 
@@ -90,11 +90,13 @@ signals:
 	void modelReset();
 
 private:
-	CyberiadaGeometryItem* convertNode(const CyberiadaNode* node,
-									   CyberiadaAbstractItem* parent = NULL);
-	CyberiadaTransitionItem* convertEdge(const CyberiadaEdge* edge);
+	void emitParentsChanged(const CyberiadaAbstractItem* item);
+	CyberiadaSMItem* convertNode(const CyberiadaNode* node,
+								 CyberiadaAbstractItem* parent = NULL);
+	CyberiadaTransitionItem* convertEdge(const CyberiadaEdge* edge,
+										 CyberiadaAbstractItem* parent = NULL);
 	void addChildNodes(const CyberiadaNode* parent, CyberiadaAbstractItem* parent_item, bool toplevel);
-	void addToMap(const QString& id, CyberiadaGeometryItem* item);
+	void addToMap(const QString& id, CyberiadaSMItem* item);
 	QString generateID() const;
 	
 	void move(CyberiadaAbstractItem* item, CyberiadaAbstractItem* target_item);
@@ -105,11 +107,13 @@ private:
 	QString							   	  sm_name, sm_version;
 	CyberiadaRootItem                     *root;
 	CyberiadaVisibleItem                  *sm_root, *states_root, *trans_root;
-	QMap<QString, CyberiadaGeometryItem*> states_map;
+	QMap<QString, CyberiadaSMItem*>       states_map;
 	QString							   	  cyberiadaStateMimeType;
 	QIcon                              	  emptyIcon;
 	QIcon							   	  smRootIcon, stateRootIcon, transRootIcon;
-	QIcon                              	  stateIcon, initialStateIcon, transIcon, actionIcon, commentIcon;
+	QIcon                              	  stateIcon, initialStateIcon, transIcon, actionIcon, commentIcon, stateLinkIcon;
+	QIcon                                 textpropIcon, textpropnoneditIcon, numpropIcon;
+	QIcon                                 geompropIcon, pointpropIcon, rectpropIcon, pathpropIcon;
 };
 
 #endif

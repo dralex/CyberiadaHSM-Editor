@@ -2,7 +2,7 @@
  * The Cyberiada State Machine Editor
  * -----------------------------------------------------------------------------
  * 
- * The State Machine Editor Window
+ * The State Machine Property Proxy Model
  *
  * Copyright (C) 2024 Alexey Fedoseev <aleksey@fedoseev.net>
  *
@@ -21,27 +21,27 @@
  *
  * ----------------------------------------------------------------------------- */
 
-#ifndef CYBERIADA_SM_WINDOW
-#define CYBERIADA_SM_WINDOW
+#ifndef CYBERIADA_SM_PROPERTY_PROXY_MODEL_HEADER
+#define CYBERIADA_SM_PROPERTY_PROXY_MODEL_HEADER
 
-#include <QMainWindow>
-#include "ui_smeditor_window.h"
-#include "cyberiadasm_model.h"
-#include "cyberiadasm_tree_proxy_model.h"
-#include "cyberiadasm_prop_proxy_model.h"
+#include <QSortFilterProxyModel>
+#include "cyberiada_abstract_item.h"
 
-class CyberiadaSMEditorWindow: public QMainWindow, public Ui_SMEditorWindow {
+class CyberiadaSMPropertyProxyModel: public QSortFilterProxyModel {
 Q_OBJECT
+ 
 public:
-	CyberiadaSMEditorWindow(QWidget* parent = 0);
+	CyberiadaSMPropertyProxyModel(QObject *parent);
 
-public slots:
-	void slotFileOpen();
+	void setRootItem(const CyberiadaAbstractItem* root) { root_item = root; }
+	
+	QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const;
+	
+	bool filterAcceptsColumn(int source_column, const QModelIndex &source_parent) const;
+	bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const;
 
 private:
-	CyberiadaSMModel* model;
-	CyberiadaSMTreeProxyModel* treeModel;
-	CyberiadaSMPropertyProxyModel* propertiesModel;
+	const CyberiadaAbstractItem* root_item;	
 };
 
 #endif

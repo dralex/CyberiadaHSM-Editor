@@ -24,49 +24,65 @@
 #ifndef TRANSITION_ITEM_HEADER
 #define TRANSITION_ITEM_HEADER
 
+#include <QList>
+
 #include "cyberiadasm_item.h"
 #include "cyberiada_state_item.h"
 
-struct CyberiadaTransitionGeometry {
-	CyberiadaTransitionGeometry() {}
-	CyberiadaTransitionGeometry(const CyberiadaSMPoint& source, const CyberiadaSMPoint& target):
-		source_port(source), target_port(target) {}
-	CyberiadaTransitionGeometry(const CyberiadaSMPoint& source, const CyberiadaSMPoint& target,
-								const QList<CyberiadaSMPoint>& points):
-		source_port(source), target_port(target), path(points) {}
+class CyberiadaGeometryPathPropertyItem: public CyberiadaPropertyItem {
+public:
+	CyberiadaGeometryPathPropertyItem(const QString& _name,
+									  const QList<CyberiadaSMPoint>& points,
+									  CyberiadaAbstractItem* parent);
+	virtual QString getValue() const;
+	int points() const { return points_num; }
 
-	CyberiadaSMPoint        source_port;
-	CyberiadaSMPoint        target_port;
-	QList<CyberiadaSMPoint> path;
+private:
+	int points_num;
 };
 
-class CyberiadaTransitionItem: public CyberiadaSMItem {
+class CyberiadaGeometryTransPropertyItem: public CyberiadaPropertyItem {
 public:
-	CyberiadaTransitionItem(const CyberiadaGeometryItem* from,
-							const CyberiadaGeometryItem* to,
-							const QString& id,
-							const QString& action,
-							const CyberiadaTransitionGeometry& g,
-							CyberiadaAbstractItem* parent = NULL):
-		CyberiadaSMItem(nodeTransition, id, "", true, action, parent),
-		item_from(from), item_to(to), geometry(g)
-		{
-		}
-
-	void moveSourcePort(const CyberiadaSMPoint& point) { geometry.source_port = point; }
-	void moveTargetPort(const CyberiadaSMPoint& point) { geometry.target_port = point; }
-	const CyberiadaSMPoint& getSourcePort() const { return geometry.source_port; }
-	const CyberiadaSMPoint& getTargetPort() const { return geometry.target_port; }
-	const QList<CyberiadaSMPoint>& getPath() const { return geometry.path; }
-
-	virtual QString getTitle() const;
-	virtual void rename(const QString& new_title);
+	CyberiadaGeometryTransPropertyItem(const QString& _name,
+									   const CyberiadaSMPoint& label,
+									   const CyberiadaSMPoint& source,
+									   const CyberiadaSMPoint& target,
+									   const QList<CyberiadaSMPoint>& points,
+									   CyberiadaAbstractItem* parent);
+	virtual QString getValue() const;
+	bool hasPoints() const { return has_points; }
 	
 private:
+	bool has_points;
+};
 
-	const CyberiadaGeometryItem* item_from;
-	const CyberiadaGeometryItem* item_to;
-	CyberiadaTransitionGeometry	 geometry;
+class CyberiadaTransitionItem: public CyberiadaSceneItem {
+public:
+	CyberiadaTransitionItem(const CyberiadaAbstractItem* from,
+							const CyberiadaAbstractItem* to,
+							const QString& id,
+							const QString& action,
+							const CyberiadaSMPoint& label,
+							const CyberiadaSMPoint& source,
+							const CyberiadaSMPoint& target,
+							const QList<CyberiadaSMPoint>& points,
+							CyberiadaAbstractItem* parent = NULL);
+
+	virtual QString getTitle() const;
+};
+
+class CyberiadaStateLinkItem: public CyberiadaVisibleItem {
+public:
+	CyberiadaStateLinkItem(const QString& _prefix,
+						   const CyberiadaAbstractItem* node,
+						   CyberiadaAbstractItem* parent);
+
+	virtual QString getTitle() const;
+	QString nodeTitle() const { return node->getTitle(); }
+	
+private:
+	QString                      prefix;
+	const CyberiadaAbstractItem* node;
 };
 
 #endif
