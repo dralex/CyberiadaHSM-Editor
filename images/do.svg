@@ -15,8 +15,8 @@
    version="1.1"
    id="svg916"
    inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)"
-   sodipodi:docname="comment.svg"
-   inkscape:export-filename="/home/dralex/devel/CyberiadaHSME/images/comment.png"
+   sodipodi:docname="do.svg"
+   inkscape:export-filename="/home/dralex/devel/CyberiadaHSME/images/trans-beh.png"
    inkscape:export-xdpi="96.000008"
    inkscape:export-ydpi="96.000008">
   <defs
@@ -26,29 +26,30 @@
        orient="auto"
        refY="0"
        refX="0"
-       id="marker5519"
+       id="marker5199"
        style="overflow:visible"
        inkscape:isstock="true">
       <path
-         id="path5517"
+         id="path5197"
          d="M 5.77,0 -2.88,5 V -5 Z"
          style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.00000003pt;stroke-opacity:1"
          transform="scale(0.4)"
          inkscape:connector-curvature="0" />
     </marker>
     <marker
-       inkscape:stockid="TriangleOutL"
+       inkscape:stockid="TriangleOutM"
        orient="auto"
-       refY="0.0"
-       refX="0.0"
-       id="TriangleOutL"
+       refY="0"
+       refX="0"
+       id="marker5199-3"
        style="overflow:visible"
        inkscape:isstock="true">
       <path
-         id="path4372"
-         d="M 5.77,0.0 L -2.88,5.0 L -2.88,-5.0 L 5.77,0.0 z "
-         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt;stroke-opacity:1;fill:#000000;fill-opacity:1"
-         transform="scale(0.8)" />
+         id="path5197-6"
+         d="M 5.77,0 -2.88,5 V -5 Z"
+         style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.00000003pt;stroke-opacity:1"
+         transform="scale(0.4)"
+         inkscape:connector-curvature="0" />
     </marker>
   </defs>
   <sodipodi:namedview
@@ -58,9 +59,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1.4"
-     inkscape:cx="-51.273294"
-     inkscape:cy="-12.516698"
+     inkscape:zoom="1.979899"
+     inkscape:cx="101.55899"
+     inkscape:cy="123.52784"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -79,7 +80,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -89,19 +90,25 @@
      id="layer1"
      transform="translate(0,-229.26667)">
     <g
-       id="g851"
-       transform="matrix(-1,0,0,1,67.412053,-0.51027833)">
+       id="g2496"
+       transform="translate(-2.0132736,-1.2442983e-5)">
+      <text
+         id="text3487"
+         y="268.39761"
+         x="49.664017"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:17.6062355px;line-height:50%;font-family:Jura;-inkscape-font-specification:Jura;text-align:start;letter-spacing:0px;word-spacing:0px;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.44015586px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         xml:space="preserve"><tspan
+           id="tspan3491"
+           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Ubuntu;-inkscape-font-specification:'Ubuntu Bold';stroke-width:0.44015586px"
+           y="268.39761"
+           x="49.664017"
+           sodipodi:role="line">/</tspan></text>
       <path
-         sodipodi:nodetypes="ccccccc"
+         sodipodi:nodetypes="cc"
          inkscape:connector-curvature="0"
-         id="rect844"
-         d="m 23.051997,243.70537 v 0 h 36.479252 v 39.87649 H 7.5595236 v -26.40502 z"
-         style="color:#000000;clip-rule:nonzero;display:inline;overflow:visible;visibility:visible;opacity:1;isolation:auto;mix-blend-mode:normal;color-interpolation:sRGB;color-interpolation-filters:linearRGB;solid-color:#000000;solid-opacity:1;vector-effect:none;fill:#ffcc00;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;marker-start:none;color-rendering:auto;image-rendering:auto;shape-rendering:auto;text-rendering:auto;enable-background:accumulate" />
-      <path
-         inkscape:connector-curvature="0"
-         id="path847"
-         d="M 7.5595236,257.17684 H 22.918362 v -13.36347"
-         style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+         id="path4228"
+         d="M 13.961783,263.13334 H 40.360867"
+         style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:2.27454925;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#marker5199-3)" />
     </g>
   </g>
 </svg>
