@@ -27,7 +27,7 @@
 #include <QAbstractItemModel>
 #include <QIcon>
 #include <QDateTime>
-#include <cyberiadamlpp.h>
+#include <cyberiada/cyberiadamlpp.h>
 
 class CyberiadaSMModel: public QAbstractItemModel {
 Q_OBJECT
