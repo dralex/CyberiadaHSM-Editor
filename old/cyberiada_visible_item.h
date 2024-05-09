@@ -63,7 +63,6 @@ private:
 	bool	allow_empty;
 };
 
-
 class CyberiadaFloatPropertyItem: public CyberiadaPropertyItem {
 public:
 	CyberiadaFloatPropertyItem(const QString& _name, double default_value, bool editable,

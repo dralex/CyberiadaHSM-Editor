@@ -27,6 +27,7 @@
 #define CYBERIADA_MIME_TYPE_STATE          "application/kruzhok.cyberiada.state"
 
 #define SM_DEFAULT_TITLE                   "State Machine"
+#define METAINFORMATION_TITLE              "Metainformation"
 #define STATES_AGGREGATOR_TITLE            "States"
 #define TRANSITIONS_AGGREGATOR_TITLE       "Transitions"
 
@@ -58,5 +59,19 @@
 #define PROPERTIES_HEADER_GEOMETRY_LABEL   "Label"
 #define PROPERTIES_HEADER_GEOMETRY_PATH    "Path"
 #define PROPERTIES_HEADER_GEOMETRY_POINT   "Point"
+
+#define METAINFO_STANDARD_VERSION          "Standard Version"
+#define METAINFO_PLATFORM_NAME             "Platform Name"
+#define METAINFO_PLATFORM_VERSION          "Platform Version"
+#define METAINFO_PLATFORM_LANGUAGE         "Platform Language"
+#define METAINFO_TARGET_SYSTEM             "Target System"
+#define METAINFO_NAME                      "Document Name"
+#define METAINFO_AUTHOR                    "Document Author"
+#define METAINFO_AUTHOR_CONTACT            "Document Author's Contact"
+#define METAINFO_DESCRIPTION               "Document Description"
+#define METAINFO_VERSION                   "Document Version"
+#define METAINFO_DATE                      "Document Date"
+#define METAINFO_ACTIONS_ORDER             "Actions Order Flag"
+#define METAINFO_EVENT_PROPAGATION         "Event Propagation Flag"
 
 #endif

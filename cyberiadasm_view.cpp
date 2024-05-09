@@ -28,7 +28,6 @@
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_view.h"
 #include "myassert.h"
-#include "cyberiadasm_tree_proxy_model.h"
 
 CyberiadaSMView::CyberiadaSMView(QWidget* parent):
 	QTreeView(parent)
@@ -45,7 +44,7 @@ CyberiadaSMView::CyberiadaSMView(QWidget* parent):
 void CyberiadaSMView::currentChanged(const QModelIndex &current, const QModelIndex &previous)
 {
 	QTreeView::currentChanged(current, previous);
-	qDebug() << "current changed" << current.row() << current.column() << (void*)current.internalPointer();
+	//qDebug() << "current changed" << current.row() << current.column() << (void*)current.internalPointer();
 	emit currentIndexActivated(current);
 }
 
@@ -62,7 +61,7 @@ void CyberiadaSMView::startDrag(Qt::DropActions)
 	drag->exec(Qt::MoveAction);
 }
 
-void CyberiadaSMView::slotSourceDataChanged(const QModelIndex& topLeft,
+/*void CyberiadaSMView::slotSourceDataChanged(const QModelIndex& topLeft,
 											const QModelIndex&)
 {
 	//qDebug() << "data changed";
@@ -72,3 +71,4 @@ void CyberiadaSMView::slotSourceDataChanged(const QModelIndex& topLeft,
 		update(proxyModel->mapFromSource(topLeft));
 	}
 }
+*/

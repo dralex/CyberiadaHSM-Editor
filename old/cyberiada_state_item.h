@@ -75,24 +75,36 @@ public:
 						   CyberiadaAbstractItem* parent = NULL);	
 };
 
-class CyberiadaStateItem: public CyberiadaSceneRectItem {
+class CyberiadaSimpleStateItem: public CyberiadaSceneRectItem {
 public:
-	CyberiadaStateItem(const QString& id, const QString& title, const QString& action,
-					   const CyberiadaSMPoint& pos,
-					   const CyberiadaSMSize& size,
-					   CyberiadaAbstractItem* parent = NULL):
-		CyberiadaSceneRectItem(nodeState, id, title, true, true,
+	CyberiadaSimpleStateItem(const QString& id, const QString& title, const QString& action,
+							 const CyberiadaSMPoint& pos,
+							 const CyberiadaSMSize& size,
+							 CyberiadaAbstractItem* parent = NULL):
+		CyberiadaSceneRectItem(nodeSimpleState, id, title, true, true,
 							   action, pos, size, parent)
 		{
 		}
 };
 
-class CyberiadaInitialStateItem: public CyberiadaScenePointItem {
+class CyberiadaCompositeStateItem: public CyberiadaSceneRectItem {
 public:
-	CyberiadaInitialStateItem(const QString& id,
+	CyberiadaCompositeStateItem(const QString& id, const QString& title, const QString& action,
+								const CyberiadaSMPoint& pos,
+								const CyberiadaSMSize& size,
+								CyberiadaAbstractItem* parent = NULL):
+		CyberiadaSceneRectItem(nodeCompositeState, id, title, true, true,
+							   action, pos, size, parent)
+		{
+		}
+};
+
+class CyberiadaInitialPseudostateItem: public CyberiadaScenePointItem {
+public:
+	CyberiadaInitialPseudostateItem(const QString& id,
 							  const CyberiadaSMPoint& pos,
 							  CyberiadaAbstractItem* parent = NULL):
-		CyberiadaScenePointItem(nodeInitialState, id,
+		CyberiadaScenePointItem(nodeInitialPseudostate, id,
 								CYBERIADA_INITIAL_NODE_TITLE,
 								false, false, "", pos, parent)
 		{

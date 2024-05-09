@@ -27,8 +27,6 @@
 #include <QMainWindow>
 #include "ui_smeditor_window.h"
 #include "cyberiadasm_model.h"
-#include "cyberiadasm_tree_proxy_model.h"
-#include "cyberiadasm_prop_proxy_model.h"
 
 class CyberiadaSMEditorWindow: public QMainWindow, public Ui_SMEditorWindow {
 Q_OBJECT
@@ -40,8 +38,6 @@ public slots:
 
 private:
 	CyberiadaSMModel* model;
-	CyberiadaSMTreeProxyModel* treeModel;
-	CyberiadaSMPropertyProxyModel* propertiesModel;
 };
 
 #endif

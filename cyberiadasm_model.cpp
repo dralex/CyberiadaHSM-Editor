@@ -25,210 +25,61 @@
 #include <QList>
 #include <QMimeData>
 #include <QDebug>
+#include <QMessageBox>
 
 #include "cyberiadasm_model.h"
 #include "myassert.h"
 #include "cyberiada_constants.h"
 
 CyberiadaSMModel::CyberiadaSMModel(QObject *parent):
-	QAbstractItemModel(parent), sm_name(SM_DEFAULT_TITLE)
+	QAbstractItemModel(parent)
 {
-	smRootIcon = QIcon(":/Icons/images/sm-root.png");
-	stateRootIcon = QIcon(":/Icons/images/state-root.png");
-	transRootIcon = QIcon(":/Icons/images/trans-root.png");
-	stateIcon = QIcon(":/Icons/images/state.png");
-	initialStateIcon = QIcon(":/Icons/images/init-state.png");
-	transIcon = QIcon(":/Icons/images/trans.png");
-	actionIcon = QIcon(":/Icons/images/action.png");
-	commentIcon = QIcon(":/Icons/images/comment.png");
-	geompropIcon = QIcon(":/Icons/images/geomprop.png");
-	textpropIcon = QIcon(":/Icons/images/textprop.png");
-	textpropnoneditIcon = QIcon(":/Icons/images/textpropnonedit.png");
-	numpropIcon = QIcon(":/Icons/images/numprop.png");
-	pointpropIcon = QIcon(":/Icons/images/pointprop.png");
-	rectpropIcon = QIcon(":/Icons/images/rectprop.png");
-	pathpropIcon = QIcon(":/Icons/images/pathprop.png");
-	stateLinkIcon = QIcon(":/Icons/images/statelink.png");
+	root = new Cyberiada::Document();
+	icons[Cyberiada::elementRoot] = emptyIcon;
+	icons[Cyberiada::elementSM] = QIcon(":/Icons/images/sm-root.png");
+	icons[Cyberiada::elementSimpleState] = QIcon(":/Icons/images/state.png");
+	icons[Cyberiada::elementCompositeState] = QIcon(":/Icons/images/state-comp.png"); 
+	icons[Cyberiada::elementComment] = QIcon(":/Icons/images/comment.png");
+	icons[Cyberiada::elementFormalComment] = QIcon(":/Icons/images/comment-machine.png");
+	icons[Cyberiada::elementInitial] = QIcon(":/Icons/images/init-state.png");
+	icons[Cyberiada::elementFinal] = QIcon(":/Icons/images/final-state.png");
+	icons[Cyberiada::elementChoice] = QIcon(":/Icons/images/choice.png");
+	icons[Cyberiada::elementTerminate] = QIcon(":/Icons/images/terminate.png");
+	icons[Cyberiada::elementTransition] = QIcon(":/Icons/images/trans.png");;
+
 	cyberiadaStateMimeType = CYBERIADA_MIME_TYPE_STATE;
-
-	initTrees();
-}
-
-void CyberiadaSMModel::initTrees()
-{
-	root = new CyberiadaRootItem();
-	sm_root = static_cast<CyberiadaVisibleItem*>(root->child(0));
-	states_root = static_cast<CyberiadaVisibleItem*>(sm_root->child(1));
-	trans_root = static_cast<CyberiadaVisibleItem*>(sm_root->child(2));
-	//qDebug() << "root" << (void*)root;
-	//qDebug() << "sm root" << (void*)sm_root;
-	//qDebug() << "states root" << (void*)states_root;
-	//qDebug() << "trans root" << (void*)trans_root;
-}
-
-void CyberiadaSMModel::cleanupTrees()
-{
-	states_map.clear();
-	delete root;
-	root = NULL;
-	sm_root = states_root = trans_root = NULL;
 }
 
 CyberiadaSMModel::~CyberiadaSMModel()
 {
-	cleanupTrees();
+	delete root;
 }
 
 void CyberiadaSMModel::reset()
 {
 	beginResetModel();
-	cleanupTrees();
-	initTrees();
+	root->reset();
 	endResetModel();	
 }
 
-QString CyberiadaSMModel::generateID() const
-{
-	QString s;
-	do {
-		int num = qrand() % 10000;
-		s = QString("id-%1").arg(num);
-	} while (states_map.contains(s));
-	return s;
-}
-
-CyberiadaSMItem* CyberiadaSMModel::convertNode(const CyberiadaNode* node,
-											   CyberiadaAbstractItem* parent)
-{
-	if (node->type == cybNodeInitial) {
-		CyberiadaSMPoint point(node->geometry_rect.x,
-							   node->geometry_rect.y);
-		return new CyberiadaInitialStateItem(node->id, point, parent);
-	} else {
-		CyberiadaSMPoint point(node->geometry_rect.x,
-							   node->geometry_rect.y);
-		CyberiadaSMSize size(node->geometry_rect.width,
-							 node->geometry_rect.height);
-		if (node->type == cybNodeComment) {
-			QString id = node->id;
-			if (id.isEmpty()) {
-				generateID();
-			}
-			return new CyberiadaCommentItem(id, node->action,
-											point, size,
-											parent);
-		} else {
-			QString title = QString(node->title).trimmed();
-			if (title.isEmpty())
-				title = CYBERIADA_EMPTY_NODE_TITLE;
-			return new CyberiadaStateItem(QString(node->id).trimmed(), title,
-										  QString(node->action).trimmed(),
-										  point, size,
-										  parent);
-		}
-	}
-}
-
-CyberiadaTransitionItem* CyberiadaSMModel::convertEdge(const CyberiadaEdge* edge,
-													   CyberiadaAbstractItem* parent)
-{
-	CyberiadaSMPoint source_port(edge->geometry_source_point.x,
-								 edge->geometry_source_point.y);
-	CyberiadaSMPoint target_port(edge->geometry_target_point.x,
-								 edge->geometry_target_point.y);
-	CyberiadaSMPoint label;
-	QList<CyberiadaSMPoint> path;
-	for (CyberiadaPolyline* cp = edge->geometry_polyline; cp; cp = cp->next) {
-		path.append(CyberiadaSMPoint(cp->point.x, cp->point.y));
-	}
-	const CyberiadaSMItem* source = states_map.value(QString(edge->source->id).trimmed(),
-													 NULL);
-	const CyberiadaSMItem* target = states_map.value(QString(edge->target->id).trimmed(),
-													 NULL);
-	if (!source || !target)
-		return NULL;
-	return new CyberiadaTransitionItem(source,
-									   target,
-									   QString(edge->id).trimmed(),
-									   QString(edge->action).trimmed(),
-									   label,
-									   source_port,
-									   target_port,
-									   path,
-									   parent);
-}
-
-void CyberiadaSMModel::addChildNodes(const CyberiadaNode* parent_node,
-									 CyberiadaAbstractItem* parent_item,
-									 bool toplevel)
-{
-	for (const CyberiadaNode* cur_node = parent_node; cur_node; cur_node = cur_node->next) {
-		CyberiadaSMItem* item = convertNode(cur_node, parent_item);
-		if (toplevel) {
-			if (cur_node->children) {
-				addChildNodes(cur_node->children, parent_item, false);
-			}
-		} else {
-			addToMap(item->getID(), item);
-			parent_item->addChild(item);
-			if (cur_node->children) {
-				addChildNodes(cur_node->children, item, false);
-			}
-		}
-	}
-}
-
-void CyberiadaSMModel::addToMap(const QString& id, CyberiadaSMItem* item)
-{
-	QString new_id = id;
-	while (states_map.contains(new_id)) {
-		new_id += "_";
-	}
-	states_map.insert(new_id, item);
-}
-
-void CyberiadaSMModel::renameSM(const QString& new_name)
-{
-	if (new_name.length() > 0) {
-		sm_name = new_name;
-		sm_root->rename(sm_name);
-	}
-}
-
-void CyberiadaSMModel::loadGraph(const QString& path)
+void CyberiadaSMModel::loadDocument(const QString& path)
 {	
-	reset();
+	Cyberiada::Document* new_doc = NULL;
 	
-	int res;
-	CyberiadaSM sm;
-	
-	if ((res = cyberiada_read_sm(&sm, path.toUtf8(), cybxmlUnknown)) != CYBERIADA_NO_ERROR) {
-		qDebug() << "Cannot load Cyberiada SM graph. Error code: " << res;
+	try {
+		new_doc = new Cyberiada::Document();
+		new_doc->load(path.toStdString());
+	} catch (const Cyberiada::Exception& e) {
+		QMessageBox::critical(NULL, tr("Load State Machine"),
+							  tr("Cannot load state machine graph:\n") + QString(e.str().c_str()));
+		if (new_doc) delete new_doc;
 		return ;
 	}
-
-	beginResetModel();
 	
-	sm_version = sm.version;
-
-	renameSM(sm.name);
-
-	addChildNodes(sm.nodes, states_root, true);
-
-	for (CyberiadaEdge* cur_edge = sm.edges; cur_edge; cur_edge = cur_edge->next) {
-		CyberiadaTransitionItem* item = convertEdge(cur_edge, trans_root);
-		if (item == NULL) {
-			qDebug() << "Cannot load Cyberiada SM graph. Cannot load edge: " << cur_edge->id;			
-			cyberiada_cleanup_sm(&sm);
-			endResetModel();
-			return ;
-		}
-		trans_root->addChild(item);
-	}
-
+	beginResetModel();
+	delete root;
+	root = new_doc;
 	endResetModel();
-
-	cyberiada_cleanup_sm(&sm);
 }
 
 QVariant CyberiadaSMModel::data(const QModelIndex &index, int role) const
@@ -236,20 +87,38 @@ QVariant CyberiadaSMModel::data(const QModelIndex &index, int role) const
 	if (!index.isValid() || index == rootIndex())
 		return QVariant();
 
-	CyberiadaAbstractItem *item;
+	const Cyberiada::Element *element;
 	int column = index.column();
 	
 	switch(role) {
 	case Qt::DisplayRole:
 	case Qt::ToolTipRole:
 	case Qt::EditRole:
-		item = static_cast<CyberiadaAbstractItem*>(index.internalPointer());
-		MY_ASSERT(item);		
+		element = static_cast<const Cyberiada::Element*>(index.internalPointer());
+		MY_ASSERT(element);		
 		if (column == 0) {
-			return item->getTitle();
-		} else if (column == 1 && item->isProperty()) {
-			const CyberiadaPropertyItem* property_item = static_cast<const CyberiadaPropertyItem*>(item);
-			return property_item->getValue();
+			if (element->get_type() == Cyberiada::elementTransition) {
+				const Cyberiada::Transition* trans = static_cast<const Cyberiada::Transition*>(element);
+				const Cyberiada::Element* source = trans->source_element();
+				MY_ASSERT(source);
+				QString source_name = source->get_name().c_str();
+				if (source_name.isEmpty()) {
+					source_name = QString("[") + source->get_id().c_str() + "]";
+				}
+				const Cyberiada::Element* target = trans->target_element();
+				MY_ASSERT(target);
+				QString target_name = target->get_name().c_str();
+				if (target_name.isEmpty()) {
+					target_name = QString("[") + target->get_id().c_str() + "]";
+				}				
+				return QString(source_name + " -> " + target_name);
+			} else {
+				QString name = element->get_name().c_str();
+				if (name.isEmpty()) {
+					name = QString("[") + element->get_id().c_str() + "]";
+				}
+				return name;
+			}
 		} else {
 			return QVariant();
 		}
@@ -264,90 +133,37 @@ QVariant CyberiadaSMModel::data(const QModelIndex &index, int role) const
 	}
 }
 
-const QIcon& CyberiadaSMModel::getIndexIcon(const QModelIndex& index) const
+QIcon CyberiadaSMModel::getIndexIcon(const QModelIndex& index) const
 {
 	if (!index.isValid()) return emptyIcon;
-	CyberiadaAbstractItem *item = static_cast<CyberiadaAbstractItem*>(index.internalPointer());
-	const CyberiadaPropertyItem* property_item;
-	MY_ASSERT(item);
-	switch (item->getType()) {
-	case nodeSM:
-		return smRootIcon;
-	case nodeStatesAggr:
-		return stateRootIcon;
-	case nodeTransitionsAggr:
-		return transRootIcon;
-	case nodeInitialState:
-		return initialStateIcon;
-	case nodeState:
-		return stateIcon;
-	case nodeComment:
-		return commentIcon;
-	case nodeTransition:
-		return transIcon;
-	case nodeTextProperty:
-		property_item = static_cast<const CyberiadaPropertyItem*>(item);
-		if (property_item->isEditable()) {
-			return textpropIcon;
-		} else {
-			return textpropnoneditIcon;
-		}
-	case nodeNumProperty:
-		return numpropIcon;
-	case nodeGeomPointProperty:
-		return pointpropIcon;
-	case nodeGeomRectProperty:
-		return rectpropIcon;
-	case nodeGeomPathProperty:
-	case nodeGeomTransProperty:
-		return pathpropIcon;
-	case nodeStateLink:
-		return stateLinkIcon;
-	default:
+	const Cyberiada::Element *element = static_cast<const Cyberiada::Element*>(index.internalPointer());
+	MY_ASSERT(element);
+	Cyberiada::ElementType t = element->get_type();
+	if (icons.find(t) != icons.end()) {
+		return icons[t];
+	} else {
 		return emptyIcon;
 	}
 }
 
-bool CyberiadaSMModel::setData(const QModelIndex & index, const QVariant & value, int role)
+bool CyberiadaSMModel::setData(const QModelIndex&, const QVariant&, int)
 {
-	//qDebug() << "set data" << index.row() << index.column() << (void*)index.internalPointer() << value << role;
-	if (index.isValid() && role == Qt::EditRole) {
-		MY_ASSERT(index.column() == 1);
-		MY_ASSERT(isPropertyIndex(index));
-		QString newStr = value.toString();
-		if (newStr.isEmpty())
-			return false;
-		CyberiadaPropertyItem *item = static_cast<CyberiadaPropertyItem*>(index.internalPointer());
-		MY_ASSERT(item);
-		//qDebug() << "try edit" << item->getTitle() << newStr;
-		if (item->setValue(newStr)) {
-			//qDebug() << "edited";
-			emitParentsChanged(item);
-			return true;
-		}
-	}
 	return false;
 }
 
 Qt::ItemFlags CyberiadaSMModel::flags(const QModelIndex &index) const
 {
-	Qt::ItemFlags defaultFlags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
-	if (index == statesRootIndex()) {
-		return Qt::ItemIsDropEnabled | defaultFlags;
-	} else if (isStateIndex(index) || isInitialStateIndex(index)) {
-		defaultFlags |= Qt::ItemIsDragEnabled;
+	Qt::ItemFlags default_flags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+	if (isSMIndex(index)) {
+		return Qt::ItemIsDropEnabled | default_flags;
+	} else if (isStateIndex(index) || isInitialIndex(index)) {
+		default_flags |= Qt::ItemIsDragEnabled;
 		if (isStateIndex(index)) {
-			defaultFlags |= Qt::ItemIsDropEnabled;
+			default_flags |= Qt::ItemIsDropEnabled;
 		}
-		return defaultFlags;
-	} else if (isPropertyIndex(index)) {
-		const CyberiadaPropertyItem* property_item = static_cast<const CyberiadaPropertyItem*>(indexToItem(index));
-		MY_ASSERT(property_item);
-		if (index.column() == 1 && property_item->isEditable()) {
-			defaultFlags |= Qt::ItemIsEditable;
-		}
+		return default_flags;
 	}
-	return defaultFlags;
+	return default_flags;
 }
 
 bool CyberiadaSMModel::hasIndex(int row, int column, const QModelIndex & parent) const
@@ -355,10 +171,13 @@ bool CyberiadaSMModel::hasIndex(int row, int column, const QModelIndex & parent)
 	if(!parent.isValid()) {
 		return row == 0;
 	}
-	CyberiadaAbstractItem *parentItem = static_cast<CyberiadaAbstractItem*>(parent.internalPointer());
-	MY_ASSERT(parentItem);
-	if(parentItem->childCount() > 0) {
-		return row >= 0 && row < parentItem->childCount();
+	if (column != 0) {
+		return false;
+	}
+	const Cyberiada::Element *parent_element = static_cast<const Cyberiada::Element*>(parent.internalPointer());
+	MY_ASSERT(parent_element);
+	if(parent_element->has_children()) {
+		return row >= 0 && row < int(parent_element->children_count());
 	} else {
 		return false;
 	}
@@ -371,12 +190,12 @@ QModelIndex CyberiadaSMModel::index(int row, int column, const QModelIndex &pare
 		//qDebug() << "index result: empty";
 		return rootIndex();
 	}
-	CyberiadaAbstractItem* parentItem = static_cast<CyberiadaAbstractItem*>(parent.internalPointer());
-	MY_ASSERT(parentItem);
-	CyberiadaAbstractItem* childItem = parentItem->child(row);
-	MY_ASSERT(childItem);
+	const Cyberiada::ElementCollection* parent_element = static_cast<const Cyberiada::ElementCollection*>(parent.internalPointer());
+	MY_ASSERT(parent_element);
+	const Cyberiada::Element* child_element = parent_element->get_element(size_t(row));
+	MY_ASSERT(child_element);
 	//qDebug() << "index result: child" << row << column << (void*)childItem;
-	return createIndex(row, column, childItem);
+	return createIndex(row, column, (void*)child_element);
 }
 
 QModelIndex CyberiadaSMModel::parent(const QModelIndex &index) const
@@ -386,41 +205,39 @@ QModelIndex CyberiadaSMModel::parent(const QModelIndex &index) const
 		//qDebug() << "parent result: empty";
 		return QModelIndex();
 	}
-	if (index == SMIndex()) {
+	if (isSMIndex(index)) {
 		//qDebug() << "parent result: root";
 		return rootIndex();
 	}
-	CyberiadaAbstractItem* childItem = static_cast<CyberiadaAbstractItem*>(index.internalPointer());
-	MY_ASSERT(childItem);
-	CyberiadaAbstractItem* parentItem = childItem->parent();
-	MY_ASSERT(parentItem);
-	if (parentItem == root) {
+	const Cyberiada::Element* child_element = static_cast<const Cyberiada::Element*>(index.internalPointer());
+	MY_ASSERT(child_element);
+	const Cyberiada::Element* parent_element = child_element->get_parent();
+	MY_ASSERT(parent_element);
+	if (parent_element == root) {
 		//qDebug() << "parent result: root2";		
 		return rootIndex();
 	}
-	MY_ASSERT(parentItem);
+	MY_ASSERT(parent_element);
 	//qDebug() << "parent result" << parentItem->row() << 0 << (void*)parentItem;
-	return createIndex(parentItem->row(), 0, parentItem);
+	return createIndex(parent_element->index(), 0, (void*)parent_element);
 }
 
 int CyberiadaSMModel::rowCount(const QModelIndex &parent) const
 {
 	//qDebug() << "row count" << (void*)parent.internalPointer();
-	CyberiadaAbstractItem* item;
+	const Cyberiada::Element* element;
 	if (!parent.isValid() || parent == rootIndex()) {
-		item = root;
+		element = root;
 	} else {
-		item = static_cast<CyberiadaAbstractItem*>(parent.internalPointer());
+		element = static_cast<const Cyberiada::Element*>(parent.internalPointer());
 	}
-	MY_ASSERT(item);
-	int r = item->childCount();
-	//qDebug() << "result:" << r;
-	return r;
+	MY_ASSERT(element);
+	return element->children_count();
 }
 
 int CyberiadaSMModel::columnCount(const QModelIndex &) const
 {
-	return 2;
+	return 1;
 }
 
 bool CyberiadaSMModel::hasChildren(const QModelIndex & parent) const
@@ -433,111 +250,73 @@ QModelIndex CyberiadaSMModel::rootIndex() const
 	return createIndex(0, 0, (void*)root);
 }
 
-QModelIndex CyberiadaSMModel::SMIndex() const
+QModelIndex CyberiadaSMModel::elementToIndex(const Cyberiada::Element* element) const
 {
-	return createIndex(0, 0, (void*)sm_root);
-}
-
-QModelIndex CyberiadaSMModel::statesRootIndex() const
-{
-	return createIndex(0, 0, (void*)states_root);
-}
-
-QModelIndex CyberiadaSMModel::transitionsRootIndex() const
-{
-	return createIndex(1, 0, (void*)trans_root);
-}
-
-QModelIndex CyberiadaSMModel::itemToIndex(const CyberiadaAbstractItem* item) const
-{
-	if (item == NULL) return QModelIndex();
-	if (item->isRoot()) {
+	if (element == NULL) return QModelIndex();
+	if (element->is_root()) {
 		return rootIndex();
 	} else {
-		MY_ASSERT(item);
-		const CyberiadaAbstractItem* parent = item->parent();
+		const Cyberiada::Element* parent = element->get_parent();
 		MY_ASSERT(parent);
-		return index(item->row(), 0, itemToIndex(parent));
+		return index(parent->index(), 0, elementToIndex(parent));
 	}
 }
 
-void CyberiadaSMModel::emitParentsChanged(const CyberiadaAbstractItem* item)
-{
-	MY_ASSERT(item);
-	MY_ASSERT(item->isProperty());
-	const CyberiadaAbstractItem* next_item = item;
-	do {
-		item = next_item;
-		QModelIndex index = itemToIndex(item);
-		MY_ASSERT(index.isValid());
-		//qDebug() << "emit" << item->getType() << item->getTitle() << "changed";
-		emit dataChanged(index, index);
-		next_item = item->parent();
-		MY_ASSERT(next_item);
-	} while (next_item->isProperty() || item->isProperty());
-}
-
-const CyberiadaAbstractItem* CyberiadaSMModel::indexToItem(const QModelIndex& index) const
+const Cyberiada::Element* CyberiadaSMModel::indexToElement(const QModelIndex& index) const
 {
 	if (!index.isValid()) return root;
-	return static_cast<const CyberiadaAbstractItem*>(index.internalPointer());
+	return static_cast<const Cyberiada::Element*>(index.internalPointer());
 }
 
-CyberiadaAbstractItem* CyberiadaSMModel::indexToItem(const QModelIndex& index)
+Cyberiada::Element* CyberiadaSMModel::indexToElement(const QModelIndex& index)
 {
 	if (!index.isValid()) return root;
-	return static_cast<CyberiadaAbstractItem*>(index.internalPointer());
-}
-
-bool CyberiadaSMModel::isTrivialIndex(const QModelIndex& index) const
-{
-	return (!index.isValid() ||
-			index == rootIndex() ||
-			index == SMIndex() ||
-			index == statesRootIndex() ||
-			index == transitionsRootIndex());
+	return static_cast<Cyberiada::Element*>(index.internalPointer());
 }
 
 bool CyberiadaSMModel::isStateIndex(const QModelIndex& index) const
 {
-	if (!index.isValid()) return false;
-	CyberiadaAbstractItem* item = static_cast<CyberiadaAbstractItem*>(index.internalPointer());
-	MY_ASSERT(item);
-	return item->getType() == nodeState;
+	return isSimpleStateIndex(index) || isCompositeStateIndex(index);
 }
 
-bool CyberiadaSMModel::isPropertyIndex(const QModelIndex& index) const
+bool CyberiadaSMModel::isSMIndex(const QModelIndex& index) const
 {
 	if (!index.isValid()) return false;
-	CyberiadaAbstractItem* item = static_cast<CyberiadaAbstractItem*>(index.internalPointer());
-	MY_ASSERT(item);
-	return item->isProperty();
+	const Cyberiada::Element* element = static_cast<const Cyberiada::Element*>(index.internalPointer());
+	MY_ASSERT(element);
+	return element->get_type() == Cyberiada::elementSM;
 }
 
-bool CyberiadaSMModel::isInitialStateIndex(const QModelIndex& index) const
+bool CyberiadaSMModel::isSimpleStateIndex(const QModelIndex& index) const
 {
 	if (!index.isValid()) return false;
-	CyberiadaAbstractItem* item = static_cast<CyberiadaAbstractItem*>(index.internalPointer());
-	MY_ASSERT(item);
-	return item->getType() == nodeInitialState;
+	const Cyberiada::Element* element = static_cast<const Cyberiada::Element*>(index.internalPointer());
+	MY_ASSERT(element);
+	return element->get_type() == Cyberiada::elementSimpleState;
+}
+
+bool CyberiadaSMModel::isCompositeStateIndex(const QModelIndex& index) const
+{
+	if (!index.isValid()) return false;
+	const Cyberiada::Element* element = static_cast<const Cyberiada::Element*>(index.internalPointer());
+	MY_ASSERT(element);
+	return element->get_type() == Cyberiada::elementCompositeState;
+}
+
+bool CyberiadaSMModel::isInitialIndex(const QModelIndex& index) const
+{
+	if (!index.isValid()) return false;
+	const Cyberiada::Element* element = static_cast<const Cyberiada::Element*>(index.internalPointer());
+	MY_ASSERT(element);
+	return element->get_type() == Cyberiada::elementInitial;
 }
 
 bool CyberiadaSMModel::isTransitionIndex(const QModelIndex& index) const
 {
 	if (!index.isValid()) return false;
-	CyberiadaAbstractItem* item = static_cast<CyberiadaAbstractItem*>(index.internalPointer());
-	MY_ASSERT(item);
-	return item->getType() == nodeTransition;
-}
-
-const CyberiadaSMItem* CyberiadaSMModel::idToItem(const QString& id) const
-{
-	return states_map.value(id, NULL);
-}
-
-CyberiadaSMItem* CyberiadaSMModel::idToItem(const QString& id)
-{
-	return states_map.value(id, NULL);
+	const Cyberiada::Element* element = static_cast<const Cyberiada::Element*>(index.internalPointer());
+	MY_ASSERT(element);
+	return element->get_type() == Cyberiada::elementTransition;
 }
 
 Qt::DropActions CyberiadaSMModel::supportedDropActions() const
@@ -545,7 +324,7 @@ Qt::DropActions CyberiadaSMModel::supportedDropActions() const
 	return Qt::MoveAction;
 }
 
-void CyberiadaSMModel::move(CyberiadaAbstractItem* item, CyberiadaAbstractItem* target_item)
+void CyberiadaSMModel::move(Cyberiada::Element*, Cyberiada::ElementCollection*)
 {
 /*	QModelIndex srcindex = itemToIndex(item);
 	QModelIndex parentindex = parent(srcindex);	
@@ -583,9 +362,9 @@ void CyberiadaSMModel::move(CyberiadaAbstractItem* item, CyberiadaAbstractItem* 
 	endInsertRows();*/
 }
 
-bool CyberiadaSMModel::dropMimeData(const QMimeData *data,
-									Qt::DropAction action, int, int column,
-									const QModelIndex &parent)
+bool CyberiadaSMModel::dropMimeData(const QMimeData *,
+									Qt::DropAction, int, int,
+									const QModelIndex &)
 {
 /*	if(action == Qt::IgnoreAction) {
 		return true;
@@ -617,6 +396,7 @@ bool CyberiadaSMModel::dropMimeData(const QMimeData *data,
 	} else {
 		return false;
 		}*/
+	return false;
 }
 
 QStringList CyberiadaSMModel::mimeTypes() const
@@ -631,40 +411,11 @@ QMimeData* CyberiadaSMModel::mimeData(const QModelIndexList &indexes) const
 	QDataStream stream(&encodedData, QIODevice::WriteOnly);
 	QString path;
 	foreach(QModelIndex index, indexes) {
-		if (!isStateIndex(index) && !isInitialStateIndex(index)) continue;
-		const CyberiadaSMItem* item = static_cast<const CyberiadaSMItem*>(indexToItem(index));
-		stream << item->getID();
+		if (!isStateIndex(index) && !isInitialIndex(index)) continue;
+		const Cyberiada::Element* element = indexToElement(index);
+		MY_ASSERT(element);
+		stream << element->get_id().c_str();
 	}
 	mimeData->setData(cyberiadaStateMimeType, encodedData);	
 	return mimeData;
 }
-
-void CyberiadaSMModel::dump() const
-{
-//	dumpRecursively(root, "");
-}
-
-/*void CyberiadaSMModel::dumpRecursively(const CyberiadaSMItem* root, const QString& indent)
-{
-	QString type;
-	QString descr;
-	QString label;
-	if(root->isRoot()) {
-		type = "Root";
-	} else if(root->isBox()) {
-		type = "B";
-		label = root->getLabel();
-	} else {
-		type = "F";
-		const BookDescription& bd = root->getBookDescr();
-		descr = bd.toString();
-		if((bd.toTextString()) != root->getLabel()) {
-			label = root->getLabel();
-		}
-	}
-	logger.write(QString("%1%2%3{%4}{%5}").arg(indent).arg(type).arg(root->getID()).arg(descr).arg(label));
-	QString newindent = indent + "-";
-	for(int i = 0; i < root->childCount(); i++) {
-		dumpRecursively(root->child(i), newindent);
-		}
-		}*/

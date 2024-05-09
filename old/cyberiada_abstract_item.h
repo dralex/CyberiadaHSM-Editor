@@ -29,12 +29,24 @@
 enum CyberiadaItemType {
 	nodeRoot,
 	nodeSM,
+	nodeMetainfo,
 	nodeStatesAggr,
 	nodeTransitionsAggr,
-	nodeState,
-	nodeComment,
+	nodeSimpleState,
+	nodeCompositeState,
+	nodeMachineComment,
+	nodeHumanComment,
 	nodeTransition,
-	nodeInitialState,
+	nodeInitialPseudostate,
+	nodeChoicePseudostate,
+	nodeFinalState,
+	nodeBehavior,
+	nodeEntryBehavior,
+	nodeExitBehavior,
+	nodeTransitionBehavior,
+	nodeBehaviorTrigger,
+	nodeBehaviorGuard,
+	nodeBehaviorAction,
 	nodeTextProperty,
 	nodeNumProperty,
 	nodeGeomPointProperty,
@@ -60,11 +72,13 @@ public:
 	virtual bool rename(const QString&) const { return false; };
 	
 	bool isRoot() const { return parent_item == NULL; }
-	bool isSMAggregate() const { return node_type == nodeSM; }
+	bool isSM() const { return node_type == nodeSM; }
 	bool isStatesAggregate() const { return node_type == nodeStatesAggr; }
 	bool isTransionsAggregate() const { return node_type == nodeTransitionsAggr; }
-	bool isState() const { return node_type == nodeState; }
-	bool isInitialState() const { return node_type == nodeInitialState; }
+	bool isCompositeState() const { return node_type == nodeCompositeState; }
+	bool isSimpleState() const { return node_type == nodeSimpleState; }
+	bool isInitialPseudostate() const { return node_type == nodeInitialPseudostate; }
+	bool isChoicePseudostate() const { return node_type == nodeChoicePseudostate; }
 	bool isTransition() const { return node_type == nodeTransition; }
 	bool isProperty() const { return isTextProperty() || isNumProperty() || isGeometry(); }
 	bool isTextProperty() const { return node_type == nodeTextProperty; }
@@ -78,7 +92,7 @@ public:
 	bool isPathGeometry() const { return node_type == nodeGeomPathProperty; }
 	bool isTransGeometry() const { return node_type == nodeGeomTransProperty; }
 	bool isStateLink() const { return node_type == nodeStateLink; }
-
+	
 	void addChild(CyberiadaAbstractItem* child);
 	void removeChild(CyberiadaAbstractItem* child);
 	void moveParent(CyberiadaAbstractItem* new_parent);

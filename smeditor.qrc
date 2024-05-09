@@ -4,10 +4,14 @@
     <file>images/sm-root.png</file>
     <file>images/state-root.png</file>
     <file>images/trans-root.png</file>
+    <file>images/state-comp.png</file>
     <file>images/state.png</file>
     <file>images/init-state.png</file>
+    <file>images/final-state.png</file>
+    <file>images/terminate.png</file>	
     <file>images/trans.png</file>
     <file>images/comment.png</file>
+    <file>images/comment-machine.png</file>
     <file>images/geomprop.png</file>
     <file>images/textprop.png</file>
     <file>images/textpropnonedit.png</file>

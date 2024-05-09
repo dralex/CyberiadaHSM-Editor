@@ -33,18 +33,14 @@ QString CyberiadaTextPropertyItem::getValue() const
 bool CyberiadaTextPropertyItem::setValue(const QString& _value)
 {
 	if (!isEditable()) {
-		qDebug() << "1";
 		return false;
 	}
 	if (_value == value) {
-//		qDebug() << "2";
 		return false;
 	}
 	if (_value.isEmpty() && !allow_empty) {
-//		qDebug() << "3";
 		return false;
 	}
-//	qDebug() << "4";
 	value = _value;
 	return true;
 }	

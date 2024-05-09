@@ -35,16 +35,37 @@ CyberiadaRootItem::CyberiadaRootItem():
 														false,
 														this);
 	addChild(sm);
+
+	CyberiadaVisibleItem* meta = new CyberiadaVisibleItem(nodeMetainfo,
+														  METAINFORMATION_TITLE,
+														  false,
+														  false,
+														  sm);
+	meta->addChild(new CyberiadaTextPropertyItem(METAINFO_STANDARD_VERSION, "", true, true, meta));
+	meta->addChild(new CyberiadaTextPropertyItem(METAINFO_PLATFORM_NAME, "", true, true, meta));
+	meta->addChild(new CyberiadaTextPropertyItem(METAINFO_PLATFORM_VERSION, "", true, true, meta));
+	meta->addChild(new CyberiadaTextPropertyItem(METAINFO_PLATFORM_LANGUAGE, "", true, true, meta));
+	meta->addChild(new CyberiadaTextPropertyItem(METAINFO_TARGET_SYSTEM, "", true, true, meta));
+	meta->addChild(new CyberiadaTextPropertyItem(METAINFO_NAME, "", true, true, meta));
+	meta->addChild(new CyberiadaTextPropertyItem(METAINFO_AUTHOR, "", true, true, meta));
+	meta->addChild(new CyberiadaTextPropertyItem(METAINFO_AUTHOR_CONTACT, "", true, true, meta));
+	meta->addChild(new CyberiadaTextPropertyItem(METAINFO_DESCRIPTION, "", true, true, meta));
+	meta->addChild(new CyberiadaTextPropertyItem(METAINFO_VERSION, "", true, true, meta));
+	meta->addChild(new CyberiadaTextPropertyItem(METAINFO_DATE, "", true, true, meta));
+	meta->addChild(new CyberiadaChoicePropertyItem(METAINFO_ACTIONS_ORDER, "", true, true, meta));
+	meta->addChild(new CyberiadaChoicePropertyItem(METAINFO_EVENT_PROPAGATION, "", true, true, meta));
+
+	sm->addChild(meta);
 	sm->addChild(new CyberiadaVisibleItem(nodeStatesAggr,
 										  STATES_AGGREGATOR_TITLE,
 										  false,
 										  false,
-										  this));
+										  sm));
 	sm->addChild(new CyberiadaVisibleItem(nodeTransitionsAggr,
 										  TRANSITIONS_AGGREGATOR_TITLE,
 										  false,
 										  false,
-										  this));
+										  sm));
 }
 
 void CyberiadaRootItem::removeChild(CyberiadaAbstractItem*)
