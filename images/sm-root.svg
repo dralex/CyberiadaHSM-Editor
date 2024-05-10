@@ -16,7 +16,7 @@
    id="svg916"
    inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)"
    sodipodi:docname="sm-root.svg"
-   inkscape:export-filename="/home/dralex/devel/CyberiadaSME/images/sm-root.png"
+   inkscape:export-filename="/home/dralex/devel/CyberiadaHSME/images/sm-root.png"
    inkscape:export-xdpi="96.000008"
    inkscape:export-ydpi="96.000008">
   <defs
@@ -81,7 +81,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>

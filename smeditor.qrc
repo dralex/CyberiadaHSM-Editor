@@ -1,24 +1,22 @@
 <RCC>
   <qresource prefix="Icons">
+    <file>images/comment-machine.png</file>
+    <file>images/comment.png</file>
     <file>images/cyberiada.png</file>
+    <file>images/entry.png</file>
+    <file>images/exit.png</file>
+    <file>images/final-state.png</file>
+    <file>images/format-cyberiada.png</file>
+    <file>images/format-yed.png</file>
+    <file>images/init-state.png</file>
     <file>images/sm-root.png</file>
-    <file>images/state-root.png</file>
-    <file>images/trans-root.png</file>
+    <file>images/sm.png</file>
     <file>images/state-comp.png</file>
     <file>images/state.png</file>
-    <file>images/init-state.png</file>
-    <file>images/final-state.png</file>
+    <file>images/subject-data.png</file>
+    <file>images/subject-element.png</file>
+    <file>images/subject-name.png</file>
     <file>images/terminate.png</file>	
     <file>images/trans.png</file>
-    <file>images/comment.png</file>
-    <file>images/comment-machine.png</file>
-    <file>images/geomprop.png</file>
-    <file>images/textprop.png</file>
-    <file>images/textpropnonedit.png</file>
-    <file>images/numprop.png</file>
-    <file>images/pointprop.png</file>
-    <file>images/rectprop.png</file>
-    <file>images/pathprop.png</file>
-    <file>images/statelink.png</file>
   </qresource>
 </RCC>
