@@ -49,7 +49,8 @@ public:
 	int                                 rowCount(const QModelIndex &parent = QModelIndex()) const;
 	int                                 columnCount(const QModelIndex &parent = QModelIndex()) const;
 	bool                                hasChildren(const QModelIndex & parent = QModelIndex()) const;
-	QIcon                               getIndexIcon(const QModelIndex& index) const; 
+	QIcon                               getIndexIcon(const QModelIndex& index) const;
+	QIcon                               getElementIcon(Cyberiada::ElementType type) const;
 	
 	// EDITING
 	bool                                setData(const QModelIndex & index, const QVariant & value, int role = Qt::EditRole);
@@ -63,9 +64,11 @@ public:
 
 	// INDEXES
 	QModelIndex                         rootIndex() const;
+	QModelIndex                         documentIndex() const;
 	QModelIndex                         elementToIndex(const Cyberiada::Element* element) const;
 	const Cyberiada::Element*           indexToElement(const QModelIndex& index) const;
 	Cyberiada::Element*                 indexToElement(const QModelIndex& index);
+	const Cyberiada::Document*          rootDocument() const;
 	bool                                isSMIndex(const QModelIndex& index) const;
 	bool                                isInitialIndex(const QModelIndex& index) const;
 	bool                                isStateIndex(const QModelIndex& index) const;

@@ -2,17 +2,15 @@ cmake_minimum_required(VERSION 3.10)
 
 project(CyberiadaInspector VERSION 1.0.0 LANGUAGES CXX)
 
+list(APPEND CMAKE_MODULE_PATH /usr/lib/cmake)
+
 set(cyberiadamlpp_DIR /usr/lib/cmake)
 find_package(cyberiadamlpp REQUIRED)
-if(!cyberiadamlpp_FOUND)
-  message(FATAL_ERROR "Cannot find libcyberiadaml++ library")
-endif()
 
 set(cyberiadaml_DIR /usr/lib/cmake)
 find_package(cyberiadaml REQUIRED)
-if(!cyberiadaml_FOUND)
-  message(FATAL_ERROR "Cannot find libcyberiadaml library")
-endif()
+
+find_package(QtPropertyBrowser REQUIRED)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -33,21 +31,24 @@ add_executable(CyberiadaInspector
   cyberiadasm_model.cpp
   cyberiadasm_view.cpp
   smeditor_window.cpp
+  cyberiadasm_properties_widget.cpp
   main.cpp
   smeditor.qrc
 )
 
 target_include_directories(CyberiadaInspector PUBLIC
-  "${CMAKE_CURRENT_SOURCE_DIR}"
-  "${cyberiadaml_INCLUDE_DIRS}"
-  "${cyberiadamlpp_INCLUDE_DIRS}"
+  ${CMAKE_CURRENT_SOURCE_DIR}
+  ${QTPROPERTYBROWSER_INCLUDE_DIR}
+  ${cyberiadaml_INCLUDE_DIRS}
+  ${cyberiadamlpp_INCLUDE_DIRS}
   )
 target_link_directories(CyberiadaInspector PUBLIC
-  "${cyberiadaml_LIBRARY}"
-  "${cyberiadamlpp_LIBRARY}"
+  ${cyberiadaml_LIBRARY}
+  ${cyberiadamlpp_LIBRARY}
   )
 target_link_libraries(CyberiadaInspector
   Qt5::Widgets
-  "${cyberiadaml_LIBRARIES}"
-  "${cyberiadamlpp_LIBRARIES}"
+  ${QTPROPERTYBROWSER_LIBRARY}
+  ${cyberiadaml_LIBRARIES}
+  ${cyberiadamlpp_LIBRARIES}
   )

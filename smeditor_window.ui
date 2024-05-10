@@ -47,7 +47,7 @@
         <item>
          <widget class="CyberiadaSMView" name="SMView">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
@@ -68,6 +68,9 @@
            <bool>false</bool>
           </attribute>
          </widget>
+        </item>
+        <item>
+         <widget class="CyberiadaSMPropertiesWidget" name="propertiesWidget" native="true"/>
         </item>
        </layout>
       </item>
@@ -112,7 +115,15 @@
    <header>cyberiadasm_view.h</header>
    <slots>
     <signal>currentIndexActivated(QModelIndex)</signal>
-    <slot>slotIndexActivated(QModelIndex)</slot>
+   </slots>
+  </customwidget>
+  <customwidget>
+   <class>CyberiadaSMPropertiesWidget</class>
+   <extends>QWidget</extends>
+   <header>cyberiadasm_properties_widget.h</header>
+   <container>1</container>
+   <slots>
+    <slot>slotElementSelected(QModelIndex)</slot>
    </slots>
   </customwidget>
  </customwidgets>
@@ -149,6 +160,22 @@
     <hint type="destinationlabel">
      <x>511</x>
      <y>383</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>SMView</sender>
+   <signal>currentIndexActivated(QModelIndex)</signal>
+   <receiver>propertiesWidget</receiver>
+   <slot>slotElementSelected(QModelIndex)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>511</x>
+     <y>216</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>511</x>
+     <y>582</y>
     </hint>
    </hints>
   </connection>

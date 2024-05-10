@@ -2,7 +2,7 @@
  * The Cyberiada State Machine Editor
  * -----------------------------------------------------------------------------
  * 
- * The State Machine View
+ * The State Machine Tree View
  *
  * Copyright (C) 2024 Alexey Fedoseev <aleksey@fedoseev.net>
  *

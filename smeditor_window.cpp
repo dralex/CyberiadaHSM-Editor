@@ -35,6 +35,7 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
 	setupUi(this);
 	SMView->setModel(model);
 	SMView->setRootIndex(model->rootIndex());
+	propertiesWidget->setModel(model);
 }
 
 void CyberiadaSMEditorWindow::slotFileOpen()
@@ -42,6 +43,8 @@ void CyberiadaSMEditorWindow::slotFileOpen()
 	QString fileName = QFileDialog::getOpenFileName(this, tr("Open State Machile GraphML file"),
 													QDir::currentPath(),
 													tr("CyberiadaML graph (*.graphml)"));
-	model->loadDocument(fileName);
-	SMView->setRootIndex(model->rootIndex());
+	if (!fileName.isEmpty()) {
+		model->loadDocument(fileName);
+		SMView->setRootIndex(model->rootIndex());
+	}
 }

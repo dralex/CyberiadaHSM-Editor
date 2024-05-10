@@ -34,9 +34,9 @@
 CyberiadaSMModel::CyberiadaSMModel(QObject *parent):
 	QAbstractItemModel(parent)
 {
-	root = new Cyberiada::Document();
-	icons[Cyberiada::elementRoot] = emptyIcon;
-	icons[Cyberiada::elementSM] = QIcon(":/Icons/images/sm-root.png");
+	root = NULL;
+	icons[Cyberiada::elementRoot] = QIcon(":/Icons/images/sm-root.png");
+	icons[Cyberiada::elementSM] = QIcon(":/Icons/images/sm.png");
 	icons[Cyberiada::elementSimpleState] = QIcon(":/Icons/images/state.png");
 	icons[Cyberiada::elementCompositeState] = QIcon(":/Icons/images/state-comp.png"); 
 	icons[Cyberiada::elementComment] = QIcon(":/Icons/images/comment.png");
@@ -52,13 +52,17 @@ CyberiadaSMModel::CyberiadaSMModel(QObject *parent):
 
 CyberiadaSMModel::~CyberiadaSMModel()
 {
-	delete root;
+	if (root) {
+		delete root;
+	}
 }
 
 void CyberiadaSMModel::reset()
 {
 	beginResetModel();
-	root->reset();
+	if (root) {
+		root->reset();
+	}	
 	endResetModel();	
 }
 
@@ -77,7 +81,9 @@ void CyberiadaSMModel::loadDocument(const QString& path)
 	}
 	
 	beginResetModel();
-	delete root;
+	if (root) {
+		delete root;
+	}
 	root = new_doc;
 	endResetModel();
 }
@@ -97,7 +103,11 @@ QVariant CyberiadaSMModel::data(const QModelIndex &index, int role) const
 		element = static_cast<const Cyberiada::Element*>(index.internalPointer());
 		MY_ASSERT(element);		
 		if (column == 0) {
-			if (element->get_type() == Cyberiada::elementTransition) {
+			if (element->get_type() == Cyberiada::elementRoot) {
+				const Cyberiada::Document* doc = static_cast<const Cyberiada::Document*>(element);
+				MY_ASSERT(doc);
+				return QString(doc->meta().name.c_str());
+			} else if (element->get_type() == Cyberiada::elementTransition) {
 				const Cyberiada::Transition* trans = static_cast<const Cyberiada::Transition*>(element);
 				const Cyberiada::Element* source = trans->source_element();
 				MY_ASSERT(source);
@@ -133,17 +143,21 @@ QVariant CyberiadaSMModel::data(const QModelIndex &index, int role) const
 	}
 }
 
-QIcon CyberiadaSMModel::getIndexIcon(const QModelIndex& index) const
+QIcon CyberiadaSMModel::getElementIcon(Cyberiada::ElementType type) const
 {
-	if (!index.isValid()) return emptyIcon;
-	const Cyberiada::Element *element = static_cast<const Cyberiada::Element*>(index.internalPointer());
-	MY_ASSERT(element);
-	Cyberiada::ElementType t = element->get_type();
-	if (icons.find(t) != icons.end()) {
-		return icons[t];
+	if (icons.find(type) != icons.end()) {
+		return icons[type];
 	} else {
 		return emptyIcon;
-	}
+	}	
+}
+
+QIcon CyberiadaSMModel::getIndexIcon(const QModelIndex& index) const
+{
+	if (!index.isValid() || index == rootIndex()) return emptyIcon;
+	const Cyberiada::Element *element = static_cast<const Cyberiada::Element*>(index.internalPointer());
+	MY_ASSERT(element);
+	return getElementIcon(element->get_type());
 }
 
 bool CyberiadaSMModel::setData(const QModelIndex&, const QVariant&, int)
@@ -168,7 +182,10 @@ Qt::ItemFlags CyberiadaSMModel::flags(const QModelIndex &index) const
 
 bool CyberiadaSMModel::hasIndex(int row, int column, const QModelIndex & parent) const
 {
-	if(!parent.isValid()) {
+	if (!parent.isValid()) {
+		return row == 0;
+	}
+	if (parent == rootIndex()) {
 		return row == 0;
 	}
 	if (column != 0) {
@@ -190,6 +207,9 @@ QModelIndex CyberiadaSMModel::index(int row, int column, const QModelIndex &pare
 		//qDebug() << "index result: empty";
 		return rootIndex();
 	}
+	if (parent == rootIndex()) {
+		return createIndex(row, column, (void*)root);
+	}
 	const Cyberiada::ElementCollection* parent_element = static_cast<const Cyberiada::ElementCollection*>(parent.internalPointer());
 	MY_ASSERT(parent_element);
 	const Cyberiada::Element* child_element = parent_element->get_element(size_t(row));
@@ -205,9 +225,12 @@ QModelIndex CyberiadaSMModel::parent(const QModelIndex &index) const
 		//qDebug() << "parent result: empty";
 		return QModelIndex();
 	}
+	if (index == documentIndex()) {
+		return rootIndex();
+	}
 	if (isSMIndex(index)) {
 		//qDebug() << "parent result: root";
-		return rootIndex();
+		return documentIndex();
 	}
 	const Cyberiada::Element* child_element = static_cast<const Cyberiada::Element*>(index.internalPointer());
 	MY_ASSERT(child_element);
@@ -215,9 +238,8 @@ QModelIndex CyberiadaSMModel::parent(const QModelIndex &index) const
 	MY_ASSERT(parent_element);
 	if (parent_element == root) {
 		//qDebug() << "parent result: root2";		
-		return rootIndex();
+		return documentIndex();
 	}
-	MY_ASSERT(parent_element);
 	//qDebug() << "parent result" << parentItem->row() << 0 << (void*)parentItem;
 	return createIndex(parent_element->index(), 0, (void*)parent_element);
 }
@@ -226,8 +248,14 @@ int CyberiadaSMModel::rowCount(const QModelIndex &parent) const
 {
 	//qDebug() << "row count" << (void*)parent.internalPointer();
 	const Cyberiada::Element* element;
-	if (!parent.isValid() || parent == rootIndex()) {
-		element = root;
+	if (!parent.isValid()) {
+		return 1;
+	} else if (parent == rootIndex()) {
+		if (root) {
+			return 1;
+		} else {
+			return 0;
+		}
 	} else {
 		element = static_cast<const Cyberiada::Element*>(parent.internalPointer());
 	}
@@ -247,6 +275,12 @@ bool CyberiadaSMModel::hasChildren(const QModelIndex & parent) const
 
 QModelIndex CyberiadaSMModel::rootIndex() const
 {
+	return createIndex(0, 0, (void*)this);
+}
+
+QModelIndex CyberiadaSMModel::documentIndex() const
+{
+	MY_ASSERT(root);
 	return createIndex(0, 0, (void*)root);
 }
 
@@ -254,7 +288,7 @@ QModelIndex CyberiadaSMModel::elementToIndex(const Cyberiada::Element* element) 
 {
 	if (element == NULL) return QModelIndex();
 	if (element->is_root()) {
-		return rootIndex();
+		return documentIndex();
 	} else {
 		const Cyberiada::Element* parent = element->get_parent();
 		MY_ASSERT(parent);
@@ -264,14 +298,25 @@ QModelIndex CyberiadaSMModel::elementToIndex(const Cyberiada::Element* element) 
 
 const Cyberiada::Element* CyberiadaSMModel::indexToElement(const QModelIndex& index) const
 {
-	if (!index.isValid()) return root;
+	if (!index.isValid()) return NULL;
+	if (index == documentIndex()) return root;
 	return static_cast<const Cyberiada::Element*>(index.internalPointer());
 }
 
 Cyberiada::Element* CyberiadaSMModel::indexToElement(const QModelIndex& index)
 {
-	if (!index.isValid()) return root;
+	if (!index.isValid()) return NULL;
+	if (index == documentIndex()) return root;
 	return static_cast<Cyberiada::Element*>(index.internalPointer());
+}
+
+const Cyberiada::Document* CyberiadaSMModel::rootDocument() const
+{
+	if (root) {
+		return static_cast<const Cyberiada::Document*>(root);
+	} else {
+		return NULL;
+	}
 }
 
 bool CyberiadaSMModel::isStateIndex(const QModelIndex& index) const
