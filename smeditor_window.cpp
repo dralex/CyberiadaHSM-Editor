@@ -31,11 +31,16 @@
 CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
 	QMainWindow(parent)
 {
-	model = new CyberiadaSMModel(this);
 	setupUi(this);
+	
+	model = new CyberiadaSMModel(this);
 	SMView->setModel(model);
 	SMView->setRootIndex(model->rootIndex());
 	propertiesWidget->setModel(model);
+	scene = new CyberiadaSMEditorScene(model, this);
+	sceneView->setScene(scene);
+	connect(SMView, SIGNAL(currentIndexActivated(QModelIndex)),
+			scene, SLOT(slotElementSelected(QModelIndex)));
 }
 
 void CyberiadaSMEditorWindow::slotFileOpen()
@@ -46,5 +51,10 @@ void CyberiadaSMEditorWindow::slotFileOpen()
 	if (!fileName.isEmpty()) {
 		model->loadDocument(fileName);
 		SMView->setRootIndex(model->rootIndex());
+		SMView->expandToDepth(2);
+		QModelIndex sm = model->firstSMIndex();
+		if (sm.isValid()) {
+			SMView->select(sm);
+		}
 	}
 }

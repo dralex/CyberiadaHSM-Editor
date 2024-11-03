@@ -35,46 +35,41 @@
      <number>0</number>
     </property>
     <item row="0" column="0">
-     <layout class="QHBoxLayout" name="horizontalLayout">
-      <property name="spacing">
-       <number>0</number>
+     <widget class="QSplitter" name="vSplitter">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
       </property>
-      <item>
-       <layout class="QVBoxLayout" name="verticalLayout">
-        <property name="spacing">
-         <number>0</number>
+      <widget class="QSplitter" name="hSplitter">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <widget class="CyberiadaSMView" name="SMView">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
         </property>
-        <item>
-         <widget class="CyberiadaSMView" name="SMView">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="editTriggers">
-           <set>QAbstractItemView::NoEditTriggers</set>
-          </property>
-          <property name="iconSize">
-           <size>
-            <width>32</width>
-            <height>32</height>
-           </size>
-          </property>
-          <property name="animated">
-           <bool>true</bool>
-          </property>
-          <attribute name="headerVisible">
-           <bool>false</bool>
-          </attribute>
-         </widget>
-        </item>
-        <item>
-         <widget class="CyberiadaSMPropertiesWidget" name="propertiesWidget" native="true"/>
-        </item>
-       </layout>
-      </item>
-     </layout>
+        <property name="editTriggers">
+         <set>QAbstractItemView::NoEditTriggers</set>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>32</width>
+          <height>32</height>
+         </size>
+        </property>
+        <property name="animated">
+         <bool>true</bool>
+        </property>
+        <attribute name="headerVisible">
+         <bool>false</bool>
+        </attribute>
+       </widget>
+       <widget class="CyberiadaSMPropertiesWidget" name="propertiesWidget" native="true"/>
+      </widget>
+      <widget class="CyberiadaSMGraphicsView" name="sceneView"/>
+     </widget>
     </item>
    </layout>
   </widget>
@@ -125,6 +120,11 @@
    <slots>
     <slot>slotElementSelected(QModelIndex)</slot>
    </slots>
+  </customwidget>
+  <customwidget>
+   <class>CyberiadaSMGraphicsView</class>
+   <extends>QGraphicsView</extends>
+   <header>cyberiadasm_editor_view.h</header>
   </customwidget>
  </customwidgets>
  <resources>

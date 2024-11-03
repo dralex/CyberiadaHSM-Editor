@@ -199,14 +199,14 @@ void CyberiadaSMPropertiesWidget::newElement(Cyberiada::Element* new_element)
 	element_group_prop->addSubProperty(element_type_prop);
 	
 	if (type == Cyberiada::elementRoot) {
-		const Cyberiada::Document* doc = model->rootDocument();
+		const Cyberiada::LocalDocument* doc = model->rootDocument();
 		MY_ASSERT(doc);
 
 		QtProperty* doc_group_prop = constructProperty(propGroupDocument);
 		addProperty(doc_group_prop);
 		
 		QtProperty* format_type_prop = constructProperty(propFormat);
-		enumManager->setValue(format_type_prop, doc->get_format());
+		enumManager->setValue(format_type_prop, doc->get_file_format());
 		doc_group_prop->addSubProperty(format_type_prop);
 		
 		QtProperty* meta_group_prop = constructProperty(propGroupMeta);
@@ -281,11 +281,13 @@ void CyberiadaSMPropertiesWidget::newElement(Cyberiada::Element* new_element)
 			addProperty(trans_group_prop);
 			
 			QtProperty* element_source_prop = constructProperty(propSource);
-			enumManager->setValue(element_source_prop, getElementNumber(true, trans->source_element()));
+			enumManager->setValue(element_source_prop, getElementNumber(true,
+																		model->idToElement(trans->source_element_id().c_str())));
 			trans_group_prop->addSubProperty(element_source_prop);
 			
 			QtProperty* element_target_prop = constructProperty(propTarget);
-			enumManager->setValue(element_target_prop, getElementNumber(false, trans->target_element()));
+			enumManager->setValue(element_target_prop, getElementNumber(false,
+																		model->idToElement(trans->target_element_id().c_str())));
 			trans_group_prop->addSubProperty(element_target_prop);
 			
 			QtProperty* action_group_prop = constructProperty(propGroupAction);

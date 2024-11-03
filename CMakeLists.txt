@@ -32,6 +32,9 @@ add_executable(CyberiadaInspector
   cyberiadasm_view.cpp
   smeditor_window.cpp
   cyberiadasm_properties_widget.cpp
+  cyberiadasm_editor_view.cpp
+  cyberiadasm_editor_scene.cpp
+  cyberiadasm_editor_items.cpp
   main.cpp
   smeditor.qrc
 )

@@ -2,9 +2,12 @@
  * The Cyberiada State Machine Editor
  * -----------------------------------------------------------------------------
  * 
- * The State Machine Editor Window
+ * The State Machine Editor View
  *
  * Copyright (C) 2024 Alexey Fedoseev <aleksey@fedoseev.net>
+ *
+ * Based on the Qt Visual Graph Editor (QVGE)
+ * Copyright (C) 2016-2021 Ars L. Masiuk's <ars.masiuk@gmail.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,25 +24,24 @@
  *
  * ----------------------------------------------------------------------------- */
 
-#ifndef CYBERIADA_SM_WINDOW
-#define CYBERIADA_SM_WINDOW
+#ifndef CYBERIADA_SM_EDITOR_VIEW_HEADER
+#define CYBERIADA_SM_EDITOR_VIEW_HEADER
 
-#include <QMainWindow>
-#include "ui_smeditor_window.h"
-#include "cyberiadasm_model.h"
-#include "cyberiadasm_editor_scene.h"
+#include <QGraphicsView>
+#include <QTimer>
+#include <QPaintEvent>
 
-class CyberiadaSMEditorWindow: public QMainWindow, public Ui_SMEditorWindow {
+class CyberiadaSMGraphicsView: public QGraphicsView {
 Q_OBJECT
+
 public:
-	CyberiadaSMEditorWindow(QWidget* parent = 0);
+	CyberiadaSMGraphicsView(QWidget *parent = NULL);
 
-public slots:
-	void                    slotFileOpen();
-
-private:
-	CyberiadaSMModel*       model;
-	CyberiadaSMEditorScene* scene;
+	void paintEvent(QPaintEvent * event) {
+		QPaintEvent* newEvent = new QPaintEvent(event->region().boundingRect());
+		QGraphicsView::paintEvent(newEvent);
+		delete newEvent;
+	}
 };
 
 #endif

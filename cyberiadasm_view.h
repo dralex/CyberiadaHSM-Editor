@@ -34,6 +34,9 @@ public:
 // public slots:
 // 	void slotSourceDataChanged(const QModelIndex &topLeft,
 // 							   const QModelIndex &bottomRight);
+
+public slots:
+	void select(const QModelIndex& index);
 									
 protected slots:
 	void currentChanged(const QModelIndex &current, const QModelIndex &previous);

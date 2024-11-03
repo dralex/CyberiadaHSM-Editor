@@ -41,6 +41,12 @@ CyberiadaSMView::CyberiadaSMView(QWidget* parent):
 //	setSelectionMode(QAbstractItemView::MultiSelection);
 }
 
+void CyberiadaSMView::select(const QModelIndex& index)
+{
+	selectionModel()->select(index, QItemSelectionModel::SelectCurrent | QItemSelectionModel::Rows);
+	emit currentIndexActivated(index);
+}
+
 void CyberiadaSMView::currentChanged(const QModelIndex &current, const QModelIndex &previous)
 {
 	QTreeView::currentChanged(current, previous);

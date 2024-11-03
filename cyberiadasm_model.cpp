@@ -68,11 +68,11 @@ void CyberiadaSMModel::reset()
 
 void CyberiadaSMModel::loadDocument(const QString& path)
 {	
-	Cyberiada::Document* new_doc = NULL;
+	Cyberiada::LocalDocument* new_doc = NULL;
 	
 	try {
-		new_doc = new Cyberiada::Document();
-		new_doc->load(path.toStdString());
+		new_doc = new Cyberiada::LocalDocument();
+		new_doc->open(path.toStdString());
 	} catch (const Cyberiada::Exception& e) {
 		QMessageBox::critical(NULL, tr("Load State Machine"),
 							  tr("Cannot load state machine graph:\n") + QString(e.str().c_str()));
@@ -109,13 +109,15 @@ QVariant CyberiadaSMModel::data(const QModelIndex &index, int role) const
 				return QString(doc->meta().name.c_str());
 			} else if (element->get_type() == Cyberiada::elementTransition) {
 				const Cyberiada::Transition* trans = static_cast<const Cyberiada::Transition*>(element);
-				const Cyberiada::Element* source = trans->source_element();
+				QString id = trans->source_element_id().c_str();
+				const Cyberiada::Element* source = idToElement(id);
 				MY_ASSERT(source);
 				QString source_name = source->get_name().c_str();
 				if (source_name.isEmpty()) {
 					source_name = QString("[") + source->get_id().c_str() + "]";
 				}
-				const Cyberiada::Element* target = trans->target_element();
+				id = trans->target_element_id().c_str();
+				const Cyberiada::Element* target = idToElement(id);
 				MY_ASSERT(target);
 				QString target_name = target->get_name().c_str();
 				if (target_name.isEmpty()) {
@@ -284,6 +286,17 @@ QModelIndex CyberiadaSMModel::documentIndex() const
 	return createIndex(0, 0, (void*)root);
 }
 
+QModelIndex CyberiadaSMModel::firstSMIndex() const
+{
+	MY_ASSERT(root);
+	std::list<Cyberiada::StateMachine*> sms = root->get_state_machines();
+	if (sms.size() == 0) {
+		return QModelIndex();
+	} else {
+		return elementToIndex(sms.front());
+	}
+}
+
 QModelIndex CyberiadaSMModel::elementToIndex(const Cyberiada::Element* element) const
 {
 	if (element == NULL) return QModelIndex();
@@ -310,10 +323,31 @@ Cyberiada::Element* CyberiadaSMModel::indexToElement(const QModelIndex& index)
 	return static_cast<Cyberiada::Element*>(index.internalPointer());
 }
 
-const Cyberiada::Document* CyberiadaSMModel::rootDocument() const
+const Cyberiada::Element* CyberiadaSMModel::idToElement(const QString& id) const
+{
+	MY_ASSERT(root);
+	return root->find_element_by_id(id.toStdString());
+}
+
+Cyberiada::Element* CyberiadaSMModel::idToElement(const QString& id)
+{
+	MY_ASSERT(root);
+	return root->find_element_by_id(id.toStdString());
+}
+
+const Cyberiada::LocalDocument* CyberiadaSMModel::rootDocument() const
 {
 	if (root) {
-		return static_cast<const Cyberiada::Document*>(root);
+		return root;
+	} else {
+		return NULL;
+	}
+}
+
+Cyberiada::LocalDocument* CyberiadaSMModel::rootDocument()
+{
+	if (root) {
+		return root;
 	} else {
 		return NULL;
 	}

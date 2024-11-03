@@ -65,10 +65,8 @@ public:
 	// INDEXES
 	QModelIndex                         rootIndex() const;
 	QModelIndex                         documentIndex() const;
+	QModelIndex                         firstSMIndex() const;
 	QModelIndex                         elementToIndex(const Cyberiada::Element* element) const;
-	const Cyberiada::Element*           indexToElement(const QModelIndex& index) const;
-	Cyberiada::Element*                 indexToElement(const QModelIndex& index);
-	const Cyberiada::Document*          rootDocument() const;
 	bool                                isSMIndex(const QModelIndex& index) const;
 	bool                                isInitialIndex(const QModelIndex& index) const;
 	bool                                isStateIndex(const QModelIndex& index) const;
@@ -76,6 +74,13 @@ public:
 	bool                                isCompositeStateIndex(const QModelIndex& index) const;
 	bool                                isTransitionIndex(const QModelIndex& index) const;
 
+	const Cyberiada::LocalDocument*     rootDocument() const;
+	Cyberiada::LocalDocument*           rootDocument();
+	const Cyberiada::Element*           indexToElement(const QModelIndex& index) const;
+	Cyberiada::Element*                 indexToElement(const QModelIndex& index);
+	const Cyberiada::Element*           idToElement(const QString& id) const;
+	Cyberiada::Element*                 idToElement(const QString& id);
+	
 signals:
 	void                                dataChanged(const QModelIndex & topLeft, const QModelIndex & bottomRight);
 	void                                modelAboutToBeReset();
@@ -84,7 +89,7 @@ signals:
 private:
 	void                                move(Cyberiada::Element* element, Cyberiada::ElementCollection* target_parent);
 	
-	Cyberiada::Document*                root;
+	Cyberiada::LocalDocument*           root;
 	QString							   	cyberiadaStateMimeType;
 	QIcon                              	emptyIcon;
 	QMap<Cyberiada::ElementType, QIcon> icons;

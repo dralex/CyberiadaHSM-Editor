@@ -2,9 +2,12 @@
  * The Cyberiada State Machine Editor
  * -----------------------------------------------------------------------------
  * 
- * The State Machine Editor Window
+ * The State Machine Editor View Implementation
  *
  * Copyright (C) 2024 Alexey Fedoseev <aleksey@fedoseev.net>
+ *
+ * Based on the Qt Visual Graph Editor (QVGE)
+ * Copyright (C) 2016-2021 Ars L. Masiuk's <ars.masiuk@gmail.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,25 +24,26 @@
  *
  * ----------------------------------------------------------------------------- */
 
-#ifndef CYBERIADA_SM_WINDOW
-#define CYBERIADA_SM_WINDOW
+#include <QGraphicsItem>
+#include <QMouseEvent> 
+#include <QScrollBar> 
+#include <QGuiApplication>
+#include <QDebug>
 
-#include <QMainWindow>
-#include "ui_smeditor_window.h"
-#include "cyberiadasm_model.h"
-#include "cyberiadasm_editor_scene.h"
+#include "cyberiadasm_editor_view.h"
 
-class CyberiadaSMEditorWindow: public QMainWindow, public Ui_SMEditorWindow {
-Q_OBJECT
-public:
-	CyberiadaSMEditorWindow(QWidget* parent = 0);
+CyberiadaSMGraphicsView::CyberiadaSMGraphicsView(QWidget *parent):
+	QGraphicsView(parent)
+{
+    setAttribute(Qt::WA_TranslucentBackground, false);
+	setViewportUpdateMode(BoundingRectViewportUpdate);
 
-public slots:
-	void                    slotFileOpen();
+	setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+	setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
 
-private:
-	CyberiadaSMModel*       model;
-	CyberiadaSMEditorScene* scene;
-};
+    setRenderHint(QPainter::Antialiasing);
+	setOptimizationFlags(DontSavePainterState);
+    setOptimizationFlags(DontAdjustForAntialiasing);
 
-#endif
+	setFocus();
+}
