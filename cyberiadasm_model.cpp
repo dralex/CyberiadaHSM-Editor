@@ -69,23 +69,38 @@ void CyberiadaSMModel::reset()
 void CyberiadaSMModel::loadDocument(const QString& path)
 {	
 	Cyberiada::LocalDocument* new_doc = NULL;
-	
+
+	bool error = false;
 	try {
 		new_doc = new Cyberiada::LocalDocument();
 		new_doc->open(path.toStdString());
+	} catch (const Cyberiada::XMLException& e) {
+		QMessageBox::critical(NULL, tr("Load State Machine"),
+							  tr("XML grapml error:\n") + QString(e.str().c_str()));
+		error = true;
+	} catch (const Cyberiada::CybMLException& e) {
+		QMessageBox::critical(NULL, tr("Load State Machine"),
+							  tr("Wrong format of the Cyberiada grapml file:\n") + QString(e.str().c_str()));
+		error = true;
 	} catch (const Cyberiada::Exception& e) {
 		QMessageBox::critical(NULL, tr("Load State Machine"),
 							  tr("Cannot load state machine graph:\n") + QString(e.str().c_str()));
-		if (new_doc) delete new_doc;
-		return ;
+		error = true;
 	}
-	
-	beginResetModel();
-	if (root) {
-		delete root;
+
+	if (error && new_doc) {
+		delete new_doc;
+		new_doc = NULL;
 	}
-	root = new_doc;
-	endResetModel();
+
+	if (new_doc) {
+		beginResetModel();
+		if (root) {
+			delete root;
+		}
+		root = new_doc;
+		endResetModel();
+	}
 }
 
 QVariant CyberiadaSMModel::data(const QModelIndex &index, int role) const
@@ -282,18 +297,24 @@ QModelIndex CyberiadaSMModel::rootIndex() const
 
 QModelIndex CyberiadaSMModel::documentIndex() const
 {
-	MY_ASSERT(root);
-	return createIndex(0, 0, (void*)root);
+	if (root) {
+		return createIndex(0, 0, (void*)root);
+	} else {
+		return QModelIndex();
+	}
 }
 
 QModelIndex CyberiadaSMModel::firstSMIndex() const
 {
-	MY_ASSERT(root);
-	std::list<Cyberiada::StateMachine*> sms = root->get_state_machines();
-	if (sms.size() == 0) {
-		return QModelIndex();
+	if (root) {
+		std::list<Cyberiada::StateMachine*> sms = root->get_state_machines();
+		if (sms.size() == 0) {
+			return QModelIndex();
+		} else {
+			return elementToIndex(sms.front());
+		}
 	} else {
-		return elementToIndex(sms.front());
+		return QModelIndex();
 	}
 }
 
