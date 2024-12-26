@@ -28,6 +28,11 @@
 #include <QBrush>
 #include "cyberiadasm_model.h"
 
+
+const int ROUNDED_RECT_RADIUS = 10;
+const int VERTEX_POINT_RADIUS = 10;
+const int COMMENT_ANGLE_CORNER = 10;
+
 /* -----------------------------------------------------------------------------
  * Abstract Item
  * ----------------------------------------------------------------------------- */
@@ -39,7 +44,8 @@ public:
 								  QGraphicsItem* parent = NULL);
 
 	enum {
-		SMItem = UserType + 1,
+        SMItem = QVariant::UserType + 1,
+        // SMItem,
 		StateItem,
 		CompositeStateItem,
 		CommentItem,
@@ -51,7 +57,7 @@ public:
 	virtual int type() const = 0;
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) = 0;
 
-    virtual QRectF boundingRect() const;
+    // virtual QRectF boundingRect() const;
 	virtual QVariant data(int key) const;
 
 	static QRectF toQtRect(const Cyberiada::Rect& r) {
@@ -63,115 +69,19 @@ protected:
 	Cyberiada::Element* element;
 };
 
-/* -----------------------------------------------------------------------------
- * State Machine Item
- * ----------------------------------------------------------------------------- */
+// /* -----------------------------------------------------------------------------
+//  * Composite State Item
+//  * ----------------------------------------------------------------------------- */
 
-class CyberiadaSMEditorSMItem: public CyberiadaSMEditorAbstractItem {
-public:
-	CyberiadaSMEditorSMItem(CyberiadaSMModel* model,
-							Cyberiada::Element* element,
-							QGraphicsItem* parent = NULL);
+// class CyberiadaSMEditorCompositeStateItem: public CyberiadaSMEditorStateItem {
+// public:
+//     CyberiadaSMEditorCompositeStateItem(CyberiadaSMModel* model,
+// 										Cyberiada::Element* element,
+// 										QGraphicsItem* parent = NULL);
 
-	virtual int type() const { return SMItem; }
-	
-    virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
-};
+// 	virtual int type() const { return CompositeStateItem; }
+// };
 
-/* -----------------------------------------------------------------------------
- * State Item
- * ----------------------------------------------------------------------------- */
 
-class CyberiadaSMEditorStateItem: public CyberiadaSMEditorAbstractItem {
-public:
-	CyberiadaSMEditorStateItem(CyberiadaSMModel* model,
-							   Cyberiada::Element* element,
-							   QGraphicsItem* parent = NULL);
-
-	virtual int type() const { return StateItem; }
-	
-    virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
-};
-
-/* -----------------------------------------------------------------------------
- * Composite State Item
- * ----------------------------------------------------------------------------- */
-
-class CyberiadaSMEditorCompositeStateItem: public CyberiadaSMEditorStateItem {
-public:
-	CyberiadaSMEditorCompositeStateItem(CyberiadaSMModel* model,
-										Cyberiada::Element* element,
-										QGraphicsItem* parent = NULL);
-
-	virtual int type() const { return CompositeStateItem; }
-};
-
-/* -----------------------------------------------------------------------------
- * Vertex Item
- * ----------------------------------------------------------------------------- */
-
-class CyberiadaSMEditorVertexItem: public CyberiadaSMEditorAbstractItem {
-public:
-	CyberiadaSMEditorVertexItem(CyberiadaSMModel* model,
-								Cyberiada::Element* element,
-								QGraphicsItem* parent = NULL);
-
-	virtual int type() const { return VertexItem; }
-	
-	virtual QRectF boundingRect();
-    virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
-
-private:
-	QRectF fullCircle() const;
-	QRectF partialCircle() const;
-};
-
-/* -----------------------------------------------------------------------------
- * Choice Item
- * ----------------------------------------------------------------------------- */
-
-class CyberiadaSMEditorChoiceItem: public CyberiadaSMEditorAbstractItem {
-public:
-	CyberiadaSMEditorChoiceItem(CyberiadaSMModel* model,
-								Cyberiada::Element* element,
-								QGraphicsItem* parent = NULL);
-
-	virtual int type() const { return ChoiceItem; }
-
-    virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
-};
-
-/* -----------------------------------------------------------------------------
- * Comment Item
- * ----------------------------------------------------------------------------- */
-
-class CyberiadaSMEditorCommentItem: public CyberiadaSMEditorAbstractItem {
-public:
-	CyberiadaSMEditorCommentItem(CyberiadaSMModel* model,
-								Cyberiada::Element* element,
-								QGraphicsItem* parent = NULL);
-
-	virtual int type() const { return CommentItem; }
-	
-    virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
-
-private:
-	QBrush commentBrush;
-};
-
-/* -----------------------------------------------------------------------------
- * Transition Item
- * ----------------------------------------------------------------------------- */
-
-class CyberiadaSMEditorTransitionItem: public CyberiadaSMEditorAbstractItem {
-public:
-	CyberiadaSMEditorTransitionItem(CyberiadaSMModel* model,
-								Cyberiada::Element* element,
-								QGraphicsItem* parent = NULL);
-
-	virtual int type() const { return TransitionItem; }
-	
-    virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
-};
 
 #endif
