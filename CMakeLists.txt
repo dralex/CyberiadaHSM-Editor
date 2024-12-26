@@ -2,12 +2,12 @@ cmake_minimum_required(VERSION 3.10)
 
 project(CyberiadaInspector VERSION 1.0.0 LANGUAGES CXX)
 
-list(APPEND CMAKE_MODULE_PATH /usr/local)
+list(APPEND CMAKE_MODULE_PATH /usr/lib/cmake)
 
-set(cyberiadamlpp_DIR /usr/local/lib/cmake)
+set(cyberiadamlpp_DIR /usr/lib/cmake)
 find_package(cyberiadamlpp REQUIRED)
 
-set(cyberiadaml_DIR /usr/local/lib/cmake)
+set(cyberiadaml_DIR /usr/lib/cmake)
 find_package(cyberiadaml REQUIRED)
 
 find_package(QtPropertyBrowser REQUIRED)
