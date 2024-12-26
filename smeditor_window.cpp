@@ -56,5 +56,6 @@ void CyberiadaSMEditorWindow::slotFileOpen()
 		if (sm.isValid()) {
 			SMView->select(sm);
 		}
+        scene->updateScene();
 	}
 }

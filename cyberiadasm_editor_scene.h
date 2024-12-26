@@ -34,6 +34,7 @@
 #include <QByteArrayList>
 
 #include "cyberiadasm_model.h"
+#include "cyberiadasm_editor_items.h"
 
 class CyberiadaSMEditorScene: public QGraphicsScene {
 Q_OBJECT
@@ -53,6 +54,8 @@ public:
     void  setGridPen(const QPen& gridPen);
     const QPen& getGridPen() const { return gridPen; }
 
+    void updateScene();
+
 public slots:
 	void  slotElementSelected(const QModelIndex& index);
 	
@@ -67,6 +70,7 @@ private:
 	
 	CyberiadaSMModel*              model;
 	Cyberiada::StateMachine*       currentSM;
+    QMap<Cyberiada::ID, QGraphicsItem*> elementItem;
 	
     int                            gridSize;
     bool                           gridEnabled;
