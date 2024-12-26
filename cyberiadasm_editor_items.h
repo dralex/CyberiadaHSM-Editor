@@ -44,8 +44,7 @@ public:
 								  QGraphicsItem* parent = NULL);
 
 	enum {
-        SMItem = QVariant::UserType + 1,
-        // SMItem,
+        SMItem = UserType + 1,
 		StateItem,
 		CompositeStateItem,
 		CommentItem,
