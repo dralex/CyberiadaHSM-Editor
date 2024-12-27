@@ -199,6 +199,9 @@ void CyberiadaSMEditorScene::setGridPen(const QPen &pen)
 void CyberiadaSMEditorScene::updateScene()
 {
     elementItem.clear();
+
+    clear();
+
     Cyberiada::StateMachine* sm = static_cast<Cyberiada::StateMachine*>(model->indexToElement(model->firstSMIndex()));
     addItemsRecursively(NULL, sm);
 }
