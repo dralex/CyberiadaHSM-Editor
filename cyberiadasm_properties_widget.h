@@ -59,6 +59,7 @@ private:
 		propGroupAction,
 		propGroupActions,
 		propGroupComment,
+		propGroupBoundingRect,
 		propGroupDocument,
 		propGroupElement,
 		propGroupGeometry,
