@@ -9,10 +9,10 @@ the GNU Free Documentation License (version 1.3).
 
 ## Requirements
 
-* libcyberidaml++ - https://github.com/kruzhok-team/libcyberiadamlpp/
+* [libcyberidaml++](https://github.com/kruzhok-team/libcyberiadamlpp/) (and its required parts: [libcyberiadaml](https://github.com/kruzhok-team/libcyberiadaml), [libhtreegeom](https://github.com/kruzhok-team/libhtreegeom) and libxml2 
 * cmake (version 3.12+)
 * Qt Framework version 5.x
-* QtPropertyBrowser - https://github.com/greenjava/QtPropertyBrowser/
+* [QtPropertyBrowser](https://github.com/greenjava/QtPropertyBrowser/)
 
 ## Installation
 
