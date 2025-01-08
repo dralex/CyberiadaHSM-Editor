@@ -3,8 +3,6 @@
 
 
 #include <QObject>
-#include <QPen>
-#include <QColor>
 #include <QGraphicsSceneMouseEvent>
 // #include <grabber.h>
 

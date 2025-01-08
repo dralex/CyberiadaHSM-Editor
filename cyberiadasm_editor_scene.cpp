@@ -37,10 +37,6 @@
 #include "cyberiadasm_editor_transition_item.h"
 #include "cyberiadasm_editor_comment_item.h"
 #include "smeditor_window.h"
-
-
-// #include "cyberiadasm_view.h"
-
 #include "myassert.h"
 
 static double DEFAULT_SCENE_X = -700;
@@ -50,8 +46,7 @@ static double DEFAULT_SCENE_HEIGHT = 3000;
 static double DEFAULT_SCENE_DELTA = 0.2;
 
 CyberiadaSMEditorScene::CyberiadaSMEditorScene(CyberiadaSMModel* _model, QObject *_parent):
-    // QGraphicsScene(_parent), model(_model), currentSM(NULL), m_parent(_parent)
-QGraphicsScene(_parent), model(_model), currentSM(NULL)
+    QGraphicsScene(_parent), model(_model), currentSM(NULL)
 {
     gridSize = 25;
     gridEnabled = true;
@@ -82,7 +77,6 @@ void CyberiadaSMEditorScene::onSelectionChanged() {
     Cyberiada::ID item_id = elementItem.key(item);
     Cyberiada::Element* element = model->idToElement(QString::fromStdString(item_id));
     const QModelIndex index = model->elementToIndex(element);
-    qDebug() << "index" << index << "\n";
 
     CyberiadaSMEditorWindow* p = dynamic_cast<CyberiadaSMEditorWindow*>(parent());
     p->SMView->setCurrentIndex(index);
@@ -91,7 +85,6 @@ void CyberiadaSMEditorScene::onSelectionChanged() {
 
 void CyberiadaSMEditorScene::slotElementSelected(const QModelIndex& index)
 {
-    qDebug() << "slotElementSelected" << "\n";
     if (index.isValid() && index != model->rootIndex() && index != model->documentIndex()) {
         Cyberiada::Element* element = model->indexToElement(index);
         const Cyberiada::ID element_id = element->get_id().c_str();
@@ -102,7 +95,6 @@ void CyberiadaSMEditorScene::slotElementSelected(const QModelIndex& index)
         blockSignals(false);
 
         QGraphicsItem* item = elementItem.value(element_id);
-        qDebug() << item;
         if (item) {
             blockSignals(true);
             item->setSelected(true);
@@ -112,19 +104,19 @@ void CyberiadaSMEditorScene::slotElementSelected(const QModelIndex& index)
         Cyberiada::StateMachine* sm = model->rootDocument()->get_parent_sm(element);
         if (sm != currentSM) {
             currentSM = sm;
+            /*Cyberiada::Rect bound = currentSM->get_bound_rect();
+            clear();
+            if (bound.valid) {
+                setSceneRect(-(bound.width / 2.0) * (1.0 + DEFAULT_SCENE_DELTA),
+                             -(bound.height / 2.0) * (1.0 + DEFAULT_SCENE_DELTA),
+                             bound.width * (1.0 + 2.0 * DEFAULT_SCENE_DELTA),
+                             bound.height * (1.0 + 2.0 * DEFAULT_SCENE_DELTA));
+                QRectF r = sceneRect();
+                qDebug() << "Scene (" << r.left() << ", " << r.top() << ", " << r.right() << ", " << r.bottom() << ")";
+            } else {
+                //reconstructGeometry();
+            }*/
 
-            // Cyberiada::Rect bound = currentSM->get_bound_rect();
-            // clear();
-            // if (bound.valid) {
-            // 	setSceneRect(-(bound.width / 2.0) * (1.0 + DEFAULT_SCENE_DELTA),
-            // 				 -(bound.height / 2.0) * (1.0 + DEFAULT_SCENE_DELTA),
-            // 				 bound.width * (1.0 + 2.0 * DEFAULT_SCENE_DELTA),
-            // 				 bound.height * (1.0 + 2.0 * DEFAULT_SCENE_DELTA));
-            // 	QRectF r = sceneRect();
-            // 	qDebug() << "Scene (" << r.left() << ", " << r.top() << ", " << r.right() << ", " << r.bottom() << ")";
-            // } else {
-            // 	//reconstructGeometry();
-            // }
             addItemsRecursively(NULL, currentSM);
             views().first()->fitInView(itemsBoundingRect(), Qt::KeepAspectRatio);
             update();

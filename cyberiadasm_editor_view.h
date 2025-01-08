@@ -28,9 +28,7 @@
 #define CYBERIADA_SM_EDITOR_VIEW_HEADER
 
 #include <QGraphicsView>
-#include <QTimer>
 #include <QPaintEvent>
-#include <QMouseEvent>
 
 class CyberiadaSMGraphicsView: public QGraphicsView {
 Q_OBJECT
@@ -46,7 +44,6 @@ public:
 
 protected:
     void wheelEvent(QWheelEvent *event) override;
-    void mousePressEvent(QMouseEvent *event) override;
 
 };
 

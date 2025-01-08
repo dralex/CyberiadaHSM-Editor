@@ -24,14 +24,7 @@
  *
  * ----------------------------------------------------------------------------- */
 
-#include <QGraphicsItem>
-#include <QMouseEvent> 
-#include <QScrollBar> 
-#include <QGuiApplication>
-#include <QDebug>
-
 #include "cyberiadasm_editor_view.h"
-#include "cyberiadasm_editor_scene.h"
 
 
 CyberiadaSMGraphicsView::CyberiadaSMGraphicsView(QWidget *parent):
@@ -65,24 +58,4 @@ void CyberiadaSMGraphicsView::wheelEvent(QWheelEvent *event) {
     else {
         QGraphicsView::wheelEvent(event);
     }
-}
-
-void CyberiadaSMGraphicsView::mousePressEvent(QMouseEvent *event) {
-    // QPointF scenePos = mapToScene(event->pos());
-
-    // // Получение объекта, на который было нажатие мыши
-    // QGraphicsItem* item = itemAt(scenePos.x(), scenePos.y());
-
-    // if (item) {
-    //      QGraphicsScene* base_scene = scene();
-    //     CyberiadaSMEditorScene* m_scene = dynamic_cast<CyberiadaSMEditorScene*>(base_scene);
-
-    //     m_scene->onSelectionChanged(item);
-
-    //     // }
-    // } else {
-    //     qDebug() << "No item selected\n";
-    // }
-
-    QGraphicsView::mousePressEvent(event);
 }
