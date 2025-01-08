@@ -25,7 +25,7 @@ CyberiadaSMEditorTransitionItem::CyberiadaSMEditorTransitionItem(QObject *parent
     updateTextPosition();
 
     // setAcceptHoverEvents(true);
-    // setFlags(ItemIsSelectable|ItemSendsGeometryChanges);
+    setFlags(ItemIsSelectable);
 }
 
 CyberiadaSMEditorTransitionItem::~CyberiadaSMEditorTransitionItem()
@@ -40,7 +40,13 @@ QRectF CyberiadaSMEditorTransitionItem::boundingRect() const
 
 void CyberiadaSMEditorTransitionItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
-    QPen pen(Qt::black, 1);
+    // QPen pen(Qt::black, 1);
+    QPen pen;
+    if (isSelected()) {
+        pen.setColor(Qt::red);
+    } else {
+        pen.setColor(Qt::black);
+    }
     pen.setCosmetic(true);
     painter->setPen(pen);
     painter->setBrush(Qt::NoBrush);
@@ -218,7 +224,13 @@ QPainterPath CyberiadaSMEditorTransitionItem::path() const
 
 void CyberiadaSMEditorTransitionItem::drawArrow(QPainter* painter)
 {
-    QPen pen(Qt::black, 1);
+    // QPen pen(Qt::black, 1);
+    QPen pen;
+    if (isSelected()) {
+        pen.setColor(Qt::red);
+    } else {
+        pen.setColor(Qt::black);
+    }
     painter->setPen(pen);
 
     QPointF p1 = sourcePoint() + sourceCenter(); // Предпоследняя точка
@@ -252,7 +264,11 @@ void CyberiadaSMEditorTransitionItem::drawArrow(QPainter* painter)
     QPolygonF arrowHead;
     arrowHead << p2 << arrowP1 << arrowP2;
 
-    painter->setBrush(Qt::black);
+    if (isSelected()) {
+        painter->setBrush(Qt::red);
+    } else {
+        painter->setBrush(Qt::black);
+    }
     painter->drawPolygon(arrowHead);
 }
 

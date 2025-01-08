@@ -33,30 +33,28 @@ CyberiadaSMEditorStateItem::CyberiadaSMEditorStateItem(QObject *parent_object,
     setPositionGrabbers();
     */
 
-    id = element->get_id().c_str();
-
     m_state = static_cast<const Cyberiada::State*>(element);
 
     setPos(QPointF(x(), y()));
+
     // if(parent->type() == SMItem){
     //     setPos(x() + width()/2, y() + height()/2);
     //     // setPos(parent->boundingRect().x() + width()/2, parent->boundingRect().y() + height()/2);
     // }
 
     title = new EditableTextItem(m_state->get_name().c_str(), this, true);
-    title->setFont(QFont("Monospace", 18));
+    title->setFont(QFont("Monospace"));
 
     m_actions = m_state->get_actions();
     std::list<Cyberiada::Action> actions = m_state->get_actions();
     for (std::list<Cyberiada::Action>::const_iterator i = actions.begin(); i != actions.end(); i++) {
         Cyberiada::ActionType type = i->get_type();
-        qDebug() << i->get_behavior().c_str();
         if (type == Cyberiada::actionEntry) {
             entry = new EditableTextItem(QString("entry() / ") + QString(i->get_behavior().c_str()), this);
-            entry->setFont(QFont("Monospace", 18));
+            entry->setFont(QFont("Monospace"));
         } else if (type == Cyberiada::actionExit) {
             exit = new EditableTextItem(QString("exit() / ") + QString(i->get_behavior().c_str()), this);
-            exit->setFont(QFont("Monospace", 18));
+            exit->setFont(QFont("Monospace"));
         }
     }
 
@@ -74,6 +72,7 @@ QPointF CyberiadaSMEditorStateItem::previousPosition() const
 {
     return m_previousPosition;
 }
+
 
 void CyberiadaSMEditorStateItem::setPreviousPosition(const QPointF previousPosition)
 {
@@ -419,12 +418,18 @@ void CyberiadaSMEditorStateItem::paint(QPainter *painter, const QStyleOptionGrap
     setPositionText();
     QRectF oldRect = rect();
     qreal titleHeight = title->boundingRect().height();
-    setRect(QRectF(oldRect.x(), oldRect.y(), oldRect.width(), title->boundingRect().height() ));
+    setRect(QRectF(oldRect.x(), oldRect.y(), oldRect.width(), titleHeight));
+
+    QColor color(Qt::black);
+    if (isSelected()) {
+        color.setRgb(255, 0, 0);
+    }
+    painter->setPen(QPen(color, 1, Qt::SolidLine));
 
     QPainterPath path;
-    path.addRoundedRect(rect(), 10, 10);
     QRectF tmpRect = rect();
-    painter->drawLine(QPointF(tmpRect.x(), tmpRect.y() + titleHeight), QPointF(tmpRect.right(), tmpRect.y() + titleHeight)); //37 - boudingRect() шрифта размером 18
+    path.addRoundedRect(tmpRect, 10, 10);
+    painter->drawLine(QPointF(tmpRect.x(), tmpRect.y() + titleHeight), QPointF(tmpRect.right(), tmpRect.y() + titleHeight));
     painter->drawPath(path);
 
     painter->setBrush(Qt::red);

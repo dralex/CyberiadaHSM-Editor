@@ -30,6 +30,7 @@
 #include <QGraphicsView>
 #include <QTimer>
 #include <QPaintEvent>
+#include <QMouseEvent>
 
 class CyberiadaSMGraphicsView: public QGraphicsView {
 Q_OBJECT
@@ -42,6 +43,11 @@ public:
 		QGraphicsView::paintEvent(newEvent);
 		delete newEvent;
 	}
+
+protected:
+    void wheelEvent(QWheelEvent *event) override;
+    void mousePressEvent(QMouseEvent *event) override;
+
 };
 
 #endif

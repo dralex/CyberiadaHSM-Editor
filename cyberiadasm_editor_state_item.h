@@ -3,12 +3,14 @@
 
 
 #include <QObject>
-#include <QGraphicsRectItem>
+#include <QPen>
+#include <QColor>
 #include <QGraphicsSceneMouseEvent>
 // #include <grabber.h>
 
 #include "editable_text_item.h"
 #include "cyberiadasm_editor_items.h"
+
 
 
 /* -----------------------------------------------------------------------------
@@ -29,7 +31,6 @@ public:
 
     virtual int type() const { return StateItem; }
 
-    QString id;
     /*
     enum CornerFlags {
         Top = 0x01,
@@ -69,7 +70,6 @@ public:
 
     void setPositionText();
 
-
 signals:
     void rectChanged(CyberiadaSMEditorStateItem *rect);
     void previousPositionChanged();
@@ -96,10 +96,9 @@ private:
     EditableTextItem* exit = nullptr;
 
     QRectF m_rect;
-
     const Cyberiada::State* m_state;
     std::list<Cyberiada::Action> m_actions;
-    // QMap<Cyberiada::ID, QGraphicsItem*> *m_elementItem;
+
 
     /*
     void resizeLeft( const QPointF &pt);

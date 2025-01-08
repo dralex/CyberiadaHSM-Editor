@@ -32,16 +32,20 @@
 #include <QSet>
 #include <QMenu>
 #include <QByteArrayList>
+#include <QList>
+#include <QGraphicsItem>
+#include <QDebug>
 
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_editor_items.h"
+#include "cyberiadasm_editor_state_item.h"
 
 class CyberiadaSMEditorScene: public QGraphicsScene {
 Q_OBJECT
 
 public:
     CyberiadaSMEditorScene(CyberiadaSMModel* model, QObject *parent = NULL);
-	virtual ~CyberiadaSMEditorScene();
+    virtual ~CyberiadaSMEditorScene();
 
 	void reset();
 	
@@ -54,21 +58,20 @@ public:
     void  setGridPen(const QPen& gridPen);
     const QPen& getGridPen() const { return gridPen; }
 
-    void updateScene();
-
 public slots:
 	void  slotElementSelected(const QModelIndex& index);
 	
     void  enableGrid(bool on = true);
     void  enableGridSnap(bool on = true);
+    void  onSelectionChanged();
 
 protected:
-	void  drawBackground(QPainter *painter, const QRectF &);
+    void  drawBackground(QPainter *painter, const QRectF &);
 	
 private:
-	void  addItemsRecursively(QGraphicsItem* parent, Cyberiada::ElementCollection* element);
-	
-	CyberiadaSMModel*              model;
+    void  addItemsRecursively(QGraphicsItem* parent, Cyberiada::ElementCollection* element);
+
+    CyberiadaSMModel*              model;
 	Cyberiada::StateMachine*       currentSM;
     QMap<Cyberiada::ID, QGraphicsItem*> elementItem;
 	
@@ -76,6 +79,7 @@ private:
     bool                           gridEnabled;
     bool                           gridSnap;
     QPen                           gridPen;
+
 };
 
 #endif
