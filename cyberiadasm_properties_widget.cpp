@@ -47,6 +47,7 @@ CyberiadaSMPropertiesWidget::CyberiadaSMPropertiesWidget(QWidget *parent):
 		{propGroupPoint,           propEditorPointGroup,        tr("Point", "Property name")},
 		{propGroupPolyline,        propEditorGroup,             tr("Polyline", "Property name")},
 		{propGroupRect,            propEditorRectGroup,         tr("Rect", "Property name")},
+		{propGroupBoundingRect,    propEditorRectGroup,         tr("Bounding Rect", "Property name")},
 		{propGroupSourcePoint,     propEditorPointGroup,        tr("Source Point", "Property name")},
 		{propGroupSubject,         propEditorGroup,             tr("Subject", "Property name")},
 		{propGroupSubjects,        propEditorGroup,             tr("Subjects", "Property name")},
@@ -211,7 +212,12 @@ void CyberiadaSMPropertiesWidget::newElement(Cyberiada::Element* new_element)
 		
 		QtProperty* meta_group_prop = constructProperty(propGroupMeta);
 		doc_group_prop->addSubProperty(meta_group_prop);
-		
+
+		QtProperty* bounding_group_prop = constructProperty(propGroupBoundingRect);
+		Cyberiada::Rect r = doc->get_bound_rect();
+		rectManager->setValue(bounding_group_prop, QRectF(r.x, r.y, r.width, r.height));
+		doc_group_prop->addSubProperty(bounding_group_prop);
+
 		QtProperty* standard_version_prop = constructProperty(propMetaStandardVersion);
 		stringManager->setValue(standard_version_prop, QString(doc->meta().standard_version.c_str()));
 		meta_group_prop->addSubProperty(standard_version_prop);
