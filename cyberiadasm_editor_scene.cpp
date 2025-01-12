@@ -73,14 +73,16 @@ void CyberiadaSMEditorScene::reset()
 }
 
 void CyberiadaSMEditorScene::onSelectionChanged() {
-    QGraphicsItem* item = selectedItems().first();
-    Cyberiada::ID item_id = elementItem.key(item);
-    Cyberiada::Element* element = model->idToElement(QString::fromStdString(item_id));
-    const QModelIndex index = model->elementToIndex(element);
-
-    CyberiadaSMEditorWindow* p = dynamic_cast<CyberiadaSMEditorWindow*>(parent());
-    p->SMView->setCurrentIndex(index);
-
+	if (selectedItems().size() > 0) {
+		QGraphicsItem* item = selectedItems().first();
+		Cyberiada::ID item_id = elementItem.key(item);
+		const Cyberiada::Element* element = model->idToElement(QString::fromStdString(item_id));
+		MY_ASSERT(element);
+		QModelIndex index = model->elementToIndex(element);
+		CyberiadaSMEditorWindow* p = dynamic_cast<CyberiadaSMEditorWindow*>(parent());
+		//p->SMView->setCurrentIndex(index);
+		p->SMView->select(index);
+	}
 }
 
 void CyberiadaSMEditorScene::slotElementSelected(const QModelIndex& index)
