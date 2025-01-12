@@ -24,6 +24,7 @@
 #include <QDebug>
 #include <QDrag>
 #include <QCursor>
+#include <QTreeView>
 
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_view.h"
@@ -44,14 +45,14 @@ CyberiadaSMView::CyberiadaSMView(QWidget* parent):
 void CyberiadaSMView::select(const QModelIndex& index)
 {
 	selectionModel()->select(index, QItemSelectionModel::SelectCurrent | QItemSelectionModel::Rows);
-	emit currentIndexActivated(index);
+    emit currentIndexActivated(index);
 }
 
 void CyberiadaSMView::currentChanged(const QModelIndex &current, const QModelIndex &previous)
 {
-	QTreeView::currentChanged(current, previous);
-	//qDebug() << "current changed" << current.row() << current.column() << (void*)current.internalPointer();
-	emit currentIndexActivated(current);
+    QTreeView::currentChanged(current, previous);
+    // qDebug() << "current changed" << current.row() << current.column() << (void*)current.internalPointer();
+    emit currentIndexActivated(current);
 }
 
 void CyberiadaSMView::startDrag(Qt::DropActions)
@@ -65,6 +66,7 @@ void CyberiadaSMView::startDrag(Qt::DropActions)
 	drag->setPixmap(m->getIndexIcon(current).pixmap(32, 32));
 	drag->setDragCursor(QCursor(Qt::ClosedHandCursor).pixmap(), Qt::MoveAction);
 	drag->exec(Qt::MoveAction);
+
 }
 
 /*void CyberiadaSMView::slotSourceDataChanged(const QModelIndex& topLeft,

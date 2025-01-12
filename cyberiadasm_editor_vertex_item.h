@@ -15,11 +15,10 @@ public:
 
     virtual int type() const { return VertexItem; }
 
-    // virtual QRectF boundingRect() const;
-    // virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
-
     QRectF boundingRect() const override;
+protected:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
+    void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
 
 private:
     QRectF fullCircle() const;

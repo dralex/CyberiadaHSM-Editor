@@ -14,6 +14,8 @@ CyberiadaSMEditorSMItem::CyberiadaSMEditorSMItem(CyberiadaSMModel* model,
     CyberiadaSMEditorAbstractItem(model, element, parent)
 {
     QRectF rect = toQtRect(element->get_bound_rect(*(model->rootDocument())));
+
+    setFlags(ItemIsSelectable);
 }
 
 QRectF CyberiadaSMEditorSMItem::boundingRect() const
@@ -27,7 +29,12 @@ QRectF CyberiadaSMEditorSMItem::boundingRect() const
 
 void CyberiadaSMEditorSMItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*)
 {
-    painter->setPen(QPen(Qt::black, 1, Qt::SolidLine));
+    QColor color(Qt::black);
+    if (isSelected()) {
+        color.setRgb(255, 0, 0);
+    }
+
+    painter->setPen(QPen(color, 1, Qt::SolidLine));
     QRectF r = boundingRect();
     painter->drawRect(r);
     const QPointF name_frame[] = {
