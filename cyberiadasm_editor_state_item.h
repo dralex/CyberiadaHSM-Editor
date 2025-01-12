@@ -98,7 +98,7 @@ private:
     QRectF m_rect;
 
     const Cyberiada::State* m_state;
-    std::list<Cyberiada::Action> m_actions;
+    std::vector<Cyberiada::Action> m_actions;
     // QMap<Cyberiada::ID, QGraphicsItem*> *m_elementItem;
 
     /*

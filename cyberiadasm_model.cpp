@@ -307,7 +307,7 @@ QModelIndex CyberiadaSMModel::documentIndex() const
 QModelIndex CyberiadaSMModel::firstSMIndex() const
 {
 	if (root) {
-		std::list<Cyberiada::StateMachine*> sms = root->get_state_machines();
+		std::vector<Cyberiada::StateMachine*> sms = root->get_state_machines();
 		if (sms.size() == 0) {
 			return QModelIndex();
 		} else {
