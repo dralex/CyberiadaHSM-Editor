@@ -359,8 +359,8 @@ void CyberiadaSMPropertiesWidget::newElement(Cyberiada::Element* new_element)
 				if (state->has_actions()) {
 					QtProperty* actions_group_prop = constructProperty(propGroupActions);
 					addProperty(actions_group_prop);	
-					const std::list<Cyberiada::Action>& actions = state->get_actions();
-					for (std::list<Cyberiada::Action>::const_iterator i = actions.begin(); i != actions.end(); i++) {
+					const std::vector<Cyberiada::Action>& actions = state->get_actions();
+					for (std::vector<Cyberiada::Action>::const_iterator i = actions.begin(); i != actions.end(); i++) {
 						const Cyberiada::Action& a = *i;
 						
 						QtProperty* action_prop = constructProperty(propGroupAction);
@@ -402,8 +402,8 @@ void CyberiadaSMPropertiesWidget::newElement(Cyberiada::Element* new_element)
 				if (comment->has_subjects()) {
 					QtProperty* subjects_group_prop = constructProperty(propGroupSubjects);
 					addProperty(subjects_group_prop);	
-					const std::list<Cyberiada::CommentSubject>& subjects = comment->get_subjects();
-					for (std::list<Cyberiada::CommentSubject>::const_iterator i = subjects.begin(); i != subjects.end(); i++) {
+					const std::vector<Cyberiada::CommentSubject>& subjects = comment->get_subjects();
+					for (std::vector<Cyberiada::CommentSubject>::const_iterator i = subjects.begin(); i != subjects.end(); i++) {
 						const Cyberiada::CommentSubject& cs = *i;
 
 						QtProperty* subject_prop = constructProperty(propGroupSubject);

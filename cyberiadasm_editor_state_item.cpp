@@ -47,8 +47,8 @@ CyberiadaSMEditorStateItem::CyberiadaSMEditorStateItem(QObject *parent_object,
     qreal bottom_delta = 0;
 
     m_actions = m_state->get_actions();
-    std::list<Cyberiada::Action> actions = m_state->get_actions();
-    for (std::list<Cyberiada::Action>::const_iterator i = actions.begin(); i != actions.end(); i++) {
+    std::vector<Cyberiada::Action> actions = m_state->get_actions();
+    for (std::vector<Cyberiada::Action>::const_iterator i = actions.begin(); i != actions.end(); i++) {
         Cyberiada::ActionType type = i->get_type();
         if (type == Cyberiada::actionEntry) {
             entry = new EditableTextItem(QString("entry() / ") + QString(i->get_behavior().c_str()), this);
