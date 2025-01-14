@@ -13,8 +13,8 @@
 #include "cyberiadasm_editor_state_item.h"
 
 
-EditableTextItem::EditableTextItem(const QString &text, QGraphicsItem *parent, bool align)
-    : QGraphicsTextItem(text, parent), align(align) {
+EditableTextItem::EditableTextItem(const QString &text, QGraphicsItem *parent, bool align, bool parentHasGeometry)
+    : QGraphicsTextItem(text, parent), align(align), parentHasGeometry(parentHasGeometry) {
     setFlags(QGraphicsItem::ItemIsSelectable);
     setTextInteractionFlags(Qt::NoTextInteraction);
     setAlign();
@@ -37,9 +37,10 @@ void EditableTextItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) {
 
 void EditableTextItem::keyPressEvent(QKeyEvent *event){
     if (isEdit) {
-        CyberiadaSMEditorStateItem *parentRectangle = dynamic_cast<CyberiadaSMEditorStateItem*>(parentItem());
+        // CyberiadaSMEditorStateItem *parentRectangle = dynamic_cast<CyberiadaSMEditorStateItem*>(parentItem());
+        CyberiadaSMEditorAbstractItem *parentSMEItem = dynamic_cast<CyberiadaSMEditorAbstractItem*>(parentItem());
         QGraphicsTextItem::keyPressEvent(event);
-        parentRectangle->setPositionText();
+        parentSMEItem->setPositionText();
         parentItem()->update();
     }
 }
@@ -62,13 +63,20 @@ void EditableTextItem::hoverEnterEvent(QGraphicsSceneHoverEvent *event) {
 }
 
 void EditableTextItem::setAlign(){
-    CyberiadaSMEditorStateItem *rectParent = dynamic_cast<CyberiadaSMEditorStateItem*>(parentItem());
-    if (!align) {
-        setTextWidth(rectParent->rect().width() - 30);
+    if (parentHasGeometry) {
+        // CyberiadaSMEditorStateItem *rectParent = dynamic_cast<CyberiadaSMEditorStateItem*>(parentItem());
+        CyberiadaSMEditorAbstractItem *parentSMEItem = dynamic_cast<CyberiadaSMEditorAbstractItem*>(parentItem());
+        if (!align) {
+            // setTextWidth(parentSMEItem->rect().width() - 30);
+            setTextWidth(parentSMEItem->boundingRect().width() - 30);
+        }
+        // if (boundingRect().width() > parentSMEItem->rect().width() - 30) {
+        if (boundingRect().width() > parentSMEItem->boundingRect().width() - 30) {
+            // setTextWidth(parentSMEItem->rect().width() - 30);
+            setTextWidth(parentSMEItem->boundingRect().width() - 30);
+        }
     }
-    if (boundingRect().width() > rectParent->rect().width() - 30) {
-        setTextWidth(rectParent->rect().width() - 30);
-    }
+
     QTextBlockFormat blockFormat;
     if (align) {
         blockFormat.setAlignment(Qt::AlignCenter);

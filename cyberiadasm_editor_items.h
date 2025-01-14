@@ -29,9 +29,9 @@
 #include "cyberiadasm_model.h"
 
 
-const int ROUNDED_RECT_RADIUS = 10;
-const int VERTEX_POINT_RADIUS = 10;
-const int COMMENT_ANGLE_CORNER = 10;
+// const int ROUNDED_RECT_RADIUS = 10;
+// const int VERTEX_POINT_RADIUS = 10;
+// const int COMMENT_ANGLE_CORNER = 10;
 
 /* -----------------------------------------------------------------------------
  * Abstract Item
@@ -62,6 +62,8 @@ public:
 	static QRectF toQtRect(const Cyberiada::Rect& r) {
 		return QRectF(r.x, r.y, r.width, r.height);
 	}
+
+    virtual void setPositionText() {} // содержит текстовый блок
 	
 protected:
 	CyberiadaSMModel* model;

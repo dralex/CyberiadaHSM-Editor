@@ -26,4 +26,16 @@
 
 #define CYBERIADA_MIME_TYPE_STATE          "application/kruzhok.cyberiada.state"
 
+// Geometry constants
+#define ROUNDED_RECT_RADIUS 10
+#define VERTEX_POINT_RADIUS 10
+#define COMMENT_ANGLE_CORNER 10
+
+// Text constants
+#define FONT_SIZE 12
+#define FONT_NAME "Monospace"
+
+#define FORMAL_COMMENT_FONT_SIZE 12
+#define FORMAL_COMMENT_FONT_NAME "Courier"
+
 #endif

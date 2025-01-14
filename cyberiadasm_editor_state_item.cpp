@@ -8,6 +8,7 @@
 #include <QGraphicsRectItem>
 #include <math.h>
 // #include "grabber.h"
+#include "cyberiada_constants.h"
 
 
 /*
@@ -33,32 +34,37 @@ CyberiadaSMEditorStateItem::CyberiadaSMEditorStateItem(QObject *parent_object,
     setPositionGrabbers();
     */
 
-    id = element->get_id().c_str();
-
     m_state = static_cast<const Cyberiada::State*>(element);
 
     setPos(QPointF(x(), y()));
-    // if(parent->type() == SMItem){
-    //     setPos(x() + width()/2, y() + height()/2);
-    //     // setPos(parent->boundingRect().x() + width()/2, parent->boundingRect().y() + height()/2);
-    // }
+
 
     title = new EditableTextItem(m_state->get_name().c_str(), this, true);
-    title->setFont(QFont("Monospace", 18));
+    title->setFont(QFont(FONT_NAME, FONT_SIZE));
+
+    m_area = new StateArea(this);
+    qreal top_delta = title->boundingRect().height();
+    qreal bottom_delta = 0;
 
     m_actions = m_state->get_actions();
     std::list<Cyberiada::Action> actions = m_state->get_actions();
     for (std::list<Cyberiada::Action>::const_iterator i = actions.begin(); i != actions.end(); i++) {
         Cyberiada::ActionType type = i->get_type();
-        qDebug() << i->get_behavior().c_str();
         if (type == Cyberiada::actionEntry) {
             entry = new EditableTextItem(QString("entry() / ") + QString(i->get_behavior().c_str()), this);
-            entry->setFont(QFont("Monospace", 18));
+            entry->setFont(QFont(FONT_NAME, FONT_SIZE));
+            top_delta += entry->boundingRect().height();
+            m_area->setTopLine(true);
         } else if (type == Cyberiada::actionExit) {
             exit = new EditableTextItem(QString("exit() / ") + QString(i->get_behavior().c_str()), this);
-            exit->setFont(QFont("Monospace", 18));
+            exit->setFont(QFont(FONT_NAME, FONT_SIZE));
+            bottom_delta += exit->boundingRect().height();
+            m_area->setBottomLine(true);
         }
     }
+
+    m_area->setRect(-width()/2, -(height() - top_delta - bottom_delta) / 2, width(), height() - top_delta - bottom_delta);
+    m_area->setPos(0, (top_delta - bottom_delta)/2 );
 
     setPositionText();
 }
@@ -138,6 +144,11 @@ qreal CyberiadaSMEditorStateItem::height() const
 {
     Cyberiada::Rect model_rect = m_state->get_geometry_rect();
     return model_rect.height;
+}
+
+StateArea *CyberiadaSMEditorStateItem::getArea()
+{
+    return m_area;
 }
 
 QRectF CyberiadaSMEditorStateItem::boundingRect() const
@@ -419,10 +430,10 @@ void CyberiadaSMEditorStateItem::paint(QPainter *painter, const QStyleOptionGrap
     setPositionText();
     QRectF oldRect = rect();
     qreal titleHeight = title->boundingRect().height();
-    setRect(QRectF(oldRect.x(), oldRect.y(), oldRect.width(), title->boundingRect().height() ));
+    // setRect(QRectF(oldRect.x(), oldRect.y(), oldRect.width(), title->boundingRect().height() ));
 
     QPainterPath path;
-    path.addRoundedRect(rect(), 10, 10);
+    path.addRoundedRect(rect(), ROUNDED_RECT_RADIUS, ROUNDED_RECT_RADIUS);
     QRectF tmpRect = rect();
     painter->drawLine(QPointF(tmpRect.x(), tmpRect.y() + titleHeight), QPointF(tmpRect.right(), tmpRect.y() + titleHeight)); //37 - boudingRect() шрифта размером 18
     painter->drawPath(path);

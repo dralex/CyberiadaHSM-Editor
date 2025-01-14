@@ -6,7 +6,7 @@
 
 class EditableTextItem : public QGraphicsTextItem {
 public:
-    explicit EditableTextItem(const QString &text, QGraphicsItem *parent = nullptr, bool align = false);
+    explicit EditableTextItem(const QString &text, QGraphicsItem *parent = nullptr, bool align = false, bool parentHasGeometry = true);
 
 protected:
     void focusOutEvent(QFocusEvent *event) override;
@@ -23,7 +23,10 @@ protected:
     void setAlign();
     bool isEdit;
     bool align;
+    bool parentHasGeometry;
 };
+
+
 
 
 #endif // EDITABLETEXTITEM_H
