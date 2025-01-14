@@ -42,6 +42,10 @@ public:
 		QGraphicsView::paintEvent(newEvent);
 		delete newEvent;
 	}
+
+protected:
+    void wheelEvent(QWheelEvent *event) override;
+
 };
 
 #endif

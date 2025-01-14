@@ -5,6 +5,7 @@
 #include <QtMath>
 
 #include "cyberiadasm_editor_transition_item.h"
+#include "cyberiada_constants.h"
 
 
 CyberiadaSMEditorTransitionItem::CyberiadaSMEditorTransitionItem(QObject *parent_object,
@@ -21,6 +22,7 @@ CyberiadaSMEditorTransitionItem::CyberiadaSMEditorTransitionItem(QObject *parent
     m_transition = static_cast<const Cyberiada::Transition*>(element);
 
     m_actionItem = new QGraphicsTextItem(text(), this);
+    m_actionItem->setFont(QFont(FONT_NAME, FONT_SIZE));
     m_actionItem->setTextInteractionFlags(Qt::TextEditorInteraction);
     updateTextPosition();
 
@@ -96,7 +98,8 @@ QPointF CyberiadaSMEditorTransitionItem::sourcePoint() const
 
 QPointF CyberiadaSMEditorTransitionItem::sourceCenter() const
 {
-    Cyberiada::ElementType sourceElementType = model->idToElement(QString::fromStdString(m_transition->source_element_id()))->get_type();
+    Cyberiada::ID id = m_transition->source_element_id();
+    Cyberiada::ElementType sourceElementType = model->idToElement(QString::fromStdString(id))->get_type();
     // if (sourceElementType == Cyberiada::elementCompositeState ||
     //     sourceElementType == Cyberiada::elementSimpleState)
     // {
@@ -305,7 +308,7 @@ void CyberiadaSMEditorTransitionItem::updateTextPosition() {
 
     // Установить позицию текста
     QPointF lastPoint = sourcePoint();
-    if(m_transition->has_polyline()) {
+    if(m_transition->has_polyline() && m_transition->get_geometry_polyline().size() > 0) {
         Cyberiada::Polyline polyline = m_transition->get_geometry_polyline();
         Cyberiada::Point lastPolylinePoint = *(std::next(polyline.begin(), polyline.size() - 1));
         lastPoint = QPointF(lastPolylinePoint.x, lastPolylinePoint.y);

@@ -1,8 +1,10 @@
 #include <QDebug>
 #include <QPainter>
 #include <QColor>
+#include <QFontDatabase>
 #include "cyberiadasm_editor_comment_item.h"
 #include "myassert.h"
+#include "cyberiada_constants.h"
 
 /* -----------------------------------------------------------------------------
  * Comment Item
@@ -19,7 +21,20 @@ CyberiadaSMEditorCommentItem::CyberiadaSMEditorCommentItem(QObject *parent_objec
 {
     m_comment = static_cast<const Cyberiada::Comment*>(element);
 
-    text = new EditableTextItem(m_comment->get_body().c_str(), this);
+    text = new EditableTextItem(m_comment->get_body().c_str(), this, false, m_comment->has_geometry());
+    if (element->get_type() == Cyberiada::elementFormalComment) {
+        int fontId = QFontDatabase::addApplicationFont(":/Fonts/fonts/courier.ttf");
+        if (fontId != -1) {
+            QStringList fontFamilies = QFontDatabase::applicationFontFamilies(fontId);
+            if (!fontFamilies.isEmpty()) {
+                // Создание шрифта из загруженного семейства
+                QFont customFont(fontFamilies.at(0), FORMAL_COMMENT_FONT_SIZE);
+                text->setFont(customFont);
+            }
+        }
+    } else {
+        text->setFont(QFont(FONT_NAME, FONT_SIZE));
+    }
 
     m_commentBrush = QBrush(QColor(0xff, 0xcc, 0));
 }
@@ -31,11 +46,15 @@ CyberiadaSMEditorCommentItem::~CyberiadaSMEditorCommentItem() {
 
 QRectF CyberiadaSMEditorCommentItem::boundingRect() const
 {
-    Cyberiada::Rect r = m_comment->get_geometry_rect();
-    return QRectF(- r.width / 2,
-                  - r.height / 2,
-                  r.width,
-                  r.height);
+    if (m_comment->has_geometry()) {
+        Cyberiada::Rect r = m_comment->get_geometry_rect();
+        qDebug() << "comment rect" << r.x << r.y << r.width << r.height;
+        return QRectF(- r.width / 2,
+                      - r.height / 2,
+                      r.width,
+                      r.height);
+    }
+    return text->boundingRect();
 }
 
 void CyberiadaSMEditorCommentItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*)
@@ -70,7 +89,7 @@ void CyberiadaSMEditorCommentItem::paint(QPainter* painter, const QStyleOptionGr
         QPointF(r.right()- COMMENT_ANGLE_CORNER, r.top() + COMMENT_ANGLE_CORNER)
     };
 
-    painter->drawConvexPolygon(points, 3);
+    painter->drawConvexPolygon(triangle, 3);
 }
 
 void CyberiadaSMEditorCommentItem::setPositionText()

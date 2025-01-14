@@ -4,6 +4,7 @@
 #include <QPainter>
 #include <QColor>
 #include "myassert.h"
+#include "cyberiada_constants.h"
 
 /* -----------------------------------------------------------------------------
  * Vertex Item

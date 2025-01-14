@@ -14,6 +14,7 @@ CyberiadaSMEditorSMItem::CyberiadaSMEditorSMItem(CyberiadaSMModel* model,
     CyberiadaSMEditorAbstractItem(model, element, parent)
 {
     QRectF rect = toQtRect(element->get_bound_rect(*(model->rootDocument())));
+    qDebug() << "SM rect " << boundingRect();
 }
 
 QRectF CyberiadaSMEditorSMItem::boundingRect() const
@@ -27,6 +28,8 @@ QRectF CyberiadaSMEditorSMItem::boundingRect() const
 
 void CyberiadaSMEditorSMItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*)
 {
+    if (!element->has_geometry()) return;
+
     painter->setPen(QPen(Qt::black, 1, Qt::SolidLine));
     QRectF r = boundingRect();
     painter->drawRect(r);
