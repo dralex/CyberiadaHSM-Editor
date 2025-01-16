@@ -144,9 +144,9 @@ void CyberiadaSMEditorScene::addItemsRecursively(QGraphicsItem* parent, Cyberiad
                 break;
             }
             case Cyberiada::elementTerminate: {
-                CyberiadaSMEditorVertexItem* final = new CyberiadaSMEditorVertexItem(model, child, new_parent);
-                elementItem.insert(child->get_id(), final);
-                addItem(final);
+                CyberiadaSMEditorVertexItem* terminate = new CyberiadaSMEditorVertexItem(model, child, new_parent);
+                elementItem.insert(child->get_id(), terminate);
+                addItem(terminate);
                 qDebug() << "add item" << child->get_id().c_str() << "type" << type << "parent" << elementItem.key(new_parent).c_str();
                 break;
             }

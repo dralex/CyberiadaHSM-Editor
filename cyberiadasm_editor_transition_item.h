@@ -9,6 +9,7 @@
 #include <QPointF>
 #include <QGraphicsTextItem>
 #include <QString>
+#include <QPainter>
 
 #include "cyberiadasm_editor_items.h"
 #include "dotsignal.h"
@@ -18,6 +19,7 @@
  *  Item
  * ----------------------------------------------------------------------------- */
 
+class TransitionText;
 
 class CyberiadaSMEditorTransitionItem : public QObject, public CyberiadaSMEditorAbstractItem
 {
@@ -99,7 +101,7 @@ private:
     QPointF m_previousSourceCenterPos;
     QPointF m_previousTargetCenterPos;
 
-    QGraphicsTextItem *m_actionItem = nullptr;
+    TransitionText *m_actionItem = nullptr;
     QPointF m_textPosition;
 
     QPointF m_previousPosition;
@@ -114,6 +116,19 @@ private:
     bool m_mouseTraking;
 
     // void updateDots();
+};
+
+class TransitionText : public QGraphicsTextItem
+{
+public:
+    TransitionText(const QString &text, QGraphicsItem *parent = nullptr) :
+        QGraphicsTextItem(text, parent) { }
+
+    void paint( QPainter *painter, const QStyleOptionGraphicsItem *o, QWidget *w) {
+        if (!toPlainText().isEmpty())
+            painter->fillRect(boundingRect(), painter->background());
+        QGraphicsTextItem::paint(painter, o, w);
+    }
 };
 
 #endif // CYBERIADASMEDITORTRANSITIONITEM_H

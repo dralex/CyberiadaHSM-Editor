@@ -3,6 +3,8 @@
 #include <QDebug>
 #include <QGraphicsSceneMouseEvent>
 #include <QtMath>
+#include <QTextDocument>
+#include <QTextOption>
 
 #include "cyberiadasm_editor_transition_item.h"
 #include "cyberiada_constants.h"
@@ -21,9 +23,10 @@ CyberiadaSMEditorTransitionItem::CyberiadaSMEditorTransitionItem(QObject *parent
 
     m_transition = static_cast<const Cyberiada::Transition*>(element);
 
-    m_actionItem = new QGraphicsTextItem(text(), this);
+    m_actionItem = new TransitionText(text(), this);
     m_actionItem->setFont(QFont(FONT_NAME, FONT_SIZE));
     m_actionItem->setTextInteractionFlags(Qt::TextEditorInteraction);
+
     updateTextPosition();
 
     // setAcceptHoverEvents(true);
@@ -313,7 +316,7 @@ void CyberiadaSMEditorTransitionItem::updateTextPosition() {
         Cyberiada::Point lastPolylinePoint = *(std::next(polyline.begin(), polyline.size() - 1));
         lastPoint = QPointF(lastPolylinePoint.x, lastPolylinePoint.y);
     }
-    QPointF textPos = (lastPoint + (targetPoint() + targetCenter() - sourceCenter())) / 2 + sourceCenter();
+    QPointF textPos = (lastPoint + (targetPoint() + targetCenter() - sourceCenter())) / 2 + sourceCenter() - m_actionItem->boundingRect().center();
 
     m_actionItem->setPos(textPos);
     update();
