@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QPainter>
 #include <QColor>
+#include <math.h>
 #include "myassert.h"
 #include "cyberiada_constants.h"
 
@@ -38,9 +39,9 @@ QRectF CyberiadaSMEditorVertexItem::partialCircle() const
 {
     MY_ASSERT(model);
     MY_ASSERT(model->rootDocument());
-    Cyberiada::Rect r = element->get_bound_rect(*(model->rootDocument()));
-    return QRectF(r.x - (VERTEX_POINT_RADIUS * 2.0 / 3.0),
-                  r.y - (VERTEX_POINT_RADIUS * 2.0 / 3.0),
+    // Cyberiada::Rect r = element->get_bound_rect(*(model->rootDocument()));
+    return QRectF(- VERTEX_POINT_RADIUS * 2.0 / 3.0,
+                  - VERTEX_POINT_RADIUS * 2.0 / 3.0,
                   VERTEX_POINT_RADIUS * 4.0 / 3.0,
                   VERTEX_POINT_RADIUS * 4.0 / 3.0);
 }
@@ -59,9 +60,11 @@ void CyberiadaSMEditorVertexItem::paint(QPainter* painter, const QStyleOptionGra
         painter->drawEllipse(partialCircle());
     } else {
         MY_ASSERT(type == Cyberiada::elementTerminate);
-        painter->setPen(QPen(Qt::black, 2, Qt::SolidLine));
         QRectF r = fullCircle();
-        painter->drawLine(r.left(), r.top(), r.right(), r.bottom());
+        painter->setPen(QPen(Qt::black, 2, Qt::SolidLine));
+        painter->drawEllipse(fullCircle());
+        painter->drawLine(r.left() / sqrt(2), r.top() / sqrt(2), r.right() / sqrt(2), r.bottom() / sqrt(2));
+        painter->drawLine(r.right() / sqrt(2), r.top() / sqrt(2), r.left() / sqrt(2), r.bottom() / sqrt(2));
     }
 }
 
