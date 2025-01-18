@@ -5,6 +5,7 @@
 #include "cyberiadasm_editor_comment_item.h"
 #include "myassert.h"
 #include "cyberiada_constants.h"
+#include "fontmanager.h"
 
 /* -----------------------------------------------------------------------------
  * Comment Item
@@ -27,13 +28,11 @@ CyberiadaSMEditorCommentItem::CyberiadaSMEditorCommentItem(QObject *parent_objec
         if (fontId != -1) {
             QStringList fontFamilies = QFontDatabase::applicationFontFamilies(fontId);
             if (!fontFamilies.isEmpty()) {
-                // Создание шрифта из загруженного семейства
-                QFont customFont(fontFamilies.at(0), FORMAL_COMMENT_FONT_SIZE);
+                QFont customFont(fontFamilies.at(0), FontManager::instance().getFont().pointSize());
                 text->setFont(customFont);
+                text->setFontStyleChangeable(false);
             }
         }
-    } else {
-        text->setFont(QFont(FONT_NAME, FONT_SIZE));
     }
 
     m_commentBrush = QBrush(QColor(0xff, 0xcc, 0));

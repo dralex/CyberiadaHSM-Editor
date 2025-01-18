@@ -38,13 +38,8 @@ CyberiadaSMEditorStateItem::CyberiadaSMEditorStateItem(QObject *parent_object,
 
     setPos(QPointF(x(), y()));
 
-
     title = new EditableTextItem(m_state->get_name().c_str(), this, true);
-    title->setFont(QFont(FONT_NAME, FONT_SIZE));
-
-    m_area = new StateArea(this);
-    qreal top_delta = title->boundingRect().height();
-    qreal bottom_delta = 0;
+    connect(title, &EditableTextItem::sizeChanged, this, &CyberiadaSMEditorStateItem::updateArea);
 
     m_actions = m_state->get_actions();
     std::vector<Cyberiada::Action> actions = m_state->get_actions();
@@ -52,19 +47,15 @@ CyberiadaSMEditorStateItem::CyberiadaSMEditorStateItem(QObject *parent_object,
         Cyberiada::ActionType type = i->get_type();
         if (type == Cyberiada::actionEntry) {
             entry = new EditableTextItem(QString("entry() / ") + QString(i->get_behavior().c_str()), this);
-            entry->setFont(QFont(FONT_NAME, FONT_SIZE));
-            top_delta += entry->boundingRect().height();
-            m_area->setTopLine(true);
+            connect(entry, &EditableTextItem::sizeChanged, this, &CyberiadaSMEditorStateItem::updateArea);
         } else if (type == Cyberiada::actionExit) {
             exit = new EditableTextItem(QString("exit() / ") + QString(i->get_behavior().c_str()), this);
-            exit->setFont(QFont(FONT_NAME, FONT_SIZE));
-            bottom_delta += exit->boundingRect().height();
-            m_area->setBottomLine(true);
+            connect(exit, &EditableTextItem::sizeChanged, this, &CyberiadaSMEditorStateItem::updateArea);
         }
     }
 
-    m_area->setRect(-width()/2, -(height() - top_delta - bottom_delta) / 2, width(), height() - top_delta - bottom_delta);
-    m_area->setPos(0, (top_delta - bottom_delta)/2 );
+    m_area = new StateArea(this);
+    updateArea();
 
     setPositionText();
 }
@@ -149,6 +140,24 @@ qreal CyberiadaSMEditorStateItem::height() const
 StateArea *CyberiadaSMEditorStateItem::getArea()
 {
     return m_area;
+}
+
+void CyberiadaSMEditorStateItem::updateArea()
+{
+    qreal top_delta = title->boundingRect().height();
+    qreal bottom_delta = 0;
+
+    if (entry) {
+        top_delta += entry->boundingRect().height();
+        m_area->setTopLine(true);
+    }
+    if (exit) {
+        bottom_delta += entry->boundingRect().height();
+        m_area->setBottomLine(true);
+    }
+
+    m_area->setRect(-width()/2, -(height() - top_delta - bottom_delta) / 2, width(), height() - top_delta - bottom_delta);
+    m_area->setPos(0, (top_delta - bottom_delta)/2 );
 }
 
 QRectF CyberiadaSMEditorStateItem::boundingRect() const

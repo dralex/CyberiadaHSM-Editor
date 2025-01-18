@@ -45,6 +45,7 @@ add_executable(CyberiadaInspector
   cyberiadasm_editor_sm_item.h cyberiadasm_editor_sm_item.cpp
   cyberiadasm_editor_choice_item.h cyberiadasm_editor_choice_item.cpp
   cyberiadasm_editor_comment_item.h cyberiadasm_editor_comment_item.cpp
+  fontmanager.h fontmanager.cpp
 )
 
 target_include_directories(CyberiadaInspector PUBLIC

@@ -13,6 +13,7 @@
 
 #include "cyberiadasm_editor_items.h"
 #include "dotsignal.h"
+#include "fontmanager.h"
 
 
 /* -----------------------------------------------------------------------------
@@ -120,15 +121,14 @@ private:
 
 class TransitionText : public QGraphicsTextItem
 {
+    Q_OBJECT
 public:
-    TransitionText(const QString &text, QGraphicsItem *parent = nullptr) :
-        QGraphicsTextItem(text, parent) { }
+    TransitionText(const QString &text, QGraphicsItem *parent = nullptr);
 
-    void paint( QPainter *painter, const QStyleOptionGraphicsItem *o, QWidget *w) {
-        if (!toPlainText().isEmpty())
-            painter->fillRect(boundingRect(), painter->background());
-        QGraphicsTextItem::paint(painter, o, w);
-    }
+    void paint( QPainter *painter, const QStyleOptionGraphicsItem *o, QWidget *w);
+
+private slots:
+    void onFontChanged(const QFont &newFont);
 };
 
 #endif // CYBERIADASMEDITORTRANSITIONITEM_H

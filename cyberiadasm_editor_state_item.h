@@ -100,6 +100,7 @@ public:
     qreal height() const;
 
     StateArea* getArea();
+    void updateArea();
 
     QRectF boundingRect() const override;
 

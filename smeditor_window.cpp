@@ -25,8 +25,12 @@
 #include <QFileDialog>
 #include <QDebug>
 #include <QDir>
+#include <QFontDialog>
+#include <QFont>
+
 #include "smeditor_window.h"
 #include "myassert.h"
+#include "fontmanager.h"
 
 CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
 	QMainWindow(parent)
@@ -59,3 +63,13 @@ void CyberiadaSMEditorWindow::slotFileOpen()
         scene->updateScene();
 	}
 }
+
+void CyberiadaSMEditorWindow::on_actionFont_triggered()
+{
+    bool ok;
+    QFont font = QFontDialog::getFont(&ok, FontManager::instance().getFont());
+    if (ok) {
+        FontManager::instance().setFont(font);
+    }
+}
+

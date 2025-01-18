@@ -11,6 +11,7 @@
 #include <QDebug>
 
 #include "cyberiadasm_editor_state_item.h"
+#include "fontmanager.h"
 
 
 EditableTextItem::EditableTextItem(const QString &text, QGraphicsItem *parent, bool align, bool parentHasGeometry)
@@ -18,6 +19,9 @@ EditableTextItem::EditableTextItem(const QString &text, QGraphicsItem *parent, b
     setFlags(QGraphicsItem::ItemIsSelectable);
     setTextInteractionFlags(Qt::NoTextInteraction);
     setAlign();
+    setFont(FontManager::instance().getFont());
+
+    connect(&FontManager::instance(), &FontManager::fontChanged, this, &EditableTextItem::onFontChanged);
 }
 
 void EditableTextItem::mousePressEvent(QGraphicsSceneMouseEvent *event) {
@@ -91,5 +95,23 @@ void EditableTextItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *
     painter->setFont(QFont(font()));
 
     QGraphicsTextItem::paint(painter, option, widget);
+}
+
+void EditableTextItem::setFontStyleChangeable(bool isChangeable)
+{
+    isFontStyleChangeable = isChangeable;
+}
+
+void EditableTextItem::onFontChanged(const QFont &newFont)
+{
+    if(isFontStyleChangeable) {
+        QFont newFontDiffSize = font();
+        newFontDiffSize.setPointSize(newFont.pointSize());
+        setFont(newFontDiffSize);
+        emit sizeChanged();
+        return;
+    }
+    setFont(newFont);
+    emit sizeChanged();
 }
 

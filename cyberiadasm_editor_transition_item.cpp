@@ -24,7 +24,6 @@ CyberiadaSMEditorTransitionItem::CyberiadaSMEditorTransitionItem(QObject *parent
     m_transition = static_cast<const Cyberiada::Transition*>(element);
 
     m_actionItem = new TransitionText(text(), this);
-    m_actionItem->setFont(QFont(FONT_NAME, FONT_SIZE));
     m_actionItem->setTextInteractionFlags(Qt::TextEditorInteraction);
 
     updateTextPosition();
@@ -531,3 +530,20 @@ void CyberiadaSMEditorTransitionItem::updateTextPosition() {
 //         m_listDotes.append(dot);
 //     }
 // }
+
+TransitionText::TransitionText(const QString &text, QGraphicsItem *parent) :
+    QGraphicsTextItem(text, parent)
+{
+    setFont(FontManager::instance().getFont());
+    connect(&FontManager::instance(), &FontManager::fontChanged, this, &TransitionText::onFontChanged);
+}
+
+void TransitionText::paint(QPainter *painter, const QStyleOptionGraphicsItem *o, QWidget *w) {
+    if (!toPlainText().isEmpty())
+        painter->fillRect(boundingRect(), painter->background());
+    QGraphicsTextItem::paint(painter, o, w);
+}
+
+void TransitionText::onFontChanged(const QFont &newFont) {
+    setFont(newFont);
+}
