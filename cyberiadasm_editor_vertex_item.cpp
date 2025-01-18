@@ -4,6 +4,7 @@
 #include <QPainter>
 #include <QColor>
 #include <math.h>
+#include <QCursor>
 #include "myassert.h"
 #include "cyberiada_constants.h"
 
@@ -18,6 +19,15 @@ CyberiadaSMEditorVertexItem::CyberiadaSMEditorVertexItem(CyberiadaSMModel* model
 {
     Cyberiada::Rect r = element->get_bound_rect(*(model->rootDocument()));
     setPos(r.x, r.y);
+
+    setFlags(ItemIsSelectable);
+    setAcceptHoverEvents(true);
+}
+
+void CyberiadaSMEditorVertexItem::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
+{
+    setCursor(Qt::ArrowCursor);
+    QGraphicsItem::hoverEnterEvent(event);
 }
 
 QRectF CyberiadaSMEditorVertexItem::boundingRect() const
@@ -48,20 +58,25 @@ QRectF CyberiadaSMEditorVertexItem::partialCircle() const
 
 void CyberiadaSMEditorVertexItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*)
 {
-    painter->setPen(QPen(Qt::black, 1, Qt::SolidLine));
+    QColor color(Qt::black);
+    if (isSelected()) {
+        color.setRgb(255, 0, 0);
+    }
+    painter->setPen(QPen(color, 1, Qt::SolidLine));
     Cyberiada::ElementType type = element->get_type();
     if (type == Cyberiada::elementInitial) {
-        painter->setBrush(QBrush(Qt::black));
+        painter->setBrush(QBrush(color));
         painter->drawEllipse(fullCircle());
     } else if (type == Cyberiada::elementFinal) {
         painter->setBrush(painter->background());
         painter->drawEllipse(fullCircle());
-        painter->setBrush(QBrush(Qt::black));
+        painter->setBrush(QBrush(color));
         painter->drawEllipse(partialCircle());
     } else {
         MY_ASSERT(type == Cyberiada::elementTerminate);
+
+        painter->setPen(QPen(color, 2, Qt::SolidLine));
         QRectF r = fullCircle();
-        painter->setPen(QPen(Qt::black, 2, Qt::SolidLine));
         painter->drawLine(r.left(), r.top(), r.right(), r.bottom());
         painter->drawLine(r.right(), r.top(), r.left(), r.bottom());
     }

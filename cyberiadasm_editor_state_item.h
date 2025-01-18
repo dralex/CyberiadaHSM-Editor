@@ -3,7 +3,6 @@
 
 
 #include <QObject>
-#include <QGraphicsRectItem>
 #include <QGraphicsSceneMouseEvent>
 #include <QGraphicsRectItem>
 #include <QPainter>
@@ -12,6 +11,7 @@
 // #include "grabber.h"
 #include "editable_text_item.h"
 #include "cyberiadasm_editor_items.h"
+
 
 
 /* -----------------------------------------------------------------------------
@@ -106,7 +106,6 @@ public:
 
     void setPositionText() override;
 
-
 signals:
     void rectChanged(CyberiadaSMEditorStateItem *rect);
     void previousPositionChanged();
@@ -134,7 +133,6 @@ private:
 
     QRectF m_rect;
     StateArea* m_area;
-
     const Cyberiada::State* m_state;
     std::vector<Cyberiada::Action> m_actions;
     // QMap<Cyberiada::ID, QGraphicsItem*> *m_elementItem;

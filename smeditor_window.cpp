@@ -32,6 +32,7 @@
 #include "myassert.h"
 #include "fontmanager.h"
 
+
 CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
 	QMainWindow(parent)
 {
@@ -41,10 +42,12 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
 	SMView->setModel(model);
 	SMView->setRootIndex(model->rootIndex());
 	propertiesWidget->setModel(model);
-	scene = new CyberiadaSMEditorScene(model, this);
+    scene = new CyberiadaSMEditorScene(model, this);
 	sceneView->setScene(scene);
+
 	connect(SMView, SIGNAL(currentIndexActivated(QModelIndex)),
-			scene, SLOT(slotElementSelected(QModelIndex)));
+            scene, SLOT(slotElementSelected(QModelIndex)));
+
 }
 
 void CyberiadaSMEditorWindow::slotFileOpen()
@@ -59,7 +62,7 @@ void CyberiadaSMEditorWindow::slotFileOpen()
 		QModelIndex sm = model->firstSMIndex();
 		if (sm.isValid()) {
 			SMView->select(sm);
-		}
+        }
         scene->updateScene();
 	}
 }

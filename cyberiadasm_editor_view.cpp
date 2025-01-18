@@ -24,13 +24,8 @@
  *
  * ----------------------------------------------------------------------------- */
 
-#include <QGraphicsItem>
-#include <QMouseEvent> 
-#include <QScrollBar> 
-#include <QGuiApplication>
-#include <QDebug>
-
 #include "cyberiadasm_editor_view.h"
+
 
 CyberiadaSMGraphicsView::CyberiadaSMGraphicsView(QWidget *parent):
 	QGraphicsView(parent)
@@ -48,6 +43,7 @@ CyberiadaSMGraphicsView::CyberiadaSMGraphicsView(QWidget *parent):
 	setFocus();
 
     setTransformationAnchor(AnchorUnderMouse);
+    setDragMode(ScrollHandDrag);
 }
 
 void CyberiadaSMGraphicsView::wheelEvent(QWheelEvent *event) {
@@ -63,4 +59,3 @@ void CyberiadaSMGraphicsView::wheelEvent(QWheelEvent *event) {
         QGraphicsView::wheelEvent(event);
     }
 }
-

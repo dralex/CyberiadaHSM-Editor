@@ -28,7 +28,6 @@
 #define CYBERIADA_SM_EDITOR_VIEW_HEADER
 
 #include <QGraphicsView>
-#include <QTimer>
 #include <QPaintEvent>
 
 class CyberiadaSMGraphicsView: public QGraphicsView {

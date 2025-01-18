@@ -63,7 +63,7 @@ void EditableTextItem::hoverEnterEvent(QGraphicsSceneHoverEvent *event) {
         setCursor(QCursor(Qt::ArrowCursor));
     }
 
-    QGraphicsTextItem::hoverMoveEvent(event);
+    QGraphicsTextItem::hoverEnterEvent(event);
 }
 
 void EditableTextItem::setAlign(){

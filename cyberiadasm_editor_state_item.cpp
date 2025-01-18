@@ -51,6 +51,7 @@ CyberiadaSMEditorStateItem::CyberiadaSMEditorStateItem(QObject *parent_object,
         } else if (type == Cyberiada::actionExit) {
             exit = new EditableTextItem(QString("exit() / ") + QString(i->get_behavior().c_str()), this);
             connect(exit, &EditableTextItem::sizeChanged, this, &CyberiadaSMEditorStateItem::updateArea);
+
         }
     }
 
@@ -71,6 +72,7 @@ QPointF CyberiadaSMEditorStateItem::previousPosition() const
 {
     return m_previousPosition;
 }
+
 
 void CyberiadaSMEditorStateItem::setPreviousPosition(const QPointF previousPosition)
 {
@@ -437,14 +439,20 @@ void CyberiadaSMEditorStateItem::paint(QPainter *painter, const QStyleOptionGrap
     Q_UNUSED(widget)
 
     setPositionText();
-    QRectF oldRect = rect();
-    qreal titleHeight = title->boundingRect().height();
+    // QRectF oldRect = rect();
     // setRect(QRectF(oldRect.x(), oldRect.y(), oldRect.width(), title->boundingRect().height() ));
+    qreal titleHeight = title->boundingRect().height();
+
+    QColor color(Qt::black);
+    if (isSelected()) {
+        color.setRgb(255, 0, 0);
+    }
+    painter->setPen(QPen(color, 1, Qt::SolidLine));
 
     QPainterPath path;
-    path.addRoundedRect(rect(), ROUNDED_RECT_RADIUS, ROUNDED_RECT_RADIUS);
     QRectF tmpRect = rect();
-    painter->drawLine(QPointF(tmpRect.x(), tmpRect.y() + titleHeight), QPointF(tmpRect.right(), tmpRect.y() + titleHeight)); //37 - boudingRect() шрифта размером 18
+    path.addRoundedRect(tmpRect, ROUNDED_RECT_RADIUS, ROUNDED_RECT_RADIUS);
+    painter->drawLine(QPointF(tmpRect.x(), tmpRect.y() + titleHeight), QPointF(tmpRect.right(), tmpRect.y() + titleHeight));
     painter->drawPath(path);
 
     painter->setBrush(Qt::red);

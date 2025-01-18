@@ -231,7 +231,7 @@ QModelIndex CyberiadaSMModel::index(int row, int column, const QModelIndex &pare
 	MY_ASSERT(parent_element);
 	const Cyberiada::Element* child_element = parent_element->get_element(size_t(row));
 	MY_ASSERT(child_element);
-	//qDebug() << "index result: child" << row << column << (void*)childItem;
+	//qDebug() << "index result: child" << row << column << (void*)child_element;
 	return createIndex(row, column, (void*)child_element);
 }
 
@@ -257,7 +257,7 @@ QModelIndex CyberiadaSMModel::parent(const QModelIndex &index) const
 		//qDebug() << "parent result: root2";		
 		return documentIndex();
 	}
-	//qDebug() << "parent result" << parentItem->row() << 0 << (void*)parentItem;
+	//qDebug() << "parent result" << parent_element->index() << 0 << (void*)parent_element;
 	return createIndex(parent_element->index(), 0, (void*)parent_element);
 }
 
