@@ -6,6 +6,7 @@
 #include <QTextDocument>
 #include <QTextOption>
 
+#include "myassert.h"
 #include "cyberiadasm_editor_transition_item.h"
 #include "cyberiada_constants.h"
 
@@ -16,7 +17,7 @@ CyberiadaSMEditorTransitionItem::CyberiadaSMEditorTransitionItem(QObject *parent
                                                                  QGraphicsItem *parent,
                                                                  QMap<Cyberiada::ID, QGraphicsItem*>* elementItem) :
     CyberiadaSMEditorAbstractItem(model, element, parent),
-    QObject(parent_object),
+    // QObject(parent_object),
     m_elementItem(elementItem)
 {
     m_mouseTraking = false;
@@ -25,6 +26,9 @@ CyberiadaSMEditorTransitionItem::CyberiadaSMEditorTransitionItem(QObject *parent
 
     m_actionItem = new TransitionText(text(), this);
     m_actionItem->setTextInteractionFlags(Qt::TextEditorInteraction);
+
+    connect(source(), &CyberiadaSMEditorAbstractItem::geometryChanged, this, &CyberiadaSMEditorTransitionItem::onSourceGeomertyChanged);
+    connect(target(), &CyberiadaSMEditorAbstractItem::geometryChanged, this, &CyberiadaSMEditorTransitionItem::onSourceGeomertyChanged);
 
     updateTextPosition();
 
@@ -39,6 +43,8 @@ CyberiadaSMEditorTransitionItem::~CyberiadaSMEditorTransitionItem()
 
 QRectF CyberiadaSMEditorTransitionItem::boundingRect() const
 {
+    MY_ASSERT(model);
+    MY_ASSERT(model->rootDocument());
     return path().boundingRect().adjusted(-10, -10, 10, 10); // Увеличиваем область для стрелки
 }
 
@@ -54,10 +60,7 @@ void CyberiadaSMEditorTransitionItem::paint(QPainter *painter, const QStyleOptio
 
     painter->drawPath(path());
 
-    update();
     drawArrow(painter);
-
-    updateTextPosition();
 }
 
 QPainterPath CyberiadaSMEditorTransitionItem::shape() const
@@ -87,10 +90,12 @@ CyberiadaSMEditorAbstractItem *CyberiadaSMEditorTransitionItem::source() const
 
 QPointF CyberiadaSMEditorTransitionItem::sourcePoint() const
 {
-    if (m_transition->has_geometry_source_point()) {
-        return QPointF(m_transition->get_source_point().x, m_transition->get_source_point().y);
-    }
-    return QPointF(); // что по умолчанию, возвращать ошибку?
+    // if (m_transition->has_geometry_source_point()) {
+    //     return QPointF(m_transition->get_source_point().x, m_transition->get_source_point().y);
+    // }
+    // return QPointF(); // что по умолчанию, возвращать ошибку?
+
+    return m_previousSourcePos;
 }
 
 // void CyberiadaSMEditorTransitionItem::setSourcePoint(const QPointF &point)
@@ -103,19 +108,25 @@ QPointF CyberiadaSMEditorTransitionItem::sourcePoint() const
 
 QPointF CyberiadaSMEditorTransitionItem::sourceCenter() const
 {
-    Cyberiada::ID id = m_transition->source_element_id();
-    Cyberiada::ElementType sourceElementType = model->idToElement(QString::fromStdString(id))->get_type();
-    // if (sourceElementType == Cyberiada::elementCompositeState ||
-    //     sourceElementType == Cyberiada::elementSimpleState)
-    // {
-    //     return (static_cast<Rectangle*>(m_elementItem->value(m_transition->source_element_id())))->sceneBoundingRect().center();
-    // }
-    // if (sourceElementType == Cyberiada::elementInitial ||
-    //     sourceElementType == Cyberiada::elementFinal)
-    // {
-    //     return static_cast<CyberiadaSMEditorVertexItem*>(m_elementItem->value(m_transition->source_element_id()))->sceneBoundingRect().center();
-    // }
-    return (m_elementItem->value(m_transition->source_element_id()))->sceneBoundingRect().center();
+   //  Cyberiada::ID id = m_transition->source_element_id();
+   //  // Cyberiada::ElementType sourceElementType = model->idToElement(QString::fromStdString(id))->get_type();
+   //  // if (sourceElementType == Cyberiada::elementCompositeState ||
+   //  //     sourceElementType == Cyberiada::elementSimpleState)
+   //  // {
+   //  //     return (static_cast<Rectangle*>(m_elementItem->value(m_transition->source_element_id())))->sceneBoundingRect().center();
+   //  // }
+   //  // if (sourceElementType == Cyberiada::elementInitial ||
+   //  //     sourceElementType == Cyberiada::elementFinal)
+   //  // {
+   //  //     return static_cast<CyberiadaSMEditorVertexItem*>(m_elementItem->value(m_transition->source_element_id()))->sceneBoundingRect().center();
+   //  // }
+   // // qDebug() << "sourse element transition Id 0" << m_transition->source_element_id().c_str() << "0";
+   //  // qDebug() << "map is empty" << (m_elementItem->isEmpty())
+   //  //          << (m_elementItem->value(m_transition->source_element_id()) == nullptr);
+   //  if(!m_elementItem->value(m_transition->source_element_id())) return QPoint(); //костыль
+   //  MY_ASSERT(m_elementItem->value(m_transition->source_element_id()));
+   //  return (m_elementItem->value(m_transition->source_element_id()))->sceneBoundingRect().center();
+    return m_previousSourceCenterPos;
 }
 
 CyberiadaSMEditorAbstractItem *CyberiadaSMEditorTransitionItem::target() const
@@ -138,10 +149,12 @@ CyberiadaSMEditorAbstractItem *CyberiadaSMEditorTransitionItem::target() const
 
 QPointF CyberiadaSMEditorTransitionItem::targetPoint() const
 {
-    if (m_transition->has_geometry_target_point()) {
-        return QPointF(m_transition->get_target_point().x, m_transition->get_target_point().y);
-    }
-    return QPointF(); // что по умолчанию, возвращать ошибку?
+    // if (m_transition->has_geometry_target_point()) {
+    //     return QPointF(m_transition->get_target_point().x, m_transition->get_target_point().y);
+    // }
+    // return QPointF(); // что по умолчанию, возвращать ошибку?
+
+    return m_previousTargetPos;
 }
 
 // void CyberiadaSMEditorTransitionItem::setTargetPoint(const QPointF &point)
@@ -153,34 +166,39 @@ QPointF CyberiadaSMEditorTransitionItem::targetPoint() const
 
 QPointF CyberiadaSMEditorTransitionItem::targetCenter() const
 {
-    // Cyberiada::ElementType targetElementType = model->idToElement(QString::fromStdString(m_transition->target_element_id()))->get_type();
-    // if (targetElementType == Cyberiada::elementCompositeState ||
-    //     targetElementType == Cyberiada::elementSimpleState){
-    //     // return (static_cast<State*>(m_elementItem->value(m_transition->source_element_id())))->sceneBoundingRect().center();
-    //     return (static_cast<Rectangle*>(m_elementItem->value(m_transition->source_element_id())))->sceneBoundingRect().center();
-    // }
-    // if (targetElementType == Cyberiada::elementInitial ||
-    //     targetElementType == Cyberiada::elementFinal){
-    //     return static_cast<CyberiadaSMEditorVertexItem*>(m_elementItem->value(m_transition->source_element_id()))->sceneBoundingRect().center();
-    // }
-    return (m_elementItem->value(m_transition->target_element_id()))->sceneBoundingRect().center();
+    // // Cyberiada::ElementType targetElementType = model->idToElement(QString::fromStdString(m_transition->target_element_id()))->get_type();
+    // // if (targetElementType == Cyberiada::elementCompositeState ||
+    // //     targetElementType == Cyberiada::elementSimpleState){
+    // //     // return (static_cast<State*>(m_elementItem->value(m_transition->source_element_id())))->sceneBoundingRect().center();
+    // //     return (static_cast<Rectangle*>(m_elementItem->value(m_transition->source_element_id())))->sceneBoundingRect().center();
+    // // }
+    // // if (targetElementType == Cyberiada::elementInitial ||
+    // //     targetElementType == Cyberiada::elementFinal){
+    // //     return static_cast<CyberiadaSMEditorVertexItem*>(m_elementItem->value(m_transition->source_element_id()))->sceneBoundingRect().center();
+    // // }
+    // if(!m_elementItem->value(m_transition->target_element_id())) return QPoint();   //костыль
+    // return (m_elementItem->value(m_transition->target_element_id()))->sceneBoundingRect().center();
+
+    return m_previousTargetCenterPos;
 }
 
 QPainterPath CyberiadaSMEditorTransitionItem::path() const
 {
-    QPainterPath path = QPainterPath();
+    // MY_ASSERT(model);
+    // QPainterPath path = QPainterPath();
 
-    path.moveTo(sourcePoint() + sourceCenter());
+    // path.moveTo(sourcePoint() + sourceCenter());
 
-    if(m_transition->has_polyline()) {
-        for (const auto& point : m_transition->get_geometry_polyline()) {
-            path.lineTo(QPointF(point.x, point.y) + sourceCenter());
-        }
-    }
+    // if(m_transition->has_polyline()) {
+    //     for (const auto& point : m_transition->get_geometry_polyline()) {
+    //         path.lineTo(QPointF(point.x, point.y) + sourceCenter());
+    //     }
+    // }
 
-    path.lineTo(targetPoint() + targetCenter());
+    // path.lineTo(targetPoint() + targetCenter());
 
-    return path;
+    // return path;
+    return m_path;
 }
 
 // void CyberiadaSMEditorTransitionItem::setPath(const QPainterPath &path)
@@ -325,7 +343,32 @@ void CyberiadaSMEditorTransitionItem::updateTextPosition() {
     QPointF textPos = (lastPoint + (targetPoint() + targetCenter() - sourceCenter())) / 2 + sourceCenter() - m_actionItem->boundingRect().center();
 
     m_actionItem->setPos(textPos);
+
+    // костыль
+    m_previousSourceCenterPos = (m_elementItem->value(m_transition->source_element_id()))->sceneBoundingRect().center();
+    m_previousSourcePos = QPointF(m_transition->get_source_point().x, m_transition->get_source_point().y);
+    m_previousTargetCenterPos = (m_elementItem->value(m_transition->target_element_id()))->sceneBoundingRect().center();
+    m_previousTargetPos = QPointF(m_transition->get_target_point().x, m_transition->get_target_point().y);
+
+    QPainterPath path = QPainterPath();
+
+    path.moveTo(sourcePoint() + sourceCenter());
+
+    if(m_transition->has_polyline()) {
+        for (const auto& point : m_transition->get_geometry_polyline()) {
+            path.lineTo(QPointF(point.x, point.y) + sourceCenter());
+        }
+    }
+
+    path.lineTo(targetPoint() + targetCenter());
+
+    m_path = path;
     update();
+}
+
+void CyberiadaSMEditorTransitionItem::onSourceGeomertyChanged()
+{
+    updateTextPosition();
 }
 
 // QPointF CyberiadaSMEditorTransitionItem::findIntersectionWithRect(const State *state)

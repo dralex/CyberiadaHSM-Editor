@@ -17,7 +17,7 @@ CyberiadaSMEditorCommentItem::CyberiadaSMEditorCommentItem(QObject *parent_objec
                                                            QGraphicsItem *parent,
                                                            QMap<Cyberiada::ID, QGraphicsItem*>* elementItem) :
     CyberiadaSMEditorAbstractItem(model, element, parent),
-    QObject(parent_object),
+    // QObject(parent_object),
     m_elementItem(elementItem)
 {
     m_comment = static_cast<const Cyberiada::Comment*>(element);
@@ -40,24 +40,26 @@ CyberiadaSMEditorCommentItem::CyberiadaSMEditorCommentItem(QObject *parent_objec
 
 
 CyberiadaSMEditorCommentItem::~CyberiadaSMEditorCommentItem() {
-
 }
 
 QRectF CyberiadaSMEditorCommentItem::boundingRect() const
 {
-    if (m_comment->has_geometry()) {
-        Cyberiada::Rect r = m_comment->get_geometry_rect();
-        qDebug() << "comment rect" << r.x << r.y << r.width << r.height;
-        return QRectF(- r.width / 2,
-                      - r.height / 2,
-                      r.width,
-                      r.height);
+    MY_ASSERT(model);
+    MY_ASSERT(model->rootDocument());
+    if (!m_comment->has_geometry()) {
+        return text->boundingRect();
     }
-    return text->boundingRect();
+    Cyberiada::Rect r = m_comment->get_geometry_rect();
+    qDebug() << "comment rect" << r.x << r.y << r.width << r.height;
+    return QRectF(- r.width / 2,
+                  - r.height / 2,
+                  r.width,
+                  r.height);
 }
 
 void CyberiadaSMEditorCommentItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*)
 {
+    if (!m_comment->has_geometry()) return
     setPositionText();
 
     painter->setPen(QPen(Qt::black, 1, Qt::SolidLine));

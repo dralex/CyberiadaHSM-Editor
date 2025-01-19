@@ -91,7 +91,7 @@ void EditableTextItem::setAlign(){
 }
 
 void EditableTextItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) {
-    setAlign();
+    // setAlign();
     painter->setFont(QFont(font()));
 
     QGraphicsTextItem::paint(painter, option, widget);

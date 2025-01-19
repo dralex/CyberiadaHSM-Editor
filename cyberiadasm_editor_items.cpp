@@ -35,6 +35,7 @@
 CyberiadaSMEditorAbstractItem::CyberiadaSMEditorAbstractItem(CyberiadaSMModel* _model,
 															 Cyberiada::Element* _element,
                                                              QGraphicsItem* parent):
+    QObject(nullptr), //----------
     QGraphicsItem(parent),
     model(_model),
     element(_element)

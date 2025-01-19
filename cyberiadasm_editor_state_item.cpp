@@ -7,6 +7,8 @@
 #include <QGraphicsSceneMouseEvent>
 #include <QGraphicsRectItem>
 #include <math.h>
+
+#include "myassert.h"
 // #include "grabber.h"
 #include "cyberiada_constants.h"
 
@@ -21,8 +23,8 @@ CyberiadaSMEditorStateItem::CyberiadaSMEditorStateItem(QObject *parent_object,
                      CyberiadaSMModel *model,
                      Cyberiada::Element *element,
                      QGraphicsItem *parent) :
-    CyberiadaSMEditorAbstractItem(model, element, parent),
-    QObject(parent_object)
+    CyberiadaSMEditorAbstractItem(model, element, parent)
+    // QObject(parent_object)
 {
     setAcceptHoverEvents(true);
     setFlags(ItemIsSelectable | ItemSendsGeometryChanges);
@@ -164,6 +166,8 @@ void CyberiadaSMEditorStateItem::updateArea()
 
 QRectF CyberiadaSMEditorStateItem::boundingRect() const
 {
+    MY_ASSERT(model);
+    MY_ASSERT(model->rootDocument());
     return rect();
 }
 
@@ -221,6 +225,7 @@ void CyberiadaSMEditorStateItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
     // }
 
     QGraphicsItem::mouseMoveEvent(event);
+    emit geometryChanged();
 }
 
 void CyberiadaSMEditorStateItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
@@ -438,7 +443,7 @@ void CyberiadaSMEditorStateItem::paint(QPainter *painter, const QStyleOptionGrap
     Q_UNUSED(option)
     Q_UNUSED(widget)
 
-    setPositionText();
+    // setPositionText();------------------
     // QRectF oldRect = rect();
     // setRect(QRectF(oldRect.x(), oldRect.y(), oldRect.width(), title->boundingRect().height() ));
     qreal titleHeight = title->boundingRect().height();

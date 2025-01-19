@@ -132,7 +132,8 @@ void CyberiadaSMEditorScene::addItemsRecursively(QGraphicsItem* parent, Cyberiad
     QGraphicsItem* new_parent = parent;
     qDebug() << "parent=null" <<  (new_parent == NULL);
 
-    if (parent_type == Cyberiada::elementSM) {
+    if (parent_type == Cyberiada::elementSM && collection->has_geometry()) {
+        qDebug() << "SM has geometry!";
         new_parent = new CyberiadaSMEditorSMItem(model, collection, parent);
         elementItem.insert(collection->get_id(), new_parent);
         addItem(new_parent);
@@ -187,13 +188,15 @@ void CyberiadaSMEditorScene::addItemsRecursively(QGraphicsItem* parent, Cyberiad
                 // new CyberiadaSMEditorChoiceItem(model, child, new_parent);
 				break;
             case Cyberiada::elementComment: {
-                CyberiadaSMEditorCommentItem* formalComment = new CyberiadaSMEditorCommentItem(this, model, child, new_parent, &elementItem);
-                elementItem.insert(child->get_id(), formalComment);
-                addItem(formalComment);
+                if (!child->has_geometry()) break;
+                CyberiadaSMEditorCommentItem* comment = new CyberiadaSMEditorCommentItem(this, model, child, new_parent, &elementItem);
+                elementItem.insert(child->get_id(), comment);
+                addItem(comment);
                 qDebug() << "add item" << child->get_id().c_str() << "type" << type << "parent" << elementItem.key(new_parent).c_str();
                 break;
             }
             case Cyberiada::elementFormalComment: {
+                if (!child->has_geometry()) break;
                 CyberiadaSMEditorCommentItem* formalComment = new CyberiadaSMEditorCommentItem(this, model, child, new_parent, &elementItem);
                 elementItem.insert(child->get_id(), formalComment);
                 addItem(formalComment);
@@ -244,6 +247,9 @@ void CyberiadaSMEditorScene::updateScene()
     elementItem.clear();
 
     clear();
+
+    MY_ASSERT(elementItem.isEmpty());
+    MY_ASSERT(items().isEmpty());
 
     Cyberiada::StateMachine* sm = static_cast<Cyberiada::StateMachine*>(model->indexToElement(model->firstSMIndex()));
     addItemsRecursively(NULL, sm);

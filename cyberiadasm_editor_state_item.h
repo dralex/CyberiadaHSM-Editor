@@ -50,7 +50,7 @@ private:
 };
 
 
-class CyberiadaSMEditorStateItem : public QObject, public CyberiadaSMEditorAbstractItem
+class CyberiadaSMEditorStateItem : public CyberiadaSMEditorAbstractItem
 {
     Q_OBJECT
     //Q_PROPERTY(QPointF previousPosition READ previousPosition WRITE setPreviousPosition NOTIFY previousPositionChanged)

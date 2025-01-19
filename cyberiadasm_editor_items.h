@@ -25,6 +25,7 @@
 #define CYBERIADA_SM_EDITOR_ITEMS_HEADER
 
 #include <QGraphicsItem>
+#include <QObject>
 #include <QBrush>
 #include "cyberiadasm_model.h"
 
@@ -37,7 +38,8 @@
  * Abstract Item
  * ----------------------------------------------------------------------------- */
 
-class CyberiadaSMEditorAbstractItem: public QGraphicsItem {
+class CyberiadaSMEditorAbstractItem: public QObject, public QGraphicsItem {
+    Q_OBJECT
 public:
 	CyberiadaSMEditorAbstractItem(CyberiadaSMModel* model,
 								  Cyberiada::Element* element,
@@ -64,7 +66,10 @@ public:
 	}
 
     virtual void setPositionText() {} // содержит текстовый блок
-	
+
+signals:
+    void geometryChanged();
+
 protected:
 	CyberiadaSMModel* model;
 	Cyberiada::Element* element;
