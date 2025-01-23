@@ -112,6 +112,9 @@ signals:
     void clicked(CyberiadaSMEditorStateItem *rect);
     void signalMove(QGraphicsItem *item, qreal dx, qreal dy);
 
+private slots:
+    void onTextItemSizeChanged();
+
 protected:
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
     void mousePressEvent(QGraphicsSceneMouseEvent *event) override;

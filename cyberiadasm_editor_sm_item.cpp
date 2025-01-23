@@ -21,8 +21,10 @@ CyberiadaSMEditorSMItem::CyberiadaSMEditorSMItem(CyberiadaSMModel* model,
 QRectF CyberiadaSMEditorSMItem::boundingRect() const
 {
     MY_ASSERT(model);
+    qDebug() << "(model->rootDocument())" << (model->rootDocument());
     MY_ASSERT(model->rootDocument());
-    QRectF rect = toQtRect(element->get_bound_rect(*(model->rootDocument())));
+    Cyberiada::Rect r = element->get_bound_rect(*(model->rootDocument()));
+    QRectF rect = toQtRect(r);
     return QRectF(rect.x(), rect.y(), rect.width(), rect.height());
 }
 

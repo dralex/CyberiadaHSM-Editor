@@ -10,6 +10,7 @@ public:
     explicit EditableTextItem(const QString &text, QGraphicsItem *parent = nullptr, bool align = false, bool parentHasGeometry = true);
 
     void setFontStyleChangeable(bool isChangeable);
+    void setFontBoldness(bool isBold);
 
 protected:
     void focusOutEvent(QFocusEvent *event) override;
@@ -35,6 +36,7 @@ protected:
 
 private:
     bool isFontStyleChangeable = true;
+    bool isBold = false;
 };
 
 

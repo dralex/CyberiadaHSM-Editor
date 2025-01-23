@@ -24,9 +24,8 @@ CyberiadaSMEditorStateItem::CyberiadaSMEditorStateItem(QObject *parent_object,
                      Cyberiada::Element *element,
                      QGraphicsItem *parent) :
     CyberiadaSMEditorAbstractItem(model, element, parent)
-    // QObject(parent_object)
 {
-    setAcceptHoverEvents(true);
+    // setAcceptHoverEvents(true);
     setFlags(ItemIsSelectable | ItemSendsGeometryChanges);
 
     /*
@@ -41,7 +40,7 @@ CyberiadaSMEditorStateItem::CyberiadaSMEditorStateItem(QObject *parent_object,
     setPos(QPointF(x(), y()));
 
     title = new EditableTextItem(m_state->get_name().c_str(), this, true);
-    connect(title, &EditableTextItem::sizeChanged, this, &CyberiadaSMEditorStateItem::updateArea);
+    title->setFontBoldness(true);
 
     m_actions = m_state->get_actions();
     std::vector<Cyberiada::Action> actions = m_state->get_actions();
@@ -49,16 +48,18 @@ CyberiadaSMEditorStateItem::CyberiadaSMEditorStateItem(QObject *parent_object,
         Cyberiada::ActionType type = i->get_type();
         if (type == Cyberiada::actionEntry) {
             entry = new EditableTextItem(QString("entry() / ") + QString(i->get_behavior().c_str()), this);
-            connect(entry, &EditableTextItem::sizeChanged, this, &CyberiadaSMEditorStateItem::updateArea);
+            connect(entry, &EditableTextItem::sizeChanged, this, &CyberiadaSMEditorStateItem::onTextItemSizeChanged);
         } else if (type == Cyberiada::actionExit) {
             exit = new EditableTextItem(QString("exit() / ") + QString(i->get_behavior().c_str()), this);
-            connect(exit, &EditableTextItem::sizeChanged, this, &CyberiadaSMEditorStateItem::updateArea);
-
+            connect(exit, &EditableTextItem::sizeChanged, this, &CyberiadaSMEditorStateItem::onTextItemSizeChanged);
         }
     }
 
-    m_area = new StateArea(this);
-    updateArea();
+    if (m_state->is_composite_state()) {
+        connect(title, &EditableTextItem::sizeChanged, this, &CyberiadaSMEditorStateItem::onTextItemSizeChanged);
+        m_area = new StateArea(this);
+        updateArea();
+    }
 
     setPositionText();
 }
@@ -92,6 +93,7 @@ void CyberiadaSMEditorStateItem::setRect(qreal x, qreal y, qreal w, qreal h)
 
 void CyberiadaSMEditorStateItem::setRect(const QRectF &rect)
 {
+    prepareGeometryChange();
     /*
     if (rect.width() >= 320 && rect.height() >= 180){
         QGraphicsRectItem::setRect(rect);
@@ -219,7 +221,7 @@ void CyberiadaSMEditorStateItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
     */
     if (m_leftMouseButtonPressed) {
         setCursor(Qt::ClosedHandCursor);
-        setFlag(ItemIsMovable);
+        // setFlag(ItemIsMovable);
     }
     // break;
     // }
@@ -396,14 +398,38 @@ void CyberiadaSMEditorStateItem::setPositionText()
     QRectF oldRect = rect();
     QRectF titleRect = title->boundingRect();
     title->setPos(oldRect.x() + (oldRect.width() - titleRect.width()) / 2 , oldRect.y());
+
+    // simple state
+    if (m_state->is_simple_state()) {
+        if (entry != nullptr && exit != nullptr) {
+            float delta = (entry->boundingRect().height() + exit->boundingRect().height());
+            entry->setPos(oldRect.x() + 15, oldRect.y() + (height() + titleRect.height() - delta) / 2);
+            exit->setPos(entry->pos() + QPointF(0, entry->boundingRect().height()));
+            return;
+        }
+        if (entry != nullptr) {
+            entry->setPos(oldRect.x() + 15, oldRect.y() + (height() + titleRect.height() - entry->boundingRect().height()) / 2);
+        }
+        if (exit != nullptr) {
+            exit->setPos(oldRect.x() + 15, oldRect.y() + (height() + titleRect.height() - exit->boundingRect().height()) / 2);
+        }
+        return;
+    }
+
+    // composite state
     if (entry != nullptr) {
         entry->setPos(oldRect.x() + 15, oldRect.y() + titleRect.height());
     }
     if (exit != nullptr) {
         exit->setPos(oldRect.x() + 15, oldRect.bottom() - exit->boundingRect().height());
     }
-
     // setPositionGrabbers();
+}
+
+void CyberiadaSMEditorStateItem::onTextItemSizeChanged()
+{
+    if (m_state->is_composite_state()) updateArea();
+    setPositionText();
 }
 
 /*
@@ -452,7 +478,7 @@ void CyberiadaSMEditorStateItem::paint(QPainter *painter, const QStyleOptionGrap
     if (isSelected()) {
         color.setRgb(255, 0, 0);
     }
-    painter->setPen(QPen(color, 1, Qt::SolidLine));
+    painter->setPen(QPen(color, 2, Qt::SolidLine));
 
     QPainterPath path;
     QRectF tmpRect = rect();

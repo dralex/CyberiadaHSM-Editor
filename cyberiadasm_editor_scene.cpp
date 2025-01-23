@@ -132,8 +132,7 @@ void CyberiadaSMEditorScene::addItemsRecursively(QGraphicsItem* parent, Cyberiad
     QGraphicsItem* new_parent = parent;
     qDebug() << "parent=null" <<  (new_parent == NULL);
 
-    if (parent_type == Cyberiada::elementSM && collection->has_geometry()) {
-        qDebug() << "SM has geometry!";
+    if (parent_type == Cyberiada::elementSM) {
         new_parent = new CyberiadaSMEditorSMItem(model, collection, parent);
         elementItem.insert(collection->get_id(), new_parent);
         addItem(new_parent);

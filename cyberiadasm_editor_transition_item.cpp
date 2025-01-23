@@ -30,10 +30,10 @@ CyberiadaSMEditorTransitionItem::CyberiadaSMEditorTransitionItem(QObject *parent
     connect(source(), &CyberiadaSMEditorAbstractItem::geometryChanged, this, &CyberiadaSMEditorTransitionItem::onSourceGeomertyChanged);
     connect(target(), &CyberiadaSMEditorAbstractItem::geometryChanged, this, &CyberiadaSMEditorTransitionItem::onSourceGeomertyChanged);
 
-    updateTextPosition();
-
     // setAcceptHoverEvents(true);
     setFlags(ItemIsSelectable|ItemSendsGeometryChanges);
+
+    updateTextPosition();
 }
 
 CyberiadaSMEditorTransitionItem::~CyberiadaSMEditorTransitionItem()
@@ -53,9 +53,7 @@ void CyberiadaSMEditorTransitionItem::paint(QPainter *painter, const QStyleOptio
     if (isSelected()) {
         color.setRgb(255, 0, 0);
     }
-    QPen pen(color, 1);
-    pen.setCosmetic(true);
-    painter->setPen(pen);
+    painter->setPen(QPen(color, 2, Qt::SolidLine));
     painter->setBrush(Qt::NoBrush);
 
     painter->drawPath(path());
@@ -333,6 +331,12 @@ QString CyberiadaSMEditorTransitionItem::text() const
 void CyberiadaSMEditorTransitionItem::updateTextPosition() {
     if (!m_actionItem) return;
 
+    // костыль
+    m_previousSourceCenterPos = (m_elementItem->value(m_transition->source_element_id()))->sceneBoundingRect().center();
+    m_previousSourcePos = QPointF(m_transition->get_source_point().x, m_transition->get_source_point().y);
+    m_previousTargetCenterPos = (m_elementItem->value(m_transition->target_element_id()))->sceneBoundingRect().center();
+    m_previousTargetPos = QPointF(m_transition->get_target_point().x, m_transition->get_target_point().y);
+
     // Установить позицию текста
     QPointF lastPoint = sourcePoint();
     if(m_transition->has_polyline() && m_transition->get_geometry_polyline().size() > 0) {
@@ -343,12 +347,6 @@ void CyberiadaSMEditorTransitionItem::updateTextPosition() {
     QPointF textPos = (lastPoint + (targetPoint() + targetCenter() - sourceCenter())) / 2 + sourceCenter() - m_actionItem->boundingRect().center();
 
     m_actionItem->setPos(textPos);
-
-    // костыль
-    m_previousSourceCenterPos = (m_elementItem->value(m_transition->source_element_id()))->sceneBoundingRect().center();
-    m_previousSourcePos = QPointF(m_transition->get_source_point().x, m_transition->get_source_point().y);
-    m_previousTargetCenterPos = (m_elementItem->value(m_transition->target_element_id()))->sceneBoundingRect().center();
-    m_previousTargetPos = QPointF(m_transition->get_target_point().x, m_transition->get_target_point().y);
 
     QPainterPath path = QPainterPath();
 
@@ -368,6 +366,7 @@ void CyberiadaSMEditorTransitionItem::updateTextPosition() {
 
 void CyberiadaSMEditorTransitionItem::onSourceGeomertyChanged()
 {
+    prepareGeometryChange();
     updateTextPosition();
 }
 

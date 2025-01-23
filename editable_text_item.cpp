@@ -97,17 +97,26 @@ void EditableTextItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *
     QGraphicsTextItem::paint(painter, option, widget);
 }
 
-void EditableTextItem::setFontStyleChangeable(bool isChangeable)
-{
-    isFontStyleChangeable = isChangeable;
+void EditableTextItem::setFontStyleChangeable(bool isChangeable) { isFontStyleChangeable = isChangeable; }
+
+void EditableTextItem::setFontBoldness(bool isBold) {
+    this->isBold = isBold;
+    onFontChanged(font());
 }
 
 void EditableTextItem::onFontChanged(const QFont &newFont)
 {
-    if(isFontStyleChangeable) {
+    if(!isFontStyleChangeable) {
         QFont newFontDiffSize = font();
         newFontDiffSize.setPointSize(newFont.pointSize());
         setFont(newFontDiffSize);
+        emit sizeChanged();
+        return;
+    }
+    if (isBold) {
+        QFont newBoldFont = newFont;
+        newBoldFont.setBold(isBold);
+        setFont(newBoldFont);
         emit sizeChanged();
         return;
     }
