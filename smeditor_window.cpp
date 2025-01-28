@@ -61,9 +61,9 @@ void CyberiadaSMEditorWindow::slotFileOpen()
 		SMView->expandToDepth(2);
 		QModelIndex sm = model->firstSMIndex();
 		if (sm.isValid()) {
+            scene->updateScene();
 			SMView->select(sm);
         }
-        scene->updateScene();
 	}
 }
 

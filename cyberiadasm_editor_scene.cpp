@@ -74,9 +74,9 @@ void CyberiadaSMEditorScene::reset()
 
 void CyberiadaSMEditorScene::onSelectionChanged() {
 	if (selectedItems().size() > 0) {
-		QGraphicsItem* item = selectedItems().first();
-		Cyberiada::ID item_id = elementItem.key(item);
-		const Cyberiada::Element* element = model->idToElement(QString::fromStdString(item_id));
+        QGraphicsItem* item = selectedItems().first();
+        Cyberiada::ID item_id = elementItem.key(item);
+        const Cyberiada::Element* element = model->idToElement(QString::fromStdString(item_id));
 		MY_ASSERT(element);
 		QModelIndex index = model->elementToIndex(element);
 		CyberiadaSMEditorWindow* p = dynamic_cast<CyberiadaSMEditorWindow*>(parent());
@@ -250,8 +250,8 @@ void CyberiadaSMEditorScene::updateScene()
     MY_ASSERT(elementItem.isEmpty());
     MY_ASSERT(items().isEmpty());
 
-    Cyberiada::StateMachine* sm = static_cast<Cyberiada::StateMachine*>(model->indexToElement(model->firstSMIndex()));
-    addItemsRecursively(NULL, sm);
+    // Cyberiada::StateMachine* sm = static_cast<Cyberiada::StateMachine*>(model->indexToElement(model->firstSMIndex()));
+    // addItemsRecursively(NULL, sm);
 }
 
 void CyberiadaSMEditorScene::drawBackground(QPainter* painter, const QRectF &)
