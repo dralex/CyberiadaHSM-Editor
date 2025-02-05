@@ -37,6 +37,9 @@ public:
 public slots:
 	void                    slotFileOpen();
 
+private slots:
+    void on_actionFont_triggered();
+
 private:
 	CyberiadaSMModel*       model;
 	CyberiadaSMEditorScene* scene;

@@ -9,17 +9,20 @@
 #include <QPointF>
 #include <QGraphicsTextItem>
 #include <QString>
+#include <QPainter>
 
 #include "cyberiadasm_editor_items.h"
 #include "dotsignal.h"
+#include "fontmanager.h"
 
 
 /* -----------------------------------------------------------------------------
  *  Item
  * ----------------------------------------------------------------------------- */
 
+class TransitionText;
 
-class CyberiadaSMEditorTransitionItem : public QObject, public CyberiadaSMEditorAbstractItem
+class CyberiadaSMEditorTransitionItem : public CyberiadaSMEditorAbstractItem
 {
     Q_OBJECT
 
@@ -74,6 +77,7 @@ signals:
     void signalMove(QGraphicsItem *item, qreal dx, qreal dy);
 
 private slots:
+    void onSourceGeomertyChanged();
     // void slotMoveSource(QGraphicsItem *item, qreal dx, qreal dy);
     // void slotMoveTarget(QGraphicsItem *item, qreal dx, qreal dy);
     // void slotMove();
@@ -96,10 +100,12 @@ private:
 
     QMap<Cyberiada::ID, QGraphicsItem*> *m_elementItem;
 
+    QPointF m_previousSourcePos;
+    QPointF m_previousTargetPos;
     QPointF m_previousSourceCenterPos;
     QPointF m_previousTargetCenterPos;
 
-    QGraphicsTextItem *m_actionItem = nullptr;
+    TransitionText *m_actionItem = nullptr;
     QPointF m_textPosition;
 
     QPointF m_previousPosition;
@@ -114,6 +120,18 @@ private:
     bool m_mouseTraking;
 
     // void updateDots();
+};
+
+class TransitionText : public QGraphicsTextItem
+{
+    Q_OBJECT
+public:
+    TransitionText(const QString &text, QGraphicsItem *parent = nullptr);
+
+    void paint( QPainter *painter, const QStyleOptionGraphicsItem *o, QWidget *w);
+
+private slots:
+    void onFontChanged(const QFont &newFont);
 };
 
 #endif // CYBERIADASMEDITORTRANSITIONITEM_H

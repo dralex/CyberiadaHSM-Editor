@@ -45,7 +45,7 @@ signals:
 	void currentIndexActivated(const QModelIndex& current);
 	
 protected:
-	void startDrag(Qt::DropActions);
+    void startDrag(Qt::DropActions);
 };
 
 #endif

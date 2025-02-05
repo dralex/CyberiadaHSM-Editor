@@ -12,7 +12,9 @@
  * ----------------------------------------------------------------------------- */
 
 
-class CyberiadaSMEditorCommentItem : public QObject, public CyberiadaSMEditorAbstractItem
+
+
+class CyberiadaSMEditorCommentItem : public CyberiadaSMEditorAbstractItem
 {
     Q_OBJECT
 
@@ -29,7 +31,7 @@ public:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
     QRectF boundingRect() const override;
 
-    void setPositionText();
+    void setPositionText() override;
 
 private:
     EditableTextItem* text;

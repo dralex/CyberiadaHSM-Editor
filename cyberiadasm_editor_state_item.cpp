@@ -7,7 +7,10 @@
 #include <QGraphicsSceneMouseEvent>
 #include <QGraphicsRectItem>
 #include <math.h>
+
+#include "myassert.h"
 // #include "grabber.h"
+#include "cyberiada_constants.h"
 
 
 /*
@@ -20,10 +23,9 @@ CyberiadaSMEditorStateItem::CyberiadaSMEditorStateItem(QObject *parent_object,
                      CyberiadaSMModel *model,
                      Cyberiada::Element *element,
                      QGraphicsItem *parent) :
-    CyberiadaSMEditorAbstractItem(model, element, parent),
-    QObject(parent_object)
+    CyberiadaSMEditorAbstractItem(model, element, parent)
 {
-    setAcceptHoverEvents(true);
+    // setAcceptHoverEvents(true);
     setFlags(ItemIsSelectable | ItemSendsGeometryChanges);
 
     /*
@@ -33,31 +35,30 @@ CyberiadaSMEditorStateItem::CyberiadaSMEditorStateItem(QObject *parent_object,
     setPositionGrabbers();
     */
 
-    id = element->get_id().c_str();
-
     m_state = static_cast<const Cyberiada::State*>(element);
 
     setPos(QPointF(x(), y()));
-    // if(parent->type() == SMItem){
-    //     setPos(x() + width()/2, y() + height()/2);
-    //     // setPos(parent->boundingRect().x() + width()/2, parent->boundingRect().y() + height()/2);
-    // }
 
     title = new EditableTextItem(m_state->get_name().c_str(), this, true);
-    title->setFont(QFont("Monospace", 18));
+    title->setFontBoldness(true);
 
     m_actions = m_state->get_actions();
     std::vector<Cyberiada::Action> actions = m_state->get_actions();
     for (std::vector<Cyberiada::Action>::const_iterator i = actions.begin(); i != actions.end(); i++) {
         Cyberiada::ActionType type = i->get_type();
-        qDebug() << i->get_behavior().c_str();
         if (type == Cyberiada::actionEntry) {
             entry = new EditableTextItem(QString("entry() / ") + QString(i->get_behavior().c_str()), this);
-            entry->setFont(QFont("Monospace", 18));
+            connect(entry, &EditableTextItem::sizeChanged, this, &CyberiadaSMEditorStateItem::onTextItemSizeChanged);
         } else if (type == Cyberiada::actionExit) {
             exit = new EditableTextItem(QString("exit() / ") + QString(i->get_behavior().c_str()), this);
-            exit->setFont(QFont("Monospace", 18));
+            connect(exit, &EditableTextItem::sizeChanged, this, &CyberiadaSMEditorStateItem::onTextItemSizeChanged);
         }
+    }
+
+    if (m_state->is_composite_state()) {
+        connect(title, &EditableTextItem::sizeChanged, this, &CyberiadaSMEditorStateItem::onTextItemSizeChanged);
+        m_area = new StateArea(this);
+        updateArea();
     }
 
     setPositionText();
@@ -75,6 +76,7 @@ QPointF CyberiadaSMEditorStateItem::previousPosition() const
     return m_previousPosition;
 }
 
+
 void CyberiadaSMEditorStateItem::setPreviousPosition(const QPointF previousPosition)
 {
     if (m_previousPosition == previousPosition)
@@ -91,6 +93,7 @@ void CyberiadaSMEditorStateItem::setRect(qreal x, qreal y, qreal w, qreal h)
 
 void CyberiadaSMEditorStateItem::setRect(const QRectF &rect)
 {
+    prepareGeometryChange();
     /*
     if (rect.width() >= 320 && rect.height() >= 180){
         QGraphicsRectItem::setRect(rect);
@@ -140,8 +143,33 @@ qreal CyberiadaSMEditorStateItem::height() const
     return model_rect.height;
 }
 
+StateArea *CyberiadaSMEditorStateItem::getArea()
+{
+    return m_area;
+}
+
+void CyberiadaSMEditorStateItem::updateArea()
+{
+    qreal top_delta = title->boundingRect().height();
+    qreal bottom_delta = 0;
+
+    if (entry) {
+        top_delta += entry->boundingRect().height();
+        m_area->setTopLine(true);
+    }
+    if (exit) {
+        bottom_delta += entry->boundingRect().height();
+        m_area->setBottomLine(true);
+    }
+
+    m_area->setRect(-width()/2, -(height() - top_delta - bottom_delta) / 2, width(), height() - top_delta - bottom_delta);
+    m_area->setPos(0, (top_delta - bottom_delta)/2 );
+}
+
 QRectF CyberiadaSMEditorStateItem::boundingRect() const
 {
+    MY_ASSERT(model);
+    MY_ASSERT(model->rootDocument());
     return rect();
 }
 
@@ -193,12 +221,13 @@ void CyberiadaSMEditorStateItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
     */
     if (m_leftMouseButtonPressed) {
         setCursor(Qt::ClosedHandCursor);
-        setFlag(ItemIsMovable);
+        // setFlag(ItemIsMovable);
     }
     // break;
     // }
 
     QGraphicsItem::mouseMoveEvent(event);
+    emit geometryChanged();
 }
 
 void CyberiadaSMEditorStateItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
@@ -369,14 +398,38 @@ void CyberiadaSMEditorStateItem::setPositionText()
     QRectF oldRect = rect();
     QRectF titleRect = title->boundingRect();
     title->setPos(oldRect.x() + (oldRect.width() - titleRect.width()) / 2 , oldRect.y());
+
+    // simple state
+    if (m_state->is_simple_state()) {
+        if (entry != nullptr && exit != nullptr) {
+            float delta = (entry->boundingRect().height() + exit->boundingRect().height());
+            entry->setPos(oldRect.x() + 15, oldRect.y() + (height() + titleRect.height() - delta) / 2);
+            exit->setPos(entry->pos() + QPointF(0, entry->boundingRect().height()));
+            return;
+        }
+        if (entry != nullptr) {
+            entry->setPos(oldRect.x() + 15, oldRect.y() + (height() + titleRect.height() - entry->boundingRect().height()) / 2);
+        }
+        if (exit != nullptr) {
+            exit->setPos(oldRect.x() + 15, oldRect.y() + (height() + titleRect.height() - exit->boundingRect().height()) / 2);
+        }
+        return;
+    }
+
+    // composite state
     if (entry != nullptr) {
         entry->setPos(oldRect.x() + 15, oldRect.y() + titleRect.height());
     }
     if (exit != nullptr) {
         exit->setPos(oldRect.x() + 15, oldRect.bottom() - exit->boundingRect().height());
     }
-
     // setPositionGrabbers();
+}
+
+void CyberiadaSMEditorStateItem::onTextItemSizeChanged()
+{
+    if (m_state->is_composite_state()) updateArea();
+    setPositionText();
 }
 
 /*
@@ -416,15 +469,21 @@ void CyberiadaSMEditorStateItem::paint(QPainter *painter, const QStyleOptionGrap
     Q_UNUSED(option)
     Q_UNUSED(widget)
 
-    setPositionText();
-    QRectF oldRect = rect();
+    // setPositionText();------------------
+    // QRectF oldRect = rect();
+    // setRect(QRectF(oldRect.x(), oldRect.y(), oldRect.width(), title->boundingRect().height() ));
     qreal titleHeight = title->boundingRect().height();
-    setRect(QRectF(oldRect.x(), oldRect.y(), oldRect.width(), title->boundingRect().height() ));
+
+    QColor color(Qt::black);
+    if (isSelected()) {
+        color.setRgb(255, 0, 0);
+    }
+    painter->setPen(QPen(color, 2, Qt::SolidLine));
 
     QPainterPath path;
-    path.addRoundedRect(rect(), 10, 10);
     QRectF tmpRect = rect();
-    painter->drawLine(QPointF(tmpRect.x(), tmpRect.y() + titleHeight), QPointF(tmpRect.right(), tmpRect.y() + titleHeight)); //37 - boudingRect() шрифта размером 18
+    path.addRoundedRect(tmpRect, ROUNDED_RECT_RADIUS, ROUNDED_RECT_RADIUS);
+    painter->drawLine(QPointF(tmpRect.x(), tmpRect.y() + titleHeight), QPointF(tmpRect.right(), tmpRect.y() + titleHeight));
     painter->drawPath(path);
 
     painter->setBrush(Qt::red);

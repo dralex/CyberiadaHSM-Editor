@@ -3,19 +3,54 @@
 
 
 #include <QObject>
-#include <QGraphicsRectItem>
 #include <QGraphicsSceneMouseEvent>
-// #include <grabber.h>
+#include <QGraphicsRectItem>
+#include <QPainter>
+#include <QDebug>
 
+// #include "grabber.h"
 #include "editable_text_item.h"
 #include "cyberiadasm_editor_items.h"
+
 
 
 /* -----------------------------------------------------------------------------
  * State Item
  * ----------------------------------------------------------------------------- */
 
-class CyberiadaSMEditorStateItem : public QObject, public CyberiadaSMEditorAbstractItem
+class StateArea : public QGraphicsRectItem
+{
+public:
+    explicit StateArea(QGraphicsItem *parent = NULL):
+        QGraphicsRectItem(parent) {}
+
+    void setTopLine(bool topLine) {
+        this->topLine = topLine;
+    }
+
+    void setBottomLine(bool bottomLine) {
+        this->bottomLine = bottomLine;
+    }
+
+protected:
+    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override
+    {
+        Q_UNUSED(option)
+        Q_UNUSED(widget)
+
+        if(topLine) painter->drawLine(boundingRect().topLeft(), boundingRect().topRight());
+        if(bottomLine) painter->drawLine(boundingRect().bottomLeft(), boundingRect().bottomRight());
+
+        painter->setBrush(Qt::blue);
+        painter->drawEllipse(QPointF(0, 0), 2, 2); // Центр системы координат
+    }
+private:
+    bool topLine = false;
+    bool bottomLine = false;
+};
+
+
+class CyberiadaSMEditorStateItem : public CyberiadaSMEditorAbstractItem
 {
     Q_OBJECT
     //Q_PROPERTY(QPointF previousPosition READ previousPosition WRITE setPreviousPosition NOTIFY previousPositionChanged)
@@ -29,7 +64,6 @@ public:
 
     virtual int type() const { return StateItem; }
 
-    QString id;
     /*
     enum CornerFlags {
         Top = 0x01,
@@ -65,16 +99,21 @@ public:
     qreal width() const;
     qreal height() const;
 
+    StateArea* getArea();
+    void updateArea();
+
     QRectF boundingRect() const override;
 
-    void setPositionText();
-
+    void setPositionText() override;
 
 signals:
     void rectChanged(CyberiadaSMEditorStateItem *rect);
     void previousPositionChanged();
     void clicked(CyberiadaSMEditorStateItem *rect);
     void signalMove(QGraphicsItem *item, qreal dx, qreal dy);
+
+private slots:
+    void onTextItemSizeChanged();
 
 protected:
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
@@ -96,7 +135,7 @@ private:
     EditableTextItem* exit = nullptr;
 
     QRectF m_rect;
-
+    StateArea* m_area;
     const Cyberiada::State* m_state;
     std::vector<Cyberiada::Action> m_actions;
     // QMap<Cyberiada::ID, QGraphicsItem*> *m_elementItem;

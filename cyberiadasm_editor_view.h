@@ -28,7 +28,6 @@
 #define CYBERIADA_SM_EDITOR_VIEW_HEADER
 
 #include <QGraphicsView>
-#include <QTimer>
 #include <QPaintEvent>
 
 class CyberiadaSMGraphicsView: public QGraphicsView {
@@ -42,6 +41,10 @@ public:
 		QGraphicsView::paintEvent(newEvent);
 		delete newEvent;
 	}
+
+protected:
+    void wheelEvent(QWheelEvent *event) override;
+
 };
 
 #endif

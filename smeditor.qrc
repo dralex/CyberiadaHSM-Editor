@@ -1,22 +1,25 @@
 <RCC>
-  <qresource prefix="Icons">
-    <file>images/comment-machine.png</file>
-    <file>images/comment.png</file>
-    <file>images/cyberiada.png</file>
-    <file>images/entry.png</file>
-    <file>images/exit.png</file>
-    <file>images/final-state.png</file>
-    <file>images/format-cyberiada.png</file>
-    <file>images/format-yed.png</file>
-    <file>images/init-state.png</file>
-    <file>images/sm-root.png</file>
-    <file>images/sm.png</file>
-    <file>images/state-comp.png</file>
-    <file>images/state.png</file>
-    <file>images/subject-data.png</file>
-    <file>images/subject-element.png</file>
-    <file>images/subject-name.png</file>
-    <file>images/terminate.png</file>	
-    <file>images/trans.png</file>
-  </qresource>
+    <qresource prefix="/Icons">
+        <file>images/comment-machine.png</file>
+        <file>images/comment.png</file>
+        <file>images/cyberiada.png</file>
+        <file>images/entry.png</file>
+        <file>images/exit.png</file>
+        <file>images/final-state.png</file>
+        <file>images/format-cyberiada.png</file>
+        <file>images/format-yed.png</file>
+        <file>images/init-state.png</file>
+        <file>images/sm-root.png</file>
+        <file>images/sm.png</file>
+        <file>images/state-comp.png</file>
+        <file>images/state.png</file>
+        <file>images/subject-data.png</file>
+        <file>images/subject-element.png</file>
+        <file>images/subject-name.png</file>
+        <file>images/terminate.png</file>
+        <file>images/trans.png</file>
+    </qresource>
+    <qresource prefix="/Fonts">
+        <file>fonts/courier.ttf</file>
+    </qresource>
 </RCC>

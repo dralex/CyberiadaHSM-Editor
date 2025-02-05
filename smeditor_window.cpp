@@ -25,8 +25,13 @@
 #include <QFileDialog>
 #include <QDebug>
 #include <QDir>
+#include <QFontDialog>
+#include <QFont>
+
 #include "smeditor_window.h"
 #include "myassert.h"
+#include "fontmanager.h"
+
 
 CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
 	QMainWindow(parent)
@@ -37,10 +42,12 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
 	SMView->setModel(model);
 	SMView->setRootIndex(model->rootIndex());
 	propertiesWidget->setModel(model);
-	scene = new CyberiadaSMEditorScene(model, this);
+    scene = new CyberiadaSMEditorScene(model, this);
 	sceneView->setScene(scene);
+
 	connect(SMView, SIGNAL(currentIndexActivated(QModelIndex)),
-			scene, SLOT(slotElementSelected(QModelIndex)));
+            scene, SLOT(slotElementSelected(QModelIndex)));
+
 }
 
 void CyberiadaSMEditorWindow::slotFileOpen()
@@ -54,8 +61,18 @@ void CyberiadaSMEditorWindow::slotFileOpen()
 		SMView->expandToDepth(2);
 		QModelIndex sm = model->firstSMIndex();
 		if (sm.isValid()) {
+            scene->updateScene();
 			SMView->select(sm);
-		}
-        scene->updateScene();
+        }
 	}
 }
+
+void CyberiadaSMEditorWindow::on_actionFont_triggered()
+{
+    bool ok;
+    QFont font = QFontDialog::getFont(&ok, FontManager::instance().getFont());
+    if (ok) {
+        FontManager::instance().setFont(font);
+    }
+}
+
