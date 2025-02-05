@@ -14,8 +14,11 @@
 #include "fontmanager.h"
 
 
-EditableTextItem::EditableTextItem(const QString &text, QGraphicsItem *parent, bool align, bool parentHasGeometry)
-    : QGraphicsTextItem(text, parent), align(align), parentHasGeometry(parentHasGeometry) {
+EditableTextItem::EditableTextItem(const QString &text, QGraphicsItem *parent, bool align, bool parentHasGeometry):
+    QGraphicsTextItem(text, parent),
+    align(align),
+    parentHasGeometry(parentHasGeometry)
+{
     setFlags(QGraphicsItem::ItemIsSelectable);
     setTextInteractionFlags(Qt::NoTextInteraction);
     setAlign();
@@ -42,7 +45,8 @@ void EditableTextItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) {
 void EditableTextItem::keyPressEvent(QKeyEvent *event){
     if (isEdit) {
         // CyberiadaSMEditorStateItem *parentRectangle = dynamic_cast<CyberiadaSMEditorStateItem*>(parentItem());
-        CyberiadaSMEditorAbstractItem *parentSMEItem = dynamic_cast<CyberiadaSMEditorAbstractItem*>(parentItem());
+        // CyberiadaSMEditorAbstractItem *parentSMEItem = dynamic_cast<CyberiadaSMEditorAbstractItem*>(parentItem());
+        ItemWithText *parentSMEItem = dynamic_cast<ItemWithText*>(parentItem());
         QGraphicsTextItem::keyPressEvent(event);
         parentSMEItem->setPositionText();
         parentItem()->update();
@@ -91,7 +95,6 @@ void EditableTextItem::setAlign(){
 }
 
 void EditableTextItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) {
-    // setAlign();
     painter->setFont(QFont(font()));
 
     QGraphicsTextItem::paint(painter, option, widget);

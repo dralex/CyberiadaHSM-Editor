@@ -2,6 +2,7 @@
 #define CYBERIADASMEDITORVERTEXITEM_H
 
 #include "cyberiadasm_editor_items.h"
+#include "dotsignal.h"
 
 /* -----------------------------------------------------------------------------
  * Vertex Item
@@ -16,9 +17,9 @@ public:
     virtual int type() const { return VertexItem; }
 
     QRectF boundingRect() const override;
+
 protected:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
-    void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
 
 private:
     QRectF fullCircle() const;

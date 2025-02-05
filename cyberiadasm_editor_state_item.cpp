@@ -9,7 +9,7 @@
 #include <math.h>
 
 #include "myassert.h"
-// #include "grabber.h"
+#include "dotsignal.h"
 #include "cyberiada_constants.h"
 
 
@@ -24,20 +24,26 @@ CyberiadaSMEditorStateItem::CyberiadaSMEditorStateItem(QObject *parent_object,
                      Cyberiada::Element *element,
                      QGraphicsItem *parent) :
     CyberiadaSMEditorAbstractItem(model, element, parent)
+    // m_cornerFlags(0)
 {
-    // setAcceptHoverEvents(true);
+    setAcceptHoverEvents(true);
     setFlags(ItemIsSelectable | ItemSendsGeometryChanges);
-
-    /*
-    for (int i = 0; i < 8; i++){
-        cornerGrabber[i] = new Grabber(this);
-    }
-    setPositionGrabbers();
-    */
 
     m_state = static_cast<const Cyberiada::State*>(element);
 
     setPos(QPointF(x(), y()));
+
+    // for (int i = 0; i < 8; i++){
+    //     cornerGrabber[i] = new DotSignal(this);
+    // }
+    // setPositionGrabbers();
+    // hideGrabbers();
+
+    for (int i = 0; i < 8; i++){
+        cornerGrabber[i] = new DotSignal(this);
+    }
+    setDotsPosition();
+    hideDots();
 
     title = new EditableTextItem(m_state->get_name().c_str(), this, true);
     title->setFontBoldness(true);
@@ -66,9 +72,10 @@ CyberiadaSMEditorStateItem::CyberiadaSMEditorStateItem(QObject *parent_object,
 
 CyberiadaSMEditorStateItem::~CyberiadaSMEditorStateItem()
 {
-    // for(int i = 0; i < 8; i++){
-    //     delete cornerGrabber[i];
-    // }
+    emit aboutToDelete();
+    for(int i = 0; i < 8; i++){
+        delete cornerGrabber[i];
+    }
 }
 
 QPointF CyberiadaSMEditorStateItem::previousPosition() const
@@ -76,15 +83,15 @@ QPointF CyberiadaSMEditorStateItem::previousPosition() const
     return m_previousPosition;
 }
 
+// +
+// void CyberiadaSMEditorStateItem::setPreviousPosition(const QPointF previousPosition)
+// {
+//     if (m_previousPosition == previousPosition)
+//         return;
 
-void CyberiadaSMEditorStateItem::setPreviousPosition(const QPointF previousPosition)
-{
-    if (m_previousPosition == previousPosition)
-        return;
-
-    m_previousPosition = previousPosition;
-    emit previousPositionChanged();
-}
+//     m_previousPosition = previousPosition;
+//     emit previousPositionChanged();
+// }
 
 void CyberiadaSMEditorStateItem::setRect(qreal x, qreal y, qreal w, qreal h)
 {
@@ -174,135 +181,136 @@ QRectF CyberiadaSMEditorStateItem::boundingRect() const
 }
 
 
-void CyberiadaSMEditorStateItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
-{
-    if (event->button() & Qt::LeftButton) {
-        m_leftMouseButtonPressed = true;
-        setPreviousPosition(event->scenePos());
-        emit clicked(this);
-    }
-    QGraphicsItem::mousePressEvent(event);
-}
+// void CyberiadaSMEditorStateItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
+// {
+//     if (event->button() & Qt::LeftButton) {
+//         m_leftMouseButtonPressed = true;
+//         setPreviousPosition(event->scenePos());
+//         emit clicked(this);
+//     }
+//     QGraphicsItem::mousePressEvent(event);
+//     showGrabbers();
+// }
 
-void CyberiadaSMEditorStateItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
-{
-    /*
-    QPointF pt = event->pos();
-    switch (m_cornerFlags) {
-    case Top:
-        resizeTop(pt);
-        break;
-    case Bottom:
-        resizeBottom(pt);
-        break;
-    case Left:
-        resizeLeft(pt);
-        break;
-    case Right:
-        resizeRight(pt);
-        break;
-    case TopLeft:
-        resizeTop(pt);
-        resizeLeft(pt);
-        break;
-    case TopRight:
-        resizeTop(pt);
-        resizeRight(pt);
-        break;
-    case BottomLeft:
-        resizeBottom(pt);
-        resizeLeft(pt);
-        break;
-    case BottomRight:
-        resizeBottom(pt);
-        resizeRight(pt);
-        break;
-    default:
-    */
-    if (m_leftMouseButtonPressed) {
-        setCursor(Qt::ClosedHandCursor);
-        // setFlag(ItemIsMovable);
-    }
-    // break;
-    // }
+// void CyberiadaSMEditorStateItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
+// {
+//     /*
+//     QPointF pt = event->pos();
+//     switch (m_cornerFlags) {
+//     case Top:
+//         resizeTop(pt);
+//         break;
+//     case Bottom:
+//         resizeBottom(pt);
+//         break;
+//     case Left:
+//         resizeLeft(pt);
+//         break;
+//     case Right:
+//         resizeRight(pt);
+//         break;
+//     case TopLeft:
+//         resizeTop(pt);
+//         resizeLeft(pt);
+//         break;
+//     case TopRight:
+//         resizeTop(pt);
+//         resizeRight(pt);
+//         break;
+//     case BottomLeft:
+//         resizeBottom(pt);
+//         resizeLeft(pt);
+//         break;
+//     case BottomRight:
+//         resizeBottom(pt);
+//         resizeRight(pt);
+//         break;
+//     default:
+//     */
+//     if (m_leftMouseButtonPressed) {
+//         setCursor(Qt::ClosedHandCursor);
+//         setFlag(ItemIsMovable);
+//     }
+//     // break;
+//     // }
 
-    QGraphicsItem::mouseMoveEvent(event);
-    emit geometryChanged();
-}
+//     QGraphicsItem::mouseMoveEvent(event);
+//     emit geometryChanged();
+// }
 
-void CyberiadaSMEditorStateItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
-{
-    if (event->button() & Qt::LeftButton) {
-        m_leftMouseButtonPressed = false;
-        setFlag(ItemIsMovable, false);
-    }
-    QGraphicsItem::mouseReleaseEvent(event);
-}
+// void CyberiadaSMEditorStateItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
+// {
+//     if (event->button() & Qt::LeftButton) {
+//         m_leftMouseButtonPressed = false;
+//         setFlag(ItemIsMovable, false);
+//     }
+//     QGraphicsItem::mouseReleaseEvent(event);
+// }
 
 
-void CyberiadaSMEditorStateItem::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
-{
-    // setPositionGrabbers();
-    // showGrabbers();
-    QGraphicsItem::hoverEnterEvent(event);
-}
+// void CyberiadaSMEditorStateItem::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
+// {
+//     setPositionGrabbers();
+//     showGrabbers();
+//     QGraphicsItem::hoverEnterEvent(event);
+// }
 
-void CyberiadaSMEditorStateItem::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
-{
-    // m_cornerFlags = 0;
-    // hideGrabbers();
-    setCursor(Qt::ArrowCursor);
-    QGraphicsItem::hoverLeaveEvent( event );
-}
+// void CyberiadaSMEditorStateItem::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
+// {
+//     m_cornerFlags = 0;
+//     hideGrabbers();
+//     setCursor(Qt::ArrowCursor);
+//     QGraphicsItem::hoverLeaveEvent( event );
+// }
 
-void CyberiadaSMEditorStateItem::hoverMoveEvent(QGraphicsSceneHoverEvent *event)
-{
-    /*
-    QPointF pt = event->pos();              // The current position of the mouse
-    qreal drx = pt.x() - rect().right();    // Distance between the mouse and the right
-    qreal dlx = pt.x() - rect().left();     // Distance between the mouse and the left
+// void CyberiadaSMEditorStateItem::hoverMoveEvent(QGraphicsSceneHoverEvent *event)
+// {
+//     /*
+//     QPointF pt = event->pos();              // The current position of the mouse
+//     qreal drx = pt.x() - rect().right();    // Distance between the mouse and the right
+//     qreal dlx = pt.x() - rect().left();     // Distance between the mouse and the left
 
-    qreal dby = pt.y() - rect().top();      // Distance between the mouse and the top
-    qreal dty = pt.y() - rect().bottom();   // Distance between the mouse and the bottom
+//     qreal dby = pt.y() - rect().top();      // Distance between the mouse and the top
+//     qreal dty = pt.y() - rect().bottom();   // Distance between the mouse and the bottom
 
-    If the mouse position is within a radius of 7
-    to a certain side( top, left, bottom or right)
-    we set the Flag in the Corner Flags Register
+//     If the mouse position is within a radius of 7
+//     to a certain side( top, left, bottom or right)
+//     we set the Flag in the Corner Flags Register
 
-    m_cornerFlags = 0;
-    if( dby < 7 && dby > -7 ) m_cornerFlags |= Top;       // Top side
-    if( dty < 7 && dty > -7 ) m_cornerFlags |= Bottom;    // Bottom side
-    if( drx < 7 && drx > -7 ) m_cornerFlags |= Right;     // Right side
-    if( dlx < 7 && dlx > -7 ) m_cornerFlags |= Left;      // Left side
+//     m_cornerFlags = 0;
+//     if( dby < 7 && dby > -7 ) m_cornerFlags |= Top;       // Top side
+//     if( dty < 7 && dty > -7 ) m_cornerFlags |= Bottom;    // Bottom side
+//     if( drx < 7 && drx > -7 ) m_cornerFlags |= Right;     // Right side
+//     if( dlx < 7 && dlx > -7 ) m_cornerFlags |= Left;      // Left side
 
-    switch (m_cornerFlags) {
-    case Top:
-    case Bottom:
-        setCursor(QCursor(Qt::SizeVerCursor));
-        break;
+//     switch (m_cornerFlags) {
+//     case Top:
+//     case Bottom:
+//         setCursor(QCursor(Qt::SizeVerCursor));
+//         break;
 
-    case Left:
-    case Right:
-        setCursor(QCursor(Qt::SizeHorCursor));
-        break;
+//     case Left:
+//     case Right:
+//         setCursor(QCursor(Qt::SizeHorCursor));
+//         break;
 
-    case TopRight:
-    case BottomLeft:
-        setCursor(QCursor(Qt::SizeBDiagCursor));
-        break;
+//     case TopRight:
+//     case BottomLeft:
+//         setCursor(QCursor(Qt::SizeBDiagCursor));
+//         break;
 
-    case TopLeft:
-    case BottomRight:
-        setCursor(QCursor(Qt::SizeFDiagCursor));
-        break;
+//     case TopLeft:
+//     case BottomRight:
+//         setCursor(QCursor(Qt::SizeFDiagCursor));
+//         break;
 
-    default:
-*/
-    setCursor(Qt::OpenHandCursor);
-        // break;
-    // }
-    QGraphicsItem::hoverMoveEvent(event);
-}
+//     default:
+// */
+//     setCursor(Qt::OpenHandCursor);
+//         // break;
+//     // }
+//     QGraphicsItem::hoverMoveEvent(event);
+// }
 
 /*
 void Rectangle::resizeLeft(const QPointF &pt)
@@ -432,46 +440,38 @@ void CyberiadaSMEditorStateItem::onTextItemSizeChanged()
     setPositionText();
 }
 
-/*
-void Rectangle::setPositionGrabbers()
-{
-    QRectF tmpRect = rect();
-    cornerGrabber[GrabberTop]->setPos(tmpRect.left() + tmpRect.width()/2, tmpRect.top());
-    cornerGrabber[GrabberBottom]->setPos(tmpRect.left() + tmpRect.width()/2, tmpRect.bottom());
-    cornerGrabber[GrabberLeft]->setPos(tmpRect.left(), tmpRect.top() + tmpRect.height()/2);
-    cornerGrabber[GrabberRight]->setPos(tmpRect.right(), tmpRect.top() + tmpRect.height()/2);
-    cornerGrabber[GrabberTopLeft]->setPos(tmpRect.topLeft().x(), tmpRect.topLeft().y());
-    cornerGrabber[GrabberTopRight]->setPos(tmpRect.topRight().x(), tmpRect.topRight().y());
-    cornerGrabber[GrabberBottomLeft]->setPos(tmpRect.bottomLeft().x(), tmpRect.bottomLeft().y());
-    cornerGrabber[GrabberBottomRight]->setPos(tmpRect.bottomRight().x(), tmpRect.bottomRight().y());
-}
-*/
+// void CyberiadaSMEditorStateItem::setPositionGrabbers()
+// {
+//     QRectF tmpRect = rect();
+//     cornerGrabber[GrabberTop]->setPos(tmpRect.left() + tmpRect.width()/2, tmpRect.top());
+//     cornerGrabber[GrabberBottom]->setPos(tmpRect.left() + tmpRect.width()/2, tmpRect.bottom());
+//     cornerGrabber[GrabberLeft]->setPos(tmpRect.left(), tmpRect.top() + tmpRect.height()/2);
+//     cornerGrabber[GrabberRight]->setPos(tmpRect.right(), tmpRect.top() + tmpRect.height()/2);
+//     cornerGrabber[GrabberTopLeft]->setPos(tmpRect.topLeft().x(), tmpRect.topLeft().y());
+//     cornerGrabber[GrabberTopRight]->setPos(tmpRect.topRight().x(), tmpRect.topRight().y());
+//     cornerGrabber[GrabberBottomLeft]->setPos(tmpRect.bottomLeft().x(), tmpRect.bottomLeft().y());
+//     cornerGrabber[GrabberBottomRight]->setPos(tmpRect.bottomRight().x(), tmpRect.bottomRight().y());
+// }
 
-/*
-void Rectangle::showGrabbers()
-{
-    for(int i = 0; i < 8; i++){
-        cornerGrabber[i]->setVisible(true);
-    }
-}
-*/
+// void CyberiadaSMEditorStateItem::showGrabbers()
+// {
+//     if(!isSelected()) return;
+//     for(int i = 0; i < 8; i++){
+//         cornerGrabber[i]->setVisible(true);
+//     }
+// }
 
-/*
-void CyberiadaSMEditorStateItem::hideGrabbers()
-{
-    for(int i = 0; i < 8; i++){
-        cornerGrabber[i]->setVisible(false);
-    }
-}
-*/
+// void CyberiadaSMEditorStateItem::hideGrabbers()
+// {
+//     for(int i = 0; i < 8; i++){
+//         cornerGrabber[i]->setVisible(false);
+//     }
+// }
 
 void CyberiadaSMEditorStateItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget){
     Q_UNUSED(option)
     Q_UNUSED(widget)
 
-    // setPositionText();------------------
-    // QRectF oldRect = rect();
-    // setRect(QRectF(oldRect.x(), oldRect.y(), oldRect.width(), title->boundingRect().height() ));
     qreal titleHeight = title->boundingRect().height();
 
     QColor color(Qt::black);

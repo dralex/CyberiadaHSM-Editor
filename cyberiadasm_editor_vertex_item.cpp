@@ -20,14 +20,14 @@ CyberiadaSMEditorVertexItem::CyberiadaSMEditorVertexItem(CyberiadaSMModel* model
     Cyberiada::Rect r = element->get_bound_rect(*(model->rootDocument()));
     setPos(r.x, r.y);
 
-    setFlags(ItemIsSelectable);
     setAcceptHoverEvents(true);
-}
+    setFlags(ItemIsSelectable | ItemSendsGeometryChanges);
 
-void CyberiadaSMEditorVertexItem::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
-{
-    setCursor(Qt::ArrowCursor);
-    QGraphicsItem::hoverEnterEvent(event);
+    for (int i = 0; i < 8; i++){
+        cornerGrabber[i] = new DotSignal(this);
+    }
+    setDotsPosition();
+    hideDots();
 }
 
 QRectF CyberiadaSMEditorVertexItem::boundingRect() const
@@ -81,4 +81,3 @@ void CyberiadaSMEditorVertexItem::paint(QPainter* painter, const QStyleOptionGra
         painter->drawLine(r.right(), r.top(), r.left(), r.bottom());
     }
 }
-

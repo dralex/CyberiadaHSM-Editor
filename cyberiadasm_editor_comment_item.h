@@ -14,7 +14,7 @@
 
 
 
-class CyberiadaSMEditorCommentItem : public CyberiadaSMEditorAbstractItem
+class CyberiadaSMEditorCommentItem : public CyberiadaSMEditorAbstractItem, public ItemWithText
 {
     Q_OBJECT
 

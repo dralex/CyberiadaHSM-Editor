@@ -23,6 +23,8 @@ CyberiadaSMEditorCommentItem::CyberiadaSMEditorCommentItem(QObject *parent_objec
     m_comment = static_cast<const Cyberiada::Comment*>(element);
 
     text = new EditableTextItem(m_comment->get_body().c_str(), this, false, m_comment->has_geometry());
+    text->setPos(-boundingRect().width() / 2 + 15, - boundingRect().height() / 2);
+
     if (element->get_type() == Cyberiada::elementFormalComment) {
         int fontId = QFontDatabase::addApplicationFont(":/Fonts/fonts/courier.ttf");
         if (fontId != -1) {
@@ -36,6 +38,15 @@ CyberiadaSMEditorCommentItem::CyberiadaSMEditorCommentItem(QObject *parent_objec
     }
 
     m_commentBrush = QBrush(QColor(0xff, 0xcc, 0));
+
+    setAcceptHoverEvents(true);
+    setFlags(ItemIsSelectable | ItemSendsGeometryChanges);
+
+    for (int i = 0; i < 8; i++){
+        cornerGrabber[i] = new DotSignal(this);
+    }
+    setDotsPosition();
+    hideDots();
 }
 
 
@@ -50,7 +61,6 @@ QRectF CyberiadaSMEditorCommentItem::boundingRect() const
         return text->boundingRect();
     }
     Cyberiada::Rect r = m_comment->get_geometry_rect();
-    qDebug() << "comment rect" << r.x << r.y << r.width << r.height;
     return QRectF(- r.width / 2,
                   - r.height / 2,
                   r.width,

@@ -12,7 +12,7 @@ DotSignal::DotSignal(QGraphicsItem *parentItem, QObject *parent) :
     // разрешение обработки наведения мыши
     setAcceptHoverEvents(true);
     // кисть для заливки
-    setBrush(QBrush(Qt::black));
+    setBrush(QBrush(Qt::green));
     // относительно центра
     setRect(-4,-4,8,8);
     setDotFlags(0);
@@ -23,7 +23,7 @@ DotSignal::DotSignal(QPointF pos, QGraphicsItem *parentItem, QObject *parent) :
 {
     setParentItem(parentItem);
     setAcceptHoverEvents(true);
-    setBrush(QBrush(Qt::black));
+    setBrush(QBrush(Qt::green));
     setRect(-4,-4,8,8);
     // отличие в добавлении позиции
     setPos(pos);
@@ -96,5 +96,5 @@ void DotSignal::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
 void DotSignal::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
 {
     Q_UNUSED(event)
-    setBrush(QBrush(Qt::black));
+    setBrush(QBrush(Qt::green));
 }

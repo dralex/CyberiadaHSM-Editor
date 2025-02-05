@@ -25,6 +25,7 @@ class TransitionText;
 class CyberiadaSMEditorTransitionItem : public CyberiadaSMEditorAbstractItem
 {
     Q_OBJECT
+    Q_INTERFACES(QGraphicsItem)
 
 public:
     explicit CyberiadaSMEditorTransitionItem(QObject *parent_object,
@@ -82,16 +83,16 @@ private slots:
     // void slotMoveTarget(QGraphicsItem *item, qreal dx, qreal dy);
     // void slotMove();
     // void slotStateResized(State *rect, State::CornerFlags side);
-    // void slotMove(QGraphicsItem *signalOwner, qreal dx, qreal dy);
+    void slotMoveDot(QGraphicsItem *signalOwner, qreal dx, qreal dy);
 
-    //protected:
-    //    void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
-    //    void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
-    //    void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
+protected:
+    void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
+    void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
+    // void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
     // void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) override;
-    // void hoverLeaveEvent(QGraphicsSceneHoverEvent *event) override;
-    // void hoverMoveEvent(QGraphicsSceneHoverEvent *event) override;
-    // void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
+    void hoverLeaveEvent(QGraphicsSceneHoverEvent *event) override;
+    void hoverMoveEvent(QGraphicsSceneHoverEvent *event) override;
+    void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
 
 private:
     // void updateCoordinates(State *state, State::CornerFlags side, QPointF *point, QPointF* previousCenterPos);
@@ -99,11 +100,6 @@ private:
     const Cyberiada::Transition* m_transition;
 
     QMap<Cyberiada::ID, QGraphicsItem*> *m_elementItem;
-
-    QPointF m_previousSourcePos;
-    QPointF m_previousTargetPos;
-    QPointF m_previousSourceCenterPos;
-    QPointF m_previousTargetCenterPos;
 
     TransitionText *m_actionItem = nullptr;
     QPointF m_textPosition;
@@ -114,12 +110,16 @@ private:
 
     QRectF m_boundingRect;
 
-    QList<DotSignal *> m_listDotes;
+    QList<DotSignal *> m_listDots;
 
     bool m_leftMouseButtonPressed;
     bool m_mouseTraking;
 
-    // void updateDots();
+    void updateDots();
+    void showDots() override;
+    void hideDots() override;
+    void setDotsPosition() override;
+    void setPointPos(int pointIndex, qreal dx, qreal dy);
 };
 
 class TransitionText : public QGraphicsTextItem

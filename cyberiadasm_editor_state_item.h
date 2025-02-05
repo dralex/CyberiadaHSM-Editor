@@ -8,7 +8,7 @@
 #include <QPainter>
 #include <QDebug>
 
-// #include "grabber.h"
+#include "dotsignal.h"
 #include "editable_text_item.h"
 #include "cyberiadasm_editor_items.h"
 
@@ -50,7 +50,7 @@ private:
 };
 
 
-class CyberiadaSMEditorStateItem : public CyberiadaSMEditorAbstractItem
+class CyberiadaSMEditorStateItem : public CyberiadaSMEditorAbstractItem, ItemWithText
 {
     Q_OBJECT
     //Q_PROPERTY(QPointF previousPosition READ previousPosition WRITE setPreviousPosition NOTIFY previousPositionChanged)
@@ -64,7 +64,7 @@ public:
 
     virtual int type() const { return StateItem; }
 
-    /*
+
     enum CornerFlags {
         Top = 0x01,
         Bottom = 0x02,
@@ -86,7 +86,7 @@ public:
         GrabberBottomLeft,
         GrabberBottomRight
     };
-*/
+
 
     QPointF previousPosition() const;
     void setPreviousPosition(const QPointF previousPosition);
@@ -108,27 +108,28 @@ public:
 
 signals:
     void rectChanged(CyberiadaSMEditorStateItem *rect);
-    void previousPositionChanged();
+    // void previousPositionChanged();
     void clicked(CyberiadaSMEditorStateItem *rect);
     void signalMove(QGraphicsItem *item, qreal dx, qreal dy);
+    void aboutToDelete();
 
 private slots:
     void onTextItemSizeChanged();
 
 protected:
-    void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
-    void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
-    void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
-    void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
-    void hoverLeaveEvent(QGraphicsSceneHoverEvent *event) override;
-    void hoverMoveEvent(QGraphicsSceneHoverEvent *event) override;
+    // void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
+    // void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
+    // void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
+    // void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
+    // void hoverLeaveEvent(QGraphicsSceneHoverEvent *event) override;
+    // void hoverMoveEvent(QGraphicsSceneHoverEvent *event) override;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
 
 private:
     // unsigned int m_cornerFlags;
-    QPointF m_previousPosition;
-    bool m_leftMouseButtonPressed;
-    // Grabber *cornerGrabber[8];
+    // QPointF m_previousPosition;
+    // bool m_leftMouseButtonPressed;
+    // DotSignal *cornerGrabber[8];
 
     EditableTextItem *title;
     EditableTextItem* entry = nullptr;
@@ -140,7 +141,6 @@ private:
     std::vector<Cyberiada::Action> m_actions;
     // QMap<Cyberiada::ID, QGraphicsItem*> *m_elementItem;
 
-    /*
     void resizeLeft( const QPointF &pt);
     void resizeRight( const QPointF &pt);
     void resizeBottom(const QPointF &pt);
@@ -149,9 +149,6 @@ private:
     void setPositionGrabbers();
     void showGrabbers();
     void hideGrabbers();
-*/
-
-
 };
 
 

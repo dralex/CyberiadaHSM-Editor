@@ -23,6 +23,9 @@ QRectF CyberiadaSMEditorSMItem::boundingRect() const
     MY_ASSERT(model);
     MY_ASSERT(model->rootDocument());
     MY_ASSERT(element);
+
+    if(!element->has_geometry()) return QRectF(0, 0, 0, 0);
+
     Cyberiada::Rect r = element->get_bound_rect(*(model->rootDocument()));
     QRectF rect = toQtRect(r);
     return QRectF(rect.x(), rect.y(), rect.width(), rect.height());

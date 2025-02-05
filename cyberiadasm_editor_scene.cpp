@@ -77,7 +77,8 @@ void CyberiadaSMEditorScene::onSelectionChanged() {
         QGraphicsItem* item = selectedItems().first();
         Cyberiada::ID item_id = elementItem.key(item);
         const Cyberiada::Element* element = model->idToElement(QString::fromStdString(item_id));
-		MY_ASSERT(element);
+        if(!element) return; // not a smeditor base element
+        // MY_ASSERT(element);
 		QModelIndex index = model->elementToIndex(element);
 		CyberiadaSMEditorWindow* p = dynamic_cast<CyberiadaSMEditorWindow*>(parent());
 		//p->SMView->setCurrentIndex(index);
