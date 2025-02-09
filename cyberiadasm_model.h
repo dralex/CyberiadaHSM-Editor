@@ -38,7 +38,7 @@ public:
 
 	// CORE FUNCTIONALITY
 	void                                reset();
-	void                                loadDocument(const QString& path);
+	void                                loadDocument(const QString& path, bool reconstruct = false, bool reconsruct_sm = false);
 
 	// DATA REPRESENTATION
 	QVariant                            data(const QModelIndex &index, int role) const;	

@@ -66,14 +66,15 @@ void CyberiadaSMModel::reset()
 	endResetModel();	
 }
 
-void CyberiadaSMModel::loadDocument(const QString& path)
+void CyberiadaSMModel::loadDocument(const QString& path, bool reconstruct, bool reconstruct_sm)
 {	
 	Cyberiada::LocalDocument* new_doc = NULL;
 
 	bool error = false;
 	try {
 		new_doc = new Cyberiada::LocalDocument();
-		new_doc->open(path.toStdString());
+		new_doc->open(path.toStdString(), Cyberiada::formatDetect, Cyberiada::geometryFormatQt,
+					  reconstruct, reconstruct_sm);
 	} catch (const Cyberiada::XMLException& e) {
 		QMessageBox::critical(NULL, tr("Load State Machine"),
 							  tr("XML grapml error:\n") + QString(e.str().c_str()));
