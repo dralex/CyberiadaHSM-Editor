@@ -178,8 +178,16 @@ QIcon CyberiadaSMModel::getIndexIcon(const QModelIndex& index) const
 	return getElementIcon(element->get_type());
 }
 
-bool CyberiadaSMModel::setData(const QModelIndex&, const QVariant&, int)
+bool CyberiadaSMModel::setData(const QModelIndex& index, const QVariant& value, int role)
 {
+	if(index.isValid() && role == Qt::EditRole && index.column() == 0) {
+		Cyberiada::Element* element = indexToElement(index);
+		MY_ASSERT(element);
+		QString newTitle = value.toString();
+		element->set_name(newTitle.toStdString());
+		emit dataChanged(index, index);
+		return true;
+	}
 	return false;
 }
 
@@ -189,7 +197,7 @@ Qt::ItemFlags CyberiadaSMModel::flags(const QModelIndex &index) const
 	if (isSMIndex(index)) {
 		return Qt::ItemIsDropEnabled | default_flags;
 	} else if (isStateIndex(index) || isInitialIndex(index)) {
-		default_flags |= Qt::ItemIsDragEnabled;
+		default_flags |= Qt::ItemIsDragEnabled | Qt::ItemIsEditable;
 		if (isStateIndex(index)) {
 			default_flags |= Qt::ItemIsDropEnabled;
 		}
