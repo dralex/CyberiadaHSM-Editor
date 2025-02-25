@@ -66,14 +66,15 @@ void CyberiadaSMModel::reset()
 	endResetModel();	
 }
 
-void CyberiadaSMModel::loadDocument(const QString& path)
+void CyberiadaSMModel::loadDocument(const QString& path, bool reconstruct, bool reconstruct_sm)
 {	
 	Cyberiada::LocalDocument* new_doc = NULL;
 
 	bool error = false;
 	try {
 		new_doc = new Cyberiada::LocalDocument();
-		new_doc->open(path.toStdString());
+		new_doc->open(path.toStdString(), Cyberiada::formatDetect, Cyberiada::geometryFormatQt,
+					  reconstruct, reconstruct_sm);
 	} catch (const Cyberiada::XMLException& e) {
 		QMessageBox::critical(NULL, tr("Load State Machine"),
 							  tr("XML grapml error:\n") + QString(e.str().c_str()));
@@ -177,8 +178,16 @@ QIcon CyberiadaSMModel::getIndexIcon(const QModelIndex& index) const
 	return getElementIcon(element->get_type());
 }
 
-bool CyberiadaSMModel::setData(const QModelIndex&, const QVariant&, int)
+bool CyberiadaSMModel::setData(const QModelIndex& index, const QVariant& value, int role)
 {
+	if(index.isValid() && role == Qt::EditRole && index.column() == 0) {
+		Cyberiada::Element* element = indexToElement(index);
+		MY_ASSERT(element);
+		QString newTitle = value.toString();
+		element->set_name(newTitle.toStdString());
+		emit dataChanged(index, index);
+		return true;
+	}
 	return false;
 }
 
@@ -188,7 +197,7 @@ Qt::ItemFlags CyberiadaSMModel::flags(const QModelIndex &index) const
 	if (isSMIndex(index)) {
 		return Qt::ItemIsDropEnabled | default_flags;
 	} else if (isStateIndex(index) || isInitialIndex(index)) {
-		default_flags |= Qt::ItemIsDragEnabled;
+		default_flags |= Qt::ItemIsDragEnabled | Qt::ItemIsEditable;
 		if (isStateIndex(index)) {
 			default_flags |= Qt::ItemIsDropEnabled;
 		}
