@@ -266,6 +266,8 @@ bool CyberiadaSMModel::newAction(const QModelIndex& index, Cyberiada::ActionType
 			return false;
 		}
 		trans->get_action().update(trigger.toStdString(), guard.toStdString(), behaviour.toStdString());
+	} else {
+		return false;
 	}
 	emit dataChanged(index, index);
 	return true;
@@ -288,6 +290,8 @@ bool CyberiadaSMModel::deleteAction(const QModelIndex& index, int action_index)
 			return false;
 		}
 		trans->get_action().clear();
+	} else {
+		return false;
 	}
 	emit dataChanged(index, index);
 	return true;
@@ -297,6 +301,9 @@ bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada:
 {
 	Cyberiada::Element* element = indexToElement(index);
 	if (!element) return false;
+	if (!element->has_point_geometry()) return false;
+	Cyberiada::Vertex* v = static_cast<Cyberiada::Vertex*>(element);
+	v->update_geometry(point);
 	emit dataChanged(index, index);
 	return true;
 }
@@ -305,6 +312,36 @@ bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada:
 {
 	Cyberiada::Element* element = indexToElement(index);
 	if (!element) return false;
+	if (!element->has_rect_geometry()) return false;
+	if (element->get_type() == Cyberiada::elementComment || Cyberiada::elementFormalComment) {
+		Cyberiada::Comment* comment = static_cast<Cyberiada::Comment*>(element);
+		comment->update_geometry(rect);
+	} else {
+		Cyberiada::ElementCollection* ec = static_cast<Cyberiada::ElementCollection*>(element);
+		ec->update_geometry(rect);
+	}
+	emit dataChanged(index, index);
+	return true;
+}
+
+bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada::Point& source, const Cyberiada::Point& target)
+{
+	Cyberiada::Element* element = indexToElement(index);
+	if (!element) return false;
+	if (element->get_type() != Cyberiada::elementTransition) return false;
+	Cyberiada::Transition* trans = static_cast<Cyberiada::Transition*>(element);
+	// TODO
+	emit dataChanged(index, index);
+	return true;
+}
+
+bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada::Polyline& pl)
+{
+	Cyberiada::Element* element = indexToElement(index);
+	if (!element) return false;
+	if (element->get_type() != Cyberiada::elementTransition) return false;
+	Cyberiada::Transition* trans = static_cast<Cyberiada::Transition*>(element);
+	// TODO
 	emit dataChanged(index, index);
 	return true;
 }

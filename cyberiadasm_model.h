@@ -69,6 +69,8 @@ public:
 	bool                                deleteAction(const QModelIndex& index, int action_index = -1);
 	bool                                updateGeometry(const QModelIndex& index, const Cyberiada::Point& point);
 	bool                                updateGeometry(const QModelIndex& index, const Cyberiada::Rect& rect);
+	bool                                updateGeometry(const QModelIndex& index, const Cyberiada::Point& source, const Cyberiada::Point& target);
+	bool                                updateGeometry(const QModelIndex& index, const Cyberiada::Polyline& pl);	
 	bool                                updateCommentBody(const QModelIndex& index, const QString& body);
 	bool                                updateMetainformation(const QModelIndex& index, const QString& parameter, const QString& new_value);
 	
