@@ -27,6 +27,7 @@
 #include <QCursor>
 
 #include "cyberiadasm_editor_items.h"
+#include "cyberiadasm_editor_scene.h"
 #include "cyberiadasm_editor_state_item.h"
 #include "myassert.h"
 
@@ -42,7 +43,7 @@ CyberiadaSMEditorAbstractItem::CyberiadaSMEditorAbstractItem(CyberiadaSMModel* _
     QGraphicsItem(parent),
     model(_model),
     element(_element),
-    m_cornerFlags(0)
+    cornerFlags(0)
 {
     if(parent) {
         CyberiadaSMEditorAbstractItem* newParent = dynamic_cast<CyberiadaSMEditorAbstractItem*>(parent);
@@ -70,13 +71,23 @@ QVariant CyberiadaSMEditorAbstractItem::data(int key) const
 	}
 }
 
-void CyberiadaSMEditorAbstractItem::setPreviousPosition(const QPointF previousPosition)
+QPointF CyberiadaSMEditorAbstractItem::getPreviousPosition() const
 {
-    if (m_previousPosition == previousPosition)
+    return previousPosition;
+}
+
+void CyberiadaSMEditorAbstractItem::setPreviousPosition(const QPointF newPreviousPosition)
+{
+    if (previousPosition == newPreviousPosition)
         return;
 
-    m_previousPosition = previousPosition;
+    previousPosition = newPreviousPosition;
     emit previousPositionChanged();
+}
+
+bool CyberiadaSMEditorAbstractItem::hasGeometry()
+{
+    return element->has_geometry();
 }
 
 void CyberiadaSMEditorAbstractItem::onParentGeometryChanged() {
@@ -97,8 +108,14 @@ QVariant CyberiadaSMEditorAbstractItem::itemChange(GraphicsItemChange change, co
 
 void CyberiadaSMEditorAbstractItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
+    if (!element->has_geometry() ||
+        dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select) {
+        event->ignore();
+        return;
+    }
+
     if (event->button() & Qt::LeftButton) {
-        m_leftMouseButtonPressed = true;
+        isLeftMouseButtonPressed = true;
         setPreviousPosition(event->scenePos());
         // emit clicked(this);
     }
@@ -108,45 +125,55 @@ void CyberiadaSMEditorAbstractItem::mousePressEvent(QGraphicsSceneMouseEvent *ev
 
 void CyberiadaSMEditorAbstractItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
-    /*
+    if (!element->has_geometry() ||
+        dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select) {
+        event->ignore();
+        return;
+    }
+
     QPointF pt = event->pos();
-    switch (m_cornerFlags) {
+    switch (cornerFlags) {
     case Top:
-        resizeTop(pt);
+        if (isLeftMouseButtonPressed) {
+            setFlag(ItemIsMovable);
+        }
         break;
     case Bottom:
         resizeBottom(pt);
         break;
     case Left:
-        resizeLeft(pt);
+        qDebug() << element->get_type() << "left";
+        if (isLeftMouseButtonPressed) {
+            setFlag(ItemIsMovable);
+        }
         break;
     case Right:
         resizeRight(pt);
         break;
     case TopLeft:
-        resizeTop(pt);
-        resizeLeft(pt);
+        if (isLeftMouseButtonPressed) {
+            setFlag(ItemIsMovable);
+        }
         break;
-    case TopRight:
-        resizeTop(pt);
-        resizeRight(pt);
-        break;
-    case BottomLeft:
-        resizeBottom(pt);
-        resizeLeft(pt);
-        break;
+    // case TopRight:
+    //     resizeTop(pt);
+    //     resizeRight(pt);
+    //     break;
+    // case BottomLeft:
+    //     resizeBottom(pt);
+    //     resizeLeft(pt);
+    //     break;
     case BottomRight:
         resizeBottom(pt);
         resizeRight(pt);
         break;
     default:
-    */
-    if (m_leftMouseButtonPressed) {
-        setCursor(Qt::ClosedHandCursor);
-        setFlag(ItemIsMovable);
+        // if (isLeftMouseButtonPressed) {
+        //     setCursor(Qt::ClosedHandCursor);
+        //     setFlag(ItemIsMovable);
+        // }
+        break;
     }
-    // break;
-    // }
 
     QGraphicsItem::mouseMoveEvent(event);
     emit geometryChanged();
@@ -154,8 +181,14 @@ void CyberiadaSMEditorAbstractItem::mouseMoveEvent(QGraphicsSceneMouseEvent *eve
 
 void CyberiadaSMEditorAbstractItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
+    if (!element->has_geometry() ||
+        dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select) {
+        event->ignore();
+        return;
+    }
+
     if (event->button() & Qt::LeftButton) {
-        m_leftMouseButtonPressed = false;
+        isLeftMouseButtonPressed = false;
         setFlag(ItemIsMovable, false);
     }
     QGraphicsItem::mouseReleaseEvent(event);
@@ -164,6 +197,12 @@ void CyberiadaSMEditorAbstractItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *
 
 void CyberiadaSMEditorAbstractItem::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
 {
+    if (!element->has_geometry() ||
+        dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select) {
+        event->ignore();
+        return;
+    }
+
     setDotsPosition();
     showDots();
     QGraphicsItem::hoverEnterEvent(event);
@@ -171,39 +210,56 @@ void CyberiadaSMEditorAbstractItem::hoverEnterEvent(QGraphicsSceneHoverEvent *ev
 
 void CyberiadaSMEditorAbstractItem::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
 {
-    m_cornerFlags = 0;
+    if (!element->has_geometry() ||
+        dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select) {
+        event->ignore();
+        return;
+    }
+
+    cornerFlags = 0;
     hideDots();
-    setCursor(Qt::ArrowCursor);
+    unsetCursor();
     QGraphicsItem::hoverLeaveEvent( event );
 }
 
 void CyberiadaSMEditorAbstractItem::hoverMoveEvent(QGraphicsSceneHoverEvent *event)
 {
-    /*
+    // TODO
+    if (!isSelected() ||
+        !element->has_geometry() ||
+        dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select) {
+        event->ignore();
+        return;
+    }
+
     QPointF pt = event->pos();              // The current position of the mouse
-    qreal drx = pt.x() - rect().right();    // Distance between the mouse and the right
-    qreal dlx = pt.x() - rect().left();     // Distance between the mouse and the left
+    qreal drx = pt.x() - boundingRect().right();    // Distance between the mouse and the right
+    qreal dlx = pt.x() - boundingRect().left();     // Distance between the mouse and the left
 
-    qreal dby = pt.y() - rect().top();      // Distance between the mouse and the top
-    qreal dty = pt.y() - rect().bottom();   // Distance between the mouse and the bottom
+    qreal dby = pt.y() - boundingRect().top();      // Distance between the mouse and the top
+    qreal dty = pt.y() - boundingRect().bottom();   // Distance between the mouse and the bottom
 
-    If the mouse position is within a radius of 7
-    to a certain side( top, left, bottom or right)
-    we set the Flag in the Corner Flags Register
+    // If the mouse position is within a radius of 7
+    // to a certain side( top, left, bottom or right)
+    // we set the Flag in the Corner Flags Register
 
-    m_cornerFlags = 0;
-    if( dby < 7 && dby > -7 ) m_cornerFlags |= Top;       // Top side
-    if( dty < 7 && dty > -7 ) m_cornerFlags |= Bottom;    // Bottom side
-    if( drx < 7 && drx > -7 ) m_cornerFlags |= Right;     // Right side
-    if( dlx < 7 && dlx > -7 ) m_cornerFlags |= Left;      // Left side
+    cornerFlags = 0;
+    if( dby < 7 && dby > -7 ) cornerFlags |= Top;       // Top side
+    if( dty < 7 && dty > -7 ) cornerFlags |= Bottom;    // Bottom side
+    if( drx < 7 && drx > -7 ) cornerFlags |= Right;     // Right side
+    if( dlx < 7 && dlx > -7 ) cornerFlags |= Left;      // Left side
 
-    switch (m_cornerFlags) {
+    switch (cornerFlags) {
     case Top:
+    case Left:
+    case TopLeft:
+        setCursor(QCursor(Qt::SizeAllCursor));
+        break;
+
     case Bottom:
         setCursor(QCursor(Qt::SizeVerCursor));
         break;
 
-    case Left:
     case Right:
         setCursor(QCursor(Qt::SizeHorCursor));
         break;
@@ -213,18 +269,114 @@ void CyberiadaSMEditorAbstractItem::hoverMoveEvent(QGraphicsSceneHoverEvent *eve
         setCursor(QCursor(Qt::SizeBDiagCursor));
         break;
 
-    case TopLeft:
     case BottomRight:
         setCursor(QCursor(Qt::SizeFDiagCursor));
         break;
 
     default:
-*/
-    setCursor(Qt::OpenHandCursor);
-        // break;
-    // }
+        // setCursor(Qt::ArrowCursor);
+        unsetCursor();
+        break;
+    }
     QGraphicsItem::hoverMoveEvent(event);
 }
+
+/*
+void CyberiadaSMEditorAbstractItem::resizeLeft(const QPointF &pt)
+{
+    QRectF tmpRect = rect();
+    // if the mouse is on the right side we return
+    if( pt.x() > tmpRect.right() )
+        return;
+    qreal widthOffset =  ( pt.x() - tmpRect.right() );
+    // limit the minimum width
+    if( widthOffset > -10 )
+        return;
+    // if it's negative we set it to a positive width value
+    if( widthOffset < 0 )
+        tmpRect.setWidth( -widthOffset );
+    else
+        tmpRect.setWidth( widthOffset );
+    // Since it's a left side , the rectange will increase in size
+    // but keeps the topLeft as it was
+    tmpRect.translate( rect().width() - tmpRect.width() , 0 );
+    prepareGeometryChange();
+    // Set the ne geometry
+    setRect( tmpRect );
+    // Update to see the result
+    update();
+    // setPositionGrabbers();
+}
+*/
+
+
+void CyberiadaSMEditorAbstractItem::resizeRight(const QPointF &pt)
+{
+    QRectF tmpRect = boundingRect();
+    if( pt.x() < tmpRect.left() )
+        return;
+    qreal widthOffset =  ( pt.x() - tmpRect.left() );
+    if( widthOffset < 10 ) /// limit
+        return;
+    if( widthOffset < 10)
+        tmpRect.setWidth( -widthOffset );
+    else
+        tmpRect.setWidth( widthOffset );
+    prepareGeometryChange();
+    // setRect( tmpRect );
+    update();
+    setDotsPosition();
+}
+
+
+
+void CyberiadaSMEditorAbstractItem::resizeBottom(const QPointF &pt)
+{
+    QRectF tmpRect = boundingRect();
+    if( pt.y() < tmpRect.top() )
+        return;
+    qreal heightOffset =  ( pt.y() - tmpRect.top() );
+    if( heightOffset < 11 ) /// limit
+        return;
+    if( heightOffset < 0)
+        tmpRect.setHeight( -heightOffset );
+    else
+        tmpRect.setHeight( heightOffset );
+    prepareGeometryChange();
+    // setRect( tmpRect );
+    update();
+    setDotsPosition();
+}
+
+void CyberiadaSMEditorAbstractItem::initializeDots()
+{
+    if (!element->has_geometry()) return;
+    for (int i = 0; i < 8; i++){
+        cornerGrabber[i] = new DotSignal(this);
+    }
+}
+
+
+/*
+void CyberiadaSMEditorStateItem::resizeTop(const QPointF &pt)
+{
+    QRectF tmpRect = rect();
+    if( pt.y() > tmpRect.bottom() )
+        return;
+    qreal heightOffset =  ( pt.y() - tmpRect.bottom() );
+    if( heightOffset > -11 ) /// limit
+        return;
+    if( heightOffset < 0)
+        tmpRect.setHeight( -heightOffset );
+    else
+        tmpRect.setHeight( heightOffset );
+    tmpRect.translate( 0 , rect().height() - tmpRect.height() );
+    prepareGeometryChange();
+    setRect( tmpRect );
+    update();
+    // setPositionGrabbers();
+}
+*/
 
 void CyberiadaSMEditorAbstractItem::handleParentChange() {
     if (auto oldParent = dynamic_cast<CyberiadaSMEditorAbstractItem*>(parentItem())) {
@@ -239,7 +391,8 @@ void CyberiadaSMEditorAbstractItem::handleParentChange() {
 }
 
 void CyberiadaSMEditorAbstractItem::setDotsPosition()
-{
+{    
+    if(!element->has_geometry()) return;
     QRectF tmpRect = boundingRect();
     cornerGrabber[GrabberTop]->setPos(tmpRect.left() + tmpRect.width()/2, tmpRect.top());
     cornerGrabber[GrabberBottom]->setPos(tmpRect.left() + tmpRect.width()/2, tmpRect.bottom());
@@ -254,6 +407,7 @@ void CyberiadaSMEditorAbstractItem::setDotsPosition()
 void CyberiadaSMEditorAbstractItem::showDots()
 {
     if(!isSelected()) return;
+    if(!element->has_geometry()) return;
     for(int i = 0; i < 8; i++){
         cornerGrabber[i]->setVisible(true);
     }
@@ -261,6 +415,7 @@ void CyberiadaSMEditorAbstractItem::showDots()
 
 void CyberiadaSMEditorAbstractItem::hideDots()
 {
+    if(!element->has_geometry()) return;
     for(int i = 0; i < 8; i++){
         cornerGrabber[i]->setVisible(false);
     }

@@ -31,11 +31,6 @@
 #include "cyberiadasm_model.h"
 #include "dotsignal.h"
 
-
-// const int ROUNDED_RECT_RADIUS = 10;
-// const int VERTEX_POINT_RADIUS = 10;
-// const int COMMENT_ANGLE_CORNER = 10;
-
 /* -----------------------------------------------------------------------------
  * Abstract Item
  * ----------------------------------------------------------------------------- */
@@ -85,15 +80,17 @@ public:
 	virtual int type() const = 0;
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) = 0;
 
-    // virtual QRectF boundingRect() const;
+    virtual QRectF boundingRect() const = 0;
 	virtual QVariant data(int key) const;
 
 	static QRectF toQtRect(const Cyberiada::Rect& r) {
 		return QRectF(r.x, r.y, r.width, r.height);
 	}
 
-    QPointF previousPosition() const;
-    void setPreviousPosition(const QPointF previousPosition);
+    QPointF getPreviousPosition() const;
+    void setPreviousPosition(const QPointF newPreviousPosition);
+
+    bool hasGeometry();
 
 protected:
     CyberiadaSMModel* model;
@@ -103,21 +100,21 @@ protected:
 
     QVariant itemChange(GraphicsItemChange change, const QVariant& value) override;
 
-    void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
     void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
+    void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
     void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
-    void hoverLeaveEvent(QGraphicsSceneHoverEvent *event) override;
     void hoverMoveEvent(QGraphicsSceneHoverEvent *event) override;
+    void hoverLeaveEvent(QGraphicsSceneHoverEvent *event) override;
 
 signals:
     void geometryChanged();
     void previousPositionChanged();
 
 protected:
-    unsigned int m_cornerFlags;
-    QPointF m_previousPosition;
-    bool m_leftMouseButtonPressed;
+    unsigned int cornerFlags;
+    QPointF previousPosition;
+    bool isLeftMouseButtonPressed;
     DotSignal *cornerGrabber[8];
 
     void resizeLeft( const QPointF &pt);
@@ -125,12 +122,12 @@ protected:
     void resizeBottom(const QPointF &pt);
     void resizeTop(const QPointF &pt);
 
+    virtual void initializeDots();
     virtual void setDotsPosition();
     virtual void showDots();
     virtual void hideDots();
 
 private:
-
     void handleParentChange();
 
 };
@@ -148,10 +145,10 @@ private:
 // 	virtual int type() const { return CompositeStateItem; }
 // };
 
-class ItemWithText {
-public:
-    virtual void setPositionText() = 0; // содержит текстовый блок
-};
+// class ItemWithText {
+// public:
+//     virtual void setPositionText() = 0; // содержит текстовый блок
+// };
 
 
 #endif

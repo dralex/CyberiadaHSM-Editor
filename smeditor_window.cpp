@@ -45,9 +45,10 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     scene = new CyberiadaSMEditorScene(model, this);
 	sceneView->setScene(scene);
 
-	connect(SMView, SIGNAL(currentIndexActivated(QModelIndex)),
-            scene, SLOT(slotElementSelected(QModelIndex)));
+    initializeTools();
 
+    connect(SMView, SIGNAL(currentIndexActivated(QModelIndex)),
+            scene, SLOT(slotElementSelected(QModelIndex)));
 }
 
 void CyberiadaSMEditorWindow::slotFileOpen()
@@ -61,11 +62,28 @@ void CyberiadaSMEditorWindow::slotFileOpen()
 		SMView->expandToDepth(2);
 		QModelIndex sm = model->firstSMIndex();
 		if (sm.isValid()) {
-            scene->updateScene();
+            scene->loadScene();
 			SMView->select(sm);
         }
 	}
 }
+
+void CyberiadaSMEditorWindow::initializeTools()
+{
+    toolGroup = new QActionGroup(this);
+    toolGroup->addAction(selectToolAction);
+    toolGroup->addAction(zoomInAction);
+    toolGroup->addAction(zoomOutAction);
+    toolGroup->addAction(panAction);
+
+    toolGroup->setExclusive(true);
+    selectToolAction->setChecked(true);
+
+    connect(toolGroup, &QActionGroup::triggered, this, &CyberiadaSMEditorWindow::onToolSelected);
+
+    emit toolGroup->triggered(selectToolAction);
+}
+
 
 void CyberiadaSMEditorWindow::on_actionFont_triggered()
 {
@@ -76,3 +94,23 @@ void CyberiadaSMEditorWindow::on_actionFont_triggered()
     }
 }
 
+void CyberiadaSMEditorWindow::onToolSelected(QAction *action)
+{
+    if (action == selectToolAction) {
+        currentTool = ToolType::Select;
+    } else if (action == zoomInAction) {
+        currentTool = ToolType::ZoomIn;
+    } else if (action == zoomOutAction) {
+        currentTool = ToolType::ZoomOut;
+    } else if (action == panAction) {
+        currentTool = ToolType::Pan;
+    } else {
+        currentTool = ToolType::Select;
+    }
+    sceneView->setCurrentTool(currentTool);
+    scene->setCurrentTool(currentTool);
+}
+
+void CyberiadaSMEditorWindow::on_fitContentAction_triggered() {
+    sceneView->fitInView(scene->itemsBoundingRect(), Qt::KeepAspectRatio);
+}

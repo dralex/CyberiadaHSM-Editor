@@ -38,4 +38,13 @@
 #define FORMAL_COMMENT_FONT_SIZE 12
 #define FORMAL_COMMENT_FONT_NAME "Courier"
 
+enum class ToolType {
+    Select,
+    Pan,
+    ZoomIn,
+    ZoomOut,
+    CreateRect,
+    CreateLine,
+};
+
 #endif

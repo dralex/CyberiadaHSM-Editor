@@ -32,7 +32,10 @@
 class CyberiadaSMEditorWindow: public QMainWindow, public Ui_SMEditorWindow {
 Q_OBJECT
 public:
-	CyberiadaSMEditorWindow(QWidget* parent = 0);
+    CyberiadaSMEditorWindow(QWidget* parent = 0);
+
+private:
+    void initializeTools();
 
 public slots:
 	void                    slotFileOpen();
@@ -40,9 +43,17 @@ public slots:
 private slots:
     void on_actionFont_triggered();
 
+    void onToolSelected(QAction *action);
+
+    void on_fitContentAction_triggered();
+
 private:
 	CyberiadaSMModel*       model;
 	CyberiadaSMEditorScene* scene;
+    QActionGroup *toolGroup;
+    ToolType currentTool = ToolType::Select;
+
+    QMap<ToolType, QAction*> toolActMap;
 };
 
 #endif

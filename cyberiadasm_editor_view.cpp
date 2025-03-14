@@ -26,6 +26,7 @@
 
 #include "cyberiadasm_editor_view.h"
 
+#include <QDebug>
 
 CyberiadaSMGraphicsView::CyberiadaSMGraphicsView(QWidget *parent):
 	QGraphicsView(parent)
@@ -34,7 +35,7 @@ CyberiadaSMGraphicsView::CyberiadaSMGraphicsView(QWidget *parent):
 	setViewportUpdateMode(BoundingRectViewportUpdate);
 
 	setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-	setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
 
     setRenderHint(QPainter::Antialiasing);
 	setOptimizationFlags(DontSavePainterState);
@@ -43,7 +44,33 @@ CyberiadaSMGraphicsView::CyberiadaSMGraphicsView(QWidget *parent):
 	setFocus();
 
     setTransformationAnchor(AnchorUnderMouse);
-    setDragMode(ScrollHandDrag);
+    // setDragMode(ScrollHandDrag);
+}
+
+void CyberiadaSMGraphicsView::setCurrentTool(ToolType tool) {
+    currentTool = tool;
+    qDebug() << "new view tool" << static_cast<int>(tool);
+
+    if (tool != ToolType::Pan) {
+        setDragMode(QGraphicsView::NoDrag);
+    }
+
+    unsetCursor();
+
+    switch (currentTool) {
+    case ToolType::ZoomIn:
+        setCursor(QPixmap(":/Icons/images/zoom-in-32.png"));
+        break;
+    case ToolType::ZoomOut:
+        setCursor(QPixmap(":/Icons/images/zoom-out-32.png"));
+        break;
+    case ToolType::Pan:
+        setDragMode(QGraphicsView::ScrollHandDrag);
+        break;
+    default:
+        setCursor(Qt::ArrowCursor);
+        break;
+    }
 }
 
 void CyberiadaSMGraphicsView::wheelEvent(QWheelEvent *event) {
@@ -57,5 +84,16 @@ void CyberiadaSMGraphicsView::wheelEvent(QWheelEvent *event) {
     }
     else {
         QGraphicsView::wheelEvent(event);
+    }
+}
+
+void CyberiadaSMGraphicsView::mousePressEvent(QMouseEvent *event)
+{
+    if (currentTool == ToolType::ZoomIn) {
+        scale(1.25, 1.25);
+    } else if (currentTool == ToolType::ZoomOut) {
+        scale(0.8, 0.8);
+    } else {
+        QGraphicsView::mousePressEvent(event);
     }
 }

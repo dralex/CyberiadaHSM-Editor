@@ -30,6 +30,8 @@
 #include <QGraphicsView>
 #include <QPaintEvent>
 
+#include "cyberiada_constants.h"
+
 class CyberiadaSMGraphicsView: public QGraphicsView {
 Q_OBJECT
 
@@ -37,14 +39,19 @@ public:
 	CyberiadaSMGraphicsView(QWidget *parent = NULL);
 
 	void paintEvent(QPaintEvent * event) {
-		QPaintEvent* newEvent = new QPaintEvent(event->region().boundingRect());
-		QGraphicsView::paintEvent(newEvent);
+        QPaintEvent* newEvent = new QPaintEvent(event->region().boundingRect());
+        QGraphicsView::paintEvent(newEvent);
 		delete newEvent;
 	}
 
+    void setCurrentTool(ToolType tool);
+
 protected:
     void wheelEvent(QWheelEvent *event) override;
+    void mousePressEvent(QMouseEvent *event) override;
 
+private:
+    ToolType currentTool = ToolType::Select;
 };
 
 #endif

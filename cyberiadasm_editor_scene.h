@@ -39,6 +39,7 @@
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_editor_items.h"
 #include "cyberiadasm_editor_state_item.h"
+#include "cyberiada_constants.h"
 
 class CyberiadaSMEditorScene: public QGraphicsScene {
 Q_OBJECT
@@ -47,7 +48,7 @@ public:
     CyberiadaSMEditorScene(CyberiadaSMModel* model, QObject *parent = NULL);
     virtual ~CyberiadaSMEditorScene();
 
-	void reset();
+    void reset();
 	
     void  setGridSize(int newSize);
     int   getGridSize() const { return gridSize; }
@@ -58,7 +59,12 @@ public:
     void  setGridPen(const QPen& gridPen);
     const QPen& getGridPen() const { return gridPen; }
 
-    void updateScene();
+    void loadScene();
+
+    QMap<Cyberiada::ID, QGraphicsItem*>& getMap() { return elementItem; }
+
+    void setCurrentTool(ToolType tool);
+    ToolType getCurrentTool() { return currentTool; }
 
 public slots:
 	void  slotElementSelected(const QModelIndex& index);
@@ -69,7 +75,7 @@ public slots:
 
 protected:
     void  drawBackground(QPainter *painter, const QRectF &);
-	
+
 private:
     void  addItemsRecursively(QGraphicsItem* parent, Cyberiada::ElementCollection* element);
 
@@ -82,6 +88,7 @@ private:
     bool                           gridSnap;
     QPen                           gridPen;
 
+    ToolType currentTool = ToolType::Select;
 };
 
 #endif
