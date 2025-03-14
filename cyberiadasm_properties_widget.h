@@ -119,6 +119,7 @@ private:
 		CyberiadaPropertyName   name;
 		CyberiadaPropertyEditor editor;
 		QString                 propName;
+		QString                 metaName;
 	};
 
 	QVector<CyberiadaProperty>  properties;
@@ -147,6 +148,7 @@ private:
 	QtProperty*                 constructProperty(CyberiadaPropertyName prop);
 	CyberiadaProperty&          findPropertyStruct(CyberiadaPropertyName prop);
 	CyberiadaProperty&          findPropertyStruct(const QString& propName);
+	CyberiadaProperty&          findProperty(const QtProperty*);
 	Cyberiada::ConstElementList getAllElements(bool source) const;
 	QStringList                 generateElementNames(bool source) const;
 	QMap<int, QIcon>            generateElementIcons(bool source) const;

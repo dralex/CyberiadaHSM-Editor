@@ -31,6 +31,22 @@
 #define VERTEX_POINT_RADIUS 10
 #define COMMENT_ANGLE_CORNER 10
 
+// Metainformation constants
+#define METAINFORMATION_AUTHOR            "Author"
+#define METAINFORMATION_CONTACT           "Contact"
+#define METAINFORMATION_DATE              "Date"
+#define METAINFORMATION_DESCRIPTION       "Description"
+#define METAINFORMATION_EVENT_PROPAGATION "Event Propagation"
+#define METAINFORMATION_MARKUP_LANGUAGE   "Markup Language"
+#define METAINFORMATION_NAME              "Document Name"
+#define METAINFORMATION_PLATFORM_LANGUAGE "Platform Language"
+#define METAINFORMATION_PLATFORM_NAME     "Platform Name"
+#define METAINFORMATION_PLATFORM_VERSION  "Platform Version"
+#define METAINFORMATION_STANDARD_VERSION  "Standard Version"
+#define METAINFORMATION_TARGET_SYSTEM     "Target System"
+#define METAINFORMATION_TRANSITION_ORDER  "Transition Order"
+#define METAINFORMATION_VERSION           "Version"
+
 // Text constants
 #define FONT_SIZE 12
 #define FONT_NAME "Monospace"

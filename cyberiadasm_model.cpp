@@ -181,14 +181,188 @@ QIcon CyberiadaSMModel::getIndexIcon(const QModelIndex& index) const
 bool CyberiadaSMModel::setData(const QModelIndex& index, const QVariant& value, int role)
 {
 	if(index.isValid() && role == Qt::EditRole && index.column() == 0) {
-		Cyberiada::Element* element = indexToElement(index);
-		MY_ASSERT(element);
-		QString newTitle = value.toString();
-		element->set_name(newTitle.toStdString());
-		emit dataChanged(index, index);
-		return true;
+		return updateTitle(index, value.toString());
 	}
 	return false;
+}
+
+bool CyberiadaSMModel::updateID(const QModelIndex& index, const QString& new_value)
+{
+	Cyberiada::Element* element = indexToElement(index);
+	if (!element) return false;
+	if (new_value.size() == 0) {
+		// empty id is not allowed
+		return false;
+	}
+	Cyberiada::ID new_id(new_value.toStdString());
+	if (root->find_element_by_id(new_id) != NULL) {
+		// the id is already available in the document
+		return false;
+	}
+	element->set_id(new_id);
+	emit dataChanged(index, index);
+	return true;
+}
+
+bool CyberiadaSMModel::updateTitle(const QModelIndex& index, const QString& new_value)
+{
+	Cyberiada::Element* element = indexToElement(index);
+	if (!element) return false;
+	Cyberiada::Name new_name(new_value.toStdString());
+	element->set_name(new_name);
+	emit dataChanged(index, index);
+	return true;
+}
+
+bool CyberiadaSMModel::updateAction(const QModelIndex& index,
+									int action_index, const QString& new_trigger, const QString& new_guard,
+									const QString& new_behaviour)
+{
+	Cyberiada::Element* element = indexToElement(index);
+	if (!element) return false;
+	if (element->get_type() == Cyberiada::elementSimpleState || element->get_type() == Cyberiada::elementCompositeState) {
+		Cyberiada::State* state = static_cast<Cyberiada::State*>(element);
+		std::vector<Cyberiada::Action>& actions = state->get_actions();
+		if (action_index < 0 || action_index >= actions.size()) {
+			return false;
+		}
+		Cyberiada::Action& a = actions[action_index];
+		if (a.get_type() != Cyberiada::actionTransition) {
+			a.update(new_behaviour.toStdString());
+		} else {
+			if (new_trigger.length() == 0) return false;
+			a.update(new_trigger.toStdString(), new_guard.toStdString(), new_behaviour.toStdString());
+		}
+	} else if (element->get_type() == Cyberiada::elementTransition) {
+		if (new_trigger.length() == 0) return false;
+		Cyberiada::Transition* trans = static_cast<Cyberiada::Transition*>(element);
+		trans->get_action().update(new_trigger.toStdString(), new_guard.toStdString(), new_behaviour.toStdString());
+	} else {
+		return false;
+	}
+	emit dataChanged(index, index);
+	return true;
+}
+
+bool CyberiadaSMModel::newAction(const QModelIndex& index, Cyberiada::ActionType type, const QString& trigger, const QString& guard,
+								 const QString& behaviour)
+{
+	Cyberiada::Element* element = indexToElement(index);
+	if (!element) return false;
+	if (element->get_type() == Cyberiada::elementSimpleState || element->get_type() == Cyberiada::elementCompositeState) {
+		Cyberiada::State* state = static_cast<Cyberiada::State*>(element);
+		std::vector<Cyberiada::Action>& actions = state->get_actions();
+		if (type == Cyberiada::actionTransition) { 
+			if (trigger.length() == 0) return false;
+			actions.push_back(Cyberiada::Action(trigger.toStdString(), guard.toStdString(), behaviour.toStdString()));
+		} else {
+			actions.push_back(Cyberiada::Action(type, behaviour.toStdString()));
+		}
+	} else if (element->get_type() == Cyberiada::elementTransition) {
+		if (trigger.length() == 0) return false;
+		Cyberiada::Transition* trans = static_cast<Cyberiada::Transition*>(element);
+		if (trans->has_action()) {
+			// should edit available action
+			return false;
+		}
+		trans->get_action().update(trigger.toStdString(), guard.toStdString(), behaviour.toStdString());
+	} else {
+		return false;
+	}
+	emit dataChanged(index, index);
+	return true;
+}
+
+bool CyberiadaSMModel::deleteAction(const QModelIndex& index, int action_index)
+{
+	Cyberiada::Element* element = indexToElement(index);
+	if (!element) return false;
+	if (element->get_type() == Cyberiada::elementSimpleState || element->get_type() == Cyberiada::elementCompositeState) {
+		Cyberiada::State* state = static_cast<Cyberiada::State*>(element);
+		std::vector<Cyberiada::Action>& actions = state->get_actions();
+		if (action_index < 0 || action_index >= actions.size()) {
+			return false;
+		}
+		actions.erase(actions.begin() + static_cast<size_t>(action_index));
+	} else if (element->get_type() == Cyberiada::elementTransition) {
+		Cyberiada::Transition* trans = static_cast<Cyberiada::Transition*>(element);
+		if (!trans->has_action()) {
+			return false;
+		}
+		trans->get_action().clear();
+	} else {
+		return false;
+	}
+	emit dataChanged(index, index);
+	return true;
+}
+
+bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada::Point& point)
+{
+	Cyberiada::Element* element = indexToElement(index);
+	if (!element) return false;
+	if (!element->has_point_geometry()) return false;
+	Cyberiada::Vertex* v = static_cast<Cyberiada::Vertex*>(element);
+	v->update_geometry(point);
+	emit dataChanged(index, index);
+	return true;
+}
+
+bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada::Rect& rect)
+{
+	Cyberiada::Element* element = indexToElement(index);
+	if (!element) return false;
+	if (!element->has_rect_geometry()) return false;
+	if (element->get_type() == Cyberiada::elementComment || Cyberiada::elementFormalComment) {
+		Cyberiada::Comment* comment = static_cast<Cyberiada::Comment*>(element);
+		comment->update_geometry(rect);
+	} else {
+		Cyberiada::ElementCollection* ec = static_cast<Cyberiada::ElementCollection*>(element);
+		ec->update_geometry(rect);
+	}
+	emit dataChanged(index, index);
+	return true;
+}
+
+bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada::Point& source, const Cyberiada::Point& target)
+{
+	Cyberiada::Element* element = indexToElement(index);
+	if (!element) return false;
+	if (element->get_type() != Cyberiada::elementTransition) return false;
+	Cyberiada::Transition* trans = static_cast<Cyberiada::Transition*>(element);
+	// TODO
+	emit dataChanged(index, index);
+	return true;
+}
+
+bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada::Polyline& pl)
+{
+	Cyberiada::Element* element = indexToElement(index);
+	if (!element) return false;
+	if (element->get_type() != Cyberiada::elementTransition) return false;
+	Cyberiada::Transition* trans = static_cast<Cyberiada::Transition*>(element);
+	// TODO
+	emit dataChanged(index, index);
+	return true;
+}
+
+bool CyberiadaSMModel::updateCommentBody(const QModelIndex& index, const QString& body)
+{
+	Cyberiada::Element* element = indexToElement(index);
+	if (!element) return false;
+	emit dataChanged(index, index);
+	return true;
+}
+
+bool CyberiadaSMModel::updateMetainformation(const QModelIndex& index, const QString& parameter, const QString& new_value)
+{
+	if (index != documentIndex()) {
+		return false;
+	}
+	QModelIndex comment_index = elementToIndex(root->get_meta_element());
+	emit dataChanged(comment_index, comment_index);
+	emit dataChanged(index, index);
+	return true;
 }
 
 Qt::ItemFlags CyberiadaSMModel::flags(const QModelIndex &index) const
