@@ -39,6 +39,8 @@ public:
 	// CORE FUNCTIONALITY
 	void                                reset();
 	void                                loadDocument(const QString& path, bool reconstruct = false, bool reconsruct_sm = false);
+	void                                saveDocument(bool round = false);
+	void                                saveAsDocument(const QString& path, Cyberiada::DocumentFormat f, bool round = false);
 
 	// DATA REPRESENTATION
 	QVariant                            data(const QModelIndex& index, int role) const;	

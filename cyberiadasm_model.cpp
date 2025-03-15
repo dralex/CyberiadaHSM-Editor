@@ -104,6 +104,20 @@ void CyberiadaSMModel::loadDocument(const QString& path, bool reconstruct, bool 
 	}
 }
 
+void CyberiadaSMModel::saveDocument(bool round)
+{
+	if (root && !root->get_file_path().empty()) {
+		root->save();
+	}
+}
+
+void CyberiadaSMModel::saveAsDocument(const QString& path, Cyberiada::DocumentFormat f, bool round)
+{
+	if (root) {
+		root->save_as(path.toStdString(), f, round);
+	}
+}
+
 QVariant CyberiadaSMModel::data(const QModelIndex &index, int role) const
 {
 	if (!index.isValid() || index == rootIndex())
