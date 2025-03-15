@@ -28,6 +28,7 @@
 #include <QPainter>
 #include <QGraphicsView>
 #include <QGraphicsScene>
+#include <QCursor>
 
 #include "cyberiadasm_editor_scene.h"
 #include "cyberiadasm_editor_items.h"
@@ -39,11 +40,12 @@
 #include "smeditor_window.h"
 #include "myassert.h"
 
-static double DEFAULT_SCENE_X = -700;
-static double DEFAULT_SCENE_Y = -700;
-static double DEFAULT_SCENE_WIDTH = 3000;
-static double DEFAULT_SCENE_HEIGHT = 3000;
+static double DEFAULT_SCENE_X = -500;
+static double DEFAULT_SCENE_Y = -500;
+static double DEFAULT_SCENE_WIDTH = 1000;
+static double DEFAULT_SCENE_HEIGHT = 1000;
 static double DEFAULT_SCENE_DELTA = 0.2;
+static double DEFAULT_SCENE_BORDER_MARGIN = 50;
 
 CyberiadaSMEditorScene::CyberiadaSMEditorScene(CyberiadaSMModel* _model, QObject *_parent):
     QGraphicsScene(_parent), model(_model), currentSM(NULL)
@@ -77,7 +79,9 @@ void CyberiadaSMEditorScene::onSelectionChanged() {
         QGraphicsItem* item = selectedItems().first();
         Cyberiada::ID item_id = elementItem.key(item);
         const Cyberiada::Element* element = model->idToElement(QString::fromStdString(item_id));
-		MY_ASSERT(element);
+
+        if(!element) return; // not a smeditor base element
+        // MY_ASSERT(element);
 		QModelIndex index = model->elementToIndex(element);
 		CyberiadaSMEditorWindow* p = dynamic_cast<CyberiadaSMEditorWindow*>(parent());
 		//p->SMView->setCurrentIndex(index);
@@ -103,26 +107,27 @@ void CyberiadaSMEditorScene::slotElementSelected(const QModelIndex& index)
             blockSignals(false);
         }
 
-        Cyberiada::StateMachine* sm = model->rootDocument()->get_parent_sm(element);
-        if (sm != currentSM) {
-            currentSM = sm;
-            /*Cyberiada::Rect bound = currentSM->get_bound_rect();
-            clear();
-            if (bound.valid) {
-                setSceneRect(-(bound.width / 2.0) * (1.0 + DEFAULT_SCENE_DELTA),
-                             -(bound.height / 2.0) * (1.0 + DEFAULT_SCENE_DELTA),
-                             bound.width * (1.0 + 2.0 * DEFAULT_SCENE_DELTA),
-                             bound.height * (1.0 + 2.0 * DEFAULT_SCENE_DELTA));
-                QRectF r = sceneRect();
-                qDebug() << "Scene (" << r.left() << ", " << r.top() << ", " << r.right() << ", " << r.bottom() << ")";
-            } else {
-                //reconstructGeometry();
-            }*/
+        // Cyberiada::StateMachine* sm = model->rootDocument()->get_parent_sm(element);
+        // if (sm != currentSM) {
+        //     currentSM = sm;
+        //     /*Cyberiada::Rect bound = currentSM->get_bound_rect();
+        //     clear();
+        //     if (bound.valid) {
+        //         setSceneRect(-(bound.width / 2.0) * (1.0 + DEFAULT_SCENE_DELTA),
+        //                      -(bound.height / 2.0) * (1.0 + DEFAULT_SCENE_DELTA),
+        //                      bound.width * (1.0 + 2.0 * DEFAULT_SCENE_DELTA),
+        //                      bound.height * (1.0 + 2.0 * DEFAULT_SCENE_DELTA));
+        //         QRectF r = sceneRect();
+        //         qDebug() << "Scene (" << r.left() << ", " << r.top() << ", " << r.right() << ", " << r.bottom() << ")";
+        //     } else {
+        //         //reconstructGeometry();
+        //     }*/
 
-            addItemsRecursively(NULL, currentSM);
-            views().first()->fitInView(itemsBoundingRect(), Qt::KeepAspectRatio);
-            update();
-        }
+        //     addItemsRecursively(NULL, currentSM);
+        //     // TODO
+        //     views().first()->fitInView(itemsBoundingRect(), Qt::KeepAspectRatio);
+        //     update();
+        // }
 	}
 }
 
@@ -188,7 +193,7 @@ void CyberiadaSMEditorScene::addItemsRecursively(QGraphicsItem* parent, Cyberiad
 				break;
             case Cyberiada::elementComment: {
                 if (!child->has_geometry()) break;
-                CyberiadaSMEditorCommentItem* comment = new CyberiadaSMEditorCommentItem(this, model, child, new_parent, &elementItem);
+                CyberiadaSMEditorCommentItem* comment = new CyberiadaSMEditorCommentItem(this, model, child, new_parent, elementItem);
                 elementItem.insert(child->get_id(), comment);
                 addItem(comment);
                 qDebug() << "add item" << child->get_id().c_str() << "type" << type << "parent" << elementItem.key(new_parent).c_str();
@@ -196,14 +201,14 @@ void CyberiadaSMEditorScene::addItemsRecursively(QGraphicsItem* parent, Cyberiad
             }
             case Cyberiada::elementFormalComment: {
                 if (!child->has_geometry()) break;
-                CyberiadaSMEditorCommentItem* formalComment = new CyberiadaSMEditorCommentItem(this, model, child, new_parent, &elementItem);
+                CyberiadaSMEditorCommentItem* formalComment = new CyberiadaSMEditorCommentItem(this, model, child, new_parent, elementItem);
                 elementItem.insert(child->get_id(), formalComment);
                 addItem(formalComment);
                 qDebug() << "add item" << child->get_id().c_str() << "type" << type << "parent" << elementItem.key(new_parent).c_str();
                 break;
             }
             case Cyberiada::elementTransition: {
-                CyberiadaSMEditorTransitionItem* transition = new CyberiadaSMEditorTransitionItem(this, model, child, NULL, &elementItem);
+                CyberiadaSMEditorTransitionItem* transition = new CyberiadaSMEditorTransitionItem(this, model, child, NULL, elementItem);
                 elementItem.insert(child->get_id(), transition);
                 addItem(transition);
                 qDebug() << "add item" << child->get_id().c_str() << "type" << type << "parent" << elementItem.key(new_parent).c_str();
@@ -241,7 +246,7 @@ void CyberiadaSMEditorScene::setGridPen(const QPen &pen)
     update();
 }
 
-void CyberiadaSMEditorScene::updateScene()
+void CyberiadaSMEditorScene::loadScene()
 {
     elementItem.clear();
 
@@ -250,8 +255,17 @@ void CyberiadaSMEditorScene::updateScene()
     MY_ASSERT(elementItem.isEmpty());
     MY_ASSERT(items().isEmpty());
 
-    // Cyberiada::StateMachine* sm = static_cast<Cyberiada::StateMachine*>(model->indexToElement(model->firstSMIndex()));
-    // addItemsRecursively(NULL, sm);
+    Cyberiada::StateMachine* sm = static_cast<Cyberiada::StateMachine*>(model->indexToElement(model->firstSMIndex()));
+    addItemsRecursively(NULL, sm);
+    // qreal margin = std::max(itemsBoundingRect().width(), itemsBoundingRect().height()) * DEFAULT_SCENE_BORDER_MARGIN_PERCENT;
+    qreal margin = DEFAULT_SCENE_BORDER_MARGIN;
+    setSceneRect(itemsBoundingRect().adjusted(-margin, -margin, margin, margin));
+    views().first()->fitInView(itemsBoundingRect(), Qt::KeepAspectRatio);
+    update();
+}
+
+void CyberiadaSMEditorScene::setCurrentTool(ToolType tool) {
+    currentTool = tool;
 }
 
 void CyberiadaSMEditorScene::drawBackground(QPainter* painter, const QRectF &)
@@ -281,6 +295,6 @@ void CyberiadaSMEditorScene::drawBackground(QPainter* painter, const QRectF &)
 	painter->drawLines(lines.data(), lines.size());
 
     painter->setBrush(Qt::red);
-    painter->drawEllipse(QPointF(0, 0), 2, 2); // Центр системы координат
+    painter->drawEllipse(QPointF(0, 0), 2, 2); // the center of the coordinate system
 }
 

@@ -1,3 +1,26 @@
+/* -----------------------------------------------------------------------------
+ * The Cyberiada State Machine Editor
+ * -----------------------------------------------------------------------------
+ *
+ * The State Machine Editor State Item
+ *
+ * Copyright (C) 2025 Anastasia Viktorova <viktorovaa.04@gmail.com>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see https://www.gnu.org/licenses/
+ *
+ * ----------------------------------------------------------------------------- */
+
 #ifndef CYBERIADASMEDITORSTATEITEM_H
 #define CYBERIADASMEDITORSTATEITEM_H
 
@@ -8,14 +31,108 @@
 #include <QPainter>
 #include <QDebug>
 
-// #include "grabber.h"
+#include "dotsignal.h"
 #include "editable_text_item.h"
 #include "cyberiadasm_editor_items.h"
 
+/* -----------------------------------------------------------------------------
+ * State Item
+ * ----------------------------------------------------------------------------- */
+
+class StateArea;
+class StateTitle;
+class StateAction;
+
+class CyberiadaSMEditorStateItem : public CyberiadaSMEditorAbstractItem //, ItemWithText
+{
+    Q_OBJECT
+    //Q_PROPERTY(QPointF previousPosition READ previousPosition WRITE setPreviousPosition NOTIFY previousPositionChanged)
+
+public:
+    explicit CyberiadaSMEditorStateItem(QObject *parent_object,
+                       CyberiadaSMModel *model,
+                       Cyberiada::Element *element,
+                       QGraphicsItem *parent = NULL);
+    ~CyberiadaSMEditorStateItem();
+
+    virtual int type() const { return StateItem; }
+
+
+    enum CornerFlags {
+        Top = 0x01,
+        Bottom = 0x02,
+        Left = 0x04,
+        Right = 0x08,
+        TopLeft = Top|Left,
+        TopRight = Top|Right,
+        BottomLeft = Bottom|Left,
+        BottomRight = Bottom|Right
+    };
+
+    enum CornerGrabbers {
+        GrabberTop = 0,
+        GrabberBottom,
+        GrabberLeft,
+        GrabberRight,
+        GrabberTopLeft,
+        GrabberTopRight,
+        GrabberBottomLeft,
+        GrabberBottomRight
+    };
+
+    void setPreviousPosition(const QPointF previousPosition);
+
+    void setRect(qreal x, qreal y, qreal w, qreal h);
+    void setRect(const QRectF &rect);
+    QRectF rect() const;
+    qreal x() const;
+    qreal y() const;
+    qreal width() const;
+    qreal height() const;
+
+    StateArea* getArea();
+    void updateArea();
+
+    QRectF boundingRect() const override;
+
+    void setPositionText();
+
+signals:
+    void rectChanged(CyberiadaSMEditorStateItem *rect);
+    // void previousPositionChanged();
+    void clicked(CyberiadaSMEditorStateItem *rect);
+    void signalMove(QGraphicsItem *item, qreal dx, qreal dy);
+    void aboutToDelete();
+
+private slots:
+    void onTextItemSizeChanged();
+
+protected:
+    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
+
+private:
+    StateTitle* title;
+    StateAction* entry = nullptr;
+    StateAction* exit = nullptr;
+
+    QRectF m_rect;
+    StateArea* area;
+    const Cyberiada::State* state;
+    std::vector<Cyberiada::Action> actions;
+
+    void resizeLeft( const QPointF &pt);
+    void resizeRight( const QPointF &pt);
+    void resizeBottom(const QPointF &pt);
+    void resizeTop(const QPointF &pt);
+
+    void setPositionGrabbers();
+    void showGrabbers();
+    void hideGrabbers();
+};
 
 
 /* -----------------------------------------------------------------------------
- * State Item
+ * State Area Item
  * ----------------------------------------------------------------------------- */
 
 class StateArea : public QGraphicsRectItem
@@ -49,110 +166,40 @@ private:
     bool bottomLine = false;
 };
 
+/* -----------------------------------------------------------------------------
+ * State Text Items
+ * ----------------------------------------------------------------------------- */
 
-class CyberiadaSMEditorStateItem : public CyberiadaSMEditorAbstractItem
+class StateTitle : public EditableTextItem
 {
-    Q_OBJECT
-    //Q_PROPERTY(QPointF previousPosition READ previousPosition WRITE setPreviousPosition NOTIFY previousPositionChanged)
-
 public:
-    explicit CyberiadaSMEditorStateItem(QObject *parent_object,
-                       CyberiadaSMModel *model,
-                       Cyberiada::Element *element,
-                       QGraphicsItem *parent = NULL);
-    ~CyberiadaSMEditorStateItem();
-
-    virtual int type() const { return StateItem; }
-
-    /*
-    enum CornerFlags {
-        Top = 0x01,
-        Bottom = 0x02,
-        Left = 0x04,
-        Right = 0x08,
-        TopLeft = Top|Left,
-        TopRight = Top|Right,
-        BottomLeft = Bottom|Left,
-        BottomRight = Bottom|Right
-    };
-
-    enum CornerGrabbers {
-        GrabberTop = 0,
-        GrabberBottom,
-        GrabberLeft,
-        GrabberRight,
-        GrabberTopLeft,
-        GrabberTopRight,
-        GrabberBottomLeft,
-        GrabberBottomRight
-    };
-*/
-
-    QPointF previousPosition() const;
-    void setPreviousPosition(const QPointF previousPosition);
-
-    void setRect(qreal x, qreal y, qreal w, qreal h);
-    void setRect(const QRectF &rect);
-    QRectF rect() const;
-    qreal x() const;
-    qreal y() const;
-    qreal width() const;
-    qreal height() const;
-
-    StateArea* getArea();
-    void updateArea();
-
-    QRectF boundingRect() const override;
-
-    void setPositionText() override;
-
-signals:
-    void rectChanged(CyberiadaSMEditorStateItem *rect);
-    void previousPositionChanged();
-    void clicked(CyberiadaSMEditorStateItem *rect);
-    void signalMove(QGraphicsItem *item, qreal dx, qreal dy);
-
-private slots:
-    void onTextItemSizeChanged();
+    explicit StateTitle(const QString &text,
+                        QGraphicsItem *parent = nullptr):
+        EditableTextItem(text, parent) {
+        setTextAlignment(Qt::AlignCenter);
+        setTextMargin(0);
+    }
 
 protected:
-    void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
     void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
+    void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
-    void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
-    void hoverLeaveEvent(QGraphicsSceneHoverEvent *event) override;
-    void hoverMoveEvent(QGraphicsSceneHoverEvent *event) override;
-    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
 
 private:
-    // unsigned int m_cornerFlags;
-    QPointF m_previousPosition;
-    bool m_leftMouseButtonPressed;
-    // Grabber *cornerGrabber[8];
-
-    EditableTextItem *title;
-    EditableTextItem* entry = nullptr;
-    EditableTextItem* exit = nullptr;
-
-    QRectF m_rect;
-    StateArea* m_area;
-    const Cyberiada::State* m_state;
-    std::vector<Cyberiada::Action> m_actions;
-    // QMap<Cyberiada::ID, QGraphicsItem*> *m_elementItem;
-
-    /*
-    void resizeLeft( const QPointF &pt);
-    void resizeRight( const QPointF &pt);
-    void resizeBottom(const QPointF &pt);
-    void resizeTop(const QPointF &pt);
-
-    void setPositionGrabbers();
-    void showGrabbers();
-    void hideGrabbers();
-*/
-
-
+    QPointF startPos;
+    bool isMoving = false;
+    bool isLeftMouseButtonPressed = false;
 };
 
+
+class StateAction : public EditableTextItem
+{
+public:
+    explicit StateAction(const QString &text,
+                        QGraphicsItem *parent = nullptr):
+        EditableTextItem(text, parent) {
+        setTextMargin(30);
+    }
+};
 
 #endif // CYBERIADASMEDITORSTATEITEM_H

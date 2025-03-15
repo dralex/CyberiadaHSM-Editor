@@ -27,12 +27,9 @@
 #include <QGraphicsItem>
 #include <QObject>
 #include <QBrush>
+
 #include "cyberiadasm_model.h"
-
-
-// const int ROUNDED_RECT_RADIUS = 10;
-// const int VERTEX_POINT_RADIUS = 10;
-// const int COMMENT_ANGLE_CORNER = 10;
+#include "dotsignal.h"
 
 /* -----------------------------------------------------------------------------
  * Abstract Item
@@ -40,10 +37,13 @@
 
 class CyberiadaSMEditorAbstractItem: public QObject, public QGraphicsItem {
     Q_OBJECT
+    Q_INTERFACES(QGraphicsItem)
 public:
 	CyberiadaSMEditorAbstractItem(CyberiadaSMModel* model,
 								  Cyberiada::Element* element,
 								  QGraphicsItem* parent = NULL);
+
+    virtual ~CyberiadaSMEditorAbstractItem() = default;
 
 	enum {
         SMItem = UserType + 1,
@@ -54,25 +54,82 @@ public:
 		ChoiceItem,
 		TransitionItem
 	};
+
+    enum CornerFlags {
+        Top = 0x01,
+        Bottom = 0x02,
+        Left = 0x04,
+        Right = 0x08,
+        TopLeft = Top|Left,
+        TopRight = Top|Right,
+        BottomLeft = Bottom|Left,
+        BottomRight = Bottom|Right
+    };
+
+    enum CornerGrabbers {
+        GrabberTop = 0,
+        GrabberBottom,
+        GrabberLeft,
+        GrabberRight,
+        GrabberTopLeft,
+        GrabberTopRight,
+        GrabberBottomLeft,
+        GrabberBottomRight
+    };
 	
 	virtual int type() const = 0;
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) = 0;
 
-    // virtual QRectF boundingRect() const;
+    virtual QRectF boundingRect() const = 0;
 	virtual QVariant data(int key) const;
 
 	static QRectF toQtRect(const Cyberiada::Rect& r) {
 		return QRectF(r.x, r.y, r.width, r.height);
 	}
 
-    virtual void setPositionText() {} // содержит текстовый блок
+    QPointF getPreviousPosition() const;
+    void setPreviousPosition(const QPointF newPreviousPosition);
+
+    bool hasGeometry();
+
+protected:
+    CyberiadaSMModel* model;
+    Cyberiada::Element* element;
+
+    void onParentGeometryChanged();
+
+    QVariant itemChange(GraphicsItemChange change, const QVariant& value) override;
+
+    void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
+    void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
+    void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
+    void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
+    void hoverMoveEvent(QGraphicsSceneHoverEvent *event) override;
+    void hoverLeaveEvent(QGraphicsSceneHoverEvent *event) override;
 
 signals:
     void geometryChanged();
+    void previousPositionChanged();
 
 protected:
-	CyberiadaSMModel* model;
-	Cyberiada::Element* element;
+    unsigned int cornerFlags;
+    QPointF previousPosition;
+    bool isLeftMouseButtonPressed;
+    DotSignal *cornerGrabber[8];
+
+    void resizeLeft( const QPointF &pt);
+    void resizeRight( const QPointF &pt);
+    void resizeBottom(const QPointF &pt);
+    void resizeTop(const QPointF &pt);
+
+    virtual void initializeDots();
+    virtual void setDotsPosition();
+    virtual void showDots();
+    virtual void hideDots();
+
+private:
+    void handleParentChange();
+
 };
 
 // /* -----------------------------------------------------------------------------
@@ -88,6 +145,10 @@ protected:
 // 	virtual int type() const { return CompositeStateItem; }
 // };
 
+// class ItemWithText {
+// public:
+//     virtual void setPositionText() = 0; // содержит текстовый блок
+// };
 
 
 #endif

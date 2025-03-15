@@ -95,9 +95,27 @@
      <string>View</string>
     </property>
     <addaction name="actionFont"/>
+    <addaction name="separator"/>
+    <addaction name="zoomInAction"/>
+    <addaction name="zoomOutAction"/>
+    <addaction name="fitContentAction"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
+  </widget>
+  <widget class="QToolBar" name="mainToolBar">
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="zoomInAction"/>
+   <addaction name="zoomOutAction"/>
+   <addaction name="fitContentAction"/>
+   <addaction name="separator"/>
+   <addaction name="selectToolAction"/>
+   <addaction name="panAction"/>
   </widget>
   <action name="actionOpen">
    <property name="text">
@@ -112,6 +130,69 @@
   <action name="actionFont">
    <property name="text">
     <string>Font</string>
+   </property>
+  </action>
+  <action name="zoomInAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/zoom-in.png</normaloff>:/Icons/images/zoom-in.png</iconset>
+   </property>
+   <property name="text">
+    <string>Zoom In</string>
+   </property>
+  </action>
+  <action name="zoomOutAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/zoom-out.png</normaloff>:/Icons/images/zoom-out.png</iconset>
+   </property>
+   <property name="text">
+    <string>Zoom Out</string>
+   </property>
+  </action>
+  <action name="fitContentAction">
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/fit-content.png</normaloff>:/Icons/images/fit-content.png</iconset>
+   </property>
+   <property name="text">
+    <string>Fit Content</string>
+   </property>
+  </action>
+  <action name="panAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/hand.png</normaloff>:/Icons/images/hand.png</iconset>
+   </property>
+   <property name="text">
+    <string>Pan</string>
+   </property>
+   <property name="toolTip">
+    <string>Pan</string>
+   </property>
+  </action>
+  <action name="selectToolAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/cursor.png</normaloff>:/Icons/images/cursor.png</iconset>
+   </property>
+   <property name="text">
+    <string>Select Tool</string>
+   </property>
+   <property name="toolTip">
+    <string>Select Tool</string>
    </property>
   </action>
  </widget>

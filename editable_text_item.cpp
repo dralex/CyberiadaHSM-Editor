@@ -1,4 +1,25 @@
-#include "editable_text_item.h"
+/* -----------------------------------------------------------------------------
+ * The Cyberiada State Machine Editor
+ * -----------------------------------------------------------------------------
+ *
+ * Editable Text Item for the State Machine Editor Scene Items
+ *
+ * Copyright (C) 2025 Anastasia Viktorova <viktorovaa.04@gmail.com>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see https://www.gnu.org/licenses/
+ *
+ * ----------------------------------------------------------------------------- */
 
 #include <QGraphicsSceneMouseEvent>
 #include <QTextCursor>
@@ -10,42 +31,49 @@
 #include <QTextBlockFormat>
 #include <QDebug>
 
-#include "cyberiadasm_editor_state_item.h"
+#include "editable_text_item.h"
+// #include "cyberiadasm_editor_state_item.h"
 #include "fontmanager.h"
+#include "cyberiadasm_editor_scene.h"
+#include "cyberiada_constants.h"
 
 
-EditableTextItem::EditableTextItem(const QString &text, QGraphicsItem *parent, bool align, bool parentHasGeometry)
-    : QGraphicsTextItem(text, parent), align(align), parentHasGeometry(parentHasGeometry) {
+EditableTextItem::EditableTextItem(const QString &text, QGraphicsItem *parent):
+    QGraphicsTextItem(text, parent)
+{
     setFlags(QGraphicsItem::ItemIsSelectable);
     setTextInteractionFlags(Qt::NoTextInteraction);
-    setAlign();
     setFont(FontManager::instance().getFont());
-
     connect(&FontManager::instance(), &FontManager::fontChanged, this, &EditableTextItem::onFontChanged);
 }
 
 void EditableTextItem::mousePressEvent(QGraphicsSceneMouseEvent *event) {
-    if (event->button() == Qt::LeftButton and !hasFocus()) {
+    if (dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select) {
+        event->ignore();
+        return;
+    }
+    if (event->button() == Qt::LeftButton && !hasFocus()) {
         event->accept();
         return;
     }
+
     QGraphicsTextItem::mousePressEvent(event);
 }
 
 void EditableTextItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) {
+    if (dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select) {
+        event->ignore();
+        return;
+    }
     setTextInteractionFlags(Qt::TextEditorInteraction);
     setFocus();
     isEdit = true;
     QGraphicsTextItem::mouseDoubleClickEvent(event);
 }
 
-void EditableTextItem::keyPressEvent(QKeyEvent *event){
+void EditableTextItem::keyPressEvent(QKeyEvent *event) {
     if (isEdit) {
-        // CyberiadaSMEditorStateItem *parentRectangle = dynamic_cast<CyberiadaSMEditorStateItem*>(parentItem());
-        CyberiadaSMEditorAbstractItem *parentSMEItem = dynamic_cast<CyberiadaSMEditorAbstractItem*>(parentItem());
         QGraphicsTextItem::keyPressEvent(event);
-        parentSMEItem->setPositionText();
-        parentItem()->update();
     }
 }
 
@@ -54,54 +82,50 @@ void EditableTextItem::focusOutEvent(QFocusEvent *event) {
     isEdit = false;
     setPlainText(toPlainText().trimmed());
     QGraphicsTextItem::focusOutEvent(event);
+    emit editingFinished();
 }
 
 void EditableTextItem::hoverEnterEvent(QGraphicsSceneHoverEvent *event) {
+    // event->ignore();
+
     if (hasFocus()) {
         setCursor(QCursor(Qt::IBeamCursor));
-    } else {
-        setCursor(QCursor(Qt::ArrowCursor));
     }
 
     QGraphicsTextItem::hoverEnterEvent(event);
 }
 
-void EditableTextItem::setAlign(){
-    if (parentHasGeometry) {
-        // CyberiadaSMEditorStateItem *rectParent = dynamic_cast<CyberiadaSMEditorStateItem*>(parentItem());
-        CyberiadaSMEditorAbstractItem *parentSMEItem = dynamic_cast<CyberiadaSMEditorAbstractItem*>(parentItem());
-        if (!align) {
-            // setTextWidth(parentSMEItem->rect().width() - 30);
-            setTextWidth(parentSMEItem->boundingRect().width() - 30);
-        }
-        // if (boundingRect().width() > parentSMEItem->rect().width() - 30) {
-        if (boundingRect().width() > parentSMEItem->boundingRect().width() - 30) {
-            // setTextWidth(parentSMEItem->rect().width() - 30);
-            setTextWidth(parentSMEItem->boundingRect().width() - 30);
-        }
-    }
-
-    QTextBlockFormat blockFormat;
-    if (align) {
-        blockFormat.setAlignment(Qt::AlignCenter);
-    } else {
-        blockFormat.setAlignment(Qt::AlignLeft);
-    }
-    textCursor().mergeBlockFormat(blockFormat);
-}
-
 void EditableTextItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) {
-    // setAlign();
     painter->setFont(QFont(font()));
 
     QGraphicsTextItem::paint(painter, option, widget);
 }
 
-void EditableTextItem::setFontStyleChangeable(bool isChangeable) { isFontStyleChangeable = isChangeable; }
+void EditableTextItem::setTextAlignment(Qt::Alignment alignment) {
+    QTextOption textOption;
+    textOption.setAlignment(alignment);
+    textOption.setWrapMode(QTextOption::WrapAnywhere);
+    document()->setDefaultTextOption(textOption);
+}
 
-void EditableTextItem::setFontBoldness(bool isBold) {
+void EditableTextItem::setTextWidthEnabled(bool enabled) {
+    isTextWidthEnabled = enabled;
+}
+
+void EditableTextItem::setFontStyleChangeable(bool isChangeable) {
+    isFontStyleChangeable = isChangeable;
+}
+
+void EditableTextItem::setFontBoldness(bool isBold)
+{
     this->isBold = isBold;
     onFontChanged(font());
+}
+
+void EditableTextItem::setTextMargin(double newTextMargin)
+{
+    textMargin = newTextMargin;
+    updateTextWidth();
 }
 
 void EditableTextItem::onFontChanged(const QFont &newFont)
@@ -122,5 +146,18 @@ void EditableTextItem::onFontChanged(const QFont &newFont)
     }
     setFont(newFont);
     emit sizeChanged();
+
+    updateTextWidth();
+}
+
+void EditableTextItem::updateTextWidth()
+{
+    if (!isTextWidthEnabled) return;
+
+    CyberiadaSMEditorAbstractItem *parentSMEItem = dynamic_cast<CyberiadaSMEditorAbstractItem*>(parentItem());
+    if (parentSMEItem && parentSMEItem->hasGeometry()) {
+        setTextWidth(parentSMEItem->boundingRect().width() - textMargin);
+        qDebug() << "updateTextWidth with margin " << toPlainText() << textMargin;
+    }
 }
 
