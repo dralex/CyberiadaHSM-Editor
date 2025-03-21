@@ -31,52 +31,42 @@ CyberiadaSMPropertiesWidget::CyberiadaSMPropertiesWidget(QWidget *parent):
 	QtTreePropertyBrowser(parent), model(NULL), element(NULL)
 {
 	properties = {
-		{propActionType,           propEditorActionType,        tr("Action Type", "Property name"), ""},
-		{propBehavior,             propEditorString,            tr("Behavior", "Property name"), ""},
-		{propBody,                 propEditorString,            tr("Body", "Property name"), ""},
-		{propColor,                propEditorColor,             tr("Color", "Property name"), ""},
-		{propFormat,               propEditorFormatType,        tr("Format", "Property name"), ""},
-		{propFragment,             propEditorString,            tr("Fragment", "Property name"), ""},
-		{propGroupAction,          propEditorGroup,             tr("Action", "Property name"), ""},
-		{propGroupActions,         propEditorGroup,             tr("Actions", "Property name"), ""},
-		{propGroupComment,         propEditorGroup,             tr("Comment", "Property name"), ""},
-		{propGroupDocument,        propEditorGroup,             tr("Document", "Property name"), ""},
-		{propGroupElement,         propEditorGroup,             tr("Element", "Property name"), ""},
-		{propGroupGeometry,        propEditorGroup,             tr("Geometry", "Property name"), ""},
-		{propGroupLabelPoint,      propEditorPointGroup,        tr("Label Point", "Property name"), ""},
-		{propGroupMeta,            propEditorGroup,             tr("Metainformation", "Property name"), ""},
-		{propGroupPoint,           propEditorPointGroup,        tr("Point", "Property name"), ""},
-		{propGroupPolyline,        propEditorGroup,             tr("Polyline", "Property name"), ""},
-		{propGroupRect,            propEditorRectGroup,         tr("Rect", "Property name"), ""},
+		{propActionType,           propEditorActionType,        tr("Action Type", "Property name")},
+		{propBehavior,             propEditorString,            tr("Behavior", "Property name")},
+		{propBody,                 propEditorString,            tr("Body", "Property name")},
+		{propColor,                propEditorColor,             tr("Color", "Property name")},
+		{propFormat,               propEditorFormatType,        tr("Format", "Property name")},
+		{propFragment,             propEditorString,            tr("Fragment", "Property name")},
+		{propGroupAction,          propEditorGroup,             tr("Action", "Property name")},
+		{propGroupActions,         propEditorGroup,             tr("Actions", "Property name")},
+		{propGroupComment,         propEditorGroup,             tr("Comment", "Property name")},
+		{propGroupDocument,        propEditorGroup,             tr("Document", "Property name")},
+		{propGroupElement,         propEditorGroup,             tr("Element", "Property name")},
+		{propGroupGeometry,        propEditorGroup,             tr("Geometry", "Property name")},
+		{propGroupLabelPoint,      propEditorPointGroup,        tr("Label Point", "Property name")},
+		{propGroupMeta,            propEditorGroup,             tr("Metainformation", "Property name")},
+		{propGroupPoint,           propEditorPointGroup,        tr("Point", "Property name")},
+		{propGroupPolyline,        propEditorGroup,             tr("Polyline", "Property name")},
+		{propGroupRect,            propEditorRectGroup,         tr("Rect", "Property name")},
         // {c,    propEditorRectGroup,         tr("Bounding Rect", "Property name")},
-		{propGroupSourcePoint,     propEditorPointGroup,        tr("Source Point", "Property name"), ""},
-		{propGroupSubject,         propEditorGroup,             tr("Subject", "Property name"), ""},
-		{propGroupSubjects,        propEditorGroup,             tr("Subjects", "Property name"), ""},
-		{propGroupTargetPoint,     propEditorPointGroup,        tr("Target Point", "Property name"), ""},
-		{propGroupTransition,      propEditorGroup,             tr("Transition", "Property name"), ""},
-		{propGuard,                propEditorString,            tr("Guard", "Property name"), ""},
-		{propID,                   propEditorString,            tr("ID", "Property name"), ""},
-		{propMarkup,               propEditorString,            tr("Markup", "Property name"), ""},
-		{propMetaAuthor,           propEditorString,            tr(METAINFORMATION_AUTHOR, "Property name"),           METAINFORMATION_AUTHOR},
-		{propMetaContact,          propEditorString,            tr(METAINFORMATION_CONTACT, "Property name"),          METAINFORMATION_CONTACT},
-		{propMetaDate,             propEditorDate,              tr(METAINFORMATION_DATE, "Property name"),             METAINFORMATION_DATE},
-		{propMetaDescription,      propEditorString,            tr(METAINFORMATION_DESCRIPTION, "Property name"),      METAINFORMATION_DESCRIPTION},
-		{propMetaEventPropagation, propEditorFlag,              tr(METAINFORMATION_EVENT_PROPAGATION, "Property name"),METAINFORMATION_EVENT_PROPAGATION},
-		{propMetaMarkupLanguage,   propEditorString,            tr(METAINFORMATION_MARKUP_LANGUAGE, "Property name"),  METAINFORMATION_MARKUP_LANGUAGE},
-		{propMetaName,             propEditorString,            tr(METAINFORMATION_NAME, "Property name"),             METAINFORMATION_NAME},
-		{propMetaPlatformLanguage, propEditorString,            tr(METAINFORMATION_PLATFORM_LANGUAGE, "Property name"),METAINFORMATION_PLATFORM_LANGUAGE},
-		{propMetaPlatformName,     propEditorString,            tr(METAINFORMATION_PLATFORM_NAME, "Property name"),    METAINFORMATION_PLATFORM_NAME},
-		{propMetaPlatformVersion,  propEditorString,            tr(METAINFORMATION_PLATFORM_VERSION, "Property name"), METAINFORMATION_PLATFORM_VERSION},
-		{propMetaStandardVersion,  propEditorString,            tr(METAINFORMATION_STANDARD_VERSION, "Property name"), METAINFORMATION_STANDARD_VERSION},
-		{propMetaTargetSystem,     propEditorString,            tr(METAINFORMATION_TARGET_SYSTEM, "Property name"),    METAINFORMATION_TARGET_SYSTEM},
-		{propMetaTransitionOrder,  propEditorFlag,              tr(METAINFORMATION_TRANSITION_ORDER, "Property name"), METAINFORMATION_TRANSITION_ORDER},
-		{propMetaVersion,          propEditorString,            tr(METAINFORMATION_VERSION, "Property name"),          METAINFORMATION_VERSION},
-		{propName,                 propEditorString,            tr("Name", "Property name"), ""},
-		{propSource,               propEditorSourceElementLink, tr("Source", "Property name"), ""},
-		{propSubjectType,          propEditorSubjectType,       tr("Subject Type", "Property name"), ""},
-		{propTarget,               propEditorTargetElementLink, tr("Target", "Property name"), ""},
-		{propTrigger,              propEditorString,            tr("Trigger", "Property name"), ""},
-		{propType,                 propEditorElementType,       tr("Type", "Property name"), ""},
+		{propGroupSourcePoint,     propEditorPointGroup,        tr("Source Point", "Property name")},
+		{propGroupSubject,         propEditorGroup,             tr("Subject", "Property name")},
+		{propGroupSubjects,        propEditorGroup,             tr("Subjects", "Property name")},
+		{propGroupTargetPoint,     propEditorPointGroup,        tr("Target Point", "Property name")},
+		{propGroupTransition,      propEditorGroup,             tr("Transition", "Property name")},
+		{propGuard,                propEditorString,            tr("Guard", "Property name")},
+		{propID,                   propEditorString,            tr("ID", "Property name")},
+		{propMarkup,               propEditorString,            tr("Markup", "Property name")},
+		{propMetaString,           propEditorString,            ""},
+		{propMetaEventPropagation, propEditorFlag,              tr(METAINFORMATION_EVENT_PROPAGATION, "Property name")},
+		{propMetaStandardVersion,  propEditorString,            tr(METAINFORMATION_STANDARD_VERSION, "Property name")},
+		{propMetaTransitionOrder,  propEditorFlag,              tr(METAINFORMATION_TRANSITION_ORDER, "Property name")},
+		{propName,                 propEditorString,            tr("Name", "Property name")},
+		{propSource,               propEditorSourceElementLink, tr("Source", "Property name")},
+		{propSubjectType,          propEditorSubjectType,       tr("Subject Type", "Property name")},
+		{propTarget,               propEditorTargetElementLink, tr("Target", "Property name")},
+		{propTrigger,              propEditorString,            tr("Trigger", "Property name")},
+		{propType,                 propEditorElementType,       tr("Type", "Property name")},
 	};
 
 	groupManager = new QtGroupPropertyManager(this);
@@ -224,50 +214,13 @@ void CyberiadaSMPropertiesWidget::newElement(Cyberiada::Element* new_element)
 		stringManager->setValue(standard_version_prop, QString(doc->meta().standard_version.c_str()));
 		meta_group_prop->addSubProperty(standard_version_prop);
 
-		QtProperty* platform_name_prop = constructProperty(propMetaPlatformName);
-		stringManager->setValue(platform_name_prop, QString(doc->meta().platform_name.c_str()));
-		meta_group_prop->addSubProperty(platform_name_prop);
-
-		QtProperty* platform_version_prop = constructProperty(propMetaPlatformVersion);
-		stringManager->setValue(platform_version_prop, QString(doc->meta().platform_version.c_str()));
-		meta_group_prop->addSubProperty(platform_version_prop);
-
-		QtProperty* platform_language_prop = constructProperty(propMetaPlatformLanguage);
-		stringManager->setValue(platform_language_prop, QString(doc->meta().platform_language.c_str()));
-		meta_group_prop->addSubProperty(platform_language_prop);
-
-		QtProperty* target_system_prop = constructProperty(propMetaTargetSystem);
-		stringManager->setValue(target_system_prop, QString(doc->meta().target_system.c_str()));
-		meta_group_prop->addSubProperty(target_system_prop);
-
-		QtProperty* name_prop = constructProperty(propMetaName);
-		stringManager->setValue(name_prop, QString(doc->meta().name.c_str()));
-		meta_group_prop->addSubProperty(name_prop);
-
-		QtProperty* author_prop = constructProperty(propMetaAuthor);
-		stringManager->setValue(author_prop, QString(doc->meta().author.c_str()));
-		meta_group_prop->addSubProperty(author_prop);
-
-		QtProperty* contact_prop = constructProperty(propMetaContact);
-		stringManager->setValue(contact_prop, QString(doc->meta().contact.c_str()));
-		meta_group_prop->addSubProperty(contact_prop);
-
-		QtProperty* description_prop = constructProperty(propMetaDescription);
-		stringManager->setValue(description_prop, QString(doc->meta().description.c_str()));
-		meta_group_prop->addSubProperty(description_prop);
-
-		QtProperty* version_prop = constructProperty(propMetaVersion);
-		stringManager->setValue(version_prop, QString(doc->meta().version.c_str()));
-		meta_group_prop->addSubProperty(version_prop);
-		
-		QtProperty* date_prop = constructProperty(propMetaDate);
-		dateManager->setValue(date_prop, QDateTime::fromString(QString(doc->meta().date.c_str()),
-															   Qt::ISODate));
-		meta_group_prop->addSubProperty(date_prop);
-		
-		QtProperty* markup_language_prop = constructProperty(propMetaMarkupLanguage);
-		stringManager->setValue(markup_language_prop, QString(doc->meta().markup_language.c_str()));
-		meta_group_prop->addSubProperty(markup_language_prop);
+		for (std::vector<std::pair<Cyberiada::String, Cyberiada::String>>::const_iterator i = doc->meta().strings.begin();
+			 i != doc->meta().strings.end();
+			 i++) {
+			QtProperty* platform_string_prop = constructProperty(propMetaString, i->first.c_str());
+			stringManager->setValue(platform_string_prop, i->second.c_str());
+			meta_group_prop->addSubProperty(platform_string_prop);
+		}
 
 		QtProperty* transition_order_prop = constructProperty(propMetaTransitionOrder);
 		boolManager->setValue(transition_order_prop, doc->meta().transition_order_flag);
@@ -500,7 +453,7 @@ void CyberiadaSMPropertiesWidget::newElement(Cyberiada::Element* new_element)
 	}
 }
 	
-QtProperty* CyberiadaSMPropertiesWidget::constructProperty(CyberiadaPropertyName prop)
+QtProperty* CyberiadaSMPropertiesWidget::constructProperty(CyberiadaPropertyName prop, const QString& alt_name)
 {
 	MY_ASSERT(element);
 	Cyberiada::ElementType type = element->get_type();
@@ -550,7 +503,11 @@ QtProperty* CyberiadaSMPropertiesWidget::constructProperty(CyberiadaPropertyName
 		break;
 		break;
 	case propEditorString:
-		new_property = stringManager->addProperty(p.propName);
+		if (alt_name.isEmpty()) {
+			new_property = stringManager->addProperty(p.propName);
+		} else {
+			new_property = stringManager->addProperty(alt_name);
+		}
 		break;
 	case propEditorSubjectType:
 		new_property = enumManager->addProperty(p.propName);
@@ -578,10 +535,12 @@ CyberiadaSMPropertiesWidget::CyberiadaProperty& CyberiadaSMPropertiesWidget::fin
 	return properties.first();
 }
 
-CyberiadaSMPropertiesWidget::CyberiadaProperty& CyberiadaSMPropertiesWidget::findPropertyStruct(const QString& propName)
+CyberiadaSMPropertiesWidget::CyberiadaProperty& CyberiadaSMPropertiesWidget::findPropertyStruct(const QString& prop_name,
+																								const QString& alt_name)
 {
 	for(QVector<CyberiadaSMPropertiesWidget::CyberiadaProperty>::iterator i = properties.begin(); i != properties.end(); i++) {
-		if (i->propName == propName) {
+		if (alt_name.isEmpty() && i->propName == prop_name ||
+			i->propName == alt_name) {
 			return *i;
 		}
 	}

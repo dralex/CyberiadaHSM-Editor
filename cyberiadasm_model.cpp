@@ -136,7 +136,7 @@ QVariant CyberiadaSMModel::data(const QModelIndex &index, int role) const
 			if (element->get_type() == Cyberiada::elementRoot) {
 				const Cyberiada::Document* doc = static_cast<const Cyberiada::Document*>(element);
 				MY_ASSERT(doc);
-				return QString(doc->meta().name.c_str());
+				return QString(doc->meta().get_string("name").c_str());
 			} else if (element->get_type() == Cyberiada::elementTransition) {
 				const Cyberiada::Transition* trans = static_cast<const Cyberiada::Transition*>(element);
 				QString id = trans->source_element_id().c_str();

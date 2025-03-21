@@ -76,20 +76,10 @@ private:
 		propGuard,
 		propID,
 		propMarkup,
-		propMetaAuthor,
-		propMetaContact,
-		propMetaDate,
-		propMetaDescription,
 		propMetaEventPropagation,
-		propMetaMarkupLanguage,
-		propMetaName,
-		propMetaPlatformLanguage,
-		propMetaPlatformName,
-		propMetaPlatformVersion,
 		propMetaStandardVersion,
-		propMetaTargetSystem,
+		propMetaString,
 		propMetaTransitionOrder,
-		propMetaVersion,
 		propName,
 		propSource,
 		propSubjectType,
@@ -145,9 +135,9 @@ private:
 
 	void                        clearProperties();
 	void                        newElement(Cyberiada::Element* new_element);
-	QtProperty*                 constructProperty(CyberiadaPropertyName prop);
+	QtProperty*                 constructProperty(CyberiadaPropertyName prop, const QString& alt_name = "");
 	CyberiadaProperty&          findPropertyStruct(CyberiadaPropertyName prop);
-	CyberiadaProperty&          findPropertyStruct(const QString& propName);
+	CyberiadaProperty&          findPropertyStruct(const QString& propName, const QString& alt_name = "");
 	CyberiadaProperty&          findProperty(const QtProperty*);
 	Cyberiada::ConstElementList getAllElements(bool source) const;
 	QStringList                 generateElementNames(bool source) const;
