@@ -47,6 +47,8 @@ private slots:
 
     void on_fitContentAction_triggered();
 
+    void on_inspectorModeAction_toggled(bool arg1);
+
 private:
 	CyberiadaSMModel*       model;
 	CyberiadaSMEditorScene* scene;

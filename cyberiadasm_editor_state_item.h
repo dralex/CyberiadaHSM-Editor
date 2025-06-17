@@ -39,7 +39,7 @@
  * State Item
  * ----------------------------------------------------------------------------- */
 
-class StateArea;
+class StateRegion;
 class StateTitle;
 class StateAction;
 
@@ -57,29 +57,6 @@ public:
 
     virtual int type() const { return StateItem; }
 
-
-    enum CornerFlags {
-        Top = 0x01,
-        Bottom = 0x02,
-        Left = 0x04,
-        Right = 0x08,
-        TopLeft = Top|Left,
-        TopRight = Top|Right,
-        BottomLeft = Bottom|Left,
-        BottomRight = Bottom|Right
-    };
-
-    enum CornerGrabbers {
-        GrabberTop = 0,
-        GrabberBottom,
-        GrabberLeft,
-        GrabberRight,
-        GrabberTopLeft,
-        GrabberTopRight,
-        GrabberBottomLeft,
-        GrabberBottomRight
-    };
-
     void setPreviousPosition(const QPointF previousPosition);
 
     void setRect(qreal x, qreal y, qreal w, qreal h);
@@ -90,12 +67,18 @@ public:
     qreal width() const;
     qreal height() const;
 
-    StateArea* getArea();
-    void updateArea();
+    StateRegion* getRegion();
+    void updateRegion();
 
     QRectF boundingRect() const override;
 
-    void setPositionText();
+    void syncFromModel() override;
+
+    void setTextPosition();
+
+private:
+    void initializeActions();
+    void addAction(Cyberiada::ActionType type);
 
 signals:
     void rectChanged(CyberiadaSMEditorStateItem *rect);
@@ -106,9 +89,13 @@ signals:
 
 private slots:
     void onTextItemSizeChanged();
+    void onActionDeleted(StateAction* signalOwner);
+    void onActionChanged(StateAction* signalOwner);
 
 protected:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
+
+    void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
 
 private:
     StateTitle* title;
@@ -116,9 +103,9 @@ private:
     StateAction* exit = nullptr;
 
     QRectF m_rect;
-    StateArea* area;
+    StateRegion* region;
     const Cyberiada::State* state;
-    std::vector<Cyberiada::Action> actions;
+    std::vector<StateAction*> actions;
 
     void resizeLeft( const QPointF &pt);
     void resizeRight( const QPointF &pt);
@@ -132,14 +119,17 @@ private:
 
 
 /* -----------------------------------------------------------------------------
- * State Area Item
+ * State Region Item
  * ----------------------------------------------------------------------------- */
 
-class StateArea : public QGraphicsRectItem
+class StateRegion : public QGraphicsRectItem
 {
 public:
-    explicit StateArea(QGraphicsItem *parent = NULL):
+    explicit StateRegion(QGraphicsItem *parent = NULL):
         QGraphicsRectItem(parent) {}
+
+    bool getTopLine() { return topLine; }
+    bool getBottomLine() { return bottomLine; }
 
     void setTopLine(bool topLine) {
         this->topLine = topLine;
@@ -158,16 +148,20 @@ protected:
         if(topLine) painter->drawLine(boundingRect().topLeft(), boundingRect().topRight());
         if(bottomLine) painter->drawLine(boundingRect().bottomLeft(), boundingRect().bottomRight());
 
+        painter->setPen(Qt::blue);
+        painter->drawRect(rect());
+
         painter->setBrush(Qt::blue);
         painter->drawEllipse(QPointF(0, 0), 2, 2); // Центр системы координат
     }
+
 private:
     bool topLine = false;
     bool bottomLine = false;
 };
 
 /* -----------------------------------------------------------------------------
- * State Text Items
+ * State Title Items
  * ----------------------------------------------------------------------------- */
 
 class StateTitle : public EditableTextItem
@@ -191,15 +185,30 @@ private:
     bool isLeftMouseButtonPressed = false;
 };
 
+/* -----------------------------------------------------------------------------
+ * State Action Item
+ * ----------------------------------------------------------------------------- */
 
 class StateAction : public EditableTextItem
 {
+    Q_OBJECT
 public:
-    explicit StateAction(const QString &text,
-                        QGraphicsItem *parent = nullptr):
-        EditableTextItem(text, parent) {
-        setTextMargin(30);
-    }
+    explicit StateAction(const Cyberiada::Action* action,
+                         QGraphicsItem *parent = nullptr);
+
+    QString getText();
+
+signals:
+    void actionDeleted(StateAction* signalOwner);
+
+protected:
+    void keyPressEvent(QKeyEvent* event) override;
+    void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
+    void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
+
+private:
+    const Cyberiada::Action* action;
+    QString typeText;
 };
 
 #endif // CYBERIADASMEDITORSTATEITEM_H

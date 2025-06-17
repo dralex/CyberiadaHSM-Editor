@@ -34,6 +34,11 @@
 #include "cyberiada_constants.h"
 #include "cyberiadasm_editor_state_item.h"
 #include "cyberiadasm_editor_scene.h"
+#include "dialogs/stateactiondialog.h"
+
+// state action includes
+#include <QTextCursor>
+#include <QKeyEvent>
 
 /* -----------------------------------------------------------------------------
  * State Item
@@ -44,7 +49,6 @@ CyberiadaSMEditorStateItem::CyberiadaSMEditorStateItem(QObject *parent_object,
                      Cyberiada::Element *element,
                      QGraphicsItem *parent) :
     CyberiadaSMEditorAbstractItem(model, element, parent)
-    // m_cornerFlags(0)
 {
     setAcceptHoverEvents(true);
     setFlags(ItemIsSelectable | ItemSendsGeometryChanges);
@@ -56,39 +60,30 @@ CyberiadaSMEditorStateItem::CyberiadaSMEditorStateItem(QObject *parent_object,
     title = new StateTitle(state->get_name().c_str(), this);
     title->setFontBoldness(true);
 
-    actions = state->get_actions();
-    // std::vector<Cyberiada::Action> actions = state->get_actions();
-    for (std::vector<Cyberiada::Action>::const_iterator i = actions.begin(); i != actions.end(); i++) {
-        Cyberiada::ActionType type = i->get_type();
-        if (type == Cyberiada::actionEntry) {
-            // TODO "exit" or "entry" and "/" are constants from cyberiadamlpp
-            entry = new StateAction(QString("entry / ") + QString(i->get_behavior().c_str()), this);
-            connect(entry, &EditableTextItem::sizeChanged, this, &CyberiadaSMEditorStateItem::onTextItemSizeChanged);
-        } else if (type == Cyberiada::actionExit) {
-            exit = new StateAction(QString("exit / ") + QString(i->get_behavior().c_str()), this);
-            connect(exit, &EditableTextItem::sizeChanged, this, &CyberiadaSMEditorStateItem::onTextItemSizeChanged);
-        }
-    }
+    initializeActions();
 
     if (state->is_composite_state()) {
         connect(title, &EditableTextItem::sizeChanged, this, &CyberiadaSMEditorStateItem::onTextItemSizeChanged);
-        area = new StateArea(this);
-        updateArea();
+        region = new StateRegion(this);
+        updateRegion();
     }
 
     initializeDots();
     setDotsPosition();
     hideDots();
-    setPositionText();
 }
 
 // TODO
 CyberiadaSMEditorStateItem::~CyberiadaSMEditorStateItem()
 {
-    emit aboutToDelete();
+    // emit aboutToDelete();
 
-    // qDebug() << "elem" << element;
-    // qDebug() << "has geom" << element->has_geometry();
+    for (StateAction* action : actions) {
+        delete action;
+    }
+    actions.clear();
+
+    if (title != nullptr) { delete title; }
 
     // if(!element->has_geometry())
     //     return;
@@ -154,27 +149,40 @@ qreal CyberiadaSMEditorStateItem::height() const
     return model_rect.height;
 }
 
-StateArea *CyberiadaSMEditorStateItem::getArea()
+StateRegion *CyberiadaSMEditorStateItem::getRegion()
 {
-    return area;
+    return region;
 }
 
-void CyberiadaSMEditorStateItem::updateArea()
+void CyberiadaSMEditorStateItem::updateRegion()
 {
-    qreal top_delta = title->boundingRect().height();
-    qreal bottom_delta = 0;
+    // draw region based on state title and actions
+    // qreal top_delta = title->boundingRect().height();
+    // qreal bottom_delta = 0;
+    // region->setTopLine(false);
+    // region->setBottomLine(false);
 
-    if (entry) {
-        top_delta += entry->boundingRect().height();
-        area->setTopLine(true);
-    }
-    if (exit) {
-        bottom_delta += entry->boundingRect().height();
-        area->setBottomLine(true);
-    }
+    // if (entry) {
+    //     top_delta += entry->boundingRect().height();
+    //     region->setTopLine(true);
+    // }
+    // if (exit) {
+    //     bottom_delta += exit->boundingRect().height();
+    //     region->setBottomLine(true);
+    // }
 
-    area->setRect(-width()/2, -(height() - top_delta - bottom_delta) / 2, width(), height() - top_delta - bottom_delta);
-    area->setPos(0, (top_delta - bottom_delta)/2 );
+    // region->setRect(-width()/2, -(height() - top_delta - bottom_delta) / 2, width(), height() - top_delta - bottom_delta);
+    // region->setPos(0, (top_delta - bottom_delta)/2 );
+
+    if (state->has_region_geometry()) {
+        Cyberiada::Rect r = state->get_region_geometry_rect();
+        region->setRect(QRectF(- r.width / 2,
+                             - r.height / 2,
+                             r.width,
+                             r.height));
+    } else {
+        region->setRect(rect());
+    }
 }
 
 QRectF CyberiadaSMEditorStateItem::boundingRect() const
@@ -184,8 +192,9 @@ QRectF CyberiadaSMEditorStateItem::boundingRect() const
     return rect();
 }
 
-void CyberiadaSMEditorStateItem::setPositionText()
+void CyberiadaSMEditorStateItem::setTextPosition()
 {
+    // TODO refactor
     QRectF oldRect = rect();
     QRectF titleRect = title->boundingRect();
     title->setPos(oldRect.x() + (oldRect.width() - titleRect.width()) / 2 , oldRect.y());
@@ -217,10 +226,86 @@ void CyberiadaSMEditorStateItem::setPositionText()
     // setPositionGrabbers();
 }
 
+void CyberiadaSMEditorStateItem::syncFromModel()
+{
+    qDebug() << "sync" << state->get_id().c_str() << state->get_name().c_str();
+    initializeActions();
+    update();
+}
+
+void CyberiadaSMEditorStateItem::initializeActions()
+{
+    // TODO
+    for (StateAction* action : actions) {
+        delete action;
+    }
+    actions.clear();
+    entry = nullptr;
+    exit = nullptr;
+
+    int actionIndex = 0;
+    for (std::vector<Cyberiada::Action>::const_iterator i = state->get_actions().begin(); i != state->get_actions().end(); i++) {
+        StateAction* action = new StateAction(&(*i), this);
+        Cyberiada::ActionType type = i->get_type();
+        if (type == Cyberiada::actionEntry) {
+            // TODO "exit", "entry" and "/" are constants from cyberiadamlpp
+            entry = action;
+        } else if (type == Cyberiada::actionExit) {
+            exit = action;
+        }
+        connect(action, &EditableTextItem::sizeChanged, this, &CyberiadaSMEditorStateItem::onTextItemSizeChanged);
+        connect(action, &StateAction::actionDeleted, this, &CyberiadaSMEditorStateItem::onActionDeleted);
+        // connect(action, &EditableTextItem::editingFinished, this, &CyberiadaSMEditorStateItem::onActionChanged);
+        actions.push_back(action);
+        actionIndex++;
+    }
+
+    setTextPosition();
+}
+
+void CyberiadaSMEditorStateItem::addAction(Cyberiada::ActionType type)
+{
+    StateActionDialog dialog;
+
+    if (dialog.exec() == QDialog::Accepted) {
+        // QString trigger = dialog.getTrigger();
+        // QString guard = dialog.getGuard();
+        QString trigger = QString("");
+        QString guard = QString("");
+        QString behaviour = dialog.getBehaviour();
+        model->newAction(model->elementToIndex(element), type, trigger, guard, behaviour);
+    }
+}
+
 void CyberiadaSMEditorStateItem::onTextItemSizeChanged()
 {
-    if (state->is_composite_state()) updateArea();
-    setPositionText();
+    if (state->is_composite_state()) updateRegion();
+    setTextPosition();
+}
+
+void CyberiadaSMEditorStateItem::onActionDeleted(StateAction* signalOwner)
+{
+    int i;
+    for(i = 0; i < actions.size(); i++){
+        if(actions.at(i) == signalOwner){
+            break;
+        }
+    }
+
+    model->deleteAction(model->elementToIndex(element), i);
+}
+
+void CyberiadaSMEditorStateItem::onActionChanged(StateAction* signalOwner) //, )
+{
+    // TODO
+    // int i;
+    // for(i = 0; i < actions.size(); i++){
+    //     if(actions.at(i) == signalOwner){
+    //         break;
+    //     }
+    // }
+
+    // model->updateAction(model->elementToIndex(element), i, );
 }
 
 void CyberiadaSMEditorStateItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget){
@@ -246,7 +331,43 @@ void CyberiadaSMEditorStateItem::paint(QPainter *painter, const QStyleOptionGrap
     painter->drawPath(path);
 
     painter->setBrush(Qt::red);
-    painter->drawEllipse(QPointF(0, 0), 2, 2); // Центр системы координат
+    painter->drawEllipse(QPointF(0, 0), 2, 2); // The center of the coordinate system
+}
+
+void CyberiadaSMEditorStateItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
+{
+    QMenu menu;
+
+    // QAction *renameAction = menu.addAction("Переименовать");
+    QAction *deleteAction = menu.addAction("Удалить");
+    QAction *addTransitionAction = menu.addAction("Добавить переход");
+    QAction *addEntryAction = menu.addAction("Добавить entry");
+    QAction *addExitAction = menu.addAction("Добавить exit");
+    QAction *addDoAction = menu.addAction("Добавить do");
+
+    if(entry != nullptr) {
+        addEntryAction->setEnabled(false);
+    }
+    if(exit != nullptr) {
+        addExitAction->setEnabled(false);
+    }
+
+    QAction *selectedAction = menu.exec(event->screenPos());
+
+    if (selectedAction == deleteAction) {
+        // static_cast<CyberiadaSMEditorScene*>(scene())->removeSMItem(element);
+        // delete this;
+    } else if (selectedAction == addTransitionAction) {
+
+    } else if (selectedAction == addEntryAction) {
+        addAction(Cyberiada::ActionType::actionEntry);
+    } else if (selectedAction == addExitAction) {
+        addAction(Cyberiada::ActionType::actionExit);
+    } else if (selectedAction == addDoAction) {
+
+    }
+
+    event->accept();
 }
 
 /* -----------------------------------------------------------------------------
@@ -302,4 +423,77 @@ void StateTitle::mouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
         return;
     }
     QGraphicsTextItem::mouseReleaseEvent(event);
+}
+
+/* -----------------------------------------------------------------------------
+ * State Region Item
+ * ----------------------------------------------------------------------------- */
+
+/* -----------------------------------------------------------------------------
+ * State Action Item
+ * ----------------------------------------------------------------------------- */
+
+StateAction::StateAction(const Cyberiada::Action* action, QGraphicsItem *parent):
+    EditableTextItem(parent),
+    action(action) {
+    setTextMargin(30);
+
+    Cyberiada::ActionType type = action->get_type();
+    switch(type) {
+    case Cyberiada::ActionType::actionEntry:
+        typeText = QString("entry / ");
+        break;
+    case Cyberiada::ActionType::actionExit:
+        typeText = QString("exit / ");
+        break;
+    default:
+        typeText = QString("");
+    }
+
+    setPlainText(typeText + QString(action->get_behavior().c_str()));
+}
+
+void StateAction::keyPressEvent(QKeyEvent *event)
+{
+    if (!isEdit) return;
+
+    QTextCursor cursor = textCursor();
+    if (cursor.position() <= typeText.length() &&
+        (event->key() == Qt::Key_Backspace || event->key() == Qt::Key_Left)) {
+        // Blocking deletion/relocation to a protected area
+        event->ignore();
+        return;
+    }
+
+    QGraphicsTextItem::keyPressEvent(event);
+}
+
+void StateAction::mousePressEvent(QGraphicsSceneMouseEvent* event) {
+    QGraphicsTextItem::mousePressEvent(event);
+
+    // Protect against setting the cursor to the beginning of the type
+    QTextCursor cursor = textCursor();
+    if (cursor.position() < typeText.length()) {
+        cursor.setPosition(typeText.length());
+        setTextCursor(cursor);
+    }
+}
+
+void StateAction::contextMenuEvent(QGraphicsSceneContextMenuEvent *event) {
+    QMenu menu;
+
+    QAction *deleteAction = menu.addAction("Удалить");
+    QAction *editAction = menu.addAction("Редактировать текст");
+
+    QAction *selectedAction = menu.exec(event->screenPos());
+
+    if (selectedAction == deleteAction) {
+        emit actionDeleted(this);
+    } else if (selectedAction == editAction) {
+        // Switch to text editing mode
+        setTextInteractionFlags(Qt::TextEditorInteraction);
+        setFocus();
+    }
+
+    event->accept();
 }

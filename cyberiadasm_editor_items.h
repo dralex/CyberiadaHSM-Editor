@@ -38,6 +38,8 @@
 class CyberiadaSMEditorAbstractItem: public QObject, public QGraphicsItem {
     Q_OBJECT
     Q_INTERFACES(QGraphicsItem)
+    Q_PROPERTY(QPointF previousPosition READ getPreviousPosition WRITE setPreviousPosition NOTIFY previousPositionChanged)
+
 public:
 	CyberiadaSMEditorAbstractItem(CyberiadaSMModel* model,
 								  Cyberiada::Element* element,
@@ -91,6 +93,8 @@ public:
     void setPreviousPosition(const QPointF newPreviousPosition);
 
     bool hasGeometry();
+
+    virtual void syncFromModel();
 
 protected:
     CyberiadaSMModel* model;

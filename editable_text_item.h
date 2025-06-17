@@ -30,6 +30,7 @@
 class EditableTextItem : public QGraphicsTextItem {
     Q_OBJECT
 public:
+    explicit EditableTextItem(QGraphicsItem *parent = nullptr);
     explicit EditableTextItem(const QString &text, QGraphicsItem *parent = nullptr);
 
     void setFontStyleChangeable(bool isChangeable);

@@ -166,9 +166,9 @@ QPointF CyberiadaSMEditorTransitionItem::sourceCenter() const
     // MY_ASSERT((editorScene->getMap()).value(m_transition->source_element_id()));
     // return ((editorScene->getMap()).value(m_transition->source_element_id()))->sceneBoundingRect().center();
 
-    if(!elementIdToItemMap.value(transition->source_element_id())) return QPoint(); //костыль
-    MY_ASSERT(elementIdToItemMap.value(transition->source_element_id()));
-    return (elementIdToItemMap.value(transition->source_element_id()))->sceneBoundingRect().center();
+    if(!elementIdToItemMap.value(id)) return QPoint(); //костыль
+    MY_ASSERT(elementIdToItemMap.value(id));
+    return (elementIdToItemMap.value(id))->sceneBoundingRect().center();
 
     // return m_previousSourceCenterPos; //+
 }
@@ -213,17 +213,6 @@ QPointF CyberiadaSMEditorTransitionItem::targetPoint() const
 
 QPointF CyberiadaSMEditorTransitionItem::targetCenter() const
 {
-    // Cyberiada::ElementType targetElementType = model->idToElement(QString::fromStdString(m_transition->target_element_id()))->get_type();
-    // if (targetElementType == Cyberiada::elementCompositeState ||
-    //     targetElementType == Cyberiada::elementSimpleState){
-    //     // return (static_cast<State*>(m_elementItem->value(m_transition->source_element_id())))->sceneBoundingRect().center();
-    //     return (static_cast<Rectangle*>(m_elementItem->value(m_transition->source_element_id())))->sceneBoundingRect().center();
-    // }
-    // if (targetElementType == Cyberiada::elementInitial ||
-    //     targetElementType == Cyberiada::elementFinal){
-    //     return static_cast<CyberiadaSMEditorVertexItem*>(m_elementItem->value(m_transition->source_element_id()))->sceneBoundingRect().center();
-    // }
-
     // CyberiadaSMEditorScene* editorScene = static_cast<CyberiadaSMEditorScene*>(scene());
     // if(!(editorScene->getMap()).value(m_transition->target_element_id())) return QPoint();   //костыль
     // return ((editorScene->getMap()).value(m_transition->target_element_id()))->sceneBoundingRect().center();
@@ -341,17 +330,17 @@ void CyberiadaSMEditorTransitionItem::drawArrow(QPainter* painter)
 
 QVector<QPointF> CyberiadaSMEditorTransitionItem::points() const
 {
-    return m_points;
-    // if(m_transition->has_polyline()) {
-    //     for (const auto& point : m_transition->get_geometry_polyline()) {
-    //         path.lineTo(QPointF(point.x, point.y) + sourceCenter());
-    //     }
-    // }
+    if(transition->has_polyline()) {
+        for (const auto& point : transition->get_geometry_polyline()) {
+            // path.lineTo(QPointF(point.x, point.y) + sourceCenter());
+        }
+    }
+    return QVector<QPointF>();
 }
 
 // void CyberiadaSMEditorTransitionItem::setPoints(const QVector<QPointF> &points)
 // {
-//     if (m_points != points) {  // Проверка на изменение
+//     if (m_points != points) {
 //         m_points = points;
 //     }
 //     updatePath();
@@ -382,7 +371,7 @@ QString CyberiadaSMEditorTransitionItem::text() const
 
 // void CyberiadaSMEditorTransitionItem::setTextPosition(const QPointF &pos)
 // {
-//     if (m_textPosition != pos) {  // Проверка на изменение
+//     if (m_textPosition != pos) {
 //         m_textPosition = pos;
 //     }
 //     updateTextPosition();
@@ -423,6 +412,8 @@ void CyberiadaSMEditorTransitionItem::updateTextPosition() {
     m_path = path;
     update();
 }
+
+void CyberiadaSMEditorTransitionItem::setTextVisible(bool visible) { actionItem->setVisible(visible); }
 
 void CyberiadaSMEditorTransitionItem::onSourceGeomertyChanged()
 {
@@ -529,6 +520,13 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
             if(i == linePath.elementCount() - 1) {
                 break;
             }
+
+            Cyberiada::Polyline pol = transition->get_geometry_polyline();
+            Cyberiada::Point p = pol.at(i - 1);
+            p.x += dx;
+            p.y += dy;
+            pol.at(i - 1) = p;
+            model->updateGeometry(model->elementToIndex(element), pol);
             // TODO
             // m_points[i - 1] = QPointF(m_points[i - 1].x() + dx, m_points[i - 1].y() + dy);
             //            m_pointForCheck = i;

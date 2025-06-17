@@ -50,8 +50,9 @@ CyberiadaSMEditorCommentItem::CyberiadaSMEditorCommentItem(QObject *parent_objec
         setPos(QPointF(r.x, r.y));
     }
 
-    text = new EditableTextItem(comment->get_body().c_str(), this);
-    text->setPos(-boundingRect().width() / 2 + 15, - boundingRect().height() / 2);
+    body = new EditableTextItem(comment->get_body().c_str(), this);
+    body->setPos(-boundingRect().width() / 2 + 15, - boundingRect().height() / 2);
+    // connect(body, EditableTextItem::editingFinished, this, CyberiadaSMEditorCommentItem::onBodyChanged);
 
     if (element->get_type() == Cyberiada::elementFormalComment) {
         int fontId = QFontDatabase::addApplicationFont(":/Fonts/fonts/courier.ttf");
@@ -59,8 +60,8 @@ CyberiadaSMEditorCommentItem::CyberiadaSMEditorCommentItem(QObject *parent_objec
             QStringList fontFamilies = QFontDatabase::applicationFontFamilies(fontId);
             if (!fontFamilies.isEmpty()) {
                 QFont customFont(fontFamilies.at(0), FontManager::instance().getFont().pointSize());
-                text->setFont(customFont);
-                text->setFontStyleChangeable(false);
+                body->setFont(customFont);
+                body->setFontStyleChangeable(false);
             }
         }
     }
@@ -70,7 +71,7 @@ CyberiadaSMEditorCommentItem::CyberiadaSMEditorCommentItem(QObject *parent_objec
     setAcceptHoverEvents(true);
     setFlags(ItemIsSelectable | ItemSendsGeometryChanges);
 
-    setPositionText();
+    setTextPosition();
 
     initializeDots();
     setDotsPosition();
@@ -86,7 +87,7 @@ QRectF CyberiadaSMEditorCommentItem::boundingRect() const
     MY_ASSERT(model);
     MY_ASSERT(model->rootDocument());
     if (!comment->has_geometry()) {
-        return text->boundingRect();
+        return body->boundingRect();
     }
     Cyberiada::Rect r = comment->get_geometry_rect();
     return QRectF(- r.width / 2,
@@ -136,10 +137,20 @@ void CyberiadaSMEditorCommentItem::paint(QPainter* painter, const QStyleOptionGr
     painter->drawConvexPolygon(triangle, 3);
 }
 
-void CyberiadaSMEditorCommentItem::setPositionText()
+void CyberiadaSMEditorCommentItem::onBodyChanged()
+{
+    model->updateCommentBody(model->elementToIndex(element), body->toPlainText());
+}
+
+void CyberiadaSMEditorCommentItem::setTextPosition()
 {
     QRectF oldRect = boundingRect();
-    QRectF titleRect = text->boundingRect();
-    text->setPos(oldRect.x() + (oldRect.width() - titleRect.width()) / 2 , oldRect.y());
+    QRectF titleRect = body->boundingRect();
+    body->setPos(oldRect.x() + (oldRect.width() - titleRect.width()) / 2 , oldRect.y());
+}
+
+void CyberiadaSMEditorCommentItem::syncFromModel()
+{
+
 }
 
