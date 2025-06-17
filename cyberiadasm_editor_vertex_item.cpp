@@ -28,6 +28,8 @@
 #include "myassert.h"
 #include "cyberiada_constants.h"
 #include "cyberiadasm_editor_vertex_item.h"
+#include "cyberiadasm_editor_scene.h"
+
 
 /* -----------------------------------------------------------------------------
  * Vertex Item
@@ -99,4 +101,39 @@ void CyberiadaSMEditorVertexItem::paint(QPainter* painter, const QStyleOptionGra
         painter->drawLine(r.left(), r.top(), r.right(), r.bottom());
         painter->drawLine(r.right(), r.top(), r.left(), r.bottom());
     }
+}
+
+void CyberiadaSMEditorVertexItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
+{
+    if (!element->has_geometry() ||
+        dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select) {
+        event->ignore();
+        return;
+    }
+
+    QPointF pt = event->pos();
+
+    if (isLeftMouseButtonPressed) {
+        setFlag(ItemIsMovable);
+        model->updateGeometry(model->elementToIndex(element),
+                              Cyberiada::Point(pos().x(), pos().y()));
+        qDebug() << static_cast<const Cyberiada::Vertex*>(element)->get_geometry_point().x;
+    }
+
+    QGraphicsItem::mouseMoveEvent(event);
+    emit geometryChanged();
+}
+
+void CyberiadaSMEditorVertexItem::hoverMoveEvent(QGraphicsSceneHoverEvent *event)
+{
+    // TODO
+    if (!isSelected() ||
+        !element->has_geometry() ||
+        dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select) {
+        event->ignore();
+        return;
+    }
+
+    setCursor(QCursor(Qt::SizeAllCursor));
+    QGraphicsItem::hoverMoveEvent(event);
 }

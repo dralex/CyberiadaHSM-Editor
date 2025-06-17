@@ -61,27 +61,32 @@ public:
 
     void loadScene();
 
-    QMap<Cyberiada::ID, QGraphicsItem*>& getMap() { return elementItem; }
+    QMap<Cyberiada::ID, QGraphicsItem*>& getMap() { return elementIdToItemMap; }
 
     void setCurrentTool(ToolType tool);
     ToolType getCurrentTool() { return currentTool; }
 
+    void removeSMItem(Cyberiada::Element *element);
+
 public slots:
 	void  slotElementSelected(const QModelIndex& index);
+    void  onModelDataChanged(const QModelIndex & topLeft, const QModelIndex & bottomRight);
 	
     void  enableGrid(bool on = true);
     void  enableGridSnap(bool on = true);
     void  onSelectionChanged();
+    void  toggleTransitionText(bool visible);
 
 protected:
     void  drawBackground(QPainter *painter, const QRectF &);
 
 private:
     void  addItemsRecursively(QGraphicsItem* parent, Cyberiada::ElementCollection* element);
+    void  updateItemsRecursively(CyberiadaSMEditorAbstractItem* parent, Cyberiada::ElementCollection* element);
 
     CyberiadaSMModel*              model;
 	Cyberiada::StateMachine*       currentSM;
-    QMap<Cyberiada::ID, QGraphicsItem*> elementItem;
+    QMap<Cyberiada::ID, QGraphicsItem*> elementIdToItemMap;
 	
     int                            gridSize;
     bool                           gridEnabled;

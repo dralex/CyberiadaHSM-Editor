@@ -80,8 +80,10 @@ void CyberiadaSMEditorWindow::initializeTools()
     selectToolAction->setChecked(true);
 
     connect(toolGroup, &QActionGroup::triggered, this, &CyberiadaSMEditorWindow::onToolSelected);
-
     emit toolGroup->triggered(selectToolAction);
+
+    transitionTextAction->setChecked(true);
+    connect(transitionTextAction, &QAction::triggered, scene, &CyberiadaSMEditorScene::toggleTransitionText);
 }
 
 
@@ -114,3 +116,9 @@ void CyberiadaSMEditorWindow::onToolSelected(QAction *action)
 void CyberiadaSMEditorWindow::on_fitContentAction_triggered() {
     sceneView->fitInView(scene->itemsBoundingRect(), Qt::KeepAspectRatio);
 }
+
+void CyberiadaSMEditorWindow::on_inspectorModeAction_toggled(bool arg1)
+{
+
+}
+

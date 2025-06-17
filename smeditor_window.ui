@@ -99,6 +99,9 @@
     <addaction name="zoomInAction"/>
     <addaction name="zoomOutAction"/>
     <addaction name="fitContentAction"/>
+    <addaction name="separator"/>
+    <addaction name="transitionTextAction"/>
+    <addaction name="inspectorModeAction"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
@@ -193,6 +196,22 @@
    </property>
    <property name="toolTip">
     <string>Select Tool</string>
+   </property>
+  </action>
+  <action name="transitionTextAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Текст на переходах</string>
+   </property>
+  </action>
+  <action name="inspectorModeAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Режим инспектора</string>
    </property>
   </action>
  </widget>

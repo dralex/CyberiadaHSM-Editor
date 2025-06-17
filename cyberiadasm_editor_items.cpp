@@ -51,7 +51,7 @@ CyberiadaSMEditorAbstractItem::CyberiadaSMEditorAbstractItem(CyberiadaSMModel* _
             connect(newParent, &CyberiadaSMEditorAbstractItem::geometryChanged,
                     this, &CyberiadaSMEditorAbstractItem::onParentGeometryChanged);
         }
-        StateArea* stateArea = dynamic_cast<StateArea*>(parent);
+        StateRegion* stateArea = dynamic_cast<StateRegion*>(parent);
         if(stateArea) {
             newParent = dynamic_cast<CyberiadaSMEditorAbstractItem*>(stateArea->parentItem());
             if(newParent) {
@@ -88,6 +88,11 @@ void CyberiadaSMEditorAbstractItem::setPreviousPosition(const QPointF newPreviou
 bool CyberiadaSMEditorAbstractItem::hasGeometry()
 {
     return element->has_geometry();
+}
+
+void CyberiadaSMEditorAbstractItem::syncFromModel()
+{
+    update();
 }
 
 void CyberiadaSMEditorAbstractItem::onParentGeometryChanged() {
@@ -142,9 +147,13 @@ void CyberiadaSMEditorAbstractItem::mouseMoveEvent(QGraphicsSceneMouseEvent *eve
         resizeBottom(pt);
         break;
     case Left:
-        qDebug() << element->get_type() << "left";
         if (isLeftMouseButtonPressed) {
             setFlag(ItemIsMovable);
+            // Cyberiada::Rect r = Cyberiada::Rect(boundingRect().x(),
+            //                                     boundingRect().y(),
+            //                                     boundingRect().height(),
+            //                                     boundingRect().width());
+            // model->updateGeometry(model->elementToIndex(element), r);
         }
         break;
     case Right:

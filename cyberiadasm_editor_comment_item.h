@@ -48,13 +48,20 @@ public:
 
     virtual int type() const { return CommentItem; }
 
-    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
     QRectF boundingRect() const override;
 
-    void setPositionText();
+    void setTextPosition();
+
+    void syncFromModel() override;
+
+protected:
+    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
+
+private slots:
+    void onBodyChanged();
 
 private:
-    EditableTextItem* text;
+    EditableTextItem* body;
     QBrush commentBrush;
 
     const Cyberiada::Comment* comment;

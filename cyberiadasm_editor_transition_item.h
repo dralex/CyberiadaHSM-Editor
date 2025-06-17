@@ -38,11 +38,23 @@
 #include "dotsignal.h"
 #include "editable_text_item.h"
 
+
+/* -----------------------------------------------------------------------------
+ * Transition Text Item
+ * ----------------------------------------------------------------------------- */
+
+class TransitionText : public EditableTextItem
+{
+    Q_OBJECT
+public:
+    explicit TransitionText(const QString &text, QGraphicsItem *parent = nullptr);
+
+    void paint( QPainter *painter, const QStyleOptionGraphicsItem *o, QWidget *w) override;
+};
+
 /* -----------------------------------------------------------------------------
  * Transition Item
  * ----------------------------------------------------------------------------- */
-
-class TransitionText;
 
 class CyberiadaSMEditorTransitionItem : public CyberiadaSMEditorAbstractItem
 {
@@ -61,16 +73,23 @@ public:
     virtual int type() const { return TransitionItem; }
 
     CyberiadaSMEditorAbstractItem *source() const;
+
     // void setSource(Rectangle *source);
     QPointF sourcePoint() const;
     // void setSourcePoint(const QPointF& point);
     QPointF sourceCenter() const;
+    Cyberiada::ID sourceId() const {
+        return transition->source_element_id();
+    }
 
     CyberiadaSMEditorAbstractItem *target() const;
     // void setTarget(Rectangle *target);
     QPointF targetPoint() const;
     // void setTargetPoint(const QPointF& point);
     QPointF targetCenter() const;
+    Cyberiada::ID targetId() const {
+        return transition->target_element_id();
+    }
 
     QRectF boundingRect() const override;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = nullptr);
@@ -89,6 +108,7 @@ public:
     void setText(const QString& text);
     void setTextPosition(const QPointF& pos);
     void updateTextPosition();
+    void setTextVisible(bool visible);
 
     // QPointF findIntersectionWithRect(const State* state);
 
@@ -143,17 +163,5 @@ private:
     void setPointPos(int pointIndex, qreal dx, qreal dy);
 };
 
-/* -----------------------------------------------------------------------------
- * Transition Text Item
- * ----------------------------------------------------------------------------- */
-
-class TransitionText : public EditableTextItem
-{
-    Q_OBJECT
-public:
-    explicit TransitionText(const QString &text, QGraphicsItem *parent = nullptr);
-
-    void paint( QPainter *painter, const QStyleOptionGraphicsItem *o, QWidget *w) override;
-};
 
 #endif // CYBERIADASMEDITORTRANSITIONITEM_H

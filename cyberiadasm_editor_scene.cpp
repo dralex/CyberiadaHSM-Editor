@@ -57,6 +57,7 @@ CyberiadaSMEditorScene::CyberiadaSMEditorScene(CyberiadaSMModel* _model, QObject
 
 	setBackgroundBrush(Qt::white);
     connect(this, &QGraphicsScene::selectionChanged, this, &CyberiadaSMEditorScene::onSelectionChanged);
+    connect(model, &CyberiadaSMModel::dataChanged, this, &CyberiadaSMEditorScene::onModelDataChanged);
     reset();
 }
 
@@ -77,7 +78,7 @@ void CyberiadaSMEditorScene::reset()
 void CyberiadaSMEditorScene::onSelectionChanged() {
 	if (selectedItems().size() > 0) {
         QGraphicsItem* item = selectedItems().first();
-        Cyberiada::ID item_id = elementItem.key(item);
+        Cyberiada::ID item_id = elementIdToItemMap.key(item);
         const Cyberiada::Element* element = model->idToElement(QString::fromStdString(item_id));
 
         if(!element) return; // not a smeditor base element
@@ -87,6 +88,15 @@ void CyberiadaSMEditorScene::onSelectionChanged() {
 		//p->SMView->setCurrentIndex(index);
 		p->SMView->select(index);
 	}
+}
+
+void CyberiadaSMEditorScene::toggleTransitionText(bool visible)
+{
+    for (auto item : items()) {
+        if (auto transition = dynamic_cast<CyberiadaSMEditorTransitionItem*>(item)) {
+            transition->setTextVisible(visible);
+        }
+    }
 }
 
 void CyberiadaSMEditorScene::slotElementSelected(const QModelIndex& index)
@@ -100,7 +110,7 @@ void CyberiadaSMEditorScene::slotElementSelected(const QModelIndex& index)
         clearSelection();
         blockSignals(false);
 
-        QGraphicsItem* item = elementItem.value(element_id);
+        QGraphicsItem* item = elementIdToItemMap.value(element_id);
         if (item) {
             blockSignals(true);
             item->setSelected(true);
@@ -131,6 +141,31 @@ void CyberiadaSMEditorScene::slotElementSelected(const QModelIndex& index)
 	}
 }
 
+void CyberiadaSMEditorScene::updateItemsRecursively(CyberiadaSMEditorAbstractItem* parent, Cyberiada::ElementCollection* collection)
+{
+    // нужно настроить QMap для поиска элемента
+    CyberiadaSMEditorAbstractItem* current_item = static_cast<CyberiadaSMEditorAbstractItem*>(elementIdToItemMap.value(collection->get_id()));
+    current_item->syncFromModel();
+
+    // updating children
+    if (collection->has_children()) {
+        const Cyberiada::ElementList& children = collection->get_children();
+        for (Cyberiada::ElementList::const_iterator i = children.begin(); i != children.end(); i++) {
+            Cyberiada::Element* child = *i;
+
+            updateItemsRecursively(current_item, static_cast<Cyberiada::ElementCollection*>(child));
+        }
+    }
+}
+
+void CyberiadaSMEditorScene::onModelDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight)
+{
+    Cyberiada::Element* element = model->indexToElement(topLeft);
+    // поиск CyberiadaSMEditorAbstractItem по QMap QMap<Cyberiada::ID, QGraphicsItem*> elementIdToItemMap;
+    updateItemsRecursively(nullptr, static_cast<Cyberiada::ElementCollection*>(element));
+    update();
+}
+
 void CyberiadaSMEditorScene::addItemsRecursively(QGraphicsItem* parent, Cyberiada::ElementCollection* collection)
 {
 	Cyberiada::ElementType parent_type = collection->get_type();
@@ -139,7 +174,7 @@ void CyberiadaSMEditorScene::addItemsRecursively(QGraphicsItem* parent, Cyberiad
 
     if (parent_type == Cyberiada::elementSM) {
         new_parent = new CyberiadaSMEditorSMItem(model, collection, parent);
-        elementItem.insert(collection->get_id(), new_parent);
+        elementIdToItemMap.insert(collection->get_id(), new_parent);
         addItem(new_parent);
         new_parent->setSelected(true);
     }
@@ -154,38 +189,38 @@ void CyberiadaSMEditorScene::addItemsRecursively(QGraphicsItem* parent, Cyberiad
 			switch(type) {
             case Cyberiada::elementCompositeState: {
                 CyberiadaSMEditorStateItem* state = new CyberiadaSMEditorStateItem(this, model, child, new_parent);
-                elementItem.insert(child->get_id(), state);
-                qDebug() << "add item" << child->get_id().c_str() << "type" << type << "parent" << elementItem.key(new_parent).c_str();
-                addItemsRecursively(state->getArea(), static_cast<Cyberiada::ElementCollection*>(child));
+                elementIdToItemMap.insert(child->get_id(), state);
+                qDebug() << "add item" << child->get_id().c_str() << "type" << type << "parent" << elementIdToItemMap.key(new_parent).c_str();
+                addItemsRecursively(state->getRegion(), static_cast<Cyberiada::ElementCollection*>(child));
                 addItem(state);
                 break;
             }
             case Cyberiada::elementSimpleState: {
                 CyberiadaSMEditorStateItem* state = new CyberiadaSMEditorStateItem(this, model, child, new_parent);
-                elementItem.insert(child->get_id(), state);
+                elementIdToItemMap.insert(child->get_id(), state);
                 addItem(state);
-                qDebug() << "add item" << child->get_id().c_str() << "type" << type << "parent" << elementItem.key(new_parent).c_str();
+                qDebug() << "add item" << child->get_id().c_str() << "type" << type << "parent" << elementIdToItemMap.key(new_parent).c_str();
 				break;
             }
             case Cyberiada::elementInitial: {
                 CyberiadaSMEditorVertexItem* initial = new CyberiadaSMEditorVertexItem(model, child, new_parent);
-                elementItem.insert(child->get_id(), initial);
+                elementIdToItemMap.insert(child->get_id(), initial);
                 addItem(initial);
-                qDebug() << "add item" << child->get_id().c_str() << "type" << type << "parent" << elementItem.key(new_parent).c_str();
+                qDebug() << "add item" << child->get_id().c_str() << "type" << type << "parent" << elementIdToItemMap.key(new_parent).c_str();
                 break;
             }
             case Cyberiada::elementFinal: {
                 CyberiadaSMEditorVertexItem* final = new CyberiadaSMEditorVertexItem(model, child, new_parent);
-                elementItem.insert(child->get_id(), final);
+                elementIdToItemMap.insert(child->get_id(), final);
                 addItem(final);
-                qDebug() << "add item" << child->get_id().c_str() << "type" << type << "parent" << elementItem.key(new_parent).c_str();
+                qDebug() << "add item" << child->get_id().c_str() << "type" << type << "parent" << elementIdToItemMap.key(new_parent).c_str();
                 break;
             }
             case Cyberiada::elementTerminate: {
                 CyberiadaSMEditorVertexItem* terminate = new CyberiadaSMEditorVertexItem(model, child, new_parent);
-                elementItem.insert(child->get_id(), terminate);
+                elementIdToItemMap.insert(child->get_id(), terminate);
                 addItem(terminate);
-                qDebug() << "add item" << child->get_id().c_str() << "type" << type << "parent" << elementItem.key(new_parent).c_str();
+                qDebug() << "add item" << child->get_id().c_str() << "type" << type << "parent" << elementIdToItemMap.key(new_parent).c_str();
                 break;
             }
 			case Cyberiada::elementChoice:
@@ -193,25 +228,25 @@ void CyberiadaSMEditorScene::addItemsRecursively(QGraphicsItem* parent, Cyberiad
 				break;
             case Cyberiada::elementComment: {
                 if (!child->has_geometry()) break;
-                CyberiadaSMEditorCommentItem* comment = new CyberiadaSMEditorCommentItem(this, model, child, new_parent, elementItem);
-                elementItem.insert(child->get_id(), comment);
+                CyberiadaSMEditorCommentItem* comment = new CyberiadaSMEditorCommentItem(this, model, child, new_parent, elementIdToItemMap);
+                elementIdToItemMap.insert(child->get_id(), comment);
                 addItem(comment);
-                qDebug() << "add item" << child->get_id().c_str() << "type" << type << "parent" << elementItem.key(new_parent).c_str();
+                qDebug() << "add item" << child->get_id().c_str() << "type" << type << "parent" << elementIdToItemMap.key(new_parent).c_str();
                 break;
             }
             case Cyberiada::elementFormalComment: {
                 if (!child->has_geometry()) break;
-                CyberiadaSMEditorCommentItem* formalComment = new CyberiadaSMEditorCommentItem(this, model, child, new_parent, elementItem);
-                elementItem.insert(child->get_id(), formalComment);
+                CyberiadaSMEditorCommentItem* formalComment = new CyberiadaSMEditorCommentItem(this, model, child, new_parent, elementIdToItemMap);
+                elementIdToItemMap.insert(child->get_id(), formalComment);
                 addItem(formalComment);
-                qDebug() << "add item" << child->get_id().c_str() << "type" << type << "parent" << elementItem.key(new_parent).c_str();
+                qDebug() << "add item" << child->get_id().c_str() << "type" << type << "parent" << elementIdToItemMap.key(new_parent).c_str();
                 break;
             }
             case Cyberiada::elementTransition: {
-                CyberiadaSMEditorTransitionItem* transition = new CyberiadaSMEditorTransitionItem(this, model, child, NULL, elementItem);
-                elementItem.insert(child->get_id(), transition);
+                CyberiadaSMEditorTransitionItem* transition = new CyberiadaSMEditorTransitionItem(this, model, child, NULL, elementIdToItemMap);
+                elementIdToItemMap.insert(child->get_id(), transition);
                 addItem(transition);
-                qDebug() << "add item" << child->get_id().c_str() << "type" << type << "parent" << elementItem.key(new_parent).c_str();
+                qDebug() << "add item" << child->get_id().c_str() << "type" << type << "parent" << elementIdToItemMap.key(new_parent).c_str();
                 break;
             }
 			default:
@@ -248,11 +283,11 @@ void CyberiadaSMEditorScene::setGridPen(const QPen &pen)
 
 void CyberiadaSMEditorScene::loadScene()
 {
-    elementItem.clear();
+    elementIdToItemMap.clear();
 
     clear();
 
-    MY_ASSERT(elementItem.isEmpty());
+    MY_ASSERT(elementIdToItemMap.isEmpty());
     MY_ASSERT(items().isEmpty());
 
     Cyberiada::StateMachine* sm = static_cast<Cyberiada::StateMachine*>(model->indexToElement(model->firstSMIndex()));
@@ -266,6 +301,46 @@ void CyberiadaSMEditorScene::loadScene()
 
 void CyberiadaSMEditorScene::setCurrentTool(ToolType tool) {
     currentTool = tool;
+}
+
+void CyberiadaSMEditorScene::removeSMItem(Cyberiada::Element* element)
+{
+    // TODO add model method for deleting from model
+    /*Cyberiada::ElementType type = element->get_type();
+    if(type == Cyberiada::elementCompositeState) {
+        if(element->has_children()) {
+            Cyberiada::ElementCollection* collection = static_cast<Cyberiada::ElementCollection*>(element);
+            const Cyberiada::ElementList& children = collection->get_children();
+            for (Cyberiada::ElementList::const_iterator i = children.begin(); i != children.end(); i++) {
+                Cyberiada::Element* child = *i;
+                removeSMItem(child);
+            }
+        }
+    }
+
+    QList<Cyberiada::ID> toRemove;
+    for (auto it = elementIdToItemMap.begin(); it != elementIdToItemMap.end(); ++it) {
+        QGraphicsItem* item = it.value();
+
+        // Пытаемся привести к TransitionItem
+        auto* transition = dynamic_cast<CyberiadaSMEditorTransitionItem*>(item);
+        if (transition) {
+            if(transition->sourceId() == element->get_id()) {
+                // elementIdToItemMap.remove(it.key());
+                toRemove.append(it.key());
+                removeItem(transition);
+                continue;
+            }
+            if(transition->sourceId() == element->get_id()) {
+                // elementIdToItemMap.remove(it.key());
+                toRemove.append(it.key());
+                removeItem(transition);
+            }
+        }
+    }
+    for (const Cyberiada::ID& id : toRemove) {
+        elementIdToItemMap.remove(id);
+    }*/
 }
 
 void CyberiadaSMEditorScene::drawBackground(QPainter* painter, const QRectF &)

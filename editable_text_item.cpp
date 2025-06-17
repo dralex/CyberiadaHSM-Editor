@@ -32,11 +32,19 @@
 #include <QDebug>
 
 #include "editable_text_item.h"
-// #include "cyberiadasm_editor_state_item.h"
 #include "fontmanager.h"
 #include "cyberiadasm_editor_scene.h"
 #include "cyberiada_constants.h"
 
+
+EditableTextItem::EditableTextItem(QGraphicsItem *parent):
+    QGraphicsTextItem(parent)
+{
+    setFlags(QGraphicsItem::ItemIsSelectable);
+    setTextInteractionFlags(Qt::NoTextInteraction);
+    setFont(FontManager::instance().getFont());
+    connect(&FontManager::instance(), &FontManager::fontChanged, this, &EditableTextItem::onFontChanged);
+}
 
 EditableTextItem::EditableTextItem(const QString &text, QGraphicsItem *parent):
     QGraphicsTextItem(text, parent)
@@ -86,7 +94,10 @@ void EditableTextItem::focusOutEvent(QFocusEvent *event) {
 }
 
 void EditableTextItem::hoverEnterEvent(QGraphicsSceneHoverEvent *event) {
-    // event->ignore();
+    if (dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select) {
+        event->ignore();
+        return;
+    }
 
     if (hasFocus()) {
         setCursor(QCursor(Qt::IBeamCursor));
@@ -157,7 +168,6 @@ void EditableTextItem::updateTextWidth()
     CyberiadaSMEditorAbstractItem *parentSMEItem = dynamic_cast<CyberiadaSMEditorAbstractItem*>(parentItem());
     if (parentSMEItem && parentSMEItem->hasGeometry()) {
         setTextWidth(parentSMEItem->boundingRect().width() - textMargin);
-        qDebug() << "updateTextWidth with margin " << toPlainText() << textMargin;
     }
 }
 

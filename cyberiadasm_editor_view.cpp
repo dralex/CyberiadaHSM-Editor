@@ -44,12 +44,10 @@ CyberiadaSMGraphicsView::CyberiadaSMGraphicsView(QWidget *parent):
 	setFocus();
 
     setTransformationAnchor(AnchorUnderMouse);
-    // setDragMode(ScrollHandDrag);
 }
 
 void CyberiadaSMGraphicsView::setCurrentTool(ToolType tool) {
     currentTool = tool;
-    qDebug() << "new view tool" << static_cast<int>(tool);
 
     if (tool != ToolType::Pan) {
         setDragMode(QGraphicsView::NoDrag);
