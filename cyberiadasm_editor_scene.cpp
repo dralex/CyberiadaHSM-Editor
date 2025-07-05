@@ -94,7 +94,17 @@ void CyberiadaSMEditorScene::toggleTransitionText(bool visible)
 {
     for (auto item : items()) {
         if (auto transition = dynamic_cast<CyberiadaSMEditorTransitionItem*>(item)) {
-            transition->setTextVisible(visible);
+            transition->setActionVisibility(visible);
+        }
+    }
+}
+
+void CyberiadaSMEditorScene::toggleInspectorMode(bool on)
+{
+    inspectorModeEnabled = on;
+    for (auto item : items()) {
+        if (auto cyberiadaItem = dynamic_cast<CyberiadaSMEditorAbstractItem*>(item)) {
+            cyberiadaItem->setInspectorMode(on);
         }
     }
 }
@@ -369,7 +379,9 @@ void CyberiadaSMEditorScene::drawBackground(QPainter* painter, const QRectF &)
 
 	painter->drawLines(lines.data(), lines.size());
 
-    painter->setBrush(Qt::red);
-    painter->drawEllipse(QPointF(0, 0), 2, 2); // the center of the coordinate system
+    if (inspectorModeEnabled) {
+        painter->setBrush(Qt::red);
+        painter->drawEllipse(QPointF(0, 0), 2, 2); // the center of the coordinate system
+    }
 }
 

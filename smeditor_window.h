@@ -39,6 +39,8 @@ private:
 
 public slots:
 	void                    slotFileOpen();
+    void                    slotFileSave();
+    void                    slotFileSaveAs();
 
 private slots:
     void on_actionFont_triggered();
@@ -47,7 +49,7 @@ private slots:
 
     void on_fitContentAction_triggered();
 
-    void on_inspectorModeAction_toggled(bool arg1);
+    void on_propertiesAction_triggered();
 
 private:
 	CyberiadaSMModel*       model;

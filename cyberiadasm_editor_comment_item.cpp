@@ -137,6 +137,7 @@ void CyberiadaSMEditorCommentItem::paint(QPainter* painter, const QStyleOptionGr
     painter->drawConvexPolygon(triangle, 3);
 }
 
+// TODO
 void CyberiadaSMEditorCommentItem::onBodyChanged()
 {
     model->updateCommentBody(model->elementToIndex(element), body->toPlainText());
@@ -151,6 +152,7 @@ void CyberiadaSMEditorCommentItem::setTextPosition()
 
 void CyberiadaSMEditorCommentItem::syncFromModel()
 {
-
+    // TODO
+    CyberiadaSMEditorAbstractItem::syncFromModel();
 }
 

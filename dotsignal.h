@@ -48,23 +48,29 @@ public:
     void setPreviousPosition(const QPointF previousPosition);
 
     void setDotFlags(unsigned int flags);
+    bool isDeleteable() { return deleteable; }
+    void setDeleteable(bool on);
 
 signals:
     void previousPositionChanged();
+    void signalPress(QGraphicsItem *signalOwner);
     void signalMouseRelease();
-    void signalMove(QGraphicsItem *signalOwner, qreal dx, qreal dy);
+    void signalMove(QGraphicsItem *signalOwner, qreal dx, qreal dy, QPointF p);
+    void signalDelete(QGraphicsItem *signalOwner);
 
 protected:
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
     void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
-    void hoverEnterEvent(QGraphicsSceneHoverEvent *event);
-    void hoverLeaveEvent(QGraphicsSceneHoverEvent *event);
+    void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
+    void hoverLeaveEvent(QGraphicsSceneHoverEvent *event) override;
+    void keyPressEvent(QKeyEvent* event) override;
 
 public slots:
 
 private:
     unsigned int flags;
+    bool deleteable;
     QPointF previousPosition;
 };
 

@@ -25,6 +25,7 @@
         <file>images/cursor.png</file>
         <file>images/zoom-out-32.png</file>
         <file>images/zoom-in-32.png</file>
+        <file>images/remove.png</file>
     </qresource>
     <qresource prefix="/Fonts">
         <file>fonts/courier.ttf</file>

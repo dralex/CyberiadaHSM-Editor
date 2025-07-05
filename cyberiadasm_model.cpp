@@ -241,13 +241,13 @@ bool CyberiadaSMModel::updateAction(const QModelIndex& index,
 			return false;
 		}
 		Cyberiada::Action& a = actions[action_index];
-		if (a.get_type() != Cyberiada::actionTransition) {
+        if (a.get_type() != Cyberiada::actionTransition) {
 			a.update(new_behaviour.toStdString());
-		} else {
+        } else {
 			if (new_trigger.length() == 0) return false;
 			a.update(new_trigger.toStdString(), new_guard.toStdString(), new_behaviour.toStdString());
 		}
-	} else if (element->get_type() == Cyberiada::elementTransition) {
+    } else if (element->get_type() == Cyberiada::elementTransition) {
 		if (new_trigger.length() == 0) return false;
 		Cyberiada::Transition* trans = static_cast<Cyberiada::Transition*>(element);
 		trans->get_action().update(new_trigger.toStdString(), new_guard.toStdString(), new_behaviour.toStdString());
@@ -325,14 +325,14 @@ bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada:
 bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada::Rect& rect)
 {
 	Cyberiada::Element* element = indexToElement(index);
-	if (!element) return false;
-	if (!element->has_rect_geometry()) return false;
-	if (element->get_type() == Cyberiada::elementComment || Cyberiada::elementFormalComment) {
+    if (!element) return false;
+    if (!element->has_rect_geometry()) return false;
+    if (element->get_type() == Cyberiada::elementComment || element->get_type() == Cyberiada::elementFormalComment) {
 		Cyberiada::Comment* comment = static_cast<Cyberiada::Comment*>(element);
-		comment->update_geometry(rect);
+        comment->update_geometry(rect);
 	} else {
 		Cyberiada::ElementCollection* ec = static_cast<Cyberiada::ElementCollection*>(element);
-		ec->update_geometry(rect);
+        ec->update_geometry(rect);
 	}
 	emit dataChanged(index, index);
 	return true;
@@ -344,7 +344,8 @@ bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada:
 	if (!element) return false;
 	if (element->get_type() != Cyberiada::elementTransition) return false;
 	Cyberiada::Transition* trans = static_cast<Cyberiada::Transition*>(element);
-	// TODO
+    // TODO
+    trans->update(source, target);
 	emit dataChanged(index, index);
 	return true;
 }
@@ -356,8 +357,25 @@ bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada:
 	if (element->get_type() != Cyberiada::elementTransition) return false;
 	Cyberiada::Transition* trans = static_cast<Cyberiada::Transition*>(element);
 	// TODO
+    trans->update(pl);
 	emit dataChanged(index, index);
 	return true;
+}
+
+bool CyberiadaSMModel::updateGeometry(const QModelIndex &index, const Cyberiada::ID &source, const Cyberiada::ID &target)
+{
+    Cyberiada::Element* element = indexToElement(index);
+    if (!element) return false;
+    if (element->get_type() != Cyberiada::elementTransition) return false;
+    Cyberiada::Transition* trans = static_cast<Cyberiada::Transition*>(element);
+    // TODO
+    if (root->find_element_by_id(source) == NULL || root->find_element_by_id(target) == NULL) {
+        // the id isn't available in the document
+        return false;
+    }
+    trans->update(source, target);
+    emit dataChanged(index, index);
+    return true;
 }
 
 bool CyberiadaSMModel::updateCommentBody(const QModelIndex& index, const QString& body)
