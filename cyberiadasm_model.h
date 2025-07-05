@@ -60,9 +60,9 @@ public:
 	bool                                updateTitle(const QModelIndex& index, const QString& new_value);
 	bool                                updateAction(const QModelIndex& index,
 													 int action_index = -1,
-													 const QString& new_behaviour = QString(),
-													 const QString& new_trigger = QString(),
-													 const QString& new_guard = QString());
+                                                     const QString& new_trigger = QString(),
+                                                     const QString& new_guard = QString(),
+                                                     const QString& new_behaviour = QString());
 	bool                                newAction(const QModelIndex& index,
 												  Cyberiada::ActionType type,
 												  const QString& trigger = QString(),
@@ -72,7 +72,8 @@ public:
 	bool                                updateGeometry(const QModelIndex& index, const Cyberiada::Point& point);
 	bool                                updateGeometry(const QModelIndex& index, const Cyberiada::Rect& rect);
 	bool                                updateGeometry(const QModelIndex& index, const Cyberiada::Point& source, const Cyberiada::Point& target);
-	bool                                updateGeometry(const QModelIndex& index, const Cyberiada::Polyline& pl);	
+    bool                                updateGeometry(const QModelIndex& index, const Cyberiada::Polyline& pl);
+    bool                                updateGeometry(const QModelIndex& index, const Cyberiada::ID& source, const Cyberiada::ID& target);
 	bool                                updateCommentBody(const QModelIndex& index, const QString& body);
 	bool                                updateMetainformation(const QModelIndex& index, const QString& parameter, const QString& new_value);
 	

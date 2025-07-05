@@ -40,6 +40,7 @@ public:
     virtual int type() const { return VertexItem; }
 
     QRectF boundingRect() const override;
+    QPainterPath shape() const override;
 
 protected:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;

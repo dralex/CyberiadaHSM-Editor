@@ -25,7 +25,10 @@
 #include <QColor>
 #include <QGraphicsSceneHoverEvent>
 #include <QGraphicsSceneMouseEvent>
+#include <QKeyEvent>
 #include "dotsignal.h"
+
+#include <QDebug>
 
 DotSignal::DotSignal(QGraphicsItem *parentItem, QObject *parent) :
     QObject(parent)
@@ -35,6 +38,7 @@ DotSignal::DotSignal(QGraphicsItem *parentItem, QObject *parent) :
     setBrush(QBrush(Qt::green));
     setRect(-4,-4,8,8);
     setDotFlags(0);
+    setDeleteable(false);
 }
 
 DotSignal::DotSignal(QPointF pos, QGraphicsItem *parentItem, QObject *parent) :
@@ -47,6 +51,7 @@ DotSignal::DotSignal(QPointF pos, QGraphicsItem *parentItem, QObject *parent) :
     setPos(pos);
     setPreviousPosition(pos);
     setDotFlags(0);
+    setDeleteable(false);
 }
 
 DotSignal::~DotSignal()
@@ -68,9 +73,16 @@ void DotSignal::setPreviousPosition(const QPointF newPreviousPosition)
     emit previousPositionChanged();
 }
 
-void DotSignal::setDotFlags(unsigned int flags)
+void DotSignal::setDotFlags(unsigned int newFlags)
 {
-    flags = flags;
+    flags = newFlags;
+}
+
+void DotSignal::setDeleteable(bool on)
+{
+    deleteable = on;
+    setFlag(QGraphicsItem::ItemIsFocusable, on);
+    setFlag(QGraphicsItem::ItemIsSelectable, on);
 }
 
 void DotSignal::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
@@ -80,7 +92,7 @@ void DotSignal::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
         auto dy = event->scenePos().y() - previousPosition.y();
         moveBy(dx,dy);
         setPreviousPosition(event->scenePos());
-        emit signalMove(this, dx, dy);
+        emit signalMove(this, dx, dy, event->scenePos());
     } else {
         QGraphicsItem::mouseMoveEvent(event);
     }
@@ -88,6 +100,7 @@ void DotSignal::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 
 void DotSignal::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
+    emit signalPress(this);
     if(flags & Movable){
         setPreviousPosition(event->scenePos());
     } else {
@@ -110,5 +123,16 @@ void DotSignal::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
 void DotSignal::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
 {
     Q_UNUSED(event)
-    setBrush(QBrush(Qt::green));
+    if (!hasFocus()) {
+        setBrush(QBrush(Qt::green));
+    }
+}
+
+void DotSignal::keyPressEvent(QKeyEvent* event)
+{
+    if (event->key() == Qt::Key_Delete || event->key() == Qt::Key_Backspace) {
+        emit signalDelete(this);
+    } else {
+        QGraphicsItem::keyPressEvent(event);
+    }
 }

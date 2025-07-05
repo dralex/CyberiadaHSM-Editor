@@ -48,7 +48,7 @@ public:
     CyberiadaSMEditorScene(CyberiadaSMModel* model, QObject *parent = NULL);
     virtual ~CyberiadaSMEditorScene();
 
-    void reset();
+    void  reset();
 	
     void  setGridSize(int newSize);
     int   getGridSize() const { return gridSize; }
@@ -59,11 +59,11 @@ public:
     void  setGridPen(const QPen& gridPen);
     const QPen& getGridPen() const { return gridPen; }
 
-    void loadScene();
+    void  loadScene();
 
     QMap<Cyberiada::ID, QGraphicsItem*>& getMap() { return elementIdToItemMap; }
 
-    void setCurrentTool(ToolType tool);
+    void  setCurrentTool(ToolType tool);
     ToolType getCurrentTool() { return currentTool; }
 
     void removeSMItem(Cyberiada::Element *element);
@@ -76,6 +76,7 @@ public slots:
     void  enableGridSnap(bool on = true);
     void  onSelectionChanged();
     void  toggleTransitionText(bool visible);
+    void  toggleInspectorMode(bool on);
 
 protected:
     void  drawBackground(QPainter *painter, const QRectF &);
@@ -92,6 +93,8 @@ private:
     bool                           gridEnabled;
     bool                           gridSnap;
     QPen                           gridPen;
+
+    bool                           inspectorModeEnabled;
 
     ToolType currentTool = ToolType::Select;
 };

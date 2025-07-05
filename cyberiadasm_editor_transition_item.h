@@ -40,26 +40,17 @@
 
 
 /* -----------------------------------------------------------------------------
- * Transition Text Item
- * ----------------------------------------------------------------------------- */
-
-class TransitionText : public EditableTextItem
-{
-    Q_OBJECT
-public:
-    explicit TransitionText(const QString &text, QGraphicsItem *parent = nullptr);
-
-    void paint( QPainter *painter, const QStyleOptionGraphicsItem *o, QWidget *w) override;
-};
-
-/* -----------------------------------------------------------------------------
  * Transition Item
  * ----------------------------------------------------------------------------- */
+
+class TransitionAction;
 
 class CyberiadaSMEditorTransitionItem : public CyberiadaSMEditorAbstractItem
 {
     Q_OBJECT
     Q_INTERFACES(QGraphicsItem)
+
+    friend class TransitionAction;
 
 public:
     explicit CyberiadaSMEditorTransitionItem(QObject *parent_object,
@@ -69,84 +60,79 @@ public:
                         QMap<Cyberiada::ID, QGraphicsItem*> &elementItem);
     ~CyberiadaSMEditorTransitionItem();
 
-
     virtual int type() const { return TransitionItem; }
 
-    CyberiadaSMEditorAbstractItem *source() const;
+    QRectF boundingRect() const override;
+    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = nullptr);
+    QPainterPath shape() const override;
 
-    // void setSource(Rectangle *source);
+    CyberiadaSMEditorAbstractItem *source() const;
+    void setSource(CyberiadaSMEditorAbstractItem *newSource);
     QPointF sourcePoint() const;
-    // void setSourcePoint(const QPointF& point);
+    void setSourcePoint(const QPointF& point);
+    void setSourcePoint(const Cyberiada::Point& point);
     QPointF sourceCenter() const;
     Cyberiada::ID sourceId() const {
         return transition->source_element_id();
     }
 
     CyberiadaSMEditorAbstractItem *target() const;
-    // void setTarget(Rectangle *target);
+    void setTarget(CyberiadaSMEditorAbstractItem *newTarget);
     QPointF targetPoint() const;
-    // void setTargetPoint(const QPointF& point);
+    void setTargetPoint(const QPointF& point);
     QPointF targetCenter() const;
     Cyberiada::ID targetId() const {
         return transition->target_element_id();
     }
 
-    QRectF boundingRect() const override;
-    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = nullptr);
-    QPainterPath shape() const override; // для обнаружения столкновений
-
     QPainterPath path() const;
-    // void setPath(const QPainterPath &path);
     void updatePath();
 
-    void drawArrow(QPainter* painter);
+    QString actionText() const;
+    void updateAction();
+    void updateActionPosition();
+    void setActionVisibility(bool visible);
 
-    QVector<QPointF> points() const;
-    // void setPoints(const QVector<QPointF>& points);
-
-    QString text() const;
-    void setText(const QString& text);
-    void setTextPosition(const QPointF& pos);
-    void updateTextPosition();
-    void setTextVisible(bool visible);
-
-    // QPointF findIntersectionWithRect(const State* state);
+    void syncFromModel() override;
 
 signals:
-    void pathChanged();
-    //    void rectChanged();
-    //    void pointsChanged();
-    void clicked(CyberiadaSMEditorTransitionItem *rect);
-    void signalMove(QGraphicsItem *item, qreal dx, qreal dy);
+    // void clicked(CyberiadaSMEditorTransitionItem *rect);
+    // void signalMove(QGraphicsItem *item, qreal dx, qreal dy);
 
 private slots:
     void onSourceGeomertyChanged();
-    // void slotMoveSource(QGraphicsItem *item, qreal dx, qreal dy);
-    // void slotMoveTarget(QGraphicsItem *item, qreal dx, qreal dy);
-    // void slotMove();
-    // void slotStateResized(State *rect, State::CornerFlags side);
-    void slotMoveDot(QGraphicsItem *signalOwner, qreal dx, qreal dy);
+    void onTargetGeomertyChanged();
+    void onSourceSizeChanged(CyberiadaSMEditorAbstractItem::CornerFlags side, qreal d);
+    void onTargetSizeChanged(CyberiadaSMEditorAbstractItem::CornerFlags side, qreal d);
+    void slotMoveDot(QGraphicsItem *signalOwner, qreal dx, qreal dy, QPointF p);
+    void slotMouseReleaseDot();
+    void slotDeleteDot(QGraphicsItem *signalOwner);
 
 protected:
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
     void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
-    // void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
-    // void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) override;
+    void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
+    void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) override;
     void hoverLeaveEvent(QGraphicsSceneHoverEvent *event) override;
     void hoverMoveEvent(QGraphicsSceneHoverEvent *event) override;
     void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
 
 private:
-    // void updateCoordinates(State *state, State::CornerFlags side, QPointF *point, QPointF* previousCenterPos);
+    void drawArrow(QPainter* painter);
+    CyberiadaSMEditorAbstractItem* itemUnderCursor();
+    QPointF findIntersectionWithItem(const CyberiadaSMEditorAbstractItem *item,
+                                     const QPointF& start, const QPointF& end,
+                                     bool* hasIntersections);
+    void updateCoordinates(CyberiadaSMEditorAbstractItem::CornerFlags side,
+                           QPointF& point, qreal d);
+    void movePolyline(QPointF delta);
 
     const Cyberiada::Transition* transition;
 
-    TransitionText *actionItem = nullptr;
+    TransitionAction *actionItem = nullptr;
     QPointF textPosition;
 
-    // QPointF previousPosition;
-    QPainterPath m_path;
-    QVector<QPointF> m_points;
+    QPointF prevPosition;
 
     QList<DotSignal *> listDots;
 
@@ -154,14 +140,35 @@ private:
 
     bool isLeftMouseButtonPressed;
     bool isMouseTraking;
+    bool isSourceTraking;
+    bool isTargetTraking;
 
     void initializeDots() override;
     void updateDots();
     void showDots() override;
     void hideDots() override;
     void setDotsPosition() override;
-    void setPointPos(int pointIndex, qreal dx, qreal dy);
 };
 
+
+/* -----------------------------------------------------------------------------
+ * Transition Action Item
+ * ----------------------------------------------------------------------------- */
+
+class TransitionAction : public EditableTextItem
+{
+    Q_OBJECT
+public:
+    explicit TransitionAction(const QString &text, QGraphicsItem *parent = nullptr);
+
+    QString getTrigger() const;
+    QString getGuard() const;
+    QString getBehaviour() const;
+
+protected:
+    void paint( QPainter *painter, const QStyleOptionGraphicsItem *o, QWidget *w) override;
+
+    void focusOutEvent(QFocusEvent *event);
+};
 
 #endif // CYBERIADASMEDITORTRANSITIONITEM_H

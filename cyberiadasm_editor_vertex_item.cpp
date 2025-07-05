@@ -56,6 +56,21 @@ QRectF CyberiadaSMEditorVertexItem::boundingRect() const
     return fullCircle();
 }
 
+QPainterPath CyberiadaSMEditorVertexItem::shape() const {
+    QPainterPath path;
+    // Cyberiada::ElementType type = element->get_type();
+    // if (type == Cyberiada::elementInitial) {
+    //     path.addEllipse(fullCircle());
+    // } else if (type == Cyberiada::elementFinal) {
+    //     path.addEllipse(partialCircle());
+    // } else {
+    //     MY_ASSERT(type == Cyberiada::elementTerminate);
+    //     path.addEllipse(fullCircle());
+    // }
+    path.addEllipse(fullCircle());
+    return path;
+}
+
 QRectF CyberiadaSMEditorVertexItem::fullCircle() const
 {
     MY_ASSERT(model);
@@ -98,6 +113,7 @@ void CyberiadaSMEditorVertexItem::paint(QPainter* painter, const QStyleOptionGra
 
         painter->setPen(QPen(color, 2, Qt::SolidLine));
         QRectF r = fullCircle();
+        painter->drawEllipse(fullCircle());
         painter->drawLine(r.left(), r.top(), r.right(), r.bottom());
         painter->drawLine(r.right(), r.top(), r.left(), r.bottom());
     }
@@ -117,7 +133,6 @@ void CyberiadaSMEditorVertexItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event
         setFlag(ItemIsMovable);
         model->updateGeometry(model->elementToIndex(element),
                               Cyberiada::Point(pos().x(), pos().y()));
-        qDebug() << static_cast<const Cyberiada::Vertex*>(element)->get_geometry_point().x;
     }
 
     QGraphicsItem::mouseMoveEvent(event);

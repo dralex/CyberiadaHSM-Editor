@@ -80,6 +80,8 @@ public:
     };
 	
 	virtual int type() const = 0;
+    Cyberiada::ID getId() { return element->get_id(); }
+
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) = 0;
 
     virtual QRectF boundingRect() const = 0;
@@ -95,6 +97,9 @@ public:
     bool hasGeometry();
 
     virtual void syncFromModel();
+
+    virtual void setInspectorMode(bool on);
+    bool getInspectorMode();
 
 protected:
     CyberiadaSMModel* model;
@@ -113,6 +118,7 @@ protected:
 
 signals:
     void geometryChanged();
+    void sizeChanged(CornerFlags side, qreal d);
     void previousPositionChanged();
 
 protected:
@@ -121,38 +127,26 @@ protected:
     bool isLeftMouseButtonPressed;
     DotSignal *cornerGrabber[8];
 
+    bool inspectorModeEnabled;
+
     void resizeLeft( const QPointF &pt);
     void resizeRight( const QPointF &pt);
     void resizeBottom(const QPointF &pt);
     void resizeTop(const QPointF &pt);
+
+    void updatePosGeometry();
+    void updateSizeGeometry();
 
     virtual void initializeDots();
     virtual void setDotsPosition();
     virtual void showDots();
     virtual void hideDots();
 
+    // virtual void remove();
+
 private:
     void handleParentChange();
 
 };
-
-// /* -----------------------------------------------------------------------------
-//  * Composite State Item
-//  * ----------------------------------------------------------------------------- */
-
-// class CyberiadaSMEditorCompositeStateItem: public CyberiadaSMEditorStateItem {
-// public:
-//     CyberiadaSMEditorCompositeStateItem(CyberiadaSMModel* model,
-// 										Cyberiada::Element* element,
-// 										QGraphicsItem* parent = NULL);
-
-// 	virtual int type() const { return CompositeStateItem; }
-// };
-
-// class ItemWithText {
-// public:
-//     virtual void setPositionText() = 0; // содержит текстовый блок
-// };
-
 
 #endif

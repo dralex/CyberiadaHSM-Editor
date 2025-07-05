@@ -31,6 +31,7 @@
 #include "smeditor_window.h"
 #include "myassert.h"
 #include "fontmanager.h"
+#include "dialogs/properties_dialog.h"
 
 
 CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
@@ -68,6 +69,25 @@ void CyberiadaSMEditorWindow::slotFileOpen()
 	}
 }
 
+void CyberiadaSMEditorWindow::slotFileSave()
+{
+    model->saveDocument();
+}
+
+void CyberiadaSMEditorWindow::slotFileSaveAs()
+{
+    QString fileName = QFileDialog::getSaveFileName(
+        this,
+        "Save State Machile GraphML file as",
+        QDir::currentPath(),
+        tr("CyberiadaML graph (*.graphml)")
+        );
+    if (fileName.isEmpty()) {
+        return;
+    }
+    model->saveAsDocument(fileName, Cyberiada::DocumentFormat::formatCyberiada10);
+}
+
 void CyberiadaSMEditorWindow::initializeTools()
 {
     toolGroup = new QActionGroup(this);
@@ -84,8 +104,10 @@ void CyberiadaSMEditorWindow::initializeTools()
 
     transitionTextAction->setChecked(true);
     connect(transitionTextAction, &QAction::triggered, scene, &CyberiadaSMEditorScene::toggleTransitionText);
-}
 
+    inspectorModeAction->setChecked(true);
+    connect(inspectorModeAction, &QAction::triggered, scene, &CyberiadaSMEditorScene::toggleInspectorMode);
+}
 
 void CyberiadaSMEditorWindow::on_actionFont_triggered()
 {
@@ -117,8 +139,15 @@ void CyberiadaSMEditorWindow::on_fitContentAction_triggered() {
     sceneView->fitInView(scene->itemsBoundingRect(), Qt::KeepAspectRatio);
 }
 
-void CyberiadaSMEditorWindow::on_inspectorModeAction_toggled(bool arg1)
+void CyberiadaSMEditorWindow::on_propertiesAction_triggered()
 {
-
+    PropertiesDialog* dlg = new PropertiesDialog(this);
+    if (dlg->exec() == QDialog::Accepted) {
+        if (dlg->isInspectorModeEnabled()) {
+            // включить режим инспектора
+        }
+        // также можно вытащить настройки шрифта из fontDialog
+    }
 }
+
 

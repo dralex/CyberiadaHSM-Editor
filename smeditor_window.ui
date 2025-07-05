@@ -87,6 +87,8 @@
      <string>&amp;File</string>
     </property>
     <addaction name="actionOpen"/>
+    <addaction name="actionSave"/>
+    <addaction name="actionSaveAs"/>
     <addaction name="separator"/>
     <addaction name="actionExit"/>
    </widget>
@@ -102,6 +104,8 @@
     <addaction name="separator"/>
     <addaction name="transitionTextAction"/>
     <addaction name="inspectorModeAction"/>
+    <addaction name="separator"/>
+    <addaction name="propertiesAction"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
@@ -119,6 +123,7 @@
    <addaction name="separator"/>
    <addaction name="selectToolAction"/>
    <addaction name="panAction"/>
+   <addaction name="separator"/>
   </widget>
   <action name="actionOpen">
    <property name="text">
@@ -214,6 +219,36 @@
     <string>Режим инспектора</string>
    </property>
   </action>
+  <action name="propertiesAction">
+   <property name="text">
+    <string>Настройки</string>
+   </property>
+  </action>
+  <action name="actionDeleteElement">
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/remove.png</normaloff>:/Icons/images/remove.png</iconset>
+   </property>
+   <property name="text">
+    <string>Delete Element</string>
+   </property>
+  </action>
+  <action name="actionSave">
+   <property name="text">
+    <string>&amp;Save...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="actionSaveAs">
+   <property name="text">
+    <string>&amp;Save as...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+S</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -291,8 +326,42 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>actionSave</sender>
+   <signal>triggered()</signal>
+   <receiver>SMEditorWindow</receiver>
+   <slot>slotFileSave()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>511</x>
+     <y>383</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionSaveAs</sender>
+   <signal>triggered()</signal>
+   <receiver>SMEditorWindow</receiver>
+   <slot>slotFileSaveAs()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>511</x>
+     <y>383</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>slotFileOpen()</slot>
+  <slot>slotFileSave()</slot>
+  <slot>slotFileSaveAs()</slot>
  </slots>
 </ui>

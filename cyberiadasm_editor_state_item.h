@@ -47,6 +47,7 @@ class CyberiadaSMEditorStateItem : public CyberiadaSMEditorAbstractItem //, Item
 {
     Q_OBJECT
     //Q_PROPERTY(QPointF previousPosition READ previousPosition WRITE setPreviousPosition NOTIFY previousPositionChanged)
+    friend class StateTitle;
 
 public:
     explicit CyberiadaSMEditorStateItem(QObject *parent_object,
@@ -57,6 +58,7 @@ public:
 
     virtual int type() const { return StateItem; }
 
+    QPainterPath shape() const override;
     void setPreviousPosition(const QPointF previousPosition);
 
     void setRect(qreal x, qreal y, qreal w, qreal h);
@@ -66,6 +68,7 @@ public:
     qreal y() const;
     qreal width() const;
     qreal height() const;
+    QString name() const;
 
     StateRegion* getRegion();
     void updateRegion();
@@ -76,6 +79,9 @@ public:
 
     void setTextPosition();
 
+    void setInspectorMode(bool on) override;
+    QStringList getSameLevelStateNames() const;
+
 private:
     void initializeActions();
     void addAction(Cyberiada::ActionType type);
@@ -83,8 +89,8 @@ private:
 signals:
     void rectChanged(CyberiadaSMEditorStateItem *rect);
     // void previousPositionChanged();
-    void clicked(CyberiadaSMEditorStateItem *rect);
-    void signalMove(QGraphicsItem *item, qreal dx, qreal dy);
+    // void clicked(CyberiadaSMEditorStateItem *rect);
+    // void signalMove(QGraphicsItem *item, qreal dx, qreal dy);
     void aboutToDelete();
 
 private slots:
@@ -97,6 +103,8 @@ protected:
 
     void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
 
+    void remove(); // override;
+
 private:
     StateTitle* title;
     StateAction* entry = nullptr;
@@ -107,12 +115,7 @@ private:
     const Cyberiada::State* state;
     std::vector<StateAction*> actions;
 
-    void resizeLeft( const QPointF &pt);
-    void resizeRight( const QPointF &pt);
-    void resizeBottom(const QPointF &pt);
-    void resizeTop(const QPointF &pt);
-
-    void setPositionGrabbers();
+    void setGrabbersPosition();
     void showGrabbers();
     void hideGrabbers();
 };
@@ -132,6 +135,7 @@ public:
     bool getBottomLine() { return bottomLine; }
 
     void setTopLine(bool topLine) {
+        this;
         this->topLine = topLine;
     }
 
@@ -140,20 +144,7 @@ public:
     }
 
 protected:
-    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override
-    {
-        Q_UNUSED(option)
-        Q_UNUSED(widget)
-
-        if(topLine) painter->drawLine(boundingRect().topLeft(), boundingRect().topRight());
-        if(bottomLine) painter->drawLine(boundingRect().bottomLeft(), boundingRect().bottomRight());
-
-        painter->setPen(Qt::blue);
-        painter->drawRect(rect());
-
-        painter->setBrush(Qt::blue);
-        painter->drawEllipse(QPointF(0, 0), 2, 2); // Центр системы координат
-    }
+    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
 
 private:
     bool topLine = false;
@@ -161,20 +152,17 @@ private:
 };
 
 /* -----------------------------------------------------------------------------
- * State Title Items
+ * State Title Item
  * ----------------------------------------------------------------------------- */
 
 class StateTitle : public EditableTextItem
 {
 public:
     explicit StateTitle(const QString &text,
-                        QGraphicsItem *parent = nullptr):
-        EditableTextItem(text, parent) {
-        setTextAlignment(Qt::AlignCenter);
-        setTextMargin(0);
-    }
+                        QGraphicsItem *parent = nullptr);
 
 protected:
+    void focusOutEvent(QFocusEvent *event) override;
     void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
@@ -197,14 +185,18 @@ public:
                          QGraphicsItem *parent = nullptr);
 
     QString getText();
+    QString getBehavior();
 
 signals:
     void actionDeleted(StateAction* signalOwner);
+    void actionUpdated(StateAction* signalOwner);
 
 protected:
     void keyPressEvent(QKeyEvent* event) override;
     void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
+    void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) override;
     void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
+    void focusOutEvent(QFocusEvent *event) override;
 
 private:
     const Cyberiada::Action* action;
