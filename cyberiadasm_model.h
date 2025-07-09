@@ -104,8 +104,7 @@ public:
 	Cyberiada::Element*                 idToElement(const QString& id);
 	
 signals:
-	void                                dataChanged(const QModelIndex & topLeft, const QModelIndex & bottomRight);
-	void                                modelAboutToBeReset();
+    void                                modelAboutToBeReset();
 	void                                modelReset();
 
 private:

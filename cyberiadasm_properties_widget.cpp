@@ -146,7 +146,9 @@ void CyberiadaSMPropertiesWidget::setModel(CyberiadaSMModel* model)
 		Cyberiada::ElementType t = Cyberiada::ElementType(i);
 		elementTypesEnumNames << types[t];
 		elementTypesEnumIcons[t] = model->getElementIcon(t);
-	}	
+    }
+
+    connect(model, &CyberiadaSMModel::dataChanged, this, &CyberiadaSMPropertiesWidget::slotModelDataChanged);
 }
 
 void CyberiadaSMPropertiesWidget::clearProperties()
@@ -170,6 +172,18 @@ void CyberiadaSMPropertiesWidget::slotElementSelected(const QModelIndex& index)
 	} else {
 		element = NULL;
 	}
+}
+
+void CyberiadaSMPropertiesWidget::slotModelDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight)
+{
+    if (model && topLeft.isValid() && topLeft != model->rootIndex()) {
+        Cyberiada::Element* changed_element = model->indexToElement(topLeft);
+        MY_ASSERT(changed_element);
+        if (element == changed_element) {
+            clearProperties();
+            newElement(changed_element);
+        }
+    }
 }
 
 void CyberiadaSMPropertiesWidget::slotPropertyChanged(QtProperty* p)
@@ -435,8 +449,8 @@ void CyberiadaSMPropertiesWidget::newElement(Cyberiada::Element* new_element)
 
 					QtProperty* rect_group_prop = constructProperty(propGroupRect);
 					geom_group_prop->addSubProperty(rect_group_prop);
-					rectManager->setValue(rect_group_prop, QRectF(r.x, r.y, r.width, r.height));
-					
+                    rectManager->setValue(rect_group_prop, QRectF(r.x, r.y, r.width, r.height));
+
 					QtProperty* color_prop = constructProperty(propColor);
 					stringManager->setValue(color_prop, QString(col.c_str()));
 					geom_group_prop->addSubProperty(color_prop);

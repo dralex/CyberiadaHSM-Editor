@@ -66,17 +66,16 @@ void CyberiadaSMView::startDrag(Qt::DropActions)
 	drag->setPixmap(m->getIndexIcon(current).pixmap(32, 32));
 	drag->setDragCursor(QCursor(Qt::ClosedHandCursor).pixmap(), Qt::MoveAction);
 	drag->exec(Qt::MoveAction);
-
 }
 
-/*void CyberiadaSMView::slotSourceDataChanged(const QModelIndex& topLeft,
+void CyberiadaSMView::slotModelDataChanged(const QModelIndex& topLeft,
 											const QModelIndex&)
 {
 	//qDebug() << "data changed";
 	if (topLeft.isValid()) {
-		CyberiadaSMTreeProxyModel* proxyModel = static_cast<CyberiadaSMTreeProxyModel*>(model());
-		//qDebug() << "update" << topLeft.row() << topLeft.column() << (void*)topLeft.internalPointer();
-		update(proxyModel->mapFromSource(topLeft));
+        // CyberiadaSMTreeProxyModel* proxyModel = static_cast<CyberiadaSMTreeProxyModel*>(model());
+        // //qDebug() << "update" << topLeft.row() << topLeft.column() << (void*)topLeft.internalPointer();
+        // update(proxyModel->mapFromSource(topLeft));
 	}
 }
-*/
+
