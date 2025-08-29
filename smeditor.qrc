@@ -26,6 +26,9 @@
         <file>images/zoom-out-32.png</file>
         <file>images/zoom-in-32.png</file>
         <file>images/remove.png</file>
+        <file>images/inspector-mode.png</file>
+        <file>images/snap-mode.png</file>
+        <file>images/grid.png</file>
     </qresource>
     <qresource prefix="/Fonts">
         <file>fonts/courier.ttf</file>

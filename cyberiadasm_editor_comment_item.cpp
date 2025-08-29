@@ -29,6 +29,7 @@
 #include "myassert.h"
 #include "cyberiada_constants.h"
 #include "fontmanager.h"
+#include "settings_manager.h"
 
 /* -----------------------------------------------------------------------------
  * Comment Item
@@ -101,13 +102,18 @@ void CyberiadaSMEditorCommentItem::paint(QPainter* painter, const QStyleOptionGr
     if (!comment->has_geometry()) return;
 
     QPen pen = QPen(Qt::black, 1, Qt::SolidLine);
+    QBrush brush = commentBrush;
     if (isSelected()) {
-        pen.setColor(Qt::red);
-        pen.setWidth(2);
+        SettingsManager& sm = SettingsManager::instance();
+        pen.setColor(sm.getSelectionColor());
+        pen.setWidth(sm.getSelectionBorderWidth());
+        QColor fillColor = sm.getSelectionColor();
+        fillColor.setAlpha(200);
+        brush.setColor(fillColor);
     }
 
     painter->setPen(pen);
-    painter->setBrush(commentBrush);
+    painter->setBrush(brush);
 
     QRectF r = boundingRect();
 
@@ -125,7 +131,7 @@ void CyberiadaSMEditorCommentItem::paint(QPainter* painter, const QStyleOptionGr
     if (type == Cyberiada::elementFormalComment) {
         painter->setBrush(QBrush(Qt::black));
     } else {
-        painter->setBrush(commentBrush);
+        painter->setBrush(brush);
     }
 
     const QPointF triangle[] = {

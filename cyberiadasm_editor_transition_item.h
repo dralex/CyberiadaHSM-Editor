@@ -168,7 +168,7 @@ public:
 protected:
     void paint( QPainter *painter, const QStyleOptionGraphicsItem *o, QWidget *w) override;
 
-    void focusOutEvent(QFocusEvent *event);
+    void focusOutEvent(QFocusEvent *event) override;
 };
 
 #endif // CYBERIADASMEDITORTRANSITIONITEM_H

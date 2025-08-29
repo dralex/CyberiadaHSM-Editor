@@ -38,6 +38,7 @@ public:
 
 	// CORE FUNCTIONALITY
 	void                                reset();
+    // void                                createDocument();
 	void                                loadDocument(const QString& path, bool reconstruct = false, bool reconsruct_sm = false);
 	void                                saveDocument(bool round = false);
 	void                                saveAsDocument(const QString& path, Cyberiada::DocumentFormat f, bool round = false);
@@ -64,7 +65,7 @@ public:
                                                      const QString& new_guard = QString(),
                                                      const QString& new_behaviour = QString());
 	bool                                newAction(const QModelIndex& index,
-												  Cyberiada::ActionType type,
+                                                  Cyberiada::ActionType type,
 												  const QString& trigger = QString(),
 												  const QString& guard = QString(),
 												  const QString& behaviour = QString());
@@ -76,7 +77,36 @@ public:
     bool                                updateGeometry(const QModelIndex& index, const Cyberiada::ID& source, const Cyberiada::ID& target);
 	bool                                updateCommentBody(const QModelIndex& index, const QString& body);
 	bool                                updateMetainformation(const QModelIndex& index, const QString& parameter, const QString& new_value);
-	
+
+    Cyberiada::StateMachine*            newStateMachine(const Cyberiada::String& sm_name, const Cyberiada::Rect& r = Cyberiada::Rect());
+    Cyberiada::State*                   newState(Cyberiada::ElementCollection* parent, const Cyberiada::String& state_name,
+                                                 const Cyberiada::Action& a = Cyberiada::Action(), const Cyberiada::Rect& r = Cyberiada::Rect(),
+                                                 const Cyberiada::Rect& region = Cyberiada::Rect(),
+                                                 const Cyberiada::Color& color = Cyberiada::Color());
+    Cyberiada::InitialPseudostate*      newInitial(Cyberiada::ElementCollection* parent, const Cyberiada::Point& p = Cyberiada::Point());
+    Cyberiada::FinalState*              newFinal(Cyberiada::ElementCollection* parent, const Cyberiada::Point& p = Cyberiada::Point());
+    Cyberiada::ChoicePseudostate*       newChoice(Cyberiada::ElementCollection* parent, const Cyberiada::Rect& r = Cyberiada::Rect(),
+                                                  const Cyberiada::Color& color = Cyberiada::Color());
+    Cyberiada::TerminatePseudostate*    newTerminate(Cyberiada::ElementCollection* parent, const Cyberiada::Point& p = Cyberiada::Point());
+    Cyberiada::Transition*              newTransition(Cyberiada::StateMachine* sm, Cyberiada::TransitionType ttype,
+                                                      Cyberiada::Element* source, Cyberiada::Element* target,
+                                                      const Cyberiada::Action& action, const Cyberiada::Polyline& pl = Cyberiada::Polyline(),
+                                                      const Cyberiada::Point& sp = Cyberiada::Point(),
+                                                      const Cyberiada::Point& tp = Cyberiada::Point(),
+                                                      const Cyberiada::Point& label_point = Cyberiada::Point(),
+                                                      const Cyberiada::Rect& label_rect = Cyberiada::Rect(),
+                                                      const Cyberiada::Color& color = Cyberiada::Color());
+    Cyberiada::Comment*                 newComment(Cyberiada::ElementCollection* parent, const Cyberiada::String& body,
+                                                   const Cyberiada::Rect& rect = Cyberiada::Rect(),
+                                                   const Cyberiada::Color& color = Cyberiada::Color(),
+                                                   const Cyberiada::String& markup = Cyberiada::String());
+    Cyberiada::Comment*                 newFormalComment(Cyberiada::ElementCollection* parent, const Cyberiada::String& body,
+                                                   const Cyberiada::Rect& rect = Cyberiada::Rect(),
+                                                   const Cyberiada::Color& color = Cyberiada::Color(),
+                                                   const Cyberiada::String& markup = Cyberiada::String());
+
+    bool                                deleteElement(const QModelIndex& index);
+
 	// DRAG & DROP
 	Qt::DropActions                     supportedDropActions() const;
 	bool                                dropMimeData(const QMimeData *data,

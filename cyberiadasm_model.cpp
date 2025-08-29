@@ -382,6 +382,7 @@ bool CyberiadaSMModel::updateCommentBody(const QModelIndex& index, const QString
 {
 	Cyberiada::Element* element = indexToElement(index);
 	if (!element) return false;
+    // TODO
 	emit dataChanged(index, index);
 	return true;
 }
@@ -395,6 +396,156 @@ bool CyberiadaSMModel::updateMetainformation(const QModelIndex& index, const QSt
 	emit dataChanged(comment_index, comment_index);
 	emit dataChanged(index, index);
 	return true;
+}
+
+Cyberiada::StateMachine *CyberiadaSMModel::newStateMachine(const Cyberiada::String &sm_name, const Cyberiada::Rect &r)
+{
+
+}
+
+Cyberiada::State *CyberiadaSMModel::newState(Cyberiada::ElementCollection *parent, const Cyberiada::String &state_name,
+                                             const Cyberiada::Action &a, const Cyberiada::Rect &r, const Cyberiada::Rect &region,
+                                             const Cyberiada::Color &color)
+{
+    if (root == NULL) {
+        // TODO create sm
+        qDebug() << "no root";
+    }
+
+    int row = rowCount(elementToIndex(parent));
+    beginInsertRows(elementToIndex(parent), row + 1, row + 1);
+    Cyberiada::State* element = root->new_state(parent, state_name, a, r, region, color);
+    endInsertRows();
+
+    return element;
+}
+
+Cyberiada::InitialPseudostate *CyberiadaSMModel::newInitial(Cyberiada::ElementCollection *parent, const Cyberiada::Point &p)
+{
+    if (root == NULL) {
+        // TODO create sm
+        qDebug() << "no root";
+    }
+
+    int row = rowCount(elementToIndex(parent));
+    beginInsertRows(elementToIndex(parent), row + 1, row + 1);
+    Cyberiada::InitialPseudostate* element = root->new_initial(parent, p);
+    endInsertRows();
+
+    return element;
+}
+
+Cyberiada::FinalState *CyberiadaSMModel::newFinal(Cyberiada::ElementCollection *parent, const Cyberiada::Point &p)
+{
+    if (root == NULL) {
+        // TODO create sm
+        qDebug() << "no root";
+    }
+
+    int row = rowCount(elementToIndex(parent));
+    beginInsertRows(elementToIndex(parent), row + 1, row + 1);
+    Cyberiada::FinalState* element = root->new_final(parent, p);
+    endInsertRows();
+
+    return element;
+}
+
+Cyberiada::ChoicePseudostate *CyberiadaSMModel::newChoice(Cyberiada::ElementCollection *parent, const Cyberiada::Rect &r,
+                                                          const Cyberiada::Color &color)
+{
+    if (root == NULL) {
+        // TODO create sm
+        qDebug() << "no root";
+    }
+
+    int row = rowCount(elementToIndex(parent));
+    beginInsertRows(elementToIndex(parent), row + 1, row + 1);
+    Cyberiada::ChoicePseudostate* element = root->new_choice(parent, r, color);
+    endInsertRows();
+
+    return element;
+}
+
+Cyberiada::TerminatePseudostate *CyberiadaSMModel::newTerminate(Cyberiada::ElementCollection *parent, const Cyberiada::Point &p)
+{
+    if (root == NULL) {
+        // TODO create sm
+        qDebug() << "no root";
+    }
+
+    int row = rowCount(elementToIndex(parent));
+    beginInsertRows(elementToIndex(parent), row + 1, row + 1);
+    Cyberiada::TerminatePseudostate* element = root->new_terminate(parent, p);
+    endInsertRows();
+
+    return element;
+}
+
+Cyberiada::Transition *CyberiadaSMModel::newTransition(Cyberiada::StateMachine *sm, Cyberiada::TransitionType ttype,
+                                                       Cyberiada::Element *source, Cyberiada::Element *target,
+                                                       const Cyberiada::Action &action, const Cyberiada::Polyline &pl,
+                                                       const Cyberiada::Point &sp, const Cyberiada::Point &tp,
+                                                       const Cyberiada::Point &label_point, const Cyberiada::Rect &label_rect,
+                                                       const Cyberiada::Color &color)
+{
+    if (root == NULL) {
+        // TODO create sm
+        qDebug() << "no root";
+    }
+
+    int row = rowCount(elementToIndex(sm));
+    beginInsertRows(elementToIndex(sm), row + 1, row + 1);
+    Cyberiada::Transition* element = root->new_transition(sm, ttype, source, target, action, pl, sp, tp, label_point, label_rect, color);
+    endInsertRows();
+
+    return element;
+}
+
+Cyberiada::Comment *CyberiadaSMModel::newComment(Cyberiada::ElementCollection *parent, const Cyberiada::String &body,
+                                                 const Cyberiada::Rect &rect, const Cyberiada::Color &color, const Cyberiada::String &markup)
+{
+    if (root == NULL) {
+        // TODO create sm
+        qDebug() << "no root";
+    }
+
+    int row = rowCount(elementToIndex(parent));
+    beginInsertRows(elementToIndex(parent), row + 1, row + 1);
+    Cyberiada::Comment* element = root->new_comment(parent, body, rect, color, markup);
+    endInsertRows();
+
+    return element;
+}
+
+Cyberiada::Comment *CyberiadaSMModel::newFormalComment(Cyberiada::ElementCollection *parent, const Cyberiada::String &body,
+                                                       const Cyberiada::Rect &rect, const Cyberiada::Color &color,
+                                                       const Cyberiada::String &markup)
+{
+    if (root == NULL) {
+        // TODO create sm
+        qDebug() << "no root";
+    }
+
+    int row = rowCount(elementToIndex(parent));
+    beginInsertRows(elementToIndex(parent), row + 1, row + 1);
+    Cyberiada::Comment* element = root->new_formal_comment(parent, body, rect, color, markup);
+    endInsertRows();
+
+    return element;
+}
+
+bool CyberiadaSMModel::deleteElement(const QModelIndex &index)
+{
+    Cyberiada::Element* child_element = indexToElement(index);
+    if (!child_element) return false;
+    Cyberiada::ElementCollection* parent_element = dynamic_cast<Cyberiada::ElementCollection*>(child_element->get_parent());
+    MY_ASSERT(parent_element);
+    int row = child_element->index();
+    beginRemoveRows(elementToIndex(parent_element), row, row);
+    parent_element->remove_element(child_element->get_id());
+    endRemoveRows();
+    emit dataChanged(index, index);
+    return true;
 }
 
 Qt::ItemFlags CyberiadaSMModel::flags(const QModelIndex &index) const
@@ -434,7 +585,7 @@ bool CyberiadaSMModel::hasIndex(int row, int column, const QModelIndex & parent)
 
 QModelIndex CyberiadaSMModel::index(int row, int column, const QModelIndex &parent) const
 {
-	//qDebug() << "index" << row << column << (void*)parent.internalPointer();
+    //qDebug() << "index" << row << column << (void*)parent.internalPointer();
 	if (!parent.isValid() || !hasIndex(row, column, parent)) {
 		//qDebug() << "index result: empty";
 		return rootIndex();
@@ -540,7 +691,7 @@ QModelIndex CyberiadaSMModel::elementToIndex(const Cyberiada::Element* element) 
 		return documentIndex();
 	} else {
 		const Cyberiada::Element* parent = element->get_parent();
-		MY_ASSERT(parent);
+        MY_ASSERT(parent);
 		return index(element->index(), 0, elementToIndex(parent));
 	}
 }

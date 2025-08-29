@@ -25,15 +25,17 @@
 #include "main.h"
 #include "smeditor_window.h"
 #include "cyberiada_constants.h"
+#include "settings_manager.h"
 
 int main(int argc, char *argv[])
 {
 	qsrand(QDateTime::currentDateTime().toTime_t());
 	CyberiadaSMEditorApplication app(argc, argv);
-	try {
+    try {
 		CyberiadaSMEditorWindow win;
 		win.show();
 		int res = app.exec();
+
 		return res;
 	} catch(const QString& error) {
 		app.printMessage(error);

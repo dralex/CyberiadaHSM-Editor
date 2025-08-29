@@ -26,6 +26,7 @@
 #include <QColor>
 #include "cyberiadasm_editor_sm_item.h"
 #include "myassert.h"
+#include "settings_manager.h".
 
 /* -----------------------------------------------------------------------------
  * State Machine Item
@@ -68,12 +69,17 @@ void CyberiadaSMEditorSMItem::paint(QPainter* painter, const QStyleOptionGraphic
 {
     if (!element->has_geometry()) return;
 
-    QColor color(Qt::black);
+    QPen pen = QPen(Qt::black, 2, Qt::SolidLine);
     if (isSelected()) {
-        color.setRgb(255, 0, 0);
+        SettingsManager& sm = SettingsManager::instance();
+        pen.setColor(sm.getSelectionColor());
+        pen.setWidth(sm.getSelectionBorderWidth());
+        QColor fillColor = sm.getSelectionColor();
+        fillColor.setAlpha(50);
+        painter->setBrush(QBrush(fillColor));
     }
 
-    painter->setPen(QPen(color, 1, Qt::SolidLine));
+    painter->setPen(pen);
     QRectF r = boundingRect();
     painter->drawRect(r);
     const QPointF name_frame[] = {
@@ -84,4 +90,9 @@ void CyberiadaSMEditorSMItem::paint(QPainter* painter, const QStyleOptionGraphic
         QPointF(r.left(), r.top() + 30)
     };
     painter->drawConvexPolygon(name_frame, 5);
+}
+
+void CyberiadaSMEditorSMItem::updateSizeToFitChildren(CyberiadaSMEditorAbstractItem *child)
+{
+    // TODO copy from state
 }

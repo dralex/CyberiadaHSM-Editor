@@ -29,6 +29,7 @@
 #include "cyberiadasm_editor_items.h"
 #include "cyberiadasm_editor_scene.h"
 #include "cyberiadasm_editor_state_item.h"
+#include "settings_manager.h"
 #include "myassert.h"
 
 
@@ -37,27 +38,47 @@
  * ----------------------------------------------------------------------------- */
 
 CyberiadaSMEditorAbstractItem::CyberiadaSMEditorAbstractItem(CyberiadaSMModel* _model,
-															 Cyberiada::Element* _element,
+                                                             Cyberiada::Element* _element,
                                                              QGraphicsItem* parent):
-    // QObject(nullptr)
+    // QObject(nullptr),
     QGraphicsItem(parent),
     model(_model),
     element(_element),
-    cornerFlags(0),
-    inspectorModeEnabled(true)
+    cornerFlags(0)
 {
+    connect(&SettingsManager::instance(), &SettingsManager::inspectorModeChanged, this, &CyberiadaSMEditorAbstractItem::slotInspectorModeChanged);
+    connect(&SettingsManager::instance(), &SettingsManager::selectionSettingsChanged, this, &CyberiadaSMEditorAbstractItem::slotSelectionSettingsChanged);
+
     if(parent) {
         CyberiadaSMEditorAbstractItem* newParent = dynamic_cast<CyberiadaSMEditorAbstractItem*>(parent);
         if(newParent) {
+            // change in parent geometry
+            // to change transition action position when parent of state/target changes
             connect(newParent, &CyberiadaSMEditorAbstractItem::geometryChanged,
                     this, &CyberiadaSMEditorAbstractItem::onParentGeometryChanged);
+            // change in parent size
+            // to change position of children
+            connect(newParent, &CyberiadaSMEditorAbstractItem::sizeChanged,
+                    this, &CyberiadaSMEditorAbstractItem::onParentSizeChanged);
+            // change in this item geometry
+            // to change size of parent when child moves inside
+            // connect(this, &CyberiadaSMEditorAbstractItem::geometryChanged,
+            //         newParent, &CyberiadaSMEditorAbstractItem::onChildGeometryChanged);
         }
         StateRegion* stateArea = dynamic_cast<StateRegion*>(parent);
         if(stateArea) {
             newParent = dynamic_cast<CyberiadaSMEditorAbstractItem*>(stateArea->parentItem());
             if(newParent) {
+                // change in parent geometry
                 connect(newParent, &CyberiadaSMEditorAbstractItem::geometryChanged,
                         this, &CyberiadaSMEditorAbstractItem::onParentGeometryChanged);
+                // change in parent size
+                // to change position of children
+                connect(newParent, &CyberiadaSMEditorAbstractItem::sizeChanged,
+                        this, &CyberiadaSMEditorAbstractItem::onParentSizeChanged);
+                // change in this item geometry
+                // connect(this, &CyberiadaSMEditorAbstractItem::geometryChanged,
+                //         newParent, &CyberiadaSMEditorAbstractItem::onChildGeometryChanged);
             }
         }
     }
@@ -97,18 +118,55 @@ void CyberiadaSMEditorAbstractItem::syncFromModel()
     update();
 }
 
-void CyberiadaSMEditorAbstractItem::setInspectorMode(bool on) {
-    inspectorModeEnabled = on;
-    update();
-}
-
-bool CyberiadaSMEditorAbstractItem::getInspectorMode() {
-    return inspectorModeEnabled;
-}
-
 void CyberiadaSMEditorAbstractItem::onParentGeometryChanged() {
     update();
     emit geometryChanged();
+}
+
+void CyberiadaSMEditorAbstractItem::onParentSizeChanged(CornerFlags side, qreal delta)
+{
+    if(auto collection = dynamic_cast<Cyberiada::ElementCollection*>(element)) {
+        Cyberiada::Rect r = collection->get_geometry_rect();
+        QRectF tmpR = QRectF(r.x, r.y, r.width, r.height);
+        switch (side) {
+        case CornerFlags::Right:
+            tmpR = QRectF(r.x - delta, r.y, r.width, r.height);
+            break;
+        case CornerFlags::Left:
+            tmpR = QRectF(r.x + delta, r.y, r.width, r.height);
+            break;
+        case CornerFlags::Bottom:
+            tmpR = QRectF(r.x, r.y - delta, r.width, r.height);
+            break;
+        case CornerFlags::Top:
+            tmpR = QRectF(r.x, r.y + delta, r.width, r.height);
+            break;
+        default:
+            break;
+        }
+
+        Cyberiada::Rect oldR = collection->get_geometry_rect();
+        qDebug() << "--child old:" << oldR.x << oldR.y << oldR.width << oldR.height;
+        qDebug() << "--new:" << tmpR.x() << tmpR.y() << tmpR.width() << tmpR.height();
+        qDebug() << "--delta" << oldR.x - tmpR.x();
+
+        Cyberiada::Rect newR = Cyberiada::Rect(tmpR.x(),
+                                            tmpR.y(),
+                                            tmpR.width(),
+                                            tmpR.height());
+        model->updateGeometry(model->elementToIndex(element), newR);
+    }
+}
+
+void CyberiadaSMEditorAbstractItem::onChildGeometryChanged()
+{
+    // update();
+    // emit geometryChanged();
+}
+
+void CyberiadaSMEditorAbstractItem::updateSizeToFitChildren(CyberiadaSMEditorAbstractItem* child)
+{
+
 }
 
 QVariant CyberiadaSMEditorAbstractItem::itemChange(GraphicsItemChange change, const QVariant &value)
@@ -125,9 +183,13 @@ QVariant CyberiadaSMEditorAbstractItem::itemChange(GraphicsItemChange change, co
 void CyberiadaSMEditorAbstractItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
     if (!element->has_geometry() ||
-        dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select) {
+        dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select ) {
         event->ignore();
         return;
+    }
+
+    if (SettingsManager::instance().getInspectorMode()) {
+        QGraphicsItem::mousePressEvent(event);
     }
 
     if (event->button() & Qt::LeftButton) {
@@ -143,8 +205,13 @@ void CyberiadaSMEditorAbstractItem::mousePressEvent(QGraphicsSceneMouseEvent *ev
 void CyberiadaSMEditorAbstractItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
     if (!element->has_geometry() ||
-        dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select) {
+        dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select ||
+        SettingsManager::instance().getInspectorMode()) {
         event->ignore();
+        return;
+    }
+
+    if (!isLeftMouseButtonPressed) {
         return;
     }
 
@@ -152,25 +219,19 @@ void CyberiadaSMEditorAbstractItem::mouseMoveEvent(QGraphicsSceneMouseEvent *eve
 
     switch (cornerFlags) {
     case Top:
-        if (isLeftMouseButtonPressed) {
-            updatePosGeometry();
-        }
+        updatePosGeometry();
         break;
     case Bottom:
         resizeBottom(pt);
         break;
     case Left:
-        if (isLeftMouseButtonPressed) {
-            updatePosGeometry();
-        }
+        updatePosGeometry();
         break;
     case Right:
         resizeRight(pt);
         break;
     case TopLeft:
-        if (isLeftMouseButtonPressed) {
-            updatePosGeometry();
-        }
+        updatePosGeometry();
         break;
     // case TopRight:
     //     resizeTop(pt);
@@ -193,6 +254,20 @@ void CyberiadaSMEditorAbstractItem::mouseMoveEvent(QGraphicsSceneMouseEvent *eve
     }
 
     QGraphicsItem::mouseMoveEvent(event);
+
+    if (parentItem()) {
+        CyberiadaSMEditorAbstractItem* parent = dynamic_cast<CyberiadaSMEditorAbstractItem*>(parentItem());
+        if(parent) {
+            parent->updateSizeToFitChildren(this);
+        }
+        StateRegion* stateArea = dynamic_cast<StateRegion*>(parentItem());
+        if(stateArea) {
+            parent = dynamic_cast<CyberiadaSMEditorAbstractItem*>(stateArea->parentItem());
+            if(parent) {
+                parent->updateSizeToFitChildren(this);
+            }
+        }
+    }
     // emit geometryChanged();
 }
 
@@ -214,7 +289,8 @@ void CyberiadaSMEditorAbstractItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *
 void CyberiadaSMEditorAbstractItem::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
 {
     if (!element->has_geometry() ||
-        dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select) {
+        dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select ||
+        SettingsManager::instance().getInspectorMode()) {
         event->ignore();
         return;
     }
@@ -236,6 +312,16 @@ void CyberiadaSMEditorAbstractItem::hoverLeaveEvent(QGraphicsSceneHoverEvent *ev
     hideDots();
     unsetCursor();
     QGraphicsItem::hoverLeaveEvent( event );
+}
+
+void CyberiadaSMEditorAbstractItem::slotInspectorModeChanged(bool on)
+{
+    update();
+}
+
+void CyberiadaSMEditorAbstractItem::slotSelectionSettingsChanged()
+{
+    update();
 }
 
 void CyberiadaSMEditorAbstractItem::hoverMoveEvent(QGraphicsSceneHoverEvent *event)
@@ -353,10 +439,20 @@ void CyberiadaSMEditorAbstractItem::updatePosGeometry()
 {
     // change the model data
     setFlag(ItemIsMovable);
+
     Cyberiada::Rect r = Cyberiada::Rect(pos().x(),
                                         pos().y(),
                                         boundingRect().width(),
                                         boundingRect().height());
+    if (type() == StateItem || type() == CompositeStateItem) {
+        auto coll = dynamic_cast<Cyberiada::ElementCollection*>(element);
+        Cyberiada::Rect oldR = coll->get_geometry_rect();
+        QRectF parR = mapRectToParent(QRectF(boundingRect()));
+        qDebug() << "++child old:" << oldR.x << oldR.y << oldR.width << oldR.height;
+        qDebug() << "++new:" << r.x << r.y << r.width << r.height;
+        qDebug() << "++delta" << oldR.x - r.x;
+        qDebug() << "++mapBR" << parR;
+    }
     model->updateGeometry(model->elementToIndex(element), r);
 }
 
@@ -370,15 +466,15 @@ void CyberiadaSMEditorAbstractItem::initializeDots()
 
 // change of parent
 void CyberiadaSMEditorAbstractItem::handleParentChange() {
-    if (auto oldParent = dynamic_cast<CyberiadaSMEditorAbstractItem*>(parentItem())) {
-        disconnect(oldParent, &CyberiadaSMEditorAbstractItem::geometryChanged,
-                   this, &CyberiadaSMEditorAbstractItem::onParentGeometryChanged);
-    }
+    // if (auto oldParent = dynamic_cast<CyberiadaSMEditorAbstractItem*>(parentItem())) {
+    //     disconnect(oldParent, &CyberiadaSMEditorAbstractItem::geometryChanged,
+    //                this, &CyberiadaSMEditorAbstractItem::onParentGeometryChanged);
+    // }
 
-    if (auto newParent = dynamic_cast<CyberiadaSMEditorAbstractItem*>(parentItem())) {
-        connect(newParent, &CyberiadaSMEditorAbstractItem::geometryChanged,
-                this, &CyberiadaSMEditorAbstractItem::onParentGeometryChanged);
-    }
+    // if (auto newParent = dynamic_cast<CyberiadaSMEditorAbstractItem*>(parentItem())) {
+    //     connect(newParent, &CyberiadaSMEditorAbstractItem::geometryChanged,
+    //             this, &CyberiadaSMEditorAbstractItem::onParentGeometryChanged);
+    // }
 }
 
 void CyberiadaSMEditorAbstractItem::setDotsPosition()

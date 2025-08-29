@@ -35,6 +35,7 @@
 #include "cyberiadasm_editor_state_item.h"
 #include "cyberiadasm_editor_scene.h"
 #include "dialogs/stateactiondialog.h"
+#include "settings_manager.h"
 
 // state action includes
 #include <QTextCursor>
@@ -70,6 +71,7 @@ CyberiadaSMEditorStateItem::CyberiadaSMEditorStateItem(QObject *parent_object,
     if (state->is_composite_state()) {
         connect(title, &EditableTextItem::sizeChanged, this, &CyberiadaSMEditorStateItem::onTextItemSizeChanged);
         region = new StateRegion(this);
+        region->setVisibleRegon(SettingsManager::instance().getInspectorMode());
         updateRegion();
     }
 
@@ -170,7 +172,7 @@ StateRegion *CyberiadaSMEditorStateItem::getRegion()
 
 void CyberiadaSMEditorStateItem::updateRegion()
 {
-    if (inspectorModeEnabled) {
+    if (SettingsManager::instance().getInspectorMode()) {
         if (state->has_region_geometry()) {
             Cyberiada::Rect r = state->get_region_geometry_rect();
             region->setRect(QRectF(- r.width / 2,
@@ -244,19 +246,18 @@ void CyberiadaSMEditorStateItem::setTextPosition()
     // setPositionGrabbers();
 }
 
-void CyberiadaSMEditorStateItem::setInspectorMode(bool on)
-{
-    inspectorModeEnabled = on;
-    if (state->is_composite_state()) {
-        updateRegion();
-    }
-    update();
-}
-
 void CyberiadaSMEditorStateItem::syncFromModel()
 {
+    qDebug() << "synk" << name() << boundingRect() << pos() - QPointF(x(), y());
+    QRectF r1 = mapRectToParent(boundingRect());
+    qDebug() << "before" << r1 << name();
     setPos(QPointF(x(), y()));
+    QRectF r2 = mapRectToParent(boundingRect());
+    qDebug() << "after" << r2 << name();
     initializeActions();
+    if (title->toPlainText() != name()) {
+        title->setPlainText(name());
+    }
     if (state->is_composite_state()) {
         updateRegion();
     }
@@ -303,6 +304,55 @@ void CyberiadaSMEditorStateItem::addAction(Cyberiada::ActionType type)
         QString guard = QString("");
         QString behaviour = dialog.getBehaviour();
         model->newAction(model->elementToIndex(element), type, trigger, guard, behaviour);
+    }
+}
+
+void CyberiadaSMEditorStateItem::updateSizeToFitChildren(CyberiadaSMEditorAbstractItem* child)
+{
+    prepareGeometryChange();
+
+    QRectF rect = child->mapRectToParent(child->boundingRect());
+
+    QRectF newRect = boundingRect().united(rect);
+
+    qDebug() << "parent change" << name() << (newRect.width() - boundingRect().width()) / 2 << child->pos();
+    qDebug() << newRect << "|" << boundingRect() << "|" << rect;
+
+    if (newRect.width() - boundingRect().width() == 0 && newRect.height() - boundingRect().height() == 0) {
+        return;
+    }
+    Cyberiada::Rect r = Cyberiada::Rect(x(),
+                                        y(),
+                                        newRect.width(),
+                                        newRect.height());
+
+    // Cyberiada::Rect r = Cyberiada::Rect(pos().x() + (newRect.width() - boundingRect().width()) / 2,
+    //                                     pos().y() + (newRect.height() - boundingRect().height()) / 2,
+    if(newRect.x() < boundingRect().x()) {
+        qDebug() << "1";
+        r = Cyberiada::Rect(r.x - (newRect.width() - boundingRect().width()) / 2, r.y, r.width - (newRect.width() - boundingRect().width()) / 2, r.height);
+        model->updateGeometry(model->elementToIndex(element), r);
+        emit sizeChanged(CornerFlags::Left, + (newRect.width() - boundingRect().width()) / 2);
+    }
+    else if (newRect.width() - boundingRect().width() != 0){
+        qDebug() << "2";
+        r = Cyberiada::Rect(r.x + (newRect.width() - boundingRect().width()) / 2, r.y, r.width, r.height);
+        model->updateGeometry(model->elementToIndex(element), r);
+        emit sizeChanged(CornerFlags::Right, (newRect.width() - boundingRect().width()) / 2);
+    }
+
+    if(newRect.y() < boundingRect().y()) {
+
+        qDebug() << "3";
+        r = Cyberiada::Rect(r.x, r.y - (newRect.height() - boundingRect().height()) / 2, r.width, r.height);
+        model->updateGeometry(model->elementToIndex(element), r);
+        emit sizeChanged(CornerFlags::Top, - (newRect.height() - boundingRect().height()) / 2);
+    }
+    else if (newRect.height() - boundingRect().height() != 0) {
+        qDebug() << "4";
+        r = Cyberiada::Rect(r.x, r.y + (newRect.height() - boundingRect().height()) / 2, r.width, r.height);
+        model->updateGeometry(model->elementToIndex(element), r);
+        emit sizeChanged(CornerFlags::Bottom, (newRect.height() - boundingRect().height()) / 2);
     }
 }
 
@@ -364,6 +414,14 @@ void CyberiadaSMEditorStateItem::onActionChanged(StateAction* signalOwner)
     model->updateAction(model->elementToIndex(element), i, QString(), QString(), signalOwner->getBehavior());
 }
 
+void CyberiadaSMEditorStateItem::slotInspectorModeChanged(bool on)
+{
+    if (state->is_composite_state()) {
+        region->setVisibleRegon(on);
+    }
+    update();
+}
+
 void CyberiadaSMEditorStateItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget){
     Q_UNUSED(option)
     Q_UNUSED(widget)
@@ -372,10 +430,12 @@ void CyberiadaSMEditorStateItem::paint(QPainter *painter, const QStyleOptionGrap
 
     QPen pen = QPen(Qt::black, 2, Qt::SolidLine);
     if (isSelected()) {
-        pen.setColor(Qt::red);
-        pen.setWidth(2);
-        painter->setBrush(QBrush(QColor(255, 0, 0, 50)));
-        // painter->setBrush(QBrush(QColor(66, 170, 255, 50)));
+        SettingsManager& sm = SettingsManager::instance();
+        pen.setColor(sm.getSelectionColor());
+        pen.setWidth(sm.getSelectionBorderWidth());
+        QColor fillColor = sm.getSelectionColor();
+        fillColor.setAlpha(50);
+        painter->setBrush(QBrush(fillColor));
     }
 
     painter->setPen(pen);
@@ -386,7 +446,7 @@ void CyberiadaSMEditorStateItem::paint(QPainter *painter, const QStyleOptionGrap
     painter->drawLine(QPointF(tmpRect.x(), tmpRect.y() + titleHeight), QPointF(tmpRect.right(), tmpRect.y() + titleHeight));
     painter->drawPath(path);
 
-    if (inspectorModeEnabled) {
+    if (SettingsManager::instance().getInspectorMode()) {
         painter->setBrush(Qt::red);
         painter->drawEllipse(QPointF(0, 0), 2, 2); // The center of the coordinate system
     }
@@ -448,6 +508,10 @@ void StateTitle::focusOutEvent(QFocusEvent *event)
     setTextInteractionFlags(Qt::NoTextInteraction);
     isEdit = false;
 
+    QTextCursor cursor = textCursor();
+    cursor.clearSelection();
+    setTextCursor(cursor);
+
     // check the uniqueness
     CyberiadaSMEditorStateItem* state = dynamic_cast<CyberiadaSMEditorStateItem*>(parentItem());
     if (state == nullptr) { return; }
@@ -473,10 +537,9 @@ void StateTitle::focusOutEvent(QFocusEvent *event)
         QGraphicsTextItem::focusOutEvent(event);
     }
 
-    state->model->updateTitle(state->model->elementToIndex(state->element), newName);
     QGraphicsTextItem::focusOutEvent(event);
-    emit editingFinished();
-    return;
+    state->model->updateTitle(state->model->elementToIndex(state->element), newName);
+    // emit editingFinished();
 }
 
 void StateTitle::mousePressEvent(QGraphicsSceneMouseEvent *event) {
@@ -486,10 +549,28 @@ void StateTitle::mousePressEvent(QGraphicsSceneMouseEvent *event) {
         return;
     }
 
-    if (event->button() == Qt::LeftButton and !hasFocus()) {
+    CyberiadaSMEditorStateItem* state = nullptr;
+    if (parentItem()) {
+        state = dynamic_cast<CyberiadaSMEditorStateItem*>(parentItem());
+    }
+    if (state != nullptr && SettingsManager::instance().getInspectorMode()) {
+        event->accept();
+        return;
+    }
+
+    if (event->button() == Qt::LeftButton && !hasFocus()) {
         startPos = event->scenePos();
         isMoving = true;
         isLeftMouseButtonPressed = true;
+
+        setCursor(QCursor(Qt::ClosedHandCursor));
+        QGraphicsScene *scene = this->scene();
+        if (scene) {
+            scene->clearSelection();
+        }
+        if (parentItem()) {
+            parentItem()->setSelected(true);
+        }
         event->accept();
         return;
     }
@@ -499,15 +580,23 @@ void StateTitle::mousePressEvent(QGraphicsSceneMouseEvent *event) {
 void StateTitle::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
     ToolType currentTool = dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool();
-    if(currentTool != ToolType::Select) {
+    CyberiadaSMEditorStateItem* state = nullptr;
+
+    if (parentItem()) {
+        state = dynamic_cast<CyberiadaSMEditorStateItem*>(parentItem());
+    }
+
+    if(currentTool != ToolType::Select ||
+            (state != nullptr && SettingsManager::instance().getInspectorMode())) {
         event->ignore();
         return;
     }
 
     if (isLeftMouseButtonPressed && !hasFocus()) {
         if (isMoving && parentItem()) {
-            CyberiadaSMEditorStateItem* state = dynamic_cast<CyberiadaSMEditorStateItem*>(parentItem());
             if (state == nullptr) { return; }
+            state->setSelected(true);
+
             QPointF delta = event->scenePos() - startPos;
             Cyberiada::Rect r = Cyberiada::Rect(state->pos().x() + delta.x(),
                                                 state->pos().y() + delta.y(),
@@ -515,6 +604,20 @@ void StateTitle::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
                                                 state->boundingRect().height());
             state->model->updateGeometry(state->model->elementToIndex(state->element), r);
             startPos = event->scenePos();
+
+            if (state->parentItem()) {
+                CyberiadaSMEditorAbstractItem* parent = dynamic_cast<CyberiadaSMEditorAbstractItem*>(state->parentItem());
+                if(parent) {
+                    parent->updateSizeToFitChildren(state);
+                }
+                StateRegion* stateArea = dynamic_cast<StateRegion*>(parentItem());
+                if(stateArea) {
+                    parent = dynamic_cast<CyberiadaSMEditorAbstractItem*>(stateArea->parentItem());
+                    if(parent) {
+                        parent->updateSizeToFitChildren(state);
+                    }
+                }
+            }
         }
         return;
     }
@@ -531,6 +634,7 @@ void StateTitle::mouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
     if (event->button() == Qt::LeftButton and !hasFocus()) {
         isMoving = false;
         isLeftMouseButtonPressed = false;
+        setCursor(QCursor(Qt::ArrowCursor));
         return;
     }
     QGraphicsTextItem::mouseReleaseEvent(event);
@@ -548,11 +652,13 @@ void StateRegion::paint(QPainter *painter, const QStyleOptionGraphicsItem *optio
     if(topLine) painter->drawLine(boundingRect().topLeft(), boundingRect().topRight());
     if(bottomLine) painter->drawLine(boundingRect().bottomLeft(), boundingRect().bottomRight());
 
-    painter->setPen(Qt::blue);
-    painter->drawRect(rect());
+    if (visible) {
+        painter->setPen(Qt::blue);
+        painter->drawRect(rect());
 
-    painter->setBrush(Qt::blue);
-    painter->drawEllipse(QPointF(0, 0), 2, 2); // Центр системы координат
+        painter->setBrush(Qt::blue);
+        painter->drawEllipse(QPointF(0, 0), 2, 2); // Центр системы координат
+    }
 }
 
 

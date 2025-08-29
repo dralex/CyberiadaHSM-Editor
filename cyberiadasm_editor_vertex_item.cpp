@@ -25,10 +25,12 @@
 #include <QPainter>
 #include <QColor>
 #include <math.h>
+
 #include "myassert.h"
 #include "cyberiada_constants.h"
 #include "cyberiadasm_editor_vertex_item.h"
 #include "cyberiadasm_editor_scene.h"
+#include "settings_manager.h"
 
 
 /* -----------------------------------------------------------------------------
@@ -96,7 +98,8 @@ void CyberiadaSMEditorVertexItem::paint(QPainter* painter, const QStyleOptionGra
 {
     QColor color(Qt::black);
     if (isSelected()) {
-        color.setRgb(255, 0, 0);
+        SettingsManager& sm = SettingsManager::instance();
+        color = sm.getSelectionColor();
     }
     painter->setPen(QPen(color, 1, Qt::SolidLine));
     Cyberiada::ElementType type = element->get_type();
@@ -122,12 +125,11 @@ void CyberiadaSMEditorVertexItem::paint(QPainter* painter, const QStyleOptionGra
 void CyberiadaSMEditorVertexItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
     if (!element->has_geometry() ||
-        dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select) {
+        dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select ||
+        SettingsManager::instance().getInspectorMode()) {
         event->ignore();
         return;
     }
-
-    QPointF pt = event->pos();
 
     if (isLeftMouseButtonPressed) {
         setFlag(ItemIsMovable);
@@ -141,10 +143,10 @@ void CyberiadaSMEditorVertexItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event
 
 void CyberiadaSMEditorVertexItem::hoverMoveEvent(QGraphicsSceneHoverEvent *event)
 {
-    // TODO
     if (!isSelected() ||
         !element->has_geometry() ||
-        dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select) {
+        dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select ||
+        SettingsManager::instance().getInspectorMode()) {
         event->ignore();
         return;
     }
