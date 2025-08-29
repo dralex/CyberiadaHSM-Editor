@@ -35,6 +35,7 @@
 #include <QList>
 #include <QGraphicsItem>
 #include <QDebug>
+#include <string>
 
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_editor_items.h"
@@ -50,11 +51,11 @@ public:
 
     void  reset();
 	
-    void  setGridSize(int newSize);
-    int   getGridSize() const { return gridSize; }
+    // void  setGridSize(int newSize);
+    // int   getGridSize() const { return gridSize; }
 
-    bool  isGridEnabled() const	{ return gridEnabled; }
-    bool  isGridSnapEnabled() const { return gridSnap; }
+    // bool  isGridEnabled() const	{ return gridEnabled; }
+    // bool  isGridSnapEnabled() const { return gridSnap; }
 
     void  setGridPen(const QPen& gridPen);
     const QPen& getGridPen() const { return gridPen; }
@@ -66,17 +67,19 @@ public:
     void  setCurrentTool(ToolType tool);
     ToolType getCurrentTool() { return currentTool; }
 
-    void removeSMItem(Cyberiada::Element *element);
+    void addSMItem(Cyberiada::ElementType type);
+
+    void  deleteItemsRecursively(Cyberiada::Element* element);
 
 public slots:
 	void  slotElementSelected(const QModelIndex& index);
-    void  onModelDataChanged(const QModelIndex & topLeft, const QModelIndex & bottomRight);
+    void  slotModelDataChanged(const QModelIndex & topLeft, const QModelIndex & bottomRight);
+    void  slotSMSizeChanged(CyberiadaSMEditorAbstractItem::CornerFlags side, qreal d);
 	
-    void  enableGrid(bool on = true);
-    void  enableGridSnap(bool on = true);
-    void  onSelectionChanged();
-    void  toggleTransitionText(bool visible);
-    void  toggleInspectorMode(bool on);
+    // void  enableGrid(bool on = true);
+    // void  enableGridSnap(bool on = true);
+    void  slotGridSettingsChanged();
+    void  slotSelectionChanged();
 
 protected:
     void  drawBackground(QPainter *painter, const QRectF &);
@@ -85,16 +88,15 @@ private:
     void  addItemsRecursively(QGraphicsItem* parent, Cyberiada::ElementCollection* element);
     void  updateItemsRecursively(CyberiadaSMEditorAbstractItem* parent, Cyberiada::ElementCollection* element);
 
+
     CyberiadaSMModel*              model;
 	Cyberiada::StateMachine*       currentSM;
     QMap<Cyberiada::ID, QGraphicsItem*> elementIdToItemMap;
 	
-    int                            gridSize;
-    bool                           gridEnabled;
-    bool                           gridSnap;
+    // int                            gridSize;
+    // bool                           gridEnabled;
+    // bool                           gridSnap;
     QPen                           gridPen;
-
-    bool                           inspectorModeEnabled;
 
     ToolType currentTool = ToolType::Select;
 };

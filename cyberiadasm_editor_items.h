@@ -42,7 +42,7 @@ class CyberiadaSMEditorAbstractItem: public QObject, public QGraphicsItem {
 
 public:
 	CyberiadaSMEditorAbstractItem(CyberiadaSMModel* model,
-								  Cyberiada::Element* element,
+                                  Cyberiada::Element* element,
 								  QGraphicsItem* parent = NULL);
 
     virtual ~CyberiadaSMEditorAbstractItem() = default;
@@ -81,6 +81,8 @@ public:
 	
 	virtual int type() const = 0;
     Cyberiada::ID getId() { return element->get_id(); }
+    QModelIndex getIndex() { return model->elementToIndex(element); }
+    Cyberiada::Element* getElement() { return element; }
 
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) = 0;
 
@@ -98,14 +100,15 @@ public:
 
     virtual void syncFromModel();
 
-    virtual void setInspectorMode(bool on);
-    bool getInspectorMode();
+    virtual void updateSizeToFitChildren(CyberiadaSMEditorAbstractItem* child);
 
 protected:
     CyberiadaSMModel* model;
     Cyberiada::Element* element;
 
     void onParentGeometryChanged();
+    virtual void onParentSizeChanged(CornerFlags side, qreal d);
+    void onChildGeometryChanged();
 
     QVariant itemChange(GraphicsItemChange change, const QVariant& value) override;
 
@@ -121,13 +124,15 @@ signals:
     void sizeChanged(CornerFlags side, qreal d);
     void previousPositionChanged();
 
+private slots:
+    virtual void slotInspectorModeChanged(bool on);
+    virtual void slotSelectionSettingsChanged();
+
 protected:
     unsigned int cornerFlags;
     QPointF previousPosition;
     bool isLeftMouseButtonPressed;
     DotSignal *cornerGrabber[8];
-
-    bool inspectorModeEnabled;
 
     void resizeLeft( const QPointF &pt);
     void resizeRight( const QPointF &pt);

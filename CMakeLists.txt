@@ -47,8 +47,10 @@ add_executable(CyberiadaInspector
   cyberiadasm_editor_comment_item.h cyberiadasm_editor_comment_item.cpp
   fontmanager.h fontmanager.cpp
   dialogs/stateactiondialog.h dialogs/stateactiondialog.cpp
-  dialogs/properties_dialog.h dialogs/properties_dialog.cpp
-  display_settings.h display_settings.cpp
+  dialogs/export_file_dialog.h dialogs/export_file_dialog.cpp dialogs/export_file_dialog.ui
+  dialogs/open_file_dialog.h dialogs/open_file_dialog.cpp dialogs/open_file_dialog.ui
+  dialogs/preferences_dialog.h dialogs/preferences_dialog.cpp dialogs/preferences_dialog.ui
+  settings_manager.h settings_manager.cpp
 )
 
 target_include_directories(CyberiadaInspector PUBLIC

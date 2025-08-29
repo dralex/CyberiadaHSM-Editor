@@ -42,12 +42,15 @@ public:
 
 public slots:
 	void                     slotElementSelected(const QModelIndex& index);
+    void                     slotModelDataChanged(const QModelIndex & topLeft, const QModelIndex & bottomRight);
 	void                     slotPropertyChanged(QtProperty* property);
 	
 private:
 	
 	CyberiadaSMModel*        model;
 	Cyberiada::Element*      element;
+    bool                     updating;
+
 
 	enum CyberiadaPropertyName {
 		propActionType,
@@ -112,7 +115,7 @@ private:
 		QString                 metaName;
 	};
 
-	QVector<CyberiadaProperty>  properties;
+    QVector<CyberiadaProperty>  cProperties;
 
 	QtGroupPropertyManager*     groupManager;
 	QtStringPropertyManager*    stringManager;
@@ -132,17 +135,26 @@ private:
 	QMap<int, QIcon>            formatTypesEnumIcons;	
 	
 	QtLineEditFactory*          lineEditFactory;
+    QtEnumEditorFactory*        enumEditorFactory;
+    // QtDateTimeEditorFactory*    dateTimeEditorFactory;
+    QtCheckBoxFactory*          checkBoxFactory;
+    // QtPointFEditorFactory*      pointFEditorFactory;
 
 	void                        clearProperties();
 	void                        newElement(Cyberiada::Element* new_element);
+    void                        updateElement();
 	QtProperty*                 constructProperty(CyberiadaPropertyName prop, const QString& alt_name = "");
 	CyberiadaProperty&          findPropertyStruct(CyberiadaPropertyName prop);
 	CyberiadaProperty&          findPropertyStruct(const QString& propName, const QString& alt_name = "");
-	CyberiadaProperty&          findProperty(const QtProperty*);
+    CyberiadaProperty&          findProperty(const QtProperty*);
+    QtProperty*                 findQtProperty(QtProperty* root, const QString& prop_name, int index = 0);
+    QtProperty*                 getPropertyParent(QtProperty* property);
+    int                         getPropertyIndex(QtProperty* property);
 	Cyberiada::ConstElementList getAllElements(bool source) const;
 	QStringList                 generateElementNames(bool source) const;
 	QMap<int, QIcon>            generateElementIcons(bool source) const;
 	int                         getElementNumber(bool source, const Cyberiada::Element* e) const;
+    const Cyberiada::Element*   getElementByNumber(bool source, int index) const;
 };
 
 #endif

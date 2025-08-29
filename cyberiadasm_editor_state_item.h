@@ -79,12 +79,12 @@ public:
 
     void setTextPosition();
 
-    void setInspectorMode(bool on) override;
     QStringList getSameLevelStateNames() const;
 
 private:
     void initializeActions();
     void addAction(Cyberiada::ActionType type);
+    void updateSizeToFitChildren(CyberiadaSMEditorAbstractItem* child) override;
 
 signals:
     void rectChanged(CyberiadaSMEditorStateItem *rect);
@@ -97,6 +97,8 @@ private slots:
     void onTextItemSizeChanged();
     void onActionDeleted(StateAction* signalOwner);
     void onActionChanged(StateAction* signalOwner);
+
+    void slotInspectorModeChanged(bool on) override;
 
 protected:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
@@ -143,12 +145,17 @@ public:
         this->bottomLine = bottomLine;
     }
 
+    void setVisibleRegon(bool on) {
+        visible = on;
+    }
+
 protected:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
 
 private:
     bool topLine = false;
     bool bottomLine = false;
+    bool visible = true;
 };
 
 /* -----------------------------------------------------------------------------

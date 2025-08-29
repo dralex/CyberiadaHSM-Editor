@@ -36,6 +36,7 @@
 #include "cyberiadasm_editor_transition_item.h"
 #include "cyberiada_constants.h"
 #include "cyberiadasm_editor_scene.h"
+#include "settings_manager.h"
 
 /* -----------------------------------------------------------------------------
  * Transition Item
@@ -60,6 +61,8 @@ CyberiadaSMEditorTransitionItem::CyberiadaSMEditorTransitionItem(QObject *parent
     transition = static_cast<const Cyberiada::Transition*>(element);
 
     actionItem = new TransitionAction(actionText(), this);
+    actionItem->setVisible(SettingsManager::instance().getShowTransitionText());
+    connect(&SettingsManager::instance(), &SettingsManager::showTransitionTextChanged, this, &CyberiadaSMEditorTransitionItem::setActionVisibility);
 
     connect(target(), &CyberiadaSMEditorAbstractItem::geometryChanged, this, &CyberiadaSMEditorTransitionItem::onTargetGeomertyChanged);
     connect(source(), &CyberiadaSMEditorAbstractItem::geometryChanged, this, &CyberiadaSMEditorTransitionItem::onSourceGeomertyChanged);
@@ -91,11 +94,15 @@ QRectF CyberiadaSMEditorTransitionItem::boundingRect() const
 }
 
 void CyberiadaSMEditorTransitionItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
-{   QColor color(Qt::black);
+{
+    QPen pen = QPen(Qt::black, 2, Qt::SolidLine);
     if (isSelected()) {
-        color.setRgb(255, 0, 0);
+        SettingsManager& sm = SettingsManager::instance();
+        pen.setColor(sm.getSelectionColor());
+        pen.setWidth(sm.getSelectionBorderWidth());
     }
-    painter->setPen(QPen(color, 2, Qt::SolidLine));
+
+    painter->setPen(pen);
     painter->setBrush(Qt::NoBrush);
     painter->drawPath(path());
 
@@ -216,12 +223,6 @@ QPainterPath CyberiadaSMEditorTransitionItem::path() const
         QPointF p1 = sourcePoint() + sourceCenter();
         QPointF p2 = targetPoint() + targetCenter();
 
-        QPointF center = (p1 + p2) / 2;
-        qreal radius = QLineF(p1, p2).length() / 2;
-
-        QRectF rect(center.x() - radius, center.y() - radius,
-                    radius * 2, radius * 2);
-
         QPointF v1 = p1 - sourceCenter();
         QPointF v2 = p2 - sourceCenter();
 
@@ -230,8 +231,38 @@ QPainterPath CyberiadaSMEditorTransitionItem::path() const
         bool clockwise = (cross > 0);
         // clockwise = !clockwise;
 
+        QPointF center = (p1 + p2) / 2;
+        qreal radius = QLineF(p1, p2).length() / 2;
+
+        qreal MIN_RADIUS = 30;
+
+        if (radius <= MIN_RADIUS) {
+            QPointF dir = p2 - p1;
+            if (dir.isNull()) {
+                dir = QPointF(1, 0);
+            }
+
+            QLineF norm(dir, QPointF());
+            norm.setLength(1.0);
+
+            QPointF normal(-norm.dy(), norm.dx());
+
+            qreal offset = std::sqrt(MIN_RADIUS * MIN_RADIUS - radius * radius);
+
+            center += normal * offset;
+            radius = MIN_RADIUS;
+        }
+
+        QRectF rect(center.x() - radius, center.y() - radius,
+                    radius * 2, radius * 2);
+
+
         qreal angle1 = QLineF(center, p1).angle();
         qreal angle2 = QLineF(center, p2).angle();
+
+        if(angle1 == angle2) {
+            angle2 += 360;
+        }
 
         qreal spanAngle = angle2 - angle1;
         if (clockwise) {
@@ -270,10 +301,12 @@ QPainterPath CyberiadaSMEditorTransitionItem::path() const
 
 void CyberiadaSMEditorTransitionItem::drawArrow(QPainter* painter)
 {
+    SettingsManager& sm = SettingsManager::instance();
+
     QPen pen(Qt::black, 1);
     if (isSelected()) {
-        pen.setColor(Qt::red);
-        pen.setWidth(2);
+        pen.setColor(sm.getSelectionColor());
+        pen.setWidth(sm.getSelectionBorderWidth());
     }
     painter->setPen(pen);
 
@@ -361,6 +394,11 @@ QPointF CyberiadaSMEditorTransitionItem::findIntersectionWithItem(const Cyberiad
     QPointF dir = end - start;
     if (dir.isNull()) {
         return QPointF();
+    }
+
+    if (item->type() == CyberiadaSMEditorAbstractItem::VertexItem) {
+        *hasIntersections = true;
+        return item->sceneBoundingRect().center();
     }
 
     QLineF rayForward(start, start + dir * 1e5);
@@ -544,8 +582,10 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
                 if (cItem) {
                     QPointF newPoint;
                     bool hasIntersections;
+
+                    // loop
                     if (cItem == target()) {
-                        // loop
+                        qDebug() << "1";
                         setSource(cItem);
                         hasIntersections = false;
                         QPointF newPoint = findIntersectionWithItem(source(), p, sourceCenter(), &hasIntersections) -
@@ -555,7 +595,9 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
                         return;
                     }
 
+                    //
                     if (cItem == source()) {
+                        qDebug() << "2";
                         hasIntersections = false;
                         QPointF newPoint = findIntersectionWithItem(source(), p, nextPoint, &hasIntersections) -
                                            sourceCenter();
@@ -568,25 +610,40 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
 
                     newPoint = findIntersectionWithItem(cItem, p, nextPoint, &hasIntersections) -
                                cItem->sceneBoundingRect().center();
+                    // intersectoin with item under cursor
                     if (hasIntersections) {
+                        qDebug() << "3";
                         isSourceTraking = false;
                         setSource(cItem);
                         setSourcePoint(newPoint);
                         return;
                     }
+
+                    qDebug() << "3.5";
                     return;
                 }
                 bool hasIntersections = false;
-                QPointF newPoint = findIntersectionWithItem(source(), p, nextPoint, &hasIntersections) -
-                                   sourceCenter();
 
+                if (source() == target()) {
+                    // loop
+                    nextPoint = sourceCenter();
+                }
+
+                QPointF newPoint = findIntersectionWithItem(source(), p, nextPoint, &hasIntersections) -
+                           sourceCenter();
+                // intersection with source in adjusted bounding rect
                 if (hasIntersections) {
                     isSourceTraking = false;
+                    qDebug() << "4" << isSourceTraking << isTargetTraking;
                     setSourcePoint(newPoint);
                     return;
                 }
 
+                qDebug() << "5";
+
+                // mouse traking
                 isSourceTraking = true;
+                setDotsPosition();
                 break;
             }
             // last point
@@ -635,6 +692,12 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
                 }
 
                 bool hasIntersections = false;
+
+                if (source() == target()) {
+                    // loop
+                    nextPoint = sourceCenter();
+                }
+
                 QPointF newPoint = findIntersectionWithItem(target(), p, nextPoint, &hasIntersections) -
                                    targetCenter();
 
@@ -645,6 +708,7 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
                 }
 
                 isTargetTraking = true;
+                setDotsPosition();
                 break;
             }
 
@@ -732,7 +796,8 @@ void CyberiadaSMEditorTransitionItem::mousePressEvent(QGraphicsSceneMouseEvent *
 
 void CyberiadaSMEditorTransitionItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
-    if (dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select) {
+    if (dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select ||
+        SettingsManager::instance().getInspectorMode()) {
         event->ignore();
         return;
     }
@@ -937,7 +1002,7 @@ QString TransitionAction::getTrigger() const
 
 QString TransitionAction::getGuard() const
 {
-    QRegularExpression re(R"(\[\s*(.*?)\s*\])");  // всё между [ и ]
+    QRegularExpression re(R"(\[\s*(.*?)\s*\])");  // all between [ and ]
     QRegularExpressionMatch match = re.match(toPlainText());
     if (match.hasMatch())
         return match.captured(1).trimmed();
@@ -946,7 +1011,7 @@ QString TransitionAction::getGuard() const
 
 QString TransitionAction::getBehaviour() const
 {
-    QRegularExpression re(R"(\/\s*(.+)$)");  // всё после /
+    QRegularExpression re(R"(\/\s*(.+)$)");  // all after /
     QRegularExpressionMatch match = re.match(toPlainText());
     if (match.hasMatch())
         return match.captured(1).trimmed();
@@ -955,7 +1020,11 @@ QString TransitionAction::getBehaviour() const
 
 void TransitionAction::paint(QPainter *painter, const QStyleOptionGraphicsItem *o, QWidget *w) {
     if (!toPlainText().isEmpty()) {
-        painter->fillRect(boundingRect(), painter->background());
+        QColor color = painter->background().color();
+        color.setAlpha(150);
+        painter->setBrush(color);
+        painter->setPen(Qt::NoPen);
+        painter->drawRect(boundingRect());
     }
     QGraphicsTextItem::paint(painter, o, w);
 }

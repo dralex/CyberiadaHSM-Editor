@@ -51,7 +51,7 @@ protected:
 
 signals:
     void sizeChanged();
-    void editingFinished();
+    // void editingFinished();
 
 protected slots:
     void onFontChanged(const QFont &newFont) ;

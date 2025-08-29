@@ -35,6 +35,7 @@
 #include "fontmanager.h"
 #include "cyberiadasm_editor_scene.h"
 #include "cyberiada_constants.h"
+#include "settings_manager.h"
 
 
 EditableTextItem::EditableTextItem(QGraphicsItem *parent):
@@ -56,12 +57,22 @@ EditableTextItem::EditableTextItem(const QString &text, QGraphicsItem *parent):
 }
 
 void EditableTextItem::mousePressEvent(QGraphicsSceneMouseEvent *event) {
-    if (dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select) {
+    if (dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select ||
+        SettingsManager::instance().getInspectorMode()) {
         event->ignore();
         return;
     }
     if (event->button() == Qt::LeftButton && !hasFocus()) {
         event->accept();
+
+        QGraphicsScene *scene = this->scene();
+        if (scene) {
+            scene->clearSelection();
+        }
+        if (parentItem()) {
+            parentItem()->setSelected(true);
+        }
+
         return;
     }
 
@@ -69,7 +80,8 @@ void EditableTextItem::mousePressEvent(QGraphicsSceneMouseEvent *event) {
 }
 
 void EditableTextItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) {
-    if (dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select) {
+    if (dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select ||
+        SettingsManager::instance().getInspectorMode()) {
         event->ignore();
         return;
     }
@@ -90,11 +102,12 @@ void EditableTextItem::focusOutEvent(QFocusEvent *event) {
     isEdit = false;
     setPlainText(toPlainText().trimmed());
     QGraphicsTextItem::focusOutEvent(event);
-    emit editingFinished();
+    // emit editingFinished();
 }
 
 void EditableTextItem::hoverEnterEvent(QGraphicsSceneHoverEvent *event) {
-    if (dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select) {
+    if (dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select ||
+        SettingsManager::instance().getInspectorMode()) {
         event->ignore();
         return;
     }

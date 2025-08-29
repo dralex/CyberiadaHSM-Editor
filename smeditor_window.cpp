@@ -27,11 +27,14 @@
 #include <QDir>
 #include <QFontDialog>
 #include <QFont>
+#include <QMessageBox>
 
 #include "smeditor_window.h"
 #include "myassert.h"
 #include "fontmanager.h"
-#include "dialogs/properties_dialog.h"
+#include "dialogs/preferences_dialog.h"
+#include "dialogs/open_file_dialog.h"
+#include "settings_manager.h"
 
 
 CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
@@ -46,6 +49,7 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     scene = new CyberiadaSMEditorScene(model, this);
 	sceneView->setScene(scene);
 
+    openFileName = QString();
     initializeTools();
 
     connect(SMView, SIGNAL(currentIndexActivated(QModelIndex)),
@@ -54,19 +58,36 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
 
 void CyberiadaSMEditorWindow::slotFileOpen()
 {
-	QString fileName = QFileDialog::getOpenFileName(this, tr("Open State Machile GraphML file"),
-													QDir::currentPath(),
-													tr("CyberiadaML graph (*.graphml)"));
-	if (!fileName.isEmpty()) {
-		model->loadDocument(fileName);
-		SMView->setRootIndex(model->rootIndex());
-		SMView->expandToDepth(2);
-		QModelIndex sm = model->firstSMIndex();
-		if (sm.isValid()) {
+    OpenFileDialog dlg(this);
+    if (dlg.exec() != QDialog::Accepted) { return; }
+
+    QString fileName = dlg.selectedFile();
+    bool inspector = dlg.inspectorModeEnabled();
+
+    if (!fileName.isEmpty()) {
+        actionInspectorMode->setChecked(inspector);
+        SettingsManager::instance().setInspectorMode(inspector);
+
+        model->loadDocument(fileName);
+        SMView->setRootIndex(model->rootIndex());
+        SMView->expandToDepth(2);
+        QModelIndex sm = model->firstSMIndex();
+        if (sm.isValid()) {
             scene->loadScene();
-			SMView->select(sm);
+            SMView->select(sm);
         }
-	}
+
+       QFileInfo fileInfo(fileName);
+       openFileName = fileInfo.fileName();
+
+       if (!openFileName.isEmpty()) {
+           if (SettingsManager::instance().getInspectorMode()) {
+               setWindowTitle(openFileName + " (inspector mode)");
+           } else {
+               setWindowTitle(openFileName);
+           }
+       }
+    }
 }
 
 void CyberiadaSMEditorWindow::slotFileSave()
@@ -86,30 +107,81 @@ void CyberiadaSMEditorWindow::slotFileSaveAs()
         return;
     }
     model->saveAsDocument(fileName, Cyberiada::DocumentFormat::formatCyberiada10);
+
+    QFileInfo fileInfo(fileName);
+    openFileName = fileInfo.fileName();
+
+    if (!openFileName.isEmpty()) {
+        if (SettingsManager::instance().getInspectorMode()) {
+            setWindowTitle(openFileName + " (inspector mode)");
+        } else {
+            setWindowTitle(openFileName);
+        }
+    }
+}
+
+void CyberiadaSMEditorWindow::slotFileExport()
+{
+    QRectF sceneRect = scene->sceneRect();
+
+    if (sceneRect.isEmpty()) {
+        QMessageBox::warning(this, "Ошибка", "Сцена пуста, нечего экспортировать.");
+        return;
+    }
+
+    QImage image(sceneRect.size().toSize(), QImage::Format_ARGB32);
+    image.fill(Qt::white); // или прозрачный фон: Qt::transparent
+
+    QPainter painter(&image);
+    scene->render(&painter);
+    painter.end();
+
+    QString selectedFilter;
+    QString fileName = QFileDialog::getSaveFileName(
+        this,
+        "Экспорт сцены как изображение",
+        "",
+        "PNG (*.png);;JPEG (*.jpg *.jpeg);;BMP (*.bmp);;TIFF (*.tiff);;Все файлы (*)",
+        &selectedFilter
+        );
+
+    if (!fileName.isEmpty()) {
+        if (QFileInfo(fileName).suffix().isEmpty()) {
+            if (selectedFilter.contains("PNG")) fileName += ".png";
+            else if (selectedFilter.contains("JPEG")) fileName += ".jpg";
+            else if (selectedFilter.contains("BMP")) fileName += ".bmp";
+            else if (selectedFilter.contains("TIFF")) fileName += ".tiff";
+        }
+        if (!image.save(fileName)) {
+            QMessageBox::critical(this, "Ошибка", "Не удалось сохранить изображение.");
+        }
+    }
 }
 
 void CyberiadaSMEditorWindow::initializeTools()
 {
     toolGroup = new QActionGroup(this);
-    toolGroup->addAction(selectToolAction);
-    toolGroup->addAction(zoomInAction);
-    toolGroup->addAction(zoomOutAction);
-    toolGroup->addAction(panAction);
+    toolGroup->addAction(actionSelectTool);
+    toolGroup->addAction(actionZoomIn);
+    toolGroup->addAction(actionZoomOut);
+    toolGroup->addAction(actionPan);
 
     toolGroup->setExclusive(true);
-    selectToolAction->setChecked(true);
+    actionSelectTool->setChecked(true);
 
-    connect(toolGroup, &QActionGroup::triggered, this, &CyberiadaSMEditorWindow::onToolSelected);
-    emit toolGroup->triggered(selectToolAction);
+    connect(toolGroup, &QActionGroup::triggered, this, &CyberiadaSMEditorWindow::slotToolSelected);
+    emit toolGroup->triggered(actionSelectTool);
 
-    transitionTextAction->setChecked(true);
-    connect(transitionTextAction, &QAction::triggered, scene, &CyberiadaSMEditorScene::toggleTransitionText);
+    // TODO
+    SettingsManager& sm = SettingsManager::instance();
 
-    inspectorModeAction->setChecked(true);
-    connect(inspectorModeAction, &QAction::triggered, scene, &CyberiadaSMEditorScene::toggleInspectorMode);
+    actionGridVisibility->setChecked(sm.getShowGrid());
+    actionTransitionText->setChecked(sm.getShowTransitionText());
+    actionInspectorMode->setChecked(sm.getInspectorMode());
+    actionSnapMode->setChecked(sm.getSnapMode());
 }
 
-void CyberiadaSMEditorWindow::on_actionFont_triggered()
+void CyberiadaSMEditorWindow::slotFontTriggered()
 {
     bool ok;
     QFont font = QFontDialog::getFont(&ok, FontManager::instance().getFont());
@@ -118,15 +190,15 @@ void CyberiadaSMEditorWindow::on_actionFont_triggered()
     }
 }
 
-void CyberiadaSMEditorWindow::onToolSelected(QAction *action)
+void CyberiadaSMEditorWindow::slotToolSelected(QAction *action)
 {
-    if (action == selectToolAction) {
+    if (action == actionSelectTool) {
         currentTool = ToolType::Select;
-    } else if (action == zoomInAction) {
+    } else if (action == actionZoomIn) {
         currentTool = ToolType::ZoomIn;
-    } else if (action == zoomOutAction) {
+    } else if (action == actionZoomOut) {
         currentTool = ToolType::ZoomOut;
-    } else if (action == panAction) {
+    } else if (action == actionPan) {
         currentTool = ToolType::Pan;
     } else {
         currentTool = ToolType::Select;
@@ -135,19 +207,99 @@ void CyberiadaSMEditorWindow::onToolSelected(QAction *action)
     scene->setCurrentTool(currentTool);
 }
 
-void CyberiadaSMEditorWindow::on_fitContentAction_triggered() {
+void CyberiadaSMEditorWindow::slotFitContent() {
     sceneView->fitInView(scene->itemsBoundingRect(), Qt::KeepAspectRatio);
 }
 
-void CyberiadaSMEditorWindow::on_propertiesAction_triggered()
+void CyberiadaSMEditorWindow::slotPreferences()
 {
-    PropertiesDialog* dlg = new PropertiesDialog(this);
-    if (dlg->exec() == QDialog::Accepted) {
-        if (dlg->isInspectorModeEnabled()) {
-            // включить режим инспектора
-        }
-        // также можно вытащить настройки шрифта из fontDialog
+    PreferencesDialog dlg(this);
+    dlg.exec();
+}
+
+void CyberiadaSMEditorWindow::slotGridVisibilityTriggered(bool on)
+{
+    SettingsManager& sm = SettingsManager::instance();
+    sm.setShowGrid(on);
+    // scene->enableGrid(on);
+}
+
+void CyberiadaSMEditorWindow::slotNewSM()
+{
+    QMessageBox::information(this, "Информация", QString("Пока не реализовано."));
+}
+
+void CyberiadaSMEditorWindow::slotNewState()
+{
+    scene->addSMItem(Cyberiada::ElementType::elementSimpleState);
+    SMView->update();
+}
+
+void CyberiadaSMEditorWindow::slotNewInitial()
+{
+    scene->addSMItem(Cyberiada::ElementType::elementInitial);
+}
+
+void CyberiadaSMEditorWindow::slotNewFinal()
+{
+    scene->addSMItem(Cyberiada::ElementType::elementFinal);
+}
+
+void CyberiadaSMEditorWindow::slotNewTerminate()
+{
+    scene->addSMItem(Cyberiada::ElementType::elementTerminate);
+}
+
+void CyberiadaSMEditorWindow::slotNewComment()
+{
+    scene->addSMItem(Cyberiada::ElementType::elementComment);
+}
+
+void CyberiadaSMEditorWindow::slotNewFormalComment()
+{
+    scene->addSMItem(Cyberiada::ElementType::elementFormalComment);
+}
+
+void CyberiadaSMEditorWindow::slotNewChoise()
+{
+    QMessageBox::information(this, "Информация", QString("Пока не реализовано."));
+}
+
+void CyberiadaSMEditorWindow::slotNewTransition()
+{
+    QMessageBox::information(this, "Информация", QString("Для создания передода зажмите правую кнопку мыши на источкине и протяните к цели!"));
+}
+
+void CyberiadaSMEditorWindow::slotDeleteElement()
+{
+    if (scene->selectedItems().isEmpty()) return;
+    CyberiadaSMEditorAbstractItem* itemToDelete = dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene->selectedItems().first());
+    if (!itemToDelete) return;
+    scene->deleteItemsRecursively(itemToDelete->getElement());
+}
+
+void CyberiadaSMEditorWindow::slotInspectorModeTriggered(bool on)
+{
+    if (on == SettingsManager::instance().getInspectorMode()) { return; }
+    SettingsManager::instance().setInspectorMode(on);
+
+    if (openFileName.isEmpty()) { return; }
+    if (on) {
+        setWindowTitle(openFileName + " (inspector mode)");
+    } else {
+        setWindowTitle(openFileName);
     }
+    // TODO prohibit actions of editing
+}
+
+void CyberiadaSMEditorWindow::slotShowTransitionActionTriggered(bool on)
+{
+    SettingsManager::instance().setShowTransitionText(on);
+}
+
+void CyberiadaSMEditorWindow::slotSnapModeTriggered(bool on)
+{
+    SettingsManager::instance().setSnapMode(on);
 }
 
 

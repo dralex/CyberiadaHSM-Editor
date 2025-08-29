@@ -35,27 +35,41 @@ public:
     CyberiadaSMEditorWindow(QWidget* parent = 0);
 
 private:
-    void initializeTools();
+    void                    initializeTools();
 
 public slots:
 	void                    slotFileOpen();
     void                    slotFileSave();
     void                    slotFileSaveAs();
+    void                    slotFileExport();
+    void                    slotInspectorModeTriggered(bool on);
+    void                    slotShowTransitionActionTriggered(bool on);
+    void                    slotSnapModeTriggered(bool on);
+    void                    slotFontTriggered();
+    void                    slotToolSelected(QAction *action);
+    void                    slotFitContent();
+    void                    slotPreferences();
+    void                    slotGridVisibilityTriggered(bool on);
 
-private slots:
-    void on_actionFont_triggered();
+    void                    slotNewSM();
+    void                    slotNewState();
+    void                    slotNewInitial();
+    void                    slotNewFinal();
+    void                    slotNewTerminate();
+    void                    slotNewComment();
+    void                    slotNewFormalComment();
+    void                    slotNewChoise();
+    void                    slotNewTransition();
 
-    void onToolSelected(QAction *action);
-
-    void on_fitContentAction_triggered();
-
-    void on_propertiesAction_triggered();
+    void                    slotDeleteElement();
 
 private:
 	CyberiadaSMModel*       model;
 	CyberiadaSMEditorScene* scene;
     QActionGroup *toolGroup;
     ToolType currentTool = ToolType::Select;
+
+    QString openFileName;
 
     QMap<ToolType, QAction*> toolActMap;
 };
