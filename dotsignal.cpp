@@ -85,6 +85,11 @@ void DotSignal::setDeleteable(bool on)
     setFlag(QGraphicsItem::ItemIsSelectable, on);
 }
 
+void DotSignal::deleteDot()
+{
+    emit signalDelete(this);
+}
+
 void DotSignal::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
     if(flags & Movable){
@@ -100,7 +105,6 @@ void DotSignal::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 
 void DotSignal::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
-    emit signalPress(this);
     if(flags & Movable){
         setPreviousPosition(event->scenePos());
     } else {
@@ -111,6 +115,7 @@ void DotSignal::mousePressEvent(QGraphicsSceneMouseEvent *event)
 void DotSignal::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
     emit signalMouseRelease();
+    ungrabMouse();
     QGraphicsItem::mouseReleaseEvent(event);
 }
 
@@ -125,14 +130,5 @@ void DotSignal::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
     Q_UNUSED(event)
     if (!hasFocus()) {
         setBrush(QBrush(Qt::green));
-    }
-}
-
-void DotSignal::keyPressEvent(QKeyEvent* event)
-{
-    if (event->key() == Qt::Key_Delete || event->key() == Qt::Key_Backspace) {
-        emit signalDelete(this);
-    } else {
-        QGraphicsItem::keyPressEvent(event);
     }
 }

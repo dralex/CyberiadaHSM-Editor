@@ -49,9 +49,13 @@ CyberiadaSMEditorAbstractItem::CyberiadaSMEditorAbstractItem(CyberiadaSMModel* _
     connect(&SettingsManager::instance(), &SettingsManager::inspectorModeChanged, this, &CyberiadaSMEditorAbstractItem::slotInspectorModeChanged);
     connect(&SettingsManager::instance(), &SettingsManager::selectionSettingsChanged, this, &CyberiadaSMEditorAbstractItem::slotSelectionSettingsChanged);
 
+    prevItemUnderCursor = nullptr;
+    isHighlighted = false;
+
     if(parent) {
         CyberiadaSMEditorAbstractItem* newParent = dynamic_cast<CyberiadaSMEditorAbstractItem*>(parent);
         if(newParent) {
+            prevItemUnderCursor = newParent;
             // change in parent geometry
             // to change transition action position when parent of state/target changes
             connect(newParent, &CyberiadaSMEditorAbstractItem::geometryChanged,
@@ -69,6 +73,7 @@ CyberiadaSMEditorAbstractItem::CyberiadaSMEditorAbstractItem(CyberiadaSMModel* _
         if(stateArea) {
             newParent = dynamic_cast<CyberiadaSMEditorAbstractItem*>(stateArea->parentItem());
             if(newParent) {
+                prevItemUnderCursor = newParent;
                 // change in parent geometry
                 connect(newParent, &CyberiadaSMEditorAbstractItem::geometryChanged,
                         this, &CyberiadaSMEditorAbstractItem::onParentGeometryChanged);
@@ -110,6 +115,14 @@ void CyberiadaSMEditorAbstractItem::setPreviousPosition(const QPointF newPreviou
 bool CyberiadaSMEditorAbstractItem::hasGeometry()
 {
     return element->has_geometry();
+}
+
+void CyberiadaSMEditorAbstractItem::setHighlighted(bool on)
+{
+    if (isHighlighted != on) {
+        isHighlighted = on;
+        update();
+    }
 }
 
 void CyberiadaSMEditorAbstractItem::syncFromModel()
@@ -190,6 +203,7 @@ void CyberiadaSMEditorAbstractItem::mousePressEvent(QGraphicsSceneMouseEvent *ev
 
     if (SettingsManager::instance().getInspectorMode()) {
         QGraphicsItem::mousePressEvent(event);
+        return;
     }
 
     if (event->button() & Qt::LeftButton) {
@@ -199,6 +213,7 @@ void CyberiadaSMEditorAbstractItem::mousePressEvent(QGraphicsSceneMouseEvent *ev
         // emit clicked(this);
     }
     QGraphicsItem::mousePressEvent(event);
+
     showDots();
 }
 
@@ -508,4 +523,22 @@ void CyberiadaSMEditorAbstractItem::hideDots()
     }
 }
 
+CyberiadaSMEditorAbstractItem *CyberiadaSMEditorAbstractItem::collectionUnderItem()
+{
+    QPointF center = mapToScene(boundingRect().center());
+    QList<QGraphicsItem*> items = scene()->items(center);
 
+    CyberiadaSMEditorAbstractItem* cItem = nullptr;
+    for (QGraphicsItem* item : items) {
+        cItem = dynamic_cast<CyberiadaSMEditorAbstractItem*>(item);
+        if (!cItem) { continue; }
+        if (cItem == this) { continue; }
+
+        if (cItem->type() == CyberiadaSMEditorAbstractItem::StateItem ||
+            cItem->type() == CyberiadaSMEditorAbstractItem::CompositeStateItem ||
+            cItem->type() == CyberiadaSMEditorAbstractItem::SMItem) {
+            return cItem;
+        }
+    }
+    return nullptr;
+}

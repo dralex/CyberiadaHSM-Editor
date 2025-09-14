@@ -38,13 +38,14 @@ CyberiadaSMView::CyberiadaSMView(QWidget* parent):
 	setDropIndicatorShown(true);
 	setDragDropMode(QAbstractItemView::DragDrop);
 	setDefaultDropAction(Qt::MoveAction);
-	setEditTriggers(QAbstractItemView::SelectedClicked);
+    setEditTriggers(QAbstractItemView::SelectedClicked);
 //	setSelectionMode(QAbstractItemView::MultiSelection);
 }
 
 void CyberiadaSMView::select(const QModelIndex& index)
 {
-	selectionModel()->select(index, QItemSelectionModel::SelectCurrent | QItemSelectionModel::Rows);
+    // selectionModel()->select(index, QItemSelectionModel::SelectCurrent | QItemSelectionModel::Rows);
+    selectionModel()->select(index, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
     emit currentIndexActivated(index);
 }
 

@@ -98,8 +98,9 @@ public:
 
     bool hasGeometry();
 
-    virtual void syncFromModel();
+    void setHighlighted(bool on);
 
+    virtual void syncFromModel();
     virtual void updateSizeToFitChildren(CyberiadaSMEditorAbstractItem* child);
 
 protected:
@@ -134,6 +135,9 @@ protected:
     bool isLeftMouseButtonPressed;
     DotSignal *cornerGrabber[8];
 
+    CyberiadaSMEditorAbstractItem* prevItemUnderCursor;
+    bool isHighlighted;
+
     void resizeLeft( const QPointF &pt);
     void resizeRight( const QPointF &pt);
     void resizeBottom(const QPointF &pt);
@@ -147,11 +151,10 @@ protected:
     virtual void showDots();
     virtual void hideDots();
 
-    // virtual void remove();
+    CyberiadaSMEditorAbstractItem* collectionUnderItem();
 
 private:
     void handleParentChange();
-
 };
 
 #endif

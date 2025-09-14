@@ -44,6 +44,8 @@ CyberiadaSMEditorSMItem::CyberiadaSMEditorSMItem(CyberiadaSMModel* model,
     }
     setFlags(ItemIsSelectable);
 
+    isHighlighted = false;
+
     initializeDots();
     setDotsPosition();
     hideDots();
@@ -70,7 +72,7 @@ void CyberiadaSMEditorSMItem::paint(QPainter* painter, const QStyleOptionGraphic
     if (!element->has_geometry()) return;
 
     QPen pen = QPen(Qt::black, 2, Qt::SolidLine);
-    if (isSelected()) {
+    if (isSelected() || isHighlighted) {
         SettingsManager& sm = SettingsManager::instance();
         pen.setColor(sm.getSelectionColor());
         pen.setWidth(sm.getSelectionBorderWidth());
@@ -91,6 +93,8 @@ void CyberiadaSMEditorSMItem::paint(QPainter* painter, const QStyleOptionGraphic
     };
     painter->drawConvexPolygon(name_frame, 5);
 }
+
+
 
 void CyberiadaSMEditorSMItem::updateSizeToFitChildren(CyberiadaSMEditorAbstractItem *child)
 {

@@ -40,6 +40,7 @@
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_editor_items.h"
 #include "cyberiadasm_editor_state_item.h"
+#include "cyberiadasm_editor_transition_item.h"
 #include "cyberiada_constants.h"
 
 class CyberiadaSMEditorScene: public QGraphicsScene {
@@ -68,6 +69,7 @@ public:
     ToolType getCurrentTool() { return currentTool; }
 
     void addSMItem(Cyberiada::ElementType type);
+    CyberiadaSMEditorTransitionItem* addTransition(CyberiadaSMEditorAbstractItem* source, CyberiadaSMEditorAbstractItem* target);
 
     void  deleteItemsRecursively(Cyberiada::Element* element);
 

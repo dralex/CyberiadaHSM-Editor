@@ -378,6 +378,20 @@ bool CyberiadaSMModel::updateGeometry(const QModelIndex &index, const Cyberiada:
     return true;
 }
 
+bool CyberiadaSMModel::updateParent(const QModelIndex &index, const Cyberiada::ID &new_parent_id)
+{
+    Cyberiada::Element* element = indexToElement(index);
+    if (!element) return false;
+    Cyberiada::ElementCollection* new_parent = dynamic_cast<Cyberiada::ElementCollection*>(idToElement(new_parent_id.c_str()));
+    if (!new_parent) return false;
+    if (parent(index) == elementToIndex(new_parent)) return true;
+    if (element->get_type() == Cyberiada::elementInitial) {
+        // TODO check
+    }
+    move(element, new_parent);
+    return true;
+}
+
 bool CyberiadaSMModel::updateCommentBody(const QModelIndex& index, const QString& body)
 {
 	Cyberiada::Element* element = indexToElement(index);
@@ -400,7 +414,16 @@ bool CyberiadaSMModel::updateMetainformation(const QModelIndex& index, const QSt
 
 Cyberiada::StateMachine *CyberiadaSMModel::newStateMachine(const Cyberiada::String &sm_name, const Cyberiada::Rect &r)
 {
+    if (root == NULL) {
+        root = new Cyberiada::LocalDocument();
+    }
 
+    int row = rowCount(rootIndex());
+    beginInsertRows(rootIndex(), row + 1, row + 1);
+    Cyberiada::StateMachine* element = root->new_state_machine(sm_name, r);
+    endInsertRows();
+
+    return element;
 }
 
 Cyberiada::State *CyberiadaSMModel::newState(Cyberiada::ElementCollection *parent, const Cyberiada::String &state_name,
@@ -408,8 +431,7 @@ Cyberiada::State *CyberiadaSMModel::newState(Cyberiada::ElementCollection *paren
                                              const Cyberiada::Color &color)
 {
     if (root == NULL) {
-        // TODO create sm
-        qDebug() << "no root";
+        return nullptr;
     }
 
     int row = rowCount(elementToIndex(parent));
@@ -423,8 +445,7 @@ Cyberiada::State *CyberiadaSMModel::newState(Cyberiada::ElementCollection *paren
 Cyberiada::InitialPseudostate *CyberiadaSMModel::newInitial(Cyberiada::ElementCollection *parent, const Cyberiada::Point &p)
 {
     if (root == NULL) {
-        // TODO create sm
-        qDebug() << "no root";
+        return nullptr;
     }
 
     int row = rowCount(elementToIndex(parent));
@@ -438,8 +459,7 @@ Cyberiada::InitialPseudostate *CyberiadaSMModel::newInitial(Cyberiada::ElementCo
 Cyberiada::FinalState *CyberiadaSMModel::newFinal(Cyberiada::ElementCollection *parent, const Cyberiada::Point &p)
 {
     if (root == NULL) {
-        // TODO create sm
-        qDebug() << "no root";
+        return nullptr;
     }
 
     int row = rowCount(elementToIndex(parent));
@@ -454,8 +474,7 @@ Cyberiada::ChoicePseudostate *CyberiadaSMModel::newChoice(Cyberiada::ElementColl
                                                           const Cyberiada::Color &color)
 {
     if (root == NULL) {
-        // TODO create sm
-        qDebug() << "no root";
+        return nullptr;
     }
 
     int row = rowCount(elementToIndex(parent));
@@ -469,8 +488,7 @@ Cyberiada::ChoicePseudostate *CyberiadaSMModel::newChoice(Cyberiada::ElementColl
 Cyberiada::TerminatePseudostate *CyberiadaSMModel::newTerminate(Cyberiada::ElementCollection *parent, const Cyberiada::Point &p)
 {
     if (root == NULL) {
-        // TODO create sm
-        qDebug() << "no root";
+        return nullptr;
     }
 
     int row = rowCount(elementToIndex(parent));
@@ -489,8 +507,7 @@ Cyberiada::Transition *CyberiadaSMModel::newTransition(Cyberiada::StateMachine *
                                                        const Cyberiada::Color &color)
 {
     if (root == NULL) {
-        // TODO create sm
-        qDebug() << "no root";
+        return nullptr;
     }
 
     int row = rowCount(elementToIndex(sm));
@@ -505,8 +522,7 @@ Cyberiada::Comment *CyberiadaSMModel::newComment(Cyberiada::ElementCollection *p
                                                  const Cyberiada::Rect &rect, const Cyberiada::Color &color, const Cyberiada::String &markup)
 {
     if (root == NULL) {
-        // TODO create sm
-        qDebug() << "no root";
+        return nullptr;
     }
 
     int row = rowCount(elementToIndex(parent));
@@ -522,8 +538,7 @@ Cyberiada::Comment *CyberiadaSMModel::newFormalComment(Cyberiada::ElementCollect
                                                        const Cyberiada::String &markup)
 {
     if (root == NULL) {
-        // TODO create sm
-        qDebug() << "no root";
+        return nullptr;
     }
 
     int row = rowCount(elementToIndex(parent));
@@ -790,16 +805,18 @@ Qt::DropActions CyberiadaSMModel::supportedDropActions() const
 	return Qt::MoveAction;
 }
 
-void CyberiadaSMModel::move(Cyberiada::Element*, Cyberiada::ElementCollection*)
+void CyberiadaSMModel::move(Cyberiada::Element* element, Cyberiada::ElementCollection* target_parent)
 {
-/*	QModelIndex srcindex = itemToIndex(item);
+    QModelIndex srcindex = elementToIndex(element);
 	QModelIndex parentindex = parent(srcindex);	
 	QModelIndex dstindex;
 	
-	if (target_item == NULL) {
-		dstindex = itemToIndex(target_item);
+    if (target_parent != NULL) {
+        dstindex = elementToIndex(target_parent);
 	} else {
-		dstindex = statesRootIndex();
+        // TODO
+        // dstindex = statesRootIndex();
+        dstindex = rootIndex();
 	}
 
 	MY_ASSERT(srcindex.isValid());
@@ -807,62 +824,79 @@ void CyberiadaSMModel::move(Cyberiada::Element*, Cyberiada::ElementCollection*)
 	int remove_index = srcindex.row();
 	int add_index = rowCount(dstindex);
 
-	CyberiadaSMItem* source_parent = item->parent();
+    Cyberiada::ElementCollection* source_parent = dynamic_cast<Cyberiada::ElementCollection*>(element->get_parent());
 
+    // TODO remove model data
 	beginRemoveRows(parentindex, remove_index, remove_index);
 	if (source_parent == NULL) {
-		states.removeAll(static_cast<CyberiadaStateItem*>(item));
+        // states.removeAll(static_cast<CyberiadaStateItem*>(item));
 	} else {
-		source_parent->removeChild(item);
+        source_parent->remove_element(element->get_id());
 	}
 	endRemoveRows();
 
+    // TODO insert model data
 	beginInsertRows(dstindex, add_index, add_index);
-	if (target_item == NULL) {
-		MY_ASSERT(item->isState());
-		states.append(static_cast<CyberiadaStateItem*>(item));
-		item->removeParent();
+    if (target_parent == NULL) {
+        // MY_ASSERT(element->isState());
+        // states.append(static_cast<CyberiadaStateItem*>(item));
+        // item->removeParent();
 	} else {
-		target_item->addChild(item);
+        element->update_parent(target_parent);
+        target_parent->add_element(element);
 	}
-	endInsertRows();*/
+    endInsertRows();
+
+    QModelIndex newIndex = elementToIndex(element);
+    emit dataChanged(newIndex, newIndex);
+    // use in case scene::updateItemsRecursively is not used in scene::slotModelDataChanged
+    QModelIndex newTargetIndex = elementToIndex(target_parent);
+    QModelIndex newSourceIndex = elementToIndex(source_parent);
+    emit dataChanged(newTargetIndex, newTargetIndex);
+    emit dataChanged(newSourceIndex, newSourceIndex);
 }
 
-bool CyberiadaSMModel::dropMimeData(const QMimeData *,
-									Qt::DropAction, int, int,
-									const QModelIndex &)
+bool CyberiadaSMModel::dropMimeData(const QMimeData *data,
+                                    Qt::DropAction action,
+                                    int row, int column,
+                                    const QModelIndex &parent)
 {
-/*	if(action == Qt::IgnoreAction) {
+    if(action == Qt::IgnoreAction) {
 		return true;
 	}
 	if(column > 0) return false;
-	CyberiadaSMItem* target_item = static_cast<CyberiadaSMItem*>(parent.internalPointer());
-	if (parent != statesRootIndex()) {
-		MY_ASSERT(target_item);
-		MY_ASSERT(target_item->isState());
+    Cyberiada::Element* target_element = static_cast<Cyberiada::Element*>(parent.internalPointer());
+    Cyberiada::ElementCollection* target_element_col = dynamic_cast<Cyberiada::ElementCollection*>(target_element);
+    if (target_element_col == NULL) {
+        return false;
+    }
+    // TODO check
+    if (parent != rootIndex()) {
+        MY_ASSERT(target_element);
+        // MY_ASSERT(isStateIndex(parent));
 	}
 	if(data->hasFormat(cyberiadaStateMimeType)) {
-		QByteArray encodedData = data->data(cyberiadaStateMimeType);
+        QByteArray encodedData = data->data(cyberiadaStateMimeType);
 		QDataStream stream(&encodedData, QIODevice::ReadOnly);
-		QStringList items;
+        QStringList elements;
 		while (!stream.atEnd()) {
 			QString path;
 			stream >> path;
-			items.append(path);
+            elements.append(path);
 		}
-		foreach(QString id_str, items) {
-			CyberiadaSMItem* source_item = static_cast<CyberiadaSMItem*>(states_map.value(id_str, NULL));
-			MY_ASSERT(source_item);
-			CyberiadaSMItem* source_parent = source_item->parent();
-			if (source_parent == target_item)
-				return false;
-			move(source_item, target_item);
+        foreach(QString id_str, elements) {
+            Cyberiada::Element* source_element = static_cast<Cyberiada::Element*>(idToElement(id_str));
+            MY_ASSERT(source_element);
+            Cyberiada::Element* source_parent = source_element->get_parent();
+            if (source_parent == target_element)
+                return false;
+
+            move(source_element, target_element_col);
 		}
 		return true;
 	} else {
 		return false;
-		}*/
-	return false;
+    }
 }
 
 QStringList CyberiadaSMModel::mimeTypes() const
@@ -875,12 +909,11 @@ QMimeData* CyberiadaSMModel::mimeData(const QModelIndexList &indexes) const
 	QMimeData *mimeData = new QMimeData;
 	QByteArray encodedData;
 	QDataStream stream(&encodedData, QIODevice::WriteOnly);
-	QString path;
 	foreach(QModelIndex index, indexes) {
 		if (!isStateIndex(index) && !isInitialIndex(index)) continue;
 		const Cyberiada::Element* element = indexToElement(index);
 		MY_ASSERT(element);
-		stream << element->get_id().c_str();
+        stream << QString(element->get_id().c_str());
 	}
 	mimeData->setData(cyberiadaStateMimeType, encodedData);	
 	return mimeData;

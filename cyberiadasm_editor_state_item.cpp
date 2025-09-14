@@ -33,6 +33,7 @@
 #include "dotsignal.h"
 #include "cyberiada_constants.h"
 #include "cyberiadasm_editor_state_item.h"
+#include "cyberiadasm_editor_sm_item.h"
 #include "cyberiadasm_editor_scene.h"
 #include "dialogs/stateactiondialog.h"
 #include "settings_manager.h"
@@ -65,15 +66,19 @@ CyberiadaSMEditorStateItem::CyberiadaSMEditorStateItem(QObject *parent_object,
 
     title = new StateTitle(name(), this);
     title->setFontBoldness(true);
+    connect(title, &EditableTextItem::sizeChanged, this, &CyberiadaSMEditorStateItem::onTextItemSizeChanged);
 
     initializeActions();
 
     if (state->is_composite_state()) {
-        connect(title, &EditableTextItem::sizeChanged, this, &CyberiadaSMEditorStateItem::onTextItemSizeChanged);
         region = new StateRegion(this);
         region->setVisibleRegon(SettingsManager::instance().getInspectorMode());
         updateRegion();
     }
+
+    isHighlighted = false;
+    creatingOfTrans = false;
+    trans = nullptr;
 
     initializeDots();
     setDotsPosition();
@@ -246,20 +251,43 @@ void CyberiadaSMEditorStateItem::setTextPosition()
     // setPositionGrabbers();
 }
 
+
+
 void CyberiadaSMEditorStateItem::syncFromModel()
 {
-    qDebug() << "synk" << name() << boundingRect() << pos() - QPointF(x(), y());
+    // qDebug() << "synk" << name() << boundingRect() << pos() - QPointF(x(), y());
     QRectF r1 = mapRectToParent(boundingRect());
-    qDebug() << "before" << r1 << name();
+    // qDebug() << "before" << r1 << name();
     setPos(QPointF(x(), y()));
     QRectF r2 = mapRectToParent(boundingRect());
-    qDebug() << "after" << r2 << name();
+    // qDebug() << "after" << r2 << name();
     initializeActions();
     if (title->toPlainText() != name()) {
         title->setPlainText(name());
     }
     if (state->is_composite_state()) {
+        if (region == nullptr) {
+            region = new StateRegion(this);
+            region->setVisibleRegon(SettingsManager::instance().getInspectorMode());
+        }
         updateRegion();
+    }
+
+    CyberiadaSMEditorAbstractItem* cParent = dynamic_cast<CyberiadaSMEditorAbstractItem*>(parentItem());
+    if (cParent == nullptr) {
+        // try to find region parent
+        cParent = dynamic_cast<CyberiadaSMEditorAbstractItem*>(parentItem()->parentItem());
+        MY_ASSERT(cParent);
+    }
+
+    if (cParent->getId() != element->get_parent()->get_id()) {
+        QGraphicsItem* newcParent = (dynamic_cast<CyberiadaSMEditorScene*>(scene())->getMap()).value(element->get_parent()->get_id());
+        QPointF posInThis = mapFromParent(pos());
+        QPointF newCoords = mapToItem(newcParent, posInThis);
+        Cyberiada::Rect newRect = Cyberiada::Rect(newCoords.x(), newCoords.y(), width(), height());
+        setParentItem(newcParent);
+        model->updateGeometry(model->elementToIndex(element), newRect);
+        prevItemUnderCursor = static_cast<CyberiadaSMEditorAbstractItem*>(newcParent);
     }
     CyberiadaSMEditorAbstractItem::syncFromModel();
 }
@@ -329,27 +357,26 @@ void CyberiadaSMEditorStateItem::updateSizeToFitChildren(CyberiadaSMEditorAbstra
     // Cyberiada::Rect r = Cyberiada::Rect(pos().x() + (newRect.width() - boundingRect().width()) / 2,
     //                                     pos().y() + (newRect.height() - boundingRect().height()) / 2,
     if(newRect.x() < boundingRect().x()) {
-        qDebug() << "1";
+        // qDebug() << "1";
         r = Cyberiada::Rect(r.x - (newRect.width() - boundingRect().width()) / 2, r.y, r.width - (newRect.width() - boundingRect().width()) / 2, r.height);
         model->updateGeometry(model->elementToIndex(element), r);
         emit sizeChanged(CornerFlags::Left, + (newRect.width() - boundingRect().width()) / 2);
     }
     else if (newRect.width() - boundingRect().width() != 0){
-        qDebug() << "2";
+        // qDebug() << "2";
         r = Cyberiada::Rect(r.x + (newRect.width() - boundingRect().width()) / 2, r.y, r.width, r.height);
         model->updateGeometry(model->elementToIndex(element), r);
         emit sizeChanged(CornerFlags::Right, (newRect.width() - boundingRect().width()) / 2);
     }
 
     if(newRect.y() < boundingRect().y()) {
-
-        qDebug() << "3";
+        // qDebug() << "3";
         r = Cyberiada::Rect(r.x, r.y - (newRect.height() - boundingRect().height()) / 2, r.width, r.height);
         model->updateGeometry(model->elementToIndex(element), r);
         emit sizeChanged(CornerFlags::Top, - (newRect.height() - boundingRect().height()) / 2);
     }
     else if (newRect.height() - boundingRect().height() != 0) {
-        qDebug() << "4";
+        // qDebug() << "4";
         r = Cyberiada::Rect(r.x, r.y + (newRect.height() - boundingRect().height()) / 2, r.width, r.height);
         model->updateGeometry(model->elementToIndex(element), r);
         emit sizeChanged(CornerFlags::Bottom, (newRect.height() - boundingRect().height()) / 2);
@@ -429,7 +456,7 @@ void CyberiadaSMEditorStateItem::paint(QPainter *painter, const QStyleOptionGrap
     qreal titleHeight = title->boundingRect().height();
 
     QPen pen = QPen(Qt::black, 2, Qt::SolidLine);
-    if (isSelected()) {
+    if (isSelected() || isHighlighted) {
         SettingsManager& sm = SettingsManager::instance();
         pen.setColor(sm.getSelectionColor());
         pen.setWidth(sm.getSelectionBorderWidth());
@@ -453,6 +480,64 @@ void CyberiadaSMEditorStateItem::paint(QPainter *painter, const QStyleOptionGrap
 
 }
 
+void CyberiadaSMEditorStateItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
+{
+    CyberiadaSMEditorAbstractItem::mousePressEvent(event);
+
+    if (cornerFlags == 0) {
+        creatingOfTrans = true;
+    }
+}
+
+void CyberiadaSMEditorStateItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
+{
+    // TODO create transition
+    if (creatingOfTrans) {
+        if (!trans) {
+            CyberiadaSMEditorScene* cScene = dynamic_cast<CyberiadaSMEditorScene*>(scene());
+            if (!cScene) return;
+            trans = cScene->addTransition(this, this);
+            trans->setSelected(true);
+            trans->getDot(1)->setVisible(true);
+            trans->getDot(1)->grabMouse();
+        }
+        return;
+    }
+
+    // if you want to update this, update StateTitle::mouseMoveEvent as well
+    CyberiadaSMEditorAbstractItem::mouseMoveEvent(event);
+    CyberiadaSMEditorAbstractItem* newParent = collectionUnderItem();
+
+    if (prevItemUnderCursor == newParent) return;
+
+    if (newParent == nullptr || parentItem() == newParent){
+        prevItemUnderCursor->setHighlighted(false);
+        prevItemUnderCursor = newParent;
+        return;
+    }
+
+    prevItemUnderCursor->setHighlighted(false);
+    prevItemUnderCursor = newParent;
+    newParent->setHighlighted(true);
+}
+
+void CyberiadaSMEditorStateItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
+{
+    // TODO create transition
+    if (creatingOfTrans && trans) {
+        creatingOfTrans = false;
+        trans = nullptr;
+
+        CyberiadaSMEditorAbstractItem::mouseReleaseEvent(event);
+        return;
+    }
+
+    // if you want to update this, update StateTitle::mouseReleaseEvent as well
+    CyberiadaSMEditorAbstractItem::mouseReleaseEvent(event);
+    prevItemUnderCursor->setHighlighted(false);
+    updateParent(prevItemUnderCursor);
+}
+
 void CyberiadaSMEditorStateItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 {
     QMenu menu;
@@ -462,6 +547,7 @@ void CyberiadaSMEditorStateItem::contextMenuEvent(QGraphicsSceneContextMenuEvent
     QAction *addEntryAction = menu.addAction("Добавить entry");
     QAction *addExitAction = menu.addAction("Добавить exit");
     QAction *addDoAction = menu.addAction("Добавить do");
+    QAction *unlinkAction = menu.addAction("Отвязать");
 
     if(entry != nullptr) {
         addEntryAction->setEnabled(false);
@@ -473,7 +559,10 @@ void CyberiadaSMEditorStateItem::contextMenuEvent(QGraphicsSceneContextMenuEvent
     QAction *selectedAction = menu.exec(event->screenPos());
 
     if (selectedAction == deleteAction) {
-        remove();
+        CyberiadaSMEditorScene* cScene = dynamic_cast<CyberiadaSMEditorScene*>(scene());
+        if (cScene) {
+            cScene->deleteItemsRecursively(element);
+        }
     } else if (selectedAction == addTransitionAction) {
 
     } else if (selectedAction == addEntryAction) {
@@ -481,16 +570,22 @@ void CyberiadaSMEditorStateItem::contextMenuEvent(QGraphicsSceneContextMenuEvent
     } else if (selectedAction == addExitAction) {
         addAction(Cyberiada::ActionType::actionExit);
     } else if (selectedAction == addDoAction) {
-
+        // TODO
+    } else if (selectedAction == unlinkAction) {
+        updateParent(nullptr);
     }
 
     event->accept();
 }
 
-void CyberiadaSMEditorStateItem::remove()
+void CyberiadaSMEditorStateItem::updateParent(CyberiadaSMEditorAbstractItem *newParent)
 {
-    // remove transitions and children
-    // delete this;
+    if (newParent == nullptr) {
+        model->updateParent(model->elementToIndex(element), model->rootDocument()->get_parent_sm(element)->get_id());
+        // TODO update geometry pos
+    } else {
+        model->updateParent(model->elementToIndex(element), newParent->getId());
+    }
 }
 
 /* -----------------------------------------------------------------------------
@@ -618,6 +713,20 @@ void StateTitle::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
                     }
                 }
             }
+
+            CyberiadaSMEditorAbstractItem* newParent = state->collectionUnderItem();
+
+            if (state->prevItemUnderCursor == newParent) return;
+
+            if (newParent == nullptr || state->parentItem() == newParent){
+                state->prevItemUnderCursor->setHighlighted(false);
+                state->prevItemUnderCursor = newParent;
+                return;
+            }
+
+            state->prevItemUnderCursor->setHighlighted(false);
+            state->prevItemUnderCursor = newParent;
+            newParent->setHighlighted(true);
         }
         return;
     }
@@ -631,12 +740,19 @@ void StateTitle::mouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
         return;
     }
 
-    if (event->button() == Qt::LeftButton and !hasFocus()) {
+    if (parentItem()) {
+        CyberiadaSMEditorStateItem* state = dynamic_cast<CyberiadaSMEditorStateItem*>(parentItem());
+        state->prevItemUnderCursor->setHighlighted(false);
+        state->updateParent(state->prevItemUnderCursor);
+    }
+
+    if (event->button() == Qt::LeftButton && !hasFocus()) {
         isMoving = false;
         isLeftMouseButtonPressed = false;
         setCursor(QCursor(Qt::ArrowCursor));
         return;
     }
+
     QGraphicsTextItem::mouseReleaseEvent(event);
 }
 
