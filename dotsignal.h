@@ -50,6 +50,7 @@ public:
     void setDotFlags(unsigned int flags);
     bool isDeleteable() { return deleteable; }
     void setDeleteable(bool on);
+    void deleteDot();
 
 signals:
     void previousPositionChanged();
@@ -64,7 +65,6 @@ protected:
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
     void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
     void hoverLeaveEvent(QGraphicsSceneHoverEvent *event) override;
-    void keyPressEvent(QKeyEvent* event) override;
 
 public slots:
 

@@ -299,6 +299,13 @@ QPainterPath CyberiadaSMEditorTransitionItem::path() const
     return path;
 }
 
+DotSignal *CyberiadaSMEditorTransitionItem::getDot(int index)
+{
+    if (index < 0) return nullptr;
+    if (listDots.size() <= index) return nullptr;
+    return listDots.at(index);
+}
+
 void CyberiadaSMEditorTransitionItem::drawArrow(QPainter* painter)
 {
     SettingsManager& sm = SettingsManager::instance();
@@ -564,7 +571,6 @@ void CyberiadaSMEditorTransitionItem::onTargetSizeChanged(CyberiadaSMEditorAbstr
 
 void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qreal dx, qreal dy, QPointF p)
 {
-    if (!isSelected()) return;
     prepareGeometryChange();
     prevPosition = p;
 

@@ -88,6 +88,8 @@ public:
     QPainterPath path() const;
     void updatePath();
 
+    DotSignal* getDot(int index);
+
     QString actionText() const;
     void updateAction();
     void updateActionPosition();

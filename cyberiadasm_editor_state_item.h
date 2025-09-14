@@ -34,6 +34,7 @@
 #include "dotsignal.h"
 #include "editable_text_item.h"
 #include "cyberiadasm_editor_items.h"
+#include "cyberiadasm_editor_transition_item.h"
 
 /* -----------------------------------------------------------------------------
  * State Item
@@ -103,9 +104,10 @@ private slots:
 protected:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
 
+    void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
+    void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
+    void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
     void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
-
-    void remove(); // override;
 
 private:
     StateTitle* title;
@@ -113,9 +115,14 @@ private:
     StateAction* exit = nullptr;
 
     QRectF m_rect;
-    StateRegion* region;
+    StateRegion* region = nullptr;
     const Cyberiada::State* state;
     std::vector<StateAction*> actions;
+
+    bool creatingOfTrans;
+    CyberiadaSMEditorTransitionItem* trans;
+    
+    void updateParent(CyberiadaSMEditorAbstractItem* newParent);
 
     void setGrabbersPosition();
     void showGrabbers();
@@ -137,7 +144,6 @@ public:
     bool getBottomLine() { return bottomLine; }
 
     void setTopLine(bool topLine) {
-        this;
         this->topLine = topLine;
     }
 

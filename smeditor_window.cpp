@@ -92,19 +92,29 @@ void CyberiadaSMEditorWindow::slotFileOpen()
 
 void CyberiadaSMEditorWindow::slotFileSave()
 {
-    model->saveDocument();
+    if (model->rootDocument() && !model->rootDocument()->get_file_path().empty()) {
+        qDebug() << model->rootDocument()->get_file_path().empty();
+        model->saveDocument();
+    } else {
+        slotFileSaveAs();
+    }
 }
 
 void CyberiadaSMEditorWindow::slotFileSaveAs()
 {
+    QString selectedFilter;
     QString fileName = QFileDialog::getSaveFileName(
         this,
         "Save State Machile GraphML file as",
         QDir::currentPath(),
-        tr("CyberiadaML graph (*.graphml)")
+        tr("CyberiadaML graph (*.graphml)"),
+        &selectedFilter
         );
     if (fileName.isEmpty()) {
         return;
+    }
+    if (QFileInfo(fileName).suffix().isEmpty()) {
+        if (selectedFilter.contains("CyberiadaML graph (*.graphml)")) fileName += ".graphml";
     }
     model->saveAsDocument(fileName, Cyberiada::DocumentFormat::formatCyberiada10);
 
@@ -274,8 +284,15 @@ void CyberiadaSMEditorWindow::slotDeleteElement()
 {
     if (scene->selectedItems().isEmpty()) return;
     CyberiadaSMEditorAbstractItem* itemToDelete = dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene->selectedItems().first());
-    if (!itemToDelete) return;
-    scene->deleteItemsRecursively(itemToDelete->getElement());
+    if (itemToDelete) {
+        scene->deleteItemsRecursively(itemToDelete->getElement());
+        return;
+    }
+    DotSignal* dotToDelete = dynamic_cast<DotSignal*>(scene->focusItem());
+    if(dotToDelete) {
+        dotToDelete->deleteDot();
+        return;
+    }
 }
 
 void CyberiadaSMEditorWindow::slotInspectorModeTriggered(bool on)

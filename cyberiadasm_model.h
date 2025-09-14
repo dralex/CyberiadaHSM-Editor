@@ -75,8 +75,9 @@ public:
 	bool                                updateGeometry(const QModelIndex& index, const Cyberiada::Point& source, const Cyberiada::Point& target);
     bool                                updateGeometry(const QModelIndex& index, const Cyberiada::Polyline& pl);
     bool                                updateGeometry(const QModelIndex& index, const Cyberiada::ID& source, const Cyberiada::ID& target);
+    bool                                updateParent(const QModelIndex& index, const Cyberiada::ID& new_parent_id);
 	bool                                updateCommentBody(const QModelIndex& index, const QString& body);
-	bool                                updateMetainformation(const QModelIndex& index, const QString& parameter, const QString& new_value);
+    bool                                updateMetainformation(const QModelIndex& index, const QString& parameter, const QString& new_value);
 
     Cyberiada::StateMachine*            newStateMachine(const Cyberiada::String& sm_name, const Cyberiada::Rect& r = Cyberiada::Rect());
     Cyberiada::State*                   newState(Cyberiada::ElementCollection* parent, const Cyberiada::String& state_name,
