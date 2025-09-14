@@ -26,7 +26,7 @@
 #include <QColor>
 #include "cyberiadasm_editor_sm_item.h"
 #include "myassert.h"
-#include "settings_manager.h".
+#include "settings_manager.h"
 
 /* -----------------------------------------------------------------------------
  * State Machine Item
