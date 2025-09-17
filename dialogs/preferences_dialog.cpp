@@ -66,6 +66,7 @@ void PreferencesDialog::loadFromSettings()
     ui->inspectorModeCheckBox->setChecked(sm.getInspectorMode());
     ui->printModeCheckBox->setChecked(sm.getPrintMode());
     ui->snapModeCheckBox->setChecked(sm.getSnapMode());
+    ui->polylineModeCheckBox->setChecked(sm.getPolylineMode());
 
     ui->showTransTextCheckBox->setChecked(sm.getShowTransitionText());
 
@@ -87,6 +88,7 @@ void PreferencesDialog::saveSettings()
     sm.setInspectorMode(ui->inspectorModeCheckBox->isChecked());
     sm.setPrintMode(ui->printModeCheckBox->isChecked());
     sm.setSnapMode(ui->snapModeCheckBox->isChecked());
+    sm.setPolylineMode(ui->polylineModeCheckBox->isChecked());
 
     // visualization
     sm.setShowTransitionText(ui->showTransTextCheckBox->isChecked());
