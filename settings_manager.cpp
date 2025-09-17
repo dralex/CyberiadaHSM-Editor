@@ -21,6 +21,7 @@ void SettingsManager::load() {
     inspectorMode = s.value("display/inspectorMode", false).toBool();
     printMode = s.value("display/printMode", false).toBool();
     snapMode = s.value("display/snapMode", false).toBool();
+    polylineMode = s.value("display/polylineMode", false).toBool();
 
     selectionColor = QColor(s.value("display/selectionColor", QColor(Qt::darkGray).name()).toString());
     selectionBorderWidth = s.value("display/selectionBorderWidth", 2).toInt();
@@ -37,6 +38,7 @@ void SettingsManager::loadDefaults()
     setInspectorMode(false);
     setPrintMode(false);
     setSnapMode(false);
+    setPolylineMode(false);
 
     setSelectionColor(QColor(Qt::red));
     setSelectionBorderWidth(2);
@@ -91,6 +93,15 @@ void SettingsManager::setSnapMode(bool value)
         snapMode = value;
         QSettings().setValue("display/snapMode", value);
         emit snapModeChanged(value);
+    }
+}
+
+void SettingsManager::setPolylineMode(bool value)
+{
+    if (polylineMode != value) {
+        polylineMode = value;
+        QSettings().setValue("display/polylineMode", value);
+        emit PolylineModeChanged(value);
     }
 }
 

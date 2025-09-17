@@ -45,6 +45,7 @@ public slots:
     void                    slotInspectorModeTriggered(bool on);
     void                    slotShowTransitionActionTriggered(bool on);
     void                    slotSnapModeTriggered(bool on);
+    void                    slotPolylineModeTriggered(bool on);
     void                    slotFontTriggered();
     void                    slotToolSelected(QAction *action);
     void                    slotFitContent();

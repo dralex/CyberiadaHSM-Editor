@@ -281,7 +281,11 @@ void CyberiadaSMPropertiesWidget::slotPropertyChanged(QtProperty* p)
             const Cyberiada::Action& a = trans->get_action();
 
             if (cp.name == propTrigger) {
-                model->updateAction(i, 0, stringManager->value(p), a.get_guard().c_str(), a.get_behavior().c_str());
+                if (stringManager->value(p).isEmpty()) {
+                    model->deleteAction(i);
+                } else {
+                    model->updateAction(i, 0, stringManager->value(p), a.get_guard().c_str(), a.get_behavior().c_str());
+                }
             }
             if (cp.name == propGuard) {
                 model->updateAction(i, 0, a.get_trigger().c_str(), stringManager->value(p), a.get_behavior().c_str());

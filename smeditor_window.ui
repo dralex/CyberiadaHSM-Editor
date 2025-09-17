@@ -147,6 +147,7 @@
    <addaction name="separator"/>
    <addaction name="actionGridVisibility"/>
    <addaction name="actionInspectorMode"/>
+   <addaction name="actionPolylineMode"/>
   </widget>
   <widget class="QToolBar" name="elementToolBar">
    <property name="windowTitle">
@@ -433,6 +434,18 @@
    </property>
    <property name="text">
     <string>Grid</string>
+   </property>
+  </action>
+  <action name="actionPolylineMode">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/polyline-mode.png</normaloff>:/Icons/images/polyline-mode.png</iconset>
+   </property>
+   <property name="text">
+    <string>Режим полилинии</string>
    </property>
   </action>
  </widget>
@@ -800,6 +813,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>actionPolylineMode</sender>
+   <signal>triggered(bool)</signal>
+   <receiver>SMEditorWindow</receiver>
+   <slot>slotPolylineModeTriggered(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>511</x>
+     <y>383</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>slotFileOpen()</slot>
@@ -821,5 +850,6 @@
   <slot>slotGridVisibilityTriggered(bool)</slot>
   <slot>slotPreferences()</slot>
   <slot>slotDeleteElement()</slot>
+  <slot>slotPolylineModeTriggered(bool)</slot>
  </slots>
 </ui>

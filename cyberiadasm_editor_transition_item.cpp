@@ -510,15 +510,20 @@ void CyberiadaSMEditorTransitionItem::updateAction()
 }
 
 void CyberiadaSMEditorTransitionItem::updateActionPosition() {
-    if (!actionItem) return;
-
-    QPointF lastPoint = sourcePoint();
-    if(transition->has_polyline() && transition->get_geometry_polyline().size() > 0) {
+    QPointF firstPoint = sourcePoint();
+    QPointF lastPoint = targetPoint() + targetCenter();
+    if (isSourceTraking) {
+        firstPoint = prevPosition;
+    }
+    if (source() != target() && transition->has_polyline() && transition->get_geometry_polyline().size() > 0) {
         Cyberiada::Polyline polyline = transition->get_geometry_polyline();
         Cyberiada::Point lastPolylinePoint = *(std::next(polyline.begin(), polyline.size() - 1));
-        lastPoint = QPointF(lastPolylinePoint.x, lastPolylinePoint.y);
+        firstPoint = QPointF(lastPolylinePoint.x, lastPolylinePoint.y);
     }
-    QPointF textPos = (lastPoint + (targetPoint() + targetCenter() - sourceCenter())) / 2 + sourceCenter() - actionItem->boundingRect().center();
+    if (isTargetTraking) {
+        lastPoint = prevPosition;
+    }
+    QPointF textPos = (firstPoint + (lastPoint - sourceCenter())) / 2 + sourceCenter() - actionItem->boundingRect().center();
 
     actionItem->setPos(textPos);
     update();
@@ -531,9 +536,7 @@ void CyberiadaSMEditorTransitionItem::setActionVisibility(bool visible) {
 void CyberiadaSMEditorTransitionItem::syncFromModel()
 {
     prepareGeometryChange();
-    if (transition->has_action()) {
-        updateAction();
-    }
+    updateAction();
     updateDots();
     setDotsPosition();
     CyberiadaSMEditorAbstractItem::syncFromModel();
@@ -591,7 +594,6 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
 
                     // loop
                     if (cItem == target()) {
-                        qDebug() << "1";
                         setSource(cItem);
                         hasIntersections = false;
                         QPointF newPoint = findIntersectionWithItem(source(), p, sourceCenter(), &hasIntersections) -
@@ -603,7 +605,6 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
 
                     //
                     if (cItem == source()) {
-                        qDebug() << "2";
                         hasIntersections = false;
                         QPointF newPoint = findIntersectionWithItem(source(), p, nextPoint, &hasIntersections) -
                                            sourceCenter();
@@ -618,14 +619,11 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
                                cItem->sceneBoundingRect().center();
                     // intersectoin with item under cursor
                     if (hasIntersections) {
-                        qDebug() << "3";
                         isSourceTraking = false;
                         setSource(cItem);
                         setSourcePoint(newPoint);
                         return;
                     }
-
-                    qDebug() << "3.5";
                     return;
                 }
                 bool hasIntersections = false;
@@ -640,16 +638,14 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
                 // intersection with source in adjusted bounding rect
                 if (hasIntersections) {
                     isSourceTraking = false;
-                    qDebug() << "4" << isSourceTraking << isTargetTraking;
                     setSourcePoint(newPoint);
                     return;
                 }
 
-                qDebug() << "5";
-
                 // mouse traking
                 isSourceTraking = true;
                 setDotsPosition();
+                updateActionPosition();
                 break;
             }
             // last point
@@ -715,6 +711,7 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
 
                 isTargetTraking = true;
                 setDotsPosition();
+                updateActionPosition();
                 break;
             }
 
@@ -732,8 +729,15 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
 
 void CyberiadaSMEditorTransitionItem::slotMouseReleaseDot()
 {
-    isSourceTraking = false;
-    isTargetTraking = false;
+    if (isSourceTraking || isTargetTraking) {
+        isSourceTraking = false;
+        isTargetTraking = false;
+        prepareGeometryChange();
+        updateActionPosition();
+    }
+    if (source() == target() && transition->has_polyline() && transition->get_geometry_polyline().size() > 0) {
+        model->updateGeometry(model->elementToIndex(element), Cyberiada::Polyline());
+    }
 }
 
 void CyberiadaSMEditorTransitionItem::slotDeleteDot(QGraphicsItem *signalOwner)
@@ -759,6 +763,15 @@ void CyberiadaSMEditorTransitionItem::slotDeleteDot(QGraphicsItem *signalOwner)
 
 void CyberiadaSMEditorTransitionItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
 {
+    if (!SettingsManager::instance().getPolylineMode()) {
+        if (actionText().isEmpty()) {
+            actionItem->setTextInteractionFlags(Qt::TextEditorInteraction);
+            actionItem->setFocus(Qt::MouseFocusReason);
+        }
+        QGraphicsItem::mouseDoubleClickEvent(event);
+        return;
+    }
+
     if (source() == target()) { return; }
 
     QPointF clickPos = event->pos();
@@ -972,12 +985,20 @@ void CyberiadaSMEditorTransitionItem::hideDots()
 
 void CyberiadaSMEditorTransitionItem::setDotsPosition()
 {
-    QPainterPath linePath = path();
+    if (isSourceTraking) {
+        listDots.first()->setPos(prevPosition);
+        return;
+    }
+    if (isTargetTraking) {
+        listDots.last()->setPos(prevPosition);
+        return;
+    }
     if (source() == target()) {
         listDots.at(0)->setPos(sourcePoint() + sourceCenter());
         listDots.at(1)->setPos(targetPoint() + targetCenter());
         return;
     }
+    QPainterPath linePath = path();
     for(int i = 0; i < linePath.elementCount(); i++) {
         QPointF point = linePath.elementAt(i);
         listDots.at(i)->setPos(point);
