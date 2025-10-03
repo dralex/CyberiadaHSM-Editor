@@ -48,6 +48,9 @@ CyberiadaSMEditorVertexItem::CyberiadaSMEditorVertexItem(CyberiadaSMModel* model
     setAcceptHoverEvents(true);
     setFlags(ItemIsSelectable | ItemSendsGeometryChanges);
 
+    trans = nullptr;
+    creatingOfTrans = false;
+
     initializeDots();
     setDotsPosition();
     hideDots();
@@ -122,12 +125,34 @@ void CyberiadaSMEditorVertexItem::paint(QPainter* painter, const QStyleOptionGra
     }
 }
 
+void CyberiadaSMEditorVertexItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
+{
+    if (cornerFlags == 0 && !isSelected()) {
+        creatingOfTrans = true;
+        return;
+    }
+    CyberiadaSMEditorAbstractItem::mousePressEvent(event);
+}
+
 void CyberiadaSMEditorVertexItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
     if (!element->has_geometry() ||
         dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select ||
         SettingsManager::instance().getInspectorMode()) {
         event->ignore();
+        return;
+    }
+
+    Cyberiada::ElementType type = element->get_type();
+    if (type == Cyberiada::elementInitial && creatingOfTrans) {
+        if (!trans) {
+            CyberiadaSMEditorScene* cScene = dynamic_cast<CyberiadaSMEditorScene*>(scene());
+            if (!cScene) return;
+            trans = cScene->addTemporaryTransition(this, event->pos());
+            trans->setSelected(true);
+            trans->getDot(1)->setVisible(true);
+            trans->getDot(1)->grabMouse();
+        }
         return;
     }
 
@@ -139,6 +164,18 @@ void CyberiadaSMEditorVertexItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event
 
     QGraphicsItem::mouseMoveEvent(event);
     emit geometryChanged();
+}
+
+void CyberiadaSMEditorVertexItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
+{
+    if (creatingOfTrans && trans) {
+        creatingOfTrans = false;
+        trans = nullptr;
+        CyberiadaSMEditorAbstractItem::mouseReleaseEvent(event);
+        return;
+    }
+
+    CyberiadaSMEditorAbstractItem::mouseReleaseEvent(event);
 }
 
 void CyberiadaSMEditorVertexItem::hoverMoveEvent(QGraphicsSceneHoverEvent *event)
