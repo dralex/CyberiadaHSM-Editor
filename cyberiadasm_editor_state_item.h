@@ -34,7 +34,7 @@
 #include "dotsignal.h"
 #include "editable_text_item.h"
 #include "cyberiadasm_editor_items.h"
-#include "cyberiadasm_editor_transition_item.h"
+#include "temporary_transition.h"
 
 /* -----------------------------------------------------------------------------
  * State Item
@@ -120,7 +120,7 @@ private:
     std::vector<StateAction*> actions;
 
     bool creatingOfTrans;
-    CyberiadaSMEditorTransitionItem* trans;
+    TemporaryTransition* ttrans;
     
     void updateParent(CyberiadaSMEditorAbstractItem* newParent);
 

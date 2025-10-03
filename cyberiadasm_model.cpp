@@ -298,7 +298,7 @@ bool CyberiadaSMModel::deleteAction(const QModelIndex& index, int action_index)
 			return false;
 		}
 		actions.erase(actions.begin() + static_cast<size_t>(action_index));
-	} else if (element->get_type() == Cyberiada::elementTransition) {
+    } else if (element->get_type() == Cyberiada::elementTransition) {
 		Cyberiada::Transition* trans = static_cast<Cyberiada::Transition*>(element);
 		if (!trans->has_action()) {
 			return false;

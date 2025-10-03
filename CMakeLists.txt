@@ -51,6 +51,8 @@ add_executable(CyberiadaInspector
   dialogs/open_file_dialog.h dialogs/open_file_dialog.cpp dialogs/open_file_dialog.ui
   dialogs/preferences_dialog.h dialogs/preferences_dialog.cpp dialogs/preferences_dialog.ui
   settings_manager.h settings_manager.cpp
+  temporary_transition.h temporary_transition.cpp
+
 )
 
 target_include_directories(CyberiadaInspector PUBLIC

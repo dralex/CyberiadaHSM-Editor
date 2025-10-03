@@ -131,7 +131,7 @@ private:
 
     const Cyberiada::Transition* transition;
 
-    TransitionAction *actionItem = nullptr;
+    TransitionAction *actionItem;
     QPointF textPosition;
 
     QPointF prevPosition;
