@@ -395,8 +395,11 @@ bool CyberiadaSMModel::updateParent(const QModelIndex &index, const Cyberiada::I
 bool CyberiadaSMModel::updateCommentBody(const QModelIndex& index, const QString& body)
 {
 	Cyberiada::Element* element = indexToElement(index);
-	if (!element) return false;
-    // TODO
+    if (!element) return false;
+    if (element->get_type() != Cyberiada::elementComment &&
+        element->get_type() != Cyberiada::elementFormalComment) return false;
+    Cyberiada::Comment* comment = static_cast<Cyberiada::Comment*>(element);
+    comment->set_body(body.toStdString());
 	emit dataChanged(index, index);
 	return true;
 }

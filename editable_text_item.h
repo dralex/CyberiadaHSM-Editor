@@ -36,6 +36,9 @@ public:
     void setFontStyleChangeable(bool isChangeable);
     void setFontBoldness(bool isBold);
     void setTextMargin(double newTextMargin);
+    void setTextAlignment(Qt::Alignment alignment);
+    void setTextWidthEnabled(bool enabled);
+    void updateTextWidth();
 
 protected:
     void focusOutEvent(QFocusEvent *event) override;
@@ -46,18 +49,14 @@ protected:
 
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
 
-    void setTextAlignment(Qt::Alignment alignment);
-    void setTextWidthEnabled(bool enabled);
-
 signals:
     void sizeChanged();
-    // void editingFinished();
+    void editingFinished();
 
 protected slots:
     void onFontChanged(const QFont &newFont) ;
 
 protected:
-    void updateTextWidth();
     bool isEdit;
     bool align;
     bool isFontStyleChangeable = true;

@@ -219,7 +219,6 @@ void CyberiadaSMEditorWindow::slotToolSelected(QAction *action)
 }
 
 void CyberiadaSMEditorWindow::slotFitContent() {
-    qDebug() << "here";
     sceneView->fitInView(scene->itemsBoundingRect(), Qt::KeepAspectRatio);
 }
 

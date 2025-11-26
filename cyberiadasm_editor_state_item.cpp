@@ -221,6 +221,7 @@ void CyberiadaSMEditorStateItem::setTextPosition()
 {
     // TODO refactor
     QRectF oldRect = rect();
+    title->updateTextWidth();
     QRectF titleRect = title->boundingRect();
     title->setPos(oldRect.x() + (oldRect.width() - titleRect.width()) / 2 , oldRect.y());
 
@@ -272,6 +273,11 @@ void CyberiadaSMEditorStateItem::syncFromModel()
         }
         updateRegion();
     }
+    // else {
+    //     if (region != nullptr) {
+    //         // TODO set actions on center (change parent from region to state)
+    //     }
+    // }
 
     CyberiadaSMEditorAbstractItem* cParent = dynamic_cast<CyberiadaSMEditorAbstractItem*>(parentItem());
     if (cParent == nullptr) {
