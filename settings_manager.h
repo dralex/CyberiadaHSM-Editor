@@ -29,6 +29,8 @@ public:
     void setPrintMode(bool value);
     bool getSnapMode() const { return snapMode; }
     void setSnapMode(bool value);
+    bool getPolylineMode() const { return polylineMode; }
+    void setPolylineMode(bool value);
 
     QColor getSelectionColor() const { return selectionColor; }
     void setSelectionColor(QColor value);
@@ -45,6 +47,7 @@ signals:
     void inspectorModeChanged(bool);
     void printModeChanged(bool);
     void snapModeChanged(bool);
+    void PolylineModeChanged(bool);
 
     void selectionSettingsChanged();
 
@@ -64,6 +67,7 @@ private:
     bool inspectorMode;
     bool printMode;
     bool snapMode;
+    bool polylineMode;
 
     // selection
     QColor selectionColor;

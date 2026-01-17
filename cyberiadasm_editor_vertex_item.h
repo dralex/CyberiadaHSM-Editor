@@ -25,6 +25,7 @@
 #define CYBERIADASMEDITORVERTEXITEM_H
 
 #include "cyberiadasm_editor_items.h"
+#include "temporary_transition.h"
 #include "dotsignal.h"
 
 /* -----------------------------------------------------------------------------
@@ -44,12 +45,18 @@ public:
 
 protected:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
+
+    void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
-    void hoverMoveEvent(QGraphicsSceneHoverEvent *event);
+    void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
+    void hoverMoveEvent(QGraphicsSceneHoverEvent *event) override;
 
 private:
     QRectF fullCircle() const;
     QRectF partialCircle() const;
+
+    TemporaryTransition* trans;
+    bool creatingOfTrans;
 };
 
 

@@ -50,12 +50,13 @@ public:
 
     QRectF boundingRect() const override;
 
-    void setTextPosition();
-
     void syncFromModel() override;
 
 protected:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
+
+private:
+    void updateBody();
 
 private slots:
     void onBodyChanged();
@@ -63,6 +64,7 @@ private slots:
 private:
     EditableTextItem* body;
     QBrush commentBrush;
+    int margin = 10;
 
     const Cyberiada::Comment* comment;
     QMap<Cyberiada::ID, QGraphicsItem*>& elementIdToItemMap;

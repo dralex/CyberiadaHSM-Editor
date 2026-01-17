@@ -562,25 +562,38 @@ void CyberiadaSMEditorScene::addSMItem(Cyberiada::ElementType type)
     }
 }
 
-CyberiadaSMEditorTransitionItem* CyberiadaSMEditorScene::addTransition(CyberiadaSMEditorAbstractItem *source,
-                                           CyberiadaSMEditorAbstractItem *target)
+void CyberiadaSMEditorScene::addTransitionFromTempopary(TemporaryTransition* ttrans, bool valid)
 {
+    if (!valid) {
+        delete ttrans;
+        return;
+    }
+
     try {
         Cyberiada::Element* element = model->newTransition(currentSM, Cyberiada::transitionExternal,
-                                                        source->getElement(), target->getElement(),
-                                                        Cyberiada::Action(Cyberiada::actionTransition));
-        CyberiadaSMEditorTransitionItem* transition = new CyberiadaSMEditorTransitionItem(
-            this, model, element, NULL, elementIdToItemMap);
+                                                        ttrans->getSourceElement(), ttrans->getTargetElement(),
+                                                        Cyberiada::Action(Cyberiada::actionTransition), Cyberiada::Polyline(),
+                                                        ttrans->getSourcePoint(), ttrans->getTargetPoint());
+        delete ttrans;
+        CyberiadaSMEditorTransitionItem* transition =
+            new CyberiadaSMEditorTransitionItem(this, model, element, NULL, elementIdToItemMap);
         elementIdToItemMap.insert(element->get_id(), transition);
         addItem(transition);
         transition->setSelected(true);
-        return transition;
     } catch (const Cyberiada::ParametersException& e){
+        delete ttrans;
         QMessageBox::critical(NULL, tr("Create new transition"),
                               tr("Parameters error:\n") + QString(e.str().c_str()));
         // error = true;
-        return nullptr;
     }
+}
+
+TemporaryTransition *CyberiadaSMEditorScene::addTemporaryTransition(CyberiadaSMEditorAbstractItem* source, QPointF targetPoint)
+{
+    TemporaryTransition* ttrans = new TemporaryTransition(this, model, NULL, elementIdToItemMap, source, targetPoint);
+    addItem(ttrans);
+    connect(ttrans, &TemporaryTransition::signalReady, this, &CyberiadaSMEditorScene::addTransitionFromTempopary);
+    return ttrans;
 }
 
 void CyberiadaSMEditorScene::drawBackground(QPainter* painter, const QRectF &)

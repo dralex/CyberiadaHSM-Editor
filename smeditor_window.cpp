@@ -189,6 +189,7 @@ void CyberiadaSMEditorWindow::initializeTools()
     actionTransitionText->setChecked(sm.getShowTransitionText());
     actionInspectorMode->setChecked(sm.getInspectorMode());
     actionSnapMode->setChecked(sm.getSnapMode());
+    actionPolylineMode->setChecked(sm.getPolylineMode());
 }
 
 void CyberiadaSMEditorWindow::slotFontTriggered()
@@ -231,7 +232,6 @@ void CyberiadaSMEditorWindow::slotGridVisibilityTriggered(bool on)
 {
     SettingsManager& sm = SettingsManager::instance();
     sm.setShowGrid(on);
-    // scene->enableGrid(on);
 }
 
 void CyberiadaSMEditorWindow::slotNewSM()
@@ -319,4 +319,7 @@ void CyberiadaSMEditorWindow::slotSnapModeTriggered(bool on)
     SettingsManager::instance().setSnapMode(on);
 }
 
-
+void CyberiadaSMEditorWindow::slotPolylineModeTriggered(bool on)
+{
+    SettingsManager::instance().setPolylineMode(on);
+}

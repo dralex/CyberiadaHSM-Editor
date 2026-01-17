@@ -29,6 +29,7 @@
         <file>images/inspector-mode.png</file>
         <file>images/snap-mode.png</file>
         <file>images/grid.png</file>
+        <file>images/polyline-mode.png</file>
     </qresource>
     <qresource prefix="/Fonts">
         <file>fonts/courier.ttf</file>

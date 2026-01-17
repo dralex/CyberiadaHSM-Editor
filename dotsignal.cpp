@@ -114,9 +114,9 @@ void DotSignal::mousePressEvent(QGraphicsSceneMouseEvent *event)
 
 void DotSignal::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
-    emit signalMouseRelease();
     ungrabMouse();
     QGraphicsItem::mouseReleaseEvent(event);
+    emit signalMouseRelease();
 }
 
 void DotSignal::hoverEnterEvent(QGraphicsSceneHoverEvent *event)

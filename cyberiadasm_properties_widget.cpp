@@ -268,20 +268,41 @@ void CyberiadaSMPropertiesWidget::slotPropertyChanged(QtProperty* p)
                 const Cyberiada::Element* sourceElement = getElementByNumber(true, enumManager->value(p));
                 MY_ASSERT(sourceElement);
                 model->updateGeometry(i, sourceElement->get_id(), trans->target_element_id());
-                // TODO set new source point
+                Cyberiada::ElementType sourceType = sourceElement->get_type();
+                Cyberiada::Point newSourcePoint = Cyberiada::Point(0, 0);
+                if (sourceType == Cyberiada::elementSimpleState ||
+                    sourceType == Cyberiada::elementCompositeState) {
+                    const Cyberiada::ElementCollection* coll = static_cast<const Cyberiada::ElementCollection*>(sourceElement);
+                    Cyberiada::Rect rect = coll->get_geometry_rect();
+                    newSourcePoint = Cyberiada::Point(rect.width / 2, 0);
+                }
+                model->updateGeometry(i, newSourcePoint, trans->get_target_point());
+
             }
 
             if (cp.name == propTarget) {
                 const Cyberiada::Element* targetElement = getElementByNumber(false, enumManager->value(p));
                 MY_ASSERT(targetElement);
                 model->updateGeometry(i, trans->source_element_id(), targetElement->get_id());
-                // TODO set new target point
+                Cyberiada::ElementType targetType = targetElement->get_type();
+                Cyberiada::Point newTargetPoint = Cyberiada::Point(0, 0);
+                if (targetType == Cyberiada::elementSimpleState ||
+                    targetType == Cyberiada::elementCompositeState) {
+                    const Cyberiada::ElementCollection* coll = static_cast<const Cyberiada::ElementCollection*>(targetElement);
+                    Cyberiada::Rect rect = coll->get_geometry_rect();
+                    newTargetPoint = Cyberiada::Point(rect.width / 2, 0);
+                }
+                model->updateGeometry(i, trans->get_source_point(), newTargetPoint);
             }
 
             const Cyberiada::Action& a = trans->get_action();
 
             if (cp.name == propTrigger) {
-                model->updateAction(i, 0, stringManager->value(p), a.get_guard().c_str(), a.get_behavior().c_str());
+                if (stringManager->value(p).isEmpty()) {
+                    model->deleteAction(i);
+                } else {
+                    model->updateAction(i, 0, stringManager->value(p), a.get_guard().c_str(), a.get_behavior().c_str());
+                }
             }
             if (cp.name == propGuard) {
                 model->updateAction(i, 0, a.get_trigger().c_str(), stringManager->value(p), a.get_behavior().c_str());

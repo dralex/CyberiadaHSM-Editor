@@ -78,7 +78,7 @@ CyberiadaSMEditorStateItem::CyberiadaSMEditorStateItem(QObject *parent_object,
 
     isHighlighted = false;
     creatingOfTrans = false;
-    trans = nullptr;
+    ttrans = nullptr;
 
     initializeDots();
     setDotsPosition();
@@ -221,6 +221,7 @@ void CyberiadaSMEditorStateItem::setTextPosition()
 {
     // TODO refactor
     QRectF oldRect = rect();
+    title->updateTextWidth();
     QRectF titleRect = title->boundingRect();
     title->setPos(oldRect.x() + (oldRect.width() - titleRect.width()) / 2 , oldRect.y());
 
@@ -272,6 +273,11 @@ void CyberiadaSMEditorStateItem::syncFromModel()
         }
         updateRegion();
     }
+    // else {
+    //     if (region != nullptr) {
+    //         // TODO set actions on center (change parent from region to state)
+    //     }
+    // }
 
     CyberiadaSMEditorAbstractItem* cParent = dynamic_cast<CyberiadaSMEditorAbstractItem*>(parentItem());
     if (cParent == nullptr) {
@@ -493,13 +499,13 @@ void CyberiadaSMEditorStateItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
     // TODO create transition
     if (creatingOfTrans) {
-        if (!trans) {
+        if (!ttrans) {
             CyberiadaSMEditorScene* cScene = dynamic_cast<CyberiadaSMEditorScene*>(scene());
             if (!cScene) return;
-            trans = cScene->addTransition(this, this);
-            trans->setSelected(true);
-            trans->getDot(1)->setVisible(true);
-            trans->getDot(1)->grabMouse();
+            ttrans = cScene->addTemporaryTransition(this, event->pos());
+            ttrans->setSelected(true);
+            ttrans->getDot(1)->setVisible(true);
+            ttrans->getDot(1)->grabMouse();
         }
         return;
     }
@@ -524,9 +530,9 @@ void CyberiadaSMEditorStateItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 void CyberiadaSMEditorStateItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
     // TODO create transition
-    if (creatingOfTrans && trans) {
+    if (creatingOfTrans && ttrans) {
         creatingOfTrans = false;
-        trans = nullptr;
+        ttrans = nullptr;
 
         CyberiadaSMEditorAbstractItem::mouseReleaseEvent(event);
         return;

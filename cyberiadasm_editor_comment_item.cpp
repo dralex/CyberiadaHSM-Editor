@@ -52,8 +52,10 @@ CyberiadaSMEditorCommentItem::CyberiadaSMEditorCommentItem(QObject *parent_objec
     }
 
     body = new EditableTextItem(comment->get_body().c_str(), this);
-    body->setPos(-boundingRect().width() / 2 + 15, - boundingRect().height() / 2);
-    // connect(body, EditableTextItem::editingFinished, this, CyberiadaSMEditorCommentItem::onBodyChanged);
+    body->setPos(-boundingRect().width() / 2 + margin, - boundingRect().height() / 2);
+    body->setTextAlignment(Qt::AlignLeft);
+    body->setTextMargin(2 * margin);
+    connect(body, &EditableTextItem::editingFinished, this, &CyberiadaSMEditorCommentItem::onBodyChanged);
 
     if (element->get_type() == Cyberiada::elementFormalComment) {
         int fontId = QFontDatabase::addApplicationFont(":/Fonts/fonts/courier.ttf");
@@ -71,8 +73,6 @@ CyberiadaSMEditorCommentItem::CyberiadaSMEditorCommentItem(QObject *parent_objec
 
     setAcceptHoverEvents(true);
     setFlags(ItemIsSelectable | ItemSendsGeometryChanges);
-
-    setTextPosition();
 
     initializeDots();
     setDotsPosition();
@@ -143,22 +143,27 @@ void CyberiadaSMEditorCommentItem::paint(QPainter* painter, const QStyleOptionGr
     painter->drawConvexPolygon(triangle, 3);
 }
 
+void CyberiadaSMEditorCommentItem::updateBody()
+{
+    if (body->toPlainText() != comment->get_body().c_str()) {
+        body->setPlainText(comment->get_body().c_str());
+    }
+    body->updateTextWidth();
+    body->setPos(-boundingRect().width() / 2 + margin, - boundingRect().height() / 2);
+}
+
 // TODO
 void CyberiadaSMEditorCommentItem::onBodyChanged()
 {
     model->updateCommentBody(model->elementToIndex(element), body->toPlainText());
 }
 
-void CyberiadaSMEditorCommentItem::setTextPosition()
-{
-    QRectF oldRect = boundingRect();
-    QRectF titleRect = body->boundingRect();
-    body->setPos(oldRect.x() + (oldRect.width() - titleRect.width()) / 2 , oldRect.y());
-}
-
 void CyberiadaSMEditorCommentItem::syncFromModel()
 {
     // TODO
+    Cyberiada::Rect model_rect = comment->get_geometry_rect();
+    setPos(QPointF(model_rect.x, model_rect.y));
+    updateBody();
     CyberiadaSMEditorAbstractItem::syncFromModel();
 }
 
