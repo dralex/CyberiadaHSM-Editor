@@ -22,16 +22,38 @@
  * ----------------------------------------------------------------------------- */
 
 #include <QDateTime>
+#include <QCommandLineParser>
 #include "main.h"
 #include "smeditor_window.h"
 #include "cyberiada_constants.h"
 #include "settings_manager.h"
+#include "batch_driver.h"
 
 int main(int argc, char *argv[])
 {
 	qsrand(QDateTime::currentDateTime().toTime_t());
 	CyberiadaSMEditorApplication app(argc, argv);
+
+	QCommandLineParser parser;
+	parser.setApplicationDescription("Cyberiada State Machine Editor");
+	parser.addHelpOption();
+	QCommandLineOption batchOption("batch", "Batch mode: open the document and exit (see docs/TESTING.md).");
+	parser.addOption(batchOption);
+	parser.addPositionalArgument("file", "The CyberiadaML document to open in batch mode.", "[file]");
+	parser.process(app);
+
+	bool batch = parser.isSet(batchOption);
+	app.setBatchMode(batch);
+
     try {
+		if (batch) {
+			QStringList args = parser.positionalArguments();
+			if (args.size() != 1) {
+				fprintf(stderr, "batch mode requires exactly one document file\n");
+				return batchUsageError;
+			}
+			return runBatchMode(app, args.first());
+		}
 		CyberiadaSMEditorWindow win;
 		win.show();
 		int res = app.exec();
@@ -42,5 +64,5 @@ int main(int argc, char *argv[])
 	} catch(...) {
 		app.printMessage();
 	}
-	return 1;
+	return app.batchMode() ? batchInternalError : 1;
 }

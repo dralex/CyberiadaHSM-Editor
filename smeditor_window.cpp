@@ -68,26 +68,40 @@ void CyberiadaSMEditorWindow::slotFileOpen()
         actionInspectorMode->setChecked(inspector);
         SettingsManager::instance().setInspectorMode(inspector);
 
-        model->loadDocument(fileName);
-        SMView->setRootIndex(model->rootIndex());
-        SMView->expandToDepth(2);
-        QModelIndex sm = model->firstSMIndex();
-        if (sm.isValid()) {
-            scene->loadScene();
-            SMView->select(sm);
+        QString error;
+        if (!openDocument(fileName, &error)) {
+            QMessageBox::critical(this, tr("Load State Machine"), error);
         }
-
-       QFileInfo fileInfo(fileName);
-       openFileName = fileInfo.fileName();
-
-       if (!openFileName.isEmpty()) {
-           if (SettingsManager::instance().getInspectorMode()) {
-               setWindowTitle(openFileName + " (inspector mode)");
-           } else {
-               setWindowTitle(openFileName);
-           }
-       }
     }
+}
+
+bool CyberiadaSMEditorWindow::openDocument(const QString& fileName, QString* error)
+{
+    if (!model->loadDocument(fileName)) {
+        if (error) {
+            *error = model->loadError();
+        }
+        return false;
+    }
+    SMView->setRootIndex(model->rootIndex());
+    SMView->expandToDepth(2);
+    QModelIndex sm = model->firstSMIndex();
+    if (sm.isValid()) {
+        scene->loadScene();
+        SMView->select(sm);
+    }
+
+    QFileInfo fileInfo(fileName);
+    openFileName = fileInfo.fileName();
+
+    if (!openFileName.isEmpty()) {
+        if (SettingsManager::instance().getInspectorMode()) {
+            setWindowTitle(openFileName + " (inspector mode)");
+        } else {
+            setWindowTitle(openFileName);
+        }
+    }
+    return true;
 }
 
 void CyberiadaSMEditorWindow::slotFileSave()

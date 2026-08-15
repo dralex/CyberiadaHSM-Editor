@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns">
+  <data key="gFormat">Cyberiada-GraphML-1.0</data>
+  <key id="gFormat" for="graphml" attr.name="format" attr.type="string"/>
+  <key id="dName" for="graph" attr.name="name" attr.type="string"/>
+  <key id="dName" for="node" attr.name="name" attr.type="string"/>
+  <key id="dStateMachine" for="graph" attr.name="stateMachine" attr.type="string"/>
+  <key id="dRegion" for="node" attr.name="region" attr.type="string"/>
+  <key id="dSubmachineState" for="node" attr.name="submachineState" attr.type="string"/>
+  <key id="dGeometry" for="graph" attr.name="geometry"/>
+  <key id="dGeometry" for="node" attr.name="geometry"/>
+  <key id="dGeometry" for="edge" attr.name="geometry"/>
+  <key id="dSourcePoint" for="edge" attr.name="sourcePoint"/>
+  <key id="dTargetPoint" for="edge" attr.name="targetPoint"/>
+  <key id="dLabelGeometry" for="edge" attr.name="labelGeometry"/>
+  <key id="dNote" for="node" attr.name="note" attr.type="string"/>
+  <key id="dVertex" for="node" attr.name="vertex" attr.type="string"/>
+  <key id="dData" for="node" attr.name="data" attr.type="string"/>
+  <key id="dData" for="edge" attr.name="data" attr.type="string"/>
+  <key id="dPivot" for="edge" attr.name="pivot" attr.type="string"/>
+  <key id="dChunk" for="edge" attr.name="chunk" attr.type="string"/>
+  <key id="dCollapsed" for="node" attr.name="collapsed" attr.type="string"/>
+  <key id="dMarkup" for="node" attr.name="markup" attr.type="string"/>
+  <key id="dColor" for="node" attr.name="color" attr.type="string"/>
+  <key id="dColor" for="edge" attr.name="color" attr.type="string"/>
+  <key id="dFormalName" for="graph" attr.name="formalName" attr.type="string"/>
+  <key id="dFormalName" for="node" attr.name="formalName" attr.type="string"/>
+  <graph id="G0" edgedefault="directed">
+    <data key="dStateMachine"/>
+    <data key="dName">Lift</data>
+    <node id="nMeta">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_META</data>
+      <data key="dData">standardVersion/ 1.0
+
+transitionOrder/ transitionFirst
+
+eventPropagation/ block
+
+</data>
+    </node>
+    <node id="n0">
+      <data key="dVertex">initial</data>
+      <data key="dName">init</data>
+    </node>
+    <node id="idle">
+      <data key="dName">Idle</data>
+      <data key="dData">entry/
+lamp_off()
+</data>
+    </node>
+    <node id="moving">
+      <data key="dName">Moving</data>
+      <data key="dData">entry/
+lamp_on()
+</data>
+      <graph id="moving:" edgedefault="directed">
+        <node id="up">
+          <data key="dName">MovingUp</data>
+          <data key="dData">entry/
+motor_up()
+</data>
+        </node>
+        <node id="down">
+          <data key="dName">MovingDown</data>
+          <data key="dData">entry/
+motor_down()
+</data>
+        </node>
+      </graph>
+    </node>
+    <node id="doors">
+      <data key="dName">DoorsOpen</data>
+      <data key="dData">entry/
+open_doors()
+start_timer()
+</data>
+    </node>
+    <edge id="t0" source="n0" target="idle">
+      <data key="dData">/
+floor = 1
+</data>
+    </edge>
+    <edge id="t1" source="idle" target="up">
+      <data key="dData">CALL [call_floor &gt; floor]/
+target = call_floor
+</data>
+    </edge>
+    <edge id="t2" source="idle" target="down">
+      <data key="dData">CALL [call_floor &lt; floor]/
+target = call_floor
+</data>
+    </edge>
+    <edge id="t3" source="idle" target="doors">
+      <data key="dData">CALL [call_floor == floor]/</data>
+    </edge>
+    <edge id="t4" source="moving" target="doors">
+      <data key="dData">FLOOR_SENSOR [floor == target]/
+stop_motor()
+</data>
+    </edge>
+    <edge id="t5" source="up" target="up">
+      <data key="dData">FLOOR_SENSOR [floor != target]/
+floor += 1
+</data>
+    </edge>
+    <edge id="t6" source="down" target="down">
+      <data key="dData">FLOOR_SENSOR [floor != target]/
+floor -= 1
+</data>
+    </edge>
+    <edge id="t7" source="doors" target="idle">
+      <data key="dData">TIMEOUT/
+close_doors()
+</data>
+    </edge>
+  </graph>
+</graphml>

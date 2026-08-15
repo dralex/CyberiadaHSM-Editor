@@ -25,7 +25,6 @@
 #include <QList>
 #include <QMimeData>
 #include <QDebug>
-#include <QMessageBox>
 
 #include "cyberiadasm_model.h"
 #include "myassert.h"
@@ -66,42 +65,37 @@ void CyberiadaSMModel::reset()
 	endResetModel();	
 }
 
-void CyberiadaSMModel::loadDocument(const QString& path, bool reconstruct, bool reconstruct_sm)
-{	
+bool CyberiadaSMModel::loadDocument(const QString& path, bool reconstruct, bool reconstruct_sm)
+{
 	Cyberiada::LocalDocument* new_doc = NULL;
 
-	bool error = false;
+	lastLoadError.clear();
 	try {
 		new_doc = new Cyberiada::LocalDocument();
 		new_doc->open(path.toStdString(), Cyberiada::formatDetect, Cyberiada::geometryFormatQt,
 					  reconstruct, reconstruct_sm);
 	} catch (const Cyberiada::XMLException& e) {
-		QMessageBox::critical(NULL, tr("Load State Machine"),
-							  tr("XML grapml error:\n") + QString(e.str().c_str()));
-		error = true;
+		lastLoadError = tr("XML grapml error:\n") + QString(e.str().c_str());
 	} catch (const Cyberiada::CybMLException& e) {
-		QMessageBox::critical(NULL, tr("Load State Machine"),
-							  tr("Wrong format of the Cyberiada grapml file:\n") + QString(e.str().c_str()));
-		error = true;
+		lastLoadError = tr("Wrong format of the Cyberiada grapml file:\n") + QString(e.str().c_str());
 	} catch (const Cyberiada::Exception& e) {
-		QMessageBox::critical(NULL, tr("Load State Machine"),
-							  tr("Cannot load state machine graph:\n") + QString(e.str().c_str()));
-		error = true;
+		lastLoadError = tr("Cannot load state machine graph:\n") + QString(e.str().c_str());
 	}
 
-	if (error && new_doc) {
-		delete new_doc;
-		new_doc = NULL;
-	}
-
-	if (new_doc) {
-		beginResetModel();
-		if (root) {
-			delete root;
+	if (!lastLoadError.isEmpty()) {
+		if (new_doc) {
+			delete new_doc;
 		}
-		root = new_doc;
-		endResetModel();
+		return false;
 	}
+
+	beginResetModel();
+	if (root) {
+		delete root;
+	}
+	root = new_doc;
+	endResetModel();
+	return true;
 }
 
 void CyberiadaSMModel::saveDocument(bool round)

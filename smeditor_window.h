@@ -34,6 +34,8 @@ Q_OBJECT
 public:
     CyberiadaSMEditorWindow(QWidget* parent = 0);
 
+    bool                    openDocument(const QString& fileName, QString* error = NULL);
+
 private:
     void                    initializeTools();
 

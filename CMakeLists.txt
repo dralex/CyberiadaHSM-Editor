@@ -36,6 +36,7 @@ add_executable(CyberiadaInspector
   cyberiadasm_editor_scene.cpp
   cyberiadasm_editor_items.cpp
   main.cpp
+  batch_driver.h batch_driver.cpp
   smeditor.qrc
   dotsignal.h dotsignal.cpp
   editable_text_item.h editable_text_item.cpp
@@ -69,3 +70,6 @@ target_link_libraries(CyberiadaInspector
   ${cyberiadaml_LIBRARIES}
   ${cyberiadamlpp_LIBRARIES}
   )
+
+enable_testing()
+add_subdirectory(tests)

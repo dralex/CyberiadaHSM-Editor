@@ -39,7 +39,8 @@ public:
 	// CORE FUNCTIONALITY
 	void                                reset();
     // void                                createDocument();
-	void                                loadDocument(const QString& path, bool reconstruct = false, bool reconsruct_sm = false);
+	bool                                loadDocument(const QString& path, bool reconstruct = false, bool reconsruct_sm = false);
+	const QString&                      loadError() const { return lastLoadError; }
 	void                                saveDocument(bool round = false);
 	void                                saveAsDocument(const QString& path, Cyberiada::DocumentFormat f, bool round = false);
 
@@ -142,6 +143,7 @@ private:
 	void                                move(Cyberiada::Element* element, Cyberiada::ElementCollection* target_parent);
 	
 	Cyberiada::LocalDocument*           root;
+	QString                             lastLoadError;
 	QString							   	cyberiadaStateMimeType;
 	QIcon                              	emptyIcon;
 	QMap<Cyberiada::ElementType, QIcon> icons;

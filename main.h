@@ -26,12 +26,13 @@
 
 #include <QApplication>
 #include <QMessageBox>
+#include <cstdio>
 
 class CyberiadaSMEditorApplication: public QApplication {
 Q_OBJECT
 public:
 	CyberiadaSMEditorApplication(int & argc, char ** argv):
-		QApplication(argc, argv) 
+		QApplication(argc, argv), batch(false), failed(false)
 		{}
 
 	virtual bool notify(QObject * receiver, QEvent * e) {
@@ -46,18 +47,26 @@ public:
 		}
 		return false;
 	}
-	
+
+	// batch mode: no dialogs, errors go to stderr (see docs/TESTING.md)
+	void setBatchMode(bool b) { batch = b; }
+	bool batchMode() const { return batch; }
+	bool errorReported() const { return failed; }
+
 	void printMessage(const QString& msg = "") {
-		if(!msg.isEmpty()) {
-			QMessageBox::critical(0,
-								  "Cyberiada State Machine Editor",
-								  QString("Error while running the program: %1").arg(msg));	
+		failed = true;
+		QString text = msg.isEmpty() ? QString("Crytical error") :
+			QString("Error while running the program: %1").arg(msg);
+		if (batch) {
+			fprintf(stderr, "%s\n", qPrintable(text));
 		} else {
-			QMessageBox::critical(0,
-								  "Cyberiada State Machine Editor",
-								  "Crytical error");
+			QMessageBox::critical(0, "Cyberiada State Machine Editor", text);
 		}
 	}
+
+private:
+	bool batch;
+	bool failed;
 };
 
 #endif
