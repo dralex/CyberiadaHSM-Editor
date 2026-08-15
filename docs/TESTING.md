@@ -66,7 +66,7 @@ tests/
 run-tests.sh            build-and-run wrapper: ctest --output-on-failure
 ```
 
-Fixture conventions:
+Diagram conventions:
 
 * positive diagrams are valid CyberiadaML-1.0 documents named by their purpose
   (`hierarchy.graphml`, `two-sms.graphml`, ...); most originate from the
