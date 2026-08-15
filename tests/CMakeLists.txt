@@ -1,8 +1,25 @@
 # The L0 smoke test suite: open every diagram in batch mode offscreen and
 # check the exit code (see docs/TESTING.md)
 
+# bake the Qt runtime location into the test environment: the Qt in use may
+# live outside the system paths, and RUNPATH does not cover transitive
+# dependencies or the dlopen'ed platform plugin
+get_target_property(_qt5_core_lib Qt5::Core LOCATION)
+get_filename_component(QT5_LIB_DIR "${_qt5_core_lib}" DIRECTORY)
+get_filename_component(_qtpb_lib_dir "${QTPROPERTYBROWSER_LIBRARY}" DIRECTORY)
+
+set(L0_LIBRARY_PATH "${QT5_LIB_DIR}:${_qtpb_lib_dir}")
+if(DEFINED ENV{LD_LIBRARY_PATH})
+  set(L0_LIBRARY_PATH "${L0_LIBRARY_PATH}:$ENV{LD_LIBRARY_PATH}")
+endif()
+
 set(L0_ENVIRONMENT
-  "QT_QPA_PLATFORM=offscreen;XDG_CONFIG_HOME=${CMAKE_CURRENT_BINARY_DIR}/config")
+  "QT_QPA_PLATFORM=offscreen"
+  "XDG_CONFIG_HOME=${CMAKE_CURRENT_BINARY_DIR}/config"
+  "LD_LIBRARY_PATH=${L0_LIBRARY_PATH}")
+if(EXISTS "${QT5_LIB_DIR}/qt5/plugins")
+  list(APPEND L0_ENVIRONMENT "QT_PLUGIN_PATH=${QT5_LIB_DIR}/qt5/plugins")
+endif()
 
 function(add_l0_test name expected_code)
   add_test(NAME l0-${name}
