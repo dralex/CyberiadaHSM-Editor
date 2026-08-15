@@ -20,3 +20,10 @@ Create `build` directory: `mkdir build && cd build`
 
 Run `cmake ..` to build the library binaries and the test program.
 
+## Testing
+
+The editor has a console test system based on the batch mode and the Qt
+offscreen platform. Build the project, then run `./run-tests.sh` from the
+repository root. See `docs/TESTING.md` for the testing architecture, the
+batch mode contract and the test layers.
+
