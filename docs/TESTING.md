@@ -10,7 +10,7 @@ golden references.
 
 ```
   run-tests.sh  /  ctest
-    |   per test: fixture .graphml [+ command script] + goldens
+    |   per test: diagram .graphml [+ command script] + goldens
     v
   CyberiadaInspector --batch <file>   (QT_QPA_PLATFORM=offscreen)
   +------------------------------------------------------+
@@ -32,7 +32,7 @@ golden references.
 
 | Layer | What is checked                                                | Status      |
 |-------|----------------------------------------------------------------|-------------|
-| L0    | smoke: every fixture opens offscreen, the process exits clean  | implemented |
+| L0    | smoke: every diagram opens offscreen, the process exits clean  | implemented |
 | L1    | load/dump: canonical model + scene dumps vs golden text        | planned     |
 | L2    | editing: scripted mutations, then dump/save vs goldens         | planned     |
 | L3    | render: offscreen image export vs golden images with tolerance | planned     |
@@ -60,18 +60,18 @@ throws it as the error message).
 
 ```
 tests/
-  CMakeLists.txt        one ctest case per fixture
+  CMakeLists.txt        one ctest case per diagram
   cmake/RunBatchTest.cmake   runs the batch mode, checks the exit code
-  fixtures/*.graphml    input documents (see below)
+  diagrams/*.graphml    input documents (see below)
 run-tests.sh            build-and-run wrapper: ctest --output-on-failure
 ```
 
 Fixture conventions:
 
-* positive fixtures are valid CyberiadaML-1.0 documents named by their purpose
+* positive diagrams are valid CyberiadaML-1.0 documents named by their purpose
   (`hierarchy.graphml`, `two-sms.graphml`, ...); most originate from the
   libcyberiadamlpp and hsm-console-viewer test corpora;
-* negative fixtures are named `broken-<reason>.graphml` and must fail with
+* negative diagrams are named `broken-<reason>.graphml` and must fail with
   exit code 2;
 * future golden files follow the sibling-library convention:
   `<name>-output.txt` (canonical dump), `<name>-output.graphml` (saved

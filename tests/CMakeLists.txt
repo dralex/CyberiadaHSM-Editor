@@ -1,4 +1,4 @@
-# The L0 smoke test suite: open every fixture in batch mode offscreen and
+# The L0 smoke test suite: open every diagram in batch mode offscreen and
 # check the exit code (see docs/TESTING.md)
 
 set(L0_ENVIRONMENT
@@ -8,7 +8,7 @@ function(add_l0_test name expected_code)
   add_test(NAME l0-${name}
     COMMAND ${CMAKE_COMMAND}
       -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
-      -DINPUT=${CMAKE_CURRENT_SOURCE_DIR}/fixtures/${name}.graphml
+      -DINPUT=${CMAKE_CURRENT_SOURCE_DIR}/diagrams/${name}.graphml
       -DEXPECTED=${expected_code}
       -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunBatchTest.cmake)
   set_tests_properties(l0-${name} PROPERTIES
@@ -17,7 +17,7 @@ function(add_l0_test name expected_code)
 endfunction()
 
 # valid CyberiadaML-1.0 documents must open cleanly
-foreach(fixture
+foreach(diagram
     choice
     cyb-geometry
     empty-actions
@@ -27,14 +27,14 @@ foreach(fixture
     meta
     sources
     two-sms)
-  add_l0_test(${fixture} 0)
+  add_l0_test(${diagram} 0)
 endforeach()
 
 # broken documents must fail with the load-error code, not hang or crash
-foreach(fixture
+foreach(diagram
     broken-xml
     broken-format)
-  add_l0_test(${fixture} 2)
+  add_l0_test(${diagram} 2)
 endforeach()
 
 # a missing file argument is a usage error
