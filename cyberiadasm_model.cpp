@@ -819,28 +819,23 @@ void CyberiadaSMModel::move(Cyberiada::Element* element, Cyberiada::ElementColle
 
     Cyberiada::ElementCollection* source_parent = dynamic_cast<Cyberiada::ElementCollection*>(element->get_parent());
 
-    // TODO remove model data
-	beginRemoveRows(parentindex, remove_index, remove_index);
-	if (source_parent == NULL) {
-        // states.removeAll(static_cast<CyberiadaStateItem*>(item));
-	} else {
-        source_parent->remove_element(element->get_id());
+    if (target_parent == NULL || source_parent == NULL) {
+		return;
 	}
+
+    // remove_element() frees the original, so deep-copy the element into the
+    // new parent first and remove the original afterwards
+    Cyberiada::Element* copied = element->copy(target_parent);
+
+	beginRemoveRows(parentindex, remove_index, remove_index);
+    source_parent->remove_element(element->get_id());
 	endRemoveRows();
 
-    // TODO insert model data
 	beginInsertRows(dstindex, add_index, add_index);
-    if (target_parent == NULL) {
-        // MY_ASSERT(element->isState());
-        // states.append(static_cast<CyberiadaStateItem*>(item));
-        // item->removeParent();
-	} else {
-        element->update_parent(target_parent);
-        target_parent->add_element(element);
-	}
+    target_parent->add_element(copied);
     endInsertRows();
 
-    QModelIndex newIndex = elementToIndex(element);
+    QModelIndex newIndex = elementToIndex(copied);
     emit dataChanged(newIndex, newIndex);
     // use in case scene::updateItemsRecursively is not used in scene::slotModelDataChanged
     QModelIndex newTargetIndex = elementToIndex(target_parent);
