@@ -413,7 +413,7 @@ Cyberiada::StateMachine *CyberiadaSMModel::newStateMachine(const Cyberiada::Stri
     }
 
     int row = rowCount(rootIndex());
-    beginInsertRows(rootIndex(), row + 1, row + 1);
+    beginInsertRows(rootIndex(), row, row);
     Cyberiada::StateMachine* element = root->new_state_machine(sm_name, r);
     endInsertRows();
 
@@ -429,7 +429,7 @@ Cyberiada::State *CyberiadaSMModel::newState(Cyberiada::ElementCollection *paren
     }
 
     int row = rowCount(elementToIndex(parent));
-    beginInsertRows(elementToIndex(parent), row + 1, row + 1);
+    beginInsertRows(elementToIndex(parent), row, row);
     Cyberiada::State* element = root->new_state(parent, state_name, a, r, region, color);
     endInsertRows();
 
@@ -443,7 +443,7 @@ Cyberiada::InitialPseudostate *CyberiadaSMModel::newInitial(Cyberiada::ElementCo
     }
 
     int row = rowCount(elementToIndex(parent));
-    beginInsertRows(elementToIndex(parent), row + 1, row + 1);
+    beginInsertRows(elementToIndex(parent), row, row);
     Cyberiada::InitialPseudostate* element = root->new_initial(parent, p);
     endInsertRows();
 
@@ -457,7 +457,7 @@ Cyberiada::FinalState *CyberiadaSMModel::newFinal(Cyberiada::ElementCollection *
     }
 
     int row = rowCount(elementToIndex(parent));
-    beginInsertRows(elementToIndex(parent), row + 1, row + 1);
+    beginInsertRows(elementToIndex(parent), row, row);
     Cyberiada::FinalState* element = root->new_final(parent, p);
     endInsertRows();
 
@@ -472,7 +472,7 @@ Cyberiada::ChoicePseudostate *CyberiadaSMModel::newChoice(Cyberiada::ElementColl
     }
 
     int row = rowCount(elementToIndex(parent));
-    beginInsertRows(elementToIndex(parent), row + 1, row + 1);
+    beginInsertRows(elementToIndex(parent), row, row);
     Cyberiada::ChoicePseudostate* element = root->new_choice(parent, r, color);
     endInsertRows();
 
@@ -486,7 +486,7 @@ Cyberiada::TerminatePseudostate *CyberiadaSMModel::newTerminate(Cyberiada::Eleme
     }
 
     int row = rowCount(elementToIndex(parent));
-    beginInsertRows(elementToIndex(parent), row + 1, row + 1);
+    beginInsertRows(elementToIndex(parent), row, row);
     Cyberiada::TerminatePseudostate* element = root->new_terminate(parent, p);
     endInsertRows();
 
@@ -505,7 +505,7 @@ Cyberiada::Transition *CyberiadaSMModel::newTransition(Cyberiada::StateMachine *
     }
 
     int row = rowCount(elementToIndex(sm));
-    beginInsertRows(elementToIndex(sm), row + 1, row + 1);
+    beginInsertRows(elementToIndex(sm), row, row);
     Cyberiada::Transition* element = root->new_transition(sm, ttype, source, target, action, pl, sp, tp, label_point, label_rect, color);
     endInsertRows();
 
@@ -520,7 +520,7 @@ Cyberiada::Comment *CyberiadaSMModel::newComment(Cyberiada::ElementCollection *p
     }
 
     int row = rowCount(elementToIndex(parent));
-    beginInsertRows(elementToIndex(parent), row + 1, row + 1);
+    beginInsertRows(elementToIndex(parent), row, row);
     Cyberiada::Comment* element = root->new_comment(parent, body, rect, color, markup);
     endInsertRows();
 
@@ -536,7 +536,7 @@ Cyberiada::Comment *CyberiadaSMModel::newFormalComment(Cyberiada::ElementCollect
     }
 
     int row = rowCount(elementToIndex(parent));
-    beginInsertRows(elementToIndex(parent), row + 1, row + 1);
+    beginInsertRows(elementToIndex(parent), row, row);
     Cyberiada::Comment* element = root->new_formal_comment(parent, body, rect, color, markup);
     endInsertRows();
 
@@ -553,7 +553,6 @@ bool CyberiadaSMModel::deleteElement(const QModelIndex &index)
     beginRemoveRows(elementToIndex(parent_element), row, row);
     parent_element->remove_element(child_element->get_id());
     endRemoveRows();
-    emit dataChanged(index, index);
     return true;
 }
 
