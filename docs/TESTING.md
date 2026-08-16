@@ -109,7 +109,10 @@ sections:
 
 The L1 tests run the editor with `tests/` as the working directory and a
 relative input path, so the `file:` field of the document dump stays
-machine-independent. Some item rectangles derive from text metrics; if a
+machine-independent. All batch output is locale-independent: the dump uses
+locale-agnostic number formatting and the application forces `LC_NUMERIC` to
+`C` (the graphml writer would otherwise follow the user's locale and print
+decimal commas). Some item rectangles derive from text metrics; if a
 different font environment shifts them, regenerate the good files locally
 with `tests/regen-good.sh` and review the diff.
 

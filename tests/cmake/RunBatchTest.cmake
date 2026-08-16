@@ -27,6 +27,7 @@ if(DEFINED DUMP_GOOD)
   execute_process(COMMAND ${CMAKE_COMMAND} -E compare_files ${OUTPUT} ${DUMP_GOOD}
     RESULT_VARIABLE diff)
   if(NOT diff EQUAL 0)
+    execute_process(COMMAND diff -u ${DUMP_GOOD} ${OUTPUT})
     message(FATAL_ERROR "dump ${OUTPUT} differs from the good file ${DUMP_GOOD}")
   endif()
 endif()
@@ -34,6 +35,7 @@ if(DEFINED SAVE_GOOD)
   execute_process(COMMAND ${CMAKE_COMMAND} -E compare_files ${SAVE_OUT} ${SAVE_GOOD}
     RESULT_VARIABLE diff)
   if(NOT diff EQUAL 0)
+    execute_process(COMMAND diff -u ${SAVE_GOOD} ${SAVE_OUT})
     message(FATAL_ERROR "document ${SAVE_OUT} differs from the good file ${SAVE_GOOD}")
   endif()
   # write->read round trip: the saved document must open cleanly

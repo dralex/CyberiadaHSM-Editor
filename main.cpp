@@ -21,6 +21,7 @@
  *
  * ----------------------------------------------------------------------------- */
 
+#include <clocale>
 #include <QDateTime>
 #include <QCommandLineParser>
 #include "main.h"
@@ -33,6 +34,9 @@ int main(int argc, char *argv[])
 {
 	qsrand(QDateTime::currentDateTime().toTime_t());
 	CyberiadaSMEditorApplication app(argc, argv);
+	// QApplication adopts the user's locale; keep the printf-family numeric
+	// formatting locale-independent - the graphml writer depends on it
+	setlocale(LC_NUMERIC, "C");
 
 	QCommandLineParser parser;
 	parser.setApplicationDescription("Cyberiada State Machine Editor");

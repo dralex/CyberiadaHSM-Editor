@@ -21,8 +21,9 @@
  *
  * ----------------------------------------------------------------------------- */
 
-#include <cstdio>
 #include <string>
+
+#include <QString>
 
 #include "cyberiadasm_dump.h"
 #include "cyberiadasm_model.h"
@@ -60,16 +61,18 @@ static void dumpSceneElement(CyberiadaSMEditorScene* scene, Cyberiada::Element* 
 		QPointF p = item->pos();
 		QRectF r = item->boundingRect();
 		double v[6] = { p.x(), p.y(), r.x(), r.y(), r.width(), r.height() };
+		QString numbers[6];
 		for (int j = 0; j < 6; j++) {
 			if (v[j] == 0.0) v[j] = 0.0;  // avoid the -0.00 output
+			// QString::number is locale-independent, unlike printf which
+			// follows LC_NUMERIC set by QApplication from the environment
+			numbers[j] = QString::number(v[j], 'f', 2);
 		}
-		char geometry[160];
-		snprintf(geometry, sizeof(geometry),
-				 "pos: (%.2f; %.2f), rect: (%.2f; %.2f; %.2f; %.2f)",
-				 v[0], v[1], v[2], v[3], v[4], v[5]);
+		QString geometry = QString("pos: (%1; %2), rect: (%3; %4; %5; %6)")
+			.arg(numbers[0], numbers[1], numbers[2], numbers[3], numbers[4], numbers[5]);
 		os << std::string(size_t(depth) * 2, ' ')
 		   << elementTypeName(element->get_type())
-		   << ": {id: '" << id << "', " << geometry << "}" << std::endl;
+		   << ": {id: '" << id << "', " << geometry.toStdString() << "}" << std::endl;
 	}
 	Cyberiada::ElementCollection* collection = dynamic_cast<Cyberiada::ElementCollection*>(element);
 	if (collection) {
