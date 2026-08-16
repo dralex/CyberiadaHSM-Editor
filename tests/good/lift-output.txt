@@ -1,0 +1,25 @@
+== document
+LocalDocument: {Document: {id: '', name: '', geometry format: none, meta: {standard version: '1.0', transition order: transition first, event propagation: block events}, elements: {State Machine: {id: 'G0', name: 'Lift', elements: {Formal Comment: {id: 'nMeta', name: 'CGML_META', body: 'standardVersion/ 1.0
+
+transitionOrder/ transitionFirst
+
+eventPropagation/ block
+
+'}, Initial: {id: 'n0', name: 'init'}, Simple State: {id: 'idle', name: 'Idle', actions: {a {entry, behavior: 'lamp_off()'}}}, Composite State: {id: 'moving', name: 'Moving', actions: {a {entry, behavior: 'lamp_on()'}}, elements: {Simple State: {id: 'up', name: 'MovingUp', actions: {a {entry, behavior: 'motor_up()'}}}, Simple State: {id: 'down', name: 'MovingDown', actions: {a {entry, behavior: 'motor_down()'}}}}}, Simple State: {id: 'doors', name: 'DoorsOpen', actions: {a {entry, behavior: 'open_doors()
+start_timer()'}}}, Transition: {id: 't0', type: loc, source: 'n0', target: 'idle', action: {behavior: 'floor = 1'}}, Transition: {id: 't1', type: loc, source: 'idle', target: 'up', action: {trigger: 'CALL', guard: 'call_floor > floor', behavior: 'target = call_floor'}}, Transition: {id: 't2', type: loc, source: 'idle', target: 'down', action: {trigger: 'CALL', guard: 'call_floor < floor', behavior: 'target = call_floor'}}, Transition: {id: 't3', type: loc, source: 'idle', target: 'doors', action: {trigger: 'CALL', guard: 'call_floor == floor'}}, Transition: {id: 't4', type: loc, source: 'moving', target: 'doors', action: {trigger: 'FLOOR_SENSOR', guard: 'floor == target', behavior: 'stop_motor()'}}, Transition: {id: 't5', type: loc, source: 'up', target: 'up', action: {trigger: 'FLOOR_SENSOR', guard: 'floor != target', behavior: 'floor += 1'}}, Transition: {id: 't6', type: loc, source: 'down', target: 'down', action: {trigger: 'FLOOR_SENSOR', guard: 'floor != target', behavior: 'floor -= 1'}}, Transition: {id: 't7', type: loc, source: 'doors', target: 'idle', action: {trigger: 'TIMEOUT', behavior: 'close_doors()'}}}}}}, file: 'diagrams/lift.graphml', format: cyberiada, format_str: 'Cyberiada-GraphML-1.0'}
+== scene
+  State Machine: {id: 'G0', pos: (0.00; 0.00), rect: (0.00; 0.00; 0.00; 0.00)}
+    Initial: {id: 'n0', pos: (0.00; 0.00), rect: (-10.00; -10.00; 20.00; 20.00)}
+    Simple State: {id: 'idle', pos: (0.00; 0.00), rect: (0.00; 0.00; 0.00; 0.00)}
+    Composite State: {id: 'moving', pos: (0.00; 0.00), rect: (0.00; 0.00; 0.00; 0.00)}
+      Simple State: {id: 'up', pos: (0.00; 0.00), rect: (0.00; 0.00; 0.00; 0.00)}
+      Simple State: {id: 'down', pos: (0.00; 0.00), rect: (0.00; 0.00; 0.00; 0.00)}
+    Simple State: {id: 'doors', pos: (0.00; 0.00), rect: (0.00; 0.00; 0.00; 0.00)}
+    Transition: {id: 't0', pos: (0.00; 0.00), rect: (-10.00; -10.00; 20.00; 20.00)}
+    Transition: {id: 't1', pos: (0.00; 0.00), rect: (-10.00; -10.00; 20.00; 49.00)}
+    Transition: {id: 't2', pos: (0.00; 0.00), rect: (-10.00; -10.00; 20.00; 49.00)}
+    Transition: {id: 't3', pos: (0.00; 0.00), rect: (-10.00; -10.00; 20.00; 20.00)}
+    Transition: {id: 't4', pos: (0.00; 0.00), rect: (-10.00; -10.00; 20.00; 20.00)}
+    Transition: {id: 't5', pos: (0.00; 0.00), rect: (-40.00; -41.00; 80.00; 80.00)}
+    Transition: {id: 't6', pos: (0.00; 0.00), rect: (-40.00; -41.00; 80.00; 80.00)}
+    Transition: {id: 't7', pos: (0.00; 0.00), rect: (-10.00; -10.00; 20.00; 20.00)}

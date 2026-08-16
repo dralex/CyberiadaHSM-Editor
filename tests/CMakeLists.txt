@@ -61,3 +61,34 @@ add_test(NAME l0-usage
     -DEXPECTED=1
     -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunBatchTest.cmake)
 set_tests_properties(l0-usage PROPERTIES TIMEOUT 60 ENVIRONMENT "${L0_ENVIRONMENT}")
+
+# The L1 dump test suite: the canonical document/scene dump of every valid
+# diagram must match the reviewed good file (see docs/TESTING.md); the input
+# path is relative so the dumped file name stays machine-independent
+function(add_l1_test name)
+  add_test(NAME l1-${name}
+    COMMAND ${CMAKE_COMMAND}
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
+      -DINPUT=diagrams/${name}.graphml
+      -DEXPECTED=0
+      -DWORKDIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/l1-${name}.out
+      -DDUMP_GOOD=${CMAKE_CURRENT_SOURCE_DIR}/good/${name}-output.txt
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunBatchTest.cmake)
+  set_tests_properties(l1-${name} PROPERTIES
+    TIMEOUT 60
+    ENVIRONMENT "${L0_ENVIRONMENT}")
+endfunction()
+
+foreach(diagram
+    choice
+    cyb-geometry
+    empty-actions
+    geometry
+    hierarchy
+    lift
+    meta
+    sources
+    two-sms)
+  add_l1_test(${diagram})
+endforeach()

@@ -1,0 +1,10 @@
+== document
+LocalDocument: {Document: {id: '', name: '', geometry format: qt, meta: {standard version: '1.0', transition order: transition first, event propagation: block events}, elements: {State Machine: {id: 'G0', name: 'SM1', elements: {Formal Comment: {id: 'nMeta', name: 'CGML_META', body: 'standardVersion/ 1.0
+
+transitionOrder/ transitionFirst
+
+eventPropagation/ block
+
+'}}}, State Machine: {id: 'G1', name: 'SM2', geometry: (1; 2; 300; 40)}}, bounding rect: (1; 2; 300; 40)}, file: 'diagrams/two-sms.graphml', format: cyberiada, format_str: 'Cyberiada-GraphML-1.0'}
+== scene
+  State Machine: {id: 'G0', pos: (0.00; 0.00), rect: (0.00; 0.00; 0.00; 0.00)}
