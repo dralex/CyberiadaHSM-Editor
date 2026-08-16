@@ -4,13 +4,13 @@ The editor is tested as a black box: the full application — window, scene and
 model wired exactly as shipped — runs under the Qt offscreen platform and is
 driven through the batch mode instead of the GUI event loop. Test verdicts come
 from exit codes, canonical stdout dumps and produced files compared against
-golden references.
+good references.
 
 ## Architecture
 
 ```
   run-tests.sh  /  ctest
-    |   per test: diagram .graphml [+ command script] + goldens
+    |   per test: diagram .graphml [+ command script] + good files
     v
   CyberiadaInspector --batch <file>   (QT_QPA_PLATFORM=offscreen)
   +------------------------------------------------------+
@@ -24,7 +24,7 @@ golden references.
   +------------------------------------------------------+
         |                |                 |
    stdout dump      saved .graphml     exported image
-   vs *-output.txt  vs *-output.graphml   vs golden image
+   vs *-output.txt  vs *-output.graphml   vs good image
                     (or cybparser diff)   (with tolerance)
 ```
 
@@ -33,9 +33,9 @@ golden references.
 | Layer | What is checked                                                | Status      |
 |-------|----------------------------------------------------------------|-------------|
 | L0    | smoke: every diagram opens offscreen, the process exits clean  | implemented |
-| L1    | load/dump: canonical model + scene dumps vs golden text        | planned     |
-| L2    | editing: scripted mutations, then dump/save vs goldens         | planned     |
-| L3    | render: offscreen image export vs golden images with tolerance | planned     |
+| L1    | load/dump: canonical model + scene dumps vs good text        | planned     |
+| L2    | editing: scripted mutations, then dump/save vs good files         | planned     |
+| L3    | render: offscreen image export vs good images with tolerance | planned     |
 | L4    | in-process interaction tests (requires a library split)        | if needed   |
 
 ## Batch mode contract
@@ -73,12 +73,12 @@ Diagram conventions:
   libcyberiadamlpp and hsm-console-viewer test corpora;
 * negative diagrams are named `broken-<reason>.graphml` and must fail with
   exit code 2;
-* future golden files follow the sibling-library convention:
+* future good files follow the sibling-library convention:
   `<name>-output.txt` (canonical dump), `<name>-output.graphml` (saved
   document).
 
-Golden files are reference data: they are never regenerated from the
-implementation just to make a failing test pass; any change to a golden is a
+Good files are reference data: they are never regenerated from the
+implementation just to make a failing test pass; any change to a good is a
 deliberate, reviewed part of a change.
 
 ## Running
