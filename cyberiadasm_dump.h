@@ -2,7 +2,7 @@
  * The Cyberiada State Machine Editor
  * -----------------------------------------------------------------------------
  *
- * The batch (console) mode driver
+ * The canonical document/scene dump for the batch mode
  *
  * Copyright (C) 2026 Alexey Fedoseev <aleksey@fedoseev.net>
  *
@@ -21,21 +21,17 @@
  *
  * ----------------------------------------------------------------------------- */
 
-#ifndef CYBERIADA_SM_BATCH_DRIVER
-#define CYBERIADA_SM_BATCH_DRIVER
+#ifndef CYBERIADA_SM_DUMP
+#define CYBERIADA_SM_DUMP
 
-#include <QString>
+#include <ostream>
 
-class CyberiadaSMEditorApplication;
+class CyberiadaSMModel;
+class CyberiadaSMEditorScene;
 
-// exit codes of the batch mode (see docs/TESTING.md)
-enum BatchExitCode {
-	batchOK = 0,
-	batchUsageError = 1,
-	batchLoadError = 2,
-	batchInternalError = 3
-};
-
-int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName, bool dump = false);
+// the document part reuses the libcyberiadamlpp dump verbatim
+void dumpDocument(CyberiadaSMModel* model, std::ostream& os);
+// the scene part lists the items in document order with fixed 2-decimal geometry
+void dumpScene(CyberiadaSMEditorScene* scene, CyberiadaSMModel* model, std::ostream& os);
 
 #endif

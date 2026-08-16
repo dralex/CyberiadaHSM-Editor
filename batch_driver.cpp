@@ -22,12 +22,14 @@
  * ----------------------------------------------------------------------------- */
 
 #include <cstdio>
+#include <iostream>
 
 #include "batch_driver.h"
 #include "main.h"
 #include "smeditor_window.h"
+#include "cyberiadasm_dump.h"
 
-int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName)
+int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName, bool dump)
 {
 	CyberiadaSMEditorWindow win;
 	win.show();
@@ -42,6 +44,13 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName)
 	app.processEvents();
 	if (app.errorReported()) {
 		return batchInternalError;
+	}
+
+	if (dump) {
+		std::cout << "== document" << std::endl;
+		dumpDocument(win.getModel(), std::cout);
+		std::cout << "== scene" << std::endl;
+		dumpScene(win.getScene(), win.getModel(), std::cout);
 	}
 	return batchOK;
 }

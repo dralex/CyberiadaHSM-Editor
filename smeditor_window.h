@@ -36,6 +36,9 @@ public:
 
     bool                    openDocument(const QString& fileName, QString* error = NULL);
 
+    CyberiadaSMModel*       getModel() { return model; }
+    CyberiadaSMEditorScene* getScene() { return scene; }
+
 private:
     void                    initializeTools();
 
