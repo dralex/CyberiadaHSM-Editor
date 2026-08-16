@@ -2,7 +2,7 @@
  * The Cyberiada State Machine Editor
  * -----------------------------------------------------------------------------
  *
- * The batch (console) mode driver
+ * The batch mode edit script interpreter
  *
  * Copyright (C) 2026 Alexey Fedoseev <aleksey@fedoseev.net>
  *
@@ -21,23 +21,15 @@
  *
  * ----------------------------------------------------------------------------- */
 
-#ifndef CYBERIADA_SM_BATCH_DRIVER
-#define CYBERIADA_SM_BATCH_DRIVER
+#ifndef CYBERIADA_SM_BATCH_SCRIPT
+#define CYBERIADA_SM_BATCH_SCRIPT
 
 #include <QString>
 
-class CyberiadaSMEditorApplication;
+class CyberiadaSMModel;
 
-// exit codes of the batch mode (see docs/TESTING.md)
-enum BatchExitCode {
-	batchOK = 0,
-	batchUsageError = 1,
-	batchLoadError = 2,
-	batchInternalError = 3,
-	batchScriptError = 4
-};
-
-int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName, bool dump = false,
-				 const QString& script = QString(), const QString& save = QString());
+// run the edit commands from the script file against the model;
+// on failure fills error with a "line N: ..." message (see docs/TESTING.md)
+bool runEditScript(CyberiadaSMModel* model, const QString& path, QString* error);
 
 #endif

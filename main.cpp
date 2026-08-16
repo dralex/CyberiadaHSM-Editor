@@ -41,6 +41,10 @@ int main(int argc, char *argv[])
 	parser.addOption(batchOption);
 	QCommandLineOption dumpOption("dump", "Print the canonical document/scene dump in batch mode.");
 	parser.addOption(dumpOption);
+	QCommandLineOption scriptOption("script", "Run the edit script in batch mode.", "file");
+	parser.addOption(scriptOption);
+	QCommandLineOption saveOption("save", "Save the document in batch mode after the edits.", "file");
+	parser.addOption(saveOption);
 	parser.addPositionalArgument("file", "The CyberiadaML document to open in batch mode.", "[file]");
 	parser.process(app);
 
@@ -54,7 +58,8 @@ int main(int argc, char *argv[])
 				fprintf(stderr, "batch mode requires exactly one document file\n");
 				return batchUsageError;
 			}
-			return runBatchMode(app, args.first(), parser.isSet(dumpOption));
+			return runBatchMode(app, args.first(), parser.isSet(dumpOption),
+								parser.value(scriptOption), parser.value(saveOption));
 		}
 		CyberiadaSMEditorWindow win;
 		win.show();
