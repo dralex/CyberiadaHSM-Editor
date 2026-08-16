@@ -1,0 +1,4 @@
+# rename a state, move a rect element and a point element
+rename node-0-0-1 Idle
+move node-0-0-1 -80 30 260 140
+move node-0-0-0 -90 -70

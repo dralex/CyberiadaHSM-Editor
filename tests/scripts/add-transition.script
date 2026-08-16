@@ -1,0 +1,3 @@
+# connect states of the geometry diagram
+new-transition G node-0-0-1 node-0-1 EVENT_GO
+new-transition G node-0-1 node-0-0-2

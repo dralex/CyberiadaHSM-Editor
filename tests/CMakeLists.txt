@@ -92,3 +92,30 @@ foreach(diagram
     two-sms)
   add_l1_test(${diagram})
 endforeach()
+
+# The L2 editing test suite: run the edit script, then compare both the dump
+# and the saved document with the good files, and re-open the saved document
+# (see docs/TESTING.md)
+function(add_l2_test case diagram)
+  add_test(NAME l2-${case}
+    COMMAND ${CMAKE_COMMAND}
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
+      -DINPUT=diagrams/${diagram}.graphml
+      -DSCRIPT=scripts/${case}.script
+      -DEXPECTED=0
+      -DWORKDIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/l2-${case}.out
+      -DDUMP_GOOD=${CMAKE_CURRENT_SOURCE_DIR}/good/${case}-output.txt
+      -DSAVE_OUT=${CMAKE_CURRENT_BINARY_DIR}/l2-${case}.graphml
+      -DSAVE_GOOD=${CMAKE_CURRENT_SOURCE_DIR}/good/${case}-output.graphml
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunBatchTest.cmake)
+  set_tests_properties(l2-${case} PROPERTIES
+    TIMEOUT 60
+    ENVIRONMENT "${L0_ENVIRONMENT}")
+endfunction()
+
+add_l2_test(add-elements hierarchy)
+add_l2_test(add-transition geometry)
+add_l2_test(rename-move geometry)
+add_l2_test(reparent hierarchy)
+add_l2_test(delete geometry)

@@ -16,5 +16,13 @@ for d in diagrams/*.graphml; do
     "$BIN" --batch "$d" --dump > "good/$name-output.txt" 2>/dev/null || { echo "FAILED $name"; exit 1; }
     echo "regenerated good/$name-output.txt"
 done
+# the L2 case -> diagram pairs are defined once, in CMakeLists.txt
+sed -n 's/^add_l2_test(\([^ ]*\) \([^)]*\))$/\1 \2/p' CMakeLists.txt | \
+while read case diagram; do
+    "$BIN" --batch "diagrams/$diagram.graphml" --script "scripts/$case.script" \
+           --save "good/$case-output.graphml" --dump > "good/$case-output.txt" 2>/dev/null || \
+        { echo "FAILED $case"; exit 1; }
+    echo "regenerated good/$case-output.txt + .graphml"
+done
 git diff --stat -- good
 echo "review the full diff before committing: git diff -- tests/good"

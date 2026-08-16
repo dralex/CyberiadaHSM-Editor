@@ -1,0 +1,6 @@
+# add elements of every core kind to the hierarchy diagram
+new-state G0 10 20 200 100 Working
+new-state n1 Nested new state
+new-initial n0::n1 -40 -40
+new-final G0 300 100
+new-comment G0 A test comment

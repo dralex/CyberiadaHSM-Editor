@@ -1,0 +1,18 @@
+== document
+LocalDocument: {Document: {id: '', name: '', geometry format: none, meta: {standard version: '1.0', transition order: transition first, event propagation: block events}, elements: {State Machine: {id: 'G0', name: 'SM', elements: {Formal Comment: {id: 'nMeta', name: 'CGML_META', body: 'standardVersion/ 1.0
+
+transitionOrder/ transitionFirst
+
+eventPropagation/ block
+
+'}, Composite State: {id: 'n0', name: 'Parent 0', elements: {Composite State: {id: 'n0::n1', name: 'Subparent 0-1', elements: {Simple State: {id: 'n0::n1::n0', name: 'State 0-1-0'}, Simple State: {id: 'n0::n1::n1', name: 'State 0-1-1'}}}}}, Composite State: {id: 'n1', name: 'Parent 1', elements: {Simple State: {id: 'n1::n0', name: 'State 1-0'}, Simple State: {id: 'n1::n1', name: 'State 1-1'}, Simple State: {id: 'n0::n0', name: 'State 0-0'}}}}}}}, file: 'diagrams/hierarchy.graphml', format: cyberiada, format_str: 'Cyberiada-GraphML-1.0'}
+== scene
+  State Machine: {id: 'G0', pos: (0.00; 0.00), rect: (0.00; 0.00; 0.00; 0.00)}
+    Composite State: {id: 'n0', pos: (0.00; 0.00), rect: (0.00; 0.00; 0.00; 0.00)}
+      Composite State: {id: 'n0::n1', pos: (0.00; 0.00), rect: (0.00; 0.00; 0.00; 0.00)}
+        Simple State: {id: 'n0::n1::n0', pos: (0.00; 0.00), rect: (0.00; 0.00; 0.00; 0.00)}
+        Simple State: {id: 'n0::n1::n1', pos: (0.00; 0.00), rect: (0.00; 0.00; 0.00; 0.00)}
+    Composite State: {id: 'n1', pos: (0.00; 0.00), rect: (0.00; 0.00; 0.00; 0.00)}
+      Simple State: {id: 'n1::n0', pos: (0.00; 0.00), rect: (0.00; 0.00; 0.00; 0.00)}
+      Simple State: {id: 'n1::n1', pos: (0.00; 0.00), rect: (0.00; 0.00; 0.00; 0.00)}
+      Simple State: {id: 'n0::n0', pos: (0.00; 0.00), rect: (0.00; 0.00; 0.00; 0.00)}

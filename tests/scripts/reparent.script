@@ -1,0 +1,2 @@
+# move a state into the other composite
+reparent n0::n0 n1

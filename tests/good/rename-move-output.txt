@@ -1,0 +1,21 @@
+== document
+LocalDocument: {Document: {id: '', name: 'test-geometry-1', geometry format: qt, meta: {standard version: '1.0', name: 'test-geometry-1', transition order: transition first, event propagation: block events}, elements: {State Machine: {id: 'G', name: 'node 0', elements: {Formal Comment: {id: 'nMeta', name: 'CGML_META', body: 'standardVersion/ 1.0
+
+name/ test-geometry-1
+
+transitionOrder/ transitionFirst
+
+eventPropagation/ block
+
+'}, Composite State: {id: 'node-0', name: 'node 0', geometry: (495; 220; 1000; 450), elements: {Composite State: {id: 'node-0-0', name: 'node 0-0', geometry: (-145; -20; 600; 300), elements: {Initial: {id: 'node-0-0-0', name: '', geometry: (-90; -70)}, Simple State: {id: 'node-0-0-1', name: 'Idle', geometry: (-80; 30; 260; 140)}, Simple State: {id: 'node-0-0-2', name: 'node 0-0-2', geometry: (225; 25; 150; 150)}}}, Simple State: {id: 'node-0-1', name: 'node 0-1', geometry: (380; 5; 150; 150)}}}, Transition: {id: 'edge-0', type: loc, source: 'node-0-0-1', target: 'node-0-0-1', sp: (-150; 0), tp: (0; 75), polyline: [ (-175; 0), (-175; 100), (0; 100) ]}, Transition: {id: 'edge-1', type: loc, source: 'node-0-0-0', target: 'node-0-0-1', sp: (0; 0), tp: (0; -75)}, Transition: {id: 'edge-2', type: loc, source: 'node-0-0-1', target: 'node-0-0-2', action: {trigger: 'LABEL'}, sp: (150; 30), tp: (-75; 30), label: (150; 75)}}}}, bounding rect: (495; 220; 1000; 450)}, file: 'diagrams/geometry.graphml', format: cyberiada, format_str: 'Cyberiada-GraphML-1.0'}
+== scene
+  State Machine: {id: 'G', pos: (0.00; 0.00), rect: (-5.00; -5.00; 1000.00; 450.00)}
+    Composite State: {id: 'node-0', pos: (495.00; 220.00), rect: (-500.00; -225.00; 1000.00; 450.00)}
+      Composite State: {id: 'node-0-0', pos: (-145.00; -20.00), rect: (-300.00; -150.00; 600.00; 300.00)}
+        Initial: {id: 'node-0-0-0', pos: (-90.00; -70.00), rect: (-10.00; -10.00; 20.00; 20.00)}
+        Simple State: {id: 'node-0-0-1', pos: (-80.00; 30.00), rect: (-130.00; -70.00; 260.00; 140.00)}
+        Simple State: {id: 'node-0-0-2', pos: (225.00; 25.00), rect: (-75.00; -75.00; 150.00; 150.00)}
+      Simple State: {id: 'node-0-1', pos: (380.00; 5.00), rect: (-75.00; -75.00; 150.00; 150.00)}
+    Transition: {id: 'edge-0', pos: (0.00; 0.00), rect: (101.15; 248.99; 178.87; 141.37)}
+    Transition: {id: 'edge-1', pos: (0.00; 0.00), rect: (250.00; 149.00; 30.00; 45.00)}
+    Transition: {id: 'edge-2', pos: (0.00; 0.00), rect: (410.00; 274.00; 100.00; 25.00)}
