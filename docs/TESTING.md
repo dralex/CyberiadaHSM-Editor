@@ -35,7 +35,7 @@ good references.
 | L0    | smoke: every diagram opens offscreen, the process exits clean  | implemented |
 | L1    | load/dump: canonical model + scene dumps vs good text        | implemented |
 | L2    | editing: scripted mutations, then dump/save vs good files         | implemented |
-| L3    | render: offscreen image export vs good images with tolerance | planned     |
+| L3    | render: offscreen image export vs good images with tolerance | implemented |
 | L4    | in-process interaction tests (requires a library split)        | if needed   |
 
 ## Batch mode contract
@@ -53,6 +53,7 @@ Exit codes:
 | 2    | document load error (XML, format, semantics)   |
 | 3    | internal error (assertion or exception thrown) |
 | 4    | edit script error (bad command, unknown id)    |
+| 5    | image comparison mismatch                      |
 
 Assertion failures are reported with their `file:line` location (`MY_ASSERT`
 throws it as the error message).
@@ -91,6 +92,25 @@ Saving uses the CyberiadaML-1.0 format with rounded geometry, keeping the
 written floats stable for the good files. The test runner also re-opens every
 saved document, so each L2 case doubles as a write-read round-trip check.
 
+## Rendering and image comparison
+
+`--batch <file.graphml> [--script <file>] --export <out.png>` renders the
+scene offscreen into an image file: 1:1 scene units to pixels, white
+background, the selection cleared first (exports never show the editing
+selection). The grid and the scene frame are part of the picture.
+
+`--compare <a.png> <b.png> [--epsilon <0-255>] [--max-diff <fraction>]`
+compares two images and exits: a pixel differs when any channel delta exceeds
+`--epsilon` (default 8); the images match when the differing pixel fraction
+is not above `--max-diff` (default 0 - strict, since pinned-font renders are
+reproducible; loosen per invocation when comparing across Qt versions). The
+statistics are printed to stderr; exit code 0 on match, 5 on mismatch.
+
+Rendering is machine-independent because the application pins the bundled
+`fonts/courier.ttf` as the default font at startup (the font dialog still
+overrides it interactively). This also keeps the text-derived rectangles in
+the L1/L2 dumps stable across machines.
+
 ## Dump format
 
 `--batch <file.graphml> --dump` prints the canonical dump on stdout in two
@@ -112,9 +132,8 @@ relative input path, so the `file:` field of the document dump stays
 machine-independent. All batch output is locale-independent: the dump uses
 locale-agnostic number formatting and the application forces `LC_NUMERIC` to
 `C` (the graphml writer would otherwise follow the user's locale and print
-decimal commas). Some item rectangles derive from text metrics; if a
-different font environment shifts them, regenerate the good files locally
-with `tests/regen-good.sh` and review the diff.
+decimal commas). Text metrics are pinned by the bundled font (see the
+rendering section), so the good files are valid across machines.
 
 ## Test suite layout
 
@@ -127,6 +146,7 @@ tests/
   scripts/<case>.script      edit scripts for the L2 cases
   good/<name>-output.txt     reviewed good files for the L1/L2 dumps
   good/<case>-output.graphml reviewed good files for the L2 saved documents
+  good/<name>-render.png     reviewed good images for the L3 renders
   regen-good.sh         regenerates the good files and shows the diff
 run-tests.sh            build-and-run wrapper: ctest --output-on-failure
 ```

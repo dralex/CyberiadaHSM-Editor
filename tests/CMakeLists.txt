@@ -119,3 +119,25 @@ add_l2_test(add-transition geometry)
 add_l2_test(rename-move geometry)
 add_l2_test(reparent hierarchy)
 add_l2_test(delete geometry)
+
+# The L3 render test suite: the exported scene image must match the good
+# image within the comparison tolerance (see docs/TESTING.md)
+function(add_l3_test diagram)
+  add_test(NAME l3-${diagram}
+    COMMAND ${CMAKE_COMMAND}
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
+      -DINPUT=diagrams/${diagram}.graphml
+      -DEXPECTED=0
+      -DWORKDIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DIMAGE_OUT=${CMAKE_CURRENT_BINARY_DIR}/l3-${diagram}.png
+      -DIMAGE_GOOD=${CMAKE_CURRENT_SOURCE_DIR}/good/${diagram}-render.png
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunBatchTest.cmake)
+  set_tests_properties(l3-${diagram} PROPERTIES
+    TIMEOUT 60
+    ENVIRONMENT "${L0_ENVIRONMENT}")
+endfunction()
+
+add_l3_test(choice)
+add_l3_test(cyb-geometry)
+add_l3_test(geometry)
+add_l3_test(sources)
