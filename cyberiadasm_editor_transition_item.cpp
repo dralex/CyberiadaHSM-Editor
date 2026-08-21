@@ -426,14 +426,14 @@ QPointF CyberiadaSMEditorTransitionItem::findIntersectionWithItem(const Cyberiad
         QPointF intersectionPoint;
 
         // find closest intersection to start point
-        if (rayForward.intersect(edge, &intersectionPoint) == QLineF::BoundedIntersection) {
+        if (rayForward.intersects(edge, &intersectionPoint) == QLineF::BoundedIntersection) {
             qreal dist = QLineF(start, intersectionPoint).length();
             if (dist < minDist) {
                 minDist = dist;
                 closestIntersection = intersectionPoint;
             }
         }
-        if (rayBackward.intersect(edge, &intersectionPoint) == QLineF::BoundedIntersection) {
+        if (rayBackward.intersects(edge, &intersectionPoint) == QLineF::BoundedIntersection) {
             qreal dist = QLineF(start, intersectionPoint).length();
             if (dist < minDist) {
                 minDist = dist;
@@ -767,7 +767,7 @@ void CyberiadaSMEditorTransitionItem::mouseDoubleClickEvent(QGraphicsSceneMouseE
     QPainterPath oldPath = path();
     for(int i = 0; i < oldPath.elementCount() - 1; i++){
         QLineF checkableLine(oldPath.elementAt(i), oldPath.elementAt(i+1));
-        if(checkableLine.intersect(checkLineFirst,0) == 1 || checkableLine.intersect(checkLineSecond,0) == 1){
+        if(checkableLine.intersects(checkLineFirst,0) == 1 || checkableLine.intersects(checkLineSecond,0) == 1){
             QPointF p = clickPos - source()->sceneBoundingRect().center();
             Cyberiada::Point cybP = Cyberiada::Point(p.x(), p.y());
             Cyberiada::Polyline pol;
