@@ -16,8 +16,8 @@ eventPropagation/ block
         Simple State: {id: 'node-0-0-1', pos: (-100.00; 25.00), rect: (-150.00; -75.00; 300.00; 150.00)}
         Simple State: {id: 'node-0-0-2', pos: (225.00; 25.00), rect: (-75.00; -75.00; 150.00; 150.00)}
       Simple State: {id: 'node-0-1', pos: (380.00; 5.00), rect: (-75.00; -75.00; 150.00; 150.00)}
-    Transition: {id: 'edge-0', pos: (0.00; 0.00), rect: (81.15; 243.99; 178.87; 141.37)}
-    Transition: {id: 'edge-1', pos: (0.00; 0.00), rect: (240.00; 139.00; 20.00; 50.00)}
-    Transition: {id: 'edge-2', pos: (0.00; 0.00), rect: (390.00; 274.00; 120.00; 20.00)}
-    Transition: {id: 'node-0-0-1-node-0-1', pos: (0.00; 0.00), rect: (240.00; 229.50; 645.00; 34.50)}
-    Transition: {id: 'node-0-1-node-0-0-2', pos: (0.00; 0.00), rect: (565.00; 229.50; 320.00; 34.50)}
+    Transition: {id: 'edge-0', pos: (0.00; 0.00), rect: (81.15; 239.99; 178.87; 141.37)}
+    Transition: {id: 'edge-1', pos: (0.00; 0.00), rect: (240.00; 135.00; 20.00; 50.00)}
+    Transition: {id: 'edge-2', pos: (0.00; 0.00), rect: (390.00; 270.00; 120.00; 20.00)}
+    Transition: {id: 'node-0-0-1-node-0-1', pos: (0.00; 0.00), rect: (240.00; 227.50; 645.00; 32.50)}
+    Transition: {id: 'node-0-1-node-0-0-2', pos: (0.00; 0.00), rect: (565.00; 227.50; 320.00; 32.50)}

@@ -16,6 +16,6 @@ eventPropagation/ block
         Simple State: {id: 'node-0-0-1', pos: (-80.00; 30.00), rect: (-130.00; -70.00; 260.00; 140.00)}
         Simple State: {id: 'node-0-0-2', pos: (225.00; 25.00), rect: (-75.00; -75.00; 150.00; 150.00)}
       Simple State: {id: 'node-0-1', pos: (380.00; 5.00), rect: (-75.00; -75.00; 150.00; 150.00)}
-    Transition: {id: 'edge-0', pos: (0.00; 0.00), rect: (101.15; 248.99; 178.87; 141.37)}
-    Transition: {id: 'edge-1', pos: (0.00; 0.00), rect: (250.00; 149.00; 30.00; 45.00)}
-    Transition: {id: 'edge-2', pos: (0.00; 0.00), rect: (410.00; 274.00; 100.00; 25.00)}
+    Transition: {id: 'edge-0', pos: (0.00; 0.00), rect: (101.15; 244.99; 178.87; 141.37)}
+    Transition: {id: 'edge-1', pos: (0.00; 0.00), rect: (250.00; 145.00; 30.00; 45.00)}
+    Transition: {id: 'edge-2', pos: (0.00; 0.00), rect: (410.00; 270.00; 100.00; 25.00)}

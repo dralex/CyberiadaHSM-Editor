@@ -16,10 +16,10 @@ start_timer()'}}}, Transition: {id: 't0', type: loc, source: 'n0', target: 'idle
       Simple State: {id: 'down', pos: (0.00; 0.00), rect: (0.00; 0.00; 0.00; 0.00)}
     Simple State: {id: 'doors', pos: (0.00; 0.00), rect: (0.00; 0.00; 0.00; 0.00)}
     Transition: {id: 't0', pos: (0.00; 0.00), rect: (-10.00; -10.00; 20.00; 20.00)}
-    Transition: {id: 't1', pos: (0.00; 0.00), rect: (-10.00; -10.00; 20.00; 49.00)}
-    Transition: {id: 't2', pos: (0.00; 0.00), rect: (-10.00; -10.00; 20.00; 49.00)}
+    Transition: {id: 't1', pos: (0.00; 0.00), rect: (-10.00; -10.00; 20.00; 45.00)}
+    Transition: {id: 't2', pos: (0.00; 0.00), rect: (-10.00; -10.00; 20.00; 45.00)}
     Transition: {id: 't3', pos: (0.00; 0.00), rect: (-10.00; -10.00; 20.00; 20.00)}
     Transition: {id: 't4', pos: (0.00; 0.00), rect: (-10.00; -10.00; 20.00; 20.00)}
-    Transition: {id: 't5', pos: (0.00; 0.00), rect: (-40.00; -41.00; 80.00; 80.00)}
-    Transition: {id: 't6', pos: (0.00; 0.00), rect: (-40.00; -41.00; 80.00; 80.00)}
+    Transition: {id: 't5', pos: (0.00; 0.00), rect: (-40.00; -45.00; 80.00; 80.00)}
+    Transition: {id: 't6', pos: (0.00; 0.00), rect: (-40.00; -45.00; 80.00; 80.00)}
     Transition: {id: 't7', pos: (0.00; 0.00), rect: (-10.00; -10.00; 20.00; 20.00)}
