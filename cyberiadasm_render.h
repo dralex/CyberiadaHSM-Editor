@@ -2,7 +2,7 @@
  * The Cyberiada State Machine Editor
  * -----------------------------------------------------------------------------
  *
- * The batch (console) mode driver
+ * The scene rendering and image comparison for exports and the batch mode
  *
  * Copyright (C) 2026 Alexey Fedoseev <aleksey@fedoseev.net>
  *
@@ -21,25 +21,20 @@
  *
  * ----------------------------------------------------------------------------- */
 
-#ifndef CYBERIADA_SM_BATCH_DRIVER
-#define CYBERIADA_SM_BATCH_DRIVER
+#ifndef CYBERIADA_SM_RENDER
+#define CYBERIADA_SM_RENDER
 
 #include <QString>
 
-class CyberiadaSMEditorApplication;
+class CyberiadaSMEditorScene;
 
-// exit codes of the batch mode (see docs/TESTING.md)
-enum BatchExitCode {
-	batchOK = 0,
-	batchUsageError = 1,
-	batchLoadError = 2,
-	batchInternalError = 3,
-	batchScriptError = 4,
-	batchImageMismatch = 5
-};
+// render the scene 1:1 into an image file (the selection is cleared first)
+bool renderScene(CyberiadaSMEditorScene* scene, const QString& path, QString* error);
 
-int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName, bool dump = false,
-				 const QString& script = QString(), const QString& save = QString(),
-				 const QString& exportImage = QString());
+// compare two images: a pixel differs when any channel delta exceeds epsilon,
+// the images match when the differing fraction is not above max_diff_fraction;
+// returns 0 on match, 1 on mismatch, -1 when an image cannot be read
+int compareImages(const QString& a, const QString& b, int epsilon,
+				  double max_diff_fraction, QString* report);
 
 #endif

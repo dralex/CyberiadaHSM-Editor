@@ -39,6 +39,7 @@ add_executable(CyberiadaInspector
   batch_driver.h batch_driver.cpp
   batch_script.h batch_script.cpp
   cyberiadasm_dump.h cyberiadasm_dump.cpp
+  cyberiadasm_render.h cyberiadasm_render.cpp
   smeditor.qrc
   dotsignal.h dotsignal.cpp
   editable_text_item.h editable_text_item.cpp

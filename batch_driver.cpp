@@ -29,9 +29,10 @@
 #include "smeditor_window.h"
 #include "cyberiadasm_dump.h"
 #include "batch_script.h"
+#include "cyberiadasm_render.h"
 
 int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName, bool dump,
-				 const QString& script, const QString& save)
+				 const QString& script, const QString& save, const QString& exportImage)
 {
 	CyberiadaSMEditorWindow win;
 	win.show();
@@ -68,6 +69,14 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName, boo
 		dumpDocument(win.getModel(), std::cout);
 		std::cout << "== scene" << std::endl;
 		dumpScene(win.getScene(), win.getModel(), std::cout);
+	}
+
+	if (!exportImage.isEmpty()) {
+		QString render_error;
+		if (!renderScene(win.getScene(), exportImage, &render_error)) {
+			fprintf(stderr, "cannot export %s\n%s\n", qPrintable(exportImage), qPrintable(render_error));
+			return batchInternalError;
+		}
 	}
 
 	if (!save.isEmpty()) {

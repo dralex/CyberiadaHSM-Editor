@@ -35,6 +35,7 @@
 #include "dialogs/preferences_dialog.h"
 #include "dialogs/open_file_dialog.h"
 #include "settings_manager.h"
+#include "cyberiadasm_render.h"
 
 
 CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
@@ -146,20 +147,6 @@ void CyberiadaSMEditorWindow::slotFileSaveAs()
 
 void CyberiadaSMEditorWindow::slotFileExport()
 {
-    QRectF sceneRect = scene->sceneRect();
-
-    if (sceneRect.isEmpty()) {
-        QMessageBox::warning(this, "Ошибка", "Сцена пуста, нечего экспортировать.");
-        return;
-    }
-
-    QImage image(sceneRect.size().toSize(), QImage::Format_ARGB32);
-    image.fill(Qt::white); // или прозрачный фон: Qt::transparent
-
-    QPainter painter(&image);
-    scene->render(&painter);
-    painter.end();
-
     QString selectedFilter;
     QString fileName = QFileDialog::getSaveFileName(
         this,
@@ -176,8 +163,9 @@ void CyberiadaSMEditorWindow::slotFileExport()
             else if (selectedFilter.contains("BMP")) fileName += ".bmp";
             else if (selectedFilter.contains("TIFF")) fileName += ".tiff";
         }
-        if (!image.save(fileName)) {
-            QMessageBox::critical(this, "Ошибка", "Не удалось сохранить изображение.");
+        QString error;
+        if (!renderScene(scene, fileName, &error)) {
+            QMessageBox::critical(this, "Ошибка", error);
         }
     }
 }
