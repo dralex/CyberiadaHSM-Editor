@@ -38,6 +38,16 @@
 #include "cyberiadasm_editor_scene.h"
 #include "settings_manager.h"
 
+// QLineF::intersect was deprecated in favour of intersects in Qt 5.14
+static QLineF::IntersectType lineIntersect(const QLineF& a, const QLineF& b, QPointF* point)
+{
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+    return a.intersects(b, point);
+#else
+    return a.intersect(b, point);
+#endif
+}
+
 /* -----------------------------------------------------------------------------
  * Transition Item
  * ----------------------------------------------------------------------------- */
@@ -426,14 +436,14 @@ QPointF CyberiadaSMEditorTransitionItem::findIntersectionWithItem(const Cyberiad
         QPointF intersectionPoint;
 
         // find closest intersection to start point
-        if (rayForward.intersects(edge, &intersectionPoint) == QLineF::BoundedIntersection) {
+        if (lineIntersect(rayForward, edge, &intersectionPoint) == QLineF::BoundedIntersection) {
             qreal dist = QLineF(start, intersectionPoint).length();
             if (dist < minDist) {
                 minDist = dist;
                 closestIntersection = intersectionPoint;
             }
         }
-        if (rayBackward.intersects(edge, &intersectionPoint) == QLineF::BoundedIntersection) {
+        if (lineIntersect(rayBackward, edge, &intersectionPoint) == QLineF::BoundedIntersection) {
             qreal dist = QLineF(start, intersectionPoint).length();
             if (dist < minDist) {
                 minDist = dist;
@@ -767,7 +777,7 @@ void CyberiadaSMEditorTransitionItem::mouseDoubleClickEvent(QGraphicsSceneMouseE
     QPainterPath oldPath = path();
     for(int i = 0; i < oldPath.elementCount() - 1; i++){
         QLineF checkableLine(oldPath.elementAt(i), oldPath.elementAt(i+1));
-        if(checkableLine.intersects(checkLineFirst,0) == 1 || checkableLine.intersects(checkLineSecond,0) == 1){
+        if(lineIntersect(checkableLine, checkLineFirst, 0) == 1 || lineIntersect(checkableLine, checkLineSecond, 0) == 1){
             QPointF p = clickPos - source()->sceneBoundingRect().center();
             Cyberiada::Point cybP = Cyberiada::Point(p.x(), p.y());
             Cyberiada::Polyline pol;
