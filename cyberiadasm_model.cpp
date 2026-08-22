@@ -584,12 +584,87 @@ Cyberiada::Comment *CyberiadaSMModel::newFormalComment(Cyberiada::ElementCollect
     return element;
 }
 
+bool CyberiadaSMModel::newCommentSubject(const QModelIndex& index, Cyberiada::Element* target,
+                                         Cyberiada::CommentSubjectType type, const QString& fragment)
+{
+    Cyberiada::Element* element = indexToElement(index);
+    if (!element) return false;
+    if (element->get_type() != Cyberiada::elementComment &&
+        element->get_type() != Cyberiada::elementFormalComment) return false;
+    Cyberiada::Comment* comment = static_cast<Cyberiada::Comment*>(element);
+    if (type == Cyberiada::commentSubjectElement) {
+        root->add_comment_to_element(comment, target);
+    } else if (type == Cyberiada::commentSubjectName) {
+        root->add_comment_to_element_name(comment, target, fragment.toStdString());
+    } else {
+        root->add_comment_to_element_body(comment, target, fragment.toStdString());
+    }
+    emit dataChanged(index, index);
+    return true;
+}
+
+bool CyberiadaSMModel::deleteCommentSubject(const QModelIndex& index, int subject_index)
+{
+    Cyberiada::Element* element = indexToElement(index);
+    if (!element) return false;
+    if (element->get_type() != Cyberiada::elementComment &&
+        element->get_type() != Cyberiada::elementFormalComment) return false;
+    Cyberiada::Comment* comment = static_cast<Cyberiada::Comment*>(element);
+    if (subject_index < 0 || (size_t)subject_index >= comment->get_subjects().size()) return false;
+    comment->remove_subject((size_t)subject_index);
+    emit dataChanged(index, index);
+    return true;
+}
+
+// the subjects hold raw element pointers - collect the subtree to be
+// deleted so the referencing subjects can be stripped first
+static void collectElements(Cyberiada::Element* element, Cyberiada::ElementList* elements)
+{
+    elements->push_back(element);
+    if (element->has_children()) {
+        Cyberiada::ElementCollection* collection = static_cast<Cyberiada::ElementCollection*>(element);
+        const Cyberiada::ElementList& children = collection->get_children();
+        for (Cyberiada::ElementList::const_iterator i = children.begin(); i != children.end(); i++) {
+            collectElements(*i, elements);
+        }
+    }
+}
+
 bool CyberiadaSMModel::deleteElement(const QModelIndex &index)
 {
     Cyberiada::Element* child_element = indexToElement(index);
     if (!child_element) return false;
     Cyberiada::ElementCollection* parent_element = dynamic_cast<Cyberiada::ElementCollection*>(child_element->get_parent());
     MY_ASSERT(parent_element);
+
+    // strip the comment subjects referencing the deleted elements
+    Cyberiada::ElementList doomed;
+    collectElements(child_element, &doomed);
+    Cyberiada::StateMachineList sms = root->get_state_machines();
+    for (Cyberiada::StateMachineList::iterator s = sms.begin(); s != sms.end(); s++) {
+        Cyberiada::ElementList comments = (*s)->find_elements_by_type(Cyberiada::elementComment);
+        Cyberiada::ElementList formal = (*s)->find_elements_by_type(Cyberiada::elementFormalComment);
+        comments.insert(comments.end(), formal.begin(), formal.end());
+        for (Cyberiada::ElementList::iterator c = comments.begin(); c != comments.end(); c++) {
+            Cyberiada::Comment* comment = static_cast<Cyberiada::Comment*>(*c);
+            bool changed = false;
+            for (size_t i = comment->get_subjects().size(); i > 0; i--) {
+                const Cyberiada::Element* target = comment->get_subjects().at(i - 1).get_element();
+                for (Cyberiada::ElementList::const_iterator d = doomed.begin(); d != doomed.end(); d++) {
+                    if (*d == target) {
+                        comment->remove_subject(i - 1);
+                        changed = true;
+                        break;
+                    }
+                }
+            }
+            if (changed) {
+                QModelIndex ci = elementToIndex(comment);
+                emit dataChanged(ci, ci);
+            }
+        }
+    }
+
     int row = child_element->index();
     beginRemoveRows(elementToIndex(parent_element), row, row);
     parent_element->remove_element(child_element->get_id());

@@ -107,6 +107,10 @@ public:
                                                    const Cyberiada::Color& color = Cyberiada::Color(),
                                                    const Cyberiada::String& markup = Cyberiada::String());
 
+    bool                                newCommentSubject(const QModelIndex& index, Cyberiada::Element* target,
+                                                          Cyberiada::CommentSubjectType type, const QString& fragment);
+    bool                                deleteCommentSubject(const QModelIndex& index, int subject_index);
+
     bool                                deleteElement(const QModelIndex& index);
 
 	// DRAG & DROP
