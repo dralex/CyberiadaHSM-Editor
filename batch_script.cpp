@@ -101,8 +101,9 @@ static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QStri
 	const QString& cmd = tokens.first();
 	double v[4];
 
-	if (cmd == "new-state" || cmd == "new-comment" ||
-		cmd == "new-initial" || cmd == "new-final") {
+	if (cmd == "new-state" || cmd == "new-comment" || cmd == "new-formal-comment" ||
+		cmd == "new-initial" || cmd == "new-final" ||
+		cmd == "new-choice" || cmd == "new-terminate") {
 		if (tokens.size() < 2) { *error = cmd + " requires a parent id"; return false; }
 		Cyberiada::Element* parent = model->idToElement(tokens.at(1));
 		Cyberiada::ElementCollection* collection = dynamic_cast<Cyberiada::ElementCollection*>(parent);
@@ -117,10 +118,19 @@ static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QStri
 			QString name = restOfLine(tokens, name_from);
 			if (name.isEmpty()) { *error = "new-state requires a name"; return false; }
 			return model->newState(collection, name.toStdString(), Cyberiada::Action(), r) != NULL;
-		} else if (cmd == "new-comment") {
+		} else if (cmd == "new-comment" || cmd == "new-formal-comment") {
 			QString body = restOfLine(tokens, 2);
-			if (body.isEmpty()) { *error = "new-comment requires a body"; return false; }
-			return model->newComment(collection, body.toStdString()) != NULL;
+			if (body.isEmpty()) { *error = cmd + " requires a body"; return false; }
+			if (cmd == "new-comment") {
+				return model->newComment(collection, body.toStdString()) != NULL;
+			}
+			return model->newFormalComment(collection, body.toStdString()) != NULL;
+		} else if (cmd == "new-choice") {
+			Cyberiada::Rect r;
+			if (toNumbers(tokens, 2, 4, v)) {
+				r = Cyberiada::Rect(v[0], v[1], v[2], v[3]);
+			}
+			return model->newChoice(collection, r) != NULL;
 		} else {
 			Cyberiada::Point p;
 			if (toNumbers(tokens, 2, 2, v)) {
@@ -128,6 +138,9 @@ static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QStri
 			}
 			if (cmd == "new-initial") {
 				return model->newInitial(collection, p) != NULL;
+			}
+			if (cmd == "new-terminate") {
+				return model->newTerminate(collection, p) != NULL;
 			}
 			return model->newFinal(collection, p) != NULL;
 		}
@@ -141,11 +154,22 @@ static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QStri
 		if (!target) { *error = "unknown target id '" + tokens.at(3) + "'"; return false; }
 		Cyberiada::Action action(restOfLine(tokens, 4).toStdString());
 		return model->newTransition(sm, Cyberiada::transitionExternal, source, target, action) != NULL;
+	} else if (cmd == "update-meta") {
+		if (tokens.size() < 3) { *error = "update-meta requires <parameter> <value>"; return false; }
+		QString param = tokens.at(1);
+		QString value = restOfLine(tokens, 2);
+		if ((param == "transitionOrder" && value != "transitionFirst" && value != "exitFirst") ||
+			(param == "eventPropagation" && value != "propagate" && value != "block")) {
+			*error = "invalid " + param + " value '" + value + "'";
+			return false;
+		}
+		return model->updateMetainformation(model->documentIndex(), param, value);
 	}
 
 	// the remaining commands address an existing element by id
 	if (cmd != "rename" && cmd != "move" && cmd != "reparent" && cmd != "delete" &&
-		cmd != "new-action" && cmd != "update-action" && cmd != "delete-action") {
+		cmd != "new-action" && cmd != "update-action" && cmd != "delete-action" &&
+		cmd != "update-comment" && cmd != "update-id" && cmd != "polyline") {
 		*error = "unknown command '" + cmd + "'";
 		return false;
 	}
@@ -159,6 +183,10 @@ static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QStri
 		if (title.isEmpty()) { *error = "rename requires a title"; return false; }
 		return model->updateTitle(index, title);
 	} else if (cmd == "move") {
+		if (element->get_type() == Cyberiada::elementChoice) {
+			*error = "the choice geometry cannot be changed";
+			return false;
+		}
 		if (toNumbers(tokens, 2, 4, v)) {
 			return model->updateGeometry(index, Cyberiada::Rect(v[0], v[1], v[2], v[3]));
 		}
@@ -176,6 +204,38 @@ static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QStri
 		return model->updateParent(index, tokens.at(2).toStdString());
 	} else if (cmd == "delete") {
 		return model->deleteElement(index);
+	} else if (cmd == "update-comment") {
+		if (element->get_type() != Cyberiada::elementComment &&
+			element->get_type() != Cyberiada::elementFormalComment) {
+			*error = "element '" + tokens.at(1) + "' is not a comment";
+			return false;
+		}
+		QString body = restOfLine(tokens, 2);
+		if (body.isEmpty()) { *error = "update-comment requires a body"; return false; }
+		return model->updateCommentBody(index, body);
+	} else if (cmd == "update-id") {
+		if (tokens.size() != 3) { *error = "update-id requires <id> <new-id>"; return false; }
+		if (model->idToElement(tokens.at(2))) {
+			*error = "id '" + tokens.at(2) + "' is already used";
+			return false;
+		}
+		return model->updateID(index, tokens.at(2));
+	} else if (cmd == "polyline") {
+		if (element->get_type() != Cyberiada::elementTransition) {
+			*error = "element '" + tokens.at(1) + "' is not a transition";
+			return false;
+		}
+		int count = tokens.size() - 2;
+		if (count % 2 != 0) { *error = "polyline requires x y coordinate pairs"; return false; }
+		Cyberiada::Polyline pl;
+		for (int i = 0; i < count; i += 2) {
+			if (!toNumbers(tokens, 2 + i, 2, v)) {
+				*error = "polyline requires numeric coordinates";
+				return false;
+			}
+			pl.push_back(Cyberiada::Point(v[0], v[1]));
+		}
+		return model->updateGeometry(index, pl);
 	} else if (cmd == "new-action" || cmd == "update-action" || cmd == "delete-action") {
 		bool is_state = element->get_type() == Cyberiada::elementSimpleState ||
 			element->get_type() == Cyberiada::elementCompositeState;
