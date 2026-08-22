@@ -1,0 +1,5 @@
+# transition action editing
+update-action t1 0 CALL [call_floor != floor]/ target = call_floor\nlog_call()
+delete-action t7 0
+delete-action t3 0
+new-action t3 OPEN [floor == target]/ open_doors()

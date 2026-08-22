@@ -1,0 +1,6 @@
+# state action editing
+new-action node-1 exit/ cleanup()
+new-action node-2 EVT2 [x > 0]/ handle()\nfinish()
+update-action parent 0 entry/ NEW_ENTRY()\nsecond_line()
+update-action node-4 0 OTHER_EVENT [guard == 2]/ react()
+delete-action node-3 1
