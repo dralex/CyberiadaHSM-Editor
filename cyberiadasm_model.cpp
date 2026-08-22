@@ -207,7 +207,24 @@ bool CyberiadaSMModel::updateID(const QModelIndex& index, const QString& new_val
 		// the id is already available in the document
 		return false;
 	}
+	Cyberiada::ID old_id = element->get_id();
 	element->set_id(new_id);
+	// transitions reference elements by id; keep them consistent
+	// (comment subject ids are not updated yet)
+	Cyberiada::StateMachineList sms = root->get_state_machines();
+	for (Cyberiada::StateMachineList::iterator i = sms.begin(); i != sms.end(); i++) {
+		std::vector<Cyberiada::Transition*> transitions = (*i)->get_transitions();
+		for (std::vector<Cyberiada::Transition*>::iterator j = transitions.begin();
+			 j != transitions.end(); j++) {
+			Cyberiada::Transition* t = *j;
+			if (t->source_element_id() == old_id || t->target_element_id() == old_id) {
+				t->update(t->source_element_id() == old_id ? new_id : t->source_element_id(),
+						  t->target_element_id() == old_id ? new_id : t->target_element_id());
+				QModelIndex ti = elementToIndex(t);
+				emit dataChanged(ti, ti);
+			}
+		}
+	}
 	emit dataChanged(index, index);
 	return true;
 }
@@ -321,6 +338,10 @@ bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada:
 	Cyberiada::Element* element = indexToElement(index);
     if (!element) return false;
     if (!element->has_rect_geometry()) return false;
+    if (element->get_type() == Cyberiada::elementChoice) {
+		// the library has no choice rect update yet
+		return false;
+	}
     if (element->get_type() == Cyberiada::elementComment || element->get_type() == Cyberiada::elementFormalComment) {
 		Cyberiada::Comment* comment = static_cast<Cyberiada::Comment*>(element);
         comment->update_geometry(rect);
@@ -390,16 +411,36 @@ bool CyberiadaSMModel::updateCommentBody(const QModelIndex& index, const QString
 {
 	Cyberiada::Element* element = indexToElement(index);
 	if (!element) return false;
-    // TODO
+	if (element->get_type() != Cyberiada::elementComment &&
+		element->get_type() != Cyberiada::elementFormalComment) return false;
+	static_cast<Cyberiada::Comment*>(element)->set_body(body.toStdString());
 	emit dataChanged(index, index);
 	return true;
 }
 
 bool CyberiadaSMModel::updateMetainformation(const QModelIndex& index, const QString& parameter, const QString& new_value)
 {
-	if (index != documentIndex()) {
+	if (!root || index != documentIndex()) {
 		return false;
 	}
+	Cyberiada::DocumentMetainformation& meta = root->meta();
+	Cyberiada::String name = parameter.toStdString();
+	Cyberiada::String value = new_value.toStdString();
+	if (name == CYBERIADA_META_STANDARD_VERSION) {
+		meta.standard_version = value;
+	} else if (name == CYBERIADA_META_TRANSITION_ORDER) {
+		if (value == CYBERIADA_META_AO_EXIT) meta.transition_order_flag = true;
+		else if (value == CYBERIADA_META_AO_TRANSITION) meta.transition_order_flag = false;
+		else return false;
+	} else if (name == CYBERIADA_META_EVENT_PROPAGATION) {
+		if (value == CYBERIADA_META_EP_PROPAGATE) meta.event_propagation_flag = true;
+		else if (value == CYBERIADA_META_EP_BLOCK) meta.event_propagation_flag = false;
+		else return false;
+	} else {
+		meta.set_string(name, value);
+	}
+	// re-serialize the meta comment; save() does not do it
+	root->update_metainfo_element();
 	QModelIndex comment_index = elementToIndex(root->get_meta_element());
 	emit dataChanged(comment_index, comment_index);
 	emit dataChanged(index, index);
