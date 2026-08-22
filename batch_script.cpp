@@ -41,8 +41,59 @@ static bool toNumbers(const QStringList& tokens, int from, int count, double* va
 
 static QString restOfLine(const QStringList& tokens, int from)
 {
-	QStringList rest = tokens.mid(from);
-	return rest.join(" ");
+	QString text = tokens.mid(from).join(" ");
+	// the trailing text field is one physical line; the escape \n embeds
+	// a newline, \\ a backslash
+	QString result;
+	result.reserve(text.size());
+	for (int i = 0; i < text.size(); i++) {
+		if (text.at(i) == QChar('\\') && i + 1 < text.size()) {
+			QChar next = text.at(i + 1);
+			if (next == QChar('n')) { result += QChar('\n'); i++; continue; }
+			if (next == QChar('\\')) { result += QChar('\\'); i++; continue; }
+		}
+		result += text.at(i);
+	}
+	return result;
+}
+
+// action text uses the CyberiadaML notation: 'entry/ behaviour',
+// 'exit/ behaviour' or 'TRIGGER [guard]/ behaviour'
+static bool parseActionText(const QString& text, Cyberiada::ActionType* type,
+							QString* trigger, QString* guard, QString* behaviour,
+							QString* error)
+{
+	int slash = -1;
+	int depth = 0;
+	for (int i = 0; i < text.length(); i++) {
+		QChar c = text.at(i);
+		if (c == QChar('[')) depth++;
+		else if (c == QChar(']')) depth--;
+		else if (c == QChar('/') && depth == 0) { slash = i; break; }
+	}
+	if (slash < 0) {
+		*error = "action text requires the 'trigger [guard]/ behaviour' notation";
+		return false;
+	}
+	QString head = text.left(slash).trimmed();
+	*behaviour = text.mid(slash + 1).trimmed();
+	*trigger = head;
+	guard->clear();
+	int bracket = head.indexOf(QChar('['));
+	if (bracket >= 0) {
+		if (!head.endsWith("]")) { *error = "unbalanced guard brackets in the action text"; return false; }
+		*trigger = head.left(bracket).trimmed();
+		*guard = head.mid(bracket + 1, head.length() - bracket - 2).trimmed();
+	}
+	if (*trigger == "entry" || *trigger == "exit") {
+		if (!guard->isEmpty()) { *error = "guards are not allowed for entry/exit activities"; return false; }
+		*type = *trigger == "entry" ? Cyberiada::actionEntry : Cyberiada::actionExit;
+		trigger->clear();
+		return true;
+	}
+	*type = Cyberiada::actionTransition;
+	if (trigger->isEmpty()) { *error = "the action trigger is required"; return false; }
+	return true;
 }
 
 static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QString* error)
@@ -93,7 +144,8 @@ static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QStri
 	}
 
 	// the remaining commands address an existing element by id
-	if (cmd != "rename" && cmd != "move" && cmd != "reparent" && cmd != "delete") {
+	if (cmd != "rename" && cmd != "move" && cmd != "reparent" && cmd != "delete" &&
+		cmd != "new-action" && cmd != "update-action" && cmd != "delete-action") {
 		*error = "unknown command '" + cmd + "'";
 		return false;
 	}
@@ -124,6 +176,64 @@ static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QStri
 		return model->updateParent(index, tokens.at(2).toStdString());
 	} else if (cmd == "delete") {
 		return model->deleteElement(index);
+	} else if (cmd == "new-action" || cmd == "update-action" || cmd == "delete-action") {
+		bool is_state = element->get_type() == Cyberiada::elementSimpleState ||
+			element->get_type() == Cyberiada::elementCompositeState;
+		bool is_transition = element->get_type() == Cyberiada::elementTransition;
+		if (!is_state && !is_transition) {
+			*error = "element '" + tokens.at(1) + "' cannot have actions";
+			return false;
+		}
+		const Cyberiada::State* state = is_state ? static_cast<const Cyberiada::State*>(element) : NULL;
+		Cyberiada::Transition* trans = is_transition ? static_cast<Cyberiada::Transition*>(element) : NULL;
+
+		// new-action appends; the other commands address the action by its
+		// 0-based index in the state's action list (transitions hold a
+		// single action, their index must be 0)
+		int action_index = 0;
+		int text_from = 2;
+		if (cmd != "new-action") {
+			bool index_ok = false;
+			if (tokens.size() > 2) action_index = tokens.at(2).toInt(&index_ok);
+			if (!index_ok) { *error = cmd + " requires an action index"; return false; }
+			text_from = 3;
+			if (is_state &&
+				(action_index < 0 || (size_t)action_index >= state->get_actions().size())) {
+				*error = QString("action index %1 out of range").arg(action_index);
+				return false;
+			}
+			if (is_transition && action_index != 0) {
+				*error = "a transition has a single action with index 0";
+				return false;
+			}
+		}
+
+		if (cmd == "delete-action") {
+			if (is_transition && !trans->has_action()) { *error = "the transition has no action"; return false; }
+			return model->deleteAction(index, action_index);
+		}
+
+		QString text = restOfLine(tokens, text_from);
+		if (text.isEmpty()) { *error = cmd + " requires the action text"; return false; }
+		Cyberiada::ActionType type;
+		QString trigger, guard, behaviour;
+		if (!parseActionText(text, &type, &trigger, &guard, &behaviour, error)) return false;
+		if (is_transition && type != Cyberiada::actionTransition) {
+			*error = "entry/exit actions are not allowed on transitions";
+			return false;
+		}
+		if (cmd == "new-action") {
+			if (is_transition && trans->has_action()) {
+				*error = "the transition already has an action";
+				return false;
+			}
+			return model->newAction(index, type, trigger, guard, behaviour);
+		}
+		if (is_state && state->get_actions().at(action_index).get_type() != type) {
+			*error = QString("the action text does not match the type of action %1").arg(action_index);
+			return false;
+		}
+		return model->updateAction(index, action_index, trigger, guard, behaviour);
 	}
 
 	*error = "unknown command '" + cmd + "'";
