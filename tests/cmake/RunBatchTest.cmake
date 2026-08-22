@@ -1,7 +1,7 @@
 # Run the editor batch mode on INPUT and require the EXPECTED exit code;
 # SCRIPT adds an edit script, DUMP_GOOD compares the --dump output (written
 # to OUTPUT), SAVE_OUT/SAVE_GOOD compare the saved document and re-open it
-set(_args --batch)
+set(_args --batch --no-text)
 if(DEFINED INPUT)
   list(APPEND _args ${INPUT})
 endif()
@@ -53,7 +53,7 @@ if(DEFINED SAVE_GOOD)
     message(FATAL_ERROR "document ${SAVE_OUT} differs from the good file ${SAVE_GOOD}")
   endif()
   # write->read round trip: the saved document must open cleanly
-  execute_process(COMMAND ${BATCH_BIN} --batch ${SAVE_OUT} RESULT_VARIABLE reopen)
+  execute_process(COMMAND ${BATCH_BIN} --batch --no-text ${SAVE_OUT} RESULT_VARIABLE reopen)
   if(NOT reopen EQUAL 0)
     message(FATAL_ERROR "saved document ${SAVE_OUT} does not re-open (exit ${reopen})")
   endif()

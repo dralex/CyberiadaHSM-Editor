@@ -137,7 +137,7 @@ function(add_l3_test diagram)
     ENVIRONMENT "${L0_ENVIRONMENT}")
 endfunction()
 
-add_l3_test(choice)
+add_l3_test(empty-actions)
 add_l3_test(cyb-geometry)
 add_l3_test(geometry)
 add_l3_test(sources)

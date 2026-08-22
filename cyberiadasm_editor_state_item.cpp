@@ -66,6 +66,7 @@ CyberiadaSMEditorStateItem::CyberiadaSMEditorStateItem(QObject *parent_object,
 
     title = new StateTitle(name(), this);
     title->setFontBoldness(true);
+    title->setVisible(SettingsManager::instance().getShowText());
     connect(title, &EditableTextItem::sizeChanged, this, &CyberiadaSMEditorStateItem::onTextItemSizeChanged);
 
     initializeActions();
@@ -192,18 +193,21 @@ void CyberiadaSMEditorStateItem::updateRegion()
     }
 
     // draw region based on state title and actions
-    qreal top_delta = title->boundingRect().height();
+    qreal top_delta = 0;
     qreal bottom_delta = 0;
     region->setTopLine(false);
     region->setBottomLine(false);
 
-    if (entry) {
-        top_delta += entry->boundingRect().height();
-        region->setTopLine(true);
-    }
-    if (exit) {
-        bottom_delta += exit->boundingRect().height();
-        region->setBottomLine(true);
+    if (SettingsManager::instance().getShowText()) {
+        top_delta = title->boundingRect().height();
+        if (entry) {
+            top_delta += entry->boundingRect().height();
+            region->setTopLine(true);
+        }
+        if (exit) {
+            bottom_delta += exit->boundingRect().height();
+            region->setBottomLine(true);
+        }
     }
 
     region->setRect(-width()/2, -(height() - top_delta - bottom_delta) / 2, width(), height() - top_delta - bottom_delta);
@@ -305,6 +309,7 @@ void CyberiadaSMEditorStateItem::initializeActions()
     int actionIndex = 0;
     for (std::vector<Cyberiada::Action>::const_iterator i = state->get_actions().begin(); i != state->get_actions().end(); i++) {
         StateAction* action = new StateAction(&(*i), this);
+        action->setVisible(SettingsManager::instance().getShowText());
         Cyberiada::ActionType type = i->get_type();
         if (type == Cyberiada::actionEntry) {
             entry = action;
@@ -453,8 +458,6 @@ void CyberiadaSMEditorStateItem::paint(QPainter *painter, const QStyleOptionGrap
     Q_UNUSED(option)
     Q_UNUSED(widget)
 
-    qreal titleHeight = title->boundingRect().height();
-
     QPen pen = QPen(Qt::black, 2, Qt::SolidLine);
     if (isSelected() || isHighlighted) {
         SettingsManager& sm = SettingsManager::instance();
@@ -470,7 +473,10 @@ void CyberiadaSMEditorStateItem::paint(QPainter *painter, const QStyleOptionGrap
     QPainterPath path;
     QRectF tmpRect = rect();
     path.addRoundedRect(tmpRect, ROUNDED_RECT_RADIUS, ROUNDED_RECT_RADIUS);
-    painter->drawLine(QPointF(tmpRect.x(), tmpRect.y() + titleHeight), QPointF(tmpRect.right(), tmpRect.y() + titleHeight));
+    if (SettingsManager::instance().getShowText()) {
+        qreal titleHeight = title->boundingRect().height();
+        painter->drawLine(QPointF(tmpRect.x(), tmpRect.y() + titleHeight), QPointF(tmpRect.right(), tmpRect.y() + titleHeight));
+    }
     painter->drawPath(path);
 
     if (SettingsManager::instance().getInspectorMode()) {

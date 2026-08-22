@@ -58,6 +58,13 @@ Exit codes:
 Assertion failures are reported with their `file:line` location (`MY_ASSERT`
 throws it as the error message).
 
+`--no-text` hides all text elements (state titles and actions, transition
+labels, comment bodies). Font metrics differ across Qt versions even for the
+same font file, and the text sizes leak into the region layout, the transition
+rectangles and the rendered pixels - so every test invocation runs with this
+option, making the dumps and images identical on any machine. The option is
+runtime-only: the GUI and normal exports always render text.
+
 ## Edit scripts
 
 `--batch <file.graphml> --script <file> [--dump] [--save <out.graphml>]` runs
@@ -106,10 +113,11 @@ is not above `--max-diff` (default 0 - strict, since pinned-font renders are
 reproducible; loosen per invocation when comparing across Qt versions). The
 statistics are printed to stderr; exit code 0 on match, 5 on mismatch.
 
-Rendering is machine-independent because the application pins the bundled
-`fonts/courier.ttf` as the default font at startup (the font dialog still
-overrides it interactively). This also keeps the text-derived rectangles in
-the L1/L2 dumps stable across machines.
+The tests render with `--no-text` (see the batch mode contract), so the
+reference images are text-free and identical across machines and Qt versions.
+The application still pins the bundled `fonts/courier.ttf` as the default
+font at startup for the GUI and manual exports (the font dialog overrides it
+interactively).
 
 ## Dump format
 
@@ -132,8 +140,8 @@ relative input path, so the `file:` field of the document dump stays
 machine-independent. All batch output is locale-independent: the dump uses
 locale-agnostic number formatting and the application forces `LC_NUMERIC` to
 `C` (the graphml writer would otherwise follow the user's locale and print
-decimal commas). Text metrics are pinned by the bundled font (see the
-rendering section), so the good files are valid across machines.
+decimal commas). The dumps are produced with `--no-text`, so no text metric
+reaches the good files and they are valid across machines and Qt versions.
 
 ## Test suite layout
 

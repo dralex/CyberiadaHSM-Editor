@@ -52,6 +52,7 @@ CyberiadaSMEditorCommentItem::CyberiadaSMEditorCommentItem(QObject *parent_objec
     }
 
     body = new EditableTextItem(comment->get_body().c_str(), this);
+    body->setVisible(SettingsManager::instance().getShowText());
     body->setPos(-boundingRect().width() / 2 + 15, - boundingRect().height() / 2);
     // connect(body, EditableTextItem::editingFinished, this, CyberiadaSMEditorCommentItem::onBodyChanged);
 
@@ -88,6 +89,9 @@ QRectF CyberiadaSMEditorCommentItem::boundingRect() const
     MY_ASSERT(model);
     MY_ASSERT(model->rootDocument());
     if (!comment->has_geometry()) {
+        if (!SettingsManager::instance().getShowText()) {
+            return QRectF(-20, -10, 40, 20);
+        }
         return body->boundingRect();
     }
     Cyberiada::Rect r = comment->get_geometry_rect();

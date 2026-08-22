@@ -71,7 +71,7 @@ CyberiadaSMEditorTransitionItem::CyberiadaSMEditorTransitionItem(QObject *parent
     transition = static_cast<const Cyberiada::Transition*>(element);
 
     actionItem = new TransitionAction(actionText(), this);
-    actionItem->setVisible(SettingsManager::instance().getShowTransitionText());
+    setActionVisibility(SettingsManager::instance().getShowTransitionText());
     connect(&SettingsManager::instance(), &SettingsManager::showTransitionTextChanged, this, &CyberiadaSMEditorTransitionItem::setActionVisibility);
 
     connect(target(), &CyberiadaSMEditorAbstractItem::geometryChanged, this, &CyberiadaSMEditorTransitionItem::onTargetGeomertyChanged);
@@ -535,7 +535,7 @@ void CyberiadaSMEditorTransitionItem::updateActionPosition() {
 }
 
 void CyberiadaSMEditorTransitionItem::setActionVisibility(bool visible) {
-    actionItem->setVisible(visible);
+    actionItem->setVisible(visible && SettingsManager::instance().getShowText());
 }
 
 void CyberiadaSMEditorTransitionItem::syncFromModel()

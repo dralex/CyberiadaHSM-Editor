@@ -23,6 +23,11 @@ public:
     bool getShowTransitionText() const { return showTransitionText; }
     void setShowTransitionText(bool value);
 
+    // runtime-only, never persisted: the batch mode hides all text elements
+    // to keep the test output independent of the font metrics
+    bool getShowText() const { return showText; }
+    void setShowText(bool value) { showText = value; }
+
     bool getInspectorMode() const { return inspectorMode; }
     void setInspectorMode(bool value);
     bool getPrintMode() const { return printMode; }
@@ -59,6 +64,7 @@ private:
 
     // visualisation
     bool showTransitionText;
+    bool showText = true;
 
     // modes
     bool inspectorMode;

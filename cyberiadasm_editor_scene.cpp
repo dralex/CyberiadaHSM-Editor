@@ -355,7 +355,16 @@ void CyberiadaSMEditorScene::loadScene()
     }
     // qreal margin = std::max(itemsBoundingRect().width(), itemsBoundingRect().height()) * DEFAULT_SCENE_BORDER_MARGIN_PERCENT;
     qreal margin = DEFAULT_SCENE_BORDER_MARGIN;
-    setSceneRect(itemsBoundingRect().adjusted(-margin, -margin, margin, margin));
+    // itemsBoundingRect() ignores visibility - union the visible items only,
+    // so hidden elements (text in the no-text mode, dots) do not leak into
+    // the scene rect
+    QRectF bounds;
+    for (QGraphicsItem* item : items()) {
+        if (item->isVisible()) {
+            bounds |= item->sceneBoundingRect();
+        }
+    }
+    setSceneRect(bounds.adjusted(-margin, -margin, margin, margin));
     qDebug() << "new scene rect" << sceneRect();
     // views().first()->fitInView(itemsBoundingRect(), Qt::KeepAspectRatio);
     views().first()->fitInView(sceneRect(), Qt::KeepAspectRatio);

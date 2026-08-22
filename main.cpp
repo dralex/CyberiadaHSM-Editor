@@ -62,6 +62,8 @@ int main(int argc, char *argv[])
 	parser.addOption(saveOption);
 	QCommandLineOption exportOption("export", "Export the scene image in batch mode.", "file");
 	parser.addOption(exportOption);
+	QCommandLineOption noTextOption("no-text", "Hide the text elements in batch mode (font-independent output).");
+	parser.addOption(noTextOption);
 	QCommandLineOption compareOption("compare", "Compare two image files with tolerance and exit.");
 	parser.addOption(compareOption);
 	QCommandLineOption epsilonOption("epsilon", "Comparison per-channel tolerance (0-255, default 8).", "n", "8");
@@ -73,6 +75,11 @@ int main(int argc, char *argv[])
 
 	bool batch = parser.isSet(batchOption);
 	app.setBatchMode(batch);
+	if (parser.isSet(noTextOption)) {
+		// font metrics differ across Qt versions even with the pinned font;
+		// the tests hide all text so the output is identical everywhere
+		SettingsManager::instance().setShowText(false);
+	}
 
     try {
 		if (parser.isSet(compareOption)) {
