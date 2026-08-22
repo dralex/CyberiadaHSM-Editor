@@ -169,7 +169,8 @@ static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QStri
 	// the remaining commands address an existing element by id
 	if (cmd != "rename" && cmd != "move" && cmd != "reparent" && cmd != "delete" &&
 		cmd != "new-action" && cmd != "update-action" && cmd != "delete-action" &&
-		cmd != "update-comment" && cmd != "update-id" && cmd != "polyline") {
+		cmd != "update-comment" && cmd != "update-id" && cmd != "polyline" &&
+		cmd != "new-subject" && cmd != "delete-subject") {
 		*error = "unknown command '" + cmd + "'";
 		return false;
 	}
@@ -236,6 +237,43 @@ static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QStri
 			pl.push_back(Cyberiada::Point(v[0], v[1]));
 		}
 		return model->updateGeometry(index, pl);
+	} else if (cmd == "new-subject" || cmd == "delete-subject") {
+		if (element->get_type() != Cyberiada::elementComment &&
+			element->get_type() != Cyberiada::elementFormalComment) {
+			*error = "element '" + tokens.at(1) + "' is not a comment";
+			return false;
+		}
+		if (cmd == "delete-subject") {
+			bool index_ok = false;
+			int subject_index = 0;
+			if (tokens.size() > 2) subject_index = tokens.at(2).toInt(&index_ok);
+			if (!index_ok) { *error = "delete-subject requires a subject index"; return false; }
+			const Cyberiada::Comment* comment = static_cast<const Cyberiada::Comment*>(element);
+			if (subject_index < 0 ||
+				(size_t)subject_index >= comment->get_subjects().size()) {
+				*error = QString("subject index %1 out of range").arg(subject_index);
+				return false;
+			}
+			return model->deleteCommentSubject(index, subject_index);
+		}
+		if (tokens.size() < 3) { *error = "new-subject requires <comment> <target>"; return false; }
+		Cyberiada::Element* target = model->idToElement(tokens.at(2));
+		if (!target) { *error = "unknown element id '" + tokens.at(2) + "'"; return false; }
+		if (target->get_type() == Cyberiada::elementRoot ||
+			target->get_type() == Cyberiada::elementSM) {
+			*error = "'" + tokens.at(2) + "' cannot be the subject of a comment";
+			return false;
+		}
+		Cyberiada::CommentSubjectType type = Cyberiada::commentSubjectElement;
+		QString fragment;
+		if (tokens.size() > 3) {
+			if (tokens.at(3) == "name") type = Cyberiada::commentSubjectName;
+			else if (tokens.at(3) == "data") type = Cyberiada::commentSubjectData;
+			else { *error = "the subject type must be 'name' or 'data'"; return false; }
+			fragment = restOfLine(tokens, 4);
+			if (fragment.isEmpty()) { *error = "the subject fragment is required"; return false; }
+		}
+		return model->newCommentSubject(index, target, type, fragment);
 	} else if (cmd == "new-action" || cmd == "update-action" || cmd == "delete-action") {
 		bool is_state = element->get_type() == Cyberiada::elementSimpleState ||
 			element->get_type() == Cyberiada::elementCompositeState;

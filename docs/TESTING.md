@@ -99,6 +99,8 @@ multi-line behaviours and comment bodies stay expressible. The commands map
 | `update-meta <parameter> <value>` | set a document metainformation parameter |
 | `update-id <id> <new-id>` | change the element id |
 | `polyline <id> [x y ...]` | replace the transition polyline (no points clear it) |
+| `new-subject <comment> <target> [name\|data <fragment>]` | link the comment to an element |
+| `delete-subject <comment> <i>` | remove subject `<i>` (0-based) |
 
 The action text uses the CyberiadaML notation: `entry/ behaviour`,
 `exit/ behaviour` or `TRIGGER [guard]/ behaviour`. State actions are addressed
@@ -107,6 +109,14 @@ single action addressed as index 0 - `new-action` only sets it while the
 transition has none, `delete-action` clears it. Guards are not allowed for
 entry/exit activities and a transition-type action requires a trigger; the
 violations are reported with specific messages before the model is touched.
+
+A comment subject links a comment (formal or informal) to an element: the
+bare `new-subject` form makes an element-type subject; `name`/`data` with a
+fragment reference a part of the target's title or body. Any element except
+the document and the state machines can be the target. Subjects are
+addressed by their 0-based position in the comment's subject list. Deleting
+an element also removes every subject referencing it or its children, so
+the document never keeps dangling subject links.
 
 `update-meta` addresses the document, not an element. The flag parameters
 accept only their standard values (`transitionOrder`: `transitionFirst` /
