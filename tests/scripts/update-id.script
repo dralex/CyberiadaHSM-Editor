@@ -1,0 +1,4 @@
+# element id and transition polyline editing
+update-id node-0-0-1 node-renamed
+polyline edge-1 250 130 260 140
+polyline edge-0

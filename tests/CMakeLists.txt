@@ -121,6 +121,10 @@ add_l2_test(reparent hierarchy)
 add_l2_test(delete geometry)
 add_l2_test(actions empty-actions)
 add_l2_test(transition-action lift)
+add_l2_test(comments hierarchy)
+add_l2_test(vertices choice)
+add_l2_test(update-meta meta)
+add_l2_test(update-id geometry)
 
 # The L3 render test suite: the exported scene image must match the good
 # image within the comparison tolerance (see docs/TESTING.md)

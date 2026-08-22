@@ -1,0 +1,5 @@
+# comment editing
+new-comment G0 First note
+new-formal-comment G0 machine/ data
+update-comment n2 Updated note\nwith a second line
+update-comment n3 machine/ updated data

@@ -1,0 +1,13 @@
+== document
+LocalDocument: {Document: {id: '', name: '', geometry format: qt, meta: {standard version: '1.0', transition order: transition first, event propagation: block events}, elements: {State Machine: {id: 'G0', name: 'SM', elements: {Formal Comment: {id: 'nMeta', name: 'CGML_META', body: 'standardVersion/ 1.0
+
+transitionOrder/ transitionFirst
+
+eventPropagation/ block
+
+'}, Choice: {id: 'n0'}, Composite State: {id: 'n1', name: 'State', elements: {Choice: {id: 'n1::n0', name: 'Local choice', geometry: (0; 5; 100; 50)}, Choice: {id: 'n1::n1', geometry: (120; 60; 80; 40)}}}, Choice: {id: 'n2'}, Terminate: {id: 'n3', geometry: (210; 110)}, Transition: {id: 'n1-n1::n1', type: ext, source: 'n1', target: 'n1::n1'}}}}, bounding rect: (80; 45; 260; 130)}, file: 'diagrams/choice.graphml', format: cyberiada, format_str: 'Cyberiada-GraphML-1.0'}
+== scene
+  State Machine: {id: 'G0', pos: (0.00; 0.00), rect: (-50.00; -20.00; 260.00; 130.00)}
+    Composite State: {id: 'n1', pos: (0.00; 0.00), rect: (0.00; 0.00; 0.00; 0.00)}
+    Terminate: {id: 'n3', pos: (210.00; 110.00), rect: (-10.00; -10.00; 20.00; 20.00)}
+    Transition: {id: 'n1-n1::n1', pos: (0.00; 0.00), rect: (-10.00; -10.00; 20.00; 20.00)}
