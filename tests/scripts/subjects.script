@@ -1,0 +1,10 @@
+# comment subject editing
+new-comment G0 Subject note
+new-formal-comment G0 unit/ test
+new-subject n2 n0::n0
+new-subject n2 n0 name Parent
+new-action n1::n0 entry/ init()
+new-subject n2 n1::n0 data init
+new-subject n3 n1::n1
+delete-subject n2 0
+delete n1::n1

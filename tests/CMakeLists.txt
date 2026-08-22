@@ -125,6 +125,7 @@ add_l2_test(comments hierarchy)
 add_l2_test(vertices choice)
 add_l2_test(update-meta meta)
 add_l2_test(update-id geometry)
+add_l2_test(subjects hierarchy)
 
 # The L3 render test suite: the exported scene image must match the good
 # image within the comparison tolerance (see docs/TESTING.md)
