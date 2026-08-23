@@ -25,7 +25,9 @@ endif()
 
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
 
-add_executable(CyberiadaInspector
+# the core library: everything but the entry point, linkable from the
+# in-process tests (see docs/TESTING.md, L4)
+add_library(CyberiadaInspectorCore STATIC
   smeditor_window.ui
   myassert.cpp
   cyberiadasm_model.cpp
@@ -35,12 +37,10 @@ add_executable(CyberiadaInspector
   cyberiadasm_editor_view.cpp
   cyberiadasm_editor_scene.cpp
   cyberiadasm_editor_items.cpp
-  main.cpp
   batch_driver.h batch_driver.cpp
   batch_script.h batch_script.cpp
   cyberiadasm_dump.h cyberiadasm_dump.cpp
   cyberiadasm_render.h cyberiadasm_render.cpp
-  smeditor.qrc
   dotsignal.h dotsignal.cpp
   editable_text_item.h editable_text_item.cpp
   cyberiadasm_editor_vertex_item.h cyberiadasm_editor_vertex_item.cpp
@@ -57,22 +57,28 @@ add_executable(CyberiadaInspector
   settings_manager.h settings_manager.cpp
 )
 
-target_include_directories(CyberiadaInspector PUBLIC
+target_include_directories(CyberiadaInspectorCore PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${QTPROPERTYBROWSER_INCLUDE_DIR}
   ${cyberiadaml_INCLUDE_DIRS}
   ${cyberiadamlpp_INCLUDE_DIRS}
   )
-target_link_directories(CyberiadaInspector PUBLIC
+target_link_directories(CyberiadaInspectorCore PUBLIC
   ${cyberiadaml_LIBRARY}
   ${cyberiadamlpp_LIBRARY}
   )
-target_link_libraries(CyberiadaInspector
+target_link_libraries(CyberiadaInspectorCore PUBLIC
   Qt5::Widgets
   ${QTPROPERTYBROWSER_LIBRARY}
   ${cyberiadaml_LIBRARIES}
   ${cyberiadamlpp_LIBRARIES}
   )
+
+add_executable(CyberiadaInspector
+  main.cpp
+  smeditor.qrc
+)
+target_link_libraries(CyberiadaInspector CyberiadaInspectorCore)
 
 enable_testing()
 add_subdirectory(tests)
