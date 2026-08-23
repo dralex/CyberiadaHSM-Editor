@@ -36,7 +36,28 @@ good references.
 | L1    | load/dump: canonical model + scene dumps vs good text        | implemented |
 | L2    | editing: scripted mutations, then dump/save vs good files         | implemented |
 | L3    | render: offscreen image export vs good images with tolerance | implemented |
-| L4    | in-process interaction tests (requires a library split)        | if needed   |
+| L4    | in-process: model contract and scene structure (QtTest)        | implemented |
+
+## In-process tests (L4)
+
+The editor sources are built into the `CyberiadaInspectorCore` static
+library; the executable adds only `main.cpp` and the resources. The L4
+tests (`tests/l4/`) link the library and drive the model and the scene
+directly under QtTest, offscreen.
+
+`l4-model` keeps a `QAbstractItemModelTester` attached to the model for the
+whole run - every reset and mutation is checked against the
+QAbstractItemModel contract - and verifies the editing API: the signals
+each mutation emits, the id fixup of transition endpoints, the comment
+subject cleanup and the transition cascade on element deletion.
+
+`l4-scene` checks the scene built from a loaded document: the item map
+against the diagram structure, item positions, selection via
+`slotElementSelected` and the dataChanged sync path. Model mutations
+through a connected scene beyond dataChanged (reparent, delete) stay
+untested: the geometry write-back in `syncFromModel` re-enters the model
+(the batch driver disconnects the scene for the same reason). There is no
+undo stack in the editor yet, so undo/redo is not an L4 subject.
 
 ## Batch mode contract
 

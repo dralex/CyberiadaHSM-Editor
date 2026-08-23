@@ -1,6 +1,8 @@
 # The L0 smoke test suite: open every diagram in batch mode offscreen and
 # check the exit code (see docs/TESTING.md)
 
+find_package(Qt5 COMPONENTS Test REQUIRED)
+
 # bake the Qt runtime location into the test environment: the Qt in use may
 # live outside the system paths, and RUNPATH does not cover transitive
 # dependencies or the dlopen'ed platform plugin
@@ -163,3 +165,19 @@ add_l3_test(empty-actions)
 add_l3_test(cyb-geometry)
 add_l3_test(geometry)
 add_l3_test(sources)
+
+# The L4 in-process test suite: QtTest binaries linked against the core
+# library, checking the model contract and the scene structure directly
+# (see docs/TESTING.md)
+function(add_l4_test name)
+  add_executable(l4-${name} l4/l4-${name}.cpp)
+  target_link_libraries(l4-${name} CyberiadaInspectorCore Qt5::Test)
+  add_test(NAME l4-${name} COMMAND l4-${name})
+  set_tests_properties(l4-${name} PROPERTIES
+    TIMEOUT 60
+    ENVIRONMENT "${L0_ENVIRONMENT}"
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+endfunction()
+
+add_l4_test(model)
+add_l4_test(scene)
