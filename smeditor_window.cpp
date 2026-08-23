@@ -289,7 +289,7 @@ void CyberiadaSMEditorWindow::slotDeleteElement()
     if (scene->selectedItems().isEmpty()) return;
     CyberiadaSMEditorAbstractItem* itemToDelete = dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene->selectedItems().first());
     if (itemToDelete) {
-        scene->deleteItemsRecursively(itemToDelete->getElement());
+        model->deleteElement(model->elementToIndex(itemToDelete->getElement()));
         return;
     }
     DotSignal* dotToDelete = dynamic_cast<DotSignal*>(scene->focusItem());

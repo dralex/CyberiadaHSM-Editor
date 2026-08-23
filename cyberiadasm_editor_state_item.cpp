@@ -276,23 +276,7 @@ void CyberiadaSMEditorStateItem::syncFromModel()
         }
         updateRegion();
     }
-
-    CyberiadaSMEditorAbstractItem* cParent = dynamic_cast<CyberiadaSMEditorAbstractItem*>(parentItem());
-    if (cParent == nullptr) {
-        // try to find region parent
-        cParent = dynamic_cast<CyberiadaSMEditorAbstractItem*>(parentItem()->parentItem());
-        MY_ASSERT(cParent);
-    }
-
-    if (cParent->getId() != element->get_parent()->get_id()) {
-        QGraphicsItem* newcParent = (dynamic_cast<CyberiadaSMEditorScene*>(scene())->getMap()).value(element->get_parent()->get_id());
-        QPointF posInThis = mapFromParent(pos());
-        QPointF newCoords = mapToItem(newcParent, posInThis);
-        Cyberiada::Rect newRect = Cyberiada::Rect(newCoords.x(), newCoords.y(), width(), height());
-        setParentItem(newcParent);
-        model->updateGeometry(model->elementToIndex(element), newRect);
-        prevItemUnderCursor = static_cast<CyberiadaSMEditorAbstractItem*>(newcParent);
-    }
+    // a reparent rebuilds the item through the model row signals
     CyberiadaSMEditorAbstractItem::syncFromModel();
 }
 
@@ -565,10 +549,7 @@ void CyberiadaSMEditorStateItem::contextMenuEvent(QGraphicsSceneContextMenuEvent
     QAction *selectedAction = menu.exec(event->screenPos());
 
     if (selectedAction == deleteAction) {
-        CyberiadaSMEditorScene* cScene = dynamic_cast<CyberiadaSMEditorScene*>(scene());
-        if (cScene) {
-            cScene->deleteItemsRecursively(element);
-        }
+        model->deleteElement(model->elementToIndex(element));
     } else if (selectedAction == addTransitionAction) {
 
     } else if (selectedAction == addEntryAction) {

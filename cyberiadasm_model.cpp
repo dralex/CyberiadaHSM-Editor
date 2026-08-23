@@ -937,6 +937,42 @@ Qt::DropActions CyberiadaSMModel::supportedDropActions() const
 	return Qt::MoveAction;
 }
 
+// the offset of a parent chain in the local geometry formats: the sum of
+// the ancestor positions up to the state machine
+static void ancestorsOffset(const Cyberiada::Element* parent, double& x, double& y)
+{
+    x = y = 0.0;
+    for (const Cyberiada::Element* e = parent;
+         e && e->get_type() != Cyberiada::elementSM && e->get_type() != Cyberiada::elementRoot;
+         e = e->get_parent()) {
+        if (e->has_rect_geometry()) {
+            const Cyberiada::Rect& r = static_cast<const Cyberiada::ElementCollection*>(e)->get_geometry_rect();
+            x += r.x;
+            y += r.y;
+        }
+    }
+}
+
+static void shiftGeometry(Cyberiada::Element* element, double dx, double dy)
+{
+    Cyberiada::ElementType type = element->get_type();
+    if (element->has_point_geometry()) {
+        Cyberiada::Vertex* v = static_cast<Cyberiada::Vertex*>(element);
+        Cyberiada::Point p = v->get_geometry_point();
+        v->update_geometry(Cyberiada::Point(p.x + dx, p.y + dy));
+    } else if (element->has_rect_geometry() && type != Cyberiada::elementChoice) {
+        if (type == Cyberiada::elementComment || type == Cyberiada::elementFormalComment) {
+            Cyberiada::Comment* c = static_cast<Cyberiada::Comment*>(element);
+            Cyberiada::Rect r = c->get_geometry_rect();
+            c->update_geometry(Cyberiada::Rect(r.x + dx, r.y + dy, r.width, r.height));
+        } else {
+            Cyberiada::ElementCollection* ec = static_cast<Cyberiada::ElementCollection*>(element);
+            Cyberiada::Rect r = ec->get_geometry_rect();
+            ec->update_geometry(Cyberiada::Rect(r.x + dx, r.y + dy, r.width, r.height));
+        }
+    }
+}
+
 void CyberiadaSMModel::move(Cyberiada::Element* element, Cyberiada::ElementCollection* target_parent)
 {
     QModelIndex srcindex = elementToIndex(element);
@@ -965,6 +1001,15 @@ void CyberiadaSMModel::move(Cyberiada::Element* element, Cyberiada::ElementColle
     // remove_element() frees the original, so deep-copy the element into the
     // new parent first and remove the original afterwards
     Cyberiada::Element* copied = element->copy(target_parent);
+
+    // the geometry is parent-relative: keep the absolute position
+    Cyberiada::DocumentGeometryFormat gf = root->get_geometry_format();
+    if (gf == Cyberiada::geometryFormatQt || gf == Cyberiada::geometryFormatCyberiada10) {
+        double ox, oy, nx, ny;
+        ancestorsOffset(source_parent, ox, oy);
+        ancestorsOffset(target_parent, nx, ny);
+        shiftGeometry(copied, ox - nx, oy - ny);
+    }
 
 	beginRemoveRows(parentindex, remove_index, remove_index);
     source_parent->remove_element(element->get_id());

@@ -53,6 +53,13 @@ CyberiadaSMEditorVertexItem::CyberiadaSMEditorVertexItem(CyberiadaSMModel* model
     hideDots();
 }
 
+void CyberiadaSMEditorVertexItem::syncFromModel()
+{
+    Cyberiada::Rect r = element->get_bound_rect(*(model->rootDocument()));
+    setPos(r.x, r.y);
+    CyberiadaSMEditorAbstractItem::syncFromModel();
+}
+
 QRectF CyberiadaSMEditorVertexItem::boundingRect() const
 {
     return fullCircle();

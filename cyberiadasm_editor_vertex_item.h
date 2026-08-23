@@ -38,6 +38,7 @@ public:
                                 QGraphicsItem* parent = NULL);
 
     virtual int type() const { return VertexItem; }
+    void syncFromModel() override;
 
     QRectF boundingRect() const override;
     QPainterPath shape() const override;

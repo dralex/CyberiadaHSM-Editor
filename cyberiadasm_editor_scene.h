@@ -71,11 +71,11 @@ public:
     void addSMItem(Cyberiada::ElementType type);
     CyberiadaSMEditorTransitionItem* addTransition(CyberiadaSMEditorAbstractItem* source, CyberiadaSMEditorAbstractItem* target);
 
-    void  deleteItemsRecursively(Cyberiada::Element* element);
-
 public slots:
 	void  slotElementSelected(const QModelIndex& index);
     void  slotModelDataChanged(const QModelIndex & topLeft, const QModelIndex & bottomRight);
+    void  slotRowsInserted(const QModelIndex& parent, int first, int last);
+    void  slotRowsAboutToBeRemoved(const QModelIndex& parent, int first, int last);
     void  slotSMSizeChanged(CyberiadaSMEditorAbstractItem::CornerFlags side, qreal d);
 	
     // void  enableGrid(bool on = true);
@@ -88,6 +88,9 @@ protected:
 
 private:
     void  addItemsRecursively(QGraphicsItem* parent, Cyberiada::ElementCollection* element);
+    QGraphicsItem* addElementItem(Cyberiada::Element* element, QGraphicsItem* parent_item);
+    QGraphicsItem* graphicsParentFor(const Cyberiada::Element* parent);
+    void  removeItemsForElement(Cyberiada::Element* element);
     void  updateItemsRecursively(CyberiadaSMEditorAbstractItem* parent, Cyberiada::ElementCollection* element);
 
 
