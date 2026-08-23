@@ -40,6 +40,7 @@ foreach(diagram
     empty-actions
     geometry
     hierarchy
+    label-geometry
     lift
     meta
     sources
@@ -99,6 +100,7 @@ foreach(diagram
     empty-actions
     geometry
     hierarchy
+    label-geometry
     lift
     meta
     sources
