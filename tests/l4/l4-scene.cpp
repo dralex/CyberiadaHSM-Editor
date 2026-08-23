@@ -34,6 +34,11 @@ private slots:
 	void test_item_geometry();
 	void test_selection();
 	void test_title_sync();
+	void test_new_state();
+	void test_new_transition();
+	void test_new_comment();
+	void test_reparent();
+	void test_delete();
 
 private:
 	int countItems(int type);
@@ -102,6 +107,85 @@ void TestScene::test_title_sync()
 	QGraphicsItem* item = scene->getMap().value("node-0-0-1");
 	QVERIFY(item);
 	QVERIFY(scene->items().contains(item));
+}
+
+// the mutations below run through the connected scene: the row signals
+// build and tear down the items
+
+void TestScene::test_new_state()
+{
+	Cyberiada::ElementCollection* parent = static_cast<Cyberiada::ElementCollection*>(
+		model->idToElement("node-0"));
+	Cyberiada::State* s = model->newState(parent, "Fresh");
+	QVERIFY(s);
+	QGraphicsItem* item = scene->getMap().value(s->get_id());
+	QVERIFY(item);
+	// the children of a composite state live in its region
+	QVERIFY(item->parentItem());
+	QCOMPARE(item->parentItem()->parentItem(), scene->getMap().value("node-0"));
+}
+
+void TestScene::test_new_transition()
+{
+	Cyberiada::StateMachine* sm = static_cast<Cyberiada::StateMachine*>(model->idToElement("G"));
+	Cyberiada::Transition* t = model->newTransition(sm, Cyberiada::transitionExternal,
+													model->idToElement("node-0-0-2"),
+													model->idToElement("node-0-1"),
+													Cyberiada::Action());
+	QVERIFY(t);
+	QVERIFY(scene->getMap().value(t->get_id()));
+	QCOMPARE(countItems(CyberiadaSMEditorAbstractItem::TransitionItem), 4);
+}
+
+void TestScene::test_new_comment()
+{
+	Cyberiada::ElementCollection* parent = static_cast<Cyberiada::ElementCollection*>(
+		model->idToElement("node-0"));
+	// a comment without geometry has no item
+	Cyberiada::Comment* bare = model->newComment(parent, "Bare");
+	QVERIFY(bare);
+	QVERIFY(!scene->getMap().contains(bare->get_id()));
+	Cyberiada::Comment* placed = model->newComment(parent, "Placed",
+												   Cyberiada::Rect(10.0, 10.0, 80.0, 30.0));
+	QVERIFY(placed);
+	QVERIFY(scene->getMap().value(placed->get_id()));
+}
+
+void TestScene::test_reparent()
+{
+	QVERIFY(scene->getMap().value("node-0-1"));
+	Cyberiada::Rect before = static_cast<const Cyberiada::State*>(
+		model->idToElement("node-0-1"))->get_geometry_rect();
+	Cyberiada::Rect step = static_cast<const Cyberiada::State*>(
+		model->idToElement("node-0-0"))->get_geometry_rect();
+	QVERIFY(model->updateParent(model->elementToIndex(model->idToElement("node-0-1")), "node-0-0"));
+	QGraphicsItem* item = scene->getMap().value("node-0-1");
+	QVERIFY(item);
+	// the item was rebuilt for the copied element
+	QCOMPARE(dynamic_cast<CyberiadaSMEditorAbstractItem*>(item)->getElement(),
+			 model->idToElement("node-0-1"));
+	QVERIFY(item->parentItem());
+	QCOMPARE(item->parentItem()->parentItem(), scene->getMap().value("node-0-0"));
+	// the model keeps the absolute position across the reparent: the rect
+	// is re-expressed relative to the new parent (one level deeper)
+	Cyberiada::Rect after = static_cast<const Cyberiada::State*>(
+		model->idToElement("node-0-1"))->get_geometry_rect();
+	QCOMPARE(after.x, before.x - step.x);
+	QCOMPARE(after.y, before.y - step.y);
+	QCOMPARE(after.width, before.width);
+}
+
+void TestScene::test_delete()
+{
+	int transitions = countItems(CyberiadaSMEditorAbstractItem::TransitionItem);
+	QVERIFY(scene->getMap().value("edge-0"));
+	QVERIFY(model->deleteElement(model->elementToIndex(model->idToElement("node-0-0-1"))));
+	QVERIFY(!scene->getMap().contains("node-0-0-1"));
+	// the attached transitions went with the state
+	QVERIFY(!scene->getMap().contains("edge-0"));
+	QVERIFY(!scene->getMap().contains("edge-1"));
+	QVERIFY(countItems(CyberiadaSMEditorAbstractItem::TransitionItem) < transitions);
+	QVERIFY(!scene->items().isEmpty());
 }
 
 QTEST_MAIN(TestScene)

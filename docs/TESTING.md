@@ -53,11 +53,17 @@ subject cleanup and the transition cascade on element deletion.
 
 `l4-scene` checks the scene built from a loaded document: the item map
 against the diagram structure, item positions, selection via
-`slotElementSelected` and the dataChanged sync path. Model mutations
-through a connected scene beyond dataChanged (reparent, delete) stay
-untested: the geometry write-back in `syncFromModel` re-enters the model
-(the batch driver disconnects the scene for the same reason). There is no
-undo stack in the editor yet, so undo/redo is not an L4 subject.
+`slotElementSelected`, and the live sync — the scene follows the model
+through its signals (dataChanged re-syncs an item, rowsInserted builds the
+items of new elements, rowsAboutToBeRemoved tears them down before the
+model frees the elements), so creation, deletion and reparenting are
+driven through the connected scene. A reparent keeps the element's
+absolute position in the document coordinates: the model re-expresses the
+geometry relative to the new parent inside the same mutation (the scene
+adds its own per-level region offset when rendering nested states). The batch mode runs the edit scripts
+with the connected scene as well, so every L2 case exercises the sync.
+There is no undo stack in the editor yet, so undo/redo is not an L4
+subject.
 
 ## Batch mode contract
 
