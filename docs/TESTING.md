@@ -65,6 +65,13 @@ rectangles and the rendered pixels - so every test invocation runs with this
 option, making the dumps and images identical on any machine. The option is
 runtime-only: the GUI and normal exports always render text.
 
+`--reconstruct` loads the document with the library's geometry reconstruction:
+absent geometry is rebuilt, and node geometry violating the standard (e.g. a
+comment with point instead of rect geometry) is dropped and rebuilt as well.
+Without the option such documents fail with a format error (exit code 2) -
+the strict default. The GUI open dialog exposes the same mode as the
+reconstruction checkbox.
+
 ## Edit scripts
 
 `--batch <file.graphml> --script <file> [--dump] [--save <out.graphml>]` runs

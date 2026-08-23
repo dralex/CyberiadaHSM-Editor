@@ -50,9 +50,22 @@ endforeach()
 # broken documents must fail with the load-error code, not hang or crash
 foreach(diagram
     broken-xml
-    broken-format)
+    broken-format
+    broken-point-comment)
   add_l0_test(${diagram} 2)
 endforeach()
+
+# the reconstruction mode repairs malformed geometry instead
+add_test(NAME l0-point-comment-reconstruct
+  COMMAND ${CMAKE_COMMAND}
+    -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
+    -DINPUT=${CMAKE_CURRENT_SOURCE_DIR}/diagrams/broken-point-comment.graphml
+    -DEXPECTED=0
+    -DRECONSTRUCT=1
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunBatchTest.cmake)
+set_tests_properties(l0-point-comment-reconstruct PROPERTIES
+  TIMEOUT 60
+  ENVIRONMENT "${L0_ENVIRONMENT}")
 
 # a missing file argument is a usage error
 add_test(NAME l0-usage

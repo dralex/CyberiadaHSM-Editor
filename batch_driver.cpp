@@ -32,13 +32,14 @@
 #include "cyberiadasm_render.h"
 
 int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName, bool dump,
-				 const QString& script, const QString& save, const QString& exportImage)
+				 const QString& script, const QString& save, const QString& exportImage,
+				 bool reconstruct)
 {
 	CyberiadaSMEditorWindow win;
 	win.show();
 
 	QString error;
-	if (!win.openDocument(fileName, &error)) {
+	if (!win.openDocument(fileName, &error, reconstruct)) {
 		fprintf(stderr, "cannot load %s\n%s\n", qPrintable(fileName), qPrintable(error));
 		return batchLoadError;
 	}
