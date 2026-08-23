@@ -93,9 +93,11 @@ void CyberiadaSMEditorScene::slotSelectionChanged() {
         if(!element) return;
         MY_ASSERT(element);
 		QModelIndex index = model->elementToIndex(element);
+        // the scene may live without the editor window (batch, tests)
         CyberiadaSMEditorWindow* p = dynamic_cast<CyberiadaSMEditorWindow*>(parent());
-        //p->SMView->setCurrentIndex(index);
-		p->SMView->select(index);
+        if (p) {
+            p->SMView->select(index);
+        }
 	}
 }
 
@@ -366,8 +368,9 @@ void CyberiadaSMEditorScene::loadScene()
     }
     setSceneRect(bounds.adjusted(-margin, -margin, margin, margin));
     qDebug() << "new scene rect" << sceneRect();
-    // views().first()->fitInView(itemsBoundingRect(), Qt::KeepAspectRatio);
-    views().first()->fitInView(sceneRect(), Qt::KeepAspectRatio);
+    if (!views().isEmpty()) {
+        views().first()->fitInView(sceneRect(), Qt::KeepAspectRatio);
+    }
     update();
 }
 

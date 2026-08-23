@@ -665,6 +665,26 @@ bool CyberiadaSMModel::deleteElement(const QModelIndex &index)
         }
     }
 
+    // delete the transitions attached to the doomed subtree - the saved
+    // document must not keep edges with missing endpoints
+    for (Cyberiada::StateMachineList::iterator s = sms.begin(); s != sms.end(); s++) {
+        Cyberiada::ElementList transitions = (*s)->find_elements_by_type(Cyberiada::elementTransition);
+        for (Cyberiada::ElementList::iterator t = transitions.begin(); t != transitions.end(); t++) {
+            Cyberiada::Transition* tr = static_cast<Cyberiada::Transition*>(*t);
+            bool attached = false, inside = false;
+            for (Cyberiada::ElementList::const_iterator d = doomed.begin(); d != doomed.end(); d++) {
+                if (*d == *t) { inside = true; break; }
+                if ((*d)->get_id() == tr->source_element_id() ||
+                    (*d)->get_id() == tr->target_element_id()) {
+                    attached = true;
+                }
+            }
+            if (!inside && attached) {
+                deleteElement(elementToIndex(tr));
+            }
+        }
+    }
+
     int row = child_element->index();
     beginRemoveRows(elementToIndex(parent_element), row, row);
     parent_element->remove_element(child_element->get_id());
@@ -674,6 +694,9 @@ bool CyberiadaSMModel::deleteElement(const QModelIndex &index)
 
 Qt::ItemFlags CyberiadaSMModel::flags(const QModelIndex &index) const
 {
+	if (!index.isValid()) {
+		return Qt::NoItemFlags;
+	}
 	Qt::ItemFlags default_flags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 	if (isSMIndex(index)) {
 		return Qt::ItemIsDropEnabled | default_flags;
