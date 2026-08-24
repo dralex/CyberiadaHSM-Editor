@@ -165,6 +165,7 @@ add_l3_test(empty-actions)
 add_l3_test(cyb-geometry)
 add_l3_test(geometry)
 add_l3_test(sources)
+add_l3_test(choice)
 
 # The L4 in-process test suite: QtTest binaries linked against the core
 # library, checking the model contract and the scene structure directly
