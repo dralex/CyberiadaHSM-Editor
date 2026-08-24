@@ -17,3 +17,4 @@ with a second line'}, Formal Comment: {id: 'n3', body: 'machine/ updated data'}}
     Composite State: {id: 'n1', pos: (0.00; 0.00), rect: (0.00; 0.00; 0.00; 0.00)}
       Simple State: {id: 'n1::n0', pos: (0.00; 0.00), rect: (0.00; 0.00; 0.00; 0.00)}
       Simple State: {id: 'n1::n1', pos: (0.00; 0.00), rect: (0.00; 0.00; 0.00; 0.00)}
+    Comment: {id: 'n2', pos: (0.00; 0.00), rect: (-20.00; -10.00; 40.00; 20.00)}

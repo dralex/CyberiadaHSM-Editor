@@ -37,6 +37,7 @@ private slots:
 	void test_new_state();
 	void test_new_transition();
 	void test_new_comment();
+	void test_new_choice();
 	void test_reparent();
 	void test_delete();
 
@@ -141,14 +142,46 @@ void TestScene::test_new_comment()
 {
 	Cyberiada::ElementCollection* parent = static_cast<Cyberiada::ElementCollection*>(
 		model->idToElement("node-0"));
-	// a comment without geometry has no item
+	// an informal comment without geometry gets a default sized item
 	Cyberiada::Comment* bare = model->newComment(parent, "Bare");
 	QVERIFY(bare);
-	QVERIFY(!scene->getMap().contains(bare->get_id()));
+	QGraphicsItem* bare_item = scene->getMap().value(bare->get_id());
+	QVERIFY(bare_item);
+	QCOMPARE(bare_item->type(), int(CyberiadaSMEditorAbstractItem::CommentItem));
+	// the size of a geometry-less comment follows its text mode
+	QVERIFY(!bare_item->boundingRect().isEmpty());
 	Cyberiada::Comment* placed = model->newComment(parent, "Placed",
 												   Cyberiada::Rect(10.0, 10.0, 80.0, 30.0));
 	QVERIFY(placed);
 	QVERIFY(scene->getMap().value(placed->get_id()));
+	// the geometry-less document meta stays out of the scene
+	QVERIFY(!scene->getMap().contains(model->idToElement("nMeta")->get_id()));
+}
+
+void TestScene::test_new_choice()
+{
+	Cyberiada::ElementCollection* parent = static_cast<Cyberiada::ElementCollection*>(
+		model->idToElement("node-0"));
+	Cyberiada::ChoicePseudostate* choice =
+		model->newChoice(parent, Cyberiada::Rect(30.0, 40.0, 60.0, 50.0));
+	QVERIFY(choice);
+	QGraphicsItem* item = scene->getMap().value(choice->get_id());
+	QVERIFY(item);
+	QCOMPARE(item->type(), int(CyberiadaSMEditorAbstractItem::ChoiceItem));
+	QCOMPARE(item->pos(), QPointF(30.0, 40.0));
+	QCOMPARE(item->boundingRect(), QRectF(-30.0, -25.0, 60.0, 50.0));
+
+	// the item follows the rect update
+	QVERIFY(model->updateGeometry(model->elementToIndex(choice),
+								  Cyberiada::Rect(70.0, 80.0, 60.0, 50.0)));
+	QCOMPARE(item->pos(), QPointF(70.0, 80.0));
+
+	// a choice without geometry gets a default sized diamond
+	Cyberiada::ChoicePseudostate* bare = model->newChoice(parent);
+	QVERIFY(bare);
+	QGraphicsItem* bare_item = scene->getMap().value(bare->get_id());
+	QVERIFY(bare_item);
+	QCOMPARE(bare_item->boundingRect(), QRectF(-20.0, -20.0, 40.0, 40.0));
 }
 
 void TestScene::test_reparent()

@@ -20,3 +20,4 @@ eventPropagation/ block
       Simple State: {id: 'n1::n2', pos: (0.00; 0.00), rect: (0.00; 0.00; 0.00; 0.00)}
     Simple State: {id: 'n2', pos: (10.00; 20.00), rect: (-100.00; -50.00; 200.00; 100.00)}
     Final: {id: 'n3', pos: (300.00; 100.00), rect: (-10.00; -10.00; 20.00; 20.00)}
+    Comment: {id: 'n4', pos: (0.00; 0.00), rect: (-20.00; -10.00; 40.00; 20.00)}

@@ -4,3 +4,4 @@ new-choice G0
 new-terminate G0 200 100
 move n3 210 110
 new-transition G0 n1 n1::n1
+move n1::n1 130 70 80 40
