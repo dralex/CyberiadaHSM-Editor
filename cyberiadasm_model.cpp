@@ -339,10 +339,9 @@ bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada:
     if (!element) return false;
     if (!element->has_rect_geometry()) return false;
     if (element->get_type() == Cyberiada::elementChoice) {
-		// the library has no choice rect update yet
-		return false;
-	}
-    if (element->get_type() == Cyberiada::elementComment || element->get_type() == Cyberiada::elementFormalComment) {
+		Cyberiada::ChoicePseudostate* choice = static_cast<Cyberiada::ChoicePseudostate*>(element);
+		choice->update_geometry(rect);
+	} else if (element->get_type() == Cyberiada::elementComment || element->get_type() == Cyberiada::elementFormalComment) {
 		Cyberiada::Comment* comment = static_cast<Cyberiada::Comment*>(element);
         comment->update_geometry(rect);
 	} else {
@@ -956,12 +955,17 @@ static void ancestorsOffset(const Cyberiada::Element* parent, double& x, double&
 static void shiftGeometry(Cyberiada::Element* element, double dx, double dy)
 {
     Cyberiada::ElementType type = element->get_type();
+    if (!element->has_geometry()) return;
     if (element->has_point_geometry()) {
         Cyberiada::Vertex* v = static_cast<Cyberiada::Vertex*>(element);
         Cyberiada::Point p = v->get_geometry_point();
         v->update_geometry(Cyberiada::Point(p.x + dx, p.y + dy));
-    } else if (element->has_rect_geometry() && type != Cyberiada::elementChoice) {
-        if (type == Cyberiada::elementComment || type == Cyberiada::elementFormalComment) {
+    } else if (element->has_rect_geometry()) {
+        if (type == Cyberiada::elementChoice) {
+            Cyberiada::ChoicePseudostate* c = static_cast<Cyberiada::ChoicePseudostate*>(element);
+            Cyberiada::Rect r = c->get_geometry_rect();
+            c->update_geometry(Cyberiada::Rect(r.x + dx, r.y + dy, r.width, r.height));
+        } else if (type == Cyberiada::elementComment || type == Cyberiada::elementFormalComment) {
             Cyberiada::Comment* c = static_cast<Cyberiada::Comment*>(element);
             Cyberiada::Rect r = c->get_geometry_rect();
             c->update_geometry(Cyberiada::Rect(r.x + dx, r.y + dy, r.width, r.height));

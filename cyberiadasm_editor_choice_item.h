@@ -37,8 +37,18 @@ public:
                                 QGraphicsItem* parent = NULL);
 
     virtual int type() const { return ChoiceItem; }
+    void syncFromModel() override;
+
+    QRectF boundingRect() const override;
 
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
+
+protected:
+    void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
+    void hoverMoveEvent(QGraphicsSceneHoverEvent *event) override;
+
+private:
+    const Cyberiada::ChoicePseudostate* choice;
 };
 
 

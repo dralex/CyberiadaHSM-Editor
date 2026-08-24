@@ -25,8 +25,11 @@
 #include <QPainter>
 #include <QColor>
 
+#include "cyberiada_constants.h"
 #include "cyberiadasm_editor_choice_item.h"
+#include "cyberiadasm_editor_scene.h"
 #include "myassert.h"
+#include "settings_manager.h"
 
 /* -----------------------------------------------------------------------------
  * Choice Item
@@ -37,11 +40,49 @@ CyberiadaSMEditorChoiceItem::CyberiadaSMEditorChoiceItem(CyberiadaSMModel* model
                                                          QGraphicsItem* parent):
     CyberiadaSMEditorAbstractItem(model, element, parent)
 {
+    choice = static_cast<const Cyberiada::ChoicePseudostate*>(element);
+
+    if (choice->has_geometry()) {
+        Cyberiada::Rect r = choice->get_geometry_rect();
+        setPos(QPointF(r.x, r.y));
+    }
+
+    setAcceptHoverEvents(true);
+    setFlags(ItemIsSelectable | ItemSendsGeometryChanges);
+
+    initializeDots();
+    setDotsPosition();
+    hideDots();
+}
+
+void CyberiadaSMEditorChoiceItem::syncFromModel()
+{
+    if (choice->has_geometry()) {
+        Cyberiada::Rect r = choice->get_geometry_rect();
+        setPos(QPointF(r.x, r.y));
+    }
+    CyberiadaSMEditorAbstractItem::syncFromModel();
+}
+
+QRectF CyberiadaSMEditorChoiceItem::boundingRect() const
+{
+    if (!choice->has_geometry()) {
+        return QRectF(- CHOICE_DEFAULT_SIZE / 2.0,
+                      - CHOICE_DEFAULT_SIZE / 2.0,
+                      CHOICE_DEFAULT_SIZE,
+                      CHOICE_DEFAULT_SIZE);
+    }
+    Cyberiada::Rect r = choice->get_geometry_rect();
+    return QRectF(- r.width / 2, - r.height / 2, r.width, r.height);
 }
 
 void CyberiadaSMEditorChoiceItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*)
 {
-    painter->setPen(QPen(Qt::black, 1, Qt::SolidLine));
+    QColor color(Qt::black);
+    if (isSelected()) {
+        color = SettingsManager::instance().getSelectionColor();
+    }
+    painter->setPen(QPen(color, 1, Qt::SolidLine));
 
     QRectF r = boundingRect();
     const QPointF points[] = {
@@ -52,4 +93,38 @@ void CyberiadaSMEditorChoiceItem::paint(QPainter* painter, const QStyleOptionGra
     };
 
     painter->drawConvexPolygon(points, 4);
+}
+
+void CyberiadaSMEditorChoiceItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
+{
+    if (!choice->has_geometry() ||
+        dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select ||
+        SettingsManager::instance().getInspectorMode()) {
+        event->ignore();
+        return;
+    }
+
+    if (isLeftMouseButtonPressed) {
+        setFlag(ItemIsMovable);
+        Cyberiada::Rect r = choice->get_geometry_rect();
+        model->updateGeometry(model->elementToIndex(element),
+                              Cyberiada::Rect(pos().x(), pos().y(), r.width, r.height));
+    }
+
+    QGraphicsItem::mouseMoveEvent(event);
+    emit geometryChanged();
+}
+
+void CyberiadaSMEditorChoiceItem::hoverMoveEvent(QGraphicsSceneHoverEvent *event)
+{
+    if (!isSelected() ||
+        !choice->has_geometry() ||
+        dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select ||
+        SettingsManager::instance().getInspectorMode()) {
+        event->ignore();
+        return;
+    }
+
+    setCursor(QCursor(Qt::SizeAllCursor));
+    QGraphicsItem::hoverMoveEvent(event);
 }

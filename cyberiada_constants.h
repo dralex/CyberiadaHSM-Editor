@@ -29,6 +29,7 @@
 // Geometry constants
 #define ROUNDED_RECT_RADIUS 10
 #define VERTEX_POINT_RADIUS 10
+#define CHOICE_DEFAULT_SIZE 40
 #define COMMENT_ANGLE_CORNER 10
 
 // Metainformation constants

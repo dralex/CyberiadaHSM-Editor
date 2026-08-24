@@ -184,12 +184,12 @@ static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QStri
 		if (title.isEmpty()) { *error = "rename requires a title"; return false; }
 		return model->updateTitle(index, title);
 	} else if (cmd == "move") {
-		if (element->get_type() == Cyberiada::elementChoice) {
-			*error = "the choice geometry cannot be changed";
-			return false;
-		}
 		if (toNumbers(tokens, 2, 4, v)) {
 			return model->updateGeometry(index, Cyberiada::Rect(v[0], v[1], v[2], v[3]));
+		}
+		if (element->get_type() == Cyberiada::elementChoice) {
+			*error = "the choice requires <x y w h>";
+			return false;
 		}
 		if (toNumbers(tokens, 2, 2, v)) {
 			return model->updateGeometry(index, Cyberiada::Point(v[0], v[1]));
