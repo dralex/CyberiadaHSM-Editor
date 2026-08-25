@@ -503,11 +503,12 @@ void CyberiadaSMPropertiesWidget::newElement(Cyberiada::Element* new_element)
 		}
 
 		QtProperty* transition_order_prop = constructProperty(propMetaTransitionOrder);
-		boolManager->setValue(transition_order_prop, doc->meta().transition_order_flag);
+		boolManager->setValue(transition_order_prop, doc->meta().transition_order == Cyberiada::transitionOrderExit);
 		meta_group_prop->addSubProperty(transition_order_prop);
 
 		QtProperty* event_propagation_prop = constructProperty(propMetaEventPropagation);
-		boolManager->setValue(event_propagation_prop, doc->meta().event_propagation_flag);
+		boolManager->setValue(event_propagation_prop,
+							  doc->meta().event_propagation == Cyberiada::docEventPropagationPropagate);
 		meta_group_prop->addSubProperty(event_propagation_prop);
 		
 	} else {
@@ -770,9 +771,10 @@ void CyberiadaSMPropertiesWidget::updateElement()
         }
 
         QtProperty* transition_order_prop = findQtProperty(meta_group_prop, findPropertyStruct(propMetaTransitionOrder).propName);
-        boolManager->setValue(transition_order_prop, doc->meta().transition_order_flag);
+        boolManager->setValue(transition_order_prop, doc->meta().transition_order == Cyberiada::transitionOrderExit);
         QtProperty* event_propagation_prop = findQtProperty(meta_group_prop, findPropertyStruct(propMetaEventPropagation).propName);
-        boolManager->setValue(event_propagation_prop, doc->meta().event_propagation_flag);
+        boolManager->setValue(event_propagation_prop,
+                              doc->meta().event_propagation == Cyberiada::docEventPropagationPropagate);
 
     } else {
         QtProperty* element_id_prop = findQtProperty(element_group_prop, findPropertyStruct(propID).propName);

@@ -428,12 +428,13 @@ bool CyberiadaSMModel::updateMetainformation(const QModelIndex& index, const QSt
 	if (name == CYBERIADA_META_STANDARD_VERSION) {
 		meta.standard_version = value;
 	} else if (name == CYBERIADA_META_TRANSITION_ORDER) {
-		if (value == CYBERIADA_META_AO_EXIT) meta.transition_order_flag = true;
-		else if (value == CYBERIADA_META_AO_TRANSITION) meta.transition_order_flag = false;
+		if (value == CYBERIADA_META_AO_EXIT) meta.transition_order = Cyberiada::transitionOrderExit;
+		else if (value == CYBERIADA_META_AO_ACTION ||
+				 value == CYBERIADA_META_AO_TRANSITION) meta.transition_order = Cyberiada::transitionOrderAction;
 		else return false;
 	} else if (name == CYBERIADA_META_EVENT_PROPAGATION) {
-		if (value == CYBERIADA_META_EP_PROPAGATE) meta.event_propagation_flag = true;
-		else if (value == CYBERIADA_META_EP_BLOCK) meta.event_propagation_flag = false;
+		if (value == CYBERIADA_META_EP_PROPAGATE) meta.event_propagation = Cyberiada::docEventPropagationPropagate;
+		else if (value == CYBERIADA_META_EP_BLOCK) meta.event_propagation = Cyberiada::docEventPropagationBlock;
 		else return false;
 	} else {
 		meta.set_string(name, value);

@@ -158,7 +158,8 @@ static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QStri
 		if (tokens.size() < 3) { *error = "update-meta requires <parameter> <value>"; return false; }
 		QString param = tokens.at(1);
 		QString value = restOfLine(tokens, 2);
-		if ((param == "transitionOrder" && value != "transitionFirst" && value != "exitFirst") ||
+		if ((param == "transitionOrder" && value != "actionFirst" &&
+			 value != "transitionFirst" && value != "exitFirst") ||
 			(param == "eventPropagation" && value != "propagate" && value != "block")) {
 			*error = "invalid " + param + " value '" + value + "'";
 			return false;

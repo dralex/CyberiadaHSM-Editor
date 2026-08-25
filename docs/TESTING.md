@@ -154,8 +154,9 @@ an element also removes every subject referencing it or its children, so
 the document never keeps dangling subject links.
 
 `update-meta` addresses the document, not an element. The flag parameters
-accept only their standard values (`transitionOrder`: `transitionFirst` /
-`exitFirst`; `eventPropagation`: `propagate` / `block`); any other parameter
+accept only their standard values (`transitionOrder`: `actionFirst` /
+`exitFirst`, the legacy `transitionFirst` is accepted as well;
+`eventPropagation`: `propagate` / `block`); any other parameter
 is a free-form string, replaced in place or appended. The change is written
 both to the decoded metainformation and to the serialized `nMeta` comment.
 `update-id` also rewrites the transition source/target references to the
