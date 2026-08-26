@@ -31,6 +31,12 @@ while read diagram; do
         { echo "FAILED $diagram render"; exit 1; }
     echo "regenerated good/$diagram-render.png"
 done
+sed -n 's/^add_service_render_test(\([^)]*\))$/\1/p' CMakeLists.txt | \
+while read diagram; do
+    "$BIN" --batch --no-text --service "diagrams/$diagram.graphml" --export "good/$diagram-service-render.png" 2>/dev/null || \
+        { echo "FAILED $diagram service render"; exit 1; }
+    echo "regenerated good/$diagram-service-render.png"
+done
 # the vector renders are compared byte by byte, so they are regenerated too
 sed -n 's/^add_l3_svg_test(\([^)]*\))$/\1/p' CMakeLists.txt | \
 while read diagram; do

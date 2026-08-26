@@ -37,6 +37,7 @@ private slots:
 	void test_item_geometry();
 	void test_loop_polyline();
 	void test_inspector_region();
+	void test_service_objects();
 	void test_selection();
 	void test_title_sync();
 	void test_new_state();
@@ -130,6 +131,39 @@ void TestScene::test_inspector_region()
 
 	SettingsManager::instance().setInspectorMode(false);
 	QVERIFY(state->getRegion()->pos() != QPointF(0, 0));
+}
+
+void TestScene::test_service_objects()
+{
+	// the service objects are a decoration: showing them must not move the
+	// region, which is the graphics parent of every nested element
+	CyberiadaSMEditorStateItem* state =
+		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0"));
+	QVERIFY(state);
+	QVERIFY(state->getRegion());
+
+	// the setting is persisted, so the test states its own starting point
+	SettingsManager::instance().setShowServiceObjects(false);
+	QPointF pos = state->getRegion()->pos();
+	QRectF rect = state->getRegion()->rect();
+
+	SettingsManager::instance().setShowServiceObjects(true);
+	QCOMPARE(state->getRegion()->pos(), pos);
+	QCOMPARE(state->getRegion()->rect(), rect);
+
+	SettingsManager::instance().setShowServiceObjects(false);
+	QCOMPARE(state->getRegion()->pos(), pos);
+	QCOMPARE(state->getRegion()->rect(), rect);
+
+	// while the inspector mode still moves it, whatever the decoration
+	SettingsManager::instance().setShowServiceObjects(true);
+	SettingsManager::instance().setInspectorMode(true);
+	QCOMPARE(state->getRegion()->pos(), QPointF(0, 0));
+	QVERIFY(state->getRegion()->pos() != pos);
+
+	SettingsManager::instance().setInspectorMode(false);
+	SettingsManager::instance().setShowServiceObjects(false);
+	QCOMPARE(state->getRegion()->pos(), pos);
 }
 
 void TestScene::test_selection()

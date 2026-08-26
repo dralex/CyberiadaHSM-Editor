@@ -70,6 +70,8 @@ int main(int argc, char *argv[])
 	parser.addOption(strictOption);
 	QCommandLineOption inspectOption("inspect", "Open the document read-only, as the file stores it.");
 	parser.addOption(inspectOption);
+	QCommandLineOption serviceOption("service", "Draw the service objects: the region borders and the coordinate origins.");
+	parser.addOption(serviceOption);
 	QCommandLineOption saveFormatOption("save-format",
 										"The format of the saved document: cyberiada (default), "
 										"yed-ostranna or yed-berloga.", "format", "cyberiada");
@@ -93,6 +95,9 @@ int main(int argc, char *argv[])
 	if (parser.isSet(inspectOption)) {
 		// the GUI turns the mode on through the open dialog
 		SettingsManager::instance().setInspectorMode(true);
+	}
+	if (parser.isSet(serviceOption)) {
+		SettingsManager::instance().overrideShowServiceObjects(true);
 	}
 
     try {

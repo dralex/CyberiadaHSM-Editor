@@ -124,11 +124,17 @@ reconstruction checkbox.
 
 `--inspect` opens the document read-only, as the GUI does through the open
 dialog: every model mutation is refused, so an edit script fails with exit
-code 4, and the scene draws the document geometry - the region rectangles
-taken from `dRegion` instead of the layout around the state title, the
-coordinate origins - so the render differs from the editing one. The dumps do
-not differ: with `--no-text` the text heights are zero, so both region layouts
-coincide, which is why the mode is covered by the renders and not by dumps.
+code 4, and the region rectangles are taken from `dRegion` instead of the
+layout around the state title. The dumps do not differ: with `--no-text` the
+text heights are zero, so both region layouts coincide, which is why the mode
+is covered by the renders and not by dumps.
+
+`--service` draws the service objects: the region borders and the coordinate
+origins of the scene, the states and the regions. They are a decoration and
+say nothing about the mode - the region geometry follows `--inspect` alone -
+so the two options are independent and the tests use both. The option is
+runtime-only, like `--no-text`: the GUI toggle is a stored preference, and a
+batch run must not change it.
 
 `--save-format <format>` chooses the format of the saved document:
 `cyberiada` (the default), `yed-ostranna` or `yed-berloga`. The yEd formats keep
@@ -277,6 +283,7 @@ tests/
   good/<name>-render.png     reviewed good images for the L3 renders
   good/<name>-render.svg     reviewed good files for the vector renders
   good/<name>-inspect-render.png  reviewed good images for the inspect renders
+  good/<name>-service-render.png  reviewed good images for the service objects
   good/<name>-<format>-output.graphml  reviewed good files for the saved formats
   regen-good.sh         regenerates the good files and shows the diff
 run-tests.sh            build-and-run wrapper: ctest --output-on-failure
@@ -294,6 +301,11 @@ Diagram conventions:
 * good files follow the sibling-library convention:
   `good/<name>-output.txt` (canonical dump) and, for the L2 cases,
   `good/<case>-output.graphml` (saved document).
+
+The `service-render-<diagram>` case draws the same diagram with `--service` but
+without `--inspect`, so its region border follows the text layout instead of
+the document region: comparing it with `<diagram>-inspect-render.png` shows the
+decoration and the geometry moving independently.
 
 The scene is exported to the vector formats as well: `--export <file>.svg`
 writes it through `QSvgGenerator` and `--export <file>.pdf` through
