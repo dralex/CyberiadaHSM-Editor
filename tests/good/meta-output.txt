@@ -29,8 +29,6 @@ markupLanguage/ html
 
 transitionOrder/ exitFirst
 
-eventPropagation/ propagate
-
-'}}}}}, file: 'diagrams/meta.graphml', format: cyberiada, format_str: 'Cyberiada-GraphML-1.0'}
+eventPropagation/ propagate'}}}}}, file: 'diagrams/meta.graphml', format: cyberiada, format_str: 'Cyberiada-GraphML-1.0'}
 == scene
   State Machine: {id: 'G0', pos: (0.00; 0.00), rect: (0.00; 0.00; 0.00; 0.00)}
