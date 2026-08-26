@@ -68,6 +68,8 @@ int main(int argc, char *argv[])
 	parser.addOption(reconstructOption);
 	QCommandLineOption strictOption("strict", "Check the standard requirements strictly on load.");
 	parser.addOption(strictOption);
+	QCommandLineOption inspectOption("inspect", "Open the document read-only, as the file stores it.");
+	parser.addOption(inspectOption);
 	QCommandLineOption compareOption("compare", "Compare two image files with tolerance and exit.");
 	parser.addOption(compareOption);
 	QCommandLineOption epsilonOption("epsilon", "Comparison per-channel tolerance (0-255, default 8).", "n", "8");
@@ -83,6 +85,10 @@ int main(int argc, char *argv[])
 		// font metrics differ across Qt versions even with the pinned font;
 		// the tests hide all text so the output is identical everywhere
 		SettingsManager::instance().setShowText(false);
+	}
+	if (parser.isSet(inspectOption)) {
+		// the GUI turns the mode on through the open dialog
+		SettingsManager::instance().setInspectorMode(true);
 	}
 
     try {

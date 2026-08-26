@@ -167,6 +167,50 @@ add_l2_test(update-id geometry)
 add_l2_test(subjects hierarchy)
 add_l2_test(transition-subjects comment-transition)
 
+# The inspection test suite: the read-only mode draws the document geometry -
+# the region rectangles and the coordinate origins - so the render differs
+# from the editing one; an edit script must be refused (see docs/TESTING.md)
+function(add_inspect_render_test name)
+  add_test(NAME inspect-render-${name}
+    COMMAND ${CMAKE_COMMAND}
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
+      -DINPUT=diagrams/${name}.graphml
+      -DINSPECT=1
+      -DEXPECTED=0
+      -DWORKDIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DIMAGE_OUT=${CMAKE_CURRENT_BINARY_DIR}/inspect-render-${name}.png
+      -DIMAGE_GOOD=${CMAKE_CURRENT_SOURCE_DIR}/good/${name}-inspect-render.png
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunBatchTest.cmake)
+  set_tests_properties(inspect-render-${name} PROPERTIES
+    TIMEOUT 60
+    ENVIRONMENT "${L0_ENVIRONMENT}")
+endfunction()
+
+add_inspect_render_test(geometry)
+add_inspect_render_test(cyb-geometry)
+
+# a refused mutation is a script error
+function(add_inspect_reject_test case diagram)
+  add_test(NAME inspect-reject-${case}
+    COMMAND ${CMAKE_COMMAND}
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
+      -DINPUT=diagrams/${diagram}.graphml
+      -DSCRIPT=scripts/${case}.script
+      -DINSPECT=1
+      -DEXPECTED=4
+      -DWORKDIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunBatchTest.cmake)
+  set_tests_properties(inspect-reject-${case} PROPERTIES
+    TIMEOUT 60
+    ENVIRONMENT "${L0_ENVIRONMENT}")
+endfunction()
+
+add_inspect_reject_test(add-elements hierarchy)
+add_inspect_reject_test(delete geometry)
+add_inspect_reject_test(rename-move geometry)
+add_inspect_reject_test(update-meta meta)
+add_inspect_reject_test(vertices choice)
+
 # The L3 render test suite: the exported scene image must match the good
 # image within the comparison tolerance (see docs/TESTING.md)
 function(add_l3_test diagram)
@@ -206,3 +250,4 @@ endfunction()
 
 add_l4_test(model)
 add_l4_test(scene)
+add_l4_test(dialog)

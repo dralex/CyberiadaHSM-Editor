@@ -51,7 +51,10 @@ QAbstractItemModel contract - and verifies the editing API: the signals
 each mutation emits, the id fixup of transition endpoints, the comment
 subject cleanup and the transition cascade on element deletion. A comment
 subject may address a transition as well; a new element is inserted before
-the transitions of its collection, where the library keeps it.
+the transitions of its collection, where the library keeps it. The inspected
+model refuses every mutation and strips the editable, draggable and droppable
+item flags, so an editing handler missing the mode check still cannot damage
+the document.
 
 `l4-scene` checks the scene built from a loaded document: the item map
 against the diagram structure, item positions, selection via
@@ -65,8 +68,15 @@ absolute position in the document coordinates: the model re-expresses the
 geometry relative to the new parent inside the same mutation (the scene
 adds its own per-level region offset when rendering nested states). The batch mode runs the edit scripts
 with the connected scene as well, so every L2 case exercises the sync.
-There is no undo stack in the editor yet, so undo/redo is not an L4
-subject.
+The inspected region follows the document while the edited one is laid out
+around the state title, so switching the mode re-derives it. There is no undo
+stack in the editor yet, so undo/redo is not an L4 subject.
+
+`l4-dialog` checks the open dialog: the file browser and the option check
+boxes really share one window (the options are injected into the dialog grid
+layout), the document is inspected by default, and the inspected document is
+never given the geometry it does not have - the reconstruction box is unchecked
+and disabled while the inspector box is checked.
 
 ## Batch mode contract
 
@@ -107,6 +117,14 @@ comment with point instead of rect geometry) is dropped and rebuilt as well.
 Without the option such documents fail with a format error (exit code 2) -
 the strict default. The GUI open dialog exposes the same mode as the
 reconstruction checkbox.
+
+`--inspect` opens the document read-only, as the GUI does through the open
+dialog: every model mutation is refused, so an edit script fails with exit
+code 4, and the scene draws the document geometry - the region rectangles
+taken from `dRegion` instead of the layout around the state title, the
+coordinate origins - so the render differs from the editing one. The dumps do
+not differ: with `--no-text` the text heights are zero, so both region layouts
+coincide, which is why the mode is covered by the renders and not by dumps.
 
 ## Edit scripts
 
@@ -247,6 +265,7 @@ tests/
   good/<name>-output.txt     reviewed good files for the L1/L2 dumps
   good/<case>-output.graphml reviewed good files for the L2 saved documents
   good/<name>-render.png     reviewed good images for the L3 renders
+  good/<name>-inspect-render.png  reviewed good images for the inspect renders
   regen-good.sh         regenerates the good files and shows the diff
 run-tests.sh            build-and-run wrapper: ctest --output-on-failure
 ```
@@ -263,6 +282,12 @@ Diagram conventions:
 * good files follow the sibling-library convention:
   `good/<name>-output.txt` (canonical dump) and, for the L2 cases,
   `good/<case>-output.graphml` (saved document).
+
+The inspection cases run the same diagrams with `--inspect`:
+`inspect-render-<diagram>` compares the read-only render with
+`good/<diagram>-inspect-render.png`, and `inspect-reject-<case>` runs an
+existing L2 script and requires exit code 4 - the refused mutation is reported
+as a script error.
 
 Good files are reference data: they are never regenerated from the
 implementation just to make a failing test pass; any change to a good file is a

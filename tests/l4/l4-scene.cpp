@@ -25,6 +25,8 @@
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_editor_scene.h"
 #include "cyberiadasm_editor_transition_item.h"
+#include "cyberiadasm_editor_state_item.h"
+#include "settings_manager.h"
 
 class TestScene: public QObject {
 	Q_OBJECT
@@ -34,6 +36,7 @@ private slots:
 	void test_load_scene();
 	void test_item_geometry();
 	void test_loop_polyline();
+	void test_inspector_region();
 	void test_selection();
 	void test_title_sync();
 	void test_new_state();
@@ -107,6 +110,26 @@ void TestScene::test_loop_polyline()
 	QVERIFY(model->updateGeometry(model->elementToIndex(model->idToElement("edge-0")),
 								  Cyberiada::Polyline()));
 	QVERIFY(!loop->boundingRect().contains(farthest));
+}
+
+void TestScene::test_inspector_region()
+{
+	// the inspected region follows the document, the edited one is laid out
+	// around the state title and activities
+	CyberiadaSMEditorStateItem* state =
+		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0"));
+	QVERIFY(state);
+	QVERIFY(state->getRegion());
+
+	QVERIFY(!SettingsManager::instance().getInspectorMode());
+	QVERIFY(state->getRegion()->pos() != QPointF(0, 0));
+
+	SettingsManager::instance().setInspectorMode(true);
+	QCOMPARE(state->getRegion()->pos(), QPointF(0, 0));
+	QCOMPARE(state->getRegion()->rect(), state->rect());
+
+	SettingsManager::instance().setInspectorMode(false);
+	QVERIFY(state->getRegion()->pos() != QPointF(0, 0));
 }
 
 void TestScene::test_selection()

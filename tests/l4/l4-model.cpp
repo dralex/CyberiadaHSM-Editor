@@ -21,9 +21,12 @@
  *
  * ----------------------------------------------------------------------------- */
 
+#include <sstream>
+
 #include <QtTest>
 #include <QAbstractItemModelTester>
 #include "cyberiadasm_model.h"
+#include "settings_manager.h"
 
 class TestModel: public QObject {
 	Q_OBJECT
@@ -39,10 +42,12 @@ private slots:
 	void test_reparent();
 	void test_subjects();
 	void test_subject_on_transition();
+	void test_read_only();
 	void test_delete();
 
 private:
 	QModelIndex indexOf(const char* id);
+	QString documentDump();
 	CyberiadaSMModel* model;
 	QAbstractItemModelTester* tester;
 };
@@ -50,6 +55,13 @@ private:
 QModelIndex TestModel::indexOf(const char* id)
 {
 	return model->elementToIndex(model->idToElement(id));
+}
+
+QString TestModel::documentDump()
+{
+	std::ostringstream os;
+	os << *static_cast<const Cyberiada::Element*>(model->rootDocument());
+	return QString(os.str().c_str());
 }
 
 void TestModel::initTestCase()
@@ -180,6 +192,50 @@ void TestModel::test_subject_on_transition()
 	// deleting the transition strips the subject pointing at it
 	QVERIFY(model->deleteElement(model->elementToIndex(t)));
 	QVERIFY(!c->has_subjects());
+}
+
+void TestModel::test_read_only()
+{
+	// the inspected document refuses every mutation, so an editing handler
+	// missing the mode check still cannot damage the file
+	QModelIndex state = indexOf("node-0");
+	QVERIFY(state.isValid());
+	QVERIFY(model->flags(state) & Qt::ItemIsEditable);
+
+	SettingsManager::instance().setInspectorMode(true);
+	QVERIFY(model->readOnly());
+	QString before = documentDump();
+
+	QVERIFY(!model->updateTitle(state, "Renamed"));
+	QVERIFY(!model->updateID(state, "node-renamed"));
+	QVERIFY(!model->updateGeometry(state, Cyberiada::Rect(0, 0, 10, 10)));
+	QVERIFY(!model->updateCommentBody(state, "text"));
+	QVERIFY(!model->newAction(state, Cyberiada::actionEntry, "entry", "", "act();"));
+	QVERIFY(!model->deleteAction(state, 0));
+	QVERIFY(!model->deleteElement(state));
+	QVERIFY(!model->newState(static_cast<Cyberiada::ElementCollection*>(
+								 model->idToElement("node-0")), "Fresh"));
+	QVERIFY(!model->newComment(static_cast<Cyberiada::ElementCollection*>(
+								   model->idToElement("node-0")), "A note"));
+	QVERIFY(!model->newStateMachine("Another"));
+	QVERIFY(!model->setData(state, "Renamed", Qt::EditRole));
+
+	// the tree is locked as well: nothing is renamed or dragged in place
+	Qt::ItemFlags f = model->flags(state);
+	QVERIFY(!(f & Qt::ItemIsEditable));
+	QVERIFY(!(f & Qt::ItemIsDragEnabled));
+	QVERIFY(!(f & Qt::ItemIsDropEnabled));
+	QVERIFY(f & Qt::ItemIsSelectable);
+
+	QCOMPARE(documentDump(), before);
+
+	SettingsManager::instance().setInspectorMode(false);
+	QVERIFY(!model->readOnly());
+	QString title = QString(model->idToElement("node-0")->get_name().c_str());
+	QVERIFY(model->updateTitle(state, "Renamed"));
+	QVERIFY(model->updateTitle(state, title));
+	QCOMPARE(documentDump(), before);
+	QVERIFY(model->flags(state) & Qt::ItemIsEditable);
 }
 
 void TestModel::test_delete()
