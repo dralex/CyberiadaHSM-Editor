@@ -63,7 +63,6 @@ void PreferencesDialog::loadFromSettings()
 {
     SettingsManager& sm = SettingsManager::instance();
 
-    ui->inspectorModeCheckBox->setChecked(sm.getInspectorMode());
     ui->printModeCheckBox->setChecked(sm.getPrintMode());
     ui->snapModeCheckBox->setChecked(sm.getSnapMode());
 
@@ -84,7 +83,6 @@ void PreferencesDialog::saveSettings()
     SettingsManager& sm = SettingsManager::instance();
 
     // general
-    sm.setInspectorMode(ui->inspectorModeCheckBox->isChecked());
     sm.setPrintMode(ui->printModeCheckBox->isChecked());
     sm.setSnapMode(ui->snapModeCheckBox->isChecked());
 

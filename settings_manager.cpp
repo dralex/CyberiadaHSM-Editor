@@ -20,7 +20,6 @@ void SettingsManager::load() {
 
     showTransitionText = s.value("display/showTransitionText", true).toBool();
 
-    inspectorMode = s.value("display/inspectorMode", false).toBool();
     printMode = s.value("display/printMode", false).toBool();
     snapMode = s.value("display/snapMode", false).toBool();
 
@@ -38,7 +37,6 @@ void SettingsManager::loadDefaults()
 
     setShowTransitionText(true);
 
-    setInspectorMode(false);
     setPrintMode(false);
     setSnapMode(false);
 
@@ -76,7 +74,6 @@ void SettingsManager::setShowTransitionText(bool value) {
 void SettingsManager::setInspectorMode(bool value) {
     if (inspectorMode != value) {
         inspectorMode = value;
-        QSettings().setValue("display/inspectorMode", value);
         emit inspectorModeChanged(value);
     }
 }

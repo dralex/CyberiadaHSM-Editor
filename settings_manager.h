@@ -28,6 +28,8 @@ public:
     bool getShowText() const { return showText; }
     void setShowText(bool value) { showText = value; }
 
+    // runtime-only, never persisted: the mode belongs to the open document,
+    // every document is opened for the inspection first
     bool getInspectorMode() const { return inspectorMode; }
     void setInspectorMode(bool value);
     bool getPrintMode() const { return printMode; }
@@ -70,7 +72,7 @@ private:
     bool showText = true;
 
     // modes
-    bool inspectorMode;
+    bool inspectorMode = false;
     bool printMode;
     bool snapMode;
 

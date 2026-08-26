@@ -42,20 +42,6 @@
        <string>General</string>
       </attribute>
       <layout class="QFormLayout" name="formLayout">
-       <item row="0" column="0">
-        <widget class="QLabel" name="inspectorModeLabel">
-         <property name="text">
-          <string>Inspector mode</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QCheckBox" name="inspectorModeCheckBox">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
        <item row="1" column="0">
         <widget class="QLabel" name="printModeLabel">
          <property name="text">
