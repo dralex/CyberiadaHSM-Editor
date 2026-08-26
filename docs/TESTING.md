@@ -222,7 +222,10 @@ sections:
   choice gets a diamond and an informal comment without geometry gets a
   default sized item, both centred on the parent origin. The link between a
   comment and its subject is not drawn yet, so a comment attached to a
-  transition looks like any other comment in the scene dump.
+  transition looks like any other comment in the scene dump. A transition
+  follows its polyline point by point, a self-transition included; only a
+  loop without a polyline is drawn as an arc between its endpoints, which
+  is why its rect is not integral.
 
 The L1 tests run the editor with `tests/` as the working directory and a
 relative input path, so the `file:` field of the document dump stays

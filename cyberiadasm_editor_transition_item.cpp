@@ -223,13 +223,19 @@ QPointF CyberiadaSMEditorTransitionItem::targetCenter() const
     return (elementIdToItemMap.value(transition->target_element_id()))->sceneBoundingRect().center();
 }
 
+// the loop is drawn as an arc only while it carries no polyline of its own
+bool CyberiadaSMEditorTransitionItem::isArcLoop() const
+{
+    return source() == target() && !transition->has_polyline();
+}
+
 QPainterPath CyberiadaSMEditorTransitionItem::path() const
 {
     MY_ASSERT(model);
     QPainterPath path = QPainterPath();
 
     // loop
-    if (source() == target() && !(isSourceTraking || isTargetTraking)) {
+    if (isArcLoop() && !(isSourceTraking || isTargetTraking)) {
         QPointF p1 = sourcePoint() + sourceCenter();
         QPointF p2 = targetPoint() + targetCenter();
 
@@ -338,7 +344,7 @@ void CyberiadaSMEditorTransitionItem::drawArrow(QPainter* painter)
         p2 = prevPosition;
     }
 
-    if (source() == target() && !(isTargetTraking || isSourceTraking)) {
+    if (isArcLoop() && !(isTargetTraking || isSourceTraking)) {
         QPointF center = (p1 + p2) / 2;
         angle = qDegreesToRadians(QLineF(center, p2).angle());
         QPointF v1 = p1 - sourceCenter();
@@ -640,7 +646,7 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
                 }
                 bool hasIntersections = false;
 
-                if (source() == target()) {
+                if (isArcLoop()) {
                     // loop
                     nextPoint = sourceCenter();
                 }
@@ -709,7 +715,7 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
 
                 bool hasIntersections = false;
 
-                if (source() == target()) {
+                if (isArcLoop()) {
                     // loop
                     nextPoint = sourceCenter();
                 }
@@ -748,8 +754,7 @@ void CyberiadaSMEditorTransitionItem::slotMouseReleaseDot()
 
 void CyberiadaSMEditorTransitionItem::slotDeleteDot(QGraphicsItem *signalOwner)
 {
-    // TODO
-    if (source() == target()) { return; }
+    if (isArcLoop()) { return; }
     QPainterPath linePath = path();
 
     for(int i = 0; i < linePath.elementCount(); i++){
@@ -769,9 +774,18 @@ void CyberiadaSMEditorTransitionItem::slotDeleteDot(QGraphicsItem *signalOwner)
 
 void CyberiadaSMEditorTransitionItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
 {
-    if (source() == target()) { return; }
-
     QPointF clickPos = event->pos();
+
+    // the arc has no segments to insert into: the click makes the loop a polyline
+    if (isArcLoop()) {
+        QPointF p = clickPos - source()->sceneBoundingRect().center();
+        Cyberiada::Polyline pol;
+        pol.push_back(Cyberiada::Point(p.x(), p.y()));
+        model->updateGeometry(model->elementToIndex(element), pol);
+        QGraphicsItem::mouseDoubleClickEvent(event);
+        return;
+    }
+
     QLineF checkLineFirst(clickPos.x() - 5, clickPos.y() - 5, clickPos.x() + 5, clickPos.y() + 5);
     QLineF checkLineSecond(clickPos.x() + 5, clickPos.y() - 5, clickPos.x() - 5, clickPos.y() + 5);
     QPainterPath oldPath = path();
@@ -873,7 +887,7 @@ void CyberiadaSMEditorTransitionItem::hoverLeaveEvent(QGraphicsSceneHoverEvent *
 
 void CyberiadaSMEditorTransitionItem::initializeDots()
 {
-    if (source() == target()) {
+    if (isArcLoop()) {
         // source
         DotSignal *dotS = new DotSignal(sourcePoint() + sourceCenter(), this);
         connect(dotS, &DotSignal::signalMove, this, &CyberiadaSMEditorTransitionItem::slotMoveDot);
@@ -909,7 +923,7 @@ void CyberiadaSMEditorTransitionItem::initializeDots()
 void CyberiadaSMEditorTransitionItem::updateDots()
 {
     int n = 2;
-    if(source() != target() && transition->has_polyline()) {
+    if(!isArcLoop() && transition->has_polyline()) {
         n += transition->get_geometry_polyline().size();
     }
 
@@ -930,39 +944,21 @@ void CyberiadaSMEditorTransitionItem::updateDots()
         listDots.append(last);
     }
 
-    if(!transition->has_polyline() && source() != target()) {
+    if(!transition->has_polyline()) {
         return;
     }
 
     // polyline
-    if(source() != target() && transition->has_polyline()) {
-        Cyberiada::Polyline pol = transition->get_geometry_polyline();
-        for(int i = 0; i < n - 2; i++) {
-            QPointF point = QPointF(pol.at(i).x, pol.at(i).y);
-            DotSignal *dot = new DotSignal(point, this);
-            connect(dot, &DotSignal::signalMove, this, &CyberiadaSMEditorTransitionItem::slotMoveDot);
-            connect(dot, &DotSignal::signalMouseRelease, this, &CyberiadaSMEditorTransitionItem::slotMouseReleaseDot);
-            connect(dot, &DotSignal::signalDelete, this, &CyberiadaSMEditorTransitionItem::slotDeleteDot);
-            dot->setDotFlags(DotSignal::Movable);
-            dot->setDeleteable(true);
-            listDots.insert(i + 1, dot);
-        }
-        return;
-    }
-
-    // loop
-    if(source() == target()) {
-        // for(int i = 1; i < n -2; i++) {
-        //     QPointF point = QPointF(path().elementAt(i).x, path().elementAt(i).y);
-        //     DotSignal *dot = new DotSignal(point, this);
-        //     connect(dot, &DotSignal::signalMove, this, &CyberiadaSMEditorTransitionItem::slotMoveDot);
-        //     connect(dot, &DotSignal::signalMouseRelease, this, &CyberiadaSMEditorTransitionItem::slotMouseReleaseDot);
-        //     connect(dot, &DotSignal::signalDelete, this, &CyberiadaSMEditorTransitionItem::slotDeleteDot);
-        //     dot->setDotFlags(DotSignal::Movable);
-        //     dot->setDeleteable(true);
-        //     listDots.insert(i, dot);
-        // }
-        return;
+    Cyberiada::Polyline pol = transition->get_geometry_polyline();
+    for(int i = 0; i < n - 2; i++) {
+        QPointF point = QPointF(pol.at(i).x, pol.at(i).y);
+        DotSignal *dot = new DotSignal(point, this);
+        connect(dot, &DotSignal::signalMove, this, &CyberiadaSMEditorTransitionItem::slotMoveDot);
+        connect(dot, &DotSignal::signalMouseRelease, this, &CyberiadaSMEditorTransitionItem::slotMouseReleaseDot);
+        connect(dot, &DotSignal::signalDelete, this, &CyberiadaSMEditorTransitionItem::slotDeleteDot);
+        dot->setDotFlags(DotSignal::Movable);
+        dot->setDeleteable(true);
+        listDots.insert(i + 1, dot);
     }
 }
 
@@ -983,7 +979,7 @@ void CyberiadaSMEditorTransitionItem::hideDots()
 void CyberiadaSMEditorTransitionItem::setDotsPosition()
 {
     QPainterPath linePath = path();
-    if (source() == target()) {
+    if (isArcLoop()) {
         listDots.at(0)->setPos(sourcePoint() + sourceCenter());
         listDots.at(1)->setPos(targetPoint() + targetCenter());
         return;

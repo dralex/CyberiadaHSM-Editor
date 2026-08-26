@@ -120,6 +120,7 @@ protected:
     void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
 
 private:
+    bool isArcLoop() const;
     void drawArrow(QPainter* painter);
     CyberiadaSMEditorAbstractItem* itemUnderCursor();
     QPointF findIntersectionWithItem(const CyberiadaSMEditorAbstractItem *item,
