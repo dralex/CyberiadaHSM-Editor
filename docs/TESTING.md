@@ -49,7 +49,9 @@ directly under QtTest, offscreen.
 whole run - every reset and mutation is checked against the
 QAbstractItemModel contract - and verifies the editing API: the signals
 each mutation emits, the id fixup of transition endpoints, the comment
-subject cleanup and the transition cascade on element deletion.
+subject cleanup and the transition cascade on element deletion. A comment
+subject may address a transition as well; a new element is inserted before
+the transitions of its collection, where the library keeps it.
 
 `l4-scene` checks the scene built from a loaded document: the item map
 against the diagram structure, item positions, selection via
@@ -92,6 +94,12 @@ same font file, and the text sizes leak into the region layout, the transition
 rectangles and the rendered pixels - so every test invocation runs with this
 option, making the dumps and images identical on any machine. The option is
 runtime-only: the GUI and normal exports always render text.
+
+`--strict` loads the document with the library's strict standard checks: the
+graph, identifier, marker, name and vertex order requirements are checked in
+addition to the format, so a document the default mode accepts may fail with
+exit code 2. The GUI open dialog exposes the same mode as the strict check
+checkbox.
 
 `--reconstruct` loads the document with the library's geometry reconstruction:
 absent geometry is rebuilt, and node geometry violating the standard (e.g. a
@@ -153,11 +161,12 @@ addressed by their 0-based position in the comment's subject list. Deleting
 an element also removes every subject referencing it or its children, so
 the document never keeps dangling subject links.
 
-`update-meta` addresses the document, not an element. The flag parameters
-accept only their standard values (`transitionOrder`: `actionFirst` /
-`exitFirst`, the legacy `transitionFirst` is accepted as well;
-`eventPropagation`: `propagate` / `block`); any other parameter
-is a free-form string, replaced in place or appended. The change is written
+`update-meta` addresses the document, not an element. The optional standard
+parameters accept only their standard values (`transitionOrder`:
+`actionFirst` / `exitFirst`, the legacy `transitionFirst` is accepted as
+well; `eventPropagation`: `propagate` / `block`) plus `none`, which removes
+the parameter from the document; any other parameter is a free-form string,
+replaced in place or appended. The change is written
 both to the decoded metainformation and to the serialized `nMeta` comment.
 `update-id` also rewrites the transition source/target references to the
 renamed element, so the saved document stays consistent. A choice pseudostate
@@ -211,7 +220,9 @@ sections:
   dump records what the scene actually builds. Every element is drawn except
   a formal comment without geometry (the document metainformation node): a
   choice gets a diamond and an informal comment without geometry gets a
-  default sized item, both centred on the parent origin.
+  default sized item, both centred on the parent origin. The link between a
+  comment and its subject is not drawn yet, so a comment attached to a
+  transition looks like any other comment in the scene dump.
 
 The L1 tests run the editor with `tests/` as the working directory and a
 relative input path, so the `file:` field of the document dump stays
@@ -244,6 +255,8 @@ Diagram conventions:
   libcyberiadamlpp and hsm-console-viewer test corpora;
 * negative diagrams are named `broken-<reason>.graphml` and must fail with
   exit code 2;
+* the L2 case name and the diagram name must differ: both tiers write
+  `good/<name>-output.txt`, so equal names would share one good file;
 * good files follow the sibling-library convention:
   `good/<name>-output.txt` (canonical dump) and, for the L2 cases,
   `good/<case>-output.graphml` (saved document).
