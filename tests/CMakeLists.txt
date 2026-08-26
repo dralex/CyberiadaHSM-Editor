@@ -267,6 +267,43 @@ function(add_l3_test diagram)
     ENVIRONMENT "${L0_ENVIRONMENT}")
 endfunction()
 
+# The vector export suite: the svg is compared byte by byte, as the saved
+# documents are; the pdf embeds a creation date, so its shape is checked
+# (see docs/TESTING.md)
+function(add_l3_svg_test diagram)
+  add_test(NAME l3-svg-${diagram}
+    COMMAND ${CMAKE_COMMAND}
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
+      -DINPUT=diagrams/${diagram}.graphml
+      -DEXPECTED=0
+      -DWORKDIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DIMAGE_OUT=${CMAKE_CURRENT_BINARY_DIR}/l3-${diagram}.svg
+      -DSVG_GOOD=${CMAKE_CURRENT_SOURCE_DIR}/good/${diagram}-render.svg
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunBatchTest.cmake)
+  set_tests_properties(l3-svg-${diagram} PROPERTIES
+    TIMEOUT 60
+    ENVIRONMENT "${L0_ENVIRONMENT}")
+endfunction()
+
+function(add_l3_pdf_test diagram)
+  add_test(NAME l3-pdf-${diagram}
+    COMMAND ${CMAKE_COMMAND}
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
+      -DINPUT=diagrams/${diagram}.graphml
+      -DEXPECTED=0
+      -DWORKDIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DIMAGE_OUT=${CMAKE_CURRENT_BINARY_DIR}/l3-${diagram}.pdf
+      -DPDF_MAGIC=1
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunBatchTest.cmake)
+  set_tests_properties(l3-pdf-${diagram} PROPERTIES
+    TIMEOUT 60
+    ENVIRONMENT "${L0_ENVIRONMENT}")
+endfunction()
+
+add_l3_svg_test(geometry)
+add_l3_svg_test(choice)
+add_l3_pdf_test(geometry)
+
 add_l3_test(empty-actions)
 add_l3_test(cyb-geometry)
 add_l3_test(geometry)

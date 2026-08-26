@@ -275,6 +275,7 @@ tests/
   good/<name>-output.txt     reviewed good files for the L1/L2 dumps
   good/<case>-output.graphml reviewed good files for the L2 saved documents
   good/<name>-render.png     reviewed good images for the L3 renders
+  good/<name>-render.svg     reviewed good files for the vector renders
   good/<name>-inspect-render.png  reviewed good images for the inspect renders
   good/<name>-<format>-output.graphml  reviewed good files for the saved formats
   regen-good.sh         regenerates the good files and shows the diff
@@ -293,6 +294,19 @@ Diagram conventions:
 * good files follow the sibling-library convention:
   `good/<name>-output.txt` (canonical dump) and, for the L2 cases,
   `good/<case>-output.graphml` (saved document).
+
+The scene is exported to the vector formats as well: `--export <file>.svg`
+writes it through `QSvgGenerator` and `--export <file>.pdf` through
+`QPdfWriter`, both by the same `scene->render()` call as the raster formats, so
+the picture is identical. The `viewBox` of the svg and the `MediaBox` of the
+pdf repeat the scene rect one unit per point. The svg cases
+(`l3-svg-<diagram>`) compare the result **byte by byte** with
+`good/<diagram>-render.svg` - the generator embeds no timestamp, so its output
+is stable for a pinned Qt - while the pdf case (`l3-pdf-<diagram>`) only checks
+the shape of the file, because a pdf carries its creation date. Both are
+produced under `--no-text`, so the good svg files contain no `<text>` element
+at all: with the text shown an svg names the bundled font and renders
+font-dependently elsewhere, unlike the raster exports.
 
 The save format cases write the same diagram in every writable format:
 `save-<format>-<diagram>` compares the result with

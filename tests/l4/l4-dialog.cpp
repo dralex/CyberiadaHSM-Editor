@@ -156,6 +156,13 @@ void TestDialog::test_export_image()
 	dlg.selectNameFilter("TIFF (*.tiff)");
 	dlg.updateSuffix();
 	QCOMPARE(dlg.defaultSuffix(), QString("tiff"));
+	// the vector formats are offered beside the raster ones
+	dlg.selectNameFilter("SVG (*.svg)");
+	dlg.updateSuffix();
+	QCOMPARE(dlg.defaultSuffix(), QString("svg"));
+	dlg.selectNameFilter("PDF (*.pdf)");
+	dlg.updateSuffix();
+	QCOMPARE(dlg.defaultSuffix(), QString("pdf"));
 }
 
 QTEST_MAIN(TestDialog)

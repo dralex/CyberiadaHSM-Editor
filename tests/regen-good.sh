@@ -31,5 +31,12 @@ while read diagram; do
         { echo "FAILED $diagram render"; exit 1; }
     echo "regenerated good/$diagram-render.png"
 done
+# the vector renders are compared byte by byte, so they are regenerated too
+sed -n 's/^add_l3_svg_test(\([^)]*\))$/\1/p' CMakeLists.txt | \
+while read diagram; do
+    "$BIN" --batch --no-text "diagrams/$diagram.graphml" --export "good/$diagram-render.svg" 2>/dev/null || \
+        { echo "FAILED $diagram svg render"; exit 1; }
+    echo "regenerated good/$diagram-render.svg"
+done
 git diff --stat -- good
 echo "review the full diff before committing: git diff -- tests/good"
