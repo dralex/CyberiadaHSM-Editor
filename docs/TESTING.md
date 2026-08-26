@@ -301,8 +301,11 @@ writes it through `QSvgGenerator` and `--export <file>.pdf` through
 the picture is identical. The `viewBox` of the svg and the `MediaBox` of the
 pdf repeat the scene rect one unit per point. The svg cases
 (`l3-svg-<diagram>`) compare the result **byte by byte** with
-`good/<diagram>-render.svg` - the generator embeds no timestamp, so its output
-is stable for a pinned Qt - while the pdf case (`l3-pdf-<diagram>`) only checks
+`good/<diagram>-render.svg`: the generator embeds no timestamp, and the export
+sets the bundled font on the painter, without which the generator would stamp
+the machine's default font family into every group element - even with no text
+at all - and the good file would only match on the machine that made it. The
+pdf case (`l3-pdf-<diagram>`) only checks
 the shape of the file, because a pdf carries its creation date. Both are
 produced under `--no-text`, so the good svg files contain no `<text>` element
 at all: with the text shown an svg names the bundled font and renders

@@ -31,11 +31,15 @@
 
 #include "cyberiadasm_render.h"
 #include "cyberiadasm_editor_scene.h"
+#include "fontmanager.h"
 
 // the final state and the transition label fill from the painter background,
-// so it is set explicitly instead of relying on the paint device default
+// so it is set explicitly instead of relying on the paint device default;
+// the vector formats also stamp the painter font into every group element,
+// even without any text, so the bundled font is set instead of the machine one
 static void preparePainter(QPainter& painter, const QRect& target)
 {
+	painter.setFont(FontManager::instance().getFont());
 	painter.setBackground(Qt::white);
 	painter.fillRect(target, Qt::white);
 }
