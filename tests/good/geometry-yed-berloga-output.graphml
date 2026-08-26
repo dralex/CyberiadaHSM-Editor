@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:java="http://www.yworks.com/xml/yfiles-common/1.0/java" xmlns:sys="http://www.yworks.com/xml/yfiles-common/markup/primitives/2.0" xmlns:x="http://www.yworks.com/xml/yfiles-common/markup/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:y="http://www.yworks.com/xml/graphml" xmlns:yed="http://www.yworks.com/xml/yed/3" yed:schemaLocation="http://graphml.graphdrawing.org/xmlns http://www.yworks.com/xml/schema/graphml/1.1/ygraphml.xsd" SchemeName="test-geometry-1">
+  <key id="d0" for="graph" attr.name="Description" attr.type="string"/>
+  <key id="d1" for="port" yfiles.type="portgraphics"/>
+  <key id="d2" for="port" yfiles.type="portgeometry"/>
+  <key id="d3" for="port" yfiles.type="portuserdata"/>
+  <key id="d4" for="node" attr.name="url" attr.type="string"/>
+  <key id="d5" for="node" attr.name="description" attr.type="string"/>
+  <key id="d6" for="node" yfiles.type="nodegraphics"/>
+  <key id="d7" for="graphml" yfiles.type="resources"/>
+  <key id="d8" for="edge" attr.name="url" attr.type="string"/>
+  <key id="d9" for="edge" attr.name="description" attr.type="string"/>
+  <key id="d10" for="edge" yfiles.type="edgegraphics"/>
+  <graph id="G" edgedefault="directed">
+    <node id="coreMeta">
+      <data key="dData">name/ test-geometry-1
+
+transitionOrder/ actionFirst
+
+eventPropagation/ block</data>
+    </node>
+    <data key="d0" xml:space="preserve"/>
+    <node id="node-0" yfiles.foldertype="group">
+      <data key="d5" xml:space="preserve"/>
+      <data key="d6">
+        <y:ProxyAutoBoundsNode>
+          <y:Realizers active="0">
+            <y:GroupNode>
+              <y:Geometry x="-4.000000" y="-4.000000" width="1000.000000" height="450.000000"/>
+              <y:Fill color="#F5F5F5" transparent="false"/>
+              <y:BorderStyle color="#000000" type="line" width="1.0"/>
+              <y:NodeLabel alignment="center" backgroundColor="#EBEBEB" fontSize="15" fontStyle="bold" textColor="#000000" xml:space="preserve" hasLineColor="false" visible="true" horizontalTextPosition="center" verticalTextPosition="top" autoSizePolicy="node_width" y="0" height="20" configuration="com.yworks.entityRelationship.label.name" modelName="internal" modelPosition="t">node 0</y:NodeLabel>
+              <y:NodeLabel alignment="left" hasBackgroundColor="false" fontSize="12" fontStyle="plain" textColor="#000000" xml:space="preserve" hasLineColor="false" visible="true" horizontalTextPosition="center" verticalTextPosition="bottom" autoSizePolicy="node_size" modelName="custom">
+
+</y:NodeLabel>
+              <y:Shape type="roundrectangle"/>
+            </y:GroupNode>
+          </y:Realizers>
+        </y:ProxyAutoBoundsNode>
+      </data>
+      <graph id="node-0:" edgedefault="directed">
+        <node id="node-0-0" yfiles.foldertype="group">
+          <data key="d5" xml:space="preserve"/>
+          <data key="d6">
+            <y:ProxyAutoBoundsNode>
+              <y:Realizers active="0">
+                <y:GroupNode>
+                  <y:Geometry x="50.000000" y="50.000000" width="600.000000" height="300.000000"/>
+                  <y:Fill color="#F5F5F5" transparent="false"/>
+                  <y:BorderStyle color="#000000" type="line" width="1.0"/>
+                  <y:NodeLabel alignment="center" backgroundColor="#EBEBEB" fontSize="15" fontStyle="bold" textColor="#000000" xml:space="preserve" hasLineColor="false" visible="true" horizontalTextPosition="center" verticalTextPosition="top" autoSizePolicy="node_width" y="0" height="20" configuration="com.yworks.entityRelationship.label.name" modelName="internal" modelPosition="t">node 0-0</y:NodeLabel>
+                  <y:NodeLabel alignment="left" hasBackgroundColor="false" fontSize="12" fontStyle="plain" textColor="#000000" xml:space="preserve" hasLineColor="false" visible="true" horizontalTextPosition="center" verticalTextPosition="bottom" autoSizePolicy="node_size" modelName="custom">
+
+</y:NodeLabel>
+                  <y:Shape type="roundrectangle"/>
+                </y:GroupNode>
+              </y:Realizers>
+            </y:ProxyAutoBoundsNode>
+          </data>
+          <graph id="node-0-0:" edgedefault="directed">
+            <node id="node-0-0-0">
+              <data key="d6">
+                <y:GenericNode configuration="com.yworks.bpmn.Event.withShadow">
+                  <y:Geometry x="240.000000" y="110.000000" width="20.000000" height="20.000000"/>
+                  <y:Fill color="#333333" color2="#000000" transparent="false"/>
+                  <y:BorderStyle color="#000000" type="line" width="1.0"/>
+                  <y:NodeLabel/>
+                  <y:StyleProperties>
+                    <y:Property class="com.yworks.yfiles.bpmn.view.EventCharEnum" name="com.yworks.bpmn.characteristic" value="EVENT_CHARACTERISTIC_START"/>
+                  </y:StyleProperties>
+                </y:GenericNode>
+              </data>
+            </node>
+            <node id="node-0-0-1">
+              <data key="d6">
+                <y:GenericNode>
+                  <y:Geometry x="100.000000" y="150.000000" width="300.000000" height="150.000000"/>
+                  <y:Fill color="#E8EEF7" color2="#B7C9E3" transparent="false"/>
+                  <y:BorderStyle color="#000000" type="line" width="1.0"/>
+                  <y:NodeLabel alignment="center" backgroundColor="#EBEBEB" fontSize="15" fontStyle="bold" textColor="#000000" xml:space="preserve" hasLineColor="false" visible="true" horizontalTextPosition="center" verticalTextPosition="top" autoSizePolicy="node_width" y="0" height="20" configuration="com.yworks.entityRelationship.label.name" modelName="internal" modelPosition="t">node 0-0-1</y:NodeLabel>
+                  <y:NodeLabel alignment="left" hasBackgroundColor="false" fontSize="12" fontStyle="plain" textColor="#000000" xml:space="preserve" hasLineColor="false" visible="true" horizontalTextPosition="center" verticalTextPosition="bottom" autoSizePolicy="node_size" modelName="custom">
+
+</y:NodeLabel>
+                </y:GenericNode>
+              </data>
+            </node>
+            <node id="node-0-0-2">
+              <data key="d6">
+                <y:GenericNode>
+                  <y:Geometry x="500.000000" y="150.000000" width="150.000000" height="150.000000"/>
+                  <y:Fill color="#E8EEF7" color2="#B7C9E3" transparent="false"/>
+                  <y:BorderStyle color="#000000" type="line" width="1.0"/>
+                  <y:NodeLabel alignment="center" backgroundColor="#EBEBEB" fontSize="15" fontStyle="bold" textColor="#000000" xml:space="preserve" hasLineColor="false" visible="true" horizontalTextPosition="center" verticalTextPosition="top" autoSizePolicy="node_width" y="0" height="20" configuration="com.yworks.entityRelationship.label.name" modelName="internal" modelPosition="t">node 0-0-2</y:NodeLabel>
+                  <y:NodeLabel alignment="left" hasBackgroundColor="false" fontSize="12" fontStyle="plain" textColor="#000000" xml:space="preserve" hasLineColor="false" visible="true" horizontalTextPosition="center" verticalTextPosition="bottom" autoSizePolicy="node_size" modelName="custom">
+
+</y:NodeLabel>
+                </y:GenericNode>
+              </data>
+            </node>
+          </graph>
+        </node>
+        <node id="node-0-1">
+          <data key="d6">
+            <y:GenericNode>
+              <y:Geometry x="800.000000" y="150.000000" width="150.000000" height="150.000000"/>
+              <y:Fill color="#E8EEF7" color2="#B7C9E3" transparent="false"/>
+              <y:BorderStyle color="#000000" type="line" width="1.0"/>
+              <y:NodeLabel alignment="center" backgroundColor="#EBEBEB" fontSize="15" fontStyle="bold" textColor="#000000" xml:space="preserve" hasLineColor="false" visible="true" horizontalTextPosition="center" verticalTextPosition="top" autoSizePolicy="node_width" y="0" height="20" configuration="com.yworks.entityRelationship.label.name" modelName="internal" modelPosition="t">node 0-1</y:NodeLabel>
+              <y:NodeLabel alignment="left" hasBackgroundColor="false" fontSize="12" fontStyle="plain" textColor="#000000" xml:space="preserve" hasLineColor="false" visible="true" horizontalTextPosition="center" verticalTextPosition="bottom" autoSizePolicy="node_size" modelName="custom">
+
+</y:NodeLabel>
+            </y:GenericNode>
+          </data>
+        </node>
+      </graph>
+    </node>
+    <edge id="edge-0" source="node-0-0-1" target="node-0-0-1">
+      <data key="d10">
+        <y:PolyLineEdge>
+          <y:Path sx="0.000000" sy="0.000000" tx="0.000000" ty="0.000000">
+            <y:Point x="75.000000" y="225.000000"/>
+            <y:Point x="75.000000" y="325.000000"/>
+            <y:Point x="250.000000" y="325.000000"/>
+          </y:Path>
+          <y:LineStyle color="#000000" type="line" width="1.0"/>
+          <y:Arrows source="none" target="standard"/>
+          <y:EdgeLabel alignment="center" fontSize="12" fontStyle="plain" textColor="#000000" backgroundColor="#F5F5F5" configuration="AutoFlippingLabel" distance="2.0" hasLineColor="false" visible="true" xml:space="preserve" modelName="centered" modelPosition="center" preferredPlacement="center_on_edge"/>
+        </y:PolyLineEdge>
+      </data>
+    </edge>
+    <edge id="edge-1" source="node-0-0-0" target="node-0-0-1">
+      <data key="d10">
+        <y:PolyLineEdge>
+          <y:Path sx="0.000000" sy="0.000000" tx="0.000000" ty="0.000000"/>
+          <y:LineStyle color="#000000" type="line" width="1.0"/>
+          <y:Arrows source="none" target="standard"/>
+          <y:EdgeLabel alignment="center" fontSize="12" fontStyle="plain" textColor="#000000" backgroundColor="#F5F5F5" configuration="AutoFlippingLabel" distance="2.0" hasLineColor="false" visible="true" xml:space="preserve" modelName="centered" modelPosition="center" preferredPlacement="center_on_edge"/>
+        </y:PolyLineEdge>
+      </data>
+    </edge>
+    <edge id="edge-2" source="node-0-0-1" target="node-0-0-2">
+      <data key="d10">
+        <y:PolyLineEdge>
+          <y:Path sx="0.000000" sy="30.000000" tx="0.000000" ty="30.000000"/>
+          <y:LineStyle color="#000000" type="line" width="1.0"/>
+          <y:Arrows source="none" target="standard"/>
+          <y:EdgeLabel alignment="center" fontSize="12" fontStyle="plain" textColor="#000000" backgroundColor="#F5F5F5" configuration="AutoFlippingLabel" distance="2.0" hasLineColor="false" visible="true" xml:space="preserve" modelName="centered" modelPosition="center" preferredPlacement="center_on_edge" x="150.000000" y="45.000000">LABEL/
+</y:EdgeLabel>
+        </y:PolyLineEdge>
+      </data>
+    </edge>
+  </graph>
+</graphml>

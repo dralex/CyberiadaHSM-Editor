@@ -25,6 +25,7 @@
 #define CYBERIADA_SM_BATCH_DRIVER
 
 #include <QString>
+#include <cyberiadamlpp.h>
 
 class CyberiadaSMEditorApplication;
 
@@ -41,6 +42,7 @@ enum BatchExitCode {
 int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName, bool dump = false,
 				 const QString& script = QString(), const QString& save = QString(),
 				 const QString& exportImage = QString(), bool reconstruct = false,
-				 bool strict = false);
+				 bool strict = false,
+				 Cyberiada::DocumentFormat saveFormat = Cyberiada::formatCyberiada10);
 
 #endif

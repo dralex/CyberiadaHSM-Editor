@@ -211,6 +211,45 @@ add_inspect_reject_test(rename-move geometry)
 add_inspect_reject_test(update-meta meta)
 add_inspect_reject_test(vertices choice)
 
+# The save format suite: the document is written in the chosen format and must
+# re-open cleanly (see docs/TESTING.md)
+function(add_save_format_test diagram format)
+  add_test(NAME save-${format}-${diagram}
+    COMMAND ${CMAKE_COMMAND}
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
+      -DINPUT=diagrams/${diagram}.graphml
+      -DSAVE_FORMAT=${format}
+      -DEXPECTED=0
+      -DWORKDIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DSAVE_OUT=${CMAKE_CURRENT_BINARY_DIR}/save-${format}-${diagram}.graphml
+      -DSAVE_GOOD=${CMAKE_CURRENT_SOURCE_DIR}/good/${diagram}-${format}-output.graphml
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunBatchTest.cmake)
+  set_tests_properties(save-${format}-${diagram} PROPERTIES
+    TIMEOUT 60
+    ENVIRONMENT "${L0_ENVIRONMENT}")
+endfunction()
+
+add_save_format_test(geometry yed-ostranna)
+add_save_format_test(geometry yed-berloga)
+
+# the yEd formats keep a single state machine only
+function(add_save_reject_test diagram format)
+  add_test(NAME save-reject-${format}-${diagram}
+    COMMAND ${CMAKE_COMMAND}
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
+      -DINPUT=diagrams/${diagram}.graphml
+      -DSAVE_FORMAT=${format}
+      -DEXPECTED=3
+      -DWORKDIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DSAVE_OUT=${CMAKE_CURRENT_BINARY_DIR}/save-reject-${format}-${diagram}.graphml
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunBatchTest.cmake)
+  set_tests_properties(save-reject-${format}-${diagram} PROPERTIES
+    TIMEOUT 60
+    ENVIRONMENT "${L0_ENVIRONMENT}")
+endfunction()
+
+add_save_reject_test(two-sms yed-ostranna)
+
 # The L3 render test suite: the exported scene image must match the good
 # image within the comparison tolerance (see docs/TESTING.md)
 function(add_l3_test diagram)

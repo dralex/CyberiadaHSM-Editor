@@ -70,6 +70,10 @@ int main(int argc, char *argv[])
 	parser.addOption(strictOption);
 	QCommandLineOption inspectOption("inspect", "Open the document read-only, as the file stores it.");
 	parser.addOption(inspectOption);
+	QCommandLineOption saveFormatOption("save-format",
+										"The format of the saved document: cyberiada (default), "
+										"yed-ostranna or yed-berloga.", "format", "cyberiada");
+	parser.addOption(saveFormatOption);
 	QCommandLineOption compareOption("compare", "Compare two image files with tolerance and exit.");
 	parser.addOption(compareOption);
 	QCommandLineOption epsilonOption("epsilon", "Comparison per-channel tolerance (0-255, default 8).", "n", "8");
@@ -112,10 +116,20 @@ int main(int argc, char *argv[])
 				fprintf(stderr, "batch mode requires exactly one document file\n");
 				return batchUsageError;
 			}
+			Cyberiada::DocumentFormat save_format = Cyberiada::formatCyberiada10;
+			QString format_str = parser.value(saveFormatOption);
+			if (format_str == "yed-ostranna") {
+				save_format = Cyberiada::formatLegacyYEDOstranna;
+			} else if (format_str == "yed-berloga") {
+				save_format = Cyberiada::formatLegacyYEDBerloga16;
+			} else if (format_str != "cyberiada") {
+				fprintf(stderr, "unknown save format %s\n", qPrintable(format_str));
+				return batchUsageError;
+			}
 			return runBatchMode(app, args.first(), parser.isSet(dumpOption),
 								parser.value(scriptOption), parser.value(saveOption),
 								parser.value(exportOption), parser.isSet(reconstructOption),
-								parser.isSet(strictOption));
+								parser.isSet(strictOption), save_format);
 		}
 		CyberiadaSMEditorWindow win;
 		win.show();

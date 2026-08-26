@@ -33,7 +33,7 @@
 
 int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName, bool dump,
 				 const QString& script, const QString& save, const QString& exportImage,
-				 bool reconstruct, bool strict)
+				 bool reconstruct, bool strict, Cyberiada::DocumentFormat saveFormat)
 {
 	CyberiadaSMEditorWindow win;
 	win.show();
@@ -76,7 +76,7 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName, boo
 	if (!save.isEmpty()) {
 		try {
 			// rounded geometry keeps the written floats stable for the good files
-			win.getModel()->saveAsDocument(save, Cyberiada::formatCyberiada10, true);
+			win.getModel()->saveAsDocument(save, saveFormat, true, false, false, false, false);
 		} catch (const Cyberiada::Exception& e) {
 			fprintf(stderr, "cannot save %s\n%s\n", qPrintable(save), e.str().c_str());
 			return batchInternalError;

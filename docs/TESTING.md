@@ -72,11 +72,15 @@ The inspected region follows the document while the edited one is laid out
 around the state title, so switching the mode re-derives it. There is no undo
 stack in the editor yet, so undo/redo is not an L4 subject.
 
-`l4-dialog` checks the open dialog: the file browser and the option check
-boxes really share one window (the options are injected into the dialog grid
-layout), the document is inspected by default, and the inspected document is
-never given the geometry it does not have - the reconstruction box is unchecked
-and disabled while the inspector box is checked.
+`l4-dialog` checks the file dialogs. The open dialog: the file browser and the
+option check boxes really share one window (the options are injected into the
+dialog grid layout), the document is inspected by default, and the inspected
+document is never given the geometry it does not have - the reconstruction box
+is unchecked and disabled while the inspector box is checked. The save dialog:
+every writable format is offered, the yEd formats are disabled with the reason
+for a document they cannot express, they disable the geometry skipping, and the
+skipped geometry disables the other options - the library allows no flag beside
+it. The image export dialog derives the file suffix from the selected format.
 
 ## Batch mode contract
 
@@ -125,6 +129,12 @@ taken from `dRegion` instead of the layout around the state title, the
 coordinate origins - so the render differs from the editing one. The dumps do
 not differ: with `--no-text` the text heights are zero, so both region layouts
 coincide, which is why the mode is covered by the renders and not by dumps.
+
+`--save-format <format>` chooses the format of the saved document:
+`cyberiada` (the default), `yed-ostranna` or `yed-berloga`. The yEd formats keep
+a single state machine with the geometry and have no shape for the terminate
+pseudostate, so a document they cannot express fails with exit code 3; the GUI
+save dialog disables such a format and shows the reason instead.
 
 ## Edit scripts
 
@@ -266,6 +276,7 @@ tests/
   good/<case>-output.graphml reviewed good files for the L2 saved documents
   good/<name>-render.png     reviewed good images for the L3 renders
   good/<name>-inspect-render.png  reviewed good images for the inspect renders
+  good/<name>-<format>-output.graphml  reviewed good files for the saved formats
   regen-good.sh         regenerates the good files and shows the diff
 run-tests.sh            build-and-run wrapper: ctest --output-on-failure
 ```
@@ -282,6 +293,12 @@ Diagram conventions:
 * good files follow the sibling-library convention:
   `good/<name>-output.txt` (canonical dump) and, for the L2 cases,
   `good/<case>-output.graphml` (saved document).
+
+The save format cases write the same diagram in every writable format:
+`save-<format>-<diagram>` compares the result with
+`good/<diagram>-<format>-output.graphml` and re-opens it, and
+`save-reject-<format>-<diagram>` requires exit code 3 for a document the format
+cannot express.
 
 The inspection cases run the same diagrams with `--inspect`:
 `inspect-render-<diagram>` compares the read-only render with

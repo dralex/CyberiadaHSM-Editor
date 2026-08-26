@@ -23,8 +23,12 @@
 
 #include <QtTest>
 #include <QCheckBox>
+#include <QComboBox>
 #include <QGridLayout>
+#include "cyberiadasm_model.h"
 #include "dialogs/open_file_dialog.h"
+#include "dialogs/save_file_dialog.h"
+#include "dialogs/export_image_dialog.h"
 
 class TestDialog: public QObject {
 	Q_OBJECT
@@ -33,6 +37,10 @@ private slots:
 	void test_options_injected();
 	void test_default_options();
 	void test_selected_file();
+	void test_save_formats();
+	void test_save_options();
+	void test_save_refused_format();
+	void test_export_image();
 };
 
 void TestDialog::test_options_injected()
@@ -76,6 +84,78 @@ void TestDialog::test_selected_file()
 	OpenFileDialog dlg;
 	dlg.selectFile("diagrams/hierarchy.graphml");
 	QVERIFY(dlg.selectedFile().endsWith("hierarchy.graphml"));
+}
+
+void TestDialog::test_save_formats()
+{
+	// every writable format is offered for a document the library can express
+	CyberiadaSMModel model(this);
+	QVERIFY(model.loadDocument("diagrams/geometry.graphml"));
+	SaveFileDialog dlg(NULL, model.rootDocument());
+	QComboBox* formats = dlg.findChild<QComboBox*>("formatComboBox");
+	QVERIFY(formats);
+	QCOMPARE(formats->count(), 3);
+	QCOMPARE(dlg.selectedFormat(), Cyberiada::formatCyberiada10);
+	QCOMPARE(dlg.acceptMode(), QFileDialog::AcceptSave);
+
+	formats->setCurrentIndex(1);
+	QCOMPARE(dlg.selectedFormat(), Cyberiada::formatLegacyYEDOstranna);
+	formats->setCurrentIndex(2);
+	QCOMPARE(dlg.selectedFormat(), Cyberiada::formatLegacyYEDBerloga16);
+}
+
+void TestDialog::test_save_options()
+{
+	// the yEd formats require the geometry, and the library allows no other
+	// option beside the skipped one
+	CyberiadaSMModel model(this);
+	QVERIFY(model.loadDocument("diagrams/geometry.graphml"));
+	SaveFileDialog dlg(NULL, model.rootDocument());
+	QComboBox* formats = dlg.findChild<QComboBox*>("formatComboBox");
+	QCheckBox* skip = dlg.findChild<QCheckBox*>("skipGeometryCheckBox");
+	QCheckBox* round = dlg.findChild<QCheckBox*>("roundCheckBox");
+	QVERIFY(formats && skip && round);
+
+	QVERIFY(skip->isEnabled());
+	skip->setChecked(true);
+	QVERIFY(dlg.skipGeometryEnabled());
+	QVERIFY(!round->isEnabled());
+	QVERIFY(!dlg.roundEnabled() || !round->isEnabled());
+
+	skip->setChecked(false);
+	QVERIFY(round->isEnabled());
+	formats->setCurrentIndex(1);
+	QVERIFY(!skip->isEnabled());
+	QVERIFY(!dlg.skipGeometryEnabled());
+}
+
+void TestDialog::test_save_refused_format()
+{
+	// the yEd formats keep a single state machine only
+	CyberiadaSMModel model(this);
+	QVERIFY(model.loadDocument("diagrams/two-sms.graphml"));
+	SaveFileDialog dlg(NULL, model.rootDocument());
+	QComboBox* formats = dlg.findChild<QComboBox*>("formatComboBox");
+	QVERIFY(formats);
+	QCOMPARE(formats->count(), 3);
+	// the format is shown with the reason but cannot be chosen
+	QVERIFY(!formats->model()->flags(formats->model()->index(1, 0)).testFlag(Qt::ItemIsEnabled));
+	QVERIFY(!formats->model()->flags(formats->model()->index(2, 0)).testFlag(Qt::ItemIsEnabled));
+	QCOMPARE(dlg.selectedFormat(), Cyberiada::formatCyberiada10);
+}
+
+void TestDialog::test_export_image()
+{
+	// the suffix follows the selected image format
+	ExportImageDialog dlg;
+	QCOMPARE(dlg.acceptMode(), QFileDialog::AcceptSave);
+	QCOMPARE(dlg.defaultSuffix(), QString("png"));
+	dlg.selectNameFilter("JPEG (*.jpg *.jpeg)");
+	dlg.updateSuffix();
+	QCOMPARE(dlg.defaultSuffix(), QString("jpg"));
+	dlg.selectNameFilter("TIFF (*.tiff)");
+	dlg.updateSuffix();
+	QCOMPARE(dlg.defaultSuffix(), QString("tiff"));
 }
 
 QTEST_MAIN(TestDialog)
