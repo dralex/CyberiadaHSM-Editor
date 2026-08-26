@@ -27,6 +27,7 @@
 
 #include "batch_script.h"
 #include "cyberiadasm_model.h"
+#include "cyberiada_constants.h"
 
 static bool toNumbers(const QStringList& tokens, int from, int count, double* values)
 {
@@ -158,9 +159,10 @@ static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QStri
 		if (tokens.size() < 3) { *error = "update-meta requires <parameter> <value>"; return false; }
 		QString param = tokens.at(1);
 		QString value = restOfLine(tokens, 2);
-		if ((param == "transitionOrder" && value != "actionFirst" &&
-			 value != "transitionFirst" && value != "exitFirst") ||
-			(param == "eventPropagation" && value != "propagate" && value != "block")) {
+		if ((param == "transitionOrder" && value != "actionFirst" && value != "transitionFirst" &&
+			 value != "exitFirst" && value != METAINFORMATION_VALUE_NONE) ||
+			(param == "eventPropagation" && value != "propagate" && value != "block" &&
+			 value != METAINFORMATION_VALUE_NONE)) {
 			*error = "invalid " + param + " value '" + value + "'";
 			return false;
 		}

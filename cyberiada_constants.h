@@ -48,6 +48,9 @@
 #define METAINFORMATION_TRANSITION_ORDER  "Transition Order"
 #define METAINFORMATION_VERSION           "Version"
 
+// the value removing an optional metainformation parameter
+#define METAINFORMATION_VALUE_NONE        "none"
+
 // Text constants
 #define FONT_SIZE 12
 #define FONT_NAME "Monospace"

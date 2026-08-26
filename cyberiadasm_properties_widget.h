@@ -85,6 +85,7 @@ private:
 		propMetaTransitionOrder,
 		propName,
 		propSource,
+		propSubjectTarget,
 		propSubjectType,
 		propTarget,
 		propTrigger,
@@ -96,6 +97,7 @@ private:
 		propEditorColor,
 		propEditorDate,
 		propEditorElementType,
+		propEditorEventPropagation,
 		propEditorFlag,
 		propEditorFormatType,
 		propEditorGroup,
@@ -104,8 +106,17 @@ private:
 		propEditorRectGroup,
 		propEditorSourceElementLink,
 		propEditorString,
+		propEditorSubjectElementLink,
 		propEditorSubjectType,
 		propEditorTargetElementLink,
+		propEditorTransitionOrder,
+	};
+
+	// the element lists offered by the link properties
+	enum ElementListKind {
+		listSource,                                   // the transition source
+		listTarget,                                   // the transition target
+		listSubject,                                  // the comment subject
 	};
 	
 	struct CyberiadaProperty {
@@ -133,6 +144,8 @@ private:
 	QMap<int, QIcon>            subjectTypesEnumIcons;	
 	QStringList                 formatTypesEnumNames;
 	QMap<int, QIcon>            formatTypesEnumIcons;	
+	QStringList                 transitionOrderEnumNames;
+	QStringList                 eventPropagationEnumNames;
 	
 	QtLineEditFactory*          lineEditFactory;
     QtEnumEditorFactory*        enumEditorFactory;
@@ -150,11 +163,11 @@ private:
     QtProperty*                 findQtProperty(QtProperty* root, const QString& prop_name, int index = 0);
     QtProperty*                 getPropertyParent(QtProperty* property);
     int                         getPropertyIndex(QtProperty* property);
-	Cyberiada::ConstElementList getAllElements(bool source) const;
-	QStringList                 generateElementNames(bool source) const;
-	QMap<int, QIcon>            generateElementIcons(bool source) const;
-	int                         getElementNumber(bool source, const Cyberiada::Element* e) const;
-    const Cyberiada::Element*   getElementByNumber(bool source, int index) const;
+	Cyberiada::ConstElementList getAllElements(ElementListKind kind) const;
+	QStringList                 generateElementNames(ElementListKind kind) const;
+	QMap<int, QIcon>            generateElementIcons(ElementListKind kind) const;
+	int                         getElementNumber(ElementListKind kind, const Cyberiada::Element* e) const;
+    const Cyberiada::Element*   getElementByNumber(ElementListKind kind, int index) const;
 };
 
 #endif

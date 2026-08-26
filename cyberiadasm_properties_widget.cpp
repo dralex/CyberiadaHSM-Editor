@@ -58,11 +58,12 @@ CyberiadaSMPropertiesWidget::CyberiadaSMPropertiesWidget(QWidget *parent):
 		{propID,                   propEditorString,            tr("ID", "Property name")},
 		{propMarkup,               propEditorString,            tr("Markup", "Property name")},
 		{propMetaString,           propEditorString,            ""},
-		{propMetaEventPropagation, propEditorFlag,              tr(METAINFORMATION_EVENT_PROPAGATION, "Property name")},
+		{propMetaEventPropagation, propEditorEventPropagation,  tr(METAINFORMATION_EVENT_PROPAGATION, "Property name")},
 		{propMetaStandardVersion,  propEditorString,            tr(METAINFORMATION_STANDARD_VERSION, "Property name")},
-		{propMetaTransitionOrder,  propEditorFlag,              tr(METAINFORMATION_TRANSITION_ORDER, "Property name")},
+		{propMetaTransitionOrder,  propEditorTransitionOrder,   tr(METAINFORMATION_TRANSITION_ORDER, "Property name")},
 		{propName,                 propEditorString,            tr("Name", "Property name")},
 		{propSource,               propEditorSourceElementLink, tr("Source", "Property name")},
+		{propSubjectTarget,        propEditorSubjectElementLink, tr("Subject Target", "Property name")},
 		{propSubjectType,          propEditorSubjectType,       tr("Subject Type", "Property name")},
 		{propTarget,               propEditorTargetElementLink, tr("Target", "Property name")},
 		{propTrigger,              propEditorString,            tr("Trigger", "Property name")},
@@ -126,6 +127,13 @@ CyberiadaSMPropertiesWidget::CyberiadaSMPropertiesWidget(QWidget *parent):
 		subjectTypesEnumNames << subjectTypes[t];
 		subjectTypesEnumIcons[t] = subjectTypeIcons[t];
 	}
+
+	transitionOrderEnumNames << tr("Not set", "Transition order")
+							 << tr("Action first", "Transition order")
+							 << tr("Exit first", "Transition order");
+	eventPropagationEnumNames << tr("Not set", "Event propagation")
+							  << tr("Block events", "Event propagation")
+							  << tr("Propagate events", "Event propagation");
 
 	formatTypesEnumNames << tr("Cyberiada GraphML 1.0", "GraphML Format");
 	formatTypesEnumNames << tr("Legacy YED", "GraphML Format");
@@ -242,14 +250,28 @@ void CyberiadaSMPropertiesWidget::slotPropertyChanged(QtProperty* p)
         // }
 
         if (cp.name == propMetaTransitionOrder) {
-            // TODO
+            static const char* values[] = {METAINFORMATION_VALUE_NONE,
+                                           CYBERIADA_META_AO_ACTION,
+                                           CYBERIADA_META_AO_EXIT};
+            int value = enumManager->value(p);
+            if (value >= 0 && value < 3) {
+                model->updateMetainformation(model->documentIndex(),
+                                             CYBERIADA_META_TRANSITION_ORDER, values[value]);
+            }
         }
 //         QtProperty* transition_order_prop = constructProperty(propMetaTransitionOrder);
 //         boolManager->setValue(transition_order_prop, doc->meta().transition_order_flag);
 //         meta_group_prop->addSubProperty(transition_order_prop);
 
         if (cp.name == propMetaEventPropagation) {
-            // TODO
+            static const char* values[] = {METAINFORMATION_VALUE_NONE,
+                                           CYBERIADA_META_EP_BLOCK,
+                                           CYBERIADA_META_EP_PROPAGATE};
+            int value = enumManager->value(p);
+            if (value >= 0 && value < 3) {
+                model->updateMetainformation(model->documentIndex(),
+                                             CYBERIADA_META_EVENT_PROPAGATION, values[value]);
+            }
         }
 //         QtProperty* event_propagation_prop = constructProperty(propMetaEventPropagation);
 //         boolManager->setValue(event_propagation_prop, doc->meta().event_propagation_flag);
@@ -265,14 +287,14 @@ void CyberiadaSMPropertiesWidget::slotPropertyChanged(QtProperty* p)
             MY_ASSERT(trans);
 
             if (cp.name == propSource) {
-                const Cyberiada::Element* sourceElement = getElementByNumber(true, enumManager->value(p));
+                const Cyberiada::Element* sourceElement = getElementByNumber(listSource, enumManager->value(p));
                 MY_ASSERT(sourceElement);
                 model->updateGeometry(i, sourceElement->get_id(), trans->target_element_id());
                 // TODO set new source point
             }
 
             if (cp.name == propTarget) {
-                const Cyberiada::Element* targetElement = getElementByNumber(false, enumManager->value(p));
+                const Cyberiada::Element* targetElement = getElementByNumber(listTarget, enumManager->value(p));
                 MY_ASSERT(targetElement);
                 model->updateGeometry(i, trans->source_element_id(), targetElement->get_id());
                 // TODO set new target point
@@ -384,7 +406,7 @@ void CyberiadaSMPropertiesWidget::slotPropertyChanged(QtProperty* p)
 //                         subject_prop->addSubProperty(cs_type_prop);
 
 //                         QtProperty* cs_target_prop = constructProperty(propTarget);
-//                         enumManager->setValue(cs_target_prop, getElementNumber(false, cs.get_element()));
+//                         enumManager->setValue(cs_target_prop, getElementNumber(listSubject, cs.get_element()));
 //                         subject_prop->addSubProperty(cs_target_prop);
 
 //                         if (cs.get_type() != Cyberiada::commentSubjectElement) {
@@ -503,12 +525,11 @@ void CyberiadaSMPropertiesWidget::newElement(Cyberiada::Element* new_element)
 		}
 
 		QtProperty* transition_order_prop = constructProperty(propMetaTransitionOrder);
-		boolManager->setValue(transition_order_prop, doc->meta().transition_order == Cyberiada::transitionOrderExit);
+		enumManager->setValue(transition_order_prop, int(doc->meta().transition_order));
 		meta_group_prop->addSubProperty(transition_order_prop);
 
 		QtProperty* event_propagation_prop = constructProperty(propMetaEventPropagation);
-		boolManager->setValue(event_propagation_prop,
-							  doc->meta().event_propagation == Cyberiada::docEventPropagationPropagate);
+		enumManager->setValue(event_propagation_prop, int(doc->meta().event_propagation));
 		meta_group_prop->addSubProperty(event_propagation_prop);
 		
 	} else {
@@ -523,12 +544,12 @@ void CyberiadaSMPropertiesWidget::newElement(Cyberiada::Element* new_element)
 			addProperty(trans_group_prop);
 			
 			QtProperty* element_source_prop = constructProperty(propSource);
-			enumManager->setValue(element_source_prop, getElementNumber(true,
+			enumManager->setValue(element_source_prop, getElementNumber(listSource,
 																		model->idToElement(trans->source_element_id().c_str())));
 			trans_group_prop->addSubProperty(element_source_prop);
 			
 			QtProperty* element_target_prop = constructProperty(propTarget);
-			enumManager->setValue(element_target_prop, getElementNumber(false,
+			enumManager->setValue(element_target_prop, getElementNumber(listTarget,
 																		model->idToElement(trans->target_element_id().c_str())));
 			trans_group_prop->addSubProperty(element_target_prop);
 			
@@ -649,8 +670,8 @@ void CyberiadaSMPropertiesWidget::newElement(Cyberiada::Element* new_element)
 						enumManager->setValue(cs_type_prop, cs.get_type());
 						subject_prop->addSubProperty(cs_type_prop);
 
-						QtProperty* cs_target_prop = constructProperty(propTarget);
-						enumManager->setValue(cs_target_prop, getElementNumber(false, cs.get_element()));
+						QtProperty* cs_target_prop = constructProperty(propSubjectTarget);
+						enumManager->setValue(cs_target_prop, getElementNumber(listSubject, cs.get_element()));
 						subject_prop->addSubProperty(cs_target_prop);
 
 						if (cs.get_type() != Cyberiada::commentSubjectElement) {
@@ -771,10 +792,9 @@ void CyberiadaSMPropertiesWidget::updateElement()
         }
 
         QtProperty* transition_order_prop = findQtProperty(meta_group_prop, findPropertyStruct(propMetaTransitionOrder).propName);
-        boolManager->setValue(transition_order_prop, doc->meta().transition_order == Cyberiada::transitionOrderExit);
+        enumManager->setValue(transition_order_prop, int(doc->meta().transition_order));
         QtProperty* event_propagation_prop = findQtProperty(meta_group_prop, findPropertyStruct(propMetaEventPropagation).propName);
-        boolManager->setValue(event_propagation_prop,
-                              doc->meta().event_propagation == Cyberiada::docEventPropagationPropagate);
+        enumManager->setValue(event_propagation_prop, int(doc->meta().event_propagation));
 
     } else {
         QtProperty* element_id_prop = findQtProperty(element_group_prop, findPropertyStruct(propID).propName);
@@ -786,11 +806,11 @@ void CyberiadaSMPropertiesWidget::updateElement()
             QtProperty* trans_group_prop = findQtProperty(nullptr, findPropertyStruct(propGroupTransition).propName);
 
             QtProperty* element_source_prop = findQtProperty(trans_group_prop, findPropertyStruct(propSource).propName);
-            enumManager->setValue(element_source_prop, getElementNumber(true,
+            enumManager->setValue(element_source_prop, getElementNumber(listSource,
                                                                         model->idToElement(trans->source_element_id().c_str())));
 
             QtProperty* element_target_prop = findQtProperty(trans_group_prop, findPropertyStruct(propTarget).propName);
-            enumManager->setValue(element_target_prop, getElementNumber(false,
+            enumManager->setValue(element_target_prop, getElementNumber(listTarget,
                                                                         model->idToElement(trans->target_element_id().c_str())));
 
             QtProperty* action_group_prop = findQtProperty(trans_group_prop, findPropertyStruct(propGroupAction).propName);
@@ -958,12 +978,12 @@ void CyberiadaSMPropertiesWidget::updateElement()
                         }
                         enumManager->setValue(cs_type_prop, cs.get_type());
 
-                        QtProperty* cs_target_prop = findQtProperty(subject_prop, findPropertyStruct(propTarget).propName);
+                        QtProperty* cs_target_prop = findQtProperty(subject_prop, findPropertyStruct(propSubjectTarget).propName);
                         if (cs_target_prop == nullptr) {
-                            cs_target_prop = constructProperty(propTarget);
+                            cs_target_prop = constructProperty(propSubjectTarget);
                             subject_prop->addSubProperty(cs_target_prop);
                         }
-                        enumManager->setValue(cs_target_prop, getElementNumber(false, cs.get_element()));
+                        enumManager->setValue(cs_target_prop, getElementNumber(listSubject, cs.get_element()));
 
                         if (cs.get_type() != Cyberiada::commentSubjectElement) {
                             QtProperty* fragment_prop = findQtProperty(subject_prop, findPropertyStruct(propFragment).propName);
@@ -1106,6 +1126,10 @@ QtProperty* CyberiadaSMPropertiesWidget::constructProperty(CyberiadaPropertyName
 		enumManager->setEnumNames(new_property, elementTypesEnumNames);		
 		enumManager->setEnumIcons(new_property, elementTypesEnumIcons);
 		break;
+	case propEditorEventPropagation:
+		new_property = enumManager->addProperty(p.propName);
+		enumManager->setEnumNames(new_property, eventPropagationEnumNames);
+		break;
 	case propEditorFlag:
 		new_property = boolManager->addProperty(p.propName);
 		break;
@@ -1125,9 +1149,18 @@ QtProperty* CyberiadaSMPropertiesWidget::constructProperty(CyberiadaPropertyName
 		break;
 	case propEditorSourceElementLink:
 		new_property = enumManager->addProperty(p.propName);
-		enumManager->setEnumNames(new_property, generateElementNames(true));		
-		enumManager->setEnumIcons(new_property, generateElementIcons(true));
+		enumManager->setEnumNames(new_property, generateElementNames(listSource));		
+		enumManager->setEnumIcons(new_property, generateElementIcons(listSource));
 		break;
+		break;
+	case propEditorTransitionOrder:
+		new_property = enumManager->addProperty(p.propName);
+		enumManager->setEnumNames(new_property, transitionOrderEnumNames);
+		break;
+	case propEditorSubjectElementLink:
+		new_property = enumManager->addProperty(p.propName);
+		enumManager->setEnumNames(new_property, generateElementNames(listSubject));
+		enumManager->setEnumIcons(new_property, generateElementIcons(listSubject));
 		break;
 	case propEditorString:
 		if (alt_name.isEmpty()) {
@@ -1143,8 +1176,8 @@ QtProperty* CyberiadaSMPropertiesWidget::constructProperty(CyberiadaPropertyName
 		break;
 	case propEditorTargetElementLink:
 		new_property = enumManager->addProperty(p.propName);
-		enumManager->setEnumNames(new_property, generateElementNames(false));		
-		enumManager->setEnumIcons(new_property, generateElementIcons(false));
+		enumManager->setEnumNames(new_property, generateElementNames(listTarget));		
+		enumManager->setEnumIcons(new_property, generateElementIcons(listTarget));
 		break;
 	default:
 		MY_ASSERT(false);
@@ -1256,30 +1289,42 @@ int CyberiadaSMPropertiesWidget::getPropertyIndex(QtProperty* property) {
     return -1;
 }
 
-Cyberiada::ConstElementList CyberiadaSMPropertiesWidget::getAllElements(bool source) const
+Cyberiada::ConstElementList CyberiadaSMPropertiesWidget::getAllElements(ElementListKind kind) const
 {
 	MY_ASSERT(model);
 	const Cyberiada::Document* doc = model->rootDocument();
 	MY_ASSERT(doc);
 	const Cyberiada::StateMachine* sm = doc->get_parent_sm(element);
 	MY_ASSERT(sm);
-	if (source) {
+	switch (kind) {
+	case listSource:
 		return sm->find_elements_by_types({Cyberiada::elementSimpleState,
 										   Cyberiada::elementCompositeState,
 										   Cyberiada::elementInitial,
 										   Cyberiada::elementChoice});
-	} else {
+	case listTarget:
 		return sm->find_elements_by_types({Cyberiada::elementSimpleState,
 										   Cyberiada::elementCompositeState,
 										   Cyberiada::elementFinal,
 										   Cyberiada::elementChoice,
 										   Cyberiada::elementTerminate});
+	default:
+		// the standard allows every element but the document and the state machine
+		return sm->find_elements_by_types({Cyberiada::elementSimpleState,
+										   Cyberiada::elementCompositeState,
+										   Cyberiada::elementComment,
+										   Cyberiada::elementFormalComment,
+										   Cyberiada::elementInitial,
+										   Cyberiada::elementFinal,
+										   Cyberiada::elementChoice,
+										   Cyberiada::elementTerminate,
+										   Cyberiada::elementTransition});
 	}
 }
 
-QStringList CyberiadaSMPropertiesWidget::generateElementNames(bool source) const
+QStringList CyberiadaSMPropertiesWidget::generateElementNames(ElementListKind kind) const
 {
-	Cyberiada::ConstElementList elements = getAllElements(source);
+	Cyberiada::ConstElementList elements = getAllElements(kind);
 	QStringList result;
 	for (Cyberiada::ConstElementList::const_iterator i = elements.begin(); i != elements.end(); i++) {
 		const Cyberiada::Element* e = *i;
@@ -1293,9 +1338,9 @@ QStringList CyberiadaSMPropertiesWidget::generateElementNames(bool source) const
 	return result;
 }
 
-QMap<int, QIcon> CyberiadaSMPropertiesWidget::generateElementIcons(bool source) const
+QMap<int, QIcon> CyberiadaSMPropertiesWidget::generateElementIcons(ElementListKind kind) const
 {
-	Cyberiada::ConstElementList elements = getAllElements(source);
+	Cyberiada::ConstElementList elements = getAllElements(kind);
 	QMap<int, QIcon> result;
 	int index = 0;
 	for (Cyberiada::ConstElementList::const_iterator i = elements.begin(); i != elements.end(); i++, index++) {
@@ -1306,10 +1351,10 @@ QMap<int, QIcon> CyberiadaSMPropertiesWidget::generateElementIcons(bool source) 
 	return result;
 }
 
-int CyberiadaSMPropertiesWidget::getElementNumber(bool source, const Cyberiada::Element* elem) const
+int CyberiadaSMPropertiesWidget::getElementNumber(ElementListKind kind, const Cyberiada::Element* elem) const
 {
 	MY_ASSERT(elem);
-	Cyberiada::ConstElementList elements = getAllElements(source);
+	Cyberiada::ConstElementList elements = getAllElements(kind);
 	int index = 0;
 	for (Cyberiada::ConstElementList::const_iterator i = elements.begin(); i != elements.end(); i++, index++) {
 		const Cyberiada::Element* e = *i;
@@ -1320,9 +1365,9 @@ int CyberiadaSMPropertiesWidget::getElementNumber(bool source, const Cyberiada::
 	return -1;	
 }
 
-const Cyberiada::Element *CyberiadaSMPropertiesWidget::getElementByNumber(bool source, int index) const
+const Cyberiada::Element *CyberiadaSMPropertiesWidget::getElementByNumber(ElementListKind kind, int index) const
 {
-    Cyberiada::ConstElementList elements = getAllElements(source);
+    Cyberiada::ConstElementList elements = getAllElements(kind);
     if (index < 0 || index >= elements.size()) return nullptr;
     return elements.at(index);
 }

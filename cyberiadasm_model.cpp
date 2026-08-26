@@ -431,10 +431,12 @@ bool CyberiadaSMModel::updateMetainformation(const QModelIndex& index, const QSt
 		if (value == CYBERIADA_META_AO_EXIT) meta.transition_order = Cyberiada::transitionOrderExit;
 		else if (value == CYBERIADA_META_AO_ACTION ||
 				 value == CYBERIADA_META_AO_TRANSITION) meta.transition_order = Cyberiada::transitionOrderAction;
+		else if (value == METAINFORMATION_VALUE_NONE) meta.transition_order = Cyberiada::transitionOrderNone;
 		else return false;
 	} else if (name == CYBERIADA_META_EVENT_PROPAGATION) {
 		if (value == CYBERIADA_META_EP_PROPAGATE) meta.event_propagation = Cyberiada::docEventPropagationPropagate;
 		else if (value == CYBERIADA_META_EP_BLOCK) meta.event_propagation = Cyberiada::docEventPropagationBlock;
+		else if (value == METAINFORMATION_VALUE_NONE) meta.event_propagation = Cyberiada::docEventPropagationNone;
 		else return false;
 	} else {
 		meta.set_string(name, value);
