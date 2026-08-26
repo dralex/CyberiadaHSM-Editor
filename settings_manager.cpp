@@ -1,3 +1,5 @@
+#include <QDir>
+
 #include "settings_manager.h"
 
 
@@ -21,6 +23,8 @@ void SettingsManager::load() {
     inspectorMode = s.value("display/inspectorMode", false).toBool();
     printMode = s.value("display/printMode", false).toBool();
     snapMode = s.value("display/snapMode", false).toBool();
+
+    lastDirectory = s.value("files/lastDirectory", QDir::currentPath()).toString();
 
     selectionColor = QColor(s.value("display/selectionColor", QColor(Qt::darkGray).name()).toString());
     selectionBorderWidth = s.value("display/selectionBorderWidth", 2).toInt();
@@ -91,6 +95,14 @@ void SettingsManager::setSnapMode(bool value)
         snapMode = value;
         QSettings().setValue("display/snapMode", value);
         emit snapModeChanged(value);
+    }
+}
+
+void SettingsManager::setLastDirectory(const QString& value)
+{
+    if (lastDirectory != value) {
+        lastDirectory = value;
+        QSettings().setValue("files/lastDirectory", value);
     }
 }
 

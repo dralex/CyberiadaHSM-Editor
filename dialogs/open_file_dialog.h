@@ -1,13 +1,37 @@
+/* -----------------------------------------------------------------------------
+ * The Cyberiada State Machine Editor
+ * -----------------------------------------------------------------------------
+ * 
+ * The Open File Dialog
+ *
+ * Copyright (C) 2025 Alexey Fedoseev <aleksey@fedoseev.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see https://www.gnu.org/licenses/
+ *
+ * ----------------------------------------------------------------------------- */
+
 #ifndef OPEN_FILE_DIALOG_H
 #define OPEN_FILE_DIALOG_H
 
-#include <QDialog>
+#include <QFileDialog>
 
 namespace Ui {
-class OpenFileDialog;
+class OpenFileOptions;
 }
 
-class OpenFileDialog : public QDialog
+// the file browser and the open options in a single window
+class OpenFileDialog : public QFileDialog
 {
     Q_OBJECT
 
@@ -21,10 +45,12 @@ public:
     bool strictModeEnabled() const;
 
 private slots:
-    void slotBrowseButtonClicked();
+    void slotInspectorToggled(bool on);
+    void slotAccepted();
 
 private:
-    Ui::OpenFileDialog *ui;
+    Ui::OpenFileOptions *ui;
+    QWidget             *options;
 };
 
 #endif // OPEN_FILE_DIALOG_H

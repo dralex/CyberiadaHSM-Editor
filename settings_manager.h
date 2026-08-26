@@ -35,6 +35,9 @@ public:
     bool getSnapMode() const { return snapMode; }
     void setSnapMode(bool value);
 
+    QString getLastDirectory() const { return lastDirectory; }
+    void setLastDirectory(const QString& value);
+
     QColor getSelectionColor() const { return selectionColor; }
     void setSelectionColor(QColor value);
     int getSelectionBorderWidth() const { return selectionBorderWidth; }
@@ -70,6 +73,9 @@ private:
     bool inspectorMode;
     bool printMode;
     bool snapMode;
+
+    // files
+    QString lastDirectory;
 
     // selection
     QColor selectionColor;
