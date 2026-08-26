@@ -35,6 +35,7 @@
 #include "dialogs/preferences_dialog.h"
 #include "dialogs/open_file_dialog.h"
 #include "dialogs/save_file_dialog.h"
+#include "dialogs/export_image_dialog.h"
 #include "settings_manager.h"
 #include "cyberiadasm_render.h"
 
@@ -155,25 +156,14 @@ void CyberiadaSMEditorWindow::slotFileSaveAs()
 
 void CyberiadaSMEditorWindow::slotFileExport()
 {
-    QString selectedFilter;
-    QString fileName = QFileDialog::getSaveFileName(
-        this,
-        "Экспорт сцены как изображение",
-        "",
-        "PNG (*.png);;JPEG (*.jpg *.jpeg);;BMP (*.bmp);;TIFF (*.tiff);;Все файлы (*)",
-        &selectedFilter
-        );
+    ExportImageDialog dlg(this);
+    if (dlg.exec() != QDialog::Accepted) { return; }
 
+    QString fileName = dlg.selectedFile();
     if (!fileName.isEmpty()) {
-        if (QFileInfo(fileName).suffix().isEmpty()) {
-            if (selectedFilter.contains("PNG")) fileName += ".png";
-            else if (selectedFilter.contains("JPEG")) fileName += ".jpg";
-            else if (selectedFilter.contains("BMP")) fileName += ".bmp";
-            else if (selectedFilter.contains("TIFF")) fileName += ".tiff";
-        }
         QString error;
         if (!renderScene(scene, fileName, &error)) {
-            QMessageBox::critical(this, "Ошибка", error);
+            QMessageBox::critical(this, tr("Ошибка"), error);
         }
     }
 }
