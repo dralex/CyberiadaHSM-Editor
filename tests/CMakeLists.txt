@@ -46,6 +46,7 @@ foreach(diagram
     label-geometry
     lift
     meta
+    polyline
     sources
     two-sms)
   add_l0_test(${diagram} 0)
@@ -125,6 +126,7 @@ foreach(diagram
     label-geometry
     lift
     meta
+    polyline
     sources
     two-sms)
   add_l1_test(${diagram})
@@ -187,6 +189,7 @@ add_l3_test(cyb-geometry)
 add_l3_test(geometry)
 add_l3_test(sources)
 add_l3_test(choice)
+add_l3_test(polyline)
 
 # The L4 in-process test suite: QtTest binaries linked against the core
 # library, checking the model contract and the scene structure directly

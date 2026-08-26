@@ -24,6 +24,7 @@
 #include <QtTest>
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_editor_scene.h"
+#include "cyberiadasm_editor_transition_item.h"
 
 class TestScene: public QObject {
 	Q_OBJECT
@@ -32,6 +33,7 @@ private slots:
 	void initTestCase();
 	void test_load_scene();
 	void test_item_geometry();
+	void test_loop_polyline();
 	void test_selection();
 	void test_title_sync();
 	void test_new_state();
@@ -84,6 +86,27 @@ void TestScene::test_item_geometry()
 	QGraphicsItem* item = scene->getMap().value("node-0-0-1");
 	QVERIFY(item);
 	QCOMPARE(item->pos(), QPointF(-100.0, 25.0));
+}
+
+void TestScene::test_loop_polyline()
+{
+	// the loop follows its polyline instead of the default arc
+	CyberiadaSMEditorTransitionItem* loop =
+		dynamic_cast<CyberiadaSMEditorTransitionItem*>(scene->getMap().value("edge-0"));
+	QVERIFY(loop);
+	const Cyberiada::Transition* t =
+		static_cast<const Cyberiada::Transition*>(model->idToElement("edge-0"));
+	QVERIFY(t->has_polyline());
+	QRectF routed = loop->boundingRect();
+	const Cyberiada::Polyline& pl = t->get_geometry_polyline();
+	for (Cyberiada::Polyline::const_iterator i = pl.begin(); i != pl.end(); i++) {
+		QVERIFY(routed.contains(loop->sourceCenter() + QPointF(i->x, i->y)));
+	}
+	// without the points the loop falls back to the arc between the endpoints
+	QPointF farthest = loop->sourceCenter() + QPointF(pl.front().x, pl.front().y);
+	QVERIFY(model->updateGeometry(model->elementToIndex(model->idToElement("edge-0")),
+								  Cyberiada::Polyline()));
+	QVERIFY(!loop->boundingRect().contains(farthest));
 }
 
 void TestScene::test_selection()
