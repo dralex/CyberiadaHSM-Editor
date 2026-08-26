@@ -2,7 +2,7 @@
  * The Cyberiada State Machine Editor
  * -----------------------------------------------------------------------------
  * 
- * The Open File Dialog
+ * The Base File Dialog
  *
  * Copyright (C) 2025 Alexey Fedoseev <aleksey@fedoseev.net>
  *
@@ -21,34 +21,26 @@
  *
  * ----------------------------------------------------------------------------- */
 
-#ifndef OPEN_FILE_DIALOG_H
-#define OPEN_FILE_DIALOG_H
 
-#include "file_dialog.h"
+#ifndef FILE_DIALOG_H
+#define FILE_DIALOG_H
 
-namespace Ui {
-class OpenFileOptions;
-}
+#include <QFileDialog>
 
-// the file browser and the open options in a single window
-class OpenFileDialog : public CyberiadaFileDialog
+// the file browser and the dialog options in a single window; the browsed
+// directory and the window size are shared by the file dialogs of the editor
+class CyberiadaFileDialog : public QFileDialog
 {
     Q_OBJECT
 
 public:
-    explicit OpenFileDialog(QWidget *parent = nullptr);
-    ~OpenFileDialog();
+    CyberiadaFileDialog(QWidget* parent, const QString& caption, const QString& filter);
 
-    bool inspectorModeEnabled() const;
-    bool reconstructionEnabled() const;
-    bool strictModeEnabled() const;
+    QString selectedFile() const;
 
-private slots:
-    void slotInspectorToggled(bool on);
-
-private:
-    Ui::OpenFileOptions *ui;
-    QWidget             *options;
+protected:
+    void setOptionsWidget(QWidget* options);
+    void done(int result) override;
 };
 
-#endif // OPEN_FILE_DIALOG_H
+#endif // FILE_DIALOG_H

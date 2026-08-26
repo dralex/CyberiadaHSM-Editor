@@ -22,47 +22,34 @@
  * ----------------------------------------------------------------------------- */
 
 #include <QCheckBox>
-#include <QGridLayout>
 
 #include "open_file_dialog.h"
 #include "ui_open_file_dialog.h"
-#include "settings_manager.h"
 
 
 OpenFileDialog::OpenFileDialog(QWidget *parent)
-    : QFileDialog(parent, tr("Открыть файл диаграммы"),
-                  SettingsManager::instance().getLastDirectory(),
-                  tr("CyberiadaML graph (*.graphml)"))
+    : CyberiadaFileDialog(parent, tr("Открыть файл диаграммы"),
+                          tr("CyberiadaML graph (*.graphml)"))
     , ui(new Ui::OpenFileOptions)
     , options(new QWidget(this))
 {
-    // the options are placed into the dialog layout, so the Qt browser is required
-    setOption(QFileDialog::DontUseNativeDialog, true);
     setFileMode(QFileDialog::ExistingFile);
     setAcceptMode(QFileDialog::AcceptOpen);
     setLabelText(QFileDialog::Accept, tr("Открыть"));
 
     ui->setupUi(options);
-    QGridLayout *grid = qobject_cast<QGridLayout*>(layout());
-    if (grid) {
-        grid->addWidget(options, grid->rowCount(), 0, 1, grid->columnCount());
-    }
+    setOptionsWidget(options);
 
     // the document is inspected until the user asks for the editing
     ui->inspectorCheckBox->setChecked(true);
     slotInspectorToggled(true);
 
     connect(ui->inspectorCheckBox, &QCheckBox::toggled, this, &OpenFileDialog::slotInspectorToggled);
-    connect(this, &QDialog::accepted, this, &OpenFileDialog::slotAccepted);
 }
 
 OpenFileDialog::~OpenFileDialog()
 {
     delete ui;
-}
-
-QString OpenFileDialog::selectedFile() const {
-    return selectedFiles().value(0);
 }
 
 bool OpenFileDialog::inspectorModeEnabled() const {
@@ -83,8 +70,4 @@ void OpenFileDialog::slotInspectorToggled(bool on) {
         ui->reconstructCheckBox->setChecked(false);
     }
     ui->reconstructCheckBox->setEnabled(!on);
-}
-
-void OpenFileDialog::slotAccepted() {
-    SettingsManager::instance().setLastDirectory(directory().absolutePath());
 }

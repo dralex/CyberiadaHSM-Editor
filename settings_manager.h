@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QSettings>
 #include <QColor>
+#include <QSize>
 
 class SettingsManager : public QObject {
     Q_OBJECT
@@ -39,6 +40,8 @@ public:
 
     QString getLastDirectory() const { return lastDirectory; }
     void setLastDirectory(const QString& value);
+    QSize getDialogSize() const { return dialogSize; }
+    void setDialogSize(const QSize& value);
 
     QColor getSelectionColor() const { return selectionColor; }
     void setSelectionColor(QColor value);
@@ -78,6 +81,7 @@ private:
 
     // files
     QString lastDirectory;
+    QSize dialogSize;
 
     // selection
     QColor selectionColor;

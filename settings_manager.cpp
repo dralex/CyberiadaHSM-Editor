@@ -24,6 +24,8 @@ void SettingsManager::load() {
     snapMode = s.value("display/snapMode", false).toBool();
 
     lastDirectory = s.value("files/lastDirectory", QDir::currentPath()).toString();
+    // the Qt default leaves too little room for the file view
+    dialogSize = s.value("files/dialogSize", QSize(900, 600)).toSize();
 
     selectionColor = QColor(s.value("display/selectionColor", QColor(Qt::darkGray).name()).toString());
     selectionBorderWidth = s.value("display/selectionBorderWidth", 2).toInt();
@@ -100,6 +102,14 @@ void SettingsManager::setLastDirectory(const QString& value)
     if (lastDirectory != value) {
         lastDirectory = value;
         QSettings().setValue("files/lastDirectory", value);
+    }
+}
+
+void SettingsManager::setDialogSize(const QSize& value)
+{
+    if (dialogSize != value && value.isValid()) {
+        dialogSize = value;
+        QSettings().setValue("files/dialogSize", value);
     }
 }
 
