@@ -38,6 +38,7 @@ private slots:
 	void test_update_id();
 	void test_reparent();
 	void test_subjects();
+	void test_subject_on_transition();
 	void test_delete();
 
 private:
@@ -158,6 +159,27 @@ void TestModel::test_subjects()
 	QVERIFY(model->deleteCommentSubject(comment, 0));
 	QVERIFY(!c->has_subjects());
 	QCOMPARE(spy.count(), 2);
+}
+
+void TestModel::test_subject_on_transition()
+{
+	Cyberiada::StateMachine* sm = static_cast<Cyberiada::StateMachine*>(
+		model->indexToElement(model->firstSMIndex()));
+	QVERIFY(sm);
+	Cyberiada::Comment* c = model->newComment(sm, "A note on the transition");
+	QVERIFY(c);
+	// the transitions stay the last children, so the comment goes before them
+	QCOMPARE(sm->get_children().back()->get_type(), Cyberiada::elementTransition);
+	QVERIFY(model->elementToIndex(c).row() < model->rowCount(model->firstSMIndex()) - 1);
+	Cyberiada::Element* t = model->idToElement("edge-2");
+	QVERIFY(t);
+	QVERIFY(model->newCommentSubject(model->elementToIndex(c), t,
+									 Cyberiada::commentSubjectElement, QString()));
+	QCOMPARE(c->get_subjects().size(), (size_t)1);
+	QCOMPARE(c->get_subjects().front().get_element()->get_id(), Cyberiada::ID("edge-2"));
+	// deleting the transition strips the subject pointing at it
+	QVERIFY(model->deleteElement(model->elementToIndex(t)));
+	QVERIFY(!c->has_subjects());
 }
 
 void TestModel::test_delete()

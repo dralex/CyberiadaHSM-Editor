@@ -3,3 +3,4 @@ update-meta name updated-meta-test
 update-meta description The updated description\nsecond line
 update-meta transitionOrder transitionFirst
 update-meta customParameter custom parameter value
+update-meta eventPropagation none

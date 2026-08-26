@@ -38,6 +38,7 @@ endfunction()
 # valid CyberiadaML-1.0 documents must open cleanly
 foreach(diagram
     choice
+    comment-transition
     cyb-geometry
     empty-actions
     geometry
@@ -57,6 +58,24 @@ foreach(diagram
     broken-point-comment)
   add_l0_test(${diagram} 2)
 endforeach()
+
+# the strict standard checks reject what the default mode accepts
+function(add_l0_strict_test name expected_code)
+  add_test(NAME l0-strict-${name}
+    COMMAND ${CMAKE_COMMAND}
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
+      -DINPUT=${CMAKE_CURRENT_SOURCE_DIR}/diagrams/${name}.graphml
+      -DEXPECTED=${expected_code}
+      -DSTRICT=1
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunBatchTest.cmake)
+  set_tests_properties(l0-strict-${name} PROPERTIES
+    TIMEOUT 60
+    ENVIRONMENT "${L0_ENVIRONMENT}")
+endfunction()
+
+# the metainformation graph of meta.graphml misses the first dStateMachine key
+add_l0_strict_test(hierarchy 0)
+add_l0_strict_test(meta 2)
 
 # the reconstruction mode repairs malformed geometry instead
 add_test(NAME l0-point-comment-reconstruct
@@ -98,6 +117,7 @@ endfunction()
 
 foreach(diagram
     choice
+    comment-transition
     cyb-geometry
     empty-actions
     geometry
@@ -143,6 +163,7 @@ add_l2_test(vertices choice)
 add_l2_test(update-meta meta)
 add_l2_test(update-id geometry)
 add_l2_test(subjects hierarchy)
+add_l2_test(transition-subjects comment-transition)
 
 # The L3 render test suite: the exported scene image must match the good
 # image within the comparison tolerance (see docs/TESTING.md)
