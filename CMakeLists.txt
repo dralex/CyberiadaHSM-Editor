@@ -64,6 +64,9 @@ add_library(CyberiadaInspectorCore STATIC
 
 target_include_directories(CyberiadaInspectorCore PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}
+  # the forms are compiled into the core, so its generated headers must be
+  # reachable by everything that links it
+  ${CMAKE_CURRENT_BINARY_DIR}/CyberiadaInspectorCore_autogen/include
   ${QTPROPERTYBROWSER_INCLUDE_DIR}
   ${cyberiadaml_INCLUDE_DIRS}
   ${cyberiadamlpp_INCLUDE_DIRS}
