@@ -18,6 +18,7 @@ public:
     QString selectedFile() const;
     bool inspectorModeEnabled() const;
     bool reconstructionEnabled() const;
+    bool strictModeEnabled() const;
 
 private slots:
     void slotBrowseButtonClicked();

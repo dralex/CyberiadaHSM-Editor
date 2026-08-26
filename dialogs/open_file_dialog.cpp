@@ -34,6 +34,10 @@ bool OpenFileDialog::reconstructionEnabled() const {
     return ui->reconstructCheckBox->isChecked();
 }
 
+bool OpenFileDialog::strictModeEnabled() const {
+    return ui->strictCheckBox->isChecked();
+}
+
 void OpenFileDialog::slotBrowseButtonClicked() {
     QString fileName = QFileDialog::getOpenFileName(this, tr("Open State Machile GraphML file"),
                                                     QDir::currentPath(),

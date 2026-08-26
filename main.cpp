@@ -66,6 +66,8 @@ int main(int argc, char *argv[])
 	parser.addOption(noTextOption);
 	QCommandLineOption reconstructOption("reconstruct", "Reconstruct absent or malformed geometry on load.");
 	parser.addOption(reconstructOption);
+	QCommandLineOption strictOption("strict", "Check the standard requirements strictly on load.");
+	parser.addOption(strictOption);
 	QCommandLineOption compareOption("compare", "Compare two image files with tolerance and exit.");
 	parser.addOption(compareOption);
 	QCommandLineOption epsilonOption("epsilon", "Comparison per-channel tolerance (0-255, default 8).", "n", "8");
@@ -106,7 +108,8 @@ int main(int argc, char *argv[])
 			}
 			return runBatchMode(app, args.first(), parser.isSet(dumpOption),
 								parser.value(scriptOption), parser.value(saveOption),
-								parser.value(exportOption), parser.isSet(reconstructOption));
+								parser.value(exportOption), parser.isSet(reconstructOption),
+								parser.isSet(strictOption));
 		}
 		CyberiadaSMEditorWindow win;
 		win.show();

@@ -35,7 +35,7 @@ public:
     CyberiadaSMEditorWindow(QWidget* parent = 0);
 
     bool                    openDocument(const QString& fileName, QString* error = NULL,
-                                         bool reconstruct = false);
+                                         bool reconstruct = false, bool strict = false);
 
     CyberiadaSMModel*       getModel() { return model; }
     CyberiadaSMEditorScene* getScene() { return scene; }

@@ -65,22 +65,23 @@ void CyberiadaSMEditorWindow::slotFileOpen()
     QString fileName = dlg.selectedFile();
     bool inspector = dlg.inspectorModeEnabled();
     bool reconstruct = dlg.reconstructionEnabled();
+    bool strict = dlg.strictModeEnabled();
 
     if (!fileName.isEmpty()) {
         actionInspectorMode->setChecked(inspector);
         SettingsManager::instance().setInspectorMode(inspector);
 
         QString error;
-        if (!openDocument(fileName, &error, reconstruct)) {
+        if (!openDocument(fileName, &error, reconstruct, strict)) {
             QMessageBox::critical(this, tr("Load State Machine"), error);
         }
     }
 }
 
 bool CyberiadaSMEditorWindow::openDocument(const QString& fileName, QString* error,
-                                           bool reconstruct)
+                                           bool reconstruct, bool strict)
 {
-    if (!model->loadDocument(fileName, reconstruct)) {
+    if (!model->loadDocument(fileName, reconstruct, false, strict)) {
         if (error) {
             *error = model->loadError();
         }

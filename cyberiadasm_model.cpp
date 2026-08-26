@@ -65,7 +65,7 @@ void CyberiadaSMModel::reset()
 	endResetModel();	
 }
 
-bool CyberiadaSMModel::loadDocument(const QString& path, bool reconstruct, bool reconstruct_sm)
+bool CyberiadaSMModel::loadDocument(const QString& path, bool reconstruct, bool reconstruct_sm, bool strict)
 {
 	Cyberiada::LocalDocument* new_doc = NULL;
 
@@ -73,7 +73,7 @@ bool CyberiadaSMModel::loadDocument(const QString& path, bool reconstruct, bool 
 	try {
 		new_doc = new Cyberiada::LocalDocument();
 		new_doc->open(path.toStdString(), Cyberiada::formatDetect, Cyberiada::geometryFormatQt,
-					  reconstruct, reconstruct_sm);
+					  reconstruct, reconstruct_sm, false, false, false, strict);
 	} catch (const Cyberiada::XMLException& e) {
 		lastLoadError = tr("XML grapml error:\n") + QString(e.str().c_str());
 	} catch (const Cyberiada::CybMLException& e) {

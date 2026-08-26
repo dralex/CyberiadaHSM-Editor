@@ -33,13 +33,13 @@
 
 int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName, bool dump,
 				 const QString& script, const QString& save, const QString& exportImage,
-				 bool reconstruct)
+				 bool reconstruct, bool strict)
 {
 	CyberiadaSMEditorWindow win;
 	win.show();
 
 	QString error;
-	if (!win.openDocument(fileName, &error, reconstruct)) {
+	if (!win.openDocument(fileName, &error, reconstruct, strict)) {
 		fprintf(stderr, "cannot load %s\n%s\n", qPrintable(fileName), qPrintable(error));
 		return batchLoadError;
 	}
