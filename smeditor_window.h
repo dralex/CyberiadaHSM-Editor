@@ -43,6 +43,9 @@ public:
 private:
     void                    initializeTools();
 
+private slots:
+    void                    slotInspectorModeChanged(bool on);
+
 public slots:
 	void                    slotFileOpen();
     void                    slotFileSave();
@@ -73,6 +76,7 @@ private:
 	CyberiadaSMModel*       model;
 	CyberiadaSMEditorScene* scene;
     QActionGroup *toolGroup;
+    QActionGroup *editGroup;
     ToolType currentTool = ToolType::Select;
 
     QString openFileName;

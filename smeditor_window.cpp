@@ -68,7 +68,6 @@ void CyberiadaSMEditorWindow::slotFileOpen()
     bool strict = dlg.strictModeEnabled();
 
     if (!fileName.isEmpty()) {
-        actionInspectorMode->setChecked(inspector);
         SettingsManager::instance().setInspectorMode(inspector);
 
         QString error;
@@ -187,12 +186,31 @@ void CyberiadaSMEditorWindow::initializeTools()
     connect(toolGroup, &QActionGroup::triggered, this, &CyberiadaSMEditorWindow::slotToolSelected);
     emit toolGroup->triggered(actionSelectTool);
 
+    // everything that modifies the document is switched off while it is inspected
+    editGroup = new QActionGroup(this);
+    editGroup->setExclusive(false);
+    editGroup->addAction(actionNew);
+    editGroup->addAction(actionSave);
+    editGroup->addAction(actionNewStateMachine);
+    editGroup->addAction(actionNewState);
+    editGroup->addAction(actionNewInitial);
+    editGroup->addAction(actionNewFinal);
+    editGroup->addAction(actionNewTerminate);
+    editGroup->addAction(actionNewChoise);
+    editGroup->addAction(actionNewComment);
+    editGroup->addAction(actionNewFormalComment);
+    editGroup->addAction(actionNewTransition);
+    editGroup->addAction(actionDeleteElement);
+
+    connect(&SettingsManager::instance(), &SettingsManager::inspectorModeChanged,
+            this, &CyberiadaSMEditorWindow::slotInspectorModeChanged);
+
     // TODO
     SettingsManager& sm = SettingsManager::instance();
 
     actionGridVisibility->setChecked(sm.getShowGrid());
     actionTransitionText->setChecked(sm.getShowTransitionText());
-    actionInspectorMode->setChecked(sm.getInspectorMode());
+    slotInspectorModeChanged(sm.getInspectorMode());
     actionSnapMode->setChecked(sm.getSnapMode());
 }
 
@@ -302,8 +320,14 @@ void CyberiadaSMEditorWindow::slotDeleteElement()
 
 void CyberiadaSMEditorWindow::slotInspectorModeTriggered(bool on)
 {
-    if (on == SettingsManager::instance().getInspectorMode()) { return; }
     SettingsManager::instance().setInspectorMode(on);
+}
+
+void CyberiadaSMEditorWindow::slotInspectorModeChanged(bool on)
+{
+    actionInspectorMode->setChecked(on);
+    editGroup->setEnabled(!on);
+    elementToolBar->setEnabled(!on);
 
     if (openFileName.isEmpty()) { return; }
     if (on) {
@@ -311,7 +335,6 @@ void CyberiadaSMEditorWindow::slotInspectorModeTriggered(bool on)
     } else {
         setWindowTitle(openFileName);
     }
-    // TODO prohibit actions of editing
 }
 
 void CyberiadaSMEditorWindow::slotShowTransitionActionTriggered(bool on)

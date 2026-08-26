@@ -401,6 +401,7 @@ void CyberiadaSMEditorScene::addSMItem(Cyberiada::ElementType type)
     if (parentCItem == nullptr) {
         if (currentSM == nullptr) {
             Cyberiada::Element* element = model->newStateMachine("New State Machine");
+            if (!element) return;
             currentSM = static_cast<Cyberiada::StateMachine*>(element);
             CyberiadaSMEditorSMItem* sm = new CyberiadaSMEditorSMItem(model, element, nullptr);
             parentCItem = sm;
@@ -438,6 +439,7 @@ void CyberiadaSMEditorScene::addSMItem(Cyberiada::ElementType type)
             Cyberiada::Element* element = model->newStateMachine("New State Machine",
                                                                  Cyberiada::Rect(sceneRect().center().x(),
                                                                                  sceneRect().center().y(), 200, 100));
+            if (!element) return;
             currentSM = static_cast<Cyberiada::StateMachine*>(element);
             CyberiadaSMEditorSMItem* sm = new CyberiadaSMEditorSMItem(model, element, NULL);
             elementIdToItemMap.insert(element->get_id(), sm);
@@ -490,6 +492,7 @@ void CyberiadaSMEditorScene::addSMItem(Cyberiada::ElementType type)
                               tr("Parameters error:\n") + QString(e.str().c_str()));
         return;
     }
+    if (!element) return;
 
     // the item itself is built by the model row signals
     QGraphicsItem* item = elementIdToItemMap.value(element->get_id());
@@ -505,6 +508,7 @@ CyberiadaSMEditorTransitionItem* CyberiadaSMEditorScene::addTransition(Cyberiada
         Cyberiada::Element* element = model->newTransition(currentSM, Cyberiada::transitionExternal,
                                                         source->getElement(), target->getElement(),
                                                         Cyberiada::Action(Cyberiada::actionTransition));
+        if (!element) return NULL;
         CyberiadaSMEditorTransitionItem* transition = static_cast<CyberiadaSMEditorTransitionItem*>(
             elementIdToItemMap.value(element->get_id()));
         if (transition) {

@@ -117,6 +117,14 @@ bool CyberiadaSMEditorAbstractItem::hasGeometry()
     return element->has_geometry();
 }
 
+bool CyberiadaSMEditorAbstractItem::isEditable() const
+{
+    const CyberiadaSMEditorScene* s = dynamic_cast<const CyberiadaSMEditorScene*>(scene());
+    return element->has_geometry() &&
+           s && const_cast<CyberiadaSMEditorScene*>(s)->getCurrentTool() == ToolType::Select &&
+           !SettingsManager::instance().getInspectorMode();
+}
+
 void CyberiadaSMEditorAbstractItem::setHighlighted(bool on)
 {
     if (isHighlighted != on) {
@@ -201,7 +209,7 @@ void CyberiadaSMEditorAbstractItem::mousePressEvent(QGraphicsSceneMouseEvent *ev
         return;
     }
 
-    if (SettingsManager::instance().getInspectorMode()) {
+    if (!isEditable()) {
         QGraphicsItem::mousePressEvent(event);
         return;
     }
@@ -219,9 +227,7 @@ void CyberiadaSMEditorAbstractItem::mousePressEvent(QGraphicsSceneMouseEvent *ev
 
 void CyberiadaSMEditorAbstractItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
-    if (!element->has_geometry() ||
-        dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select ||
-        SettingsManager::instance().getInspectorMode()) {
+    if (!isEditable()) {
         event->ignore();
         return;
     }
@@ -288,8 +294,7 @@ void CyberiadaSMEditorAbstractItem::mouseMoveEvent(QGraphicsSceneMouseEvent *eve
 
 void CyberiadaSMEditorAbstractItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
-    if (!element->has_geometry() ||
-        dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select) {
+    if (!isEditable()) {
         event->ignore();
         return;
     }
@@ -303,9 +308,7 @@ void CyberiadaSMEditorAbstractItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *
 
 void CyberiadaSMEditorAbstractItem::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
 {
-    if (!element->has_geometry() ||
-        dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select ||
-        SettingsManager::instance().getInspectorMode()) {
+    if (!isEditable()) {
         event->ignore();
         return;
     }
@@ -317,8 +320,7 @@ void CyberiadaSMEditorAbstractItem::hoverEnterEvent(QGraphicsSceneHoverEvent *ev
 
 void CyberiadaSMEditorAbstractItem::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
 {
-    if (!element->has_geometry() ||
-        dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select) {
+    if (!isEditable()) {
         event->ignore();
         return;
     }
@@ -342,9 +344,7 @@ void CyberiadaSMEditorAbstractItem::slotSelectionSettingsChanged()
 void CyberiadaSMEditorAbstractItem::hoverMoveEvent(QGraphicsSceneHoverEvent *event)
 {
     // TODO
-    if (!isSelected() ||
-        !element->has_geometry() ||
-        dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select) {
+    if (!isSelected() || !isEditable()) {
         event->ignore();
         return;
     }

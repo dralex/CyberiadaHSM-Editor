@@ -43,6 +43,8 @@ public:
 	                                                 bool reconsruct_sm = false, bool strict = false);
 	const QString&                      loadError() const { return lastLoadError; }
 	void                                saveDocument(bool round = false);
+	// the inspected document is never modified
+	bool                                readOnly() const;
 	void                                saveAsDocument(const QString& path, Cyberiada::DocumentFormat f, bool round = false);
 
 	// DATA REPRESENTATION

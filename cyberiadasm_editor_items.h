@@ -97,6 +97,8 @@ public:
     void setPreviousPosition(const QPointF newPreviousPosition);
 
     bool hasGeometry();
+    // no element is edited while the document is inspected
+    bool isEditable() const;
 
     void setHighlighted(bool on);
 

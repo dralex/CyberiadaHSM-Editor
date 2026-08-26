@@ -587,6 +587,7 @@ void CyberiadaSMEditorTransitionItem::onTargetSizeChanged(CyberiadaSMEditorAbstr
 
 void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qreal dx, qreal dy, QPointF p)
 {
+    if (SettingsManager::instance().getInspectorMode()) { return; }
     prepareGeometryChange();
     prevPosition = p;
 
@@ -754,6 +755,7 @@ void CyberiadaSMEditorTransitionItem::slotMouseReleaseDot()
 
 void CyberiadaSMEditorTransitionItem::slotDeleteDot(QGraphicsItem *signalOwner)
 {
+    if (SettingsManager::instance().getInspectorMode()) { return; }
     if (isArcLoop()) { return; }
     QPainterPath linePath = path();
 
@@ -774,6 +776,8 @@ void CyberiadaSMEditorTransitionItem::slotDeleteDot(QGraphicsItem *signalOwner)
 
 void CyberiadaSMEditorTransitionItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
 {
+    if (SettingsManager::instance().getInspectorMode()) { return; }
+
     QPointF clickPos = event->pos();
 
     // the arc has no segments to insert into: the click makes the loop a polyline
@@ -814,6 +818,10 @@ void CyberiadaSMEditorTransitionItem::mousePressEvent(QGraphicsSceneMouseEvent *
         event->ignore();
         return;
     }
+    if (SettingsManager::instance().getInspectorMode()) {
+        QGraphicsItem::mousePressEvent(event);
+        return;
+    }
 
     showDots();
     if (event->button() & Qt::LeftButton) {
@@ -852,7 +860,8 @@ void CyberiadaSMEditorTransitionItem::mouseReleaseEvent(QGraphicsSceneMouseEvent
 
 void CyberiadaSMEditorTransitionItem::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
 {
-    if (dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select) {
+    if (dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select ||
+        SettingsManager::instance().getInspectorMode()) {
         event->ignore();
         return;
     }

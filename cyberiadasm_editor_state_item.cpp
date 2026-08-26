@@ -434,6 +434,8 @@ void CyberiadaSMEditorStateItem::slotInspectorModeChanged(bool on)
 {
     if (state->is_composite_state()) {
         region->setVisibleRegon(on);
+        // the inspected region follows the document, the edited one follows the text
+        updateRegion();
     }
     update();
 }
@@ -474,6 +476,8 @@ void CyberiadaSMEditorStateItem::mousePressEvent(QGraphicsSceneMouseEvent *event
 {
     CyberiadaSMEditorAbstractItem::mousePressEvent(event);
 
+    if (!isEditable()) { return; }
+
     if (cornerFlags == 0) {
         creatingOfTrans = true;
     }
@@ -513,6 +517,11 @@ void CyberiadaSMEditorStateItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 
 void CyberiadaSMEditorStateItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
+    if (!isEditable()) {
+        CyberiadaSMEditorAbstractItem::mouseReleaseEvent(event);
+        return;
+    }
+
     // TODO create transition
     if (creatingOfTrans && trans) {
         creatingOfTrans = false;
@@ -530,6 +539,8 @@ void CyberiadaSMEditorStateItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *eve
 
 void CyberiadaSMEditorStateItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 {
+    if (!isEditable()) { return; }
+
     QMenu menu;
 
     QAction *deleteAction = menu.addAction("Удалить");
@@ -857,7 +868,8 @@ void StateAction::mousePressEvent(QGraphicsSceneMouseEvent* event) {
 }
 
 void StateAction::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) {
-    if (dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select) {
+    if (dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select ||
+        SettingsManager::instance().getInspectorMode()) {
         event->ignore();
         return;
     }
@@ -879,6 +891,8 @@ void StateAction::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) {
 }
 
 void StateAction::contextMenuEvent(QGraphicsSceneContextMenuEvent *event) {
+    if (SettingsManager::instance().getInspectorMode()) { return; }
+
     QMenu menu;
 
     QAction *deleteAction = menu.addAction("Удалить");

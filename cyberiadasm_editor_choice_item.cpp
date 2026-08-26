@@ -97,9 +97,7 @@ void CyberiadaSMEditorChoiceItem::paint(QPainter* painter, const QStyleOptionGra
 
 void CyberiadaSMEditorChoiceItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
-    if (!choice->has_geometry() ||
-        dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select ||
-        SettingsManager::instance().getInspectorMode()) {
+    if (!isEditable()) {
         event->ignore();
         return;
     }
@@ -117,10 +115,7 @@ void CyberiadaSMEditorChoiceItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event
 
 void CyberiadaSMEditorChoiceItem::hoverMoveEvent(QGraphicsSceneHoverEvent *event)
 {
-    if (!isSelected() ||
-        !choice->has_geometry() ||
-        dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select ||
-        SettingsManager::instance().getInspectorMode()) {
+    if (!isSelected() || !isEditable()) {
         event->ignore();
         return;
     }

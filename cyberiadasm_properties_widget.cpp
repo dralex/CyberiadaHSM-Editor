@@ -26,6 +26,7 @@
 #include "myassert.h"
 #include "cyberiadasm_properties_widget.h"
 #include "cyberiada_constants.h"
+#include "settings_manager.h"
 
 CyberiadaSMPropertiesWidget::CyberiadaSMPropertiesWidget(QWidget *parent):
 	QtTreePropertyBrowser(parent), model(NULL), element(NULL)
@@ -93,6 +94,10 @@ CyberiadaSMPropertiesWidget::CyberiadaSMPropertiesWidget(QWidget *parent):
     connect(boolManager, SIGNAL(propertyChanged(QtProperty*)), this, SLOT(slotPropertyChanged(QtProperty*)));
     checkBoxFactory = new QtCheckBoxFactory(this);
     setFactoryForManager(boolManager, checkBoxFactory);
+
+    connect(&SettingsManager::instance(), &SettingsManager::inspectorModeChanged,
+            this, &CyberiadaSMPropertiesWidget::slotInspectorModeChanged);
+    slotInspectorModeChanged(SettingsManager::instance().getInspectorMode());
 
 	QMap<Cyberiada::ActionType, QString> actionTypes = {
 		{Cyberiada::actionTransition, tr("Transition", "Action type")},
@@ -208,9 +213,24 @@ void CyberiadaSMPropertiesWidget::slotModelDataChanged(const QModelIndex &topLef
     }
 }
 
+void CyberiadaSMPropertiesWidget::slotInspectorModeChanged(bool on)
+{
+    // the inspected properties are displayed but not edited
+    if (on) {
+        unsetFactoryForManager(stringManager);
+        unsetFactoryForManager(enumManager);
+        unsetFactoryForManager(boolManager);
+    } else {
+        setFactoryForManager(stringManager, lineEditFactory);
+        setFactoryForManager(enumManager, enumEditorFactory);
+        setFactoryForManager(boolManager, checkBoxFactory);
+    }
+}
+
 void CyberiadaSMPropertiesWidget::slotPropertyChanged(QtProperty* p)
 {
     if (updating) return;
+    if (model && model->readOnly()) return;
 
     if (!element) return;
 
