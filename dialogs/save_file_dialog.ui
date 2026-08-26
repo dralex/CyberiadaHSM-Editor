@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>SaveFileOptions</class>
+ <widget class="QWidget" name="SaveFileOptions">
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QGroupBox" name="optionsBox">
+     <property name="title">
+      <string>Параметры сохранения</string>
+     </property>
+     <layout class="QVBoxLayout" name="optionsLayout">
+      <item>
+       <layout class="QHBoxLayout" name="formatLayout">
+        <item>
+         <widget class="QLabel" name="formatLabel">
+          <property name="text">
+           <string>Формат:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="formatComboBox">
+          <property name="toolTip">
+           <string>Формат записи документа</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="QLabel" name="formatHintLabel">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="roundCheckBox">
+        <property name="toolTip">
+         <string>Округлить координаты геометрии до целых значений</string>
+        </property>
+        <property name="text">
+         <string>Округление координат</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="skipGeometryCheckBox">
+        <property name="toolTip">
+         <string>Записать документ без геометрии; несовместимо с остальными параметрами</string>
+        </property>
+        <property name="text">
+         <string>Без геометрии</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="checkInitialCheckBox">
+        <property name="toolTip">
+         <string>Проверить наличие начального псевдосостояния верхнего уровня</string>
+        </property>
+        <property name="text">
+         <string>Проверка начального псевдосостояния</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="strictActionsCheckBox">
+        <property name="toolTip">
+         <string>Проверить уникальность действий entry и exit</string>
+        </property>
+        <property name="text">
+         <string>Проверка действий состояний</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="skipEmptyCheckBox">
+        <property name="toolTip">
+         <string>Не записывать пустое поведение действий</string>
+        </property>
+        <property name="text">
+         <string>Пропуск пустого поведения</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <tabstops>
+  <tabstop>formatComboBox</tabstop>
+  <tabstop>roundCheckBox</tabstop>
+  <tabstop>skipGeometryCheckBox</tabstop>
+  <tabstop>checkInitialCheckBox</tabstop>
+  <tabstop>strictActionsCheckBox</tabstop>
+  <tabstop>skipEmptyCheckBox</tabstop>
+ </tabstops>
+ <resources/>
+ <connections/>
+</ui>

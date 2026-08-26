@@ -140,10 +140,15 @@ CyberiadaSMPropertiesWidget::CyberiadaSMPropertiesWidget(QWidget *parent):
 							  << tr("Block events", "Event propagation")
 							  << tr("Propagate events", "Event propagation");
 
+	// the enum values follow Cyberiada::DocumentFormat
 	formatTypesEnumNames << tr("Cyberiada GraphML 1.0", "GraphML Format");
 	formatTypesEnumNames << tr("Legacy YED", "GraphML Format");
+	formatTypesEnumNames << tr("yEd Ostranna", "GraphML Format");
+	formatTypesEnumNames << tr("yEd Berloga 1.6", "GraphML Format");
 	formatTypesEnumIcons[0] = QIcon(":/Icons/images/format-cyberiada.png");
 	formatTypesEnumIcons[1] = QIcon(":/Icons/images/format-yed.png");
+	formatTypesEnumIcons[2] = QIcon(":/Icons/images/format-yed.png");
+	formatTypesEnumIcons[3] = QIcon(":/Icons/images/format-yed.png");
 	
 	setResizeMode(ResizeToContents);
 

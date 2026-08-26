@@ -34,6 +34,7 @@
 #include "fontmanager.h"
 #include "dialogs/preferences_dialog.h"
 #include "dialogs/open_file_dialog.h"
+#include "dialogs/save_file_dialog.h"
 #include "settings_manager.h"
 #include "cyberiadasm_render.h"
 
@@ -110,8 +111,12 @@ bool CyberiadaSMEditorWindow::openDocument(const QString& fileName, QString* err
 void CyberiadaSMEditorWindow::slotFileSave()
 {
     if (model->rootDocument() && !model->rootDocument()->get_file_path().empty()) {
-        qDebug() << model->rootDocument()->get_file_path().empty();
-        model->saveDocument();
+        try {
+            model->saveDocument();
+        } catch (const Cyberiada::Exception& e) {
+            QMessageBox::critical(this, tr("Save State Machine"),
+                                  tr("Cannot save the document:\n") + QString(e.str().c_str()));
+        }
     } else {
         slotFileSaveAs();
     }
@@ -119,21 +124,22 @@ void CyberiadaSMEditorWindow::slotFileSave()
 
 void CyberiadaSMEditorWindow::slotFileSaveAs()
 {
-    QString selectedFilter;
-    QString fileName = QFileDialog::getSaveFileName(
-        this,
-        "Save State Machile GraphML file as",
-        QDir::currentPath(),
-        tr("CyberiadaML graph (*.graphml)"),
-        &selectedFilter
-        );
+    SaveFileDialog dlg(this, model->rootDocument());
+    if (dlg.exec() != QDialog::Accepted) { return; }
+
+    QString fileName = dlg.selectedFile();
     if (fileName.isEmpty()) {
         return;
     }
-    if (QFileInfo(fileName).suffix().isEmpty()) {
-        if (selectedFilter.contains("CyberiadaML graph (*.graphml)")) fileName += ".graphml";
+    try {
+        model->saveAsDocument(fileName, dlg.selectedFormat(), dlg.roundEnabled(),
+                              dlg.skipGeometryEnabled(), dlg.checkInitialEnabled(),
+                              dlg.strictActionsEnabled(), dlg.skipEmptyBehaviorEnabled());
+    } catch (const Cyberiada::Exception& e) {
+        QMessageBox::critical(this, tr("Save State Machine"),
+                              tr("Cannot save the document:\n") + QString(e.str().c_str()));
+        return;
     }
-    model->saveAsDocument(fileName, Cyberiada::DocumentFormat::formatCyberiada10);
 
     QFileInfo fileInfo(fileName);
     openFileName = fileInfo.fileName();

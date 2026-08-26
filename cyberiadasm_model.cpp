@@ -108,7 +108,17 @@ void CyberiadaSMModel::saveDocument(bool round)
 {
 	if (readOnly()) return;
 	if (root && !root->get_file_path().empty()) {
-		root->save();
+		root->save(round);
+	}
+}
+
+void CyberiadaSMModel::saveAsDocument(const QString& path, Cyberiada::DocumentFormat f,
+									  bool round, bool skip_geometry, bool check_initial,
+									  bool strict_actions, bool skip_empty_behavior)
+{
+	if (root) {
+		root->save_as(path.toStdString(), f, round, skip_geometry, check_initial,
+					  strict_actions, skip_empty_behavior);
 	}
 }
 
