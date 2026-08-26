@@ -45,6 +45,7 @@ private:
 
 private slots:
     void                    slotInspectorModeChanged(bool on);
+    void                    slotServiceObjectsChanged(bool on);
 
 public slots:
 	void                    slotFileOpen();
@@ -59,6 +60,7 @@ public slots:
     void                    slotFitContent();
     void                    slotPreferences();
     void                    slotGridVisibilityTriggered(bool on);
+    void                    slotServiceObjectsTriggered(bool on);
 
     void                    slotNewSM();
     void                    slotNewState();

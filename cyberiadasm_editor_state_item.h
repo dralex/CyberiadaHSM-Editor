@@ -100,6 +100,7 @@ private slots:
     void onActionChanged(StateAction* signalOwner);
 
     void slotInspectorModeChanged(bool on) override;
+    void slotServiceObjectsChanged(bool on) override;
 
 protected:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;

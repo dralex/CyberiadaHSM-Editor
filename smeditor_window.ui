@@ -108,6 +108,7 @@
     <addaction name="actionTransitionText"/>
     <addaction name="actionInspectorMode"/>
     <addaction name="actionGridVisibility"/>
+    <addaction name="actionServiceObjects"/>
     <addaction name="actionSnapMode"/>
     <addaction name="separator"/>
     <addaction name="actionPreferences"/>
@@ -146,6 +147,7 @@
    <addaction name="actionPan"/>
    <addaction name="separator"/>
    <addaction name="actionGridVisibility"/>
+   <addaction name="actionServiceObjects"/>
    <addaction name="actionInspectorMode"/>
   </widget>
   <widget class="QToolBar" name="elementToolBar">
@@ -421,6 +423,21 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+N</string>
+   </property>
+  </action>
+  <action name="actionServiceObjects">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/geomprop.png</normaloff>:/Icons/images/geomprop.png</iconset>
+   </property>
+   <property name="text">
+    <string>Служебные объекты</string>
+   </property>
+   <property name="toolTip">
+    <string>Границы регионов и начала координат</string>
    </property>
   </action>
   <action name="actionGridVisibility">
@@ -753,6 +770,22 @@
    </hints>
   </connection>
   <connection>
+   <sender>actionServiceObjects</sender>
+   <signal>triggered(bool)</signal>
+   <receiver>SMEditorWindow</receiver>
+   <slot>slotServiceObjectsTriggered(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>511</x>
+     <y>383</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
    <sender>actionGridVisibility</sender>
    <signal>triggered(bool)</signal>
    <receiver>SMEditorWindow</receiver>
@@ -808,6 +841,7 @@
   <slot>slotInspectorModeTriggered(bool)</slot>
   <slot>slotSnapModeTriggered(bool)</slot>
   <slot>slotShowTransitionActionTriggered(bool)</slot>
+  <slot>slotServiceObjectsTriggered(bool)</slot>
   <slot>slotNewSM()</slot>
   <slot>slotNewState()</slot>
   <slot>slotNewInitial()</slot>

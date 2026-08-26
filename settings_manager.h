@@ -24,6 +24,13 @@ public:
     bool getShowTransitionText() const { return showTransitionText; }
     void setShowTransitionText(bool value);
 
+    // the auxiliary objects explaining the structure: the region borders and
+    // the coordinate origins of the scene, the states and the regions
+    bool getShowServiceObjects() const { return showServiceObjects; }
+    void setShowServiceObjects(bool value);
+    // the batch mode draws them without touching the stored preferences
+    void overrideShowServiceObjects(bool value) { showServiceObjects = value; }
+
     // runtime-only, never persisted: the batch mode hides all text elements
     // to keep the test output independent of the font metrics
     bool getShowText() const { return showText; }
@@ -55,6 +62,7 @@ signals:
 
     void gridSettingsChanged();
     void showTransitionTextChanged(bool);
+    void serviceObjectsChanged(bool);
     void inspectorModeChanged(bool);
     void printModeChanged(bool);
     void snapModeChanged(bool);
@@ -72,6 +80,7 @@ private:
 
     // visualisation
     bool showTransitionText;
+    bool showServiceObjects;
     bool showText = true;
 
     // modes

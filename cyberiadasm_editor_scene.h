@@ -81,6 +81,7 @@ public slots:
     // void  enableGrid(bool on = true);
     // void  enableGridSnap(bool on = true);
     void  slotGridSettingsChanged();
+    void  slotServiceObjectsChanged();
     void  slotSelectionChanged();
 
 protected:

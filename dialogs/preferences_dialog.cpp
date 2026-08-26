@@ -67,6 +67,7 @@ void PreferencesDialog::loadFromSettings()
     ui->snapModeCheckBox->setChecked(sm.getSnapMode());
 
     ui->showTransTextCheckBox->setChecked(sm.getShowTransitionText());
+    ui->serviceObjectsCheckBox->setChecked(sm.getShowServiceObjects());
 
     selectionColor = sm.getSelectionColor();
     ui->selectionColorPreview->setStyleSheet(
@@ -88,6 +89,7 @@ void PreferencesDialog::saveSettings()
 
     // visualization
     sm.setShowTransitionText(ui->showTransTextCheckBox->isChecked());
+    sm.setShowServiceObjects(ui->serviceObjectsCheckBox->isChecked());
 
     // selection
     sm.setSelectionColor(selectionColor.name());

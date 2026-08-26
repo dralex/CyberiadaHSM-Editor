@@ -129,6 +129,7 @@ signals:
 
 private slots:
     virtual void slotInspectorModeChanged(bool on);
+    virtual void slotServiceObjectsChanged(bool on);
     virtual void slotSelectionSettingsChanged();
 
 protected:

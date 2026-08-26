@@ -77,6 +77,23 @@
        <string>Visualization</string>
       </attribute>
       <layout class="QFormLayout" name="formLayout_5">
+       <item row="1" column="0">
+        <widget class="QLabel" name="serviceObjectsLabel">
+         <property name="text">
+          <string>Show Service Objects</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QCheckBox" name="serviceObjectsCheckBox">
+         <property name="toolTip">
+          <string>The region borders and the coordinate origins</string>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
        <item row="0" column="0">
         <widget class="QLabel" name="showTransTextLabel">
          <property name="text">

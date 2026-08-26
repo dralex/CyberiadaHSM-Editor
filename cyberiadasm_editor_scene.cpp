@@ -59,6 +59,7 @@ CyberiadaSMEditorScene::CyberiadaSMEditorScene(CyberiadaSMModel* _model, QObject
     // gridSnap = true;
     gridPen = QPen(Qt::gray, 0, Qt::DotLine);
     connect(&SettingsManager::instance(), &SettingsManager::gridSettingsChanged, this, &CyberiadaSMEditorScene::slotGridSettingsChanged);
+    connect(&SettingsManager::instance(), &SettingsManager::serviceObjectsChanged, this, &CyberiadaSMEditorScene::slotServiceObjectsChanged);
 
 	setBackgroundBrush(Qt::white);
     connect(this, &QGraphicsScene::selectionChanged, this, &CyberiadaSMEditorScene::slotSelectionChanged);
@@ -237,6 +238,12 @@ void CyberiadaSMEditorScene::slotSMSizeChanged(CyberiadaSMEditorAbstractItem::Co
 
 void CyberiadaSMEditorScene::slotGridSettingsChanged()
 {
+    update();
+}
+
+void CyberiadaSMEditorScene::slotServiceObjectsChanged()
+{
+    // the scene origin marker lives in the background
     update();
 }
 
@@ -531,7 +538,7 @@ void CyberiadaSMEditorScene::drawBackground(QPainter* painter, const QRectF &)
 	painter->setBrush(backgroundBrush());
 	painter->drawRect(sceneRect());
 
-    if (sm.getInspectorMode()) {
+    if (sm.getShowServiceObjects()) {
         painter->setBrush(Qt::green);
         painter->drawEllipse(QPointF(0, 0), 5, 5); // the center of the coordinate system
     }

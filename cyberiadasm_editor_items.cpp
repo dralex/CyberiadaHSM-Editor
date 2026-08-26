@@ -47,6 +47,7 @@ CyberiadaSMEditorAbstractItem::CyberiadaSMEditorAbstractItem(CyberiadaSMModel* _
     cornerFlags(0)
 {
     connect(&SettingsManager::instance(), &SettingsManager::inspectorModeChanged, this, &CyberiadaSMEditorAbstractItem::slotInspectorModeChanged);
+    connect(&SettingsManager::instance(), &SettingsManager::serviceObjectsChanged, this, &CyberiadaSMEditorAbstractItem::slotServiceObjectsChanged);
     connect(&SettingsManager::instance(), &SettingsManager::selectionSettingsChanged, this, &CyberiadaSMEditorAbstractItem::slotSelectionSettingsChanged);
 
     prevItemUnderCursor = nullptr;
@@ -332,6 +333,11 @@ void CyberiadaSMEditorAbstractItem::hoverLeaveEvent(QGraphicsSceneHoverEvent *ev
 }
 
 void CyberiadaSMEditorAbstractItem::slotInspectorModeChanged(bool on)
+{
+    update();
+}
+
+void CyberiadaSMEditorAbstractItem::slotServiceObjectsChanged(bool on)
 {
     update();
 }

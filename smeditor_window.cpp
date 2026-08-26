@@ -200,6 +200,9 @@ void CyberiadaSMEditorWindow::initializeTools()
 
     connect(&SettingsManager::instance(), &SettingsManager::inspectorModeChanged,
             this, &CyberiadaSMEditorWindow::slotInspectorModeChanged);
+    // the same setting is reachable from the preferences, so the action follows it
+    connect(&SettingsManager::instance(), &SettingsManager::serviceObjectsChanged,
+            this, &CyberiadaSMEditorWindow::slotServiceObjectsChanged);
 
     // TODO
     SettingsManager& sm = SettingsManager::instance();
@@ -207,6 +210,7 @@ void CyberiadaSMEditorWindow::initializeTools()
     actionGridVisibility->setChecked(sm.getShowGrid());
     actionTransitionText->setChecked(sm.getShowTransitionText());
     slotInspectorModeChanged(sm.getInspectorMode());
+    actionServiceObjects->setChecked(sm.getShowServiceObjects());
     actionSnapMode->setChecked(sm.getSnapMode());
 }
 
@@ -244,6 +248,16 @@ void CyberiadaSMEditorWindow::slotPreferences()
 {
     PreferencesDialog dlg(this);
     dlg.exec();
+}
+
+void CyberiadaSMEditorWindow::slotServiceObjectsTriggered(bool on)
+{
+    SettingsManager::instance().setShowServiceObjects(on);
+}
+
+void CyberiadaSMEditorWindow::slotServiceObjectsChanged(bool on)
+{
+    actionServiceObjects->setChecked(on);
 }
 
 void CyberiadaSMEditorWindow::slotGridVisibilityTriggered(bool on)

@@ -73,7 +73,7 @@ CyberiadaSMEditorStateItem::CyberiadaSMEditorStateItem(QObject *parent_object,
 
     if (state->is_composite_state()) {
         region = new StateRegion(this);
-        region->setVisibleRegon(SettingsManager::instance().getInspectorMode());
+        region->setVisibleRegon(SettingsManager::instance().getShowServiceObjects());
         updateRegion();
     }
 
@@ -189,6 +189,9 @@ void CyberiadaSMEditorStateItem::updateRegion()
             region->setRect(rect());
         }
         region->setPos(0, 0);
+        // the document region has no place for the action separators
+        region->setTopLine(false);
+        region->setBottomLine(false);
         return;
     }
 
@@ -272,7 +275,7 @@ void CyberiadaSMEditorStateItem::syncFromModel()
     if (state->is_composite_state()) {
         if (region == nullptr) {
             region = new StateRegion(this);
-            region->setVisibleRegon(SettingsManager::instance().getInspectorMode());
+            region->setVisibleRegon(SettingsManager::instance().getShowServiceObjects());
         }
         updateRegion();
     }
@@ -433,9 +436,17 @@ void CyberiadaSMEditorStateItem::onActionChanged(StateAction* signalOwner)
 void CyberiadaSMEditorStateItem::slotInspectorModeChanged(bool on)
 {
     if (state->is_composite_state()) {
-        region->setVisibleRegon(on);
         // the inspected region follows the document, the edited one follows the text
         updateRegion();
+    }
+    update();
+}
+
+void CyberiadaSMEditorStateItem::slotServiceObjectsChanged(bool on)
+{
+    // the region border is a decoration: the region geometry does not change
+    if (state->is_composite_state()) {
+        region->setVisibleRegon(on);
     }
     update();
 }
@@ -465,7 +476,7 @@ void CyberiadaSMEditorStateItem::paint(QPainter *painter, const QStyleOptionGrap
     }
     painter->drawPath(path);
 
-    if (SettingsManager::instance().getInspectorMode()) {
+    if (SettingsManager::instance().getShowServiceObjects()) {
         painter->setBrush(Qt::red);
         painter->drawEllipse(QPointF(0, 0), 2, 2); // The center of the coordinate system
     }

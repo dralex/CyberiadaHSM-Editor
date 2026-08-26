@@ -19,6 +19,7 @@ void SettingsManager::load() {
     gridSpacing = s.value("display/gridSpacing", 25).toInt();
 
     showTransitionText = s.value("display/showTransitionText", true).toBool();
+    showServiceObjects = s.value("display/showServiceObjects", false).toBool();
 
     printMode = s.value("display/printMode", false).toBool();
     snapMode = s.value("display/snapMode", false).toBool();
@@ -38,6 +39,7 @@ void SettingsManager::loadDefaults()
     setGridSpacing(25);
 
     setShowTransitionText(true);
+    setShowServiceObjects(false);
 
     setPrintMode(false);
     setSnapMode(false);
@@ -70,6 +72,14 @@ void SettingsManager::setShowTransitionText(bool value) {
         showTransitionText = value;
         QSettings().setValue("display/showTransitionText", value);
         emit showTransitionTextChanged(value);
+    }
+}
+
+void SettingsManager::setShowServiceObjects(bool value) {
+    if (showServiceObjects != value) {
+        showServiceObjects = value;
+        QSettings().setValue("display/showServiceObjects", value);
+        emit serviceObjectsChanged(value);
     }
 }
 
