@@ -449,6 +449,19 @@ bool CyberiadaSMModel::updateMetainformation(const QModelIndex& index, const QSt
 	return true;
 }
 
+// the library keeps the transitions after the other children, so a new
+// element lands before the first transition of the collection
+static int newElementRow(Cyberiada::ElementCollection* parent)
+{
+    if (!parent) return 0;
+    const Cyberiada::ElementList& children = parent->get_children();
+    int row = 0;
+    for (Cyberiada::ElementList::const_iterator i = children.begin(); i != children.end(); i++, row++) {
+        if ((*i)->get_type() == Cyberiada::elementTransition) break;
+    }
+    return row;
+}
+
 Cyberiada::StateMachine *CyberiadaSMModel::newStateMachine(const Cyberiada::String &sm_name, const Cyberiada::Rect &r)
 {
     if (root == NULL) {
@@ -471,7 +484,7 @@ Cyberiada::State *CyberiadaSMModel::newState(Cyberiada::ElementCollection *paren
         return nullptr;
     }
 
-    int row = rowCount(elementToIndex(parent));
+    int row = newElementRow(parent);
     beginInsertRows(elementToIndex(parent), row, row);
     Cyberiada::State* element = root->new_state(parent, state_name, a, r, region, color);
     endInsertRows();
@@ -485,7 +498,7 @@ Cyberiada::InitialPseudostate *CyberiadaSMModel::newInitial(Cyberiada::ElementCo
         return nullptr;
     }
 
-    int row = rowCount(elementToIndex(parent));
+    int row = newElementRow(parent);
     beginInsertRows(elementToIndex(parent), row, row);
     Cyberiada::InitialPseudostate* element = root->new_initial(parent, p);
     endInsertRows();
@@ -499,7 +512,7 @@ Cyberiada::FinalState *CyberiadaSMModel::newFinal(Cyberiada::ElementCollection *
         return nullptr;
     }
 
-    int row = rowCount(elementToIndex(parent));
+    int row = newElementRow(parent);
     beginInsertRows(elementToIndex(parent), row, row);
     Cyberiada::FinalState* element = root->new_final(parent, p);
     endInsertRows();
@@ -514,7 +527,7 @@ Cyberiada::ChoicePseudostate *CyberiadaSMModel::newChoice(Cyberiada::ElementColl
         return nullptr;
     }
 
-    int row = rowCount(elementToIndex(parent));
+    int row = newElementRow(parent);
     beginInsertRows(elementToIndex(parent), row, row);
     Cyberiada::ChoicePseudostate* element = root->new_choice(parent, r, color);
     endInsertRows();
@@ -528,7 +541,7 @@ Cyberiada::TerminatePseudostate *CyberiadaSMModel::newTerminate(Cyberiada::Eleme
         return nullptr;
     }
 
-    int row = rowCount(elementToIndex(parent));
+    int row = newElementRow(parent);
     beginInsertRows(elementToIndex(parent), row, row);
     Cyberiada::TerminatePseudostate* element = root->new_terminate(parent, p);
     endInsertRows();
@@ -562,7 +575,7 @@ Cyberiada::Comment *CyberiadaSMModel::newComment(Cyberiada::ElementCollection *p
         return nullptr;
     }
 
-    int row = rowCount(elementToIndex(parent));
+    int row = newElementRow(parent);
     beginInsertRows(elementToIndex(parent), row, row);
     Cyberiada::Comment* element = root->new_comment(parent, body, rect, color, markup);
     endInsertRows();
@@ -578,7 +591,7 @@ Cyberiada::Comment *CyberiadaSMModel::newFormalComment(Cyberiada::ElementCollect
         return nullptr;
     }
 
-    int row = rowCount(elementToIndex(parent));
+    int row = newElementRow(parent);
     beginInsertRows(elementToIndex(parent), row, row);
     Cyberiada::Comment* element = root->new_formal_comment(parent, body, rect, color, markup);
     endInsertRows();
@@ -997,8 +1010,6 @@ void CyberiadaSMModel::move(Cyberiada::Element* element, Cyberiada::ElementColle
 	MY_ASSERT(srcindex.isValid());
 
 	int remove_index = srcindex.row();
-	int add_index = rowCount(dstindex);
-
     Cyberiada::ElementCollection* source_parent = dynamic_cast<Cyberiada::ElementCollection*>(element->get_parent());
 
     if (target_parent == NULL || source_parent == NULL) {
@@ -1022,6 +1033,7 @@ void CyberiadaSMModel::move(Cyberiada::Element* element, Cyberiada::ElementColle
     source_parent->remove_element(element->get_id());
 	endRemoveRows();
 
+	int add_index = newElementRow(target_parent);
 	beginInsertRows(dstindex, add_index, add_index);
     target_parent->add_element(copied);
     endInsertRows();
