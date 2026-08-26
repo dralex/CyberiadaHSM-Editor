@@ -28,7 +28,8 @@
 
 class CyberiadaSMEditorScene;
 
-// render the scene 1:1 into an image file (the selection is cleared first)
+// render the scene 1:1 into an image file (the selection is cleared first);
+// the raster formats are chosen by the file suffix, svg and pdf are vector
 bool renderScene(CyberiadaSMEditorScene* scene, const QString& path, QString* error);
 
 // compare two images: a pixel differs when any channel delta exceeds epsilon,

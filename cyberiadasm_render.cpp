@@ -21,11 +21,31 @@
  *
  * ----------------------------------------------------------------------------- */
 
+#include <QFileInfo>
 #include <QImage>
+#include <QMargins>
+#include <QPageSize>
 #include <QPainter>
+#include <QPdfWriter>
+#include <QSvgGenerator>
 
 #include "cyberiadasm_render.h"
 #include "cyberiadasm_editor_scene.h"
+
+// the final state and the transition label fill from the painter background,
+// so it is set explicitly instead of relying on the paint device default
+static void preparePainter(QPainter& painter, const QRect& target)
+{
+	painter.setBackground(Qt::white);
+	painter.fillRect(target, Qt::white);
+}
+
+// neither vector device reports the writing errors
+static bool fileWritten(const QString& path)
+{
+	QFileInfo info(path);
+	return info.exists() && info.size() > 0;
+}
 
 bool renderScene(CyberiadaSMEditorScene* scene, const QString& path, QString* error)
 {
@@ -37,6 +57,51 @@ bool renderScene(CyberiadaSMEditorScene* scene, const QString& path, QString* er
 	// exported images must not show the editing selection
 	scene->clearSelection();
 	QRect target(QPoint(0, 0), scene_rect.toRect().size());
+	QString suffix = QFileInfo(path).suffix().toLower();
+
+	if (suffix == "svg") {
+		QSvgGenerator generator;
+		generator.setFileName(path);
+		generator.setSize(target.size());
+		generator.setViewBox(target);
+		{
+			QPainter painter(&generator);
+			if (!painter.isActive()) {
+				if (error) *error = "cannot write the image " + path;
+				return false;
+			}
+			preparePainter(painter, target);
+			scene->render(&painter, target, scene_rect);
+		}
+		if (!fileWritten(path)) {
+			if (error) *error = "cannot save the image " + path;
+			return false;
+		}
+		return true;
+	}
+
+	if (suffix == "pdf") {
+		QPdfWriter writer(path);
+		// a scene unit becomes a point, so the page repeats the scene size
+		writer.setResolution(72);
+		writer.setPageSize(QPageSize(QSizeF(target.width(), target.height()), QPageSize::Point));
+		writer.setPageMargins(QMarginsF(0, 0, 0, 0), QPageLayout::Point);
+		{
+			QPainter painter(&writer);
+			if (!painter.isActive()) {
+				if (error) *error = "cannot write the image " + path;
+				return false;
+			}
+			preparePainter(painter, target);
+			scene->render(&painter, target, scene_rect);
+		}
+		if (!fileWritten(path)) {
+			if (error) *error = "cannot save the image " + path;
+			return false;
+		}
+		return true;
+	}
+
 	QImage image(target.size(), QImage::Format_ARGB32);
 	if (image.isNull()) {
 		if (error) *error = "cannot allocate the image";
@@ -44,6 +109,7 @@ bool renderScene(CyberiadaSMEditorScene* scene, const QString& path, QString* er
 	}
 	image.fill(Qt::white);
 	QPainter painter(&image);
+	preparePainter(painter, target);
 	scene->render(&painter, target, scene_rect);
 	painter.end();
 	if (!image.save(path)) {

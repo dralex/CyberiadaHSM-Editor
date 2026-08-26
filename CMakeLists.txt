@@ -24,6 +24,9 @@ if(CMAKE_VERSION VERSION_LESS "3.7.0")
 endif()
 
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
+# the Svg module may live outside the Qt5 tree, so it is looked up on its own;
+# the Qt5 components above must be found first, the Svg config depends on them
+find_package(Qt5Svg REQUIRED)
 
 # the core library: everything but the entry point, linkable from the
 # in-process tests (see docs/TESTING.md, L4)
@@ -71,6 +74,7 @@ target_link_directories(CyberiadaInspectorCore PUBLIC
   )
 target_link_libraries(CyberiadaInspectorCore PUBLIC
   Qt5::Widgets
+  Qt5::Svg
   ${QTPROPERTYBROWSER_LIBRARY}
   ${cyberiadaml_LIBRARIES}
   ${cyberiadamlpp_LIBRARIES}

@@ -26,7 +26,8 @@
 
 ExportImageDialog::ExportImageDialog(QWidget* parent)
     : CyberiadaFileDialog(parent, tr("Экспорт сцены как изображение"),
-                          tr("PNG (*.png);;JPEG (*.jpg *.jpeg);;BMP (*.bmp);;TIFF (*.tiff)"))
+                          tr("PNG (*.png);;JPEG (*.jpg *.jpeg);;BMP (*.bmp);;TIFF (*.tiff);;"
+                             "SVG (*.svg);;PDF (*.pdf)"))
 {
     setFileMode(QFileDialog::AnyFile);
     setAcceptMode(QFileDialog::AcceptSave);
@@ -56,6 +57,10 @@ void ExportImageDialog::slotFilterSelected(const QString& filter)
         setDefaultSuffix("bmp");
     } else if (filter.startsWith("TIFF")) {
         setDefaultSuffix("tiff");
+    } else if (filter.startsWith("SVG")) {
+        setDefaultSuffix("svg");
+    } else if (filter.startsWith("PDF")) {
+        setDefaultSuffix("pdf");
     } else {
         setDefaultSuffix("png");
     }
