@@ -335,9 +335,6 @@ void CyberiadaSMEditorStateItem::updateSizeToFitChildren(CyberiadaSMEditorAbstra
 
     QRectF newRect = boundingRect().united(rect);
 
-    qDebug() << "parent change" << name() << (newRect.width() - boundingRect().width()) / 2 << child->pos();
-    qDebug() << newRect << "|" << boundingRect() << "|" << rect;
-
     if (newRect.width() - boundingRect().width() == 0 && newRect.height() - boundingRect().height() == 0) {
         return;
     }

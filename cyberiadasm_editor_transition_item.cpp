@@ -608,7 +608,6 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
 
                     // loop
                     if (cItem == target()) {
-                        qDebug() << "1";
                         setSource(cItem);
                         hasIntersections = false;
                         QPointF newPoint = findIntersectionWithItem(source(), p, sourceCenter(), &hasIntersections) -
@@ -620,7 +619,6 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
 
                     //
                     if (cItem == source()) {
-                        qDebug() << "2";
                         hasIntersections = false;
                         QPointF newPoint = findIntersectionWithItem(source(), p, nextPoint, &hasIntersections) -
                                            sourceCenter();
@@ -635,14 +633,12 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
                                cItem->sceneBoundingRect().center();
                     // intersectoin with item under cursor
                     if (hasIntersections) {
-                        qDebug() << "3";
                         isSourceTraking = false;
                         setSource(cItem);
                         setSourcePoint(newPoint);
                         return;
                     }
 
-                    qDebug() << "3.5";
                     return;
                 }
                 bool hasIntersections = false;
@@ -657,12 +653,10 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
                 // intersection with source in adjusted bounding rect
                 if (hasIntersections) {
                     isSourceTraking = false;
-                    qDebug() << "4" << isSourceTraking << isTargetTraking;
                     setSourcePoint(newPoint);
                     return;
                 }
 
-                qDebug() << "5";
 
                 // mouse traking
                 isSourceTraking = true;

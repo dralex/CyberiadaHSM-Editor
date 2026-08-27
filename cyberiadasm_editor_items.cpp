@@ -167,11 +167,6 @@ void CyberiadaSMEditorAbstractItem::onParentSizeChanged(CornerFlags side, qreal 
             break;
         }
 
-        Cyberiada::Rect oldR = collection->get_geometry_rect();
-        qDebug() << "--child old:" << oldR.x << oldR.y << oldR.width << oldR.height;
-        qDebug() << "--new:" << tmpR.x() << tmpR.y() << tmpR.width() << tmpR.height();
-        qDebug() << "--delta" << oldR.x - tmpR.x();
-
         Cyberiada::Rect newR = Cyberiada::Rect(tmpR.x(),
                                             tmpR.y(),
                                             tmpR.width(),
@@ -465,15 +460,6 @@ void CyberiadaSMEditorAbstractItem::updatePosGeometry()
                                         pos().y(),
                                         boundingRect().width(),
                                         boundingRect().height());
-    if (type() == StateItem || type() == CompositeStateItem) {
-        auto coll = dynamic_cast<Cyberiada::ElementCollection*>(element);
-        Cyberiada::Rect oldR = coll->get_geometry_rect();
-        QRectF parR = mapRectToParent(QRectF(boundingRect()));
-        qDebug() << "++child old:" << oldR.x << oldR.y << oldR.width << oldR.height;
-        qDebug() << "++new:" << r.x << r.y << r.width << r.height;
-        qDebug() << "++delta" << oldR.x - r.x;
-        qDebug() << "++mapBR" << parR;
-    }
     model->updateGeometry(model->elementToIndex(element), r);
 }
 
