@@ -34,6 +34,7 @@ class TestScene: public QObject {
 private slots:
 	void initTestCase();
 	void test_load_scene();
+	void test_item_hierarchy();
 	void test_item_geometry();
 	void test_loop_polyline();
 	void test_inspector_region();
@@ -82,6 +83,34 @@ void TestScene::test_load_scene()
 	QCOMPARE(countItems(CyberiadaSMEditorAbstractItem::StateItem), 5);
 	QCOMPARE(countItems(CyberiadaSMEditorAbstractItem::VertexItem), 1);
 	QCOMPARE(countItems(CyberiadaSMEditorAbstractItem::TransitionItem), 3);
+}
+
+void TestScene::test_item_hierarchy()
+{
+	// the items enter the scene through their parents, so a nested element
+	// must sit in the region of its state and appear in the scene once
+	const QMap<Cyberiada::ID, QGraphicsItem*>& map = scene->getMap();
+	QGraphicsItem* sm = map.value("G");
+	CyberiadaSMEditorStateItem* outer =
+		dynamic_cast<CyberiadaSMEditorStateItem*>(map.value("node-0"));
+	CyberiadaSMEditorStateItem* inner =
+		dynamic_cast<CyberiadaSMEditorStateItem*>(map.value("node-0-0"));
+	QVERIFY(sm && outer && inner);
+
+	QVERIFY(!sm->parentItem());
+	QCOMPARE(outer->parentItem(), sm);
+	QCOMPARE(inner->parentItem(), static_cast<QGraphicsItem*>(outer->getRegion()));
+	QCOMPARE(map.value("node-0-0-1")->parentItem(),
+			 static_cast<QGraphicsItem*>(inner->getRegion()));
+	// the transitions live at the top level
+	QVERIFY(!map.value("edge-0")->parentItem());
+
+	// every item belongs to this scene and is listed exactly once
+	QList<QGraphicsItem*> items = scene->items();
+	for (QMap<Cyberiada::ID, QGraphicsItem*>::const_iterator i = map.begin(); i != map.end(); i++) {
+		QCOMPARE((*i)->scene(), static_cast<QGraphicsScene*>(scene));
+		QCOMPARE(items.count(*i), 1);
+	}
 }
 
 void TestScene::test_item_geometry()

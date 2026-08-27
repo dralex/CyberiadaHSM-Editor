@@ -175,7 +175,6 @@ void CyberiadaSMEditorScene::removeItemsForElement(Cyberiada::Element* element)
     }
     QGraphicsItem* item = elementIdToItemMap.take(element->get_id());
     if (item) {
-        removeItem(item);
         delete item;
     }
 }
@@ -258,6 +257,15 @@ QGraphicsItem* CyberiadaSMEditorScene::graphicsParentFor(const Cyberiada::Elemen
     return item;
 }
 
+// an item built with a parent enters the scene with it, so adding it again
+// would either warn or, when the parent is not attached yet, detach the item
+void CyberiadaSMEditorScene::addSceneItem(QGraphicsItem* item)
+{
+    if (!item->parentItem()) {
+        addItem(item);
+    }
+}
+
 QGraphicsItem* CyberiadaSMEditorScene::addElementItem(Cyberiada::Element* child, QGraphicsItem* new_parent)
 {
     QGraphicsItem* item = NULL;
@@ -265,9 +273,10 @@ QGraphicsItem* CyberiadaSMEditorScene::addElementItem(Cyberiada::Element* child,
     case Cyberiada::elementCompositeState: {
         CyberiadaSMEditorStateItem* state = new CyberiadaSMEditorStateItem(this, model, child, new_parent);
         elementIdToItemMap.insert(child->get_id(), state);
+        // the subtree is built inside an attached root, or Qt would detach it
+        addSceneItem(state);
         addItemsRecursively(state->getRegion(), static_cast<Cyberiada::ElementCollection*>(child));
-        item = state;
-        break;
+        return state;
     }
     case Cyberiada::elementSimpleState:
         item = new CyberiadaSMEditorStateItem(this, model, child, new_parent);
@@ -297,7 +306,7 @@ QGraphicsItem* CyberiadaSMEditorScene::addElementItem(Cyberiada::Element* child,
     }
     if (item) {
         elementIdToItemMap.insert(child->get_id(), item);
-        addItem(item);
+        addSceneItem(item);
     }
     return item;
 }
@@ -309,7 +318,7 @@ void CyberiadaSMEditorScene::addItemsRecursively(QGraphicsItem* parent, Cyberiad
     if (collection->get_type() == Cyberiada::elementSM) {
         new_parent = new CyberiadaSMEditorSMItem(model, collection, parent);
         elementIdToItemMap.insert(collection->get_id(), new_parent);
-        addItem(new_parent);
+        addSceneItem(new_parent);
         new_parent->setSelected(true);
     }
 
@@ -376,7 +385,6 @@ void CyberiadaSMEditorScene::loadScene()
         }
     }
     setSceneRect(bounds.adjusted(-margin, -margin, margin, margin));
-    qDebug() << "new scene rect" << sceneRect();
     if (!views().isEmpty()) {
         views().first()->fitInView(sceneRect(), Qt::KeepAspectRatio);
     }
@@ -415,7 +423,6 @@ void CyberiadaSMEditorScene::addSMItem(Cyberiada::ElementType type)
             parentColl = static_cast<Cyberiada::ElementCollection*>(element);
             elementIdToItemMap.insert(element->get_id(), sm);
             addItem(sm);
-            qDebug() << "add item" << element->get_id().c_str() << "type" << type;
         } else {
             for (auto item : items()) {
                 if (auto smItem = dynamic_cast<CyberiadaSMEditorSMItem*>(item)) {
@@ -429,7 +436,7 @@ void CyberiadaSMEditorScene::addSMItem(Cyberiada::ElementType type)
 
     Cyberiada::LocalDocument* d = model->rootDocument();
     if (d == NULL) {
-        qDebug() << "LocalDocument NULL";
+        qWarning() << "the document is not loaded";
         // TODO create doc
     }
 

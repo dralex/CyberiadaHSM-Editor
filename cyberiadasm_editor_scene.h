@@ -89,6 +89,7 @@ protected:
 
 private:
     void  addItemsRecursively(QGraphicsItem* parent, Cyberiada::ElementCollection* element);
+    void addSceneItem(QGraphicsItem* item);
     QGraphicsItem* addElementItem(Cyberiada::Element* element, QGraphicsItem* parent_item);
     QGraphicsItem* graphicsParentFor(const Cyberiada::Element* parent);
     void  removeItemsForElement(Cyberiada::Element* element);
