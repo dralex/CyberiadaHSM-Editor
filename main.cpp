@@ -25,7 +25,6 @@
 #include <QCommandLineParser>
 #include <QFontDatabase>
 #include "main.h"
-#include "smeditor_window.h"
 #include "cyberiada_constants.h"
 #include "settings_manager.h"
 #include "fontmanager.h"
@@ -136,11 +135,7 @@ int main(int argc, char *argv[])
 								parser.value(exportOption), parser.isSet(reconstructOption),
 								parser.isSet(strictOption), save_format);
 		}
-		CyberiadaSMEditorWindow win;
-		win.show();
-		int res = app.exec();
-
-		return res;
+		return runGuiMode(app);
 	} catch(const QString& error) {
 		app.printMessage(error);
 	} catch(...) {

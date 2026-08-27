@@ -39,6 +39,10 @@ enum BatchExitCode {
 	batchImageMismatch = 5
 };
 
+// the editor window is built here, so its generated form stays inside the
+// library and no other target has to find a copy of it
+int runGuiMode(CyberiadaSMEditorApplication& app);
+
 int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName, bool dump = false,
 				 const QString& script = QString(), const QString& save = QString(),
 				 const QString& exportImage = QString(), bool reconstruct = false,

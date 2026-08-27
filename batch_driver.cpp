@@ -31,6 +31,13 @@
 #include "batch_script.h"
 #include "cyberiadasm_render.h"
 
+int runGuiMode(CyberiadaSMEditorApplication& app)
+{
+	CyberiadaSMEditorWindow win;
+	win.show();
+	return app.exec();
+}
+
 int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName, bool dump,
 				 const QString& script, const QString& save, const QString& exportImage,
 				 bool reconstruct, bool strict, Cyberiada::DocumentFormat saveFormat)
