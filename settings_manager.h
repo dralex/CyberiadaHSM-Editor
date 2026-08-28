@@ -5,6 +5,9 @@
 #include <QSettings>
 #include <QColor>
 #include <QSize>
+#include <QString>
+
+#include "cyberiada_constants.h"
 
 class SettingsManager : public QObject {
     Q_OBJECT
@@ -45,6 +48,14 @@ public:
     bool getSnapMode() const { return snapMode; }
     void setSnapMode(bool value);
 
+    // the shared family of the element text, empty means the bundled font
+    QString getFontFamily() const { return fontFamily; }
+    void setFontFamily(const QString& value);
+    // the point size of the text of the role; the formal comment follows the
+    // comment size, so it has no setting of its own
+    int getFontSize(FontRole role) const;
+    void setFontSize(FontRole role, int value);
+
     QString getLastDirectory() const { return lastDirectory; }
     void setLastDirectory(const QString& value);
     QSize getDialogSize() const { return dialogSize; }
@@ -67,6 +78,8 @@ signals:
     void printModeChanged(bool);
     void snapModeChanged(bool);
 
+    void fontSettingsChanged();
+
     void selectionSettingsChanged();
 
 private:
@@ -87,6 +100,10 @@ private:
     bool inspectorMode = false;
     bool printMode;
     bool snapMode;
+
+    // text
+    QString fontFamily;
+    int fontSizes[fontRolesCount];
 
     // files
     QString lastDirectory;

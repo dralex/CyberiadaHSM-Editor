@@ -65,7 +65,6 @@ CyberiadaSMEditorStateItem::CyberiadaSMEditorStateItem(QObject *parent_object,
     CyberiadaSMEditorAbstractItem::setPreviousPosition(QPointF(x(), y()));
 
     title = new StateTitle(name(), this);
-    title->setFontBoldness(true);
     title->setVisible(SettingsManager::instance().getShowText());
     connect(title, &EditableTextItem::sizeChanged, this, &CyberiadaSMEditorStateItem::onTextItemSizeChanged);
 
@@ -600,6 +599,7 @@ void CyberiadaSMEditorStateItem::updateParent(CyberiadaSMEditorAbstractItem *new
 
 StateTitle::StateTitle(const QString &text, QGraphicsItem *parent):
     EditableTextItem(text, parent) {
+    setFontRole(fontRoleStateTitle);
     setTextAlignment(Qt::AlignCenter);
     setTextMargin(0);
 }
@@ -791,6 +791,7 @@ void StateRegion::paint(QPainter *painter, const QStyleOptionGraphicsItem *optio
 StateAction::StateAction(const Cyberiada::Action* action, QGraphicsItem *parent):
     EditableTextItem(parent),
     action(action) {
+    setFontRole(fontRoleStateAction);
     setTextMargin(30);
 
     Cyberiada::ActionType type = action->get_type();

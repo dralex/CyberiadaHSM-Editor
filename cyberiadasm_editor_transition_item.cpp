@@ -73,6 +73,8 @@ CyberiadaSMEditorTransitionItem::CyberiadaSMEditorTransitionItem(QObject *parent
     actionItem = new TransitionAction(actionText(), this);
     setActionVisibility(SettingsManager::instance().getShowTransitionText());
     connect(&SettingsManager::instance(), &SettingsManager::showTransitionTextChanged, this, &CyberiadaSMEditorTransitionItem::setActionVisibility);
+    // the label is centered on the polyline, so it follows its own size
+    connect(actionItem, &EditableTextItem::sizeChanged, this, &CyberiadaSMEditorTransitionItem::updateActionPosition);
 
     connect(target(), &CyberiadaSMEditorAbstractItem::geometryChanged, this, &CyberiadaSMEditorTransitionItem::onTargetGeomertyChanged);
     connect(source(), &CyberiadaSMEditorAbstractItem::geometryChanged, this, &CyberiadaSMEditorTransitionItem::onSourceGeomertyChanged);
@@ -1001,6 +1003,7 @@ void CyberiadaSMEditorTransitionItem::setDotsPosition()
 TransitionAction::TransitionAction(const QString &text, QGraphicsItem *parent) :
     EditableTextItem(text, parent)
 {
+    setFontRole(fontRoleTransition);
     setTextWidthEnabled(false);
     setTextAlignment(Qt::AlignCenter);
     setTextMargin(0);

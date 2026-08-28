@@ -32,6 +32,9 @@ find_package(Qt5Svg REQUIRED)
 # in-process tests (see docs/TESTING.md, L4)
 add_library(CyberiadaInspectorCore STATIC
   smeditor_window.ui
+  # the resources live in the core so the in-process tests get the bundled
+  # font and the icons too; FontManager pulls them in with Q_INIT_RESOURCE
+  smeditor.qrc
   myassert.cpp
   cyberiadasm_model.cpp
   cyberiadasm_view.cpp
@@ -85,7 +88,6 @@ target_link_libraries(CyberiadaInspectorCore PUBLIC
 
 add_executable(CyberiadaInspector
   main.cpp
-  smeditor.qrc
 )
 target_link_libraries(CyberiadaInspector CyberiadaInspectorCore)
 

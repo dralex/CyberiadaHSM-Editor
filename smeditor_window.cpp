@@ -25,8 +25,6 @@
 #include <QFileDialog>
 #include <QDebug>
 #include <QDir>
-#include <QFontDialog>
-#include <QFont>
 #include <QMessageBox>
 
 #include "smeditor_window.h"
@@ -212,15 +210,6 @@ void CyberiadaSMEditorWindow::initializeTools()
     slotInspectorModeChanged(sm.getInspectorMode());
     actionServiceObjects->setChecked(sm.getShowServiceObjects());
     actionSnapMode->setChecked(sm.getSnapMode());
-}
-
-void CyberiadaSMEditorWindow::slotFontTriggered()
-{
-    bool ok;
-    QFont font = QFontDialog::getFont(&ok, FontManager::instance().getFont());
-    if (ok) {
-        FontManager::instance().setFont(font);
-    }
 }
 
 void CyberiadaSMEditorWindow::slotToolSelected(QAction *action)

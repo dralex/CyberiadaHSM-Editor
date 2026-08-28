@@ -26,7 +26,12 @@
 
 #include <QFont>
 #include <QObject>
+#include <QString>
 
+#include "cyberiada_constants.h"
+
+// builds the font of every text role from the stored settings; the bundled
+// font is registered here so the library users get it without the executable
 class FontManager : public QObject {
     Q_OBJECT
 
@@ -40,22 +45,20 @@ public:
         return instance;
     }
 
-    QFont getFont() const {
-        return currentFont;
-    }
+    // register the bundled font; call it once the application object exists
+    void loadBundledFont();
+    QString bundledFamily() const { return bundled; }
 
-    void setFont(const QFont &font) {
-        if (currentFont != font) {
-            currentFont = font;
-            emit fontChanged(currentFont);
-        }
-    }
+    QFont font(FontRole role) const;
+    // the family at the default size, for the painter of the exported image
+    QFont baseFont() const;
 
 signals:
-    void fontChanged(const QFont &newFont);
+    void fontsChanged();
 
 private:
-    FontManager() = default;
-    QFont currentFont;
+    FontManager();
+
+    QString bundled;
 };
 #endif // FONTMANAGER_H

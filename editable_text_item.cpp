@@ -43,8 +43,8 @@ EditableTextItem::EditableTextItem(QGraphicsItem *parent):
 {
     setFlags(QGraphicsItem::ItemIsSelectable);
     setTextInteractionFlags(Qt::NoTextInteraction);
-    setFont(FontManager::instance().getFont());
-    connect(&FontManager::instance(), &FontManager::fontChanged, this, &EditableTextItem::onFontChanged);
+    applyFont();
+    connect(&FontManager::instance(), &FontManager::fontsChanged, this, &EditableTextItem::applyFont);
 }
 
 EditableTextItem::EditableTextItem(const QString &text, QGraphicsItem *parent):
@@ -52,8 +52,8 @@ EditableTextItem::EditableTextItem(const QString &text, QGraphicsItem *parent):
 {
     setFlags(QGraphicsItem::ItemIsSelectable);
     setTextInteractionFlags(Qt::NoTextInteraction);
-    setFont(FontManager::instance().getFont());
-    connect(&FontManager::instance(), &FontManager::fontChanged, this, &EditableTextItem::onFontChanged);
+    applyFont();
+    connect(&FontManager::instance(), &FontManager::fontsChanged, this, &EditableTextItem::applyFont);
 }
 
 void EditableTextItem::mousePressEvent(QGraphicsSceneMouseEvent *event) {
@@ -136,14 +136,10 @@ void EditableTextItem::setTextWidthEnabled(bool enabled) {
     isTextWidthEnabled = enabled;
 }
 
-void EditableTextItem::setFontStyleChangeable(bool isChangeable) {
-    isFontStyleChangeable = isChangeable;
-}
-
-void EditableTextItem::setFontBoldness(bool isBold)
+void EditableTextItem::setFontRole(FontRole role)
 {
-    this->isBold = isBold;
-    onFontChanged(font());
+    fontRole = role;
+    applyFont();
 }
 
 void EditableTextItem::setTextMargin(double newTextMargin)
@@ -152,25 +148,10 @@ void EditableTextItem::setTextMargin(double newTextMargin)
     updateTextWidth();
 }
 
-void EditableTextItem::onFontChanged(const QFont &newFont)
+void EditableTextItem::applyFont()
 {
-    if(!isFontStyleChangeable) {
-        QFont newFontDiffSize = font();
-        newFontDiffSize.setPointSize(newFont.pointSize());
-        setFont(newFontDiffSize);
-        emit sizeChanged();
-        return;
-    }
-    if (isBold) {
-        QFont newBoldFont = newFont;
-        newBoldFont.setBold(isBold);
-        setFont(newBoldFont);
-        emit sizeChanged();
-        return;
-    }
-    setFont(newFont);
+    setFont(FontManager::instance().font(fontRole));
     emit sizeChanged();
-
     updateTextWidth();
 }
 

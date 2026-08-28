@@ -39,7 +39,7 @@
 // even without any text, so the bundled font is set instead of the machine one
 static void preparePainter(QPainter& painter, const QRect& target)
 {
-	painter.setFont(FontManager::instance().getFont());
+	painter.setFont(FontManager::instance().baseFont());
 	painter.setBackground(Qt::white);
 	painter.fillRect(target, Qt::white);
 }

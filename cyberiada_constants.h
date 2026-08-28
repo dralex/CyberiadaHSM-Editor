@@ -52,11 +52,24 @@
 #define METAINFORMATION_VALUE_NONE        "none"
 
 // Text constants
-#define FONT_SIZE 12
-#define FONT_NAME "Monospace"
+#define FONT_SIZE     12
+#define FONT_SIZE_MIN 6
+#define FONT_SIZE_MAX 72
 
-#define FORMAL_COMMENT_FONT_SIZE 12
-#define FORMAL_COMMENT_FONT_NAME "Courier"
+// the family of the bundled font, used when the resource cannot be loaded
+#define FONT_FALLBACK_NAME "Courier"
+
+// the text of every element is drawn in the font of its role; the sizes are
+// set separately, the boldness and the formal comment family are fixed here
+enum FontRole {
+    fontRoleStateTitle = 0,
+    fontRoleStateAction,
+    fontRoleTransition,
+    fontRoleComment,
+    // not selected by the user: the comment size in the bundled monospace
+    fontRoleFormalComment,
+    fontRolesCount
+};
 
 enum class ToolType {
     Select,

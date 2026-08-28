@@ -26,6 +26,8 @@
 
 #include <QGraphicsTextItem>
 
+#include "cyberiada_constants.h"
+
 
 class EditableTextItem : public QGraphicsTextItem {
     Q_OBJECT
@@ -33,8 +35,9 @@ public:
     explicit EditableTextItem(QGraphicsItem *parent = nullptr);
     explicit EditableTextItem(const QString &text, QGraphicsItem *parent = nullptr);
 
-    void setFontStyleChangeable(bool isChangeable);
-    void setFontBoldness(bool isBold);
+    // the role sets the font: the size, the boldness and the fixed family
+    void setFontRole(FontRole role);
+    FontRole getFontRole() const { return fontRole; }
     void setTextMargin(double newTextMargin);
 
 protected:
@@ -54,15 +57,14 @@ signals:
     // void editingFinished();
 
 protected slots:
-    void onFontChanged(const QFont &newFont) ;
+    void applyFont();
 
 protected:
     void updateTextWidth();
     bool isEdit;
     bool align;
-    bool isFontStyleChangeable = true;
-    bool isBold = false;
     bool isTextWidthEnabled = true;
+    FontRole fontRole = fontRoleStateAction;
     double textMargin;
 };
 

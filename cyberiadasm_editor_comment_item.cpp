@@ -24,7 +24,6 @@
 #include <QDebug>
 #include <QPainter>
 #include <QColor>
-#include <QFontDatabase>
 #include "cyberiadasm_editor_comment_item.h"
 #include "myassert.h"
 #include "cyberiada_constants.h"
@@ -56,17 +55,8 @@ CyberiadaSMEditorCommentItem::CyberiadaSMEditorCommentItem(QObject *parent_objec
     body->setPos(-boundingRect().width() / 2 + 15, - boundingRect().height() / 2);
     // connect(body, EditableTextItem::editingFinished, this, CyberiadaSMEditorCommentItem::onBodyChanged);
 
-    if (element->get_type() == Cyberiada::elementFormalComment) {
-        int fontId = QFontDatabase::addApplicationFont(":/Fonts/fonts/courier.ttf");
-        if (fontId != -1) {
-            QStringList fontFamilies = QFontDatabase::applicationFontFamilies(fontId);
-            if (!fontFamilies.isEmpty()) {
-                QFont customFont(fontFamilies.at(0), FontManager::instance().getFont().pointSize());
-                body->setFont(customFont);
-                body->setFontStyleChangeable(false);
-            }
-        }
-    }
+    body->setFontRole(element->get_type() == Cyberiada::elementFormalComment ?
+                      fontRoleFormalComment : fontRoleComment);
 
     commentBrush = QBrush(QColor(0xff, 0xcc, 0));
 

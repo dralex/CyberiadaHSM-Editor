@@ -23,7 +23,6 @@
 
 #include <clocale>
 #include <QCommandLineParser>
-#include <QFontDatabase>
 #include "main.h"
 #include "cyberiada_constants.h"
 #include "settings_manager.h"
@@ -38,15 +37,9 @@ int main(int argc, char *argv[])
 	// formatting locale-independent - the graphml writer depends on it
 	setlocale(LC_NUMERIC, "C");
 
-	// pin the bundled font so text metrics and rendering do not depend
-	// on the machine's font environment; the font dialog still overrides
-	int font_id = QFontDatabase::addApplicationFont(":/Fonts/fonts/courier.ttf");
-	if (font_id != -1) {
-		QStringList families = QFontDatabase::applicationFontFamilies(font_id);
-		if (!families.isEmpty()) {
-			FontManager::instance().setFont(QFont(families.first(), FONT_SIZE));
-		}
-	}
+	// pin the bundled font so the text metrics and the rendering do not
+	// depend on the font environment of the machine
+	FontManager::instance().loadBundledFont();
 
 	QCommandLineParser parser;
 	parser.setApplicationDescription("Cyberiada State Machine Editor");

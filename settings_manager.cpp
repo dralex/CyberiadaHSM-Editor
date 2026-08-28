@@ -3,6 +3,22 @@
 #include "settings_manager.h"
 
 
+// the formal comment is drawn in the comment size, so it stores nothing
+static FontRole storedFontRole(FontRole role)
+{
+    return role == fontRoleFormalComment ? fontRoleComment : role;
+}
+
+static const char* fontSizeKey(FontRole role)
+{
+    switch (storedFontRole(role)) {
+    case fontRoleStateTitle:  return "display/stateTitleFontSize";
+    case fontRoleStateAction: return "display/stateActionFontSize";
+    case fontRoleTransition:  return "display/transitionFontSize";
+    default:                  return "display/commentFontSize";
+    }
+}
+
 SettingsManager& SettingsManager::instance() {
     static SettingsManager instance;
     return instance;
@@ -24,6 +40,11 @@ void SettingsManager::load() {
     printMode = s.value("display/printMode", false).toBool();
     snapMode = s.value("display/snapMode", false).toBool();
 
+    fontFamily = s.value("display/fontFamily", QString()).toString();
+    for (int role = 0; role < fontRolesCount; role++) {
+        fontSizes[role] = s.value(fontSizeKey(FontRole(role)), FONT_SIZE).toInt();
+    }
+
     lastDirectory = s.value("files/lastDirectory", QDir::currentPath()).toString();
     // the Qt default leaves too little room for the file view
     dialogSize = s.value("files/dialogSize", QSize(900, 600)).toSize();
@@ -44,9 +65,39 @@ void SettingsManager::loadDefaults()
     setPrintMode(false);
     setSnapMode(false);
 
+    setFontFamily(QString());
+    for (int role = 0; role < fontRolesCount; role++) {
+        setFontSize(FontRole(role), FONT_SIZE);
+    }
+
     setSelectionColor(QColor(Qt::red));
     setSelectionBorderWidth(2);
     setSelectionInvertText(false);
+}
+
+void SettingsManager::setFontFamily(const QString& value)
+{
+    if (fontFamily != value) {
+        fontFamily = value;
+        QSettings().setValue("display/fontFamily", value);
+        emit fontSettingsChanged();
+    }
+}
+
+int SettingsManager::getFontSize(FontRole role) const
+{
+    return fontSizes[storedFontRole(role)];
+}
+
+void SettingsManager::setFontSize(FontRole role, int value)
+{
+    if (value < FONT_SIZE_MIN || value > FONT_SIZE_MAX) return;
+    FontRole stored = storedFontRole(role);
+    if (fontSizes[stored] != value) {
+        fontSizes[stored] = value;
+        QSettings().setValue(fontSizeKey(stored), value);
+        emit fontSettingsChanged();
+    }
 }
 
 void SettingsManager::setShowGrid(bool value)
