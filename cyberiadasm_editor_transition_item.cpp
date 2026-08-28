@@ -1004,7 +1004,6 @@ TransitionAction::TransitionAction(const QString &text, QGraphicsItem *parent) :
     EditableTextItem(text, parent)
 {
     setFontRole(fontRoleTransition);
-    setTextWidthEnabled(false);
     setTextAlignment(Qt::AlignCenter);
     setTextMargin(0);
 }

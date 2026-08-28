@@ -50,7 +50,6 @@ protected:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
 
     void setTextAlignment(Qt::Alignment alignment);
-    void setTextWidthEnabled(bool enabled);
 
 signals:
     void sizeChanged();
@@ -65,7 +64,8 @@ protected:
     bool align;
     bool isTextWidthEnabled = true;
     FontRole fontRole = fontRoleStateAction;
-    double textMargin;
+    // the comment body keeps the default: it wraps at the full element width
+    double textMargin = 0;
 };
 
 

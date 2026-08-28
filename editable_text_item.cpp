@@ -43,7 +43,7 @@ EditableTextItem::EditableTextItem(QGraphicsItem *parent):
 {
     setFlags(QGraphicsItem::ItemIsSelectable);
     setTextInteractionFlags(Qt::NoTextInteraction);
-    applyFont();
+    setFont(FontManager::instance().font(fontRole));
     connect(&FontManager::instance(), &FontManager::fontsChanged, this, &EditableTextItem::applyFont);
 }
 
@@ -52,7 +52,7 @@ EditableTextItem::EditableTextItem(const QString &text, QGraphicsItem *parent):
 {
     setFlags(QGraphicsItem::ItemIsSelectable);
     setTextInteractionFlags(Qt::NoTextInteraction);
-    applyFont();
+    setFont(FontManager::instance().font(fontRole));
     connect(&FontManager::instance(), &FontManager::fontsChanged, this, &EditableTextItem::applyFont);
 }
 
@@ -132,13 +132,11 @@ void EditableTextItem::setTextAlignment(Qt::Alignment alignment) {
     document()->setDefaultTextOption(textOption);
 }
 
-void EditableTextItem::setTextWidthEnabled(bool enabled) {
-    isTextWidthEnabled = enabled;
-}
-
 void EditableTextItem::setFontRole(FontRole role)
 {
     fontRole = role;
+    // only the text inside a state box is wrapped at the width of the box
+    isTextWidthEnabled = (role == fontRoleStateTitle || role == fontRoleStateAction);
     applyFont();
 }
 
