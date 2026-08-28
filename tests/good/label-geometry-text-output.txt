@@ -1,0 +1,10 @@
+== text
+    Simple State: {id: 'n0', role: title, font: 'Courier' 12 bold, pos: (-50; -30), size: (100; 24), text: 'Off'}
+    Simple State: {id: 'n0', role: action, font: 'Courier' 12, pos: (-35; -16), size: (70; 56), text: 'entry / off();'}
+    Simple State: {id: 'n1', role: title, font: 'Courier' 12 bold, pos: (-50; -30), size: (100; 24), text: 'On'}
+    Simple State: {id: 'n1', role: action, font: 'Courier' 12, pos: (-35; -44), size: (70; 56), text: 'entry / on();'}
+    Simple State: {id: 'n1', role: action, font: 'Courier' 12, pos: (-35; 12), size: (70; 56), text: 'exit / cleanup();'}
+    Comment: {id: 'cX', role: comment, font: 'Courier' 12, pos: (-33; -20), size: (66; 24), text: 'A note'}
+    Transition: {id: 'init-n0', role: transition, font: 'Courier' 12, pos: (-459; -357), size: (8; 24), text: ''}
+    Transition: {id: 'n0-n1', role: transition, font: 'Courier' 12, pos: (-439; -322), size: (257; 24), text: 'TURN_ON [ready] / start();'}
+    Transition: {id: 'n1-n0', role: transition, font: 'Courier' 12, pos: (-400; -322), size: (181; 24), text: 'TURN_OFF / stop();'}

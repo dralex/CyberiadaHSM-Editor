@@ -1,6 +1,7 @@
 # Run the editor batch mode on INPUT and require the EXPECTED exit code;
 # SCRIPT adds an edit script, DUMP_GOOD compares the --dump output (written
-# to OUTPUT), SAVE_OUT/SAVE_GOOD compare the saved document and re-open it
+# to OUTPUT), SAVE_OUT/SAVE_GOOD compare the saved document and re-open it;
+# TEXT shows the text elements and DUMP_TEXT dumps their font and layout
 set(_args --batch --no-text)
 if(DEFINED RECONSTRUCT)
   list(APPEND _args --reconstruct)
@@ -13,6 +14,12 @@ if(DEFINED INSPECT)
 endif()
 if(DEFINED SERVICE)
   list(APPEND _args --service)
+endif()
+if(DEFINED TEXT)
+  list(APPEND _args --text)
+endif()
+if(DEFINED DUMP_TEXT)
+  list(APPEND _args --dump-text)
 endif()
 if(DEFINED INPUT)
   list(APPEND _args ${INPUT})
@@ -34,7 +41,10 @@ if(DEFINED WORKDIR)
   set(_workdir WORKING_DIRECTORY ${WORKDIR})
 endif()
 if(DEFINED DUMP_GOOD)
-  list(APPEND _args --dump)
+  # the text cases compare the text section alone
+  if(NOT DEFINED DUMP_TEXT)
+    list(APPEND _args --dump)
+  endif()
   execute_process(COMMAND ${BATCH_BIN} ${_args}
     ${_workdir}
     OUTPUT_FILE ${OUTPUT}

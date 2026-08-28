@@ -37,6 +37,13 @@ while read diagram; do
         { echo "FAILED $diagram service render"; exit 1; }
     echo "regenerated good/$diagram-service-render.png"
 done
+# the text metrics are dumped with the text shown, unlike every other case
+sed -n 's/^add_text_dump_test(\([^)]*\))$/\1/p' CMakeLists.txt | \
+while read diagram; do
+    "$BIN" --batch --text --dump-text "diagrams/$diagram.graphml" > "good/$diagram-text-output.txt" 2>/dev/null || \
+        { echo "FAILED $diagram text"; exit 1; }
+    echo "regenerated good/$diagram-text-output.txt"
+done
 # the vector renders are compared byte by byte, so they are regenerated too
 sed -n 's/^add_l3_svg_test(\([^)]*\))$/\1/p' CMakeLists.txt | \
 while read diagram; do

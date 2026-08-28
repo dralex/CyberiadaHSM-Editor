@@ -37,11 +37,13 @@ good references.
 | L2    | editing: scripted mutations, then dump/save vs good files         | implemented |
 | L3    | render: offscreen image export vs good images with tolerance | implemented |
 | L4    | in-process: model contract and scene structure (QtTest)        | implemented |
+| text  | text metrics: font and layout of every text item vs good text | implemented |
 
 ## In-process tests (L4)
 
 The editor sources are built into the `CyberiadaInspectorCore` static
-library; the executable adds only `main.cpp` and the resources. The L4
+library; the executable adds only `main.cpp`. The resources are a part of the
+library as well, so the tests get the bundled font and the icons. The L4
 tests (`tests/l4/`) link the library and drive the model and the scene
 directly under QtTest, offscreen.
 
@@ -55,6 +57,12 @@ the transitions of its collection, where the library keeps it. The inspected
 model refuses every mutation and strips the editable, draggable and droppable
 item flags, so an editing handler missing the mode check still cannot damage
 the document.
+
+`l4-text` checks the per-role fonts: the bundled font is found through the
+resources of the core library, every role carries its own point size, the
+header is bold and the formal comment keeps the bundled family, a size change
+reaches the items of that role alone, and the header is re-wrapped afterwards.
+The sizes are compared with each other, never with an absolute value.
 
 `l4-scene` checks the scene built from a loaded document: the item map
 against the diagram structure, item positions, selection via
@@ -108,6 +116,15 @@ same font file, and the text sizes leak into the region layout, the transition
 rectangles and the rendered pixels - so every test invocation runs with this
 option, making the dumps and images identical on any machine. The option is
 runtime-only: the GUI and normal exports always render text.
+
+`--text` shows the text elements again, overriding an earlier `--no-text`. The
+text metrics cases pass both, so they inherit the rest of the hermetic test
+invocation and only turn the text back on.
+
+`--dump-text` writes a `== text` section listing every text item: the owning
+element, the role of the text, its font family, point size and boldness, its
+position inside the element and its size, rounded to the pixel. It is
+independent of `--dump`, so a text case compares that section alone.
 
 `--strict` loads the document with the library's strict standard checks: the
 graph, identifier, marker, name and vertex order requirements are checked in
@@ -237,6 +254,24 @@ The application still pins the bundled `fonts/courier.ttf` as the default
 font at startup for the GUI and manual exports (the font dialog overrides it
 interactively).
 
+## Text metrics
+
+The text of an element is drawn in the font of its role - the state header, the
+state body, the transition label and the comment have separate point sizes, set
+in the Text tab of the preferences. The header is bold and the formal comment
+keeps the bundled monospace family whatever the shared family is; both are fixed
+properties of the role, not settings.
+
+The glyphs are never compared. Their rasterization follows the freetype build,
+the hinting and the antialiasing of the machine, so a reference image with text
+would only match where it was made. The metrics are another matter: with the
+bundled font pinned at startup, the screen dpi pinned by `QT_FONT_DPI=96` in the
+test environment and the hinting turned off (`QFont::PreferNoHinting`), the
+advance and the line height come from the font file alone. A text case therefore
+compares the `--dump-text` section, and the `l4-text` in-process test compares
+the relations - a larger header is taller, the other roles do not move, the
+region follows - rather than absolute values.
+
 ## Dump format
 
 `--batch <file.graphml> --dump` prints the canonical dump on stdout in two
@@ -267,7 +302,10 @@ machine-independent. All batch output is locale-independent: the dump uses
 locale-agnostic number formatting and the application forces `LC_NUMERIC` to
 `C` (the graphml writer would otherwise follow the user's locale and print
 decimal commas). The dumps are produced with `--no-text`, so no text metric
-reaches the good files and they are valid across machines and Qt versions.
+reaches the good files and they are valid across machines and Qt versions. The
+text cases are the exception and add `--text`: they compare the metrics, which
+the pinned font, the pinned dpi and the disabled hinting keep machine-
+independent (see the text metrics section).
 
 ## Test suite layout
 
@@ -279,6 +317,7 @@ tests/
   diagrams/*.graphml    input documents (see below)
   scripts/<case>.script      edit scripts for the L2 cases
   good/<name>-output.txt     reviewed good files for the L1/L2 dumps
+  good/<name>-text-output.txt  reviewed good files for the text metrics
   good/<case>-output.graphml reviewed good files for the L2 saved documents
   good/<name>-render.png     reviewed good images for the L3 renders
   good/<name>-render.svg     reviewed good files for the vector renders

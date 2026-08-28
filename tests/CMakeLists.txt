@@ -17,6 +17,9 @@ endif()
 
 set(L0_ENVIRONMENT
   "QT_QPA_PLATFORM=offscreen"
+  # the point size becomes pixels through the screen dpi, so it is pinned:
+  # the text metrics then follow the font file alone
+  "QT_FONT_DPI=96"
   "XDG_CONFIG_HOME=${CMAKE_CURRENT_BINARY_DIR}/config"
   "LD_LIBRARY_PATH=${L0_LIBRARY_PATH}")
 if(EXISTS "${QT5_LIB_DIR}/qt5/plugins")
@@ -131,6 +134,34 @@ foreach(diagram
     two-sms)
   add_l1_test(${diagram})
 endforeach()
+
+# The text metrics test suite: the font and the layout of every text item
+# must match the reviewed good file. The glyphs are never compared: their
+# rasterization follows the freetype build, while the metrics with the pinned
+# font, the pinned dpi and the hinting turned off follow the font file only
+# (see docs/TESTING.md)
+function(add_text_dump_test name)
+  add_test(NAME text-${name}
+    COMMAND ${CMAKE_COMMAND}
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
+      -DINPUT=diagrams/${name}.graphml
+      -DTEXT=1
+      -DDUMP_TEXT=1
+      -DEXPECTED=0
+      -DWORKDIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/text-${name}.out
+      -DDUMP_GOOD=${CMAKE_CURRENT_SOURCE_DIR}/good/${name}-text-output.txt
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunBatchTest.cmake)
+  set_tests_properties(text-${name} PROPERTIES
+    TIMEOUT 60
+    ENVIRONMENT "${L0_ENVIRONMENT}")
+endfunction()
+
+add_text_dump_test(comment-transition)
+add_text_dump_test(empty-actions)
+add_text_dump_test(geometry)
+add_text_dump_test(hierarchy)
+add_text_dump_test(label-geometry)
 
 # The L2 editing test suite: run the edit script, then compare both the dump
 # and the saved document with the good files, and re-open the saved document
@@ -348,3 +379,4 @@ endfunction()
 add_l4_test(model)
 add_l4_test(scene)
 add_l4_test(dialog)
+add_l4_test(text)
