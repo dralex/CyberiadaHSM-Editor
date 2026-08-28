@@ -2,16 +2,25 @@
 #include "ui_preferences_dialog.h"
 
 #include <QColorDialog>
+#include <QSpinBox>
 #include <QSettings>
 #include <QDebug>
 
 #include "settings_manager.h"
+#include "fontmanager.h"
 
 PreferencesDialog::PreferencesDialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::PreferencesDialog)
 {
     ui->setupUi(this);
+
+    // the forms cannot use the constants, so the limits are set here
+    QSpinBox* sizes[] = { ui->stateTitleFontSizeSpinBox, ui->stateActionFontSizeSpinBox,
+                          ui->transitionFontSizeSpinBox, ui->commentFontSizeSpinBox };
+    for (size_t i = 0; i < sizeof(sizes) / sizeof(sizes[0]); i++) {
+        sizes[i]->setRange(FONT_SIZE_MIN, FONT_SIZE_MAX);
+    }
 
     ui->selectionColorPreview->setFixedSize(30, 30);
     ui->selectionColorPreview->setFrameStyle(QFrame::Panel | QFrame::Sunken);
@@ -77,6 +86,17 @@ void PreferencesDialog::loadFromSettings()
 
     ui->gridVisibilityCheckBox->setChecked(sm.getShowGrid());
     ui->gridSpacingSpinBox->setValue(sm.getGridSpacing());
+
+    // the empty setting means the bundled font, so the effective family shows
+    QString family = sm.getFontFamily();
+    if (family.isEmpty()) {
+        family = FontManager::instance().bundledFamily();
+    }
+    ui->fontFamilyComboBox->setCurrentFont(QFont(family));
+    ui->stateTitleFontSizeSpinBox->setValue(sm.getFontSize(fontRoleStateTitle));
+    ui->stateActionFontSizeSpinBox->setValue(sm.getFontSize(fontRoleStateAction));
+    ui->transitionFontSizeSpinBox->setValue(sm.getFontSize(fontRoleTransition));
+    ui->commentFontSizeSpinBox->setValue(sm.getFontSize(fontRoleComment));
 }
 
 void PreferencesDialog::saveSettings()
@@ -99,4 +119,11 @@ void PreferencesDialog::saveSettings()
     // grid
     sm.setShowGrid(ui->gridVisibilityCheckBox->isChecked());
     sm.setGridSpacing(ui->gridSpacingSpinBox->value());
+
+    // text
+    sm.setFontFamily(ui->fontFamilyComboBox->currentFont().family());
+    sm.setFontSize(fontRoleStateTitle, ui->stateTitleFontSizeSpinBox->value());
+    sm.setFontSize(fontRoleStateAction, ui->stateActionFontSizeSpinBox->value());
+    sm.setFontSize(fontRoleTransition, ui->transitionFontSizeSpinBox->value());
+    sm.setFontSize(fontRoleComment, ui->commentFontSizeSpinBox->value());
 }

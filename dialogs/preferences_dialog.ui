@@ -226,6 +226,107 @@
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="textTab">
+      <attribute name="title">
+       <string>Text</string>
+      </attribute>
+      <layout class="QFormLayout" name="formLayout_4">
+       <item row="0" column="0">
+        <widget class="QLabel" name="fontFamilyLabel">
+         <property name="text">
+          <string>Font</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QFontComboBox" name="fontFamilyComboBox">
+         <property name="toolTip">
+          <string>The family of the text of every element but the formal comment</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="stateTitleFontSizeLabel">
+         <property name="text">
+          <string>State header</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QSpinBox" name="stateTitleFontSizeSpinBox">
+         <property name="suffix">
+          <string> pt</string>
+         </property>
+         <property name="minimum">
+          <number>6</number>
+         </property>
+         <property name="maximum">
+          <number>72</number>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="stateActionFontSizeLabel">
+         <property name="text">
+          <string>State body</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QSpinBox" name="stateActionFontSizeSpinBox">
+         <property name="suffix">
+          <string> pt</string>
+         </property>
+         <property name="minimum">
+          <number>6</number>
+         </property>
+         <property name="maximum">
+          <number>72</number>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="transitionFontSizeLabel">
+         <property name="text">
+          <string>Transition label</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <widget class="QSpinBox" name="transitionFontSizeSpinBox">
+         <property name="suffix">
+          <string> pt</string>
+         </property>
+         <property name="minimum">
+          <number>6</number>
+         </property>
+         <property name="maximum">
+          <number>72</number>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="commentFontSizeLabel">
+         <property name="text">
+          <string>Comment</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QSpinBox" name="commentFontSizeSpinBox">
+         <property name="suffix">
+          <string> pt</string>
+         </property>
+         <property name="minimum">
+          <number>6</number>
+         </property>
+         <property name="maximum">
+          <number>72</number>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
    <item>
