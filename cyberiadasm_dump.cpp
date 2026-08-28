@@ -21,13 +21,16 @@
  *
  * ----------------------------------------------------------------------------- */
 
+#include <algorithm>
 #include <string>
+#include <vector>
 
 #include <QString>
 
 #include "cyberiadasm_dump.h"
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_editor_scene.h"
+#include "editable_text_item.h"
 
 void dumpDocument(CyberiadaSMModel* model, std::ostream& os)
 {
@@ -86,4 +89,84 @@ static void dumpSceneElement(CyberiadaSMEditorScene* scene, Cyberiada::Element* 
 void dumpScene(CyberiadaSMEditorScene* scene, CyberiadaSMModel* model, std::ostream& os)
 {
 	dumpSceneElement(scene, model->rootDocument(), 0, os);
+}
+
+static const char* fontRoleName(FontRole role)
+{
+	switch (role) {
+	case fontRoleStateTitle:    return "title";
+	case fontRoleStateAction:   return "action";
+	case fontRoleTransition:    return "transition";
+	case fontRoleComment:       return "comment";
+	case fontRoleFormalComment: return "formal comment";
+	default:                    return "unknown";
+	}
+}
+
+// the text is one line here, so the reference files stay comparable
+static QString escapeText(const QString& text)
+{
+	QString result = text;
+	result.replace("\\", "\\\\");
+	result.replace("\n", "\\n");
+	return result;
+}
+
+// the layout is compared at the pixel: the fractions differ between the
+// text engines even when the font file and the point size are the same
+static QString roundedNumber(double value)
+{
+	double rounded = double(qRound(value));
+	if (rounded == 0.0) rounded = 0.0;  // avoid the -0 output
+	return QString::number(rounded, 'f', 0);
+}
+
+static void dumpTextElement(CyberiadaSMEditorScene* scene, Cyberiada::Element* element,
+							int depth, std::ostream& os)
+{
+	Cyberiada::ID id = element->get_id();
+	QGraphicsItem* item = scene->getMap().value(id, NULL);
+	if (item && element->get_type() != Cyberiada::elementRoot) {
+		std::vector<EditableTextItem*> texts;
+		const QList<QGraphicsItem*>& children = item->childItems();
+		for (QList<QGraphicsItem*>::const_iterator i = children.begin(); i != children.end(); i++) {
+			EditableTextItem* text = dynamic_cast<EditableTextItem*>(*i);
+			if (text) texts.push_back(text);
+		}
+		// the insertion order of the children is not a part of the contract
+		std::sort(texts.begin(), texts.end(), [](EditableTextItem* a, EditableTextItem* b) {
+			if (a->getFontRole() != b->getFontRole()) return a->getFontRole() < b->getFontRole();
+			if (a->pos().y() != b->pos().y()) return a->pos().y() < b->pos().y();
+			return a->pos().x() < b->pos().x();
+		});
+		for (size_t i = 0; i < texts.size(); i++) {
+			EditableTextItem* text = texts[i];
+			QFont font = text->font();
+			QRectF r = text->boundingRect();
+			QString line = QString("{id: '%1', role: %2, font: '%3' %4%5, pos: (%6; %7), size: (%8; %9), text: '%10'}")
+				.arg(QString::fromStdString(id))
+				.arg(fontRoleName(text->getFontRole()))
+				.arg(font.family())
+				.arg(font.pointSize())
+				.arg(font.bold() ? " bold" : "")
+				.arg(roundedNumber(text->pos().x()), roundedNumber(text->pos().y()))
+				.arg(roundedNumber(r.width()), roundedNumber(r.height()))
+				.arg(escapeText(text->toPlainText()));
+			os << std::string(size_t(depth) * 2, ' ')
+			   << elementTypeName(element->get_type()) << ": "
+			   << line.toStdString() << std::endl;
+		}
+	}
+	Cyberiada::ElementCollection* collection = dynamic_cast<Cyberiada::ElementCollection*>(element);
+	if (collection) {
+		const Cyberiada::ElementList& children = collection->get_children();
+		for (Cyberiada::ElementList::const_iterator i = children.begin(); i != children.end(); i++) {
+			dumpTextElement(scene, *i, depth + 1, os);
+		}
+	}
+}
+
+void dumpText(CyberiadaSMEditorScene* scene, CyberiadaSMModel* model, std::ostream& os)
+{
+	dumpTextElement(scene, model->rootDocument(), 0, os);
 }

@@ -33,5 +33,8 @@ class CyberiadaSMEditorScene;
 void dumpDocument(CyberiadaSMModel* model, std::ostream& os);
 // the scene part lists the items in document order with fixed 2-decimal geometry
 void dumpScene(CyberiadaSMEditorScene* scene, CyberiadaSMModel* model, std::ostream& os);
+// the text part lists the font and the layout of every text item, rounded to
+// the pixel: the metrics are compared instead of the glyphs (see docs/TESTING.md)
+void dumpText(CyberiadaSMEditorScene* scene, CyberiadaSMModel* model, std::ostream& os);
 
 #endif

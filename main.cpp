@@ -56,6 +56,10 @@ int main(int argc, char *argv[])
 	parser.addOption(exportOption);
 	QCommandLineOption noTextOption("no-text", "Hide the text elements in batch mode (font-independent output).");
 	parser.addOption(noTextOption);
+	QCommandLineOption textOption("text", "Show the text elements in batch mode, overriding --no-text.");
+	parser.addOption(textOption);
+	QCommandLineOption dumpTextOption("dump-text", "Dump the font and the layout of the text elements.");
+	parser.addOption(dumpTextOption);
 	QCommandLineOption reconstructOption("reconstruct", "Reconstruct absent or malformed geometry on load.");
 	parser.addOption(reconstructOption);
 	QCommandLineOption strictOption("strict", "Check the standard requirements strictly on load.");
@@ -83,6 +87,10 @@ int main(int argc, char *argv[])
 		// font metrics differ across Qt versions even with the pinned font;
 		// the tests hide all text so the output is identical everywhere
 		SettingsManager::instance().setShowText(false);
+	}
+	if (parser.isSet(textOption)) {
+		// the tests hide the text by default, the text cases ask it back
+		SettingsManager::instance().setShowText(true);
 	}
 	if (parser.isSet(inspectOption)) {
 		// the GUI turns the mode on through the open dialog
@@ -126,7 +134,8 @@ int main(int argc, char *argv[])
 			return runBatchMode(app, args.first(), parser.isSet(dumpOption),
 								parser.value(scriptOption), parser.value(saveOption),
 								parser.value(exportOption), parser.isSet(reconstructOption),
-								parser.isSet(strictOption), save_format);
+								parser.isSet(strictOption), save_format,
+								parser.isSet(dumpTextOption));
 		}
 		return runGuiMode(app);
 	} catch(const QString& error) {
