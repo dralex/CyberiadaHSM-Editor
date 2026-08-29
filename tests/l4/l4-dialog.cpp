@@ -52,6 +52,7 @@ void TestDialog::test_options_injected()
 	QVERIFY(dlg.testOption(QFileDialog::DontUseNativeDialog));
 	QVERIFY(dlg.findChild<QCheckBox*>("inspectorCheckBox"));
 	QVERIFY(dlg.findChild<QCheckBox*>("reconstructCheckBox"));
+	QVERIFY(dlg.findChild<QCheckBox*>("reconstructSMCheckBox"));
 	QVERIFY(dlg.findChild<QCheckBox*>("strictCheckBox"));
 }
 
@@ -62,21 +63,37 @@ void TestDialog::test_default_options()
 	OpenFileDialog dlg;
 	QCheckBox* inspector = dlg.findChild<QCheckBox*>("inspectorCheckBox");
 	QCheckBox* reconstruct = dlg.findChild<QCheckBox*>("reconstructCheckBox");
-	QVERIFY(inspector && reconstruct);
+	QCheckBox* reconstructSM = dlg.findChild<QCheckBox*>("reconstructSMCheckBox");
+	QVERIFY(inspector && reconstruct && reconstructSM);
 	QVERIFY(dlg.inspectorModeEnabled());
 	QVERIFY(!dlg.reconstructionEnabled());
 	QVERIFY(!reconstruct->isEnabled());
+	QVERIFY(!dlg.reconstructionSMEnabled());
+	QVERIFY(!reconstructSM->isEnabled());
 	QVERIFY(!dlg.strictModeEnabled());
 
 	inspector->setChecked(false);
 	QVERIFY(!dlg.inspectorModeEnabled());
 	QVERIFY(reconstruct->isEnabled());
+	// the border is created only within the reconstruction
+	QVERIFY(!reconstructSM->isEnabled());
 	reconstruct->setChecked(true);
 	QVERIFY(dlg.reconstructionEnabled());
+	QVERIFY(reconstructSM->isEnabled());
+	reconstructSM->setChecked(true);
+	QVERIFY(dlg.reconstructionSMEnabled());
+
+	reconstruct->setChecked(false);
+	QVERIFY(!dlg.reconstructionSMEnabled());
+	QVERIFY(!reconstructSM->isEnabled());
+	reconstruct->setChecked(true);
+	reconstructSM->setChecked(true);
 
 	inspector->setChecked(true);
 	QVERIFY(!dlg.reconstructionEnabled());
 	QVERIFY(!reconstruct->isEnabled());
+	QVERIFY(!dlg.reconstructionSMEnabled());
+	QVERIFY(!reconstructSM->isEnabled());
 }
 
 void TestDialog::test_selected_file()

@@ -40,7 +40,7 @@ public:
 	void                                reset();
     // void                                createDocument();
 	bool                                loadDocument(const QString& path, bool reconstruct = false,
-	                                                 bool reconsruct_sm = false, bool strict = false);
+	                                                 bool reconstruct_sm = false, bool strict = false);
 	const QString&                      loadError() const { return lastLoadError; }
 	void                                saveDocument(bool round = false);
 	void                                saveAsDocument(const QString& path, Cyberiada::DocumentFormat f,

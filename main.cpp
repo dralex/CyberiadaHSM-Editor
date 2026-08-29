@@ -62,6 +62,8 @@ int main(int argc, char *argv[])
 	parser.addOption(dumpTextOption);
 	QCommandLineOption reconstructOption("reconstruct", "Reconstruct absent or malformed geometry on load.");
 	parser.addOption(reconstructOption);
+	QCommandLineOption reconstructSMOption("reconstruct-sm", "Reconstruct the absent state machine border too (with --reconstruct).");
+	parser.addOption(reconstructSMOption);
 	QCommandLineOption strictOption("strict", "Check the standard requirements strictly on load.");
 	parser.addOption(strictOption);
 	QCommandLineOption inspectOption("inspect", "Open the document read-only, as the file stores it.");
@@ -134,6 +136,7 @@ int main(int argc, char *argv[])
 			return runBatchMode(app, args.first(), parser.isSet(dumpOption),
 								parser.value(scriptOption), parser.value(saveOption),
 								parser.value(exportOption), parser.isSet(reconstructOption),
+								parser.isSet(reconstructSMOption),
 								parser.isSet(strictOption), save_format,
 								parser.isSet(dumpTextOption));
 		}

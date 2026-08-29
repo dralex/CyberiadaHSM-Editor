@@ -40,14 +40,14 @@ int runGuiMode(CyberiadaSMEditorApplication& app)
 
 int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName, bool dump,
 				 const QString& script, const QString& save, const QString& exportImage,
-				 bool reconstruct, bool strict, Cyberiada::DocumentFormat saveFormat,
-				 bool dumpTextMetrics)
+				 bool reconstruct, bool reconstruct_sm, bool strict,
+				 Cyberiada::DocumentFormat saveFormat, bool dumpTextMetrics)
 {
 	CyberiadaSMEditorWindow win;
 	win.show();
 
 	QString error;
-	if (!win.openDocument(fileName, &error, reconstruct, strict)) {
+	if (!win.openDocument(fileName, &error, reconstruct, reconstruct_sm, strict)) {
 		fprintf(stderr, "cannot load %s\n%s\n", qPrintable(fileName), qPrintable(error));
 		return batchLoadError;
 	}

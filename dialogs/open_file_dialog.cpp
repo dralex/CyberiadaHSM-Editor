@@ -43,8 +43,10 @@ OpenFileDialog::OpenFileDialog(QWidget *parent)
     // the document is inspected until the user asks for the editing
     ui->inspectorCheckBox->setChecked(true);
     slotInspectorToggled(true);
+    slotReconstructToggled(false);
 
     connect(ui->inspectorCheckBox, &QCheckBox::toggled, this, &OpenFileDialog::slotInspectorToggled);
+    connect(ui->reconstructCheckBox, &QCheckBox::toggled, this, &OpenFileDialog::slotReconstructToggled);
 }
 
 OpenFileDialog::~OpenFileDialog()
@@ -60,6 +62,10 @@ bool OpenFileDialog::reconstructionEnabled() const {
     return ui->reconstructCheckBox->isChecked();
 }
 
+bool OpenFileDialog::reconstructionSMEnabled() const {
+    return ui->reconstructSMCheckBox->isChecked();
+}
+
 bool OpenFileDialog::strictModeEnabled() const {
     return ui->strictCheckBox->isChecked();
 }
@@ -70,4 +76,12 @@ void OpenFileDialog::slotInspectorToggled(bool on) {
         ui->reconstructCheckBox->setChecked(false);
     }
     ui->reconstructCheckBox->setEnabled(!on);
+}
+
+void OpenFileDialog::slotReconstructToggled(bool on) {
+    // the library creates the border only within the reconstruction
+    if (!on) {
+        ui->reconstructSMCheckBox->setChecked(false);
+    }
+    ui->reconstructSMCheckBox->setEnabled(on);
 }

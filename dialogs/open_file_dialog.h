@@ -41,10 +41,12 @@ public:
 
     bool inspectorModeEnabled() const;
     bool reconstructionEnabled() const;
+    bool reconstructionSMEnabled() const;
     bool strictModeEnabled() const;
 
 private slots:
     void slotInspectorToggled(bool on);
+    void slotReconstructToggled(bool on);
 
 private:
     Ui::OpenFileOptions *ui;
