@@ -366,7 +366,8 @@ void CyberiadaSMPropertiesWidget::slotPropertyChanged(QtProperty* p)
                     }
                 }
                 if (trans->has_polyline()) {
-                    if (cp.name == propGroupPolyline) {
+                    // the polyline group never changes, its points do
+                    if (cp.name == propGroupPoint) {
                         Cyberiada::Polyline pl = trans->get_geometry_polyline();
                         int point_index = getPropertyIndex(p);
                         QPointF new_point = pointManager->value(p);
@@ -511,6 +512,16 @@ void CyberiadaSMPropertiesWidget::slotPropertyChanged(QtProperty* p)
     }
 }
 
+// the row and its sub-rows are shown but never edited
+static void disableRow(QtProperty* row)
+{
+	row->setEnabled(false);
+	QList<QtProperty*> sub = row->subProperties();
+	for (QList<QtProperty*>::iterator i = sub.begin(); i != sub.end(); i++) {
+		(*i)->setEnabled(false);
+	}
+}
+
 void CyberiadaSMPropertiesWidget::newElement(Cyberiada::Element* new_element)
 {
 	MY_ASSERT(new_element);
@@ -621,7 +632,7 @@ void CyberiadaSMPropertiesWidget::newElement(Cyberiada::Element* new_element)
 				if (trans->has_geometry_label_point()) {
 					QtProperty* lpoint_group_prop = constructProperty(propGroupLabelPoint);
 					// the library has no setter for the label point
-					lpoint_group_prop->setEnabled(false);
+					disableRow(lpoint_group_prop);
 					geom_group_prop->addSubProperty(lpoint_group_prop);
 					pointManager->setValue(lpoint_group_prop, QPointF(trans->get_label_point().x,
 																	  trans->get_label_point().y));
@@ -893,7 +904,7 @@ void CyberiadaSMPropertiesWidget::updateElement()
                     QtProperty* lpoint_group_prop = findQtProperty(geom_group_prop, findPropertyStruct(propGroupLabelPoint).propName);
                     if (lpoint_group_prop == nullptr) {
                         lpoint_group_prop = constructProperty(propGroupLabelPoint);
-                        lpoint_group_prop->setEnabled(false);
+                        disableRow(lpoint_group_prop);
                         geom_group_prop->addSubProperty(lpoint_group_prop);
                     }
                     pointManager->setValue(lpoint_group_prop, QPointF(trans->get_label_point().x,
