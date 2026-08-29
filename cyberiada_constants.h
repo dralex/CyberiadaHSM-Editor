@@ -31,6 +31,8 @@
 #define VERTEX_POINT_RADIUS 10
 #define CHOICE_DEFAULT_SIZE 40
 #define COMMENT_ANGLE_CORNER 10
+// the smallest width and height of a resized element
+#define ELEMENT_MIN_SIZE     10
 
 // Metainformation constants
 #define METAINFORMATION_AUTHOR            "Author"

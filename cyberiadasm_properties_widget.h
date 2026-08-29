@@ -152,7 +152,7 @@ private:
     QtEnumEditorFactory*        enumEditorFactory;
     // QtDateTimeEditorFactory*    dateTimeEditorFactory;
     QtCheckBoxFactory*          checkBoxFactory;
-    // QtPointFEditorFactory*      pointFEditorFactory;
+    QtDoubleSpinBoxFactory*     doubleSpinBoxFactory;
 
 	void                        clearProperties();
 	void                        newElement(Cyberiada::Element* new_element);

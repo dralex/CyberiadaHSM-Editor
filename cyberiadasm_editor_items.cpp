@@ -31,6 +31,7 @@
 #include "cyberiadasm_editor_state_item.h"
 #include "settings_manager.h"
 #include "myassert.h"
+#include "cyberiada_constants.h"
 
 
 /* -----------------------------------------------------------------------------
@@ -413,7 +414,7 @@ void CyberiadaSMEditorAbstractItem::resizeRight(const QPointF &pt)
     if( pt.x() < tmpRect.left() )
         return;
     qreal widthOffset =  ( pt.x() - tmpRect.left() );
-    if( widthOffset < 10 ) /// limit
+    if( widthOffset < ELEMENT_MIN_SIZE )
         return;
     if( widthOffset < 10)
         tmpRect.setWidth( -widthOffset );
@@ -435,7 +436,7 @@ void CyberiadaSMEditorAbstractItem::resizeBottom(const QPointF &pt)
     if( pt.y() < tmpRect.top() )
         return;
     qreal heightOffset =  ( pt.y() - tmpRect.top() );
-    if( heightOffset < 11 ) /// limit
+    if( heightOffset < ELEMENT_MIN_SIZE )
         return;
     if( heightOffset < 0)
         tmpRect.setHeight( -heightOffset );

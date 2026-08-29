@@ -84,10 +84,11 @@ CyberiadaSMPropertiesWidget::CyberiadaSMPropertiesWidget(QWidget *parent):
     setFactoryForManager(enumManager, enumEditorFactory);
 
 	pointManager = new QtPointFPropertyManager(this);
-    // connect(pointManager, SIGNAL(propertyChanged(QtProperty*)), this, SLOT(slotPropertyChanged(QtProperty*)));
-    // lineEditFactory = new QtPoin(this);
-    // setFactoryForManager(stringManager, lineEditFactory);
+    connect(pointManager, SIGNAL(propertyChanged(QtProperty*)), this, SLOT(slotPropertyChanged(QtProperty*)));
 	rectManager = new QtRectFPropertyManager(this);
+    connect(rectManager, SIGNAL(propertyChanged(QtProperty*)), this, SLOT(slotPropertyChanged(QtProperty*)));
+    // the composite rows have no editor, their X/Y/W/H sub-rows do
+    doubleSpinBoxFactory = new QtDoubleSpinBoxFactory(this);
 	dateManager = new QtDateTimePropertyManager(this);
 
 	boolManager = new QtBoolPropertyManager(this);
@@ -225,10 +226,14 @@ void CyberiadaSMPropertiesWidget::slotInspectorModeChanged(bool on)
         unsetFactoryForManager(stringManager);
         unsetFactoryForManager(enumManager);
         unsetFactoryForManager(boolManager);
+        unsetFactoryForManager(pointManager->subDoublePropertyManager());
+        unsetFactoryForManager(rectManager->subDoublePropertyManager());
     } else {
         setFactoryForManager(stringManager, lineEditFactory);
         setFactoryForManager(enumManager, enumEditorFactory);
         setFactoryForManager(boolManager, checkBoxFactory);
+        setFactoryForManager(pointManager->subDoublePropertyManager(), doubleSpinBoxFactory);
+        setFactoryForManager(rectManager->subDoublePropertyManager(), doubleSpinBoxFactory);
     }
 }
 
@@ -348,13 +353,6 @@ void CyberiadaSMPropertiesWidget::slotPropertyChanged(QtProperty* p)
                     if (cp.name == propGroupTargetPoint) {
                         QPointF tp = pointManager->value(p);
                         model->updateGeometry(i, trans->get_source_point(), Cyberiada::Point(tp.x(), tp.y()));
-                    }
-                }
-                if (trans->has_geometry_label_point()) {
-                    if (cp.name == propGroupLabelPoint) {
-                        QPointF lp = pointManager->value(p);
-                        // TODO
-                        // model->updateGeometry(i, trans->get_source_point(), Cyberiada::Point(tp.x(), tp.y()));
                     }
                 }
                 if (trans->has_polyline()) {
@@ -491,7 +489,8 @@ void CyberiadaSMPropertiesWidget::slotPropertyChanged(QtProperty* p)
 //                     stringManager->setValue(color_prop, QString(col.c_str()));
 //                     geom_group_prop->addSubProperty(color_prop);
 
-                } else if (type == Cyberiada::elementInitial || type == Cyberiada::elementFinal) {
+                } else if (type == Cyberiada::elementInitial || type == Cyberiada::elementFinal ||
+                           type == Cyberiada::elementTerminate) {
                     if (cp.name == propGroupPoint) {
                         QPointF newPoint = pointManager->value(p);
                         model->updateGeometry(i, Cyberiada::Point(newPoint.x(), newPoint.y()));
@@ -611,6 +610,8 @@ void CyberiadaSMPropertiesWidget::newElement(Cyberiada::Element* new_element)
 				}
 				if (trans->has_geometry_label_point()) {
 					QtProperty* lpoint_group_prop = constructProperty(propGroupLabelPoint);
+					// the library has no setter for the label point
+					lpoint_group_prop->setEnabled(false);
 					geom_group_prop->addSubProperty(lpoint_group_prop);
 					pointManager->setValue(lpoint_group_prop, QPointF(trans->get_label_point().x,
 																	  trans->get_label_point().y));
@@ -768,7 +769,8 @@ void CyberiadaSMPropertiesWidget::newElement(Cyberiada::Element* new_element)
 					stringManager->setValue(color_prop, QString(col.c_str()));
 					geom_group_prop->addSubProperty(color_prop);
 					
-				} else if (type == Cyberiada::elementInitial || type == Cyberiada::elementFinal) {
+				} else if (type == Cyberiada::elementInitial || type == Cyberiada::elementFinal ||
+						   type == Cyberiada::elementTerminate) {
 					const Cyberiada::Vertex* v = static_cast<const Cyberiada::Vertex*>(element);
 					QtProperty* point_group_prop = constructProperty(propGroupPoint);
 					geom_group_prop->addSubProperty(point_group_prop);
@@ -858,7 +860,7 @@ void CyberiadaSMPropertiesWidget::updateElement()
 
                 if (trans->has_geometry_source_point()) {
                     QtProperty* spoint_group_prop = findQtProperty(geom_group_prop, findPropertyStruct(propGroupSourcePoint).propName);
-                    if (spoint_group_prop = nullptr) {
+                    if (spoint_group_prop == nullptr) {
                         spoint_group_prop = constructProperty(propGroupSourcePoint);
                         geom_group_prop->addSubProperty(spoint_group_prop);
                     }
@@ -881,6 +883,7 @@ void CyberiadaSMPropertiesWidget::updateElement()
                     QtProperty* lpoint_group_prop = findQtProperty(geom_group_prop, findPropertyStruct(propGroupLabelPoint).propName);
                     if (lpoint_group_prop == nullptr) {
                         lpoint_group_prop = constructProperty(propGroupLabelPoint);
+                        lpoint_group_prop->setEnabled(false);
                         geom_group_prop->addSubProperty(lpoint_group_prop);
                     }
                     pointManager->setValue(lpoint_group_prop, QPointF(trans->get_label_point().x,
@@ -1108,7 +1111,8 @@ void CyberiadaSMPropertiesWidget::updateElement()
                     }
                     stringManager->setValue(color_prop, QString(col.c_str()));
 
-                } else if (type == Cyberiada::elementInitial || type == Cyberiada::elementFinal) {
+                } else if (type == Cyberiada::elementInitial || type == Cyberiada::elementFinal ||
+                           type == Cyberiada::elementTerminate) {
                     const Cyberiada::Vertex* v = static_cast<const Cyberiada::Vertex*>(element);
                     QtProperty* point_group_prop = findQtProperty(geom_group_prop, findPropertyStruct(propGroupPoint).propName);
                     if (point_group_prop == nullptr) {
@@ -1169,9 +1173,14 @@ QtProperty* CyberiadaSMPropertiesWidget::constructProperty(CyberiadaPropertyName
 	case propEditorPointGroup:
 		new_property = pointManager->addProperty(p.propName);
 		break;
-	case propEditorRectGroup:
+	case propEditorRectGroup: {
 		new_property = rectManager->addProperty(p.propName);
+		// the sub-rows are X, Y, Width, Height in the manager order
+		QList<QtProperty*> sub = new_property->subProperties();
+		rectManager->subDoublePropertyManager()->setMinimum(sub.at(2), ELEMENT_MIN_SIZE);
+		rectManager->subDoublePropertyManager()->setMinimum(sub.at(3), ELEMENT_MIN_SIZE);
 		break;
+	}
 	case propEditorSourceElementLink:
 		new_property = enumManager->addProperty(p.propName);
 		enumManager->setEnumNames(new_property, generateElementNames(listSource));		
