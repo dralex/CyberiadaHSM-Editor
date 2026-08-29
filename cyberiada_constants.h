@@ -40,6 +40,7 @@
 #define METAINFORMATION_DATE              "Date"
 #define METAINFORMATION_DESCRIPTION       "Description"
 #define METAINFORMATION_EVENT_PROPAGATION "Event Propagation"
+#define METAINFORMATION_GEOMETRY          "Geometry"
 #define METAINFORMATION_MARKUP_LANGUAGE   "Markup Language"
 #define METAINFORMATION_NAME              "Document Name"
 #define METAINFORMATION_PLATFORM_LANGUAGE "Platform Language"

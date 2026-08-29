@@ -152,6 +152,7 @@ signals:
 
 private:
 	void                                move(Cyberiada::Element* element, Cyberiada::ElementCollection* target_parent);
+	void                                declareGeometry(Cyberiada::DocumentFormat f, bool skip_geometry);
 	
 	Cyberiada::LocalDocument*           root;
 	QString                             lastLoadError;

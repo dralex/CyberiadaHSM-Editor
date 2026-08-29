@@ -35,6 +35,8 @@
 
 name/ minimal
 
+geometry/ full
+
 transitionOrder/ actionFirst
 
 eventPropagation/ block</data>

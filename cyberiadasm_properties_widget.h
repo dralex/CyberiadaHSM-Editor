@@ -82,6 +82,7 @@ private:
 		propID,
 		propMarkup,
 		propMetaEventPropagation,
+		propMetaGeometry,
 		propMetaStandardVersion,
 		propMetaString,
 		propMetaTransitionOrder,
@@ -102,6 +103,7 @@ private:
 		propEditorEventPropagation,
 		propEditorFlag,
 		propEditorFormatType,
+		propEditorGeometryDeclaration,
 		propEditorGroup,
 		propEditorPointGroup,
 		propEditorPolylineGroup,
@@ -148,6 +150,7 @@ private:
 	QMap<int, QIcon>            formatTypesEnumIcons;	
 	QStringList                 transitionOrderEnumNames;
 	QStringList                 eventPropagationEnumNames;
+	QStringList                 geometryDeclarationEnumNames;
 	
 	QtLineEditFactory*          lineEditFactory;
     QtEnumEditorFactory*        enumEditorFactory;

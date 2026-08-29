@@ -35,6 +35,8 @@
 
 name/ test-geometry-1
 
+geometry/ full
+
 transitionOrder/ actionFirst
 
 eventPropagation/ block</data>

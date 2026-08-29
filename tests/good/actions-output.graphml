@@ -35,6 +35,8 @@
 
 name/ test-empty-actions
 
+geometry/ full
+
 transitionOrder/ actionFirst
 
 eventPropagation/ block</data>

@@ -36,6 +36,8 @@
       <data key="dName">CGML_META</data>
       <data key="dData">standardVersion/ 1.0
 
+geometry/ full
+
 transitionOrder/ actionFirst
 
 eventPropagation/ block</data>

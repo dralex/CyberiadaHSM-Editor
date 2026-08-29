@@ -60,6 +60,7 @@ CyberiadaSMPropertiesWidget::CyberiadaSMPropertiesWidget(QWidget *parent):
 		{propMarkup,               propEditorString,            tr("Markup", "Property name")},
 		{propMetaString,           propEditorString,            ""},
 		{propMetaEventPropagation, propEditorEventPropagation,  tr(METAINFORMATION_EVENT_PROPAGATION, "Property name")},
+		{propMetaGeometry,         propEditorGeometryDeclaration, tr(METAINFORMATION_GEOMETRY, "Property name")},
 		{propMetaStandardVersion,  propEditorString,            tr(METAINFORMATION_STANDARD_VERSION, "Property name")},
 		{propMetaTransitionOrder,  propEditorTransitionOrder,   tr(METAINFORMATION_TRANSITION_ORDER, "Property name")},
 		{propName,                 propEditorString,            tr("Name", "Property name")},
@@ -139,6 +140,11 @@ CyberiadaSMPropertiesWidget::CyberiadaSMPropertiesWidget(QWidget *parent):
 	transitionOrderEnumNames << tr("Not set", "Transition order")
 							 << tr("Action first", "Transition order")
 							 << tr("Exit first", "Transition order");
+	// the order follows Cyberiada::DocumentGeometryDeclaration
+	geometryDeclarationEnumNames << tr("Not set", "Geometry declaration")
+								 << tr("None", "Geometry declaration")
+								 << tr("Short", "Geometry declaration")
+								 << tr("Full", "Geometry declaration");
 	eventPropagationEnumNames << tr("Not set", "Event propagation")
 							  << tr("Block events", "Event propagation")
 							  << tr("Propagate events", "Event propagation");
@@ -302,6 +308,16 @@ void CyberiadaSMPropertiesWidget::slotPropertyChanged(QtProperty* p)
 //         QtProperty* transition_order_prop = constructProperty(propMetaTransitionOrder);
 //         boolManager->setValue(transition_order_prop, doc->meta().transition_order_flag);
 //         meta_group_prop->addSubProperty(transition_order_prop);
+
+        if (cp.name == propMetaGeometry) {
+            static const char* values[] = {"", CYBERIADA_META_GEOM_NONE,
+                                           CYBERIADA_META_GEOM_SHORT, CYBERIADA_META_GEOM_FULL};
+            int value = enumManager->value(p);
+            if (value >= 0 && value < 4) {
+                model->updateMetainformation(model->documentIndex(),
+                                             CYBERIADA_META_GEOMETRY, values[value]);
+            }
+        }
 
         if (cp.name == propMetaEventPropagation) {
             static const char* values[] = {METAINFORMATION_VALUE_NONE,
@@ -564,6 +580,8 @@ void CyberiadaSMPropertiesWidget::newElement(Cyberiada::Element* new_element)
 		for (std::vector<std::pair<Cyberiada::String, Cyberiada::String>>::const_iterator i = doc->meta().strings.begin();
 			 i != doc->meta().strings.end();
 			 i++) {
+			// the geometry declaration has its own row
+			if (i->first == CYBERIADA_META_GEOMETRY) continue;
 			QtProperty* platform_string_prop = constructProperty(propMetaString, i->first.c_str());
 			stringManager->setValue(platform_string_prop, i->second.c_str());
 			meta_group_prop->addSubProperty(platform_string_prop);
@@ -576,6 +594,10 @@ void CyberiadaSMPropertiesWidget::newElement(Cyberiada::Element* new_element)
 		QtProperty* event_propagation_prop = constructProperty(propMetaEventPropagation);
 		enumManager->setValue(event_propagation_prop, int(doc->meta().event_propagation));
 		meta_group_prop->addSubProperty(event_propagation_prop);
+
+		QtProperty* geometry_prop = constructProperty(propMetaGeometry);
+		enumManager->setValue(geometry_prop, int(doc->meta().get_geometry()));
+		meta_group_prop->addSubProperty(geometry_prop);
 		
 	} else {
 		QtProperty* element_id_prop = constructProperty(propID);
@@ -835,6 +857,7 @@ void CyberiadaSMPropertiesWidget::updateElement()
         for (std::vector<std::pair<Cyberiada::String, Cyberiada::String>>::const_iterator i = doc->meta().strings.begin();
              i != doc->meta().strings.end();
              i++) {
+            if (i->first == CYBERIADA_META_GEOMETRY) continue;
             QtProperty* platform_string_prop = findQtProperty(meta_group_prop, i->first.c_str());
             stringManager->setValue(platform_string_prop, i->second.c_str());
         }
@@ -843,6 +866,8 @@ void CyberiadaSMPropertiesWidget::updateElement()
         enumManager->setValue(transition_order_prop, int(doc->meta().transition_order));
         QtProperty* event_propagation_prop = findQtProperty(meta_group_prop, findPropertyStruct(propMetaEventPropagation).propName);
         enumManager->setValue(event_propagation_prop, int(doc->meta().event_propagation));
+        QtProperty* geometry_prop = findQtProperty(meta_group_prop, findPropertyStruct(propMetaGeometry).propName);
+        enumManager->setValue(geometry_prop, int(doc->meta().get_geometry()));
 
     } else {
         QtProperty* element_id_prop = findQtProperty(element_group_prop, findPropertyStruct(propID).propName);
@@ -1211,6 +1236,10 @@ QtProperty* CyberiadaSMPropertiesWidget::constructProperty(CyberiadaPropertyName
 	case propEditorTransitionOrder:
 		new_property = enumManager->addProperty(p.propName);
 		enumManager->setEnumNames(new_property, transitionOrderEnumNames);
+		break;
+	case propEditorGeometryDeclaration:
+		new_property = enumManager->addProperty(p.propName);
+		enumManager->setEnumNames(new_property, geometryDeclarationEnumNames);
 		break;
 	case propEditorSubjectElementLink:
 		new_property = enumManager->addProperty(p.propName);

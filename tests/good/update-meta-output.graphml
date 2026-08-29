@@ -58,6 +58,8 @@ markupLanguage/ html
 
 customParameter/ custom parameter value
 
+geometry/ full
+
 transitionOrder/ actionFirst</data>
     </node>
   </graph>

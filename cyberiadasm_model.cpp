@@ -104,10 +104,26 @@ bool CyberiadaSMModel::readOnly() const
 	return SettingsManager::instance().getInspectorMode();
 }
 
+// the written document declares its geometry (7.1): the editor writes the
+// exact sizes or none at all; the yEd formats carry no metainformation
+void CyberiadaSMModel::declareGeometry(Cyberiada::DocumentFormat f, bool skip_geometry)
+{
+	if (!root || f != Cyberiada::formatCyberiada10) return;
+	Cyberiada::DocumentGeometryDeclaration g = skip_geometry ?
+		Cyberiada::geometryDeclarationNone : Cyberiada::geometryDeclarationFull;
+	if (root->meta().get_geometry() == g) return;
+	root->meta().set_geometry(g);
+	root->update_metainfo_element();
+	QModelIndex comment_index = elementToIndex(root->get_meta_element());
+	emit dataChanged(comment_index, comment_index);
+	emit dataChanged(documentIndex(), documentIndex());
+}
+
 void CyberiadaSMModel::saveDocument(bool round)
 {
 	if (readOnly()) return;
 	if (root && !root->get_file_path().empty()) {
+		declareGeometry(root->get_file_format(), false);
 		root->save(round);
 	}
 }
@@ -117,6 +133,7 @@ void CyberiadaSMModel::saveAsDocument(const QString& path, Cyberiada::DocumentFo
 									  bool strict_actions, bool skip_empty_behavior)
 {
 	if (root) {
+		declareGeometry(f, skip_geometry);
 		root->save_as(path.toStdString(), f, round, skip_geometry, check_initial,
 					  strict_actions, skip_empty_behavior);
 	}
@@ -125,6 +142,7 @@ void CyberiadaSMModel::saveAsDocument(const QString& path, Cyberiada::DocumentFo
 void CyberiadaSMModel::saveAsDocument(const QString& path, Cyberiada::DocumentFormat f, bool round)
 {
 	if (root) {
+		declareGeometry(f, false);
 		root->save_as(path.toStdString(), f, round);
 	}
 }
@@ -491,6 +509,13 @@ bool CyberiadaSMModel::updateMetainformation(const QModelIndex& index, const QSt
 		if (value == CYBERIADA_META_EP_PROPAGATE) meta.event_propagation = Cyberiada::docEventPropagationPropagate;
 		else if (value == CYBERIADA_META_EP_BLOCK) meta.event_propagation = Cyberiada::docEventPropagationBlock;
 		else if (value == METAINFORMATION_VALUE_NONE) meta.event_propagation = Cyberiada::docEventPropagationNone;
+		else return false;
+	} else if (name == CYBERIADA_META_GEOMETRY) {
+		// "none" is a declaration here, the empty value removes the parameter
+		if (value == CYBERIADA_META_GEOM_NONE) meta.set_geometry(Cyberiada::geometryDeclarationNone);
+		else if (value == CYBERIADA_META_GEOM_SHORT) meta.set_geometry(Cyberiada::geometryDeclarationShort);
+		else if (value == CYBERIADA_META_GEOM_FULL) meta.set_geometry(Cyberiada::geometryDeclarationFull);
+		else if (value.empty()) meta.set_geometry(Cyberiada::geometryDeclarationAbsent);
 		else return false;
 	} else {
 		meta.set_string(name, value);

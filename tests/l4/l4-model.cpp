@@ -45,6 +45,7 @@ private slots:
 	void test_subject_on_transition();
 	void test_read_only();
 	void test_delete();
+	void test_geometry_declaration();
 
 private:
 	QModelIndex indexOf(const char* id);
@@ -272,6 +273,36 @@ void TestModel::test_delete()
 	QVERIFY(!model->idToElement("edge-0"));
 	QVERIFY(!model->idToElement("edge-1"));
 	QVERIFY(!c->has_subjects());
+}
+
+void TestModel::test_geometry_declaration()
+{
+	// the written document declares the geometry the editor writes: full,
+	// or none when the geometry is skipped; the parameter is edited as well
+	QTemporaryDir dir;
+	QVERIFY(dir.isValid());
+	QString path = dir.filePath("declared.graphml");
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	const Cyberiada::DocumentMetainformation& meta = model->rootDocument()->meta();
+	QCOMPARE(meta.get_geometry(), Cyberiada::geometryDeclarationAbsent);
+
+	model->saveAsDocument(path, Cyberiada::formatCyberiada10, true);
+	QCOMPARE(meta.get_geometry(), Cyberiada::geometryDeclarationFull);
+	model->saveAsDocument(path, Cyberiada::formatCyberiada10, true, true, false, false, false);
+	QCOMPARE(meta.get_geometry(), Cyberiada::geometryDeclarationNone);
+
+	// the declaration survives the file
+	CyberiadaSMModel written(this);
+	QVERIFY(written.loadDocument(path));
+	QCOMPARE(written.rootDocument()->meta().get_geometry(), Cyberiada::geometryDeclarationNone);
+
+	QModelIndex doc = model->documentIndex();
+	QVERIFY(model->updateMetainformation(doc, CYBERIADA_META_GEOMETRY, CYBERIADA_META_GEOM_SHORT));
+	QCOMPARE(meta.get_geometry(), Cyberiada::geometryDeclarationShort);
+	QVERIFY(!model->updateMetainformation(doc, CYBERIADA_META_GEOMETRY, "wide"));
+	QVERIFY(model->updateMetainformation(doc, CYBERIADA_META_GEOMETRY, ""));
+	QCOMPARE(meta.get_geometry(), Cyberiada::geometryDeclarationAbsent);
+	QVERIFY(meta.get_string(CYBERIADA_META_GEOMETRY).empty());
 }
 
 QTEST_MAIN(TestModel)

@@ -255,7 +255,9 @@ scene connected to the model, so the dump shows the scene the live
 synchronization built.
 
 Saving uses the CyberiadaML-1.0 format with rounded geometry, keeping the
-written floats stable for the good files. The test runner also re-opens every
+written floats stable for the good files, and declares the geometry the editor
+writes in the metainformation (`geometry/ full`, or `none` when the geometry
+is skipped) - the standard resolves the geometry mode from that parameter. The test runner also re-opens every
 saved document, so each L2 case doubles as a write-read round-trip check.
 
 ## Rendering and image comparison
