@@ -98,6 +98,8 @@ CyberiadaSMPropertiesWidget::CyberiadaSMPropertiesWidget(QWidget *parent):
 
     connect(&SettingsManager::instance(), &SettingsManager::inspectorModeChanged,
             this, &CyberiadaSMPropertiesWidget::slotInspectorModeChanged);
+    connect(this, &QtAbstractPropertyBrowser::currentItemChanged,
+            this, &CyberiadaSMPropertiesWidget::slotCurrentItemChanged);
     slotInspectorModeChanged(SettingsManager::instance().getInspectorMode());
 
 	QMap<Cyberiada::ActionType, QString> actionTypes = {
@@ -216,6 +218,14 @@ void CyberiadaSMPropertiesWidget::slotModelDataChanged(const QModelIndex &topLef
         if (element == changed_element) {
             updateElement();
         }
+    }
+}
+
+void CyberiadaSMPropertiesWidget::slotCurrentItemChanged(QtBrowserItem*)
+{
+    // a value the model refused stays in the row until the row is left
+    if (element) {
+        updateElement();
     }
 }
 

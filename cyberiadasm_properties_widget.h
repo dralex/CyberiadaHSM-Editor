@@ -45,6 +45,7 @@ public slots:
     void                     slotModelDataChanged(const QModelIndex & topLeft, const QModelIndex & bottomRight);
 	void                     slotPropertyChanged(QtProperty* property);
 	void                     slotInspectorModeChanged(bool on);
+	void                     slotCurrentItemChanged(QtBrowserItem* item);
 	
 private:
 	

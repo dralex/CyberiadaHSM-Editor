@@ -369,35 +369,6 @@ void CyberiadaSMEditorStateItem::updateSizeToFitChildren(CyberiadaSMEditorAbstra
     }
 }
 
-QStringList CyberiadaSMEditorStateItem::getSameLevelStateNames() const
-{
-    QStringList names;
-    auto parentElementCollection = dynamic_cast<Cyberiada::ElementCollection*>(element->get_parent());
-    if (!parentElementCollection) {
-        return names;
-    }
-
-    if (parentElementCollection->has_children()){
-        const Cyberiada::ElementList& children = parentElementCollection->get_children();
-        for (Cyberiada::ElementList::const_iterator i = children.begin(); i != children.end(); i++) {
-            Cyberiada::Element* child = *i;
-            Cyberiada::ElementType type = child->get_type();
-
-            switch(type) {
-            case Cyberiada::elementCompositeState: {
-                names << QString(child->get_name().c_str());
-                break;
-            }
-            case Cyberiada::elementSimpleState: {
-                names << QString(child->get_name().c_str());
-                break;
-            }
-            }
-        }
-    }
-    return names;
-}
-
 void CyberiadaSMEditorStateItem::onTextItemSizeChanged()
 {
     if (state->is_composite_state()) updateRegion();
@@ -611,34 +582,25 @@ void StateTitle::focusOutEvent(QFocusEvent *event)
     cursor.clearSelection();
     setTextCursor(cursor);
 
-    // check the uniqueness
     CyberiadaSMEditorStateItem* state = dynamic_cast<CyberiadaSMEditorStateItem*>(parentItem());
     if (state == nullptr) { return; }
-    QStringList names = state->getSameLevelStateNames();
     QString newName = toPlainText().trimmed();
+    QGraphicsTextItem::focusOutEvent(event);
+
+    if (newName == state->name()) { return; }
 
     if (newName.isEmpty()) {
         QMessageBox::warning(nullptr, "Предупреждение", QString("Имя не может быть пустым!"));
         setPlainText(state->name());
-        QGraphicsTextItem::focusOutEvent(event);
         return;
     }
 
-    if (newName == state->name()) {
-        QGraphicsTextItem::focusOutEvent(event);
-        return;
-    }
-
-    if (names.contains(newName)) {
+    // the model refuses a name taken on this level
+    if (!state->model->updateTitle(state->model->elementToIndex(state->element), newName)) {
         QMessageBox::warning(nullptr, "Предупреждение",
                              QString("Сосстояние с именем \"%1\" уже существует на этом уровне иерархии.").arg(newName));
         setPlainText(state->name());
-        QGraphicsTextItem::focusOutEvent(event);
     }
-
-    QGraphicsTextItem::focusOutEvent(event);
-    state->model->updateTitle(state->model->elementToIndex(state->element), newName);
-    // emit editingFinished();
 }
 
 void StateTitle::mousePressEvent(QGraphicsSceneMouseEvent *event) {

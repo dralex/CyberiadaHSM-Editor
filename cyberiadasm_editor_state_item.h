@@ -80,8 +80,6 @@ public:
 
     void setTextPosition();
 
-    QStringList getSameLevelStateNames() const;
-
 private:
     void initializeActions();
     void addAction(Cyberiada::ActionType type);

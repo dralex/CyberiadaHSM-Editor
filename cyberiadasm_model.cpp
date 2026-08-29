@@ -248,12 +248,35 @@ bool CyberiadaSMModel::updateID(const QModelIndex& index, const QString& new_val
 	return true;
 }
 
+static bool isState(const Cyberiada::Element* element)
+{
+	return element->get_type() == Cyberiada::elementSimpleState ||
+		element->get_type() == Cyberiada::elementCompositeState;
+}
+
+// another state of the same level already carries the name
+static bool siblingStateNamed(const Cyberiada::Element* element, const Cyberiada::Name& name)
+{
+	const Cyberiada::ElementCollection* parent =
+		dynamic_cast<const Cyberiada::ElementCollection*>(element->get_parent());
+	if (!parent || !parent->has_children()) return false;
+	Cyberiada::ConstElementList children = parent->get_children();
+	for (Cyberiada::ConstElementList::const_iterator i = children.begin(); i != children.end(); i++) {
+		if (*i != element && isState(*i) && (*i)->get_name() == name) return true;
+	}
+	return false;
+}
+
 bool CyberiadaSMModel::updateTitle(const QModelIndex& index, const QString& new_value)
 {
 	if (readOnly()) return false;
 	Cyberiada::Element* element = indexToElement(index);
 	if (!element) return false;
 	Cyberiada::Name new_name(new_value.toStdString());
+	// the states of one level are told apart by name; the vertices have none
+	if (isState(element) && (new_value.trimmed().isEmpty() || siblingStateNamed(element, new_name))) {
+		return false;
+	}
 	element->set_name(new_name);
 	emit dataChanged(index, index);
 	return true;
