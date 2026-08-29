@@ -1,0 +1,17 @@
+== document
+LocalDocument: {Document: {id: '', name: 'minimal', geometry format: qt, meta: {standard version: '1.0', name: 'minimal', transition order: action first, event propagation: block events}, elements: {State Machine: {id: 'G', name: 'Minimal SM', elements: {Formal Comment: {id: 'nMeta', name: 'CGML_META', body: 'standardVersion/ 1.0
+
+name/ minimal
+
+transitionOrder/ actionFirst
+
+eventPropagation/ block'}, Initial: {id: 'init', name: '', geometry: (-170; -100)}, Simple State: {id: 'n0', name: 'Off', actions: {a {entry, behavior: 'off();'}}, geometry: (-80; -30; 100; 60)}, Simple State: {id: 'n1', name: 'On', actions: {a {entry, behavior: 'on();'}, a {exit, behavior: 'cleanup();'}}, geometry: (120; -30; 100; 60)}, Comment: {id: 'cX', body: 'A note', geometry: (-20; 0; 300; 200)}, Transition: {id: 'init-n0', type: loc, source: 'init', target: 'n0', sp: (0; 0), tp: (-50; -30)}, Transition: {id: 'n0-n1', type: loc, source: 'n0', target: 'n1', action: {trigger: 'TURN_ON', guard: 'ready', behavior: 'start();'}, sp: (50; 0), tp: (-50; 0)}, Transition: {id: 'n1-n0', type: loc, source: 'n1', target: 'n0', action: {trigger: 'TURN_OFF', behavior: 'stop();'}, sp: (-50; 0), tp: (50; 0)}}}}, bounding rect: (180; 110; 340; 200)}, file: 'diagrams/broken-point-comment.graphml', format: cyberiada, format_str: 'Cyberiada-GraphML-1.0'}
+== scene
+  State Machine: {id: 'G', pos: (0.00; 0.00), rect: (-170.00; -100.00; 340.00; 200.00)}
+    Initial: {id: 'init', pos: (-170.00; -100.00), rect: (-10.00; -10.00; 20.00; 20.00)}
+    Simple State: {id: 'n0', pos: (-80.00; -30.00), rect: (-50.00; -30.00; 100.00; 60.00)}
+    Simple State: {id: 'n1', pos: (120.00; -30.00), rect: (-50.00; -30.00; 100.00; 60.00)}
+    Comment: {id: 'cX', pos: (-20.00; 0.00), rect: (-150.00; -100.00; 300.00; 200.00)}
+    Transition: {id: 'init-n0', pos: (0.00; 0.00), rect: (-180.00; -110.00; 60.00; 60.00)}
+    Transition: {id: 'n0-n1', pos: (0.00; 0.00), rect: (-40.00; -40.00; 120.00; 20.00)}
+    Transition: {id: 'n1-n0', pos: (0.00; 0.00), rect: (-40.00; -40.00; 120.00; 20.00)}

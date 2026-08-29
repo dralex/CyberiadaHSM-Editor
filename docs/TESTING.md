@@ -38,6 +38,7 @@ good references.
 | L3    | render: offscreen image export vs good images with tolerance | implemented |
 | L4    | in-process: model contract and scene structure (QtTest)        | implemented |
 | text  | text metrics: font and layout of every text item vs good text | implemented |
+| reconstruct | reconstruction: the rebuilt geometry, shown and saved, vs good files | implemented |
 
 ## In-process tests (L4)
 
@@ -149,7 +150,18 @@ absent geometry is rebuilt, and node geometry violating the standard (e.g. a
 comment with point instead of rect geometry) is dropped and rebuilt as well.
 Without the option such documents fail with a format error (exit code 2) -
 the strict default. The GUI open dialog exposes the same mode as the
-reconstruction checkbox.
+reconstruction checkbox. `--reconstruct-sm` creates the absent state machine
+border as well; the library honours it only together with `--reconstruct`,
+and the dialog enables its checkbox only under the reconstruction one.
+
+The reconstruction cases (`reconstruct-<diagram>`, `reconstruct-sm-<diagram>`)
+load a diagram this way and compare both the scene dump and the saved
+document with the good files, so a change in the library's layout - the
+shelf placement of the states, the grow-only padding of the authored parents,
+the border attachment of the transitions, the repair of malformed node
+geometry - is seen in the editor. A complete document is covered too
+(`geometry`): the library grows an authored composite state whose child
+touches its border, and the good file records that.
 
 `--inspect` opens the document read-only, as the GUI does through the open
 dialog: every model mutation is refused, so an edit script fails with exit
@@ -331,6 +343,8 @@ tests/
   good/<name>-output.txt     reviewed good files for the L1/L2 dumps
   good/<name>-text-output.txt  reviewed good files for the text metrics
   good/<case>-output.graphml reviewed good files for the L2 saved documents
+  good/<name>-reconstruct[-sm]-output.txt      reviewed good files for the reconstruction dumps
+  good/<name>-reconstruct[-sm]-output.graphml  reviewed good files for the reconstructed documents
   good/<name>-render.png     reviewed good images for the L3 renders
   good/<name>-render.svg     reviewed good files for the vector renders
   good/<name>-inspect-render.png  reviewed good images for the inspect renders

@@ -198,6 +198,39 @@ add_l2_test(update-id geometry)
 add_l2_test(subjects hierarchy)
 add_l2_test(transition-subjects comment-transition)
 
+# The reconstruction test suite: the document is loaded with the library's
+# geometry reconstruction, then the scene dump and the saved document are
+# compared with the good files; the -sm cases create the state machine border
+# as well (see docs/TESTING.md)
+function(add_reconstruct_test name)
+  set(_sm)
+  set(_suffix reconstruct)
+  if(ARGC GREATER 1 AND ARGV1 STREQUAL "SM")
+    set(_sm -DRECONSTRUCT_SM=1)
+    set(_suffix reconstruct-sm)
+  endif()
+  add_test(NAME ${_suffix}-${name}
+    COMMAND ${CMAKE_COMMAND}
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
+      -DINPUT=diagrams/${name}.graphml
+      -DRECONSTRUCT=1 ${_sm}
+      -DEXPECTED=0
+      -DWORKDIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/${_suffix}-${name}.out
+      -DDUMP_GOOD=${CMAKE_CURRENT_SOURCE_DIR}/good/${name}-${_suffix}-output.txt
+      -DSAVE_OUT=${CMAKE_CURRENT_BINARY_DIR}/${_suffix}-${name}.graphml
+      -DSAVE_GOOD=${CMAKE_CURRENT_SOURCE_DIR}/good/${name}-${_suffix}-output.graphml
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunBatchTest.cmake)
+  set_tests_properties(${_suffix}-${name} PROPERTIES
+    TIMEOUT 60
+    ENVIRONMENT "${L0_ENVIRONMENT}")
+endfunction()
+
+add_reconstruct_test(hierarchy)
+add_reconstruct_test(hierarchy SM)
+add_reconstruct_test(broken-point-comment)
+add_reconstruct_test(geometry)
+
 # The inspection test suite: the read-only mode draws the document geometry -
 # the region rectangles and the coordinate origins - so the render differs
 # from the editing one; an edit script must be refused (see docs/TESTING.md)

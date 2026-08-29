@@ -24,6 +24,16 @@ while read case diagram; do
         { echo "FAILED $case"; exit 1; }
     echo "regenerated good/$case-output.txt + .graphml"
 done
+# the reconstruction cases: the loaded geometry is rebuilt by the library
+sed -n 's/^add_reconstruct_test(\([^ )]*\)\( SM\)\?)$/\1\2/p' CMakeLists.txt | \
+while read diagram sm; do
+    suffix=reconstruct; flags=--reconstruct
+    [ "$sm" = "SM" ] && { suffix=reconstruct-sm; flags="--reconstruct --reconstruct-sm"; }
+    "$BIN" --batch --no-text $flags "diagrams/$diagram.graphml" \
+           --save "good/$diagram-$suffix-output.graphml" --dump > "good/$diagram-$suffix-output.txt" 2>/dev/null || \
+        { echo "FAILED $diagram $suffix"; exit 1; }
+    echo "regenerated good/$diagram-$suffix-output.txt + .graphml"
+done
 # the L3 render diagrams are defined once, in CMakeLists.txt
 sed -n 's/^add_l3_test(\([^)]*\))$/\1/p' CMakeLists.txt | \
 while read diagram; do

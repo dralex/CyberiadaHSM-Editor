@@ -1,0 +1,16 @@
+== document
+LocalDocument: {Document: {id: '', name: '', geometry format: qt, meta: {standard version: '1.0', transition order: action first, event propagation: block events}, elements: {State Machine: {id: 'G0', name: 'SM', elements: {Formal Comment: {id: 'nMeta', name: 'CGML_META', body: 'standardVersion/ 1.0
+
+transitionOrder/ actionFirst
+
+eventPropagation/ block'}, Composite State: {id: 'n0', name: 'Parent 0', geometry: (-135; 0; 380; 700), elements: {Simple State: {id: 'n0::n0', name: 'State 0-0', geometry: (-20; -230; 300; 200)}, Composite State: {id: 'n0::n1', name: 'Subparent 0-1', geometry: (0; 105; 340; 450), elements: {Simple State: {id: 'n0::n1::n0', name: 'State 0-1-0', geometry: (0; -105; 300; 200)}, Simple State: {id: 'n0::n1::n1', name: 'State 0-1-1', geometry: (0; 105; 300; 200)}}, region: (0; 0; 320; 430)}}, region: (0; 0; 360; 680)}, Composite State: {id: 'n1', name: 'Parent 1', geometry: (155; -125; 340; 450), elements: {Simple State: {id: 'n1::n0', name: 'State 1-0', geometry: (0; -105; 300; 200)}, Simple State: {id: 'n1::n1', name: 'State 1-1', geometry: (0; 105; 300; 200)}}, region: (0; 0; 320; 430)}}}}, bounding rect: (335; 360; 650; 700)}, file: 'diagrams/hierarchy.graphml', format: cyberiada, format_str: 'Cyberiada-GraphML-1.0'}
+== scene
+  State Machine: {id: 'G0', pos: (0.00; 0.00), rect: (-325.00; -350.00; 650.00; 700.00)}
+    Composite State: {id: 'n0', pos: (-135.00; 0.00), rect: (-190.00; -350.00; 380.00; 700.00)}
+      Simple State: {id: 'n0::n0', pos: (-20.00; -230.00), rect: (-150.00; -100.00; 300.00; 200.00)}
+      Composite State: {id: 'n0::n1', pos: (0.00; 105.00), rect: (-170.00; -225.00; 340.00; 450.00)}
+        Simple State: {id: 'n0::n1::n0', pos: (0.00; -105.00), rect: (-150.00; -100.00; 300.00; 200.00)}
+        Simple State: {id: 'n0::n1::n1', pos: (0.00; 105.00), rect: (-150.00; -100.00; 300.00; 200.00)}
+    Composite State: {id: 'n1', pos: (155.00; -125.00), rect: (-170.00; -225.00; 340.00; 450.00)}
+      Simple State: {id: 'n1::n0', pos: (0.00; -105.00), rect: (-150.00; -100.00; 300.00; 200.00)}
+      Simple State: {id: 'n1::n1', pos: (0.00; 105.00), rect: (-150.00; -100.00; 300.00; 200.00)}
