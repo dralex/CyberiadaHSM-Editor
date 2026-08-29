@@ -56,7 +56,10 @@ subject may address a transition as well; a new element is inserted before
 the transitions of its collection, where the library keeps it. The inspected
 model refuses every mutation and strips the editable, draggable and droppable
 item flags, so an editing handler missing the mode check still cannot damage
-the document.
+the document. The states of one level are told apart by name: the model
+refuses an empty or a taken state name on every rename path (the property
+view, the tree, the canvas title, the batch `rename`), while the vertices
+keep their empty names.
 
 `l4-text` checks the per-role fonts: the bundled font is found through the
 resources of the core library, every role carries its own point size, the
@@ -79,6 +82,15 @@ with the connected scene as well, so every L2 case exercises the sync.
 The inspected region follows the document while the edited one is laid out
 around the state title, so switching the mode re-derives it. There is no undo
 stack in the editor yet, so undo/redo is not an L4 subject.
+
+`l4-properties` checks the property view: an edited rect, point, endpoint or
+polyline row writes the model and the scene item in the same call (the state
+moves or resizes, its title is re-wrapped), the width and the height rows
+refuse what the mouse resize refuses, the label point of a transition is
+shown but disabled (the library cannot set it), the inspected view opens no
+editor and drops a write, a model change refreshes the rows in place without
+adding any, and the name row renames the element and the canvas title while a
+name the model refuses reverts once the row is left.
 
 `l4-dialog` checks the file dialogs. The open dialog: the file browser and the
 option check boxes really share one window (the options are injected into the

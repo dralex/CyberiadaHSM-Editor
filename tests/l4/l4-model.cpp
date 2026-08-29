@@ -36,6 +36,7 @@ private slots:
 	void test_load();
 	void test_reload();
 	void test_update_title();
+	void test_title_rules();
 	void test_actions();
 	void test_new_elements();
 	void test_update_id();
@@ -103,6 +104,22 @@ void TestModel::test_update_title()
 	QVERIFY(model->updateTitle(state, "Renamed"));
 	QCOMPARE(spy.count(), 1);
 	QCOMPARE(model->data(state, Qt::DisplayRole).toString(), QString("Renamed"));
+}
+
+void TestModel::test_title_rules()
+{
+	// the states of one level are told apart by name: an empty or a taken
+	// name is refused without a signal; the vertices carry no name
+	QModelIndex state = indexOf("node-0-0-1");
+	QSignalSpy spy(model, &CyberiadaSMModel::dataChanged);
+	QVERIFY(!model->updateTitle(state, ""));
+	QVERIFY(!model->updateTitle(state, "  "));
+	QVERIFY(!model->updateTitle(state, "node 0-0-2"));
+	QCOMPARE(spy.count(), 0);
+	QVERIFY(model->updateTitle(state, "NODE 0-0-2"));
+	QVERIFY(model->updateTitle(state, "Renamed"));
+	QCOMPARE(spy.count(), 2);
+	QVERIFY(model->updateTitle(indexOf("node-0-0-0"), ""));
 }
 
 void TestModel::test_actions()
