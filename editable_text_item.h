@@ -38,6 +38,8 @@ public:
     // the role sets the font: the size, the boldness and the fixed family
     void setFontRole(FontRole role);
     FontRole getFontRole() const { return fontRole; }
+    // the wrap width follows the parent box, refreshed after a resize
+    void updateTextWidth();
     void setTextMargin(double newTextMargin);
 
 protected:
@@ -59,7 +61,6 @@ protected slots:
     void applyFont();
 
 protected:
-    void updateTextWidth();
     bool isEdit;
     bool align;
     bool isTextWidthEnabled = true;

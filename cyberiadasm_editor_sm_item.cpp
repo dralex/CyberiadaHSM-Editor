@@ -51,6 +51,16 @@ CyberiadaSMEditorSMItem::CyberiadaSMEditorSMItem(CyberiadaSMModel* model,
     hideDots();
 }
 
+void CyberiadaSMEditorSMItem::syncFromModel()
+{
+    prepareGeometryChange();
+    if (element->has_geometry()) {
+        QRectF rect = toQtRect(element->get_bound_rect(*(model->rootDocument())));
+        setPos(rect.x(), rect.y());
+    }
+    CyberiadaSMEditorAbstractItem::syncFromModel();
+}
+
 QRectF CyberiadaSMEditorSMItem::boundingRect() const
 {
     MY_ASSERT(model);

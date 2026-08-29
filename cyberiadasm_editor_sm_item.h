@@ -45,6 +45,8 @@ public:
 
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
 
+    void syncFromModel() override;
+
 private:
     void updateSizeToFitChildren(CyberiadaSMEditorAbstractItem* child) override;
 };

@@ -152,10 +152,12 @@ void CyberiadaSMEditorCommentItem::setTextPosition()
 
 void CyberiadaSMEditorCommentItem::syncFromModel()
 {
+    prepareGeometryChange();
     if (comment->has_geometry()) {
         Cyberiada::Rect r = comment->get_geometry_rect();
         setPos(r.x, r.y);
     }
+    setTextPosition();
     CyberiadaSMEditorAbstractItem::syncFromModel();
 }
 

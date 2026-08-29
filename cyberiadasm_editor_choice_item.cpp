@@ -57,6 +57,7 @@ CyberiadaSMEditorChoiceItem::CyberiadaSMEditorChoiceItem(CyberiadaSMModel* model
 
 void CyberiadaSMEditorChoiceItem::syncFromModel()
 {
+    prepareGeometryChange();
     if (choice->has_geometry()) {
         Cyberiada::Rect r = choice->get_geometry_rect();
         setPos(QPointF(r.x, r.y));

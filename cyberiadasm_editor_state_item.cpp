@@ -261,12 +261,10 @@ void CyberiadaSMEditorStateItem::setTextPosition()
 
 void CyberiadaSMEditorStateItem::syncFromModel()
 {
-    // qDebug() << "synk" << name() << boundingRect() << pos() - QPointF(x(), y());
-    QRectF r1 = mapRectToParent(boundingRect());
-    // qDebug() << "before" << r1 << name();
+    // the bounding rect follows the model, so the size may change here
+    prepareGeometryChange();
     setPos(QPointF(x(), y()));
-    QRectF r2 = mapRectToParent(boundingRect());
-    // qDebug() << "after" << r2 << name();
+    title->updateTextWidth();
     initializeActions();
     if (title->toPlainText() != name()) {
         title->setPlainText(name());
