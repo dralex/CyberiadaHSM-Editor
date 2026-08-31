@@ -15,11 +15,18 @@ if(DEFINED ENV{LD_LIBRARY_PATH})
   set(L0_LIBRARY_PATH "${L0_LIBRARY_PATH}:$ENV{LD_LIBRARY_PATH}")
 endif()
 
+# the good text dumps depend on the glyph metrics, and the fontconfig
+# substitution differs between machines: expose the bundled fonts only
+set(TEST_FONT_DIR ${PROJECT_SOURCE_DIR}/fonts)
+set(TEST_FONT_CACHE ${CMAKE_CURRENT_BINARY_DIR}/fontcache)
+configure_file(fonts.conf.in fonts.conf @ONLY)
+
 set(L0_ENVIRONMENT
   "QT_QPA_PLATFORM=offscreen"
   # the point size becomes pixels through the screen dpi, so it is pinned:
   # the text metrics then follow the font file alone
   "QT_FONT_DPI=96"
+  "FONTCONFIG_FILE=${CMAKE_CURRENT_BINARY_DIR}/fonts.conf"
   "XDG_CONFIG_HOME=${CMAKE_CURRENT_BINARY_DIR}/config"
   "LD_LIBRARY_PATH=${L0_LIBRARY_PATH}")
 if(EXISTS "${QT5_LIB_DIR}/qt5/plugins")

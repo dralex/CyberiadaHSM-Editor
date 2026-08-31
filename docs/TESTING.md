@@ -419,7 +419,10 @@ cd .. && ./run-tests.sh          # or: cd build && ctest --output-on-failure
 
 Each test carries its full environment, baked in at configure time: the
 offscreen platform, a hermetic `XDG_CONFIG_HOME` inside the build directory,
-and the library/plugin paths of the Qt actually found by CMake. Plain `ctest`
+a private fontconfig (`FONTCONFIG_FILE` generated from `tests/fonts.conf.in`)
+that exposes only the bundled `fonts/` directory, so no system font ever
+enters a match, and the library/plugin paths of the Qt actually found by
+CMake. Plain `ctest`
 therefore works even when Qt lives outside the system paths (RUNPATH alone is
 not enough there: it does not cover the transitive Qt dependencies nor the
 dlopen'ed platform plugin). With a relocated Qt the *build* still needs

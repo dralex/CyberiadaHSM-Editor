@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<!DOCTYPE fontconfig SYSTEM "fonts.dtd">
+<!-- the test font configuration: only the bundled fonts are visible, so every
+     family request resolves to the same font file on any machine -->
+<fontconfig>
+  <dir>@TEST_FONT_DIR@</dir>
+  <cachedir>@TEST_FONT_CACHE@</cachedir>
+</fontconfig>
