@@ -276,8 +276,9 @@ statistics are printed to stderr; exit code 0 on match, 5 on mismatch.
 
 The tests render with `--no-text` (see the batch mode contract), so the
 reference images are text-free and identical across machines and Qt versions.
-The application still pins the bundled `fonts/courier.ttf` as the default
-font at startup for the GUI and manual exports (the font dialog overrides it
+The application still pins the bundled Cyberiada Mono (`fonts/*.ttf`, a
+renamed DejaVu Sans Mono - see `fonts/LICENSE`) as the default font at
+startup for the GUI and manual exports (the font dialog overrides it
 interactively).
 
 ## Text metrics
@@ -293,7 +294,10 @@ the hinting and the antialiasing of the machine, so a reference image with text
 would only match where it was made. The metrics are another matter: with the
 bundled font pinned at startup, the screen dpi pinned by `QT_FONT_DPI=96` in the
 test environment and the hinting turned off (`QFont::PreferNoHinting`), the
-advance and the line height come from the font file alone. A text case therefore
+advance and the line height come from the font file alone. The bundled family
+name is unique on purpose: a font requested by an ambiguous name (the former
+`Courier`) is silently shadowed by a same-named system family with more real
+faces, and the metrics then follow the machine again. A text case therefore
 compares the `--dump-text` section, and the `l4-text` in-process test compares
 the relations - a larger header is taller, the other roles do not move, the
 region follows - rather than absolute values.

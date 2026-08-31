@@ -1,9 +1,9 @@
 == text
-    Composite State: {id: 'node-0', role: title, font: 'Courier' 12 bold, pos: (-500; -225), size: (1000; 24), text: 'node 0'}
-      Composite State: {id: 'node-0-0', role: title, font: 'Courier' 12 bold, pos: (-300; -150), size: (600; 24), text: 'node 0-0'}
-        Simple State: {id: 'node-0-0-1', role: title, font: 'Courier' 12 bold, pos: (-150; -75), size: (300; 24), text: 'node 0-0-1'}
-        Simple State: {id: 'node-0-0-2', role: title, font: 'Courier' 12 bold, pos: (-75; -75), size: (150; 24), text: 'node 0-0-2'}
-      Simple State: {id: 'node-0-1', role: title, font: 'Courier' 12 bold, pos: (-75; -75), size: (150; 24), text: 'node 0-1'}
-    Transition: {id: 'edge-0', role: transition, font: 'Courier' 12, pos: (246; 325), size: (8; 24), text: ''}
-    Transition: {id: 'edge-1', role: transition, font: 'Courier' 12, pos: (246; 147), size: (8; 24), text: ''}
-    Transition: {id: 'edge-2', role: transition, font: 'Courier' 12, pos: (422; 267), size: (56; 24), text: 'LABEL'}
+    Composite State: {id: 'node-0', role: title, font: 'Cyberiada Mono' 12 bold, pos: (-500; -225), size: (1000; 27), text: 'node 0'}
+      Composite State: {id: 'node-0-0', role: title, font: 'Cyberiada Mono' 12 bold, pos: (-300; -150), size: (600; 27), text: 'node 0-0'}
+        Simple State: {id: 'node-0-0-1', role: title, font: 'Cyberiada Mono' 12 bold, pos: (-150; -75), size: (300; 27), text: 'node 0-0-1'}
+        Simple State: {id: 'node-0-0-2', role: title, font: 'Cyberiada Mono' 12 bold, pos: (-75; -75), size: (150; 27), text: 'node 0-0-2'}
+      Simple State: {id: 'node-0-1', role: title, font: 'Cyberiada Mono' 12 bold, pos: (-75; -75), size: (150; 27), text: 'node 0-1'}
+    Transition: {id: 'edge-0', role: transition, font: 'Cyberiada Mono' 12, pos: (246; 326), size: (8; 27), text: ''}
+    Transition: {id: 'edge-1', role: transition, font: 'Cyberiada Mono' 12, pos: (246; 149), size: (8; 27), text: ''}
+    Transition: {id: 'edge-2', role: transition, font: 'Cyberiada Mono' 12, pos: (422; 269), size: (56; 27), text: 'LABEL'}

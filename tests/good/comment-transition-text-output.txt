@@ -1,5 +1,5 @@
 == text
-    Simple State: {id: 'n0', role: title, font: 'Courier' 12 bold, pos: (-100; -50), size: (200; 24), text: 'First state'}
-    Simple State: {id: 'n1', role: title, font: 'Courier' 12 bold, pos: (-100; -50), size: (200; 24), text: 'Second state'}
-    Comment: {id: 'n2', role: comment, font: 'Courier' 12, pos: (-134; -40), size: (267; 24), text: 'A note about the transition'}
-    Transition: {id: 't0', role: transition, font: 'Courier' 12, pos: (-66; -102), size: (133; 24), text: 'EVENT / go();'}
+    Simple State: {id: 'n0', role: title, font: 'Cyberiada Mono' 12 bold, pos: (-100; -50), size: (200; 27), text: 'First state'}
+    Simple State: {id: 'n1', role: title, font: 'Cyberiada Mono' 12 bold, pos: (-100; -50), size: (200; 27), text: 'Second state'}
+    Comment: {id: 'n2', role: comment, font: 'Cyberiada Mono' 12, pos: (-134; -40), size: (268; 27), text: 'A note about the transition'}
+    Transition: {id: 't0', role: transition, font: 'Cyberiada Mono' 12, pos: (-67; -103), size: (133; 27), text: 'EVENT / go();'}

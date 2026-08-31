@@ -41,8 +41,11 @@ void FontManager::loadBundledFont()
     // linked in only when something refers to them
     Q_INIT_RESOURCE(smeditor);
 
-    int font_id = QFontDatabase::addApplicationFont(":/Fonts/fonts/courier.ttf");
+    // the family name is unique to the bundle, so no system font can shadow
+    // it on any platform and the text metrics are the same everywhere
+    int font_id = QFontDatabase::addApplicationFont(":/Fonts/fonts/cyberiada-mono.ttf");
     if (font_id == -1) return;
+    QFontDatabase::addApplicationFont(":/Fonts/fonts/cyberiada-mono-bold.ttf");
     QStringList families = QFontDatabase::applicationFontFamilies(font_id);
     if (!families.isEmpty()) {
         bundled = families.first();

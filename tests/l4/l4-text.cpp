@@ -86,7 +86,7 @@ void TestText::test_bundled_font()
 	// the resources are linked into the core, so the font is here as well
 	QString family = FontManager::instance().bundledFamily();
 	QVERIFY(!family.isEmpty());
-	QCOMPARE(family, QString("Courier"));
+	QCOMPARE(family, QString("Cyberiada Mono"));
 }
 
 void TestText::test_role_font()

@@ -32,6 +32,7 @@
         <file>images/geomprop.png</file>
     </qresource>
     <qresource prefix="/Fonts">
-        <file>fonts/courier.ttf</file>
+        <file>fonts/cyberiada-mono.ttf</file>
+        <file>fonts/cyberiada-mono-bold.ttf</file>
     </qresource>
 </RCC>
