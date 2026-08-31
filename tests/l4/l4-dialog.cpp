@@ -29,6 +29,8 @@
 #include "dialogs/open_file_dialog.h"
 #include "dialogs/save_file_dialog.h"
 #include "dialogs/export_image_dialog.h"
+#include "dialogs/stateactiondialog.h"
+#include <QPlainTextEdit>
 
 class TestDialog: public QObject {
 	Q_OBJECT
@@ -41,6 +43,7 @@ private slots:
 	void test_save_options();
 	void test_save_refused_format();
 	void test_export_image();
+	void test_action_dialog();
 };
 
 void TestDialog::test_options_injected()
@@ -183,4 +186,28 @@ void TestDialog::test_export_image()
 }
 
 QTEST_MAIN(TestDialog)
+void TestDialog::test_action_dialog()
+{
+	StateActionDialog dialog("entry");
+	QPlainTextEdit* edit = dialog.findChild<QPlainTextEdit*>();
+	QVERIFY(edit);
+	// the keyword is pre-filled; the behaviour follows on the same line or,
+	// as in the document format, on the next one
+	QCOMPARE(edit->toPlainText(), QString("entry/"));
+	QVERIFY(dialog.parseInput());
+	QCOMPARE(dialog.getBehaviour(), QString(""));
+
+	edit->setPlainText("entry/ foo();");
+	QVERIFY(dialog.parseInput());
+	QCOMPARE(dialog.getBehaviour(), QString("foo();"));
+
+	edit->setPlainText("entry/\nfoo();\nbar();");
+	QVERIFY(dialog.parseInput());
+	QCOMPARE(dialog.getBehaviour(), QString("foo();\nbar();"));
+
+	// a damaged keyword is refused
+	edit->setPlainText("entrance/ foo();");
+	QVERIFY(!dialog.parseInput());
+}
+
 #include "l4-dialog.moc"

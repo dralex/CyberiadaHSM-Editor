@@ -317,7 +317,7 @@ void CyberiadaSMEditorStateItem::initializeActions()
 
 void CyberiadaSMEditorStateItem::addAction(Cyberiada::ActionType type)
 {
-    StateActionDialog dialog;
+    StateActionDialog dialog(type == Cyberiada::actionEntry ? "entry" : "exit");
 
     if (dialog.exec() == QDialog::Accepted) {
         model->newAction(model->elementToIndex(element), type,
@@ -754,20 +754,29 @@ StateAction::StateAction(const Cyberiada::Action* action, QGraphicsItem *parent)
     setFontRole(fontRoleStateAction);
     setTextMargin(30);
 
+    QString behaviour = QString(action->get_behavior().c_str());
     Cyberiada::ActionType type = action->get_type();
     switch(type) {
     // TODO "exit", "entry" and "/" are constants from cyberiadamlpp
     case Cyberiada::ActionType::actionEntry:
-        typeText = QString("entry / ");
+        typeText = QString("entry");
         break;
     case Cyberiada::ActionType::actionExit:
-        typeText = QString("exit / ");
+        typeText = QString("exit");
         break;
     default:
         typeText = QString("");
     }
+    if (!typeText.isEmpty()) {
+        // a multiline behaviour starts under the keyword, as in the document
+        if (behaviour.contains('\n')) {
+            typeText += QString("/\n");
+        } else {
+            typeText += QString(" / ");
+        }
+    }
 
-    setPlainText(typeText + QString(action->get_behavior().c_str()));
+    setPlainText(typeText + behaviour);
 }
 
 QString StateAction::getBehavior()

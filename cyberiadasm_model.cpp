@@ -24,6 +24,7 @@
 #include <QIcon>
 #include <QList>
 #include <QMimeData>
+#include <QRegularExpression>
 #include <QDebug>
 
 #include "cyberiadasm_model.h"
@@ -300,6 +301,15 @@ bool CyberiadaSMModel::updateTitle(const QModelIndex& index, const QString& new_
 	return true;
 }
 
+// blank lines separate the action blocks in the document text format, so a
+// stored behaviour must not contain them - the saved file would not load back
+static QString normalizedBehaviour(const QString& behaviour)
+{
+	QString s = behaviour;
+	s.replace(QRegularExpression("[ \t\r]*\n([ \t\r]*\n)+"), "\n");
+	return s.trimmed();
+}
+
 bool CyberiadaSMModel::updateAction(const QModelIndex& index,
 									int action_index, const QString& new_trigger, const QString& new_guard,
 									const QString& new_behaviour)
@@ -314,16 +324,18 @@ bool CyberiadaSMModel::updateAction(const QModelIndex& index,
 			return false;
 		}
 		Cyberiada::Action& a = actions[action_index];
+		std::string behaviour = normalizedBehaviour(new_behaviour).toStdString();
         if (a.get_type() != Cyberiada::actionTransition) {
-			a.update(new_behaviour.toStdString());
+			a.update(behaviour);
         } else {
 			if (new_trigger.length() == 0) return false;
-			a.update(new_trigger.toStdString(), new_guard.toStdString(), new_behaviour.toStdString());
+			a.update(new_trigger.toStdString(), new_guard.toStdString(), behaviour);
 		}
     } else if (element->get_type() == Cyberiada::elementTransition) {
 		if (new_trigger.length() == 0) return false;
 		Cyberiada::Transition* trans = static_cast<Cyberiada::Transition*>(element);
-		trans->get_action().update(new_trigger.toStdString(), new_guard.toStdString(), new_behaviour.toStdString());
+		trans->get_action().update(new_trigger.toStdString(), new_guard.toStdString(),
+								   normalizedBehaviour(new_behaviour).toStdString());
 	} else {
 		return false;
 	}
@@ -340,11 +352,12 @@ bool CyberiadaSMModel::newAction(const QModelIndex& index, Cyberiada::ActionType
 	if (element->get_type() == Cyberiada::elementSimpleState || element->get_type() == Cyberiada::elementCompositeState) {
 		Cyberiada::State* state = static_cast<Cyberiada::State*>(element);
 		std::vector<Cyberiada::Action>& actions = state->get_actions();
+		std::string new_behaviour = normalizedBehaviour(behaviour).toStdString();
 		if (type == Cyberiada::actionTransition) { 
 			if (trigger.length() == 0) return false;
-			actions.push_back(Cyberiada::Action(trigger.toStdString(), guard.toStdString(), behaviour.toStdString()));
+			actions.push_back(Cyberiada::Action(trigger.toStdString(), guard.toStdString(), new_behaviour));
 		} else {
-			actions.push_back(Cyberiada::Action(type, behaviour.toStdString()));
+			actions.push_back(Cyberiada::Action(type, new_behaviour));
 		}
 	} else if (element->get_type() == Cyberiada::elementTransition) {
 		if (trigger.length() == 0) return false;
@@ -353,7 +366,8 @@ bool CyberiadaSMModel::newAction(const QModelIndex& index, Cyberiada::ActionType
 			// should edit available action
 			return false;
 		}
-		trans->get_action().update(trigger.toStdString(), guard.toStdString(), behaviour.toStdString());
+		trans->get_action().update(trigger.toStdString(), guard.toStdString(),
+								   normalizedBehaviour(behaviour).toStdString());
 	} else {
 		return false;
 	}

@@ -134,6 +134,14 @@ void TestModel::test_actions()
 	const Cyberiada::State* s =
 		static_cast<const Cyberiada::State*>(model->idToElement("node-0-0-2"));
 	QVERIFY(!s->has_actions());
+
+	// a multiline behaviour is kept, but blank lines cannot be stored: they
+	// separate the action blocks in the document text format
+	QVERIFY(model->newAction(state, Cyberiada::actionEntry, "", "", "a();\n\nb();"));
+	QCOMPARE(QString(s->get_actions()[0].get_behavior().c_str()), QString("a();\nb();"));
+	QVERIFY(model->updateAction(state, 0, "", "", "\n  x();\n\n\ny();  "));
+	QCOMPARE(QString(s->get_actions()[0].get_behavior().c_str()), QString("x();\ny();"));
+	QVERIFY(model->deleteAction(state, 0));
 }
 
 void TestModel::test_new_elements()

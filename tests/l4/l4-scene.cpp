@@ -258,6 +258,24 @@ void TestScene::test_action_edit()
 	QCOMPARE(int(st->get_actions().size()), 1);
 	QCOMPARE(QString(st->get_actions()[0].get_behavior().c_str()), QString("second()"));
 
+	// a multiline behaviour is shown under the keyword, as in the document
+	action = nullptr;
+	for (QGraphicsItem* child : state->childItems()) {
+		if ((action = dynamic_cast<StateAction*>(child))) break;
+	}
+	QVERIFY(action);
+	action->setTextInteractionFlags(Qt::TextEditorInteraction);
+	action->setFocus();
+	action->setPlainText("entry / a();\nb();");
+	action->clearFocus();
+	QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+	QCOMPARE(QString(st->get_actions()[0].get_behavior().c_str()), QString("a();\nb();"));
+	action = nullptr;
+	for (QGraphicsItem* child : state->childItems()) {
+		if ((action = dynamic_cast<StateAction*>(child))) break;
+	}
+	QVERIFY(action);
+	QCOMPARE(action->toPlainText(), QString("entry/\na();\nb();"));
 }
 
 void TestScene::test_new_state()

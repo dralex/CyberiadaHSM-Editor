@@ -60,6 +60,7 @@ foreach(diagram
     label-geometry
     lift
     meta
+    multiline-actions
     polyline
     sources
     two-sms)
@@ -140,6 +141,7 @@ foreach(diagram
     label-geometry
     lift
     meta
+    multiline-actions
     polyline
     sources
     two-sms)
@@ -173,6 +175,7 @@ add_text_dump_test(empty-actions)
 add_text_dump_test(geometry)
 add_text_dump_test(hierarchy)
 add_text_dump_test(label-geometry)
+add_text_dump_test(multiline-actions)
 
 # The L2 editing test suite: run the edit script, then compare both the dump
 # and the saved document with the good files, and re-open the saved document
