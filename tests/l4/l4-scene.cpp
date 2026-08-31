@@ -41,6 +41,7 @@ private slots:
 	void test_service_objects();
 	void test_selection();
 	void test_title_sync();
+	void test_action_edit();
 	void test_new_state();
 	void test_new_transition();
 	void test_new_comment();
@@ -221,6 +222,43 @@ void TestScene::test_title_sync()
 
 // the mutations below run through the connected scene: the row signals
 // build and tear down the items
+
+void TestScene::test_action_edit()
+{
+	// the commit of an action edit rebuilds the action items from the very
+	// event handler of the edited one: the old item must outlive the call
+	CyberiadaSMEditorStateItem* state =
+		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0-1"));
+	QVERIFY(state);
+	QModelIndex index = model->elementToIndex(model->idToElement("node-0-1"));
+	QVERIFY(model->newAction(index, Cyberiada::actionEntry, QString(), QString(), "first()"));
+	StateAction* action = nullptr;
+	for (QGraphicsItem* child : state->childItems()) {
+		if ((action = dynamic_cast<StateAction*>(child))) break;
+	}
+	QVERIFY(action);
+	QCOMPARE(action->toPlainText(), QString("entry / first()"));
+
+	// the in-scene edit path: focus, retype, commit on the focus out
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+	action->setTextInteractionFlags(Qt::TextEditorInteraction);
+	action->setFocus();
+	QVERIFY(action->hasFocus());
+	action->setPlainText("entry / second()");
+	QPointer<StateAction> old(action);
+	action->clearFocus();
+	// the commit rebuilt the actions, but the emitting item must still be
+	// alive here - it is destroyed only after its handlers left the stack
+	QVERIFY(!old.isNull());
+	QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+	QVERIFY(old.isNull());
+	const Cyberiada::State* st =
+		static_cast<const Cyberiada::State*>(model->idToElement("node-0-1"));
+	QCOMPARE(int(st->get_actions().size()), 1);
+	QCOMPARE(QString(st->get_actions()[0].get_behavior().c_str()), QString("second()"));
+
+}
 
 void TestScene::test_new_state()
 {

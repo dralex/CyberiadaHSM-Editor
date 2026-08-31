@@ -282,9 +282,14 @@ void CyberiadaSMEditorStateItem::syncFromModel()
 
 void CyberiadaSMEditorStateItem::initializeActions()
 {
-    // TODO
+    // the rebuild runs from the model change signal, which may originate in
+    // an old action's own event handler (focus out, context menu) - the item
+    // must outlive the current call stack
     for (StateAction* action : actions) {
-        delete action;
+        action->disconnect(this);
+        action->hide();
+        if (action->scene()) action->scene()->removeItem(action);
+        action->deleteLater();
     }
     actions.clear();
     entry = nullptr;
@@ -315,12 +320,8 @@ void CyberiadaSMEditorStateItem::addAction(Cyberiada::ActionType type)
     StateActionDialog dialog;
 
     if (dialog.exec() == QDialog::Accepted) {
-        // QString trigger = dialog.getTrigger();
-        // QString guard = dialog.getGuard();
-        QString trigger = QString("");
-        QString guard = QString("");
-        QString behaviour = dialog.getBehaviour();
-        model->newAction(model->elementToIndex(element), type, trigger, guard, behaviour);
+        model->newAction(model->elementToIndex(element), type,
+                         QString(), QString(), dialog.getBehaviour());
     }
 }
 
@@ -749,8 +750,7 @@ void StateRegion::paint(QPainter *painter, const QStyleOptionGraphicsItem *optio
  * ----------------------------------------------------------------------------- */
 
 StateAction::StateAction(const Cyberiada::Action* action, QGraphicsItem *parent):
-    EditableTextItem(parent),
-    action(action) {
+    EditableTextItem(parent) {
     setFontRole(fontRoleStateAction);
     setTextMargin(30);
 

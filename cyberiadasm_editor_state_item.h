@@ -211,7 +211,6 @@ protected:
     void focusOutEvent(QFocusEvent *event) override;
 
 private:
-    const Cyberiada::Action* action;
     QString typeText;
 };
 
