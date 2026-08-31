@@ -33,6 +33,10 @@ if(EXISTS "${QT5_LIB_DIR}/qt5/plugins")
   list(APPEND L0_ENVIRONMENT "QT_PLUGIN_PATH=${QT5_LIB_DIR}/qt5/plugins")
 endif()
 
+# ctest re-reads this file on every run: the log then names the commit it tested
+set_property(DIRECTORY APPEND PROPERTY TEST_INCLUDE_FILES
+  ${CMAKE_CURRENT_SOURCE_DIR}/cmake/PrintRevision.cmake)
+
 function(add_l0_test name expected_code)
   add_test(NAME l0-${name}
     COMMAND ${CMAKE_COMMAND}

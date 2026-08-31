@@ -417,6 +417,10 @@ mkdir build && cd build && cmake .. && make
 cd .. && ./run-tests.sh          # or: cd build && ctest --output-on-failure
 ```
 
+At every run ctest first prints the commit under test (hash, branch, subject
+and a local-changes marker, via `tests/cmake/PrintRevision.cmake`), so a saved
+test log identifies the exact version it exercised.
+
 Each test carries its full environment, baked in at configure time: the
 offscreen platform, a hermetic `XDG_CONFIG_HOME` inside the build directory,
 a private fontconfig (`FONTCONFIG_FILE` generated from `tests/fonts.conf.in`)
