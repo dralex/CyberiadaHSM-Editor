@@ -119,7 +119,6 @@ private:
     std::vector<StateAction*> actions;
 
     bool creatingOfTrans;
-    CyberiadaSMEditorTransitionItem* trans;
     
     void updateParent(CyberiadaSMEditorAbstractItem* newParent);
 

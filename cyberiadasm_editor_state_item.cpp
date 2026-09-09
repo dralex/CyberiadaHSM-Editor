@@ -78,7 +78,6 @@ CyberiadaSMEditorStateItem::CyberiadaSMEditorStateItem(QObject *parent_object,
 
     isHighlighted = false;
     creatingOfTrans = false;
-    trans = nullptr;
 
     initializeDots();
     setDotsPosition();
@@ -451,32 +450,48 @@ void CyberiadaSMEditorStateItem::paint(QPainter *painter, const QStyleOptionGrap
 
 void CyberiadaSMEditorStateItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
-    CyberiadaSMEditorAbstractItem::mousePressEvent(event);
-
-    if (!isEditable()) { return; }
-
-    if (cornerFlags == 0) {
-        creatingOfTrans = true;
-    }
-}
-
-void CyberiadaSMEditorStateItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
-{
-    // TODO create transition
-    if (creatingOfTrans) {
-        if (!trans) {
-            CyberiadaSMEditorScene* cScene = dynamic_cast<CyberiadaSMEditorScene*>(scene());
-            if (!cScene) return;
-            trans = cScene->addTransition(this, this);
-            trans->setSelected(true);
-            trans->getDot(1)->setVisible(true);
-            trans->getDot(1)->grabMouse();
+    // the transition tool draws from the pressed state; the select tool never does
+    CyberiadaSMEditorScene* cScene = dynamic_cast<CyberiadaSMEditorScene*>(scene());
+    if (cScene && cScene->getCurrentTool() == ToolType::Transition) {
+        if (event->button() == Qt::LeftButton && element->has_geometry() &&
+            !SettingsManager::instance().getInspectorMode()) {
+            creatingOfTrans = true;
+            event->accept();
+        } else {
+            event->ignore();
         }
         return;
     }
 
+    CyberiadaSMEditorAbstractItem::mousePressEvent(event);
+}
+
+void CyberiadaSMEditorStateItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
+{
+    if (creatingOfTrans) {
+        // the target dot of the new loop takes the drag over from here
+        creatingOfTrans = false;
+        CyberiadaSMEditorScene* cScene = dynamic_cast<CyberiadaSMEditorScene*>(scene());
+        if (!cScene) return;
+        CyberiadaSMEditorTransitionItem* trans = cScene->addTransition(this, this);
+        if (!trans) return;
+        trans->setSelected(true);
+        trans->getDot(1)->setVisible(true);
+        trans->getDot(1)->grabMouse();
+        return;
+    }
+
+    // a drag of the body moves the state like a drag of its border zones
+    bool bodyDrag = isEditable() && isLeftMouseButtonPressed && cornerFlags == 0;
+    if (bodyDrag) {
+        setFlag(ItemIsMovable);
+    }
+
     // if you want to update this, update StateTitle::mouseMoveEvent as well
     CyberiadaSMEditorAbstractItem::mouseMoveEvent(event);
+    if (bodyDrag) {
+        updatePosGeometry();
+    }
     CyberiadaSMEditorAbstractItem* newParent = collectionUnderItem();
 
     if (prevItemUnderCursor == newParent) return;
@@ -494,16 +509,14 @@ void CyberiadaSMEditorStateItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 
 void CyberiadaSMEditorStateItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
-    if (!isEditable()) {
-        CyberiadaSMEditorAbstractItem::mouseReleaseEvent(event);
+    if (creatingOfTrans) {
+        // a press without a move leaves nothing behind
+        creatingOfTrans = false;
+        event->accept();
         return;
     }
 
-    // TODO create transition
-    if (creatingOfTrans && trans) {
-        creatingOfTrans = false;
-        trans = nullptr;
-
+    if (!isEditable()) {
         CyberiadaSMEditorAbstractItem::mouseReleaseEvent(event);
         return;
     }

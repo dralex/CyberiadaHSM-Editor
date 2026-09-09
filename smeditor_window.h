@@ -70,7 +70,6 @@ public slots:
     void                    slotNewComment();
     void                    slotNewFormalComment();
     void                    slotNewChoise();
-    void                    slotNewTransition();
 
     void                    slotDeleteElement();
 

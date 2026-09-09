@@ -42,6 +42,7 @@ private slots:
 	void test_selection();
 	void test_title_sync();
 	void test_action_edit();
+	void test_body_drag();
 	void test_new_state();
 	void test_new_transition();
 	void test_new_comment();
@@ -51,6 +52,7 @@ private slots:
 
 private:
 	int countItems(int type);
+	void mouse(QEvent::Type type, const QPointF& scenePos, Qt::MouseButtons buttons);
 	CyberiadaSMModel* model;
 	CyberiadaSMEditorScene* scene;
 };
@@ -64,6 +66,17 @@ int TestScene::countItems(int type)
 		if ((*i)->type() == type) count++;
 	}
 	return count;
+}
+
+// a left button gesture delivered through the scene, as a view would
+void TestScene::mouse(QEvent::Type type, const QPointF& scenePos, Qt::MouseButtons buttons)
+{
+	QGraphicsSceneMouseEvent event(type);
+	event.setScenePos(scenePos);
+	event.setScreenPos(scenePos.toPoint());
+	event.setButton(Qt::LeftButton);
+	event.setButtons(buttons);
+	QApplication::sendEvent(scene, &event);
 }
 
 void TestScene::initTestCase()
@@ -276,6 +289,62 @@ void TestScene::test_action_edit()
 	}
 	QVERIFY(action);
 	QCOMPARE(action->toPlainText(), QString("entry/\na();\nb();"));
+}
+
+void TestScene::test_body_drag()
+{
+	// the select tool moves a state by its body; only the transition tool
+	// draws a transition from it
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+	CyberiadaSMEditorStateItem* state =
+		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0-1"));
+	QVERIFY(state);
+	const Cyberiada::State* element =
+		static_cast<const Cyberiada::State*>(model->idToElement("node-0-1"));
+	Cyberiada::Rect before = element->get_geometry_rect();
+	int transitions = countItems(CyberiadaSMEditorAbstractItem::TransitionItem);
+	// the free body area: the title and the actions sit at the top and the left
+	QPointF centre = state->sceneBoundingRect().bottomRight() - QPointF(20, 20);
+
+	scene->clearSelection();
+	mouse(QEvent::GraphicsSceneMousePress, centre, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, centre + QPointF(30, 20), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, centre + QPointF(30, 20), Qt::NoButton);
+	Cyberiada::Rect moved = element->get_geometry_rect();
+	QCOMPARE(moved.x, before.x + 30);
+	QCOMPARE(moved.y, before.y + 20);
+	QCOMPARE(countItems(CyberiadaSMEditorAbstractItem::TransitionItem), transitions);
+
+	scene->setCurrentTool(ToolType::Transition);
+	centre = state->sceneBoundingRect().bottomRight() - QPointF(20, 20);
+	mouse(QEvent::GraphicsSceneMousePress, centre, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, centre + QPointF(30, 20), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, centre + QPointF(30, 20), Qt::NoButton);
+	QCOMPARE(countItems(CyberiadaSMEditorAbstractItem::TransitionItem), transitions + 1);
+	QCOMPARE(element->get_geometry_rect().x, moved.x);
+	scene->setCurrentTool(ToolType::Select);
+
+	// the gesture left nothing armed: the next body drag moves again
+	mouse(QEvent::GraphicsSceneMousePress, centre, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, centre + QPointF(-30, -20), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, centre + QPointF(-30, -20), Qt::NoButton);
+	QCOMPARE(element->get_geometry_rect().x, before.x);
+	QCOMPARE(element->get_geometry_rect().y, before.y);
+	QCOMPARE(countItems(CyberiadaSMEditorAbstractItem::TransitionItem), transitions + 1);
+
+	// the drawn loop goes away, the later tests count the diagram's own
+	const QMap<Cyberiada::ID, QGraphicsItem*>& map = scene->getMap();
+	for (QMap<Cyberiada::ID, QGraphicsItem*>::const_iterator i = map.begin(); i != map.end(); i++) {
+		if ((*i)->type() != CyberiadaSMEditorAbstractItem::TransitionItem) continue;
+		Cyberiada::Element* e = dynamic_cast<CyberiadaSMEditorAbstractItem*>(*i)->getElement();
+		const Cyberiada::Transition* t = static_cast<const Cyberiada::Transition*>(e);
+		if (t->source_element_id() == "node-0-1" && t->target_element_id() == "node-0-1") {
+			QVERIFY(model->deleteElement(model->elementToIndex(e)));
+			break;
+		}
+	}
+	QCOMPARE(countItems(CyberiadaSMEditorAbstractItem::TransitionItem), transitions);
 }
 
 void TestScene::test_new_state()

@@ -378,12 +378,18 @@
    </property>
   </action>
   <action name="actionNewTransition">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="icon">
     <iconset resource="smeditor.qrc">
      <normaloff>:/Icons/images/trans.png</normaloff>:/Icons/images/trans.png</iconset>
    </property>
    <property name="text">
-    <string>New Transition</string>
+    <string>Transition Tool</string>
+   </property>
+   <property name="toolTip">
+    <string>Transition Tool</string>
    </property>
   </action>
   <action name="actionNewChoise">
@@ -732,22 +738,6 @@
    </hints>
   </connection>
   <connection>
-   <sender>actionNewTransition</sender>
-   <signal>triggered()</signal>
-   <receiver>SMEditorWindow</receiver>
-   <slot>slotNewTransition()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>-1</x>
-     <y>-1</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>511</x>
-     <y>383</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>actionExport</sender>
    <signal>triggered()</signal>
    <receiver>SMEditorWindow</receiver>
@@ -843,7 +833,6 @@
   <slot>slotNewTerminate()</slot>
   <slot>slotNewComment()</slot>
   <slot>slotNewFormalComment()</slot>
-  <slot>slotNewTransition()</slot>
   <slot>slotNewChoise()</slot>
   <slot>slotFileExport()</slot>
   <slot>slotGridVisibilityTriggered(bool)</slot>

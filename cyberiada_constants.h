@@ -79,8 +79,7 @@ enum class ToolType {
     Pan,
     ZoomIn,
     ZoomOut,
-    CreateRect,
-    CreateLine,
+    Transition,
 };
 
 #endif

@@ -65,6 +65,9 @@ void CyberiadaSMGraphicsView::setCurrentTool(ToolType tool) {
     case ToolType::Pan:
         setDragMode(QGraphicsView::ScrollHandDrag);
         break;
+    case ToolType::Transition:
+        setCursor(Qt::CrossCursor);
+        break;
     default:
         setCursor(Qt::ArrowCursor);
         break;

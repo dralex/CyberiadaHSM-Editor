@@ -174,6 +174,7 @@ void CyberiadaSMEditorWindow::initializeTools()
     toolGroup->addAction(actionZoomIn);
     toolGroup->addAction(actionZoomOut);
     toolGroup->addAction(actionPan);
+    toolGroup->addAction(actionNewTransition);
 
     toolGroup->setExclusive(true);
     actionSelectTool->setChecked(true);
@@ -223,6 +224,8 @@ void CyberiadaSMEditorWindow::slotToolSelected(QAction *action)
         currentTool = ToolType::ZoomOut;
     } else if (action == actionPan) {
         currentTool = ToolType::Pan;
+    } else if (action == actionNewTransition) {
+        currentTool = ToolType::Transition;
     } else {
         currentTool = ToolType::Select;
     }
@@ -296,11 +299,6 @@ void CyberiadaSMEditorWindow::slotNewFormalComment()
 void CyberiadaSMEditorWindow::slotNewChoise()
 {
     QMessageBox::information(this, "Информация", QString("Пока не реализовано."));
-}
-
-void CyberiadaSMEditorWindow::slotNewTransition()
-{
-    QMessageBox::information(this, "Информация", QString("Для создания передода зажмите правую кнопку мыши на источкине и протяните к цели!"));
 }
 
 void CyberiadaSMEditorWindow::slotDeleteElement()
