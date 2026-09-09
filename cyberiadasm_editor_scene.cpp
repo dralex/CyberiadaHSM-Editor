@@ -31,6 +31,7 @@
 #include <QCursor>
 #include <QMessageBox>
 
+#include <cmath>
 #include "cyberiadasm_editor_scene.h"
 #include "cyberiadasm_editor_items.h"
 #include "cyberiadasm_editor_sm_item.h"
@@ -624,13 +625,12 @@ CyberiadaSMEditorTransitionItem* CyberiadaSMEditorScene::addTransition(Cyberiada
     }
 }
 
-void CyberiadaSMEditorScene::drawBackground(QPainter* painter, const QRectF &)
+void CyberiadaSMEditorScene::drawBackground(QPainter* painter, const QRectF& exposed)
 {
     SettingsManager& sm = SettingsManager::instance();
 
-	painter->setPen(QPen(Qt::darkGray, 2, Qt::SolidLine));
-	painter->setBrush(backgroundBrush());
-	painter->drawRect(sceneRect());
+    // no frame: the diagram has no cosmetic boundary; a real boundary is the
+    // optional state machine border element instead
 
     if (sm.getShowServiceObjects()) {
         painter->setBrush(Qt::green);
@@ -644,14 +644,15 @@ void CyberiadaSMEditorScene::drawBackground(QPainter* painter, const QRectF &)
 
 	painter->setPen(gridPen);
 
-	QRectF rect = sceneRect();
+	// the grid fills the visible area, not a bounded scene rectangle
+	QRectF rect = exposed;
 
     int gridSize = sm.getGridSpacing();
 
-	double left = int(rect.left()) - (int(rect.left()) % gridSize);
-	double top = int(rect.top()) - (int(rect.top()) % gridSize);
+	double left = std::floor(rect.left() / gridSize) * gridSize;
+	double top = std::floor(rect.top() / gridSize) * gridSize;
 
-	QVarLengthArray<QLineF, 100> lines;
+	QVarLengthArray<QLineF, 256> lines;
 
 	for (double x = left; x < rect.right(); x += gridSize)
 		lines.append(QLineF(x, rect.top(), x, rect.bottom()));

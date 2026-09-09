@@ -24,23 +24,17 @@ font-family="Cyberiada Mono" font-size="16" font-weight="400" font-style="normal
 >
 </g>
 
-<g fill="#ffffff" fill-opacity="1" stroke="#808080" stroke-opacity="1" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,100,70)"
-font-family="Cyberiada Mono" font-size="16" font-weight="400" font-style="normal" 
->
-<rect x="-100" y="-70" width="200" height="150"/>
-</g>
-
-<g fill="none" stroke="#808080" stroke-opacity="1" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,100,70)"
+<g fill="none" stroke="#000000" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,100,70)"
 font-family="Cyberiada Mono" font-size="16" font-weight="400" font-style="normal" 
 >
 </g>
 
-<g fill="none" stroke="#808080" stroke-opacity="1" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,100,70)"
+<g fill="none" stroke="#000000" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,100,70)"
 font-family="Cyberiada Mono" font-size="16" font-weight="400" font-style="normal" 
 >
 </g>
 
-<g fill="none" stroke="#808080" stroke-opacity="1" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,100,70)"
+<g fill="none" stroke="#000000" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,100,70)"
 font-family="Cyberiada Mono" font-size="16" font-weight="400" font-style="normal" 
 >
 </g>
@@ -51,12 +45,12 @@ font-family="Cyberiada Mono" font-size="16" font-weight="400" font-style="normal
 <path vector-effect="none" fill-rule="evenodd" d="M0,-20 L20,0 L0,20 L-20,0 L0,-20"/>
 </g>
 
-<g fill="none" stroke="#808080" stroke-opacity="1" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,100,70)"
+<g fill="none" stroke="#000000" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,100,70)"
 font-family="Cyberiada Mono" font-size="16" font-weight="400" font-style="normal" 
 >
 </g>
 
-<g fill="none" stroke="#808080" stroke-opacity="1" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,100,70)"
+<g fill="none" stroke="#000000" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,100,70)"
 font-family="Cyberiada Mono" font-size="16" font-weight="400" font-style="normal" 
 >
 </g>
@@ -67,22 +61,22 @@ font-family="Cyberiada Mono" font-size="16" font-weight="400" font-style="normal
 <path vector-effect="none" fill-rule="evenodd" d=""/>
 </g>
 
-<g fill="none" stroke="#808080" stroke-opacity="1" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,100,70)"
+<g fill="none" stroke="#000000" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,100,70)"
 font-family="Cyberiada Mono" font-size="16" font-weight="400" font-style="normal" 
 >
 </g>
 
-<g fill="none" stroke="#808080" stroke-opacity="1" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,100,70)"
+<g fill="none" stroke="#000000" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,100,70)"
 font-family="Cyberiada Mono" font-size="16" font-weight="400" font-style="normal" 
 >
 </g>
 
-<g fill="none" stroke="#808080" stroke-opacity="1" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,100,70)"
+<g fill="none" stroke="#000000" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,100,70)"
 font-family="Cyberiada Mono" font-size="16" font-weight="400" font-style="normal" 
 >
 </g>
 
-<g fill="none" stroke="#808080" stroke-opacity="1" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,100,75)"
+<g fill="none" stroke="#000000" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,100,75)"
 font-family="Cyberiada Mono" font-size="16" font-weight="400" font-style="normal" 
 >
 </g>
@@ -93,7 +87,7 @@ font-family="Cyberiada Mono" font-size="16" font-weight="400" font-style="normal
 <path vector-effect="none" fill-rule="evenodd" d="M0,-25 L50,0 L0,25 L-50,0 L0,-25"/>
 </g>
 
-<g fill="none" stroke="#808080" stroke-opacity="1" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,100,75)"
+<g fill="none" stroke="#000000" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,100,75)"
 font-family="Cyberiada Mono" font-size="16" font-weight="400" font-style="normal" 
 >
 </g>
