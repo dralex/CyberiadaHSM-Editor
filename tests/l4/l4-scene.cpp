@@ -45,6 +45,7 @@ private slots:
 	void test_body_drag();
 	void test_double_click_action();
 	void test_action_layout();
+	void test_border_resize();
 	void test_new_state();
 	void test_new_transition();
 	void test_new_comment();
@@ -390,6 +391,44 @@ void TestScene::test_action_layout()
 	QCOMPARE(entry->pos(), QPointF(rect.x() + 15, rect.y() + title->boundingRect().height()));
 	QCOMPARE(exit->pos(), QPointF(rect.x() + 15, rect.bottom() - exit->boundingRect().height()));
 	QVERIFY(model->deleteAction(index, 1));
+	QVERIFY(model->deleteAction(index, 0));
+}
+
+void TestScene::test_border_resize()
+{
+	// the bottom border resizes even where the exit block covers it, and a
+	// press decides the zone without a prior hover
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+	CyberiadaSMEditorStateItem* state =
+		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0-0-2"));
+	QVERIFY(state);
+	QModelIndex index = model->elementToIndex(model->idToElement("node-0-0-2"));
+	QVERIFY(model->newAction(index, Cyberiada::actionExit, QString(), QString(), "out()"));
+	const Cyberiada::State* element =
+		static_cast<const Cyberiada::State*>(model->idToElement("node-0-0-2"));
+	Cyberiada::Rect before = element->get_geometry_rect();
+	QRectF box = state->sceneBoundingRect();
+	QPointF onExit(box.center().x() - 20, box.bottom() - 3);
+	QVERIFY(dynamic_cast<StateAction*>(scene->itemAt(onExit, QTransform())));
+
+	scene->clearSelection();
+	mouse(QEvent::GraphicsSceneMousePress, onExit, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, onExit + QPointF(0, 40), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, onExit + QPointF(0, 40), Qt::NoButton);
+	// the border follows the pointer, which started 3 px inside
+	Cyberiada::Rect after = element->get_geometry_rect();
+	QCOMPARE(after.height, before.height + 37);
+	QCOMPARE(after.width, before.width);
+
+	// the right border still resizes the width
+	box = state->sceneBoundingRect();
+	QPointF onRight(box.right() - 3, box.center().y());
+	mouse(QEvent::GraphicsSceneMousePress, onRight, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, onRight + QPointF(30, 0), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, onRight + QPointF(30, 0), Qt::NoButton);
+	QCOMPARE(element->get_geometry_rect().width, before.width + 27);
+	QCOMPARE(element->get_geometry_rect().height, after.height);
 	QVERIFY(model->deleteAction(index, 0));
 }
 

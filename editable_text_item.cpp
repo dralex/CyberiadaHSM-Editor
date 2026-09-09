@@ -32,6 +32,7 @@
 #include <QDebug>
 
 #include "editable_text_item.h"
+#include "cyberiadasm_editor_items.h"
 #include "fontmanager.h"
 #include "cyberiadasm_editor_scene.h"
 #include "cyberiada_constants.h"
@@ -62,6 +63,13 @@ void EditableTextItem::mousePressEvent(QGraphicsSceneMouseEvent *event) {
         event->ignore();
         return;
     }
+    // the border zone of the box belongs to the box: the press falls through
+    CyberiadaSMEditorAbstractItem* box = parentBox();
+    if (box && !hasFocus() && box->borderZone(mapToParent(event->pos())) != 0) {
+        event->ignore();
+        return;
+    }
+
     if (event->button() == Qt::LeftButton && !hasFocus()) {
         event->accept();
 
@@ -117,6 +125,28 @@ void EditableTextItem::hoverEnterEvent(QGraphicsSceneHoverEvent *event) {
     }
 
     QGraphicsTextItem::hoverEnterEvent(event);
+}
+
+void EditableTextItem::hoverMoveEvent(QGraphicsSceneHoverEvent *event) {
+    // the resize cursor of the box shows through the text at its border
+    CyberiadaSMEditorAbstractItem* box = parentBox();
+    if (box && !hasFocus() && box->isEditable()) {
+        CyberiadaSMEditorAbstractItem::applyZoneCursor(this, box->borderZone(mapToParent(event->pos())));
+    }
+    QGraphicsTextItem::hoverMoveEvent(event);
+}
+
+CyberiadaSMEditorAbstractItem* EditableTextItem::parentBox() const
+{
+    CyberiadaSMEditorAbstractItem* box = dynamic_cast<CyberiadaSMEditorAbstractItem*>(parentItem());
+    if (!box) return nullptr;
+    int type = box->type();
+    if (type != CyberiadaSMEditorAbstractItem::StateItem &&
+        type != CyberiadaSMEditorAbstractItem::CompositeStateItem &&
+        type != CyberiadaSMEditorAbstractItem::CommentItem) {
+        return nullptr;
+    }
+    return box;
 }
 
 void EditableTextItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) {

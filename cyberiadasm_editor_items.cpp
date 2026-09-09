@@ -211,6 +211,9 @@ void CyberiadaSMEditorAbstractItem::mousePressEvent(QGraphicsSceneMouseEvent *ev
         return;
     }
 
+    // the press decides the gesture: no prior hover or selection is needed
+    cornerFlags = borderZone(event->pos());
+
     if (event->button() & Qt::LeftButton) {
         isLeftMouseButtonPressed = true;
         // setPreviousPosition(event->scenePos());
@@ -343,68 +346,51 @@ void CyberiadaSMEditorAbstractItem::slotSelectionSettingsChanged()
     update();
 }
 
+int CyberiadaSMEditorAbstractItem::borderZone(const QPointF& pt) const
+{
+    // within 7 px of a side, inside or outside
+    QRectF r = boundingRect();
+    int flags = 0;
+    if (qAbs(pt.y() - r.top()) < 7) flags |= Top;
+    if (qAbs(pt.y() - r.bottom()) < 7) flags |= Bottom;
+    if (qAbs(pt.x() - r.right()) < 7) flags |= Right;
+    if (qAbs(pt.x() - r.left()) < 7) flags |= Left;
+    return flags;
+}
+
+void CyberiadaSMEditorAbstractItem::applyZoneCursor(QGraphicsItem* item, int flags)
+{
+    switch (flags) {
+    case Top:
+    case Left:
+    case TopLeft:
+    case TopRight:
+    case BottomLeft:
+        item->setCursor(QCursor(Qt::SizeAllCursor));
+        break;
+    case Bottom:
+        item->setCursor(QCursor(Qt::SizeVerCursor));
+        break;
+    case Right:
+        item->setCursor(QCursor(Qt::SizeHorCursor));
+        break;
+    case BottomRight:
+        item->setCursor(QCursor(Qt::SizeFDiagCursor));
+        break;
+    default:
+        item->unsetCursor();
+        break;
+    }
+}
+
 void CyberiadaSMEditorAbstractItem::hoverMoveEvent(QGraphicsSceneHoverEvent *event)
 {
-    // TODO
     if (!isSelected() || !isEditable()) {
         event->ignore();
         return;
     }
-
-    QPointF pt = event->pos();                      // The current position of the mouse
-    qreal drx = pt.x() - boundingRect().right();    // Distance between the mouse and the right
-    qreal dlx = pt.x() - boundingRect().left();     // Distance between the mouse and the left
-
-    qreal dby = pt.y() - boundingRect().top();      // Distance between the mouse and the top
-    qreal dty = pt.y() - boundingRect().bottom();   // Distance between the mouse and the bottom
-
-    // If the mouse position is within a radius of 7
-    // to a certain side( top, left, bottom or right)
-    // we set the Flag in the Corner Flags Register
-
-    cornerFlags = 0;
-    if( dby < 7 && dby > -7 ) cornerFlags |= Top;       // Top side
-    if( dty < 7 && dty > -7 ) cornerFlags |= Bottom;    // Bottom side
-    if( drx < 7 && drx > -7 ) cornerFlags |= Right;     // Right side
-    if( dlx < 7 && dlx > -7 ) cornerFlags |= Left;      // Left side
-
-    switch (cornerFlags) {
-    case Top:
-        setCursor(QCursor(Qt::SizeAllCursor));
-        break;
-    case Left:
-        setCursor(QCursor(Qt::SizeAllCursor));
-        break;
-    case TopLeft:
-        setCursor(QCursor(Qt::SizeAllCursor));
-        break;
-
-    case Bottom:
-        setCursor(QCursor(Qt::SizeVerCursor));
-        break;
-
-    case Right:
-        setCursor(QCursor(Qt::SizeHorCursor));
-        break;
-
-    case TopRight:
-        // TODO
-        setCursor(QCursor(Qt::SizeAllCursor));
-        break;
-    case BottomLeft:
-        // setCursor(QCursor(Qt::SizeBDiagCursor));
-        setCursor(QCursor(Qt::SizeAllCursor));
-        break;
-
-    case BottomRight:
-        setCursor(QCursor(Qt::SizeFDiagCursor));
-        break;
-
-    default:
-        // setCursor(Qt::ArrowCursor);
-        unsetCursor();
-        break;
-    }
+    cornerFlags = borderZone(event->pos());
+    applyZoneCursor(this, cornerFlags);
     QGraphicsItem::hoverMoveEvent(event);
 }
 

@@ -99,6 +99,9 @@ public:
     bool hasGeometry();
     // no element is edited while the document is inspected
     bool isEditable() const;
+    // the resize/move zone of a point in item coordinates (CornerFlags bits)
+    int borderZone(const QPointF& pt) const;
+    static void applyZoneCursor(QGraphicsItem* item, int flags);
 
     void setHighlighted(bool on);
 

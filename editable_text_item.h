@@ -28,6 +28,8 @@
 
 #include "cyberiada_constants.h"
 
+class CyberiadaSMEditorAbstractItem;
+
 
 class EditableTextItem : public QGraphicsTextItem {
     Q_OBJECT
@@ -48,10 +50,13 @@ protected:
     void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) override;
     void keyPressEvent(QKeyEvent *event);
     void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
+    void hoverMoveEvent(QGraphicsSceneHoverEvent *event) override;
 
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
 
     void setTextAlignment(Qt::Alignment alignment);
+    // the resizable box the text belongs to, or null
+    CyberiadaSMEditorAbstractItem* parentBox() const;
 
 signals:
     void sizeChanged();
