@@ -98,12 +98,14 @@ void TestText::test_role_font()
 	settings.setFontSize(fontRoleTransition, 8);
 	settings.setFontSize(fontRoleComment, 16);
 
-	QCOMPARE(fonts.font(fontRoleStateTitle).pointSize(), 20);
-	QCOMPARE(fonts.font(fontRoleStateAction).pointSize(), 14);
-	QCOMPARE(fonts.font(fontRoleTransition).pointSize(), 8);
-	QCOMPARE(fonts.font(fontRoleComment).pointSize(), 16);
+	// the point size is converted to pixels in the font manager (96 dpi
+	// fixed), so the metrics do not depend on the machine
+	QCOMPARE(fonts.font(fontRoleStateTitle).pixelSize(), 27);
+	QCOMPARE(fonts.font(fontRoleStateAction).pixelSize(), 19);
+	QCOMPARE(fonts.font(fontRoleTransition).pixelSize(), 11);
+	QCOMPARE(fonts.font(fontRoleComment).pixelSize(), 21);
 	// the formal comment is written in the size of the comment
-	QCOMPARE(fonts.font(fontRoleFormalComment).pointSize(), 16);
+	QCOMPARE(fonts.font(fontRoleFormalComment).pixelSize(), 21);
 
 	// only the header is bold
 	QVERIFY(fonts.font(fontRoleStateTitle).bold());
@@ -142,8 +144,8 @@ void TestText::test_item_sizes()
 	for (int role = 0; role < fontRolesCount; role++) {
 		const QList<EditableTextItem*> items = textItems(FontRole(role));
 		for (QList<EditableTextItem*>::const_iterator i = items.begin(); i != items.end(); i++) {
-			QCOMPARE((*i)->font().pointSize(),
-					 SettingsManager::instance().getFontSize(FontRole(role)));
+			QCOMPARE((*i)->font().pixelSize(),
+					 qRound(SettingsManager::instance().getFontSize(FontRole(role)) * 96.0 / 72.0));
 		}
 	}
 }
@@ -158,9 +160,9 @@ void TestText::test_title_size_change()
 	SettingsManager::instance().setFontSize(fontRoleStateTitle, FONT_SIZE * 2);
 
 	// the header follows its own size and leaves the other roles alone
-	QCOMPARE(title->font().pointSize(), FONT_SIZE * 2);
+	QCOMPARE(title->font().pixelSize(), FONT_SIZE * 2 * 96 / 72);
 	QVERIFY(title->boundingRect().height() > title_height);
-	QCOMPARE(action->font().pointSize(), FONT_SIZE);
+	QCOMPARE(action->font().pixelSize(), FONT_SIZE * 96 / 72);
 	QCOMPARE(action->boundingRect().height(), action_height);
 
 	SettingsManager::instance().setFontSize(fontRoleStateTitle, FONT_SIZE);

@@ -23,9 +23,6 @@ configure_file(fonts.conf.in fonts.conf @ONLY)
 
 set(L0_ENVIRONMENT
   "QT_QPA_PLATFORM=offscreen"
-  # the point size becomes pixels through the screen dpi, so it is pinned:
-  # the text metrics then follow the font file alone
-  "QT_FONT_DPI=96"
   "FONTCONFIG_FILE=${CMAKE_CURRENT_BINARY_DIR}/fonts.conf"
   "XDG_CONFIG_HOME=${CMAKE_CURRENT_BINARY_DIR}/config"
   "LD_LIBRARY_PATH=${L0_LIBRARY_PATH}")

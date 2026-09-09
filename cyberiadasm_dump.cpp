@@ -31,6 +31,7 @@
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_editor_scene.h"
 #include "editable_text_item.h"
+#include "settings_manager.h"
 
 void dumpDocument(CyberiadaSMModel* model, std::ostream& os)
 {
@@ -147,7 +148,7 @@ static void dumpTextElement(CyberiadaSMEditorScene* scene, Cyberiada::Element* e
 				.arg(QString::fromStdString(id))
 				.arg(fontRoleName(text->getFontRole()))
 				.arg(font.family())
-				.arg(font.pointSize())
+				.arg(SettingsManager::instance().getFontSize(text->getFontRole()))
 				.arg(font.bold() ? " bold" : "")
 				.arg(roundedNumber(text->pos().x()), roundedNumber(text->pos().y()))
 				.arg(roundedNumber(r.width()), roundedNumber(r.height()))

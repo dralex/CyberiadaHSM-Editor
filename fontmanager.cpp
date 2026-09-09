@@ -52,6 +52,14 @@ void FontManager::loadBundledFont()
     }
 }
 
+// a point is 1/72 inch at the fixed 96 dpi of the diagram plane: the size is
+// converted here, not through the screen dpi of the machine, so the metrics
+// follow the font file alone (the preferences still configure points)
+static int pixelsForPoints(int points)
+{
+    return qRound(points * 96.0 / 72.0);
+}
+
 QFont FontManager::font(FontRole role) const
 {
     const SettingsManager& settings = SettingsManager::instance();
@@ -60,7 +68,8 @@ QFont FontManager::font(FontRole role) const
     if (family.isEmpty() || role == fontRoleFormalComment) {
         family = bundled;
     }
-    QFont result(family, settings.getFontSize(role));
+    QFont result(family);
+    result.setPixelSize(pixelsForPoints(settings.getFontSize(role)));
     if (role == fontRoleStateTitle) {
         result.setBold(true);
     }
@@ -76,7 +85,8 @@ QFont FontManager::baseFont() const
     if (family.isEmpty()) {
         family = bundled;
     }
-    QFont result(family, FONT_SIZE);
+    QFont result(family);
+    result.setPixelSize(pixelsForPoints(FONT_SIZE));
     result.setHintingPreference(QFont::PreferNoHinting);
     return result;
 }

@@ -292,9 +292,12 @@ properties of the role, not settings.
 The glyphs are never compared. Their rasterization follows the freetype build,
 the hinting and the antialiasing of the machine, so a reference image with text
 would only match where it was made. The metrics are another matter: with the
-bundled font pinned at startup, the screen dpi pinned by `QT_FONT_DPI=96` in the
-test environment and the hinting turned off (`QFont::PreferNoHinting`), the
-advance and the line height come from the font file alone. The bundled family
+bundled font pinned at startup, the point size converted to pixels inside the
+font manager (a point is 1/72 inch at the fixed 96 dpi of the diagram plane -
+the screen dpi and the scaling environment of the machine play no part) and
+the hinting turned off (`QFont::PreferNoHinting`), the advance and the line
+height come from the font file alone. The same conversion makes the exported
+SVG carry the true pixel size of the drawn text. The bundled family
 name is unique on purpose: a font requested by an ambiguous name (the former
 `Courier`) is silently shadowed by a same-named system family with more real
 faces, and the metrics then follow the machine again. A text case therefore
