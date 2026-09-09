@@ -48,6 +48,7 @@ private slots:
 	void test_action_layout();
 	void test_border_resize();
 	void test_box_transition();
+	void test_auto_attach();
 	void test_new_state();
 	void test_new_transition();
 	void test_new_comment();
@@ -57,6 +58,8 @@ private slots:
 
 private:
 	int countItems(int type);
+	static bool onBorder(const QRectF& box, const QPointF& p);
+	void deleteTransition(const Cyberiada::ID& source, const Cyberiada::ID& target);
 	void mouse(QEvent::Type type, const QPointF& scenePos, Qt::MouseButtons buttons);
 	CyberiadaSMModel* model;
 	CyberiadaSMEditorScene* scene;
@@ -82,6 +85,29 @@ void TestScene::mouse(QEvent::Type type, const QPointF& scenePos, Qt::MouseButto
 	event.setButton(Qt::LeftButton);
 	event.setButtons(buttons);
 	QApplication::sendEvent(scene, &event);
+}
+
+// on the boundary of a (rounded) box: inside it grown by a pixel, outside
+// it shrunk by the corner radius
+bool TestScene::onBorder(const QRectF& box, const QPointF& p)
+{
+	qreal r = ROUNDED_RECT_RADIUS + 1;
+	return box.adjusted(-1, -1, 1, 1).contains(p) && !box.adjusted(r, r, -r, -r).contains(p);
+}
+
+void TestScene::deleteTransition(const Cyberiada::ID& source, const Cyberiada::ID& target)
+{
+	const QMap<Cyberiada::ID, QGraphicsItem*>& map = scene->getMap();
+	for (QMap<Cyberiada::ID, QGraphicsItem*>::const_iterator i = map.begin(); i != map.end(); i++) {
+		if ((*i)->type() != CyberiadaSMEditorAbstractItem::TransitionItem) continue;
+		Cyberiada::Element* e = dynamic_cast<CyberiadaSMEditorAbstractItem*>(*i)->getElement();
+		const Cyberiada::Transition* t = static_cast<const Cyberiada::Transition*>(e);
+		if (t->source_element_id() == source && t->target_element_id() == target) {
+			QVERIFY(model->deleteElement(model->elementToIndex(e)));
+			return;
+		}
+	}
+	QFAIL("no such transition");
 }
 
 void TestScene::initTestCase()
@@ -474,6 +500,58 @@ void TestScene::test_box_transition()
 			break;
 		}
 	}
+	QCOMPARE(countItems(CyberiadaSMEditorAbstractItem::TransitionItem), transitions);
+}
+
+void TestScene::test_auto_attach()
+{
+	// an end without a stored point is attached to the node border: the
+	// drawn transition keeps its source unstored yet runs border to border
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+	CyberiadaSMEditorStateItem* from =
+		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0-1"));
+	CyberiadaSMEditorStateItem* to =
+		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0-0-2"));
+	QVERIFY(from && to);
+	int transitions = countItems(CyberiadaSMEditorAbstractItem::TransitionItem);
+	scene->clearSelection();
+	from->setSelected(true);
+	DotSignal* box = nullptr;
+	for (QGraphicsItem* child : from->childItems()) {
+		DotSignal* dot = dynamic_cast<DotSignal*>(child);
+		if (dot && dot->pos() == QPointF(0, from->rect().bottom())) box = dot;
+	}
+	QVERIFY(box);
+	box->setVisible(true);
+	QPointF on = box->scenePos();
+	QPointF over = to->sceneBoundingRect().center();
+	mouse(QEvent::GraphicsSceneMousePress, on, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, on + QPointF(0, 30), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, over, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, over, Qt::NoButton);
+	QCOMPARE(countItems(CyberiadaSMEditorAbstractItem::TransitionItem), transitions + 1);
+
+	CyberiadaSMEditorTransitionItem* drawn = nullptr;
+	const QMap<Cyberiada::ID, QGraphicsItem*>& map = scene->getMap();
+	for (QMap<Cyberiada::ID, QGraphicsItem*>::const_iterator i = map.begin(); i != map.end(); i++) {
+		CyberiadaSMEditorTransitionItem* t = dynamic_cast<CyberiadaSMEditorTransitionItem*>(*i);
+		if (t && t->sourceId() == "node-0-1" && t->targetId() == "node-0-0-2") drawn = t;
+	}
+	QVERIFY(drawn);
+	const Cyberiada::Transition* element =
+		static_cast<const Cyberiada::Transition*>(drawn->getElement());
+	QVERIFY(!element->has_geometry_source_point());
+	QVERIFY(onBorder(from->sceneBoundingRect(), drawn->sourcePoint() + drawn->sourceCenter()));
+	QVERIFY(onBorder(to->sceneBoundingRect(), drawn->targetPoint() + drawn->targetCenter()));
+	deleteTransition("node-0-1", "node-0-0-2");
+
+	// a transition without any stored point attaches at both borders
+	CyberiadaSMEditorTransitionItem* plain = scene->addTransition(from, to);
+	QVERIFY(plain);
+	QVERIFY(onBorder(from->sceneBoundingRect(), plain->sourcePoint() + plain->sourceCenter()));
+	QVERIFY(onBorder(to->sceneBoundingRect(), plain->targetPoint() + plain->targetCenter()));
+	deleteTransition("node-0-1", "node-0-0-2");
 	QCOMPARE(countItems(CyberiadaSMEditorAbstractItem::TransitionItem), transitions);
 }
 

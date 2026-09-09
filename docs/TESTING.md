@@ -327,7 +327,10 @@ sections:
   transition looks like any other comment in the scene dump. A transition
   follows its polyline point by point, a self-transition included; only a
   loop without a polyline is drawn as an arc between its endpoints, which
-  is why its rect is not integral.
+  is why its rect is not integral. An endpoint without a stored point is
+  attached to the node border toward the other end (a vertex at its
+  centre), as the library's reconstruction would place it, so the rect of
+  such a transition is border-based while the document keeps no point.
 
 The L1 tests run the editor with `tests/` as the working directory and a
 relative input path, so the `file:` field of the document dump stays

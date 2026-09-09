@@ -149,12 +149,33 @@ void CyberiadaSMEditorTransitionItem::setSource(CyberiadaSMEditorAbstractItem *n
 }
 
 
+QPointF CyberiadaSMEditorTransitionItem::attachedPoint(const CyberiadaSMEditorAbstractItem* item,
+                                                       const QPointF& toward) const
+{
+    if (!item) return QPointF();
+    QPointF centre = item->sceneBoundingRect().center();
+    if (toward == centre) return QPointF();
+    bool has = false;
+    QPointF p = findIntersectionWithItem(item, centre, toward, &has);
+    return has ? p - centre : QPointF();
+}
+
 QPointF CyberiadaSMEditorTransitionItem::sourcePoint() const
 {
     if (transition->has_geometry_source_point()) {
         return QPointF(transition->get_source_point().x, transition->get_source_point().y);
     }
-    return QPointF();
+    if (isArcLoop()) return QPointF();
+    QPointF toward;
+    if (transition->has_polyline() && !transition->get_geometry_polyline().empty()) {
+        const Cyberiada::Point& v = transition->get_geometry_polyline().front();
+        toward = QPointF(v.x, v.y) + sourceCenter();
+    } else if (transition->has_geometry_target_point()) {
+        toward = QPointF(transition->get_target_point().x, transition->get_target_point().y) + targetCenter();
+    } else {
+        toward = targetCenter();
+    }
+    return attachedPoint(source(), toward);
 }
 
 void CyberiadaSMEditorTransitionItem::setSourcePoint(const QPointF &point)
@@ -206,7 +227,17 @@ QPointF CyberiadaSMEditorTransitionItem::targetPoint() const
     if (transition->has_geometry_target_point()) {
         return QPointF(transition->get_target_point().x, transition->get_target_point().y);
     }
-    return QPointF();
+    if (isArcLoop()) return QPointF();
+    QPointF toward;
+    if (transition->has_polyline() && !transition->get_geometry_polyline().empty()) {
+        const Cyberiada::Point& v = transition->get_geometry_polyline().back();
+        toward = QPointF(v.x, v.y) + sourceCenter();
+    } else if (transition->has_geometry_source_point()) {
+        toward = QPointF(transition->get_source_point().x, transition->get_source_point().y) + sourceCenter();
+    } else {
+        toward = sourceCenter();
+    }
+    return attachedPoint(target(), toward);
 }
 
 void CyberiadaSMEditorTransitionItem::setTargetPoint(const QPointF &point)
@@ -404,7 +435,7 @@ CyberiadaSMEditorAbstractItem *CyberiadaSMEditorTransitionItem::itemUnderCursor(
 
 QPointF CyberiadaSMEditorTransitionItem::findIntersectionWithItem(const CyberiadaSMEditorAbstractItem *item,
                                                                   const QPointF& start, const QPointF& end,
-                                                                  bool* hasIntersections)
+                                                                  bool* hasIntersections) const
 {
     if (!item) return QPointF();
 

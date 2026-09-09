@@ -123,9 +123,12 @@ private:
     bool isArcLoop() const;
     void drawArrow(QPainter* painter);
     CyberiadaSMEditorAbstractItem* itemUnderCursor();
+    // the attachment of an end without a stored point: the node border toward
+    // the next point of the edge, a vertex at its centre
+    QPointF attachedPoint(const CyberiadaSMEditorAbstractItem* item, const QPointF& toward) const;
     QPointF findIntersectionWithItem(const CyberiadaSMEditorAbstractItem *item,
                                      const QPointF& start, const QPointF& end,
-                                     bool* hasIntersections);
+                                     bool* hasIntersections) const;
     void updateCoordinates(CyberiadaSMEditorAbstractItem::CornerFlags side,
                            QPointF& point, qreal d);
     void movePolyline(QPointF delta);

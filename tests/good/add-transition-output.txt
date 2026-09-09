@@ -17,5 +17,5 @@ eventPropagation/ block'}, Composite State: {id: 'node-0', name: 'node 0', geome
     Transition: {id: 'edge-0', pos: (0.00; 0.00), rect: (65.00; 215.00; 195.00; 120.00)}
     Transition: {id: 'edge-1', pos: (0.00; 0.00), rect: (240.00; 110.00; 20.00; 50.00)}
     Transition: {id: 'edge-2', pos: (0.00; 0.00), rect: (390.00; 245.00; 120.00; 20.00)}
-    Transition: {id: 'node-0-0-1-node-0-1', pos: (0.00; 0.00), rect: (240.00; 215.00; 645.00; 20.00)}
-    Transition: {id: 'node-0-1-node-0-0-2', pos: (0.00; 0.00), rect: (565.00; 215.00; 320.00; 20.00)}
+    Transition: {id: 'node-0-0-1-node-0-1', pos: (0.00; 0.00), rect: (390.00; 215.00; 570.00; 20.00)}
+    Transition: {id: 'node-0-1-node-0-0-2', pos: (0.00; 0.00), rect: (640.00; 215.00; 320.00; 20.00)}

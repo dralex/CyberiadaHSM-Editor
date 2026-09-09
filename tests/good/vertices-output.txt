@@ -12,4 +12,4 @@ eventPropagation/ block'}, Choice: {id: 'n0'}, Composite State: {id: 'n1', name:
       Choice: {id: 'n1::n1', pos: (130.00; 70.00), rect: (-40.00; -20.00; 80.00; 40.00)}
     Choice: {id: 'n2', pos: (0.00; 0.00), rect: (-20.00; -20.00; 40.00; 40.00)}
     Terminate: {id: 'n3', pos: (210.00; 110.00), rect: (-10.00; -10.00; 20.00; 20.00)}
-    Transition: {id: 'n1-n1::n1', pos: (0.00; 0.00), rect: (-10.00; -10.00; 150.00; 90.00)}
+    Transition: {id: 'n1-n1::n1', pos: (0.00; 0.00), rect: (-10.00; -10.00; 112.86; 70.00)}
