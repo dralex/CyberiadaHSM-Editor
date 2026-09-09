@@ -30,6 +30,7 @@
 #include <QSvgGenerator>
 
 #include "cyberiadasm_render.h"
+#include "settings_manager.h"
 #include "cyberiadasm_editor_scene.h"
 #include "fontmanager.h"
 
@@ -51,6 +52,30 @@ static bool fileWritten(const QString& path)
 	return info.exists() && info.size() > 0;
 }
 
+// an exported image is the diagram alone: the grid and the service markers
+// belong to editing, so they are forced off for the duration of the render
+// (a runtime override, so nothing is persisted and the on-screen view keeps
+// its settings)
+namespace {
+	struct ExportGuard {
+		SettingsManager& sm;
+		bool grid;
+		bool service;
+		ExportGuard():
+			sm(SettingsManager::instance()),
+			grid(sm.getShowGrid()), service(sm.getShowServiceObjects())
+		{
+			sm.overrideShowGrid(false);
+			sm.overrideShowServiceObjects(false);
+		}
+		~ExportGuard()
+		{
+			sm.overrideShowGrid(grid);
+			sm.overrideShowServiceObjects(service);
+		}
+	};
+}
+
 bool renderScene(CyberiadaSMEditorScene* scene, const QString& path, QString* error)
 {
 	QRectF scene_rect = scene->sceneRect();
@@ -58,8 +83,9 @@ bool renderScene(CyberiadaSMEditorScene* scene, const QString& path, QString* er
 		if (error) *error = "the scene is empty, nothing to export";
 		return false;
 	}
-	// exported images must not show the editing selection
+	// exported images must not show the editing selection or the aids
 	scene->clearSelection();
+	ExportGuard guard;
 	QRect target(QPoint(0, 0), scene_rect.toRect().size());
 	QString suffix = QFileInfo(path).suffix().toLower();
 

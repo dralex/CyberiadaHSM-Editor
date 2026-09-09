@@ -41,11 +41,11 @@ while read diagram; do
         { echo "FAILED $diagram render"; exit 1; }
     echo "regenerated good/$diagram-render.png"
 done
-sed -n 's/^add_service_render_test(\([^)]*\))$/\1/p' CMakeLists.txt | \
+sed -n 's/^add_inspect_render_test(\([^)]*\))$/\1/p' CMakeLists.txt | \
 while read diagram; do
-    "$BIN" --batch --no-text --service "diagrams/$diagram.graphml" --export "good/$diagram-service-render.png" 2>/dev/null || \
-        { echo "FAILED $diagram service render"; exit 1; }
-    echo "regenerated good/$diagram-service-render.png"
+    "$BIN" --batch --no-text --inspect "diagrams/$diagram.graphml" --export "good/$diagram-inspect-render.png" 2>/dev/null || \
+        { echo "FAILED $diagram inspect render"; exit 1; }
+    echo "regenerated good/$diagram-inspect-render.png"
 done
 # the text metrics are dumped with the text shown, unlike every other case
 sed -n 's/^add_text_dump_test(\([^)]*\))$/\1/p' CMakeLists.txt | \

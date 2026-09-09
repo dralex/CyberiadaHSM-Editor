@@ -33,6 +33,8 @@ public:
     void setShowServiceObjects(bool value);
     // the batch mode draws them without touching the stored preferences
     void overrideShowServiceObjects(bool value) { showServiceObjects = value; }
+    // a runtime override, like the service objects one: no signal, not persisted
+    void overrideShowGrid(bool value) { showGrid = value; }
 
     // runtime-only, never persisted: the batch mode hides all text elements
     // to keep the test output independent of the font metrics

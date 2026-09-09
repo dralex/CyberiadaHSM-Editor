@@ -775,7 +775,7 @@ void StateRegion::paint(QPainter *painter, const QStyleOptionGraphicsItem *optio
     if(topLine) painter->drawLine(boundingRect().topLeft(), boundingRect().topRight());
     if(bottomLine) painter->drawLine(boundingRect().bottomLeft(), boundingRect().bottomRight());
 
-    if (visible) {
+    if (visible && SettingsManager::instance().getShowServiceObjects()) {
         painter->setPen(Qt::blue);
         painter->drawRect(rect());
 

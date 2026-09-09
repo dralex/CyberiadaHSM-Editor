@@ -281,7 +281,6 @@ function(add_inspect_render_test name)
       -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
       -DINPUT=diagrams/${name}.graphml
       -DINSPECT=1
-      -DSERVICE=1
       -DEXPECTED=0
       -DWORKDIR=${CMAKE_CURRENT_SOURCE_DIR}
       -DIMAGE_OUT=${CMAKE_CURRENT_BINARY_DIR}/inspect-render-${name}.png
@@ -294,26 +293,6 @@ endfunction()
 
 add_inspect_render_test(geometry)
 add_inspect_render_test(cyb-geometry)
-
-# the service objects are drawn while editing as well: the region border then
-# follows the text layout instead of the document region (see docs/TESTING.md)
-function(add_service_render_test name)
-  add_test(NAME service-render-${name}
-    COMMAND ${CMAKE_COMMAND}
-      -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
-      -DINPUT=diagrams/${name}.graphml
-      -DSERVICE=1
-      -DEXPECTED=0
-      -DWORKDIR=${CMAKE_CURRENT_SOURCE_DIR}
-      -DIMAGE_OUT=${CMAKE_CURRENT_BINARY_DIR}/service-render-${name}.png
-      -DIMAGE_GOOD=${CMAKE_CURRENT_SOURCE_DIR}/good/${name}-service-render.png
-      -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunBatchTest.cmake)
-  set_tests_properties(service-render-${name} PROPERTIES
-    TIMEOUT 60
-    ENVIRONMENT "${L0_ENVIRONMENT}")
-endfunction()
-
-add_service_render_test(cyb-geometry)
 
 # a refused mutation is a script error
 function(add_inspect_reject_test case diagram)

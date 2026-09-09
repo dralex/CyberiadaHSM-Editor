@@ -298,8 +298,11 @@ saved document, so each L2 case doubles as a write-read round-trip check.
 
 `--batch <file.graphml> [--script <file>] --export <out.png>` renders the
 scene offscreen into an image file: 1:1 scene units to pixels, white
-background, the selection cleared first (exports never show the editing
-selection). The grid and the scene frame are part of the picture.
+background, the selection cleared first. An exported image is the diagram
+alone: the grid and the service objects (the region borders and the
+coordinate origins) belong to editing and are forced off for the render, so
+`--service` and the stored grid preference make no difference to a saved
+image. The scene frame stays.
 
 `--compare <a.png> <b.png> [--epsilon <0-255>] [--max-diff <fraction>]`
 compares two images and exits: a pixel differs when any channel delta exceeds
@@ -397,7 +400,6 @@ tests/
   good/<name>-render.png     reviewed good images for the L3 renders
   good/<name>-render.svg     reviewed good files for the vector renders
   good/<name>-inspect-render.png  reviewed good images for the inspect renders
-  good/<name>-service-render.png  reviewed good images for the service objects
   good/<name>-<format>-output.graphml  reviewed good files for the saved formats
   regen-good.sh         regenerates the good files and shows the diff
 run-tests.sh            build-and-run wrapper: ctest --output-on-failure
@@ -415,11 +417,6 @@ Diagram conventions:
 * good files follow the sibling-library convention:
   `good/<name>-output.txt` (canonical dump) and, for the L2 cases,
   `good/<case>-output.graphml` (saved document).
-
-The `service-render-<diagram>` case draws the same diagram with `--service` but
-without `--inspect`, so its region border follows the text layout instead of
-the document region: comparing it with `<diagram>-inspect-render.png` shows the
-decoration and the geometry moving independently.
 
 The scene is exported to the vector formats as well: `--export <file>.svg`
 writes it through `QSvgGenerator` and `--export <file>.pdf` through
@@ -445,7 +442,8 @@ cannot express.
 
 The inspection cases run the same diagrams with `--inspect`:
 `inspect-render-<diagram>` compares the read-only render with
-`good/<diagram>-inspect-render.png`, and `inspect-reject-<case>` runs an
+`good/<diagram>-inspect-render.png` (the service objects are off in an export,
+so the image shows the inspected layout alone), and `inspect-reject-<case>` runs an
 existing L2 script and requires exit code 4 - the refused mutation is reported
 as a script error.
 
