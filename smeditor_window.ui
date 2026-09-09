@@ -148,15 +148,15 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="actionUndo"/>
-   <addaction name="actionRedo"/>
-   <addaction name="separator"/>
    <addaction name="actionZoomIn"/>
    <addaction name="actionZoomOut"/>
    <addaction name="actionFitContent"/>
    <addaction name="separator"/>
    <addaction name="actionSelectTool"/>
    <addaction name="actionPan"/>
+   <addaction name="separator"/>
+   <addaction name="actionUndo"/>
+   <addaction name="actionRedo"/>
    <addaction name="separator"/>
    <addaction name="actionGridVisibility"/>
    <addaction name="actionServiceObjects"/>
