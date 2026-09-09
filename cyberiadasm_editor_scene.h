@@ -104,6 +104,8 @@ private:
     QGraphicsItem* addElementItem(Cyberiada::Element* element, QGraphicsItem* parent_item);
     QGraphicsItem* graphicsParentFor(const Cyberiada::Element* parent);
     QPointF freePlace(const Cyberiada::ElementCollection* parent, const QSizeF& size);
+    // a centre for a new state-machine border that overlaps no existing machine
+    QPointF freeStateMachinePlace(const QSizeF& size);
     void  removeItemsForElement(Cyberiada::Element* element);
     void  updateItemsRecursively(CyberiadaSMEditorAbstractItem* parent, Cyberiada::ElementCollection* element);
 

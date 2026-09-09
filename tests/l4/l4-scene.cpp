@@ -59,6 +59,7 @@ private slots:
 	void test_reparent();
 	void test_delete();
 	void test_multi_sm();
+	void test_new_sm_place();
 
 private:
 	int countItems(int type);
@@ -786,6 +787,24 @@ void TestScene::test_multi_sm()
 	scene->loadScene();
 	QVERIFY(scene->getMap().value("G0"));
 	QVERIFY(scene->getMap().value("G1"));
+}
+
+void TestScene::test_new_sm_place()
+{
+	// each added state machine gets a border that overlaps no other machine
+	scene->addSMItem(Cyberiada::elementSM);
+	scene->addSMItem(Cyberiada::elementSM);
+	QList<QRectF> borders;
+	const QMap<Cyberiada::ID, QGraphicsItem*>& map = scene->getMap();
+	for (QMap<Cyberiada::ID, QGraphicsItem*>::const_iterator i = map.begin(); i != map.end(); i++) {
+		if ((*i)->type() == CyberiadaSMEditorAbstractItem::SMItem && !(*i)->sceneBoundingRect().isEmpty()) {
+			borders.append((*i)->sceneBoundingRect());
+		}
+	}
+	QVERIFY(borders.size() >= 2);
+	for (int a = 0; a < borders.size(); a++)
+		for (int b = a + 1; b < borders.size(); b++)
+			QVERIFY(!borders[a].intersects(borders[b]));
 }
 
 QTEST_MAIN(TestScene)

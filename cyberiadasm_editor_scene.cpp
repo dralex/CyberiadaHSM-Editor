@@ -101,6 +101,10 @@ void CyberiadaSMEditorScene::slotModelReset()
 
 CyberiadaSMEditorScene::~CyberiadaSMEditorScene()
 {
+    // the items are destroyed with the scene; stop reacting to their
+    // deselection, which would read the already-freed item map
+    disconnect(this, &QGraphicsScene::selectionChanged,
+               this, &CyberiadaSMEditorScene::slotSelectionChanged);
 }
 
 void CyberiadaSMEditorScene::reset()
@@ -513,9 +517,9 @@ void CyberiadaSMEditorScene::addSMItem(Cyberiada::ElementType type)
     if (type == Cyberiada::elementSM) {
         // the document has no item, so the new state machine item is built here
         try {
+            QPointF c = freeStateMachinePlace(QSizeF(400, 300));
             Cyberiada::Element* element = model->newStateMachine("New State Machine",
-                                                                 Cyberiada::Rect(sceneRect().center().x(),
-                                                                                 sceneRect().center().y(), 200, 100));
+                                                                 Cyberiada::Rect(c.x(), c.y(), 400, 300));
             if (!element) return;
             currentSM = static_cast<Cyberiada::StateMachine*>(element);
             CyberiadaSMEditorSMItem* sm = new CyberiadaSMEditorSMItem(model, element, NULL);
@@ -580,6 +584,30 @@ void CyberiadaSMEditorScene::addSMItem(Cyberiada::ElementType type)
 
 // the first slot of the parent (the origin, then to the right, then the
 // next row) that overlaps no sibling: new elements do not pile up
+QPointF CyberiadaSMEditorScene::freeStateMachinePlace(const QSizeF& size)
+{
+    QList<QRectF> taken;
+    for (QGraphicsItem* item : items()) {
+        if (item->isVisible() && dynamic_cast<CyberiadaSMEditorSMItem*>(item)) {
+            taken.append(item->sceneBoundingRect());
+        }
+    }
+    const qreal gap = 40;
+    for (int row = 0; row < 20; row++) {
+        for (int col = 0; col < 20; col++) {
+            QPointF centre(col * (size.width() + gap), row * (size.height() + gap));
+            QRectF slot(centre.x() - size.width() / 2, centre.y() - size.height() / 2,
+                        size.width(), size.height());
+            bool free = true;
+            for (const QRectF& r : taken) {
+                if (r.intersects(slot)) { free = false; break; }
+            }
+            if (free) return centre;
+        }
+    }
+    return QPointF(0, 0);
+}
+
 QPointF CyberiadaSMEditorScene::freePlace(const Cyberiada::ElementCollection* parent, const QSizeF& size)
 {
     QGraphicsItem* graphicsParent = graphicsParentFor(parent);

@@ -342,18 +342,9 @@ void CyberiadaSMEditorWindow::slotSceneToolChanged(ToolType tool)
 
 void CyberiadaSMEditorWindow::slotNewSM()
 {
-    // draw an explicit border for the current state machine (its standard
-    // dGeometry rect); with no document yet, create a bordered machine
-    QModelIndex smIndex = model->firstSMIndex();
-    if (!smIndex.isValid()) {
-        scene->addSMItem(Cyberiada::elementSM);
-        return;
-    }
-    Cyberiada::Element* sm = model->indexToElement(smIndex);
-    if (!sm || sm->has_geometry()) return;
-    Cyberiada::Rect r = sm->get_bound_rect(*model->rootDocument());
-    if (!r.valid) r = Cyberiada::Rect(0, 0, 400, 300);   // an empty machine
-    model->updateGeometry(smIndex, r);
+    // several state machines are allowed; each new one is placed clear of the
+    // others (its border geometry is distinct, like a new state)
+    scene->addSMItem(Cyberiada::elementSM);
 }
 
 void CyberiadaSMEditorWindow::slotNewState()
