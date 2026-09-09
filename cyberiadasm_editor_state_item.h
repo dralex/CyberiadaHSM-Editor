@@ -80,6 +80,9 @@ public:
 
     void setTextPosition();
 
+    // the action a double click on the free space adds, or -1
+    int missingActionType() const;
+
 private:
     void initializeActions();
     void addAction(Cyberiada::ActionType type);
@@ -106,6 +109,7 @@ protected:
     void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
+    void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) override;
     void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
 
 private:

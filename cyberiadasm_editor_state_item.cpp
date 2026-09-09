@@ -507,6 +507,27 @@ void CyberiadaSMEditorStateItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
     newParent->setHighlighted(true);
 }
 
+int CyberiadaSMEditorStateItem::missingActionType() const
+{
+    if (!entry) return Cyberiada::actionEntry;
+    if (!exit) return Cyberiada::actionExit;
+    return -1;
+}
+
+void CyberiadaSMEditorStateItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
+{
+    // the texts edit themselves on a double click; the free space adds one
+    if (event->button() != Qt::LeftButton || !isEditable()) {
+        QGraphicsItem::mouseDoubleClickEvent(event);
+        return;
+    }
+    event->accept();
+    int type = missingActionType();
+    if (type >= 0) {
+        addAction(Cyberiada::ActionType(type));
+    }
+}
+
 void CyberiadaSMEditorStateItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
     if (creatingOfTrans) {

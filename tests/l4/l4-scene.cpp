@@ -43,6 +43,7 @@ private slots:
 	void test_title_sync();
 	void test_action_edit();
 	void test_body_drag();
+	void test_double_click_action();
 	void test_new_state();
 	void test_new_transition();
 	void test_new_comment();
@@ -345,6 +346,23 @@ void TestScene::test_body_drag()
 		}
 	}
 	QCOMPARE(countItems(CyberiadaSMEditorAbstractItem::TransitionItem), transitions);
+}
+
+void TestScene::test_double_click_action()
+{
+	// a double click on the free space adds the entry, then the exit
+	CyberiadaSMEditorStateItem* state =
+		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0-0-2"));
+	QVERIFY(state);
+	QModelIndex index = model->elementToIndex(model->idToElement("node-0-0-2"));
+	QCOMPARE(state->missingActionType(), int(Cyberiada::actionEntry));
+	QVERIFY(model->newAction(index, Cyberiada::actionEntry, QString(), QString(), "in()"));
+	QCOMPARE(state->missingActionType(), int(Cyberiada::actionExit));
+	QVERIFY(model->newAction(index, Cyberiada::actionExit, QString(), QString(), "out()"));
+	QCOMPARE(state->missingActionType(), -1);
+	QVERIFY(model->deleteAction(index, 1));
+	QVERIFY(model->deleteAction(index, 0));
+	QCOMPARE(state->missingActionType(), int(Cyberiada::actionEntry));
 }
 
 void TestScene::test_new_state()
