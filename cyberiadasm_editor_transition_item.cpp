@@ -156,7 +156,7 @@ QPointF CyberiadaSMEditorTransitionItem::attachedPoint(const CyberiadaSMEditorAb
     QPointF centre = item->sceneBoundingRect().center();
     if (toward == centre) return QPointF();
     bool has = false;
-    QPointF p = findIntersectionWithItem(item, centre, toward, &has);
+    QPointF p = findIntersectionWithItem(item, centre, toward, &has, true);
     return has ? p - centre : QPointF();
 }
 
@@ -436,7 +436,8 @@ CyberiadaSMEditorAbstractItem *CyberiadaSMEditorTransitionItem::itemUnderCursor(
 
 QPointF CyberiadaSMEditorTransitionItem::findIntersectionWithItem(const CyberiadaSMEditorAbstractItem *item,
                                                                   const QPointF& start, const QPointF& end,
-                                                                  bool* hasIntersections) const
+                                                                  bool* hasIntersections,
+                                                                  bool forwardOnly) const
 {
     if (!item) return QPointF();
 
@@ -483,7 +484,8 @@ QPointF CyberiadaSMEditorTransitionItem::findIntersectionWithItem(const Cyberiad
                 closestIntersection = intersectionPoint;
             }
         }
-        if (lineIntersect(rayBackward, edge, &intersectionPoint) == QLineF::BoundedIntersection) {
+        if (!forwardOnly &&
+            lineIntersect(rayBackward, edge, &intersectionPoint) == QLineF::BoundedIntersection) {
             qreal dist = QLineF(start, intersectionPoint).length();
             if (dist < minDist) {
                 minDist = dist;

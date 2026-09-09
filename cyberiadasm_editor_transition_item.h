@@ -126,9 +126,11 @@ private:
     // the attachment of an end without a stored point: the node border toward
     // the next point of the edge, a vertex at its centre
     QPointF attachedPoint(const CyberiadaSMEditorAbstractItem* item, const QPointF& toward) const;
+    // forwardOnly: the border in the direction of the end alone, not behind
     QPointF findIntersectionWithItem(const CyberiadaSMEditorAbstractItem *item,
                                      const QPointF& start, const QPointF& end,
-                                     bool* hasIntersections) const;
+                                     bool* hasIntersections,
+                                     bool forwardOnly = false) const;
     void updateCoordinates(CyberiadaSMEditorAbstractItem::CornerFlags side,
                            QPointF& point, qreal d);
     void movePolyline(QPointF delta);

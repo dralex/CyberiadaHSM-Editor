@@ -557,15 +557,25 @@ void TestScene::test_auto_attach()
 		static_cast<const Cyberiada::Transition*>(drawn->getElement());
 	QVERIFY(!element->has_geometry_source_point());
 	QVERIFY(element->has_geometry_target_point());
-	QVERIFY(onBorder(from->sceneBoundingRect(), drawn->sourcePoint() + drawn->sourceCenter()));
+	QPointF sp = drawn->sourcePoint() + drawn->sourceCenter();
+	QVERIFY(onBorder(from->sceneBoundingRect(), sp));
 	QVERIFY(onBorder(to->sceneBoundingRect(), drawn->targetPoint() + drawn->targetCenter()));
+	// on the border facing the target, not the one behind
+	QVERIFY(QLineF(sp, to->sceneBoundingRect().center()).length() <
+			QLineF(from->sceneBoundingRect().center(), to->sceneBoundingRect().center()).length());
 	deleteTransition("node-0-1", "node-0-0-2");
 
-	// a transition without any stored point attaches at both borders
+	// a transition without any stored point attaches at both borders that
+	// face each other
 	CyberiadaSMEditorTransitionItem* plain = scene->addTransition(from, to);
 	QVERIFY(plain);
-	QVERIFY(onBorder(from->sceneBoundingRect(), plain->sourcePoint() + plain->sourceCenter()));
-	QVERIFY(onBorder(to->sceneBoundingRect(), plain->targetPoint() + plain->targetCenter()));
+	sp = plain->sourcePoint() + plain->sourceCenter();
+	QPointF tp = plain->targetPoint() + plain->targetCenter();
+	QVERIFY(onBorder(from->sceneBoundingRect(), sp));
+	QVERIFY(onBorder(to->sceneBoundingRect(), tp));
+	qreal centres = QLineF(from->sceneBoundingRect().center(), to->sceneBoundingRect().center()).length();
+	QVERIFY(QLineF(sp, to->sceneBoundingRect().center()).length() < centres);
+	QVERIFY(QLineF(tp, from->sceneBoundingRect().center()).length() < centres);
 	deleteTransition("node-0-1", "node-0-0-2");
 	QCOMPARE(countItems(CyberiadaSMEditorAbstractItem::TransitionItem), transitions);
 }
