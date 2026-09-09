@@ -154,6 +154,10 @@ void CyberiadaSMEditorScene::slotElementSelected(const QModelIndex& index)
             blockSignals(false);
         }
 
+        // new elements land in the machine the user is working in
+        Cyberiada::StateMachine* sm = model->rootDocument()->get_parent_sm(element);
+        if (sm) currentSM = sm;
+
         // Cyberiada::StateMachine* sm = model->rootDocument()->get_parent_sm(element);
         // if (sm != currentSM) {
         //     currentSM = sm;
@@ -394,15 +398,19 @@ void CyberiadaSMEditorScene::loadScene(bool fit)
     MY_ASSERT(elementIdToItemMap.isEmpty());
     MY_ASSERT(items().isEmpty());
 
-    Cyberiada::StateMachine* sm = static_cast<Cyberiada::StateMachine*>(model->indexToElement(model->firstSMIndex()));
-    currentSM = sm;
-    addItemsRecursively(NULL, sm);
+    // every state machine of the document is drawn, in the shared global
+    // coordinate space (7.2.1); the first is the default active one
+    std::vector<Cyberiada::StateMachine*> sms = model->rootDocument()->get_state_machines();
+    currentSM = sms.empty() ? NULL : sms.front();
+    for (std::vector<Cyberiada::StateMachine*>::iterator i = sms.begin(); i != sms.end(); i++) {
+        addItemsRecursively(NULL, *i);
+    }
     for (auto item : items()) {
         if (auto smItem = dynamic_cast<CyberiadaSMEditorSMItem*>(item)) {
             connect(smItem, &CyberiadaSMEditorAbstractItem::sizeChanged, this, &CyberiadaSMEditorScene::slotSMSizeChanged);
-            break;
         }
     }
+    clearSelection();
     // qreal margin = std::max(itemsBoundingRect().width(), itemsBoundingRect().height()) * DEFAULT_SCENE_BORDER_MARGIN_PERCENT;
     qreal margin = DEFAULT_SCENE_BORDER_MARGIN;
     // itemsBoundingRect() ignores visibility - union the visible items only,

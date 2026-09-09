@@ -6,3 +6,4 @@ transitionOrder/ actionFirst
 eventPropagation/ block'}}}, State Machine: {id: 'G1', name: 'SM2', geometry: (1; 2; 300; 40)}}, bounding rect: (1; 2; 300; 40)}, file: 'diagrams/two-sms.graphml', format: cyberiada, format_str: 'Cyberiada-GraphML-1.0'}
 == scene
   State Machine: {id: 'G0', pos: (0.00; 0.00), rect: (0.00; 0.00; 0.00; 0.00)}
+  State Machine: {id: 'G1', pos: (1.00; 2.00), rect: (-150.00; -20.00; 300.00; 40.00)}

@@ -58,6 +58,7 @@ private slots:
 	void test_new_choice();
 	void test_reparent();
 	void test_delete();
+	void test_multi_sm();
 
 private:
 	int countItems(int type);
@@ -776,6 +777,15 @@ void TestScene::test_delete()
 	QVERIFY(!scene->getMap().contains("edge-1"));
 	QVERIFY(countItems(CyberiadaSMEditorAbstractItem::TransitionItem) < transitions);
 	QVERIFY(!scene->items().isEmpty());
+}
+
+void TestScene::test_multi_sm()
+{
+	// every state machine of the document is drawn, not only the first
+	QVERIFY(model->loadDocument("diagrams/two-sms.graphml"));
+	scene->loadScene();
+	QVERIFY(scene->getMap().value("G0"));
+	QVERIFY(scene->getMap().value("G1"));
 }
 
 QTEST_MAIN(TestScene)
