@@ -47,6 +47,9 @@ public:
 
     void syncFromModel() override;
 
+protected:
+    void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
+
 private:
     void updateSizeToFitChildren(CyberiadaSMEditorAbstractItem* child) override;
 };

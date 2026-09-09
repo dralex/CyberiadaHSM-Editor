@@ -452,6 +452,7 @@ void CyberiadaSMEditorAbstractItem::updatePosGeometry()
 
 void CyberiadaSMEditorAbstractItem::initializeDots()
 {
+    if (cornerGrabber[0] != nullptr) return;   // idempotent
     if (!element->has_geometry()) return;
     for (int i = 0; i < 8; i++){
         cornerGrabber[i] = new DotSignal(this);
@@ -474,6 +475,10 @@ void CyberiadaSMEditorAbstractItem::handleParentChange() {
 void CyberiadaSMEditorAbstractItem::setDotsPosition()
 {    
     if(!element->has_geometry()) return;
+    // an element may gain geometry after construction (a state machine border
+    // added at runtime): create its handles the first time they are needed
+    initializeDots();
+    if (cornerGrabber[0] == nullptr) return;
     QRectF tmpRect = boundingRect();
     cornerGrabber[GrabberTop]->setPos(tmpRect.left() + tmpRect.width()/2, tmpRect.top());
     cornerGrabber[GrabberBottom]->setPos(tmpRect.left() + tmpRect.width()/2, tmpRect.bottom());
@@ -489,6 +494,7 @@ void CyberiadaSMEditorAbstractItem::showDots()
 {
     if(!isSelected()) return;
     if(!element->has_geometry()) return;
+    if(cornerGrabber[0] == nullptr) return;
     for(int i = 0; i < 8; i++){
         cornerGrabber[i]->setVisible(true);
     }
@@ -496,7 +502,7 @@ void CyberiadaSMEditorAbstractItem::showDots()
 
 void CyberiadaSMEditorAbstractItem::hideDots()
 {
-    if(!element->has_geometry()) return;
+    if(cornerGrabber[0] == nullptr) return;
     for(int i = 0; i < 8; i++){
         cornerGrabber[i]->setVisible(false);
     }

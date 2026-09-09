@@ -51,6 +51,7 @@ private slots:
 	void test_auto_attach();
 	void test_new_element_place();
 	void test_undo_gesture();
+	void test_sm_border();
 	void test_new_state();
 	void test_new_transition();
 	void test_new_comment();
@@ -641,6 +642,32 @@ void TestScene::test_undo_gesture()
 	QCOMPARE(static_cast<const Cyberiada::State*>(
 		model->idToElement("node-0-1"))->get_geometry_rect().x, before.x + 30);
 	stack->undo();
+}
+
+void TestScene::test_sm_border()
+{
+	// a rect-less state machine gains a drawn border and loses it again;
+	// setting the border on an SM that already has content must not crash
+	// (the resize handles are created lazily) nor move the content
+	QModelIndex sm = model->firstSMIndex();
+	QVERIFY(sm.isValid());
+	Cyberiada::Element* smElem = model->indexToElement(sm);
+	if (smElem->has_geometry()) QVERIFY(model->updateGeometry(sm, Cyberiada::Rect()));
+	QVERIFY(!smElem->has_geometry());
+
+	Cyberiada::Rect content = smElem->get_bound_rect(*model->rootDocument());
+	QVERIFY(content.valid);
+	QVERIFY(model->updateGeometry(sm, content));
+	QVERIFY(smElem->has_geometry());
+	QGraphicsItem* item = scene->getMap().value(smElem->get_id());
+	QVERIFY(item);
+	QVERIFY(item->type() == CyberiadaSMEditorAbstractItem::SMItem);
+	QVERIFY(!item->boundingRect().isEmpty());
+	QVERIFY(scene->items().contains(item));
+
+	// clearing the border removes it, back to frameless
+	QVERIFY(model->updateGeometry(sm, Cyberiada::Rect()));
+	QVERIFY(!smElem->has_geometry());
 }
 
 void TestScene::test_new_state()

@@ -302,7 +302,11 @@ background, the selection cleared first. An exported image is the diagram
 alone: the grid and the service objects (the region borders and the
 coordinate origins) belong to editing and are forced off for the render, so
 `--service` and the stored grid preference make no difference to a saved
-image. The scene frame stays.
+image. There is no cosmetic scene frame: the editor draws no boundary
+rectangle and the grid fills the whole edit area; a diagram boundary is the
+optional state machine border (the standard `dGeometry` rect of the `<graph>`),
+an ordinary element the user adds through the New State Machine action and
+resizes or removes like any other.
 
 `--compare <a.png> <b.png> [--epsilon <0-255>] [--max-diff <fraction>]`
 compares two images and exits: a pixel differs when any channel delta exceeds

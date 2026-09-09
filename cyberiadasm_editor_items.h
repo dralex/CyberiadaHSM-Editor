@@ -139,7 +139,7 @@ protected:
     unsigned int cornerFlags;
     QPointF previousPosition;
     bool isLeftMouseButtonPressed;
-    DotSignal *cornerGrabber[8];
+    DotSignal *cornerGrabber[8] = {};
 
     CyberiadaSMEditorAbstractItem* prevItemUnderCursor;
     bool isHighlighted;
