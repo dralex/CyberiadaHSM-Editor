@@ -5,13 +5,13 @@ name/ minimal
 
 transitionOrder/ actionFirst
 
-eventPropagation/ block'}, Initial: {id: 'init', name: '', geometry: (-500; -380)}, Simple State: {id: 'n0', name: 'Off', actions: {a {entry, behavior: 'off();'}}, geometry: (-410; -310; 100; 60)}, Simple State: {id: 'n1', name: 'On', actions: {a {entry, behavior: 'on();'}, a {exit, behavior: 'cleanup();'}}, geometry: (-210; -310; 100; 60)}, Comment: {id: 'cX', body: 'A note', geometry: (-160; -170; 100; 40)}, Transition: {id: 'init-n0', type: loc, source: 'init', target: 'n0'}, Transition: {id: 'n0-n1', type: loc, source: 'n0', target: 'n1', action: {trigger: 'TURN_ON', guard: 'ready', behavior: 'start();'}, rect: (880; 680; 60; 20)}, Transition: {id: 'n1-n0', type: loc, source: 'n1', target: 'n0', action: {trigger: 'TURN_OFF', behavior: 'stop();'}}}}}, bounding rect: (510; 390; 1000; 760)}, file: 'diagrams/label-geometry.graphml', format: cyberiada, format_str: 'Cyberiada-GraphML-1.0'}
+eventPropagation/ block'}, Initial: {id: 'init', name: '', geometry: (10; 10)}, Simple State: {id: 'n0', name: 'Off', actions: {a {entry, behavior: 'off();'}}, geometry: (100; 80; 100; 60)}, Simple State: {id: 'n1', name: 'On', actions: {a {entry, behavior: 'on();'}, a {exit, behavior: 'cleanup();'}}, geometry: (300; 80; 100; 60)}, Comment: {id: 'cX', body: 'A note', geometry: (350; 220; 100; 40)}, Transition: {id: 'init-n0', type: loc, source: 'init', target: 'n0'}, Transition: {id: 'n0-n1', type: loc, source: 'n0', target: 'n1', action: {trigger: 'TURN_ON', guard: 'ready', behavior: 'start();'}, rect: (880; 680; 60; 20)}, Transition: {id: 'n1-n0', type: loc, source: 'n1', target: 'n0', action: {trigger: 'TURN_OFF', behavior: 'stop();'}}}}}, bounding rect: (510; 390; 1000; 760)}, file: 'diagrams/label-geometry.graphml', format: cyberiada, format_str: 'Cyberiada-GraphML-1.0'}
 == scene
-  State Machine: {id: 'G', pos: (0.00; 0.00), rect: (-500.00; -380.00; 1000.00; 760.00)}
-    Initial: {id: 'init', pos: (-500.00; -380.00), rect: (-10.00; -10.00; 20.00; 20.00)}
-    Simple State: {id: 'n0', pos: (-410.00; -310.00), rect: (-50.00; -30.00; 100.00; 60.00)}
-    Simple State: {id: 'n1', pos: (-210.00; -310.00), rect: (-50.00; -30.00; 100.00; 60.00)}
-    Comment: {id: 'cX', pos: (-160.00; -170.00), rect: (-50.00; -20.00; 100.00; 40.00)}
-    Transition: {id: 'init-n0', pos: (0.00; 0.00), rect: (-510.00; -390.00; 71.43; 60.00)}
-    Transition: {id: 'n0-n1', pos: (0.00; 0.00), rect: (-370.00; -320.00; 120.00; 20.00)}
-    Transition: {id: 'n1-n0', pos: (0.00; 0.00), rect: (-370.00; -320.00; 120.00; 20.00)}
+  State Machine: {id: 'G', pos: (0.00; 0.00), rect: (10.00; 10.00; 1000.00; 760.00)}
+    Initial: {id: 'init', pos: (10.00; 10.00), rect: (-10.00; -10.00; 20.00; 20.00)}
+    Simple State: {id: 'n0', pos: (100.00; 80.00), rect: (-50.00; -30.00; 100.00; 60.00)}
+    Simple State: {id: 'n1', pos: (300.00; 80.00), rect: (-50.00; -30.00; 100.00; 60.00)}
+    Comment: {id: 'cX', pos: (350.00; 220.00), rect: (-50.00; -20.00; 100.00; 40.00)}
+    Transition: {id: 'init-n0', pos: (0.00; 0.00), rect: (0.00; 0.00; 71.43; 60.00)}
+    Transition: {id: 'n0-n1', pos: (0.00; 0.00), rect: (140.00; 70.00; 120.00; 20.00)}
+    Transition: {id: 'n1-n0', pos: (0.00; 0.00), rect: (140.00; 70.00; 120.00; 20.00)}

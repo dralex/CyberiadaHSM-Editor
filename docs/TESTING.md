@@ -365,6 +365,9 @@ sections:
   attached to the node border toward the other end (a vertex at its
   centre), as the library's reconstruction would place it, so the rect of
   such a transition is border-based while the document keeps no point.
+  The children of a state machine without a rect carry global coordinates
+  (7.2.1): the state machine item sits at the origin and its rect is the
+  union of its content, in the scene as in the saved file.
 
 The L1 tests run the editor with `tests/` as the working directory and a
 relative input path, so the `file:` field of the document dump stays

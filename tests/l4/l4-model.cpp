@@ -48,6 +48,7 @@ private slots:
 	void test_delete();
 	void test_geometry_declaration();
 	void test_undo_redo();
+	void test_move_subjects();
 
 private:
 	QModelIndex indexOf(const char* id);
@@ -396,6 +397,31 @@ void TestModel::test_undo_redo()
 	QVERIFY(!stack->isClean());
 	stack->undo();
 	QVERIFY(stack->isClean());
+}
+
+void TestModel::test_move_subjects()
+{
+	// a comment outside a subtree points into it; reparenting copies the
+	// subtree and frees the original, and the subject follows the copy
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	Cyberiada::ElementCollection* sm = static_cast<Cyberiada::ElementCollection*>(
+		model->idToElement("G"));
+	Cyberiada::Comment* note = model->newComment(sm, "Into the subtree", Cyberiada::Rect(0, 0, 100, 40));
+	QVERIFY(note);
+	QString note_id = QString(note->get_id().c_str());
+	Cyberiada::Element* inner = model->idToElement("node-0-0-1");
+	QVERIFY(model->newCommentSubject(model->elementToIndex(note), inner,
+									 Cyberiada::commentSubjectElement, QString()));
+	QVERIFY(model->updateParent(indexOf("node-0-0"), "node-0-1"));
+	Cyberiada::Element* moved = model->idToElement("node-0-0-1");
+	QVERIFY(moved && moved != inner);
+	const Cyberiada::Comment* c = static_cast<const Cyberiada::Comment*>(model->idToElement(note_id));
+	QCOMPARE(int(c->get_subjects().size()), 1);
+	QCOMPARE(c->get_subjects()[0].get_element(), static_cast<const Cyberiada::Element*>(moved));
+	QVERIFY(documentDump().contains("to: 'node-0-0-1'"));
+	QTemporaryDir dir;
+	QVERIFY(dir.isValid());
+	model->saveAsDocument(dir.filePath("moved.graphml"), Cyberiada::formatCyberiada10);
 }
 
 QTEST_MAIN(TestModel)

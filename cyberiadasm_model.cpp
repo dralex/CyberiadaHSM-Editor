@@ -1236,8 +1236,12 @@ void CyberiadaSMModel::move(Cyberiada::Element* element, Cyberiada::ElementColle
 	}
 
     // remove_element() frees the original, so deep-copy the element into the
-    // new parent first and remove the original afterwards
+    // new parent first and remove the original afterwards; every comment
+    // subject of the document that pointed into the subtree follows the copy
     Cyberiada::Element* copied = element->copy(target_parent);
+    if (Cyberiada::ElementCollection* subtree = dynamic_cast<Cyberiada::ElementCollection*>(copied)) {
+        root->rebind_subjects(*subtree);
+    }
 
     // the geometry is parent-relative: keep the absolute position
     Cyberiada::DocumentGeometryFormat gf = root->get_geometry_format();

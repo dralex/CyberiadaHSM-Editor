@@ -237,7 +237,7 @@ function(add_undo_test case diagram good)
 endfunction()
 
 add_undo_test(undo-all hierarchy hierarchy)
-add_undo_test(redo-all geometry rename-move rename-move)
+add_undo_test(redo-all hierarchy add-elements add-elements)
 
 # The reconstruction test suite: the document is loaded with the library's
 # geometry reconstruction, then the scene dump and the saved document are

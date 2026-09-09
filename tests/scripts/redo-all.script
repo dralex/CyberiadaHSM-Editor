@@ -1,10 +1,16 @@
-# the rename-move edits undone and redone: the edited diagram is back
-rename node-0-0-1 Idle
-move node-0-0-1 -80 30 260 140
-move node-0-0-0 -90 -70
+# the add-elements edits undone and redone: the edited diagram is back
+new-state G0 10 20 200 100 Working
+new-state n1 Nested new state
+new-initial n0::n1 -40 -40
+new-final G0 300 100
+new-comment G0 A test comment
 undo
 undo
 undo
+undo
+undo
+redo
+redo
 redo
 redo
 redo

@@ -5,6 +5,6 @@
     Simple State: {id: 'n1', role: action, font: 'Cyberiada Mono' 12, pos: (-35; -35), size: (70; 65), text: 'exit / cleanup();'}
     Simple State: {id: 'n1', role: action, font: 'Cyberiada Mono' 12, pos: (-35; -3), size: (70; 65), text: 'entry / on();'}
     Comment: {id: 'cX', role: comment, font: 'Cyberiada Mono' 12, pos: (-33; -20), size: (66; 27), text: 'A note'}
-    Transition: {id: 'init-n0', role: transition, font: 'Cyberiada Mono' 12, pos: (-478; -373), size: (8; 27), text: ''}
-    Transition: {id: 'n0-n1', role: transition, font: 'Cyberiada Mono' 12, pos: (-439; -323), size: (258; 27), text: 'TURN_ON [ready] / start();'}
-    Transition: {id: 'n1-n0', role: transition, font: 'Cyberiada Mono' 12, pos: (-401; -323), size: (181; 27), text: 'TURN_OFF / stop();'}
+    Transition: {id: 'init-n0', role: transition, font: 'Cyberiada Mono' 12, pos: (32; 17), size: (8; 27), text: ''}
+    Transition: {id: 'n0-n1', role: transition, font: 'Cyberiada Mono' 12, pos: (71; 67), size: (258; 27), text: 'TURN_ON [ready] / start();'}
+    Transition: {id: 'n1-n0', role: transition, font: 'Cyberiada Mono' 12, pos: (109; 67), size: (181; 27), text: 'TURN_OFF / stop();'}
