@@ -525,9 +525,22 @@ void TestScene::test_auto_attach()
 	QVERIFY(box);
 	box->setVisible(true);
 	QPointF on = box->scenePos();
-	QPointF over = to->sceneBoundingRect().center();
+	// off the centre: the drag's own intersection then differs from the
+	// display attachment, so the target point really gets stored
+	QPointF over = to->sceneBoundingRect().center() + QPointF(20, 10);
 	mouse(QEvent::GraphicsSceneMousePress, on, Qt::LeftButton);
 	mouse(QEvent::GraphicsSceneMouseMove, on + QPointF(0, 30), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, over, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, over, Qt::NoButton);
+	QCOMPARE(countItems(CyberiadaSMEditorAbstractItem::TransitionItem), transitions + 1);
+	deleteTransition("node-0-1", "node-0-0-2");
+
+	// the same gesture with the first move still inside the source state
+	// (the loop phase of the drag) must not pin the source to the centre
+	from->setSelected(true);
+	box->setVisible(true);
+	mouse(QEvent::GraphicsSceneMousePress, on, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, on - QPointF(0, 20), Qt::LeftButton);
 	mouse(QEvent::GraphicsSceneMouseMove, over, Qt::LeftButton);
 	mouse(QEvent::GraphicsSceneMouseRelease, over, Qt::NoButton);
 	QCOMPARE(countItems(CyberiadaSMEditorAbstractItem::TransitionItem), transitions + 1);
@@ -542,6 +555,7 @@ void TestScene::test_auto_attach()
 	const Cyberiada::Transition* element =
 		static_cast<const Cyberiada::Transition*>(drawn->getElement());
 	QVERIFY(!element->has_geometry_source_point());
+	QVERIFY(element->has_geometry_target_point());
 	QVERIFY(onBorder(from->sceneBoundingRect(), drawn->sourcePoint() + drawn->sourceCenter()));
 	QVERIFY(onBorder(to->sceneBoundingRect(), drawn->targetPoint() + drawn->targetCenter()));
 	deleteTransition("node-0-1", "node-0-0-2");

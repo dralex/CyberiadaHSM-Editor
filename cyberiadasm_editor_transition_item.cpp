@@ -178,19 +178,20 @@ QPointF CyberiadaSMEditorTransitionItem::sourcePoint() const
     return attachedPoint(source(), toward);
 }
 
+// the other end keeps its stored point, or stays unplaced: the displayed
+// attachment is never written back
 void CyberiadaSMEditorTransitionItem::setSourcePoint(const QPointF &point)
 {
     if(sourcePoint() == point) {
         return;
     }
     model->updateGeometry(model->elementToIndex(element), Cyberiada::Point(point.x(), point.y()),
-                          Cyberiada::Point(targetPoint().x(), targetPoint().y()));
+                          transition->get_target_point());
 }
 
 void CyberiadaSMEditorTransitionItem::setSourcePoint(const Cyberiada::Point &point)
 {
-    model->updateGeometry(model->elementToIndex(element), point,
-                          Cyberiada::Point(targetPoint().x(), targetPoint().y()));
+    model->updateGeometry(model->elementToIndex(element), point, transition->get_target_point());
 }
 
 QPointF CyberiadaSMEditorTransitionItem::sourceCenter() const
@@ -245,7 +246,7 @@ void CyberiadaSMEditorTransitionItem::setTargetPoint(const QPointF &point)
     if(targetPoint() == point) {
         return;
     }
-    model->updateGeometry(model->elementToIndex(element), Cyberiada::Point(sourcePoint().x(), sourcePoint().y()),
+    model->updateGeometry(model->elementToIndex(element), transition->get_source_point(),
                           Cyberiada::Point(point.x(), point.y()));
 }
 
