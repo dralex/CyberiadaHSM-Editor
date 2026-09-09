@@ -29,7 +29,7 @@
         <file>images/inspector-mode.png</file>
         <file>images/snap-mode.png</file>
         <file>images/grid.png</file>
-        <file>images/geomprop.png</file>
+        <file>images/special-markers.png</file>
     </qresource>
     <qresource prefix="/Fonts">
         <file>fonts/cyberiada-mono.ttf</file>

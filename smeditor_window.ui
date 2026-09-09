@@ -431,7 +431,7 @@
    </property>
    <property name="icon">
     <iconset resource="smeditor.qrc">
-     <normaloff>:/Icons/images/geomprop.png</normaloff>:/Icons/images/geomprop.png</iconset>
+     <normaloff>:/Icons/images/special-markers.png</normaloff>:/Icons/images/special-markers.png</iconset>
    </property>
    <property name="text">
     <string>Служебные объекты</string>
