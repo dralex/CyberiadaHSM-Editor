@@ -459,7 +459,7 @@ void CyberiadaSMEditorScene::addSMItem(Cyberiada::ElementType type)
 
     QPointF center;
     if (parentCItem) {
-        center = QPointF(0, 0);
+        center = freePlace(parentColl, QSizeF(200, 100));
     } else {
         center = sceneRect().center();
     }
@@ -530,6 +530,39 @@ void CyberiadaSMEditorScene::addSMItem(Cyberiada::ElementType type)
     if (item) {
         item->setSelected(true);
     }
+}
+
+// the first slot of the parent (the origin, then to the right, then the
+// next row) that overlaps no sibling: new elements do not pile up
+QPointF CyberiadaSMEditorScene::freePlace(const Cyberiada::ElementCollection* parent, const QSizeF& size)
+{
+    QGraphicsItem* graphicsParent = graphicsParentFor(parent);
+    if (!graphicsParent) return QPointF(0, 0);
+    QList<QRectF> taken;
+    if (parent->has_children()) {
+        const Cyberiada::ConstElementList& children = parent->get_children();
+        for (Cyberiada::ConstElementList::const_iterator i = children.begin(); i != children.end(); i++) {
+            QGraphicsItem* item = elementIdToItemMap.value((*i)->get_id());
+            if (item && (*i)->get_type() != Cyberiada::elementTransition) {
+                taken.append(item->sceneBoundingRect());
+            }
+        }
+    }
+    const qreal gap = 20;
+    for (int row = 0; row < 10; row++) {
+        for (int col = 0; col < 10; col++) {
+            QPointF centre(col * (size.width() + gap), row * (size.height() + gap));
+            QRectF slot = graphicsParent->mapRectToScene(
+                QRectF(centre.x() - size.width() / 2, centre.y() - size.height() / 2,
+                       size.width(), size.height()));
+            bool free = true;
+            for (const QRectF& rect : taken) {
+                if (rect.intersects(slot)) { free = false; break; }
+            }
+            if (free) return centre;
+        }
+    }
+    return QPointF(0, 0);
 }
 
 CyberiadaSMEditorTransitionItem* CyberiadaSMEditorScene::addTransition(CyberiadaSMEditorAbstractItem *source,

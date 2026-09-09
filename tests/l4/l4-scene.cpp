@@ -49,6 +49,7 @@ private slots:
 	void test_border_resize();
 	void test_box_transition();
 	void test_auto_attach();
+	void test_new_element_place();
 	void test_new_state();
 	void test_new_transition();
 	void test_new_comment();
@@ -567,6 +568,30 @@ void TestScene::test_auto_attach()
 	QVERIFY(onBorder(to->sceneBoundingRect(), plain->targetPoint() + plain->targetCenter()));
 	deleteTransition("node-0-1", "node-0-0-2");
 	QCOMPARE(countItems(CyberiadaSMEditorAbstractItem::TransitionItem), transitions);
+}
+
+void TestScene::test_new_element_place()
+{
+	// two states added in a row do not land on each other
+	QGraphicsItem* sm = scene->getMap().value("G");
+	QVERIFY(sm);
+	QList<Cyberiada::ID> before = scene->getMap().keys();
+	scene->clearSelection();
+	sm->setSelected(true);
+	scene->addSMItem(Cyberiada::elementSimpleState);
+	scene->clearSelection();
+	sm->setSelected(true);
+	scene->addSMItem(Cyberiada::elementSimpleState);
+	QList<QGraphicsItem*> fresh;
+	for (const Cyberiada::ID& id : scene->getMap().keys()) {
+		if (!before.contains(id)) fresh.append(scene->getMap().value(id));
+	}
+	QCOMPARE(fresh.size(), 2);
+	QVERIFY(!fresh[0]->sceneBoundingRect().intersects(fresh[1]->sceneBoundingRect()));
+	for (QGraphicsItem* item : fresh) {
+		Cyberiada::Element* e = dynamic_cast<CyberiadaSMEditorAbstractItem*>(item)->getElement();
+		QVERIFY(model->deleteElement(model->elementToIndex(e)));
+	}
 }
 
 void TestScene::test_new_state()
