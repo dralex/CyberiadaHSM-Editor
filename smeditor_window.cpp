@@ -56,6 +56,75 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     connect(SMView, SIGNAL(currentIndexActivated(QModelIndex)),
             scene, SLOT(slotElementSelected(QModelIndex)));
     connect(model, &CyberiadaSMModel::modelReset, this, &CyberiadaSMEditorWindow::slotModelReset);
+
+    QUndoStack* stack = model->undoStack();
+    connect(actionUndo, &QAction::triggered, stack, &QUndoStack::undo);
+    connect(actionRedo, &QAction::triggered, stack, &QUndoStack::redo);
+    connect(stack, &QUndoStack::canUndoChanged, actionUndo, &QAction::setEnabled);
+    connect(stack, &QUndoStack::canRedoChanged, actionRedo, &QAction::setEnabled);
+    connect(stack, &QUndoStack::undoTextChanged, this, &CyberiadaSMEditorWindow::slotUndoTextChanged);
+    connect(stack, &QUndoStack::redoTextChanged, this, &CyberiadaSMEditorWindow::slotRedoTextChanged);
+    connect(stack, &QUndoStack::cleanChanged, this, &CyberiadaSMEditorWindow::slotCleanChanged);
+    actionUndo->setEnabled(false);
+    actionRedo->setEnabled(false);
+}
+
+// the actions die before the model's stack, whose destructor still signals
+CyberiadaSMEditorWindow::~CyberiadaSMEditorWindow()
+{
+    model->undoStack()->disconnect(this);
+}
+
+void CyberiadaSMEditorWindow::slotUndoTextChanged(const QString& text)
+{
+    actionUndo->setText(text.isEmpty() ? tr("Undo") : tr("Undo %1").arg(text));
+}
+
+void CyberiadaSMEditorWindow::slotRedoTextChanged(const QString& text)
+{
+    actionRedo->setText(text.isEmpty() ? tr("Redo") : tr("Redo %1").arg(text));
+}
+
+// the clean state of the undo stack is the saved state of the document
+void CyberiadaSMEditorWindow::slotCleanChanged(bool clean)
+{
+    setWindowModified(!clean);
+}
+
+// the title carries the modified marker; the inspected document is read-only
+void CyberiadaSMEditorWindow::updateTitle()
+{
+    if (openFileName.isEmpty()) return;
+    QString title = openFileName + "[*]";
+    if (SettingsManager::instance().getInspectorMode()) {
+        title += " (inspector mode)";
+    }
+    setWindowTitle(title);
+    setWindowModified(!model->undoStack()->isClean());
+}
+
+bool CyberiadaSMEditorWindow::confirmDiscard()
+{
+    if (model->undoStack()->isClean()) return true;
+    QMessageBox::StandardButton answer = QMessageBox::question(
+        this, tr("Unsaved changes"),
+        tr("The document has unsaved changes. Save them?"),
+        QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel, QMessageBox::Save);
+    if (answer == QMessageBox::Cancel) return false;
+    if (answer == QMessageBox::Save) {
+        slotFileSave();
+        return model->undoStack()->isClean();
+    }
+    return true;
+}
+
+void CyberiadaSMEditorWindow::closeEvent(QCloseEvent* event)
+{
+    if (confirmDiscard()) {
+        event->accept();
+    } else {
+        event->ignore();
+    }
 }
 
 // the tree follows a restored document
@@ -67,6 +136,7 @@ void CyberiadaSMEditorWindow::slotModelReset()
 
 void CyberiadaSMEditorWindow::slotFileOpen()
 {
+    if (!confirmDiscard()) return;
     OpenFileDialog dlg(this);
     if (dlg.exec() != QDialog::Accepted) { return; }
 
@@ -105,14 +175,7 @@ bool CyberiadaSMEditorWindow::openDocument(const QString& fileName, QString* err
 
     QFileInfo fileInfo(fileName);
     openFileName = fileInfo.fileName();
-
-    if (!openFileName.isEmpty()) {
-        if (SettingsManager::instance().getInspectorMode()) {
-            setWindowTitle(openFileName + " (inspector mode)");
-        } else {
-            setWindowTitle(openFileName);
-        }
-    }
+    updateTitle();
     return true;
 }
 
@@ -151,14 +214,7 @@ void CyberiadaSMEditorWindow::slotFileSaveAs()
 
     QFileInfo fileInfo(fileName);
     openFileName = fileInfo.fileName();
-
-    if (!openFileName.isEmpty()) {
-        if (SettingsManager::instance().getInspectorMode()) {
-            setWindowTitle(openFileName + " (inspector mode)");
-        } else {
-            setWindowTitle(openFileName);
-        }
-    }
+    updateTitle();
 }
 
 void CyberiadaSMEditorWindow::slotFileExport()
@@ -206,6 +262,8 @@ void CyberiadaSMEditorWindow::initializeTools()
     editGroup->addAction(actionNewFormalComment);
     editGroup->addAction(actionNewTransition);
     editGroup->addAction(actionDeleteElement);
+    editGroup->addAction(actionUndo);
+    editGroup->addAction(actionRedo);
 
     connect(&SettingsManager::instance(), &SettingsManager::inspectorModeChanged,
             this, &CyberiadaSMEditorWindow::slotInspectorModeChanged);
@@ -347,14 +405,11 @@ void CyberiadaSMEditorWindow::slotInspectorModeChanged(bool on)
 {
     actionInspectorMode->setChecked(on);
     editGroup->setEnabled(!on);
+    actionUndo->setEnabled(!on && model->undoStack()->canUndo());
+    actionRedo->setEnabled(!on && model->undoStack()->canRedo());
     elementToolBar->setEnabled(!on);
 
-    if (openFileName.isEmpty()) { return; }
-    if (on) {
-        setWindowTitle(openFileName + " (inspector mode)");
-    } else {
-        setWindowTitle(openFileName);
-    }
+    updateTitle();
 }
 
 void CyberiadaSMEditorWindow::slotShowTransitionActionTriggered(bool on)

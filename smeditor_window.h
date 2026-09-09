@@ -34,6 +34,8 @@ Q_OBJECT
 public:
     CyberiadaSMEditorWindow(QWidget* parent = 0);
 
+    ~CyberiadaSMEditorWindow();
+
     bool                    openDocument(const QString& fileName, QString* error = NULL,
                                          bool reconstruct = false, bool reconstruct_sm = false,
                                          bool strict = false);
@@ -41,11 +43,21 @@ public:
     CyberiadaSMModel*       getModel() { return model; }
     CyberiadaSMEditorScene* getScene() { return scene; }
 
+    // the unsaved changes prompt: true when the document may go
+    bool                    confirmDiscard();
+
+protected:
+    void                    closeEvent(QCloseEvent* event) override;
+
 private:
     void                    initializeTools();
+    void                    updateTitle();
 
 private slots:
     void                    slotModelReset();
+    void                    slotUndoTextChanged(const QString& text);
+    void                    slotRedoTextChanged(const QString& text);
+    void                    slotCleanChanged(bool clean);
     void                    slotInspectorModeChanged(bool on);
     void                    slotServiceObjectsChanged(bool on);
 

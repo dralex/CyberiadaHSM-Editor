@@ -112,6 +112,11 @@ checks the undo stack: every mutation is one step that brings the exact
 document dump back (the file identity included), a refused mutation pushes
 nothing, a bracketed gesture is one step, and the clean state follows the save.
 
+`l4-window` drives the main window in process: the undo and redo actions
+follow the stack (enabled state, text, effect), the tree follows a restored
+document, the modified marker follows the clean state, and a clean document
+closes without the unsaved changes prompt.
+
 `l4-properties` checks the property view: an edited rect, point, endpoint or
 polyline row writes the model and the scene item in the same call (the state
 moves or resizes, its title is re-wrapped), the width and the height rows
