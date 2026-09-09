@@ -41,7 +41,9 @@ public:
     ~DotSignal();
 
     enum Flags {
-        Movable = 0x01
+        Movable = 0x01,
+        // a drag from the dot starts a transition (the owner draws it)
+        TransitionSource = 0x02
     };
 
     QPointF getPreviousPosition() const;
@@ -58,6 +60,7 @@ signals:
     void signalMouseRelease();
     void signalMove(QGraphicsItem *signalOwner, qreal dx, qreal dy, QPointF p);
     void signalDelete(QGraphicsItem *signalOwner);
+    void signalDragStarted(QGraphicsItem *signalOwner);
 
 protected:
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
@@ -71,6 +74,7 @@ public slots:
 private:
     unsigned int flags;
     bool deleteable;
+    bool dragArmed = false;
     QPointF previousPosition;
 };
 

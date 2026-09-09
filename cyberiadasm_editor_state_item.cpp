@@ -82,6 +82,14 @@ CyberiadaSMEditorStateItem::CyberiadaSMEditorStateItem(QObject *parent_object,
     initializeDots();
     setDotsPosition();
     hideDots();
+    // a drag from a border box draws a transition from the state
+    if (element->has_geometry()) {
+        for (int i = 0; i < 8; i++) {
+            cornerGrabber[i]->setDotFlags(DotSignal::TransitionSource);
+            connect(cornerGrabber[i], &DotSignal::signalDragStarted,
+                    this, &CyberiadaSMEditorStateItem::slotTransitionFromBox);
+        }
+    }
 }
 
 // TODO
@@ -453,15 +461,8 @@ void CyberiadaSMEditorStateItem::mousePressEvent(QGraphicsSceneMouseEvent *event
 void CyberiadaSMEditorStateItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
     if (creatingOfTrans) {
-        // the target dot of the new loop takes the drag over from here
         creatingOfTrans = false;
-        CyberiadaSMEditorScene* cScene = dynamic_cast<CyberiadaSMEditorScene*>(scene());
-        if (!cScene) return;
-        CyberiadaSMEditorTransitionItem* trans = cScene->addTransition(this, this);
-        if (!trans) return;
-        trans->setSelected(true);
-        trans->getDot(1)->setVisible(true);
-        trans->getDot(1)->grabMouse();
+        startTransition();
         return;
     }
 
@@ -489,6 +490,27 @@ void CyberiadaSMEditorStateItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
     prevItemUnderCursor->setHighlighted(false);
     prevItemUnderCursor = newParent;
     newParent->setHighlighted(true);
+}
+
+// a new loop whose target dot takes the current drag over
+void CyberiadaSMEditorStateItem::startTransition()
+{
+    CyberiadaSMEditorScene* cScene = dynamic_cast<CyberiadaSMEditorScene*>(scene());
+    if (!cScene) return;
+    CyberiadaSMEditorTransitionItem* trans = cScene->addTransition(this, this);
+    if (!trans) return;
+    trans->setSelected(true);
+    trans->getDot(1)->setVisible(true);
+    trans->getDot(1)->grabMouse();
+}
+
+void CyberiadaSMEditorStateItem::slotTransitionFromBox()
+{
+    CyberiadaSMEditorScene* cScene = dynamic_cast<CyberiadaSMEditorScene*>(scene());
+    if (!cScene || !element->has_geometry() || SettingsManager::instance().getInspectorMode()) return;
+    // the tool follows the gesture and returns with the release
+    cScene->beginTransientTool(ToolType::Transition);
+    startTransition();
 }
 
 int CyberiadaSMEditorStateItem::missingActionType() const

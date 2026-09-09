@@ -86,6 +86,7 @@ public:
 private:
     void initializeActions();
     void addAction(Cyberiada::ActionType type);
+    void startTransition();
     void updateSizeToFitChildren(CyberiadaSMEditorAbstractItem* child) override;
 
 signals:
@@ -96,6 +97,7 @@ signals:
     void aboutToDelete();
 
 private slots:
+    void slotTransitionFromBox();
     void onTextItemSizeChanged();
     void onActionDeleted(StateAction* signalOwner);
     void onActionChanged(StateAction* signalOwner);

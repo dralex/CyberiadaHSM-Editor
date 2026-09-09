@@ -92,6 +92,12 @@ void DotSignal::deleteDot()
 
 void DotSignal::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
+    if (dragArmed) {
+        // the first move after the press: a click alone starts nothing
+        dragArmed = false;
+        emit signalDragStarted(this);
+        return;
+    }
     if(flags & Movable){
         auto dx = event->scenePos().x() - previousPosition.x();
         auto dy = event->scenePos().y() - previousPosition.y();
@@ -105,7 +111,10 @@ void DotSignal::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 
 void DotSignal::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
-    if(flags & Movable){
+    if ((flags & TransitionSource) && event->button() == Qt::LeftButton) {
+        dragArmed = true;
+        event->accept();
+    } else if(flags & Movable){
         setPreviousPosition(event->scenePos());
     } else {
         QGraphicsItem::mousePressEvent(event);
@@ -114,6 +123,7 @@ void DotSignal::mousePressEvent(QGraphicsSceneMouseEvent *event)
 
 void DotSignal::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
+    dragArmed = false;
     emit signalMouseRelease();
     ungrabMouse();
     QGraphicsItem::mouseReleaseEvent(event);

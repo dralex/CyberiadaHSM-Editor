@@ -67,9 +67,14 @@ public:
 
     void  setCurrentTool(ToolType tool);
     ToolType getCurrentTool() { return currentTool; }
+    // a tool for one gesture: the select tool is back with the mouse release
+    void  beginTransientTool(ToolType tool);
 
     void addSMItem(Cyberiada::ElementType type);
     CyberiadaSMEditorTransitionItem* addTransition(CyberiadaSMEditorAbstractItem* source, CyberiadaSMEditorAbstractItem* target);
+
+signals:
+    void  toolChanged(ToolType tool);
 
 public slots:
 	void  slotElementSelected(const QModelIndex& index);
@@ -86,6 +91,7 @@ public slots:
 
 protected:
     void  drawBackground(QPainter *painter, const QRectF &);
+    void  mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
 
 private:
     void  addItemsRecursively(QGraphicsItem* parent, Cyberiada::ElementCollection* element);
@@ -106,6 +112,7 @@ private:
     QPen                           gridPen;
 
     ToolType currentTool = ToolType::Select;
+    bool transientTool = false;
 };
 
 #endif

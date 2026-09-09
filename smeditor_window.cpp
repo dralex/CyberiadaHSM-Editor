@@ -180,6 +180,7 @@ void CyberiadaSMEditorWindow::initializeTools()
     actionSelectTool->setChecked(true);
 
     connect(toolGroup, &QActionGroup::triggered, this, &CyberiadaSMEditorWindow::slotToolSelected);
+    connect(scene, &CyberiadaSMEditorScene::toolChanged, this, &CyberiadaSMEditorWindow::slotSceneToolChanged);
     emit toolGroup->triggered(actionSelectTool);
 
     // everything that modifies the document is switched off while it is inspected
@@ -258,6 +259,19 @@ void CyberiadaSMEditorWindow::slotGridVisibilityTriggered(bool on)
     SettingsManager& sm = SettingsManager::instance();
     sm.setShowGrid(on);
     // scene->enableGrid(on);
+}
+
+// the scene switched the tool itself (a drag from a border box): the
+// toolbar follows without triggering the tool again
+void CyberiadaSMEditorWindow::slotSceneToolChanged(ToolType tool)
+{
+    currentTool = tool;
+    sceneView->setCurrentTool(tool);
+    if (tool == ToolType::Transition) {
+        actionNewTransition->setChecked(true);
+    } else if (tool == ToolType::Select) {
+        actionSelectTool->setChecked(true);
+    }
 }
 
 void CyberiadaSMEditorWindow::slotNewSM()

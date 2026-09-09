@@ -26,6 +26,7 @@
 #include "cyberiadasm_editor_scene.h"
 #include "cyberiadasm_editor_transition_item.h"
 #include "cyberiadasm_editor_state_item.h"
+#include "dotsignal.h"
 #include "settings_manager.h"
 
 class TestScene: public QObject {
@@ -46,6 +47,7 @@ private slots:
 	void test_double_click_action();
 	void test_action_layout();
 	void test_border_resize();
+	void test_box_transition();
 	void test_new_state();
 	void test_new_transition();
 	void test_new_comment();
@@ -430,6 +432,49 @@ void TestScene::test_border_resize()
 	QCOMPARE(element->get_geometry_rect().width, before.width + 27);
 	QCOMPARE(element->get_geometry_rect().height, after.height);
 	QVERIFY(model->deleteAction(index, 0));
+}
+
+void TestScene::test_box_transition()
+{
+	// a drag from a border box draws a transition under a transient
+	// transition tool; the release brings the select tool back
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+	CyberiadaSMEditorStateItem* state =
+		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0-1"));
+	QVERIFY(state);
+	int transitions = countItems(CyberiadaSMEditorAbstractItem::TransitionItem);
+	scene->clearSelection();
+	state->setSelected(true);
+	DotSignal* box = nullptr;
+	for (QGraphicsItem* child : state->childItems()) {
+		DotSignal* dot = dynamic_cast<DotSignal*>(child);
+		if (dot && dot->pos() == QPointF(0, state->rect().bottom())) box = dot;
+	}
+	QVERIFY(box);
+	box->setVisible(true);
+	QPointF on = box->scenePos();
+	QVERIFY(scene->itemAt(on, QTransform()) == box);
+
+	mouse(QEvent::GraphicsSceneMousePress, on, Qt::LeftButton);
+	QCOMPARE(countItems(CyberiadaSMEditorAbstractItem::TransitionItem), transitions);
+	mouse(QEvent::GraphicsSceneMouseMove, on + QPointF(0, 30), Qt::LeftButton);
+	QCOMPARE(countItems(CyberiadaSMEditorAbstractItem::TransitionItem), transitions + 1);
+	QVERIFY(scene->getCurrentTool() == ToolType::Transition);
+	mouse(QEvent::GraphicsSceneMouseRelease, on + QPointF(0, 30), Qt::NoButton);
+	QVERIFY(scene->getCurrentTool() == ToolType::Select);
+
+	const QMap<Cyberiada::ID, QGraphicsItem*>& map = scene->getMap();
+	for (QMap<Cyberiada::ID, QGraphicsItem*>::const_iterator i = map.begin(); i != map.end(); i++) {
+		if ((*i)->type() != CyberiadaSMEditorAbstractItem::TransitionItem) continue;
+		Cyberiada::Element* e = dynamic_cast<CyberiadaSMEditorAbstractItem*>(*i)->getElement();
+		const Cyberiada::Transition* t = static_cast<const Cyberiada::Transition*>(e);
+		if (t->source_element_id() == "node-0-1" && t->target_element_id() == "node-0-1") {
+			QVERIFY(model->deleteElement(model->elementToIndex(e)));
+			break;
+		}
+	}
+	QCOMPARE(countItems(CyberiadaSMEditorAbstractItem::TransitionItem), transitions);
 }
 
 void TestScene::test_new_state()

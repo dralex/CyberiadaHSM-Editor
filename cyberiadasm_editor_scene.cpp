@@ -393,6 +393,23 @@ void CyberiadaSMEditorScene::loadScene()
 
 void CyberiadaSMEditorScene::setCurrentTool(ToolType tool) {
     currentTool = tool;
+    transientTool = false;
+}
+
+void CyberiadaSMEditorScene::beginTransientTool(ToolType tool)
+{
+    currentTool = tool;
+    transientTool = true;
+    emit toolChanged(tool);
+}
+
+void CyberiadaSMEditorScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* event)
+{
+    QGraphicsScene::mouseReleaseEvent(event);
+    if (transientTool) {
+        setCurrentTool(ToolType::Select);
+        emit toolChanged(ToolType::Select);
+    }
 }
 
 void CyberiadaSMEditorScene::addSMItem(Cyberiada::ElementType type)

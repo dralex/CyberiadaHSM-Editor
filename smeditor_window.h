@@ -57,6 +57,7 @@ public slots:
     void                    slotShowTransitionActionTriggered(bool on);
     void                    slotSnapModeTriggered(bool on);
     void                    slotToolSelected(QAction *action);
+    void                    slotSceneToolChanged(ToolType tool);
     void                    slotFitContent();
     void                    slotPreferences();
     void                    slotGridVisibilityTriggered(bool on);
