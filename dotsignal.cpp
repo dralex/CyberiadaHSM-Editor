@@ -26,6 +26,7 @@
 #include <QGraphicsSceneHoverEvent>
 #include <QGraphicsSceneMouseEvent>
 #include <QKeyEvent>
+#include <QCursor>
 #include "dotsignal.h"
 
 #include <QDebug>
@@ -133,6 +134,10 @@ void DotSignal::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
 {
     Q_UNUSED(event)
     setBrush(QBrush(Qt::red));
+    // the box starts a transition, not a resize: its own cursor says so
+    if (flags & TransitionSource) {
+        setCursor(QCursor(Qt::CrossCursor));
+    }
 }
 
 void DotSignal::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
@@ -141,4 +146,5 @@ void DotSignal::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
     if (!hasFocus()) {
         setBrush(QBrush(Qt::green));
     }
+    unsetCursor();
 }
