@@ -1,9 +1,9 @@
 == text
     Simple State: {id: 'n0', role: title, font: 'Cyberiada Mono' 12 bold, pos: (-50; -30), size: (100; 27), text: 'Off'}
-    Simple State: {id: 'n0', role: action, font: 'Cyberiada Mono' 12, pos: (-35; -19), size: (70; 65), text: 'entry / off();'}
+    Simple State: {id: 'n0', role: action, font: 'Cyberiada Mono' 12, pos: (-35; -3), size: (70; 65), text: 'entry / off();'}
     Simple State: {id: 'n1', role: title, font: 'Cyberiada Mono' 12 bold, pos: (-50; -30), size: (100; 27), text: 'On'}
-    Simple State: {id: 'n1', role: action, font: 'Cyberiada Mono' 12, pos: (-35; -51), size: (70; 65), text: 'entry / on();'}
-    Simple State: {id: 'n1', role: action, font: 'Cyberiada Mono' 12, pos: (-35; 14), size: (70; 65), text: 'exit / cleanup();'}
+    Simple State: {id: 'n1', role: action, font: 'Cyberiada Mono' 12, pos: (-35; -35), size: (70; 65), text: 'exit / cleanup();'}
+    Simple State: {id: 'n1', role: action, font: 'Cyberiada Mono' 12, pos: (-35; -3), size: (70; 65), text: 'entry / on();'}
     Comment: {id: 'cX', role: comment, font: 'Cyberiada Mono' 12, pos: (-33; -20), size: (66; 27), text: 'A note'}
     Transition: {id: 'init-n0', role: transition, font: 'Cyberiada Mono' 12, pos: (-459; -358), size: (8; 27), text: ''}
     Transition: {id: 'n0-n1', role: transition, font: 'Cyberiada Mono' 12, pos: (-439; -323), size: (258; 27), text: 'TURN_ON [ready] / start();'}

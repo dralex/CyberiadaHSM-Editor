@@ -229,24 +229,8 @@ void CyberiadaSMEditorStateItem::setTextPosition()
     QRectF titleRect = title->boundingRect();
     title->setPos(oldRect.x() + (oldRect.width() - titleRect.width()) / 2 , oldRect.y());
 
-    // simple state
-    if (state->is_simple_state()) {
-        if (entry != nullptr && exit != nullptr) {
-            float delta = (entry->boundingRect().height() + exit->boundingRect().height());
-            entry->setPos(oldRect.x() + 15, oldRect.y() + (height() + titleRect.height() - delta) / 2);
-            exit->setPos(entry->pos() + QPointF(0, entry->boundingRect().height()));
-            return;
-        }
-        if (entry != nullptr) {
-            entry->setPos(oldRect.x() + 15, oldRect.y() + (height() + titleRect.height() - entry->boundingRect().height()) / 2);
-        }
-        if (exit != nullptr) {
-            exit->setPos(oldRect.x() + 15, oldRect.y() + (height() + titleRect.height() - exit->boundingRect().height()) / 2);
-        }
-        return;
-    }
-
-    // composite state
+    // the entry is pinned to the top-left of the region under the title and
+    // the exit to its bottom-left, in the simple and the composite state alike
     if (entry != nullptr) {
         entry->setPos(oldRect.x() + 15, oldRect.y() + titleRect.height());
     }

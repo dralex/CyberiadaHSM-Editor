@@ -44,6 +44,7 @@ private slots:
 	void test_action_edit();
 	void test_body_drag();
 	void test_double_click_action();
+	void test_action_layout();
 	void test_new_state();
 	void test_new_transition();
 	void test_new_comment();
@@ -363,6 +364,33 @@ void TestScene::test_double_click_action()
 	QVERIFY(model->deleteAction(index, 1));
 	QVERIFY(model->deleteAction(index, 0));
 	QCOMPARE(state->missingActionType(), int(Cyberiada::actionEntry));
+}
+
+void TestScene::test_action_layout()
+{
+	// the entry sits under the title at the left, the exit at the bottom left
+	CyberiadaSMEditorStateItem* state =
+		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0-0-2"));
+	QVERIFY(state);
+	QModelIndex index = model->elementToIndex(model->idToElement("node-0-0-2"));
+	QVERIFY(model->newAction(index, Cyberiada::actionEntry, QString(), QString(), "in()"));
+	QVERIFY(model->newAction(index, Cyberiada::actionExit, QString(), QString(), "out()"));
+	StateTitle* title = nullptr;
+	StateAction* entry = nullptr;
+	StateAction* exit = nullptr;
+	for (QGraphicsItem* child : state->childItems()) {
+		if (StateTitle* t = dynamic_cast<StateTitle*>(child)) title = t;
+		if (StateAction* a = dynamic_cast<StateAction*>(child)) {
+			if (a->toPlainText().startsWith("entry")) entry = a;
+			if (a->toPlainText().startsWith("exit")) exit = a;
+		}
+	}
+	QVERIFY(title && entry && exit);
+	QRectF rect = state->rect();
+	QCOMPARE(entry->pos(), QPointF(rect.x() + 15, rect.y() + title->boundingRect().height()));
+	QCOMPARE(exit->pos(), QPointF(rect.x() + 15, rect.bottom() - exit->boundingRect().height()));
+	QVERIFY(model->deleteAction(index, 1));
+	QVERIFY(model->deleteAction(index, 0));
 }
 
 void TestScene::test_new_state()
