@@ -209,6 +209,36 @@ add_l2_test(update-id geometry)
 add_l2_test(subjects hierarchy)
 add_l2_test(transition-subjects comment-transition)
 
+# The undo test suite: a script edits and undoes (or redoes) through the
+# batch verbs, and the dump must equal an EXISTING good file - the untouched
+# diagram's L1 dump after the undo, the edited L2 dump after the redo - so the
+# cases own no reference file (see docs/TESTING.md)
+function(add_undo_test case diagram good)
+  set(_save)
+  if(ARGC GREATER 3)
+    set(_save
+      -DSAVE_OUT=${CMAKE_CURRENT_BINARY_DIR}/undo-${case}.graphml
+      -DSAVE_GOOD=${CMAKE_CURRENT_SOURCE_DIR}/good/${ARGV3}-output.graphml)
+  endif()
+  add_test(NAME undo-${case}
+    COMMAND ${CMAKE_COMMAND}
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
+      -DINPUT=diagrams/${diagram}.graphml
+      -DSCRIPT=scripts/${case}.script
+      -DEXPECTED=0
+      -DWORKDIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/undo-${case}.out
+      -DDUMP_GOOD=${CMAKE_CURRENT_SOURCE_DIR}/good/${good}-output.txt
+      ${_save}
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunBatchTest.cmake)
+  set_tests_properties(undo-${case} PROPERTIES
+    TIMEOUT 60
+    ENVIRONMENT "${L0_ENVIRONMENT}")
+endfunction()
+
+add_undo_test(undo-all hierarchy hierarchy)
+add_undo_test(redo-all geometry rename-move rename-move)
+
 # The reconstruction test suite: the document is loaded with the library's
 # geometry reconstruction, then the scene dump and the saved document are
 # compared with the good files; the -sm cases create the state machine border

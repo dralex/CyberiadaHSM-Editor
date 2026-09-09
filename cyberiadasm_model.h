@@ -25,6 +25,7 @@
 #define CYBERIADA_SM_MODEL_HEADER
 
 #include <QAbstractItemModel>
+#include <QUndoStack>
 #include <QIcon>
 #include <QDateTime>
 #include <cyberiada/cyberiadamlpp.h>
@@ -141,21 +142,33 @@ public:
 
 	const Cyberiada::LocalDocument*     rootDocument() const;
 	Cyberiada::LocalDocument*           rootDocument();
+
+	// UNDO: one step per user gesture, the whole document snapshotted
+	// around the mutations between the two calls (the calls nest; an
+	// unbracketed mutation is a step of its own)
+	QUndoStack*                         undoStack() { return undo; }
+	void                                beginUndoStep(const QString& text);
+	void                                endUndoStep();
+	void                                restoreSnapshot(const std::string& snapshot);
 	const Cyberiada::Element*           indexToElement(const QModelIndex& index) const;
 	Cyberiada::Element*                 indexToElement(const QModelIndex& index);
 	const Cyberiada::Element*           idToElement(const QString& id) const;
 	Cyberiada::Element*                 idToElement(const QString& id);
 	
-signals:
-    void                                modelAboutToBeReset();
-	void                                modelReset();
-
 private:
+	std::string                         snapshot() const;
 	void                                move(Cyberiada::Element* element, Cyberiada::ElementCollection* target_parent);
 	void                                declareGeometry(Cyberiada::DocumentFormat f, bool skip_geometry);
 	
 	Cyberiada::LocalDocument*           root;
 	QString                             lastLoadError;
+	QUndoStack*                         undo;
+	int                                 undoDepth;
+	QString                             undoText;
+	std::string                         undoBefore;
+	// the file identity, restored after a snapshot decode
+	QString                             filePath;
+	Cyberiada::DocumentFormat           fileFormat;
 	QString							   	cyberiadaStateMimeType;
 	QIcon                              	emptyIcon;
 	QMap<Cyberiada::ElementType, QIcon> icons;

@@ -24,6 +24,7 @@
 #include <sstream>
 
 #include <QtTest>
+#include <functional>
 #include <QAbstractItemModelTester>
 #include "cyberiadasm_model.h"
 #include "settings_manager.h"
@@ -46,6 +47,7 @@ private slots:
 	void test_read_only();
 	void test_delete();
 	void test_geometry_declaration();
+	void test_undo_redo();
 
 private:
 	QModelIndex indexOf(const char* id);
@@ -311,6 +313,89 @@ void TestModel::test_geometry_declaration()
 	QVERIFY(model->updateMetainformation(doc, CYBERIADA_META_GEOMETRY, ""));
 	QCOMPARE(meta.get_geometry(), Cyberiada::geometryDeclarationAbsent);
 	QVERIFY(meta.get_string(CYBERIADA_META_GEOMETRY).empty());
+}
+
+void TestModel::test_undo_redo()
+{
+	// every mutation is one undo step that brings the exact document back;
+	// the elements are re-resolved by id, the restore replaces them all
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	QUndoStack* stack = model->undoStack();
+	QCOMPARE(stack->count(), 0);
+	QVERIFY(stack->isClean());
+
+	QString d0 = documentDump();
+	QVERIFY(model->updateTitle(indexOf("node-0-1"), "Undone"));
+	QString d1 = documentDump();
+	QVERIFY(d1 != d0);
+	QCOMPARE(stack->count(), 1);
+	QVERIFY(!stack->isClean());
+	stack->undo();
+	QCOMPARE(documentDump(), d0);
+	// the file identity survives the restore
+	QCOMPARE(QString(model->rootDocument()->get_file_path().c_str()), QString("diagrams/geometry.graphml"));
+	QCOMPARE(int(model->rootDocument()->get_file_format()), int(Cyberiada::formatCyberiada10));
+	stack->redo();
+	QCOMPARE(documentDump(), d1);
+
+	// a refused mutation pushes nothing
+	QVERIFY(!model->updateTitle(indexOf("node-0-1"), ""));
+	QCOMPARE(stack->count(), 1);
+
+	// a bracketed gesture is one step whatever it writes
+	model->beginUndoStep("gesture");
+	QVERIFY(model->updateGeometry(indexOf("node-0-1"), Cyberiada::Rect(390, 15, 150, 150)));
+	QVERIFY(model->updateGeometry(indexOf("node-0-1"), Cyberiada::Rect(400, 25, 150, 150)));
+	QVERIFY(model->updateGeometry(indexOf("node-0-1"), Cyberiada::Rect(410, 35, 160, 160)));
+	model->endUndoStep();
+	QCOMPARE(stack->count(), 2);
+	stack->undo();
+	QCOMPARE(documentDump(), d1);
+	stack->redo();
+
+	// the structural mutations: each restores exactly
+	struct Case { const char* name; std::function<bool()> run; };
+	QList<Case> cases = {
+		{"delete a state with its transitions", [&]() { return model->deleteElement(indexOf("node-0-0-1")); }},
+		{"reparent", [&]() { return model->updateParent(indexOf("node-0-1"), "node-0-0"); }},
+		{"new state", [&]() { return model->newState(static_cast<Cyberiada::ElementCollection*>(
+			model->idToElement("node-0")), "Fresh", Cyberiada::Action(), Cyberiada::Rect(0, 0, 100, 50)) != NULL; }},
+		{"new action", [&]() { return model->newAction(indexOf("node-0-0-2"), Cyberiada::actionEntry, "", "", "in()"); }},
+		{"update action", [&]() { return model->updateAction(indexOf("node-0-0-2"), 0, "", "", "out()"); }},
+		{"delete action", [&]() { return model->deleteAction(indexOf("node-0-0-2"), 0); }},
+		{"id", [&]() { return model->updateID(indexOf("node-0-1"), "renamed-id"); }},
+		{"metainformation", [&]() { return model->updateMetainformation(model->documentIndex(), "name", "undone"); }},
+	};
+	for (const Case& c : cases) {
+		QString before = documentDump();
+		int steps = stack->count();
+		QVERIFY2(c.run(), c.name);
+		QString after = documentDump();
+		QVERIFY2(after != before, c.name);
+		QVERIFY2(stack->count() > steps, c.name);
+		while (stack->count() > steps && stack->canUndo() && stack->index() > steps) stack->undo();
+		QVERIFY2(documentDump() == before, c.name);
+		while (stack->canRedo()) stack->redo();
+		QString redone = documentDump();
+		if (redone != after) {
+			int at = 0;
+			while (at < redone.size() && at < after.size() && redone[at] == after[at]) at++;
+			qWarning() << c.name << "differs at" << at
+					   << "\n  after:" << after.mid(qMax(0, at - 60), 160)
+					   << "\n  redone:" << redone.mid(qMax(0, at - 60), 160);
+		}
+		QVERIFY2(redone == after, c.name);
+	}
+
+	// the clean state follows the save
+	QTemporaryDir dir;
+	QVERIFY(dir.isValid());
+	model->saveAsDocument(dir.filePath("undo.graphml"), Cyberiada::formatCyberiada10);
+	QVERIFY(stack->isClean());
+	QVERIFY(model->updateTitle(indexOf("node-0-0-2"), "Dirty"));
+	QVERIFY(!stack->isClean());
+	stack->undo();
+	QVERIFY(stack->isClean());
 }
 
 QTEST_MAIN(TestModel)

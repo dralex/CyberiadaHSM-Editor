@@ -45,6 +45,7 @@ private:
     void                    initializeTools();
 
 private slots:
+    void                    slotModelReset();
     void                    slotInspectorModeChanged(bool on);
     void                    slotServiceObjectsChanged(bool on);
 

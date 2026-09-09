@@ -155,6 +155,12 @@ static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QStri
 		if (!target) { *error = "unknown target id '" + tokens.at(3) + "'"; return false; }
 		Cyberiada::Action action(restOfLine(tokens, 4).toStdString());
 		return model->newTransition(sm, Cyberiada::transitionExternal, source, target, action) != NULL;
+	} else if (cmd == "undo") {
+		model->undoStack()->undo();
+		return true;
+	} else if (cmd == "redo") {
+		model->undoStack()->redo();
+		return true;
 	} else if (cmd == "update-meta") {
 		if (tokens.size() < 3) { *error = "update-meta requires <parameter> <value>"; return false; }
 		QString param = tokens.at(1);
@@ -358,6 +364,9 @@ bool runEditScript(CyberiadaSMModel* model, const QString& path, QString* error)
 		QStringList tokens = trimmed.split(QRegularExpression("\\s+"));
 		QString message;
 		bool ok = false;
+		// every command is one undo step; undo/redo themselves are not
+		bool step = tokens.first() != "undo" && tokens.first() != "redo";
+		if (step) model->beginUndoStep(tokens.first());
 		try {
 			ok = runCommand(model, tokens, &message);
 			if (!ok && message.isEmpty()) {
@@ -366,6 +375,7 @@ bool runEditScript(CyberiadaSMModel* model, const QString& path, QString* error)
 		} catch (const Cyberiada::Exception& e) {
 			message = QString(e.str().c_str());
 		}
+		if (step) model->endUndoStep();
 		if (!ok) {
 			*error = QString("line %1: %2").arg(lineno).arg(message);
 			return false;

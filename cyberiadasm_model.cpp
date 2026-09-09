@@ -28,6 +28,7 @@
 #include <QDebug>
 
 #include "cyberiadasm_model.h"
+#include "cyberiadasm_undo.h"
 #include "settings_manager.h"
 #include "myassert.h"
 #include "cyberiada_constants.h"
@@ -36,6 +37,10 @@ CyberiadaSMModel::CyberiadaSMModel(QObject *parent):
 	QAbstractItemModel(parent)
 {
 	root = NULL;
+	undo = new QUndoStack(this);
+	undo->setUndoLimit(100);
+	undoDepth = 0;
+	fileFormat = Cyberiada::formatCyberiada10;
 	icons[Cyberiada::elementRoot] = QIcon(":/Icons/images/sm-root.png");
 	icons[Cyberiada::elementSM] = QIcon(":/Icons/images/sm.png");
 	icons[Cyberiada::elementSimpleState] = QIcon(":/Icons/images/state.png");
@@ -96,7 +101,10 @@ bool CyberiadaSMModel::loadDocument(const QString& path, bool reconstruct, bool 
 		delete root;
 	}
 	root = new_doc;
+	filePath = QString(root->get_file_path().c_str());
+	fileFormat = root->get_file_format();
 	endResetModel();
+	undo->clear();
 	return true;
 }
 
@@ -104,6 +112,74 @@ bool CyberiadaSMModel::readOnly() const
 {
 	return SettingsManager::instance().getInspectorMode();
 }
+
+// the snapshot is the Cyberiada 1.0 encoding of the document in memory; an
+// absent or empty document encodes as an empty string
+std::string CyberiadaSMModel::snapshot() const
+{
+	if (!root) return std::string();
+	std::string buffer;
+	try {
+		root->encode(buffer, Cyberiada::formatCyberiada10);
+	} catch (const Cyberiada::Exception& e) {
+		qWarning() << "cannot snapshot the document:" << e.str().c_str();
+		return std::string();
+	}
+	return buffer;
+}
+
+void CyberiadaSMModel::beginUndoStep(const QString& text)
+{
+	if (undoDepth++ == 0) {
+		undoText = text;
+		undoBefore = snapshot();
+	} else if (undoText.isEmpty()) {
+		// the gesture is named by its first mutation
+		undoText = text;
+	}
+}
+
+void CyberiadaSMModel::endUndoStep()
+{
+	if (undoDepth == 0) return;
+	if (--undoDepth > 0) return;
+	std::string after = snapshot();
+	if (after == undoBefore) return;
+	undo->push(new DocumentStep(this, undoText.isEmpty() ? tr("edit") : undoText, undoBefore, after));
+}
+
+void CyberiadaSMModel::restoreSnapshot(const std::string& snapshot)
+{
+	beginResetModel();
+	if (!root) {
+		root = new Cyberiada::LocalDocument();
+	}
+	if (snapshot.empty()) {
+		root->reset();
+	} else {
+		// the format argument is the input hint as well as the detected result
+		Cyberiada::DocumentFormat f = Cyberiada::formatDetect;
+		Cyberiada::String format_str;
+		try {
+			root->decode(snapshot, f, format_str, Cyberiada::geometryFormatQt);
+		} catch (const Cyberiada::Exception& e) {
+			// the snapshot came from this very document: a failure is a defect
+			qWarning() << "cannot restore the document:" << e.str().c_str();
+		}
+	}
+	// the decode resets the file identity with the rest of the document
+	root->set_file(filePath.toStdString(), fileFormat);
+	endResetModel();
+}
+
+// the mutations of one call form one step unless a gesture is open
+class UndoScope {
+public:
+	UndoScope(CyberiadaSMModel* model, const QString& text): model(model) { model->beginUndoStep(text); }
+	~UndoScope() { model->endUndoStep(); }
+private:
+	CyberiadaSMModel* model;
+};
 
 // the written document declares its geometry (7.1): the editor writes the
 // exact sizes or none at all; the yEd formats carry no metainformation
@@ -126,6 +202,7 @@ void CyberiadaSMModel::saveDocument(bool round)
 	if (root && !root->get_file_path().empty()) {
 		declareGeometry(root->get_file_format(), false);
 		root->save(round);
+		undo->setClean();
 	}
 }
 
@@ -137,6 +214,9 @@ void CyberiadaSMModel::saveAsDocument(const QString& path, Cyberiada::DocumentFo
 		declareGeometry(f, skip_geometry);
 		root->save_as(path.toStdString(), f, round, skip_geometry, check_initial,
 					  strict_actions, skip_empty_behavior);
+		filePath = QString(root->get_file_path().c_str());
+		fileFormat = root->get_file_format();
+		undo->setClean();
 	}
 }
 
@@ -145,6 +225,9 @@ void CyberiadaSMModel::saveAsDocument(const QString& path, Cyberiada::DocumentFo
 	if (root) {
 		declareGeometry(f, false);
 		root->save_as(path.toStdString(), f, round);
+		filePath = QString(root->get_file_path().c_str());
+		fileFormat = root->get_file_format();
+		undo->setClean();
 	}
 }
 
@@ -234,6 +317,7 @@ bool CyberiadaSMModel::setData(const QModelIndex& index, const QVariant& value, 
 bool CyberiadaSMModel::updateID(const QModelIndex& index, const QString& new_value)
 {
 	if (readOnly()) return false;
+	UndoScope scope(this, tr("id"));
 	Cyberiada::Element* element = indexToElement(index);
 	if (!element) return false;
 	if (new_value.size() == 0) {
@@ -289,6 +373,7 @@ static bool siblingStateNamed(const Cyberiada::Element* element, const Cyberiada
 bool CyberiadaSMModel::updateTitle(const QModelIndex& index, const QString& new_value)
 {
 	if (readOnly()) return false;
+	UndoScope scope(this, tr("rename"));
 	Cyberiada::Element* element = indexToElement(index);
 	if (!element) return false;
 	Cyberiada::Name new_name(new_value.toStdString());
@@ -315,6 +400,7 @@ bool CyberiadaSMModel::updateAction(const QModelIndex& index,
 									const QString& new_behaviour)
 {
 	if (readOnly()) return false;
+	UndoScope scope(this, tr("action"));
 	Cyberiada::Element* element = indexToElement(index);
 	if (!element) return false;
 	if (element->get_type() == Cyberiada::elementSimpleState || element->get_type() == Cyberiada::elementCompositeState) {
@@ -347,6 +433,7 @@ bool CyberiadaSMModel::newAction(const QModelIndex& index, Cyberiada::ActionType
 								 const QString& behaviour)
 {
 	if (readOnly()) return false;
+	UndoScope scope(this, tr("action"));
 	Cyberiada::Element* element = indexToElement(index);
 	if (!element) return false;
 	if (element->get_type() == Cyberiada::elementSimpleState || element->get_type() == Cyberiada::elementCompositeState) {
@@ -378,6 +465,7 @@ bool CyberiadaSMModel::newAction(const QModelIndex& index, Cyberiada::ActionType
 bool CyberiadaSMModel::deleteAction(const QModelIndex& index, int action_index)
 {
 	if (readOnly()) return false;
+	UndoScope scope(this, tr("action"));
 	Cyberiada::Element* element = indexToElement(index);
 	if (!element) return false;
 	if (element->get_type() == Cyberiada::elementSimpleState || element->get_type() == Cyberiada::elementCompositeState) {
@@ -403,6 +491,7 @@ bool CyberiadaSMModel::deleteAction(const QModelIndex& index, int action_index)
 bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada::Point& point)
 {
 	if (readOnly()) return false;
+	UndoScope scope(this, tr("geometry"));
 	Cyberiada::Element* element = indexToElement(index);
 	if (!element) return false;
 	if (!element->has_point_geometry()) return false;
@@ -415,6 +504,7 @@ bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada:
 bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada::Rect& rect)
 {
 	if (readOnly()) return false;
+	UndoScope scope(this, tr("geometry"));
 	Cyberiada::Element* element = indexToElement(index);
     if (!element) return false;
     if (!element->has_rect_geometry()) return false;
@@ -435,6 +525,7 @@ bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada:
 bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada::Point& source, const Cyberiada::Point& target)
 {
 	if (readOnly()) return false;
+	UndoScope scope(this, tr("geometry"));
 	Cyberiada::Element* element = indexToElement(index);
 	if (!element) return false;
 	if (element->get_type() != Cyberiada::elementTransition) return false;
@@ -448,6 +539,7 @@ bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada:
 bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada::Polyline& pl)
 {
 	if (readOnly()) return false;
+	UndoScope scope(this, tr("geometry"));
 	Cyberiada::Element* element = indexToElement(index);
 	if (!element) return false;
 	if (element->get_type() != Cyberiada::elementTransition) return false;
@@ -461,6 +553,7 @@ bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada:
 bool CyberiadaSMModel::updateGeometry(const QModelIndex &index, const Cyberiada::ID &source, const Cyberiada::ID &target)
 {
 	if (readOnly()) return false;
+	UndoScope scope(this, tr("geometry"));
     Cyberiada::Element* element = indexToElement(index);
     if (!element) return false;
     if (element->get_type() != Cyberiada::elementTransition) return false;
@@ -478,6 +571,7 @@ bool CyberiadaSMModel::updateGeometry(const QModelIndex &index, const Cyberiada:
 bool CyberiadaSMModel::updateParent(const QModelIndex &index, const Cyberiada::ID &new_parent_id)
 {
 	if (readOnly()) return false;
+	UndoScope scope(this, tr("reparent"));
     Cyberiada::Element* element = indexToElement(index);
     if (!element) return false;
     Cyberiada::ElementCollection* new_parent = dynamic_cast<Cyberiada::ElementCollection*>(idToElement(new_parent_id.c_str()));
@@ -493,6 +587,7 @@ bool CyberiadaSMModel::updateParent(const QModelIndex &index, const Cyberiada::I
 bool CyberiadaSMModel::updateCommentBody(const QModelIndex& index, const QString& body)
 {
 	if (readOnly()) return false;
+	UndoScope scope(this, tr("comment"));
 	Cyberiada::Element* element = indexToElement(index);
 	if (!element) return false;
 	if (element->get_type() != Cyberiada::elementComment &&
@@ -505,6 +600,7 @@ bool CyberiadaSMModel::updateCommentBody(const QModelIndex& index, const QString
 bool CyberiadaSMModel::updateMetainformation(const QModelIndex& index, const QString& parameter, const QString& new_value)
 {
 	if (readOnly()) return false;
+	UndoScope scope(this, tr("metainformation"));
 	if (!root || index != documentIndex()) {
 		return false;
 	}
@@ -531,6 +627,9 @@ bool CyberiadaSMModel::updateMetainformation(const QModelIndex& index, const QSt
 		else if (value == CYBERIADA_META_GEOM_FULL) meta.set_geometry(Cyberiada::geometryDeclarationFull);
 		else if (value.empty()) meta.set_geometry(Cyberiada::geometryDeclarationAbsent);
 		else return false;
+	} else if (name == CYBERIADA_META_NAME) {
+		// the document name and its metainformation entry are one thing
+		root->set_name(value);
 	} else {
 		meta.set_string(name, value);
 	}
@@ -558,6 +657,7 @@ static int newElementRow(Cyberiada::ElementCollection* parent)
 Cyberiada::StateMachine *CyberiadaSMModel::newStateMachine(const Cyberiada::String &sm_name, const Cyberiada::Rect &r)
 {
 	if (readOnly()) return NULL;
+	UndoScope scope(this, tr("new state machine"));
     if (root == NULL) {
         root = new Cyberiada::LocalDocument();
     }
@@ -575,6 +675,7 @@ Cyberiada::State *CyberiadaSMModel::newState(Cyberiada::ElementCollection *paren
                                              const Cyberiada::Color &color)
 {
 	if (readOnly()) return NULL;
+	UndoScope scope(this, tr("new state"));
     if (root == NULL) {
         return nullptr;
     }
@@ -590,6 +691,7 @@ Cyberiada::State *CyberiadaSMModel::newState(Cyberiada::ElementCollection *paren
 Cyberiada::InitialPseudostate *CyberiadaSMModel::newInitial(Cyberiada::ElementCollection *parent, const Cyberiada::Point &p)
 {
 	if (readOnly()) return NULL;
+	UndoScope scope(this, tr("new element"));
     if (root == NULL) {
         return nullptr;
     }
@@ -605,6 +707,7 @@ Cyberiada::InitialPseudostate *CyberiadaSMModel::newInitial(Cyberiada::ElementCo
 Cyberiada::FinalState *CyberiadaSMModel::newFinal(Cyberiada::ElementCollection *parent, const Cyberiada::Point &p)
 {
 	if (readOnly()) return NULL;
+	UndoScope scope(this, tr("new element"));
     if (root == NULL) {
         return nullptr;
     }
@@ -621,6 +724,7 @@ Cyberiada::ChoicePseudostate *CyberiadaSMModel::newChoice(Cyberiada::ElementColl
                                                           const Cyberiada::Color &color)
 {
 	if (readOnly()) return NULL;
+	UndoScope scope(this, tr("new element"));
     if (root == NULL) {
         return nullptr;
     }
@@ -636,6 +740,7 @@ Cyberiada::ChoicePseudostate *CyberiadaSMModel::newChoice(Cyberiada::ElementColl
 Cyberiada::TerminatePseudostate *CyberiadaSMModel::newTerminate(Cyberiada::ElementCollection *parent, const Cyberiada::Point &p)
 {
 	if (readOnly()) return NULL;
+	UndoScope scope(this, tr("new element"));
     if (root == NULL) {
         return nullptr;
     }
@@ -656,6 +761,7 @@ Cyberiada::Transition *CyberiadaSMModel::newTransition(Cyberiada::StateMachine *
                                                        const Cyberiada::Color &color)
 {
 	if (readOnly()) return NULL;
+	UndoScope scope(this, tr("new transition"));
     if (root == NULL) {
         return nullptr;
     }
@@ -672,6 +778,7 @@ Cyberiada::Comment *CyberiadaSMModel::newComment(Cyberiada::ElementCollection *p
                                                  const Cyberiada::Rect &rect, const Cyberiada::Color &color, const Cyberiada::String &markup)
 {
 	if (readOnly()) return NULL;
+	UndoScope scope(this, tr("new comment"));
     if (root == NULL) {
         return nullptr;
     }
@@ -689,6 +796,7 @@ Cyberiada::Comment *CyberiadaSMModel::newFormalComment(Cyberiada::ElementCollect
                                                        const Cyberiada::String &markup)
 {
 	if (readOnly()) return NULL;
+	UndoScope scope(this, tr("new comment"));
     if (root == NULL) {
         return nullptr;
     }
@@ -705,6 +813,7 @@ bool CyberiadaSMModel::newCommentSubject(const QModelIndex& index, Cyberiada::El
                                          Cyberiada::CommentSubjectType type, const QString& fragment)
 {
 	if (readOnly()) return false;
+	UndoScope scope(this, tr("subject"));
     Cyberiada::Element* element = indexToElement(index);
     if (!element) return false;
     if (element->get_type() != Cyberiada::elementComment &&
@@ -724,6 +833,7 @@ bool CyberiadaSMModel::newCommentSubject(const QModelIndex& index, Cyberiada::El
 bool CyberiadaSMModel::deleteCommentSubject(const QModelIndex& index, int subject_index)
 {
 	if (readOnly()) return false;
+	UndoScope scope(this, tr("subject"));
     Cyberiada::Element* element = indexToElement(index);
     if (!element) return false;
     if (element->get_type() != Cyberiada::elementComment &&
@@ -752,6 +862,7 @@ static void collectElements(Cyberiada::Element* element, Cyberiada::ElementList*
 bool CyberiadaSMModel::deleteElement(const QModelIndex &index)
 {
 	if (readOnly()) return false;
+	UndoScope scope(this, tr("delete"));
     Cyberiada::Element* child_element = indexToElement(index);
     if (!child_element) return false;
     Cyberiada::ElementCollection* parent_element = dynamic_cast<Cyberiada::ElementCollection*>(child_element->get_parent());
@@ -1161,6 +1272,7 @@ bool CyberiadaSMModel::dropMimeData(const QMimeData *data,
                                     const QModelIndex &parent)
 {
 	if (readOnly()) return false;
+	UndoScope scope(this, tr("reparent"));
     if(action == Qt::IgnoreAction) {
 		return true;
 	}

@@ -66,7 +66,36 @@ CyberiadaSMEditorScene::CyberiadaSMEditorScene(CyberiadaSMModel* _model, QObject
     connect(model, &CyberiadaSMModel::dataChanged, this, &CyberiadaSMEditorScene::slotModelDataChanged);
     connect(model, &CyberiadaSMModel::rowsInserted, this, &CyberiadaSMEditorScene::slotRowsInserted);
     connect(model, &CyberiadaSMModel::rowsAboutToBeRemoved, this, &CyberiadaSMEditorScene::slotRowsAboutToBeRemoved);
+    connect(model, &CyberiadaSMModel::modelAboutToBeReset, this, &CyberiadaSMEditorScene::slotModelAboutToBeReset);
+    connect(model, &CyberiadaSMModel::modelReset, this, &CyberiadaSMEditorScene::slotModelReset);
     reset();
+}
+
+// a snapshot restore replaces every element: the items are rebuilt and the
+// selection is brought back by id
+void CyberiadaSMEditorScene::slotModelAboutToBeReset()
+{
+    selectedBeforeReset.clear();
+    for (QGraphicsItem* item : selectedItems()) {
+        CyberiadaSMEditorAbstractItem* cItem = dynamic_cast<CyberiadaSMEditorAbstractItem*>(item);
+        if (cItem) selectedBeforeReset.append(cItem->getId());
+    }
+}
+
+void CyberiadaSMEditorScene::slotModelReset()
+{
+    if (model->firstSMIndex().isValid()) {
+        loadScene(false);
+    } else {
+        elementIdToItemMap.clear();
+        clear();
+        currentSM = NULL;
+    }
+    for (const Cyberiada::ID& id : selectedBeforeReset) {
+        QGraphicsItem* item = elementIdToItemMap.value(id);
+        if (item) item->setSelected(true);
+    }
+    selectedBeforeReset.clear();
 }
 
 CyberiadaSMEditorScene::~CyberiadaSMEditorScene()
@@ -355,7 +384,7 @@ void CyberiadaSMEditorScene::setGridPen(const QPen &pen)
     update();
 }
 
-void CyberiadaSMEditorScene::loadScene()
+void CyberiadaSMEditorScene::loadScene(bool fit)
 {
     elementIdToItemMap.clear();
 
@@ -385,7 +414,7 @@ void CyberiadaSMEditorScene::loadScene()
         }
     }
     setSceneRect(bounds.adjusted(-margin, -margin, margin, margin));
-    if (!views().isEmpty()) {
+    if (fit && !views().isEmpty()) {
         views().first()->fitInView(sceneRect(), Qt::KeepAspectRatio);
     }
     update();
@@ -403,6 +432,13 @@ void CyberiadaSMEditorScene::beginTransientTool(ToolType tool)
     emit toolChanged(tool);
 }
 
+// a mouse gesture is one undo step whatever it writes on the way
+void CyberiadaSMEditorScene::mousePressEvent(QGraphicsSceneMouseEvent* event)
+{
+    model->beginUndoStep(QString());
+    QGraphicsScene::mousePressEvent(event);
+}
+
 void CyberiadaSMEditorScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* event)
 {
     QGraphicsScene::mouseReleaseEvent(event);
@@ -410,6 +446,7 @@ void CyberiadaSMEditorScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* event)
         setCurrentTool(ToolType::Select);
         emit toolChanged(ToolType::Select);
     }
+    model->endUndoStep();
 }
 
 void CyberiadaSMEditorScene::addSMItem(Cyberiada::ElementType type)

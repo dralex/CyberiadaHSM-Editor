@@ -55,6 +55,14 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
 
     connect(SMView, SIGNAL(currentIndexActivated(QModelIndex)),
             scene, SLOT(slotElementSelected(QModelIndex)));
+    connect(model, &CyberiadaSMModel::modelReset, this, &CyberiadaSMEditorWindow::slotModelReset);
+}
+
+// the tree follows a restored document
+void CyberiadaSMEditorWindow::slotModelReset()
+{
+    SMView->setRootIndex(model->rootIndex());
+    SMView->expandToDepth(2);
 }
 
 void CyberiadaSMEditorWindow::slotFileOpen()

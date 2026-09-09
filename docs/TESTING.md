@@ -28,6 +28,31 @@ good references.
                     (or cybparser diff)   (with tolerance)
 ```
 
+### Undo/redo
+
+```
+  gesture (scene press ... release)     single-shot edit (dialog, property, script)
+          |                                        |
+   beginUndoStep()  ... N mutations ...  endUndoStep()   (a mutator opens its own
+          |                                                step when none is open)
+          v
+   first mutation of a step: encode the document "before"; on the step end:
+   encode "after"; push DocumentStep{before, after} if they differ
+          |
+   undo/redo: decode the snapshot into the document -> model reset -> the
+   scene rebuilds its items (view kept, selection restored by id), the
+   properties widget clears, the tree is re-rooted; the clean state of the
+   stack marks the window title and drives the save prompt
+```
+
+The snapshot is the Cyberiada 1.0 encoding in memory; a restored document
+keeps its file identity, so the `file:`/`format:` fields of the dump do not
+move across an undo. The undo tier proves the fidelity end to end: the
+`undo-all` script edits the hierarchy diagram with the `add-elements`
+commands and undoes them all - the dump must equal the untouched L1 good
+file; `redo-all` redoes them all and must equal the `add-elements` L2 dump
+and saved document. Neither case owns a reference file.
+
 ## Test layers
 
 | Layer | What is checked                                                | Status      |
@@ -39,6 +64,7 @@ good references.
 | L4    | in-process: model contract and scene structure (QtTest)        | implemented |
 | text  | text metrics: font and layout of every text item vs good text | implemented |
 | reconstruct | reconstruction: the rebuilt geometry, shown and saved, vs good files | implemented |
+| undo  | undo/redo: a script edits and undoes, the dump vs the existing good files | implemented |
 
 ## In-process tests (L4)
 
@@ -81,8 +107,10 @@ geometry relative to the new parent inside the same mutation (the scene
 adds its own per-level region offset when rendering nested states). The batch mode runs the edit scripts
 with the connected scene as well, so every L2 case exercises the sync.
 The inspected region follows the document while the edited one is laid out
-around the state title, so switching the mode re-derives it. There is no undo
-stack in the editor yet, so undo/redo is not an L4 subject.
+around the state title, so switching the mode re-derives it. `test_undo_redo`
+checks the undo stack: every mutation is one step that brings the exact
+document dump back (the file identity included), a refused mutation pushes
+nothing, a bracketed gesture is one step, and the clean state follows the save.
 
 `l4-properties` checks the property view: an edited rect, point, endpoint or
 polyline row writes the model and the scene item in the same call (the state
@@ -219,6 +247,7 @@ multi-line behaviours and comment bodies stay expressible. The commands map
 | `polyline <id> [x y ...]` | replace the transition polyline (no points clear it) |
 | `new-subject <comment> <target> [name\|data <fragment>]` | link the comment to an element |
 | `delete-subject <comment> <i>` | remove subject `<i>` (0-based) |
+| `undo` / `redo` | undo or redo one step (every other command is one step) |
 
 The action text uses the CyberiadaML notation: `entry/ behaviour`,
 `exit/ behaviour` or `TRIGGER [guard]/ behaviour`. State actions are addressed

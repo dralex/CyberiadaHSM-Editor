@@ -43,6 +43,7 @@ public:
 public slots:
 	void                     slotElementSelected(const QModelIndex& index);
     void                     slotModelDataChanged(const QModelIndex & topLeft, const QModelIndex & bottomRight);
+	void slotModelAboutToBeReset();
 	void                     slotPropertyChanged(QtProperty* property);
 	void                     slotInspectorModeChanged(bool on);
 	void                     slotCurrentItemChanged(QtBrowserItem* item);

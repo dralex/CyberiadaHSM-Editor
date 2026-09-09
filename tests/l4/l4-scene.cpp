@@ -50,6 +50,7 @@ private slots:
 	void test_box_transition();
 	void test_auto_attach();
 	void test_new_element_place();
+	void test_undo_gesture();
 	void test_new_state();
 	void test_new_transition();
 	void test_new_comment();
@@ -602,6 +603,44 @@ void TestScene::test_new_element_place()
 		Cyberiada::Element* e = dynamic_cast<CyberiadaSMEditorAbstractItem*>(item)->getElement();
 		QVERIFY(model->deleteElement(model->elementToIndex(e)));
 	}
+}
+
+void TestScene::test_undo_gesture()
+{
+	// a whole drag is one undo step; the undo rebuilds the scene from the
+	// restored document and keeps the moved state selected
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+	CyberiadaSMEditorStateItem* state =
+		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0-1"));
+	QVERIFY(state);
+	QUndoStack* stack = model->undoStack();
+	int steps = stack->count();
+	Cyberiada::Rect before = static_cast<const Cyberiada::State*>(
+		model->idToElement("node-0-1"))->get_geometry_rect();
+	QPointF at = state->sceneBoundingRect().bottomRight() - QPointF(20, 20);
+	scene->clearSelection();
+	mouse(QEvent::GraphicsSceneMousePress, at, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, at + QPointF(10, 5), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, at + QPointF(20, 10), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, at + QPointF(30, 20), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, at + QPointF(30, 20), Qt::NoButton);
+	QCOMPARE(stack->count(), steps + 1);
+	QCOMPARE(static_cast<const Cyberiada::State*>(
+		model->idToElement("node-0-1"))->get_geometry_rect().x, before.x + 30);
+
+	stack->undo();
+	QCOMPARE(static_cast<const Cyberiada::State*>(
+		model->idToElement("node-0-1"))->get_geometry_rect().x, before.x);
+	QGraphicsItem* rebuilt = scene->getMap().value("node-0-1");
+	QVERIFY(rebuilt);
+	QVERIFY(rebuilt != state);
+	QVERIFY(rebuilt->isSelected());
+	QVERIFY(scene->items().contains(rebuilt));
+	stack->redo();
+	QCOMPARE(static_cast<const Cyberiada::State*>(
+		model->idToElement("node-0-1"))->get_geometry_rect().x, before.x + 30);
+	stack->undo();
 }
 
 void TestScene::test_new_state()

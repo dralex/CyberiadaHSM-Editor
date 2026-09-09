@@ -191,6 +191,14 @@ void CyberiadaSMPropertiesWidget::setModel(CyberiadaSMModel* model)
     }
 
     connect(model, &CyberiadaSMModel::dataChanged, this, &CyberiadaSMPropertiesWidget::slotModelDataChanged);
+    connect(model, &CyberiadaSMModel::modelAboutToBeReset, this, &CyberiadaSMPropertiesWidget::slotModelAboutToBeReset);
+}
+
+// the element goes away with the restored document
+void CyberiadaSMPropertiesWidget::slotModelAboutToBeReset()
+{
+	clearProperties();
+	element = NULL;
 }
 
 void CyberiadaSMPropertiesWidget::clearProperties()

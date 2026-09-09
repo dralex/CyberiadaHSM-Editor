@@ -37,6 +37,7 @@ add_library(CyberiadaInspectorCore STATIC
   smeditor.qrc
   myassert.cpp
   cyberiadasm_model.cpp
+    cyberiadasm_undo.cpp
   cyberiadasm_view.cpp
   smeditor_window.cpp
   cyberiadasm_properties_widget.cpp

@@ -1,0 +1,10 @@
+# the rename-move edits undone and redone: the edited diagram is back
+rename node-0-0-1 Idle
+move node-0-0-1 -80 30 260 140
+move node-0-0-0 -90 -70
+undo
+undo
+undo
+redo
+redo
+redo

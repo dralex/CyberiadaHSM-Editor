@@ -1,5 +1,5 @@
 == document
-LocalDocument: {Document: {id: '', name: 'Test document', geometry format: none, meta: {standard version: '1.0', platform: 'Berloga', platformVersion: '1.4', platformLanguage: 'script', target: 'Unit', name: 'updated-meta-test', author: 'Author', contact: 'platform@kruzhok.org', description: 'The updated description
+LocalDocument: {Document: {id: '', name: 'updated-meta-test', geometry format: none, meta: {standard version: '1.0', platform: 'Berloga', platformVersion: '1.4', platformLanguage: 'script', target: 'Unit', name: 'updated-meta-test', author: 'Author', contact: 'platform@kruzhok.org', description: 'The updated description
 second line', version: '0.1', date: '2024-04-14T11:22:00', markupLanguage: 'html', customParameter: 'custom parameter value', transition order: action first}, elements: {State Machine: {id: 'G0', name: 'SM', elements: {Formal Comment: {id: 'nMeta', name: 'CGML_META', body: 'standardVersion/ 1.0
 
 platform/ Berloga

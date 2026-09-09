@@ -61,7 +61,9 @@ public:
     void  setGridPen(const QPen& gridPen);
     const QPen& getGridPen() const { return gridPen; }
 
-    void  loadScene();
+    // fit: the view follows the whole scene (a fresh document); a rebuild
+    // after an undo keeps the view where it is
+    void  loadScene(bool fit = true);
 
     QMap<Cyberiada::ID, QGraphicsItem*>& getMap() { return elementIdToItemMap; }
 
@@ -88,9 +90,12 @@ public slots:
     void  slotGridSettingsChanged();
     void  slotServiceObjectsChanged();
     void  slotSelectionChanged();
+    void  slotModelAboutToBeReset();
+    void  slotModelReset();
 
 protected:
     void  drawBackground(QPainter *painter, const QRectF &);
+    void  mousePressEvent(QGraphicsSceneMouseEvent* event) override;
     void  mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
 
 private:
@@ -114,6 +119,8 @@ private:
 
     ToolType currentTool = ToolType::Select;
     bool transientTool = false;
+    // the selection to bring back after a snapshot restore
+    QList<Cyberiada::ID> selectedBeforeReset;
 };
 
 #endif
