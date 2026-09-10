@@ -67,6 +67,8 @@ private slots:
 	void test_double_click_label();
 	void test_segment_drag_vertex();
 	void test_remove_vertex();
+	void test_default_name_unique();
+	void test_reparent_simple();
 
 private:
 	int countItems(int type);
@@ -1080,6 +1082,58 @@ void TestScene::test_remove_vertex()
 	size_t mid = t->get_geometry_polyline().size();
 	tr->getDot(0)->deleteDot();
 	QCOMPARE(t->get_geometry_polyline().size(), mid);
+}
+
+void TestScene::test_default_name_unique()
+{
+	// several states added at the top level get distinct names
+	QVERIFY(model->loadDocument("diagrams/polyline.graphml"));
+	scene->loadScene();
+	CyberiadaSMEditorAbstractItem* smItem =
+		dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene->getMap().value("G0"));
+	QVERIFY(smItem);
+	const Cyberiada::ElementCollection* sm =
+		static_cast<const Cyberiada::ElementCollection*>(smItem->getElement());
+
+	int before = countItems(CyberiadaSMEditorAbstractItem::StateItem);
+	scene->clearSelection();
+	scene->addSMItem(Cyberiada::elementSimpleState);
+	scene->clearSelection();
+	scene->addSMItem(Cyberiada::elementSimpleState);
+	QCOMPARE(countItems(CyberiadaSMEditorAbstractItem::StateItem), before + 2);
+
+	// no two sibling states of the machine share a name
+	QStringList names;
+	Cyberiada::ConstElementList kids = sm->get_children();
+	for (Cyberiada::ConstElementList::const_iterator i = kids.begin(); i != kids.end(); i++) {
+		if ((*i)->get_type() != Cyberiada::elementSimpleState &&
+			(*i)->get_type() != Cyberiada::elementCompositeState) continue;
+		QString n = QString::fromStdString((*i)->get_name());
+		QVERIFY2(!names.contains(n), qPrintable("duplicate state name: " + n));
+		names.append(n);
+	}
+}
+
+void TestScene::test_reparent_simple()
+{
+	// dragging a state into a simple state (making it composite) keeps the
+	// dragged item visible, nested in the new region - not lost until reload
+	QVERIFY(model->loadDocument("diagrams/polyline.graphml"));
+	scene->loadScene();
+	QVERIFY(scene->getMap().value("n0"));
+	QVERIFY(scene->getMap().value("n1"));
+	QVERIFY(!static_cast<const Cyberiada::State*>(model->idToElement("n0"))->is_composite_state());
+
+	QVERIFY(model->updateParent(model->elementToIndex(model->idToElement("n1")), "n0"));
+
+	// the dragged item survived (it is deleted then re-added under the region)
+	QGraphicsItem* child = scene->getMap().value("n1");
+	QVERIFY(child);
+	QVERIFY(child->isVisible());
+	QVERIFY(child->parentItem());
+	// the child lives in n0's region, whose parent item is the n0 state
+	QCOMPARE(child->parentItem()->parentItem(), scene->getMap().value("n0"));
+	QVERIFY(static_cast<const Cyberiada::State*>(model->idToElement("n0"))->is_composite_state());
 }
 
 QTEST_MAIN(TestScene)
