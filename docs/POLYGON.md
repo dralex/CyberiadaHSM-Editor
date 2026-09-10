@@ -16,7 +16,7 @@ LLM backend is configurable; the agent is never a fixed vendor.
 ## Architecture
 
 ```
-  catalog/operations      ledger.json             catalog/briefs + corpus
+  catalog/operations      register.json            catalog/briefs + corpus
   (verbs, kinds,          (coverage: verb pairs,   (domain briefs, the
    preconditions)          verb x kind, fired)      diagrams to reproduce)
         \                      |                      /
@@ -258,18 +258,18 @@ The vision review is a separate, optional step: when the backend declares
 `vision = true`, the agent receives its plan and the png and answers whether
 the picture shows the plan. Its verdicts are `review` candidates.
 
-## Operation catalog, composer, ledger, fuzzer
+## Operation catalog, composer, register, fuzzer
 
 `catalog/operations.json` lists every operation of the batch script: the verb,
 the argument shape, the element kinds it applies to and its preconditions
 (`reparent` needs a target that may contain the element, `delete-action`
 needs an existing action, ...). It is the single source for the prompt verb
-table, the fuzzer grammar and the ledger cells; phase 2 adds the gesture
+table, the fuzzer grammar and the register cells; phase 2 adds the gesture
 verbs to it.
 
 The composer draws a mission from a seed: the start document, three to six
 operations, a theme, a budget, and the untried cells it reads from the
-ledger. `ledger.json` counts, across sessions, every executed `(verb, kind)`
+register. `register.json` counts, across sessions, every executed `(verb, kind)`
 cell and every consecutive verb pair, and marks the cells that fired an
 oracle. The draw is biased toward empty cells, so the coverage grows the way
 pairwise testing does, and the fired cells are revisited with other
@@ -351,7 +351,7 @@ tests/polygon/
   polygon.example.toml      backend and threshold configuration
   run-polygon.sh            wrapper: env of the ctest tiers + python -m polygon
   polygon/                  the package
-    composer.py             missions, seeds, ledger bias
+    composer.py             missions, seeds, register bias
     adapters/               chat_completions.py, messages.py, base.py
     fuzzer.py               random valid sequences
     runner.py               editor subprocess, timeout, reruns
@@ -369,7 +369,7 @@ tests/polygon/
   problems/
     register.json
     P-<n>/                  start.graphml, script, dump, stderr, png, plan
-  ledger.json
+  register.json
   sessions/<date>-<seed>/   prompts, answers, feedback, per round
 ```
 
@@ -411,7 +411,7 @@ the verbs.
 |---|---|
 | 1 | package, catalog, composer, two adapters, fuzzer, runner, tier 1 and 2, mechanical render check, register with minimization, regression tier, the `== stack` dump |
 | 2 | gesture verbs in the batch script, gesture operations in the catalog, gesture themes |
-| 3 | vision review, corpus growth from reproductions, ledger-driven campaigns, session replay reports |
+| 3 | vision review, corpus growth from reproductions, register-driven campaigns, session replay reports |
 
 ## Running
 
