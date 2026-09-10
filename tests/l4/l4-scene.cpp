@@ -832,8 +832,8 @@ void TestScene::test_new_sm_place()
 
 void TestScene::test_sm_contains()
 {
-	// a top-level element is clamped inside a bordered machine, which does
-	// not grow to follow it (the user resizes the machine to make room)
+	// a top-level element dragged toward the edge grows the machine to make
+	// room; the element stays inside the (grown) border
 	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
 	scene->loadScene();
 	QEvent activate(QEvent::WindowActivate);
@@ -842,28 +842,29 @@ void TestScene::test_sm_contains()
 	Cyberiada::ElementCollection* smc =
 		static_cast<Cyberiada::ElementCollection*>(model->indexToElement(smi));
 	QVERIFY(model->updateGeometry(smi, Cyberiada::Rect(0, 0, 1600, 1200)));
-	double borderW = smc->get_geometry_rect().width;
+	double borderW0 = smc->get_geometry_rect().width;
 
 	Cyberiada::State* freeState = model->newState(smc, "Free", Cyberiada::Action(),
 												  Cyberiada::Rect(600, 450, 100, 60));
 	QVERIFY(freeState);
 	QGraphicsItem* fi = scene->getMap().value(freeState->get_id());
-	QGraphicsItem* smItem = scene->getMap().value(smc->get_id());
-	QVERIFY(fi && smItem);
+	QVERIFY(fi);
 
 	QPointF c = fi->sceneBoundingRect().center();
 	scene->clearSelection();
 	fi->setSelected(true);
 	mouse(QEvent::GraphicsSceneMousePress, c, Qt::LeftButton);
-	mouse(QEvent::GraphicsSceneMouseMove, c + QPointF(4000, 3000), Qt::LeftButton);
-	mouse(QEvent::GraphicsSceneMouseRelease, c + QPointF(4000, 3000), Qt::NoButton);
+	mouse(QEvent::GraphicsSceneMouseMove, c + QPointF(2000, 1500), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, c + QPointF(2000, 1500), Qt::NoButton);
 
-	// the element stayed inside the border, and the border did not grow
+	// the border grew, and the element sits inside the grown border
+	double borderW1 = smc->get_geometry_rect().width;
+	QVERIFY(borderW1 > borderW0);
+	QGraphicsItem* smItem = scene->getMap().value(smc->get_id());
 	QRectF border = smItem->sceneBoundingRect();
 	QRectF moved = fi->sceneBoundingRect();
-	QVERIFY(moved.right() <= border.right() + 1.0);
-	QVERIFY(moved.bottom() <= border.bottom() + 1.0);
-	QCOMPARE(smc->get_geometry_rect().width, borderW);
+	QVERIFY(moved.left() >= border.left() - 1.0 && moved.right() <= border.right() + 1.0);
+	QVERIFY(moved.top() >= border.top() - 1.0 && moved.bottom() <= border.bottom() + 1.0);
 }
 
 void TestScene::test_sm_extends()

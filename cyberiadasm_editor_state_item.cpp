@@ -482,12 +482,12 @@ void CyberiadaSMEditorStateItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
     if (prevItemUnderCursor == newParent) return;
 
     if (newParent == nullptr || parentItem() == newParent){
-        prevItemUnderCursor->setHighlighted(false);
+        if (prevItemUnderCursor) prevItemUnderCursor->setHighlighted(false);
         prevItemUnderCursor = newParent;
         return;
     }
 
-    prevItemUnderCursor->setHighlighted(false);
+    if (prevItemUnderCursor) prevItemUnderCursor->setHighlighted(false);
     prevItemUnderCursor = newParent;
     newParent->setHighlighted(true);
 }
@@ -550,7 +550,7 @@ void CyberiadaSMEditorStateItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *eve
 
     // if you want to update this, update StateTitle::mouseReleaseEvent as well
     CyberiadaSMEditorAbstractItem::mouseReleaseEvent(event);
-    prevItemUnderCursor->setHighlighted(false);
+    if (prevItemUnderCursor) prevItemUnderCursor->setHighlighted(false);
     updateParent(prevItemUnderCursor);
 }
 
@@ -596,8 +596,9 @@ void CyberiadaSMEditorStateItem::contextMenuEvent(QGraphicsSceneContextMenuEvent
 void CyberiadaSMEditorStateItem::updateParent(CyberiadaSMEditorAbstractItem *newParent)
 {
     if (newParent == nullptr) {
-        model->updateParent(model->elementToIndex(element), model->rootDocument()->get_parent_sm(element)->get_id());
-        // TODO update geometry pos
+        // dropped on empty space: keep it in its own state machine
+        Cyberiada::StateMachine* sm = model->rootDocument()->get_parent_sm(element);
+        if (sm) model->updateParent(model->elementToIndex(element), sm->get_id());
     } else {
         model->updateParent(model->elementToIndex(element), newParent->getId());
     }
@@ -752,7 +753,7 @@ void StateTitle::mouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
     if (parentItem()) {
         CyberiadaSMEditorStateItem* state = dynamic_cast<CyberiadaSMEditorStateItem*>(parentItem());
         if (state != nullptr) {
-            state->prevItemUnderCursor->setHighlighted(false);
+            if (state->prevItemUnderCursor) state->prevItemUnderCursor->setHighlighted(false);
             state->updateParent(state->prevItemUnderCursor);
         }
     }

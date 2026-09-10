@@ -88,7 +88,9 @@ void CyberiadaSMEditorWindow::slotRedoTextChanged(const QString& text)
 // the clean state of the undo stack is the saved state of the document
 void CyberiadaSMEditorWindow::slotCleanChanged(bool clean)
 {
-    setWindowModified(!clean);
+    // the marker only makes sense once a document title (with the [*] slot)
+    // is set; before that the window has no placeholder
+    if (!openFileName.isEmpty()) setWindowModified(!clean);
 }
 
 // the title carries the modified marker; the inspected document is read-only

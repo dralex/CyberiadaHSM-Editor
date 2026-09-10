@@ -151,8 +151,6 @@ protected:
     void resizeTop(const QPointF &pt);
 
     void updatePosGeometry();
-    // keep a top-level element within its state machine border (no auto-grow)
-    void clampInsideStateMachine();
     // the smallest the element may be resized to (a box has a floor)
     virtual qreal minimumWidth() const;
     virtual qreal minimumHeight() const;

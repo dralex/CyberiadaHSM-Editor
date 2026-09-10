@@ -26,6 +26,7 @@
 #include <QColor>
 #include <QMenu>
 #include <QGraphicsSceneContextMenuEvent>
+#include <cmath>
 #include "cyberiadasm_editor_sm_item.h"
 #include "cyberiadasm_editor_state_item.h"
 #include "cyberiadasm_model.h"
@@ -172,10 +173,21 @@ void CyberiadaSMEditorSMItem::paint(QPainter* painter, const QStyleOptionGraphic
 
 void CyberiadaSMEditorSMItem::updateSizeToFitChildren(CyberiadaSMEditorAbstractItem *child)
 {
-    Q_UNUSED(child)
-    // a state machine border does not grow to follow its children: they are
-    // clamped inside it instead (clampInsideStateMachine); the user resizes
-    // the border to make room
+    // the border grows to make room for a child moved toward or past its edge
+    // (symmetrically, keeping the centre, so the other children do not shift)
+    if (!child || !element->has_geometry()) return;
+    Cyberiada::Rect border =
+        static_cast<Cyberiada::ElementCollection*>(element)->get_geometry_rect();
+    QRectF cb = child->boundingRect();
+    QPointF cp = child->pos();
+    const double pad = 10.0;
+    double needW = 2.0 * (std::fabs(cp.x()) + cb.width() / 2.0 + pad);
+    double needH = 2.0 * (std::fabs(cp.y()) + cb.height() / 2.0 + pad);
+    double newW = std::max((double)border.width, needW);
+    double newH = std::max((double)border.height, needH);
+    if (newW > border.width + 0.5 || newH > border.height + 0.5) {
+        model->updateGeometry(getIndex(), Cyberiada::Rect(border.x, border.y, newW, newH));
+    }
 }
 
 void CyberiadaSMEditorSMItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)

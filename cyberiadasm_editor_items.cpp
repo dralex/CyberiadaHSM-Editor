@@ -434,22 +434,6 @@ void CyberiadaSMEditorAbstractItem::resizeBottom(const QPointF &pt)
     emit sizeChanged(CornerFlags::Bottom, delta);
 }
 
-void CyberiadaSMEditorAbstractItem::clampInsideStateMachine()
-{
-    // a bordered state machine contains its children: instead of growing, the
-    // move is clamped so the child stays inside the border (the user resizes
-    // the machine to make room)
-    CyberiadaSMEditorAbstractItem* sm = dynamic_cast<CyberiadaSMEditorAbstractItem*>(parentItem());
-    if (!sm || sm->type() != SMItem || !sm->getElement()->has_geometry()) return;
-    QRectF border = sm->boundingRect();
-    QRectF self = boundingRect();
-    if (border.width() < self.width() || border.height() < self.height()) return;
-    qreal halfW = self.width() / 2, halfH = self.height() / 2;
-    qreal x = qBound(border.left() + halfW, pos().x(), border.right() - halfW);
-    qreal y = qBound(border.top() + halfH, pos().y(), border.bottom() - halfH);
-    if (x != pos().x() || y != pos().y()) setPos(x, y);
-}
-
 qreal CyberiadaSMEditorAbstractItem::minimumWidth() const { return ELEMENT_MIN_SIZE; }
 qreal CyberiadaSMEditorAbstractItem::minimumHeight() const { return ELEMENT_MIN_SIZE; }
 
@@ -457,7 +441,6 @@ void CyberiadaSMEditorAbstractItem::updatePosGeometry()
 {
     // change the model data
     setFlag(ItemIsMovable);
-    clampInsideStateMachine();
 
     Cyberiada::Rect r = Cyberiada::Rect(pos().x(),
                                         pos().y(),
