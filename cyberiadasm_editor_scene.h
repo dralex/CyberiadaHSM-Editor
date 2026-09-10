@@ -106,6 +106,9 @@ private:
     QPointF freePlace(const Cyberiada::ElementCollection* parent, const QSizeF& size);
     // a centre for a new state-machine border that overlaps no existing machine
     QPointF freeStateMachinePlace(const QSizeF& size);
+    // grow a bordered state machine (symmetrically, keeping its centre) so a
+    // newly added child fits inside it
+    void extendStateMachineForChild(CyberiadaSMEditorAbstractItem* smItem, QGraphicsItem* child);
     void  removeItemsForElement(Cyberiada::Element* element);
     void  updateItemsRecursively(CyberiadaSMEditorAbstractItem* parent, Cyberiada::ElementCollection* element);
 

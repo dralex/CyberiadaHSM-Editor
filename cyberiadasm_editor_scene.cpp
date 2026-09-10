@@ -578,7 +578,34 @@ void CyberiadaSMEditorScene::addSMItem(Cyberiada::ElementType type)
     // the item itself is built by the model row signals
     QGraphicsItem* item = elementIdToItemMap.value(element->get_id());
     if (item) {
+        // a new object dropped in a bordered machine stays inside it: the
+        // border extends to contain it (unlike a drag, which is clamped)
+        CyberiadaSMEditorAbstractItem* smItem = dynamic_cast<CyberiadaSMEditorSMItem*>(parentCItem);
+        if (smItem && smItem->getElement()->has_geometry()) {
+            extendStateMachineForChild(smItem, item);
+        }
         item->setSelected(true);
+    }
+}
+
+void CyberiadaSMEditorScene::extendStateMachineForChild(CyberiadaSMEditorAbstractItem* smItem,
+                                                        QGraphicsItem* child)
+{
+    Cyberiada::ElementCollection* sm =
+        static_cast<Cyberiada::ElementCollection*>(smItem->getElement());
+    Cyberiada::Rect border = sm->get_geometry_rect();
+    // the child position is relative to the machine centre; it fits when the
+    // border half-size covers the child offset plus its half-size
+    QRectF cb = child->boundingRect();
+    QPointF cp = child->pos();
+    const double pad = 10.0;
+    double needW = 2.0 * (std::fabs(cp.x()) + cb.width() / 2.0 + pad);
+    double needH = 2.0 * (std::fabs(cp.y()) + cb.height() / 2.0 + pad);
+    double newW = std::max((double)border.width, needW);
+    double newH = std::max((double)border.height, needH);
+    if (newW > border.width + 0.5 || newH > border.height + 0.5) {
+        // the centre is kept, so the existing children do not move
+        model->updateGeometry(smItem->getIndex(), Cyberiada::Rect(border.x, border.y, newW, newH));
     }
 }
 

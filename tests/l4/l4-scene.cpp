@@ -61,6 +61,7 @@ private slots:
 	void test_multi_sm();
 	void test_new_sm_place();
 	void test_sm_contains();
+	void test_sm_extends();
 
 private:
 	int countItems(int type);
@@ -862,6 +863,48 @@ void TestScene::test_sm_contains()
 	QVERIFY(moved.right() <= border.right() + 1.0);
 	QVERIFY(moved.bottom() <= border.bottom() + 1.0);
 	QCOMPARE(smc->get_geometry_rect().width, borderW);
+}
+
+void TestScene::test_sm_extends()
+{
+	// a new object added into a bordered machine goes inside it, and the
+	// border extends to contain it
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	scene->addSMItem(Cyberiada::elementSM);           // a fresh empty bordered machine
+	Cyberiada::StateMachine* sm = model->rootDocument()->get_state_machines().back();
+	QVERIFY(sm && sm->has_geometry());
+	Cyberiada::Rect before = sm->get_geometry_rect();
+
+	for (int k = 0; k < 3; k++) {
+		scene->clearSelection();
+		QGraphicsItem* smItem = scene->getMap().value(sm->get_id());
+		QVERIFY(smItem);
+		smItem->setSelected(true);
+		scene->addSMItem(Cyberiada::elementSimpleState);
+	}
+
+	Cyberiada::Rect after = sm->get_geometry_rect();
+	QVERIFY(after.width >= before.width);
+	QVERIFY(after.height >= before.height);
+
+	// every child element sits within the (grown) border
+	QGraphicsItem* smItem = scene->getMap().value(sm->get_id());
+	QRectF border = smItem->sceneBoundingRect();
+	const Cyberiada::ElementList& kids = sm->get_children();
+	int states = 0;
+	for (Cyberiada::ElementList::const_iterator i = kids.begin(); i != kids.end(); i++) {
+		if ((*i)->get_type() != Cyberiada::elementSimpleState) continue;
+		states++;
+		QGraphicsItem* ci = scene->getMap().value((*i)->get_id());
+		QVERIFY(ci);
+		QRectF r = ci->sceneBoundingRect();
+		QVERIFY(r.left() >= border.left() - 1.0 && r.right() <= border.right() + 1.0);
+		QVERIFY(r.top() >= border.top() - 1.0 && r.bottom() <= border.bottom() + 1.0);
+	}
+	QCOMPARE(states, 3);
+	// the extension was actually needed (three 200-wide states do not fit 400)
+	QVERIFY(after.width > before.width);
 }
 
 QTEST_MAIN(TestScene)
