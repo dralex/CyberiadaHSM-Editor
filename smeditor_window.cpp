@@ -60,6 +60,7 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     QUndoStack* stack = model->undoStack();
     connect(actionUndo, &QAction::triggered, stack, &QUndoStack::undo);
     connect(actionRedo, &QAction::triggered, stack, &QUndoStack::redo);
+    connect(actionFitContent, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotFitContent);
     connect(stack, &QUndoStack::canUndoChanged, actionUndo, &QAction::setEnabled);
     connect(stack, &QUndoStack::canRedoChanged, actionRedo, &QAction::setEnabled);
     connect(stack, &QUndoStack::undoTextChanged, this, &CyberiadaSMEditorWindow::slotUndoTextChanged);
@@ -303,7 +304,9 @@ void CyberiadaSMEditorWindow::slotToolSelected(QAction *action)
 }
 
 void CyberiadaSMEditorWindow::slotFitContent() {
-    sceneView->fitInView(scene->itemsBoundingRect(), Qt::KeepAspectRatio);
+    QRectF bounds = scene->visibleItemsBoundingRect();
+    if (bounds.isNull()) return;
+    sceneView->fitInView(bounds, Qt::KeepAspectRatio);
 }
 
 void CyberiadaSMEditorWindow::slotPreferences()

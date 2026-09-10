@@ -67,6 +67,10 @@ public:
 
     QMap<Cyberiada::ID, QGraphicsItem*>& getMap() { return elementIdToItemMap; }
 
+    // the union of the visible items only (unlike itemsBoundingRect, which
+    // counts hidden dots and text)
+    QRectF visibleItemsBoundingRect() const;
+
     void  setCurrentTool(ToolType tool);
     ToolType getCurrentTool() { return currentTool; }
     // a tool for one gesture: the select tool is back with the mouse release
