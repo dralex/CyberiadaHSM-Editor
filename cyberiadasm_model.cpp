@@ -654,6 +654,23 @@ static int newElementRow(Cyberiada::ElementCollection* parent)
     return row;
 }
 
+// the states of one level are told apart by name, so a fresh one gets the
+// base name, else the base with the smallest free numeric suffix
+Cyberiada::Name CyberiadaSMModel::uniqueStateName(const Cyberiada::ElementCollection *parent,
+                                                  const Cyberiada::Name &base) const
+{
+	if (!parent || !parent->has_children()) return base;
+	Cyberiada::ConstElementList children = parent->get_children();
+	for (int n = 0; ; n++) {
+		Cyberiada::Name candidate = n == 0 ? base : base + " " + std::to_string(n);
+		bool taken = false;
+		for (Cyberiada::ConstElementList::const_iterator i = children.begin(); i != children.end(); i++) {
+			if (isState(*i) && (*i)->get_name() == candidate) { taken = true; break; }
+		}
+		if (!taken) return candidate;
+	}
+}
+
 Cyberiada::StateMachine *CyberiadaSMModel::newStateMachine(const Cyberiada::String &sm_name, const Cyberiada::Rect &r)
 {
 	if (readOnly()) return NULL;

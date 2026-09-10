@@ -549,7 +549,8 @@ void CyberiadaSMEditorScene::addSMItem(Cyberiada::ElementType type)
         switch(type) {
         case Cyberiada::elementCompositeState:
         case Cyberiada::elementSimpleState:
-            element = model->newState(parentColl, "New state", Cyberiada::Action(),
+            element = model->newState(parentColl, model->uniqueStateName(parentColl, "New state"),
+                                      Cyberiada::Action(),
                                       Cyberiada::Rect(center.x(), center.y(), 200, 100));
             break;
         case Cyberiada::elementInitial:

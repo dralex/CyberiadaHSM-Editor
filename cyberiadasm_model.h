@@ -88,6 +88,9 @@ public:
 	bool                                updateCommentBody(const QModelIndex& index, const QString& body);
     bool                                updateMetainformation(const QModelIndex& index, const QString& parameter, const QString& new_value);
 
+    // a default name unique among the sibling states of the parent
+    Cyberiada::Name                     uniqueStateName(const Cyberiada::ElementCollection* parent,
+                                                        const Cyberiada::Name& base) const;
     Cyberiada::StateMachine*            newStateMachine(const Cyberiada::String& sm_name, const Cyberiada::Rect& r = Cyberiada::Rect());
     Cyberiada::State*                   newState(Cyberiada::ElementCollection* parent, const Cyberiada::String& state_name,
                                                  const Cyberiada::Action& a = Cyberiada::Action(), const Cyberiada::Rect& r = Cyberiada::Rect(),
