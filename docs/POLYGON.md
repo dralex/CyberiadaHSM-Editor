@@ -16,7 +16,7 @@ LLM backend is configurable; the agent is never a fixed vendor.
 ## Architecture
 
 ```
-  catalog/operations      register.json            catalog/briefs + corpus
+  catalog/operations      coverage.json            catalog/briefs + corpus
   (verbs, kinds,          (coverage: verb pairs,   (domain briefs, the
    preconditions)          verb x kind, fired)      diagrams to reproduce)
         \                      |                      /
@@ -33,11 +33,11 @@ LLM backend is configurable; the agent is never a fixed vendor.
       vision flag, retries, budget)          from the catalog, seeded)
                   |  == plan / == script / == expectations
                   v
-       +---------------------------- runner ----------------------------+
-       |  CyberiadaInspector --batch <doc> --script <s> --dump          |
-       |  subprocess, timeout, signal and exit code capture             |
-       |  reruns: --save + reopen | undo-all / redo-all | --export      |
-       +-------------------------------+--------------------------------+
+       +------------------------------ runner --------------------------------+
+       |  CyberiadaInspector --batch <doc> --script <s> --dump --dump-stack |
+       |  subprocess, timeout, signal and exit code capture                 |
+       |  reruns: --save + reopen | undo-all / redo-all | --export          |
+       +-------------------------------+------------------------------------+
                                        | exit code, stderr, dump, files
                                        v
        +--------------------------- oracles ----------------------------+
@@ -220,7 +220,7 @@ anything.
 | `action <id> <i> <text>` | action `<i>` of the element has that text |
 | `rect-inside <id> <id>` | the scene rect of the first lies within the second |
 | `no-overlap <id> <id>` | the scene rects do not intersect |
-| `undo-depth <n>` | the undo stack holds `<n>` steps (needs the `--dump` stack line, see the editor changes) |
+| `undo-depth <n>` | the `== stack` section of `--dump-stack` reports `index: <n>` |
 
 The vocabulary is deliberately small; what it cannot express is left to the
 vision review. The undo-all rerun reuses the evaluator with the facts of the
@@ -258,20 +258,36 @@ The vision review is a separate, optional step: when the backend declares
 `vision = true`, the agent receives its plan and the png and answers whether
 the picture shows the plan. Its verdicts are `review` candidates.
 
-## Operation catalog, composer, register, fuzzer
+## Operation catalog, composer, coverage, fuzzer
 
 `catalog/operations.json` lists every operation of the batch script: the verb,
 the argument shape, the element kinds it applies to and its preconditions
 (`reparent` needs a target that may contain the element, `delete-action`
 needs an existing action, ...). It is the single source for the prompt verb
-table, the fuzzer grammar and the register cells; phase 2 adds the gesture
-verbs to it.
+table, the fuzzer grammar and the coverage cells. It covers the model verbs
+of `TESTING.md` and the gesture verbs of the same script:
+
+| command | effect |
+|---|---|
+| `press x y [ctrl\|shift\|alt ...]` | mouse press at scene coordinates |
+| `move x y` | mouse move with the pressed button |
+| `release x y` | mouse release |
+| `click x y [mods]` | press and release at one point |
+| `double-click x y` | double click |
+| `tool select\|transition` | select the scene tool |
+| `delete-selected` | delete the selected element |
+
+A gesture is one undo step opened on press and closed on release, as in the
+GUI, and the dump after a gesture shows the scene the gesture built, so the
+expectation facts apply unchanged. The catalog lists the gesture forms of the
+operations (`drag`, `resize`, `draw transition`, `delete selected`) beside
+the verbs, and mission B draws them alike.
 
 The composer draws a mission from a seed: the start document, three to six
 operations, a theme, a budget, and the untried cells it reads from the
-register. `register.json` counts, across sessions, every executed `(verb, kind)`
-cell and every consecutive verb pair, and marks the cells that fired an
-oracle. The draw is biased toward empty cells, so the coverage grows the way
+coverage store. `coverage.json` counts, across sessions, every executed
+`(verb, kind)` cell and every consecutive verb pair, and marks the cells
+that fired an oracle. The draw is biased toward empty cells, so the coverage grows the way
 pairwise testing does, and the fired cells are revisited with other
 neighbours.
 
@@ -351,7 +367,7 @@ tests/polygon/
   polygon.example.toml      backend and threshold configuration
   run-polygon.sh            wrapper: env of the ctest tiers + python -m polygon
   polygon/                  the package
-    composer.py             missions, seeds, register bias
+    composer.py             missions, seeds, coverage bias
     adapters/               chat_completions.py, messages.py, base.py
     fuzzer.py               random valid sequences
     runner.py               editor subprocess, timeout, reruns
@@ -369,49 +385,13 @@ tests/polygon/
   problems/
     register.json
     P-<n>/                  start.graphml, script, dump, stderr, png, plan
-  register.json
+  coverage.json
   sessions/<date>-<seed>/   prompts, answers, feedback, per round
 ```
 
 `tests/CMakeLists.txt` gains `add_polygon_problem_tests()` reading the
 register and reusing `cmake/RunBatchTest.cmake` with `EXPECTED` set to the
 recorded exit code, under the same `L0_ENVIRONMENT`.
-
-## Editor changes
-
-Phase 1 needs one addition to the batch mode: a `== stack` dump section with
-the undo depth and the clean flag, so `undo-depth` is checkable. The batch
-driver also checks `errorReported()` only once, after the script; an
-assertion thrown during dump, export or save is lost. The check moves after
-every stage.
-
-Phase 2 adds the gesture verbs to the script, mapped to the synthetic scene
-events the L4 tests already send (`tests/l4/l4-scene.cpp`, `TestScene::mouse`):
-
-| command | effect |
-|---|---|
-| `press x y [button] [mods]` | mouse press at scene coordinates |
-| `move x y` | mouse move with the pressed buttons |
-| `release x y [button]` | mouse release |
-| `click x y [button] [mods]` | press and release |
-| `double-click x y [button]` | double click |
-| `tool <name>` | select the scene tool (`cursor`, `hand`, `transition`, `state`, ...) |
-| `key <name> [mods]` | a key press and release |
-
-A gesture is not an undo step by itself: the scene opens the step on press
-and closes it on release, as in the GUI. The dump after a gesture shows the
-scene the gesture built, so the expectation facts apply unchanged. The
-catalog gains the gesture forms of the operations (`drag`, `resize`, `draw
-transition`, `box select`, `delete selected`), and mission B draws them like
-the verbs.
-
-## Phases
-
-| Phase | Content |
-|---|---|
-| 1 | package, catalog, composer, two adapters, fuzzer, runner, tier 1 and 2, mechanical render check, register with minimization, regression tier, the `== stack` dump |
-| 2 | gesture verbs in the batch script, gesture operations in the catalog, gesture themes |
-| 3 | vision review, corpus growth from reproductions, register-driven campaigns, session replay reports |
 
 ## Running
 
