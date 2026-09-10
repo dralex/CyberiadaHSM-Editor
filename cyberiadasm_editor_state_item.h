@@ -72,6 +72,8 @@ public:
     QString name() const;
 
     StateRegion* getRegion();
+    // create the region on demand when the state turned composite
+    StateRegion* ensureRegion();
     void updateRegion();
 
     QRectF boundingRect() const override;

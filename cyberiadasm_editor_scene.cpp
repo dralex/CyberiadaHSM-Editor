@@ -289,8 +289,9 @@ QGraphicsItem* CyberiadaSMEditorScene::graphicsParentFor(const Cyberiada::Elemen
     if (!parent) return NULL;
     QGraphicsItem* item = elementIdToItemMap.value(parent->get_id());
     if (item && parent->get_type() == Cyberiada::elementCompositeState) {
-        // the children of a composite state live in its region
-        return static_cast<CyberiadaSMEditorStateItem*>(item)->getRegion();
+        // the children of a composite state live in its region; a state that
+        // just turned composite (a live reparent) needs it created now
+        return static_cast<CyberiadaSMEditorStateItem*>(item)->ensureRegion();
     }
     return item;
 }

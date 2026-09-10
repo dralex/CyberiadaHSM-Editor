@@ -71,8 +71,7 @@ CyberiadaSMEditorStateItem::CyberiadaSMEditorStateItem(QObject *parent_object,
     initializeActions();
 
     if (state->is_composite_state()) {
-        region = new StateRegion(this);
-        region->setVisibleRegon(SettingsManager::instance().getShowServiceObjects());
+        ensureRegion();
         updateRegion();
     }
 
@@ -182,6 +181,17 @@ StateRegion *CyberiadaSMEditorStateItem::getRegion()
     return region;
 }
 
+// a simple state that gains a child becomes composite: its region must exist
+// before the child item is added (a live reparent adds it from a row signal)
+StateRegion *CyberiadaSMEditorStateItem::ensureRegion()
+{
+    if (state->is_composite_state() && region == nullptr) {
+        region = new StateRegion(this);
+        region->setVisibleRegon(SettingsManager::instance().getShowServiceObjects());
+    }
+    return region;
+}
+
 void CyberiadaSMEditorStateItem::updateRegion()
 {
     if (SettingsManager::instance().getInspectorMode()) {
@@ -261,10 +271,7 @@ void CyberiadaSMEditorStateItem::syncFromModel()
         title->setPlainText(name());
     }
     if (state->is_composite_state()) {
-        if (region == nullptr) {
-            region = new StateRegion(this);
-            region->setVisibleRegon(SettingsManager::instance().getShowServiceObjects());
-        }
+        ensureRegion();
         updateRegion();
     }
     // a reparent rebuilds the item through the model row signals
