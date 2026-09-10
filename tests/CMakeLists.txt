@@ -200,6 +200,18 @@ endfunction()
 add_stack_dump_test(hierarchy hierarchy)
 add_stack_dump_test(add-elements hierarchy add-elements)
 
+# The polygon unit tests: the package of tests/polygon/ under unittest, with
+# the editor binary and the batch environment (see docs/POLYGON.md)
+find_package(Python3 COMPONENTS Interpreter)
+if(Python3_Interpreter_FOUND)
+  add_test(NAME polygon-unit
+    COMMAND ${Python3_EXECUTABLE} -m unittest discover -s tests -t .
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/polygon)
+  set_tests_properties(polygon-unit PROPERTIES
+    TIMEOUT 300
+    ENVIRONMENT "${L0_ENVIRONMENT};POLYGON_INSPECTOR=$<TARGET_FILE:CyberiadaInspector>")
+endif()
+
 # The L2 editing test suite: run the edit script, then compare both the dump
 # and the saved document with the good files, and re-open the saved document
 # (see docs/TESTING.md)

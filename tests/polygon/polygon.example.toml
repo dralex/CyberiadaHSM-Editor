@@ -1,0 +1,27 @@
+# The test polygon configuration: copy to polygon.toml and fill in the
+# backends; the keys never enter this file, only the names of the
+# environment variables that hold them (see docs/POLYGON.md)
+
+[run]
+timeout = 30       # seconds per editor run
+rounds = 8         # rounds per agent session
+calls = 40         # model calls per session
+
+[render]
+probe_px = 2       # pixels sampled around the expected border path
+ink_min = 0.5      # the ink ratio below which an element counts as unpainted
+
+[backend.local]
+kind = "chat-completions"
+base_url = "http://localhost:11434/v1"
+model = "qwen2.5-coder:32b"
+key_env = "POLYGON_LOCAL_KEY"
+vision = false
+temperature = 0.7
+
+[backend.cloud]
+kind = "messages"
+base_url = ""
+model = ""
+key_env = "POLYGON_CLOUD_KEY"
+vision = true
