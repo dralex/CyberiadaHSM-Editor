@@ -26,6 +26,7 @@
 #include <vector>
 
 #include <QString>
+#include <QUndoStack>
 
 #include "cyberiadasm_dump.h"
 #include "cyberiadasm_model.h"
@@ -172,4 +173,12 @@ static void dumpTextElement(CyberiadaSMEditorScene* scene, Cyberiada::Element* e
 void dumpText(CyberiadaSMEditorScene* scene, CyberiadaSMModel* model, std::ostream& os)
 {
 	dumpTextElement(scene, model->rootDocument(), 0, os);
+}
+
+void dumpStack(CyberiadaSMModel* model, std::ostream& os)
+{
+	const QUndoStack* stack = model->undoStack();
+	os << "count: " << stack->count() << std::endl;
+	os << "index: " << stack->index() << std::endl;
+	os << "clean: " << (stack->isClean() ? "yes" : "no") << std::endl;
 }

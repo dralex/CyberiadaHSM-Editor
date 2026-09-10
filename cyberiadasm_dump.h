@@ -37,4 +37,7 @@ void dumpScene(CyberiadaSMEditorScene* scene, CyberiadaSMModel* model, std::ostr
 // the pixel: the metrics are compared instead of the glyphs (see docs/TESTING.md)
 void dumpText(CyberiadaSMEditorScene* scene, CyberiadaSMModel* model, std::ostream& os);
 
+// the undo stack: the step count, the current index and the clean state
+void dumpStack(CyberiadaSMModel* model, std::ostream& os);
+
 #endif

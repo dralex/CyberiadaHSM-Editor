@@ -174,6 +174,32 @@ add_text_dump_test(hierarchy)
 add_text_dump_test(label-geometry)
 add_text_dump_test(multiline-actions)
 
+# The stack test suite: the undo stack section after an optional script
+# (the count, the index and the clean state) vs the good file (see docs/TESTING.md)
+function(add_stack_dump_test name diagram)
+  set(_script)
+  if(ARGC GREATER 2)
+    set(_script -DSCRIPT=scripts/${ARGV2}.script)
+  endif()
+  add_test(NAME stack-${name}
+    COMMAND ${CMAKE_COMMAND}
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
+      -DINPUT=diagrams/${diagram}.graphml
+      ${_script}
+      -DDUMP_STACK=1
+      -DEXPECTED=0
+      -DWORKDIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/stack-${name}.out
+      -DDUMP_GOOD=${CMAKE_CURRENT_SOURCE_DIR}/good/${name}-stack-output.txt
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunBatchTest.cmake)
+  set_tests_properties(stack-${name} PROPERTIES
+    TIMEOUT 60
+    ENVIRONMENT "${L0_ENVIRONMENT}")
+endfunction()
+
+add_stack_dump_test(hierarchy hierarchy)
+add_stack_dump_test(add-elements hierarchy add-elements)
+
 # The L2 editing test suite: run the edit script, then compare both the dump
 # and the saved document with the good files, and re-open the saved document
 # (see docs/TESTING.md)

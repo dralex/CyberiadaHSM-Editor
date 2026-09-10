@@ -1,0 +1,4 @@
+== stack
+count: 0
+index: 0
+clean: yes

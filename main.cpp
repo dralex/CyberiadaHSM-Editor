@@ -60,6 +60,8 @@ int main(int argc, char *argv[])
 	parser.addOption(textOption);
 	QCommandLineOption dumpTextOption("dump-text", "Dump the font and the layout of the text elements.");
 	parser.addOption(dumpTextOption);
+	QCommandLineOption dumpStackOption("dump-stack", "Dump the undo stack: the step count, the index and the clean state.");
+	parser.addOption(dumpStackOption);
 	QCommandLineOption reconstructOption("reconstruct", "Reconstruct absent or malformed geometry on load.");
 	parser.addOption(reconstructOption);
 	QCommandLineOption reconstructSMOption("reconstruct-sm", "Reconstruct the absent state machine border too (with --reconstruct).");
@@ -138,7 +140,7 @@ int main(int argc, char *argv[])
 								parser.value(exportOption), parser.isSet(reconstructOption),
 								parser.isSet(reconstructSMOption),
 								parser.isSet(strictOption), save_format,
-								parser.isSet(dumpTextOption));
+								parser.isSet(dumpTextOption), parser.isSet(dumpStackOption));
 		}
 		return runGuiMode(app);
 	} catch(const QString& error) {

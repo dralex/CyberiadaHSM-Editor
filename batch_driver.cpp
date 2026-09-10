@@ -41,7 +41,7 @@ int runGuiMode(CyberiadaSMEditorApplication& app)
 int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName, bool dump,
 				 const QString& script, const QString& save, const QString& exportImage,
 				 bool reconstruct, bool reconstruct_sm, bool strict,
-				 Cyberiada::DocumentFormat saveFormat, bool dumpTextMetrics)
+				 Cyberiada::DocumentFormat saveFormat, bool dumpTextMetrics, bool dumpUndoStack)
 {
 	CyberiadaSMEditorWindow win;
 	win.show();
@@ -76,6 +76,11 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName, boo
 	if (dumpTextMetrics) {
 		std::cout << "== text" << std::endl;
 		dumpText(win.getScene(), win.getModel(), std::cout);
+	}
+
+	if (dumpUndoStack) {
+		std::cout << "== stack" << std::endl;
+		dumpStack(win.getModel(), std::cout);
 	}
 
 	if (!exportImage.isEmpty()) {

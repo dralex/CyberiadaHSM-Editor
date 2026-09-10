@@ -173,6 +173,11 @@ element, the role of the text, its font family, point size and boldness, its
 position inside the element and its size, rounded to the pixel. It is
 independent of `--dump`, so a text case compares that section alone.
 
+`--dump-stack` writes a `== stack` section with the undo stack: the step
+`count`, the current `index` and the `clean` state. It is independent of
+`--dump` as well; the stack cases (`stack-<name>`) compare that section alone
+with `good/<name>-stack-output.txt`, after the named script or with none.
+
 `--strict` loads the document with the library's strict standard checks: the
 graph, identifier, marker, name and vertex order requirements are checked in
 addition to the format, so a document the default mode accepts may fail with
@@ -399,6 +404,7 @@ tests/
   scripts/<case>.script      edit scripts for the L2 cases
   good/<name>-output.txt     reviewed good files for the L1/L2 dumps
   good/<name>-text-output.txt  reviewed good files for the text metrics
+  good/<name>-stack-output.txt reviewed good files for the undo stack dumps
   good/<case>-output.graphml reviewed good files for the L2 saved documents
   good/<name>-reconstruct[-sm]-output.txt      reviewed good files for the reconstruction dumps
   good/<name>-reconstruct[-sm]-output.graphml  reviewed good files for the reconstructed documents
