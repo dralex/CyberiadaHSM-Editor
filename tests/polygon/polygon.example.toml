@@ -23,5 +23,5 @@ temperature = 0.7
 kind = "messages"
 base_url = ""
 model = ""
-key_env = "POLYGON_CLOUD_KEY"
+key_env = "POLYGON_CLOUD_KEY"     # or key_file = "~/cloud.key"
 vision = true

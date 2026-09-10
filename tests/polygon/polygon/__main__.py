@@ -34,6 +34,10 @@ from . import env as E
 from . import oracles
 from . import register as R
 from . import render
+from . import catalog as CAT
+from . import coverage as COV
+from . import fuzzer as F
+from . import session as S
 
 
 def _env():
@@ -123,6 +127,24 @@ def cmd_register(args):
     return 2
 
 
+def cmd_fuzz(args):
+    env = _env()
+    cfg = C.load(args.config)
+    document = _diagram(env, args.diagram)
+    catalog = CAT.Catalog()
+    coverage = COV.Coverage(env.polygon / "coverage.json")
+    producer = F.Fuzzer(catalog, coverage, args.seed, gestures=not args.no_gestures)
+    folder = S.session_folder(env.polygon, "fuzz", args.seed)
+    session = S.Session(env, cfg, document, producer, _register(env), coverage, folder,
+                        producer_name="fuzzer", seed=args.seed, minimize=not args.no_minimize)
+    session.run(args.rounds)
+    print("%s: %s" % (folder, session.summary()))
+    for r in session.rounds:
+        for kind, signature, note in r.findings:
+            print("round %d %s %s: %s" % (r.number, kind, signature[:60], note[:100]))
+    return 0
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="polygon")
     parser.add_argument("--config", help="the polygon.toml to use")
@@ -144,6 +166,13 @@ def main(argv=None):
     p.add_argument("--title")
     p.add_argument("--no-minimize", action="store_true")
     p.set_defaults(func=cmd_register)
+    p = sub.add_parser("fuzz", help="a fuzzer session")
+    p.add_argument("--diagram", required=True)
+    p.add_argument("--seed", type=int, default=1)
+    p.add_argument("--rounds", type=int, default=20)
+    p.add_argument("--no-gestures", action="store_true")
+    p.add_argument("--no-minimize", action="store_true")
+    p.set_defaults(func=cmd_fuzz)
     args = parser.parse_args(argv)
     return args.func(args)
 

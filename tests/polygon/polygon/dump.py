@@ -438,55 +438,80 @@ def sections(text):
     return result
 
 
-def lines(document):
-    """One comparable line per element, in document order: the identity, the
-    texts, the actions and the geometry; the meta first, without the geometry
+def fields(document):
+    """One comparable record per element, in document order: [(field, value)]
+    with the identity first; the meta first of all, without the geometry
     declaration the save writes. The file identity plays no part."""
-    out = ["meta: " + ", ".join("%s=%s" % (k, v) for k, v in document.meta if k != "geometry")]
+    out = [("meta", "meta", [(k, v) for k, v in document.meta if k != "geometry"])]
     for e in document.walk():
         if e.kind == KIND_DOCUMENT:
             continue
-        fields = [e.kind, e.id, "name=%r" % e.name]
+        record = [("kind", e.kind), ("id", e.id), ("name", e.name)]
         if e.kind in COMMENT_KINDS and not e.is_meta:
-            fields.append("body=%r" % e.body)
-        if e.actions:
-            fields.append("actions=%r" % [a.notation() for a in e.actions])
-        if e.geometry is not None:
-            fields.append("geometry=%r" % (e.geometry,))
-        if e.region is not None:
-            fields.append("region=%r" % (e.region,))
-        if e.subjects:
-            fields.append("subjects=%r" % e.subjects)
+            record.append(("body", e.body))
+        record.append(("actions", [a.notation() for a in e.actions]))
+        record.append(("geometry", e.geometry))
+        record.append(("region", e.region))
+        record.append(("subjects", list(e.subjects)))
         if e.kind == KIND_TRANSITION:
-            fields.append("%s %s -> %s" % (e.ttype, e.source, e.target))
-            if e.action is not None:
-                fields.append("action=%r" % e.action.notation())
-            if e.polyline:
-                fields.append("polyline=%r" % e.polyline)
-        out.append(" ".join(fields))
+            record.append(("type", e.ttype))
+            record.append(("source", e.source))
+            record.append(("target", e.target))
+            record.append(("action", e.action.notation() if e.action else None))
+            record.append(("polyline", list(e.polyline)))
+        out.append((e.kind, e.id, record))
     return out
 
 
+def record_text(record):
+    kind, id_, pairs = record
+    return "%s %s " % (kind, id_) + " ".join("%s=%r" % (k, v) for k, v in pairs
+                                             if v not in (None, [], "") or k in ("kind", "id"))
+
+
+@dataclass
+class Difference:
+    where: str      # the element kind (or 'meta', 'scene', 'count')
+    field: str      # the differing field
+    expected: str
+    got: str
+
+    @property
+    def tag(self):
+        """The signature part: kind and field, no instance data."""
+        return "%s:%s" % (self.where.lower().replace(" ", "-"), self.field)
+
+
 def compare(a_text, b_text):
-    """The first difference of two dumps, (expected line, got line), by the
-    document structure and geometry and then by the scene section; None when
-    they agree."""
+    """The first difference of two dumps by the document structure and
+    geometry, then by the scene section; None when they agree."""
     da, db = parse_dump(a_text), parse_dump(b_text)
     if da.document is None or db.document is None:
-        return ("a document", "no document")
-    la, lb = lines(da.document), lines(db.document)
-    for x, y in zip(la, lb):
-        if x != y:
-            return (x, y)
-    if len(la) != len(lb):
-        return (la[len(lb)] if len(la) > len(lb) else "", lb[len(la)] if len(lb) > len(la) else "")
+        return Difference("document", "missing", "a document", "no document")
+    fa, fb = fields(da.document), fields(db.document)
+    for ra, rb in zip(fa, fb):
+        if ra == rb:
+            continue
+        if ra[0] == "meta":
+            return Difference("meta", "meta", str(ra[2]), str(rb[2]))
+        if ra[0] != rb[0] or ra[1] != rb[1]:
+            return Difference(ra[0], "identity", record_text(ra), record_text(rb))
+        for (ka, va), (kb, vb) in zip(ra[2], rb[2]):
+            if va != vb:
+                return Difference(ra[0], ka, record_text(ra), record_text(rb))
+        return Difference(ra[0], "record", record_text(ra), record_text(rb))
+    if len(fa) != len(fb):
+        extra = fa[len(fb)] if len(fa) > len(fb) else fb[len(fa)]
+        return Difference("count", "elements", "%d elements" % len(fa),
+                          "%d elements (%s)" % (len(fb), record_text(extra)))
     sa = sections(a_text).get("scene", "").splitlines()
     sb = sections(b_text).get("scene", "").splitlines()
     for x, y in zip(sa, sb):
         if x != y:
-            return (x, y)
+            kind = x.strip().split(":")[0] if x.strip() else "item"
+            return Difference("scene " + kind, "item", x.strip(), y.strip())
     if len(sa) != len(sb):
-        return (sa[len(sb)] if len(sa) > len(sb) else "", sb[len(sa)] if len(sb) > len(sa) else "")
+        return Difference("scene", "count", "%d items" % len(sa), "%d items" % len(sb))
     return None
 
 

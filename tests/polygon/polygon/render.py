@@ -218,11 +218,13 @@ class RenderResult:
     outside: list = None      # [(child item, parent item)]
 
 
-def check(dump, image, probe_px, ink_min):
-    """The render check of one export against its dump."""
+def check(dump, image, probe_px, ink_min, frame=None):
+    """The render check of one export against its dump; the frame is the one
+    the export reported, or derived from the dump when absent."""
     result = RenderResult(unpainted=[], outside=[])
     items = list(dump.scene_items().values())
-    frame = scene_frame(items)
+    if frame is None:
+        frame = scene_frame(items)
     if frame is None:
         result.skipped = True
         return result
@@ -264,11 +266,12 @@ def oracle(round_, script_text, dump):
         result = round_.run(script_text, "export-png", export=target)
         if result.exit != runner.EXIT_OK or not target.exists():
             return []
+        round_.export_frame = oracles.export_frame(result)
     try:
         image = decode_png(target)
     except (PngError, zlib.error) as e:
         return [oracles.Finding(oracles.KIND_RENDER, "render:png:" + oracles.normalize(str(e)), str(e))]
-    result = check(dump, image, round_.config.probe_px, round_.config.ink_min)
+    result = check(dump, image, round_.config.probe_px, round_.config.ink_min, round_.export_frame)
     findings = []
     if result.skipped:
         return findings

@@ -70,11 +70,20 @@ def revision(root):
         return ""
 
 
-def evaluate_script(env, config, diagram, script_text, expectation_text="", workdir=None):
-    """The findings of a script with every oracle, in a temporary workdir."""
+def evaluate_script(env, config, diagram, script_text, expectation_text="", workdir=None, family=None):
+    """The findings of a script with every oracle (or one family), in a
+    temporary workdir."""
     with tempfile.TemporaryDirectory(prefix="polygon-") as tmp:
         round_ = oracles.Round(env, config, diagram, workdir or tmp)
-        return round_.evaluate(script_text, 0, expectation_text, render.oracle)
+        return round_.evaluate(script_text, 0, expectation_text, render.oracle, family)
+
+
+def family_of(signature):
+    """The oracle family a signature belongs to: the reruns it needs."""
+    head = signature.split(":")[0]
+    if head in ("save-reopen", "undo-all", "redo-all", "export", "render"):
+        return head
+    return "main"
 
 
 class Register:
@@ -172,24 +181,32 @@ class Register:
 
 
 def reproduces(env, config, diagram, script_text, expectation_text, signature):
-    result = evaluate_script(env, config, diagram, script_text, expectation_text)
+    result = evaluate_script(env, config, diagram, script_text, expectation_text,
+                             family=family_of(signature))
     return any(f.signature == signature for f in result.findings)
 
 
 def minimize(env, config, diagram, script_text, expectation_text, signature):
-    """The shortest prefix that reproduces the signature, then every command
-    dropped in turn while the signature holds. Comments are dropped first."""
+    """The shortest prefix that reproduces the signature (found by bisection,
+    then checked), then every command dropped in turn while the signature
+    holds. Comments are dropped first; only the oracle family of the
+    signature is rerun."""
     lines = [l for l in script_text.splitlines() if l.strip() and not l.strip().startswith("#")]
     if not lines:
         return script_text
-    kept = None
-    for n in range(0, len(lines) + 1):
-        candidate = "\n".join(lines[:n]) + "\n"
-        if reproduces(env, config, diagram, candidate, expectation_text, signature):
-            kept = lines[:n]
-            break
-    if kept is None:
+    rep = lambda ls: reproduces(env, config, diagram, "\n".join(ls) + "\n", expectation_text, signature)
+    if not rep(lines):
         return script_text
+    low, high = 0, len(lines)     # rep(lines[:high]) holds
+    if rep([]):
+        high = 0
+    while high - low > 1:
+        mid = (low + high) // 2
+        if rep(lines[:mid]):
+            high = mid
+        else:
+            low = mid
+    kept = lines[:high]
     i = len(kept) - 1
     while i >= 0:
         candidate = kept[:i] + kept[i + 1:]

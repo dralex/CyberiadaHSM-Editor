@@ -82,6 +82,17 @@ def crash_finding(result, stage):
     return None
 
 
+def export_frame(result):
+    """(x, y, w, h) of the picture an export run reported, or None."""
+    for line in result.messages():
+        if line.startswith("export frame "):
+            try:
+                return tuple(float(v) for v in line.split()[2:6])
+            except ValueError:
+                return None
+    return None
+
+
 class Round:
     """The runs of one round on a start document and an accumulated script."""
 
@@ -92,6 +103,7 @@ class Round:
         self.workdir = Path(workdir)
         self.workdir.mkdir(parents=True, exist_ok=True)
         self._start_dump = None
+        self.export_frame = None   # (x, y, w, h) the last png export reported
 
     def run(self, script_text, name, **options):
         script = runner.write_script(self.workdir / (name + ".script"), script_text)
@@ -105,10 +117,11 @@ class Round:
             self._start_dump = result
         return self._start_dump
 
-    def evaluate(self, script_text, prefix_lines=0, expectation_text="", render=None):
+    def evaluate(self, script_text, prefix_lines=0, expectation_text="", render=None, family=None):
         """Run the script with every oracle. prefix_lines: the lines of the
         script the previous round accepted; an error inside them is a replay
-        oracle failure, later ones are the round's own script error."""
+        oracle failure, later ones are the round's own script error. family
+        limits the tier 1 reruns to one oracle family (the signature head)."""
         out = RoundResult()
         main = self.run(script_text, "main", dump=True, stack=True)
         out.run = main
@@ -134,10 +147,10 @@ class Round:
         except D.DumpError as e:
             out.findings.append(Finding(KIND_ORACLE, "dump:" + normalize(str(e)), str(e)))
             return out
-        out.findings += self.tier1(script_text, main, out.dump)
+        out.findings += self.tier1(script_text, main, out.dump, family)
         for fact, reason in expectations.evaluate(expectation_text, out.dump):
             out.findings.append(Finding(KIND_SEMANTIC, "expect:" + normalize(fact), reason))
-        if render is not None:
+        if render is not None and family in (None, "render"):
             out.findings += render(self, script_text, out.dump)
         return out
 
@@ -154,13 +167,21 @@ class Round:
             return [Finding(KIND_ORACLE, "%s:dump:%s" % (name, normalize(str(e))), str(e))]
         if diff is None:
             return []
-        x, y = diff
-        return [Finding(KIND_ORACLE, "%s:%s" % (name, normalize(x)[:120]),
-                        "%s: expected %r, got %r" % (stage, x, y))]
+        return [Finding(KIND_ORACLE, "%s:%s" % (name, diff.tag),
+                        "%s: expected %r, got %r" % (stage, diff.expected, diff.got))]
 
-    def tier1(self, script_text, main, dump):
+    def tier1(self, script_text, main, dump, family=None):
         findings = []
-        # save then reopen
+        if family in (None, "save-reopen"):
+            findings += self.save_reopen(script_text, main)
+        if family in (None, "undo-all", "redo-all"):
+            findings += self.undo_redo(script_text, main, dump)
+        if family in (None, "export"):
+            findings += self.exports(script_text)
+        return findings
+
+    def save_reopen(self, script_text, main):
+        findings = []
         saved = self.workdir / "saved.graphml"
         save = self.run(script_text, "save", save=saved)
         crash = crash_finding(save, "save")
@@ -173,7 +194,10 @@ class Round:
             reopen = runner.run(self.env, saved, dump=True, timeout=self.config.timeout,
                                 workdir=self.workdir)
             findings += self._compare("save-reopen", main.stdout, reopen, "reopen")
-        # undo all, redo all
+        return findings
+
+    def undo_redo(self, script_text, main, dump):
+        findings = []
         steps = dump.stack.index if dump.stack else 0
         undo_text = script_text.rstrip("\n") + "\n" + "undo\n" * steps
         undo = self.run(undo_text, "undo", dump=True)
@@ -181,10 +205,15 @@ class Round:
         redo_text = undo_text + "redo\n" * steps
         redo = self.run(redo_text, "redo", dump=True)
         findings += self._compare("redo-all", main.stdout, redo, "redo-all")
-        # exports
+        return findings
+
+    def exports(self, script_text):
+        findings = []
         for suffix in ("png", "svg"):
             target = self.workdir / ("export." + suffix)
             result = self.run(script_text, "export-" + suffix, export=target)
+            if suffix == "png":
+                self.export_frame = export_frame(result)
             crash = crash_finding(result, "export " + suffix)
             if crash:
                 findings.append(crash)
