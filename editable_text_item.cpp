@@ -170,6 +170,16 @@ void EditableTextItem::setFontRole(FontRole role)
     applyFont();
 }
 
+void EditableTextItem::setTextWidthEnabled(bool on)
+{
+    isTextWidthEnabled = on;
+    if (!on) {
+        setTextWidth(-1);   // natural width, no wrapping
+    } else {
+        updateTextWidth();
+    }
+}
+
 void EditableTextItem::setTextMargin(double newTextMargin)
 {
     textMargin = newTextMargin;

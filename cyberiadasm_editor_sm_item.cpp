@@ -53,6 +53,8 @@ CyberiadaSMEditorSMItem::CyberiadaSMEditorSMItem(CyberiadaSMModel* model,
 
     // an editable title, like a state, shown only when the border exists
     title = new StateTitle(QString(element->get_name().c_str()), this);
+    title->setTextWidthEnabled(false);   // the header tab hugs the title text
+    title->setTextAlignment(Qt::AlignLeft);
     title->setVisible(element->has_geometry() && SettingsManager::instance().getShowText());
     connect(title, &EditableTextItem::sizeChanged, this, [this]() { setTitlePosition(); update(); });
     setTitlePosition();
@@ -63,6 +65,33 @@ void CyberiadaSMEditorSMItem::setTitlePosition()
     if (!title || !element->has_geometry()) return;
     QRectF r = boundingRect();
     title->setPos(r.left() + 8, r.top() + 4);
+}
+
+qreal CyberiadaSMEditorSMItem::titleTabWidth() const
+{
+    if (!title || !title->isVisible()) return 0;
+    return title->boundingRect().width() + 16;   // the tab padding
+}
+
+Cyberiada::Rect CyberiadaSMEditorSMItem::contentRect() const
+{
+    return static_cast<Cyberiada::ElementCollection*>(element)
+        ->ElementCollection::get_bound_rect(*(model->rootDocument()));
+}
+
+qreal CyberiadaSMEditorSMItem::minimumWidth() const
+{
+    Cyberiada::Rect c = contentRect();
+    qreal contentW = c.valid ? c.width : 0;
+    return std::max(std::max((qreal)ELEMENT_MIN_SIZE, titleTabWidth()), contentW);
+}
+
+qreal CyberiadaSMEditorSMItem::minimumHeight() const
+{
+    Cyberiada::Rect c = contentRect();
+    qreal contentH = c.valid ? c.height : 0;
+    qreal titleH = (title && title->isVisible()) ? title->boundingRect().height() + 8 : 0;
+    return std::max(std::max((qreal)ELEMENT_MIN_SIZE, titleH), contentH);
 }
 
 void CyberiadaSMEditorSMItem::syncFromModel()
@@ -77,6 +106,16 @@ void CyberiadaSMEditorSMItem::syncFromModel()
         if (title->toPlainText() != name) title->setPlainText(name);
         title->setVisible(element->has_geometry() && SettingsManager::instance().getShowText());
         setTitlePosition();
+        // a title longer than the border widens the machine (once)
+        if (element->has_geometry() && !adjustingForTitle) {
+            Cyberiada::Rect b = static_cast<Cyberiada::ElementCollection*>(element)->get_geometry_rect();
+            qreal need = titleTabWidth();
+            if (b.width + 0.5 < need) {
+                adjustingForTitle = true;
+                model->updateGeometry(getIndex(), Cyberiada::Rect(b.x, b.y, need, b.height));
+                adjustingForTitle = false;
+            }
+        }
     }
     CyberiadaSMEditorAbstractItem::syncFromModel();
 }

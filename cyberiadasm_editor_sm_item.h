@@ -52,13 +52,20 @@ public:
     // the state machine draws no transition handles: no edge starts or ends here
     void initializeDots() override {}
 
+    // the border cannot be smaller than its title tab or its content
+    qreal minimumWidth() const override;
+    qreal minimumHeight() const override;
+
 protected:
     void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
 
 private:
     void setTitlePosition();
+    qreal titleTabWidth() const;
+    Cyberiada::Rect contentRect() const;
 
     StateTitle* title = nullptr;
+    bool adjustingForTitle = false;
     void updateSizeToFitChildren(CyberiadaSMEditorAbstractItem* child) override;
 };
 

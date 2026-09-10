@@ -42,6 +42,9 @@ public:
     FontRole getFontRole() const { return fontRole; }
     // the wrap width follows the parent box, refreshed after a resize
     void updateTextWidth();
+    // a title that hugs its text (a state machine header) rather than the box
+    void setTextWidthEnabled(bool on);
+    void setTextAlignment(Qt::Alignment alignment);
     void setTextMargin(double newTextMargin);
 
 protected:
@@ -54,7 +57,6 @@ protected:
 
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
 
-    void setTextAlignment(Qt::Alignment alignment);
     // the resizable box the text belongs to, or null
     CyberiadaSMEditorAbstractItem* parentBox() const;
 

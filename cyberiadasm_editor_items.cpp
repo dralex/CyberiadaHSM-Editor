@@ -400,12 +400,10 @@ void CyberiadaSMEditorAbstractItem::resizeRight(const QPointF &pt)
     if( pt.x() < tmpRect.left() )
         return;
     qreal widthOffset =  ( pt.x() - tmpRect.left() );
-    if( widthOffset < ELEMENT_MIN_SIZE )
-        return;
-    if( widthOffset < 10)
-        tmpRect.setWidth( -widthOffset );
-    else
-        tmpRect.setWidth( widthOffset );
+    qreal minW = minimumWidth();
+    if( widthOffset < minW )
+        widthOffset = minW;         // cannot resize below the floor
+    tmpRect.setWidth( widthOffset );
     prepareGeometryChange();
     qreal delta = (widthOffset - boundingRect().width()) / 2;
     Cyberiada::Rect r = Cyberiada::Rect(pos().x() + delta,
@@ -422,12 +420,10 @@ void CyberiadaSMEditorAbstractItem::resizeBottom(const QPointF &pt)
     if( pt.y() < tmpRect.top() )
         return;
     qreal heightOffset =  ( pt.y() - tmpRect.top() );
-    if( heightOffset < ELEMENT_MIN_SIZE )
-        return;
-    if( heightOffset < 0)
-        tmpRect.setHeight( -heightOffset );
-    else
-        tmpRect.setHeight( heightOffset );
+    qreal minH = minimumHeight();
+    if( heightOffset < minH )
+        heightOffset = minH;        // cannot resize below the floor
+    tmpRect.setHeight( heightOffset );
     prepareGeometryChange();
     qreal delta = (heightOffset - boundingRect().height()) / 2;
     Cyberiada::Rect r = Cyberiada::Rect(pos().x(),
@@ -453,6 +449,9 @@ void CyberiadaSMEditorAbstractItem::clampInsideStateMachine()
     qreal y = qBound(border.top() + halfH, pos().y(), border.bottom() - halfH);
     if (x != pos().x() || y != pos().y()) setPos(x, y);
 }
+
+qreal CyberiadaSMEditorAbstractItem::minimumWidth() const { return ELEMENT_MIN_SIZE; }
+qreal CyberiadaSMEditorAbstractItem::minimumHeight() const { return ELEMENT_MIN_SIZE; }
 
 void CyberiadaSMEditorAbstractItem::updatePosGeometry()
 {

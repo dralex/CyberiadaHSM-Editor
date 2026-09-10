@@ -62,6 +62,7 @@ private slots:
 	void test_new_sm_place();
 	void test_sm_contains();
 	void test_sm_extends();
+	void test_sm_title_size();
 
 private:
 	int countItems(int type);
@@ -906,6 +907,21 @@ void TestScene::test_sm_extends()
 	// the extension was actually needed (three 200-wide states spread wider
 	// than the default border)
 	QVERIFY(after.width > before.width);
+}
+
+void TestScene::test_sm_title_size()
+{
+	// a title longer than the border widens the machine to fit its header
+	QVERIFY(model->loadDocument("diagrams/two-sms.graphml"));
+	scene->loadScene();
+	QModelIndex g0 = model->elementToIndex(model->idToElement("G0"));
+	QVERIFY(model->updateGeometry(g0, Cyberiada::Rect(0, 0, 100, 40)));
+	double before = static_cast<const Cyberiada::ElementCollection*>(
+		model->idToElement("G0"))->get_geometry_rect().width;
+	QVERIFY(model->updateTitle(g0, "AVeryLongStateMachineTitleHere"));
+	double after = static_cast<const Cyberiada::ElementCollection*>(
+		model->idToElement("G0"))->get_geometry_rect().width;
+	QVERIFY(after > before);
 }
 
 QTEST_MAIN(TestScene)
