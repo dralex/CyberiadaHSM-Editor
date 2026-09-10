@@ -88,6 +88,9 @@ bool renderScene(CyberiadaSMEditorScene* scene, const QString& path, QString* er
 	// the visible diagram, not the scene rect of the loaded document: the
 	// edits may have grown it
 	QRectF scene_rect = scene->diagramRect();
+	// the frame of the picture in scene units, for the tools reading the export
+	fprintf(stderr, "export frame %g %g %g %g\n", scene_rect.x(), scene_rect.y(),
+			scene_rect.width(), scene_rect.height());
 	QRect target(QPoint(0, 0), scene_rect.toRect().size());
 	QString suffix = QFileInfo(path).suffix().toLower();
 
