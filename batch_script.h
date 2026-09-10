@@ -26,10 +26,11 @@
 
 #include <QString>
 
-class CyberiadaSMModel;
+class CyberiadaSMEditorWindow;
 
-// run the edit commands from the script file against the model;
-// on failure fills error with a "line N: ..." message (see docs/TESTING.md)
-bool runEditScript(CyberiadaSMModel* model, const QString& path, QString* error);
+// run the edit commands and the mouse gestures from the script file against
+// the model and the scene of the window; on failure fills error with a
+// "line N: ..." message (see docs/TESTING.md)
+bool runEditScript(CyberiadaSMEditorWindow* win, const QString& path, QString* error);
 
 #endif

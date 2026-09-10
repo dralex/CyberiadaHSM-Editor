@@ -234,6 +234,7 @@ add_l2_test(update-meta meta)
 add_l2_test(update-id geometry)
 add_l2_test(subjects hierarchy)
 add_l2_test(transition-subjects comment-transition)
+add_l2_test(gestures geometry)
 
 # The undo test suite: a script edits and undoes (or redoes) through the
 # batch verbs, and the dump must equal an EXISTING good file - the untouched
@@ -264,6 +265,7 @@ endfunction()
 
 add_undo_test(undo-all hierarchy hierarchy)
 add_undo_test(redo-all hierarchy add-elements add-elements)
+add_undo_test(gestures-undo geometry geometry)
 
 # The reconstruction test suite: the document is loaded with the library's
 # geometry reconstruction, then the scene dump and the saved document are

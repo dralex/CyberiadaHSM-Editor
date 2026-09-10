@@ -262,6 +262,34 @@ multi-line behaviours and comment bodies stay expressible. The commands map
 | `delete-subject <comment> <i>` | remove subject `<i>` (0-based) |
 | `undo` / `redo` | undo or redo one step (every other command is one step) |
 
+The mouse gestures go through the same script. A gesture is delivered to the
+scene as a view would send it - the left button at scene coordinates - so it
+takes the path of the GUI: the item handlers, the tools, the border zones.
+
+| command | effect |
+|---|---|
+| `press x y [ctrl\|shift\|alt ...]` | press the left button at the scene point, with the modifiers |
+| `drag x y` | move the pointer with the button pressed |
+| `release x y` | release the button |
+| `click x y [mods]` | press and release at one point |
+| `double-click x y [mods]` | double click at the point |
+| `tool select\|transition` | select the scene tool |
+| `delete-selected` | delete the selected element through the window action |
+
+A gesture is one undo step opened by the press and closed by the release, as
+in the GUI, so `press`, `drag`, `release`, `click`, `double-click` and `tool`
+open no script-level step; `delete-selected` is one step like the model
+commands. The first gesture activates the scene. A `drag` or `release`
+without a press, a `press` while the button is pressed and a script ending
+with the button pressed are script errors (exit code 4); `delete-selected`
+with nothing selected is one as well. The gesture case (`l2-gestures`) drags
+a state by its body, resizes another from its border, draws a loop under
+the transition tool (the first drag starts the loop on the pressed state,
+the following drags move its target end) and deletes the moved state after
+a click; its
+undo case (`undo-gestures-undo`) undoes the four steps and must reproduce the
+untouched dump.
+
 The action text uses the CyberiadaML notation: `entry/ behaviour`,
 `exit/ behaviour` or `TRIGGER [guard]/ behaviour`. State actions are addressed
 by their 0-based position in the state's action list; a transition holds a

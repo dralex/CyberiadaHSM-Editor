@@ -1,0 +1,24 @@
+# edit the geometry diagram through mouse gestures
+# drag node-0-1 by its body
+press 930 280
+drag 960 300
+release 960 300
+# resize node-0-0-2 from its right border, 3 px inside
+press 647 225
+drag 677 225
+release 677 225
+# draw a loop on node-0-0-1 with the transition tool: the first move starts
+# the loop, the following drags would move its target end onto another state
+tool transition
+press 380 280
+drag 300 250
+release 300 250
+tool select
+# select the moved node-0-1 with a click and delete it
+click 960 300
+delete-selected
+# undo every step: the drag, the resize, the transition and the deletion
+undo
+undo
+undo
+undo

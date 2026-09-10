@@ -24,9 +24,13 @@
 #include <QFile>
 #include <QTextStream>
 #include <QRegularExpression>
+#include <QApplication>
+#include <QGraphicsSceneMouseEvent>
 
 #include "batch_script.h"
 #include "cyberiadasm_model.h"
+#include "cyberiadasm_editor_scene.h"
+#include "smeditor_window.h"
 #include "cyberiada_constants.h"
 
 static bool toNumbers(const QStringList& tokens, int from, int count, double* values)
@@ -347,8 +351,99 @@ static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QStri
 	return false;
 }
 
-bool runEditScript(CyberiadaSMModel* model, const QString& path, QString* error)
+// the mouse state of a script: the gestures go through the scene as a view
+// would send them, one left button, between a press and a release
+struct GestureState {
+	bool activated = false;
+	bool pressed = false;
+	Qt::KeyboardModifiers mods = Qt::NoModifier;
+};
+
+static bool isGesture(const QString& cmd)
 {
+	return cmd == "press" || cmd == "drag" || cmd == "release" ||
+		cmd == "click" || cmd == "double-click" || cmd == "tool";
+}
+
+static bool parseModifiers(const QStringList& tokens, int from,
+						   Qt::KeyboardModifiers* mods, QString* error)
+{
+	*mods = Qt::NoModifier;
+	for (int i = from; i < tokens.size(); i++) {
+		const QString& m = tokens.at(i);
+		if (m == "ctrl") *mods |= Qt::ControlModifier;
+		else if (m == "shift") *mods |= Qt::ShiftModifier;
+		else if (m == "alt") *mods |= Qt::AltModifier;
+		else { *error = "unknown modifier '" + m + "'"; return false; }
+	}
+	return true;
+}
+
+static void sendMouse(QGraphicsScene* scene, QEvent::Type type, const QPointF& pos,
+					  Qt::MouseButtons buttons, Qt::KeyboardModifiers mods)
+{
+	QGraphicsSceneMouseEvent event(type);
+	event.setScenePos(pos);
+	event.setScreenPos(pos.toPoint());
+	event.setButton(Qt::LeftButton);
+	event.setButtons(buttons);
+	event.setModifiers(mods);
+	QApplication::sendEvent(scene, &event);
+}
+
+static bool runGesture(CyberiadaSMEditorScene* scene, const QStringList& tokens,
+					   GestureState* state, QString* error)
+{
+	const QString& cmd = tokens.first();
+	if (!state->activated) {
+		// the scene handles the gestures of an active window only
+		QEvent activate(QEvent::WindowActivate);
+		QApplication::sendEvent(scene, &activate);
+		state->activated = true;
+	}
+	if (cmd == "tool") {
+		if (tokens.size() != 2) { *error = "tool requires a name"; return false; }
+		if (tokens.at(1) == "select") scene->setCurrentTool(ToolType::Select);
+		else if (tokens.at(1) == "transition") scene->setCurrentTool(ToolType::Transition);
+		else { *error = "unknown tool '" + tokens.at(1) + "'"; return false; }
+		return true;
+	}
+	double v[2];
+	if (!toNumbers(tokens, 1, 2, v)) { *error = cmd + " requires the x y coordinates"; return false; }
+	QPointF pos(v[0], v[1]);
+	if (cmd == "drag" || cmd == "release") {
+		if (tokens.size() != 3) { *error = cmd + " takes the coordinates only"; return false; }
+		if (!state->pressed) { *error = cmd + " without a press"; return false; }
+		if (cmd == "drag") {
+			sendMouse(scene, QEvent::GraphicsSceneMouseMove, pos, Qt::LeftButton, state->mods);
+		} else {
+			sendMouse(scene, QEvent::GraphicsSceneMouseRelease, pos, Qt::NoButton, state->mods);
+			state->pressed = false;
+		}
+		return true;
+	}
+	Qt::KeyboardModifiers mods;
+	if (!parseModifiers(tokens, 3, &mods, error)) return false;
+	if (cmd == "double-click") {
+		sendMouse(scene, QEvent::GraphicsSceneMouseDoubleClick, pos, Qt::LeftButton, mods);
+		return true;
+	}
+	if (state->pressed) { *error = cmd + " while the button is pressed"; return false; }
+	sendMouse(scene, QEvent::GraphicsSceneMousePress, pos, Qt::LeftButton, mods);
+	if (cmd == "press") {
+		state->pressed = true;
+		state->mods = mods;
+	} else {
+		sendMouse(scene, QEvent::GraphicsSceneMouseRelease, pos, Qt::NoButton, mods);
+	}
+	return true;
+}
+
+bool runEditScript(CyberiadaSMEditorWindow* win, const QString& path, QString* error)
+{
+	CyberiadaSMModel* model = win->getModel();
+	CyberiadaSMEditorScene* scene = win->getScene();
+	GestureState gesture;
 	QFile file(path);
 	if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
 		*error = "cannot open script " + path;
@@ -364,11 +459,24 @@ bool runEditScript(CyberiadaSMModel* model, const QString& path, QString* error)
 		QStringList tokens = trimmed.split(QRegularExpression("\\s+"));
 		QString message;
 		bool ok = false;
-		// every command is one undo step; undo/redo themselves are not
-		bool step = tokens.first() != "undo" && tokens.first() != "redo";
-		if (step) model->beginUndoStep(tokens.first());
+		// every command is one undo step; undo/redo themselves are not, and
+		// a gesture is bracketed by the scene between the press and the release
+		const QString& cmd = tokens.first();
+		bool step = cmd != "undo" && cmd != "redo" && !isGesture(cmd);
+		if (step) model->beginUndoStep(cmd);
 		try {
-			ok = runCommand(model, tokens, &message);
+			if (isGesture(cmd)) {
+				ok = runGesture(scene, tokens, &gesture, &message);
+			} else if (cmd == "delete-selected") {
+				if (scene->selectedItems().isEmpty()) {
+					message = "nothing is selected";
+				} else {
+					win->actionDeleteElement->trigger();
+					ok = true;
+				}
+			} else {
+				ok = runCommand(model, tokens, &message);
+			}
 			if (!ok && message.isEmpty()) {
 				message = "command failed";
 			}
@@ -380,6 +488,10 @@ bool runEditScript(CyberiadaSMModel* model, const QString& path, QString* error)
 			*error = QString("line %1: %2").arg(lineno).arg(message);
 			return false;
 		}
+	}
+	if (gesture.pressed) {
+		*error = QString("line %1: the script ends with the button pressed").arg(lineno);
+		return false;
 	}
 	return true;
 }

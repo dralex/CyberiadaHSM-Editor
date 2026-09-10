@@ -270,7 +270,7 @@ of `TESTING.md` and the gesture verbs of the same script:
 | command | effect |
 |---|---|
 | `press x y [ctrl\|shift\|alt ...]` | mouse press at scene coordinates |
-| `move x y` | mouse move with the pressed button |
+| `drag x y` | mouse move with the pressed button |
 | `release x y` | mouse release |
 | `click x y [mods]` | press and release at one point |
 | `double-click x y` | double click |

@@ -62,7 +62,7 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName, boo
 
 	if (!script.isEmpty()) {
 		// the scene follows the model through its signals
-		if (!runEditScript(win.getModel(), script, &error)) {
+		if (!runEditScript(&win, script, &error)) {
 			fprintf(stderr, "script %s failed\n%s\n", qPrintable(script), qPrintable(error));
 			return batchScriptError;
 		}
