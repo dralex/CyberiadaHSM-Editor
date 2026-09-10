@@ -25,6 +25,8 @@
 #include <QPainter>
 #include <QDebug>
 #include <QGraphicsSceneMouseEvent>
+#include <QGraphicsSceneContextMenuEvent>
+#include <QMenu>
 #include <QtMath>
 #include <QTextDocument>
 #include <QTextOption>
@@ -625,6 +627,12 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
 {
     if (SettingsManager::instance().getInspectorMode()) { return; }
     prepareGeometryChange();
+
+    // with Ctrl held the endpoint locks to the adjacent point on the dominant
+    // axis, so the segment next to it stays strictly horizontal or vertical
+    DotSignal* movedDot = dynamic_cast<DotSignal*>(signalOwner);
+    Qt::KeyboardModifiers mods = movedDot ? movedDot->modifiers() : Qt::NoModifier;
+
     prevPosition = p;
 
     for(int i = 0; i < listDots.size(); i++){
@@ -635,6 +643,11 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
                 if(transition->has_polyline() && transition->get_geometry_polyline().size() > 0) {
                     Cyberiada::Polyline polyline = transition->get_geometry_polyline();
                     nextPoint = QPointF(polyline.front().x, polyline.front().y) + sourceCenter();
+                }
+                if (mods & Qt::ControlModifier) {
+                    if (qAbs(p.x() - nextPoint.x()) <= qAbs(p.y() - nextPoint.y())) p.setX(nextPoint.x());
+                    else                                                            p.setY(nextPoint.y());
+                    prevPosition = p;
                 }
 
                 CyberiadaSMEditorAbstractItem* cItem = itemUnderCursor();
@@ -705,6 +718,11 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
                 if(transition->has_polyline() && transition->get_geometry_polyline().size() > 0) {
                     Cyberiada::Polyline polyline = transition->get_geometry_polyline();
                     nextPoint = QPointF(polyline.back().x, polyline.back().y) + sourceCenter();
+                }
+                if (mods & Qt::ControlModifier) {
+                    if (qAbs(p.x() - nextPoint.x()) <= qAbs(p.y() - nextPoint.y())) p.setX(nextPoint.x());
+                    else                                                            p.setY(nextPoint.y());
+                    prevPosition = p;
                 }
 
                 CyberiadaSMEditorAbstractItem* cItem = itemUnderCursor();
@@ -787,59 +805,74 @@ void CyberiadaSMEditorTransitionItem::slotDeleteDot(QGraphicsItem *signalOwner)
 {
     if (SettingsManager::instance().getInspectorMode()) { return; }
     if (isArcLoop()) { return; }
-    QPainterPath linePath = path();
 
-    for(int i = 0; i < linePath.elementCount(); i++){
+    for(int i = 0; i < listDots.size(); i++){
         if(listDots.at(i) == signalOwner){
-            // first or last
-            if(i == 0 || i == linePath.elementCount() - 1) {
-                break;
-            }
-
-            Cyberiada::Polyline pol = transition->get_geometry_polyline();
-            pol.erase(pol.begin() + i - 1);
-            model->updateGeometry(model->elementToIndex(element), pol);
+            removePolylineVertex(i);
             break;
         }
     }
+}
+
+// interior dots map to polyline[dotIndex-1]; the endpoints have no vertex
+void CyberiadaSMEditorTransitionItem::removePolylineVertex(int dotIndex)
+{
+    if (!transition->has_polyline()) { return; }
+    if (dotIndex <= 0 || dotIndex >= listDots.size() - 1) { return; }
+
+    Cyberiada::Polyline pol = transition->get_geometry_polyline();
+    if (dotIndex - 1 >= int(pol.size())) { return; }
+    pol.erase(pol.begin() + dotIndex - 1);
+    model->updateGeometry(model->elementToIndex(element), pol);
+}
+
+// the two 10px diagonal probe crosses of a local point against each segment
+int CyberiadaSMEditorTransitionItem::segmentAt(const QPointF& localPos) const
+{
+    QLineF checkLineFirst(localPos.x() - 5, localPos.y() - 5, localPos.x() + 5, localPos.y() + 5);
+    QLineF checkLineSecond(localPos.x() + 5, localPos.y() - 5, localPos.x() - 5, localPos.y() + 5);
+    QPainterPath oldPath = path();
+    for(int i = 0; i < oldPath.elementCount() - 1; i++){
+        QLineF checkableLine(oldPath.elementAt(i), oldPath.elementAt(i+1));
+        if(lineIntersect(checkableLine, checkLineFirst, 0) == 1 ||
+           lineIntersect(checkableLine, checkLineSecond, 0) == 1){
+            return i;
+        }
+    }
+    return -1;
 }
 
 void CyberiadaSMEditorTransitionItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
 {
     if (SettingsManager::instance().getInspectorMode()) { return; }
 
-    QPointF clickPos = event->pos();
+    // a double click edits the transition label; a vertex is added by dragging
+    // a segment instead
+    actionItem->setVisible(true);
+    actionItem->startEditing();
+    QGraphicsItem::mouseDoubleClickEvent(event);
+}
 
-    // the arc has no segments to insert into: the click makes the loop a polyline
-    if (isArcLoop()) {
-        QPointF p = clickPos - source()->sceneBoundingRect().center();
-        Cyberiada::Polyline pol;
-        pol.push_back(Cyberiada::Point(p.x(), p.y()));
-        model->updateGeometry(model->elementToIndex(element), pol);
-        QGraphicsItem::mouseDoubleClickEvent(event);
-        return;
-    }
+void CyberiadaSMEditorTransitionItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
+{
+    if (SettingsManager::instance().getInspectorMode()) { return; }
 
-    QLineF checkLineFirst(clickPos.x() - 5, clickPos.y() - 5, clickPos.x() + 5, clickPos.y() + 5);
-    QLineF checkLineSecond(clickPos.x() + 5, clickPos.y() - 5, clickPos.x() - 5, clickPos.y() + 5);
-    QPainterPath oldPath = path();
-    for(int i = 0; i < oldPath.elementCount() - 1; i++){
-        QLineF checkableLine(oldPath.elementAt(i), oldPath.elementAt(i+1));
-        if(lineIntersect(checkableLine, checkLineFirst, 0) == 1 || lineIntersect(checkableLine, checkLineSecond, 0) == 1){
-            QPointF p = clickPos - source()->sceneBoundingRect().center();
-            Cyberiada::Point cybP = Cyberiada::Point(p.x(), p.y());
-            Cyberiada::Polyline pol;
-            if(transition->has_polyline()) {
-                pol = transition->get_geometry_polyline();
-                pol.insert(pol.begin() + i, cybP);
-            } else {
-                pol.push_back(cybP);
-            }
-            model->updateGeometry(model->elementToIndex(element), pol);
+    // offer to remove a polyline vertex when the click is on an interior dot
+    int vertexDot = -1;
+    for (int i = 1; i < listDots.size() - 1; i++) {
+        if (QLineF(listDots.at(i)->scenePos(), event->scenePos()).length() <= 6.0) {
+            vertexDot = i;
             break;
         }
     }
-    QGraphicsItem::mouseDoubleClickEvent(event);
+    if (vertexDot < 0) { return; }
+
+    QMenu menu;
+    QAction* remove = menu.addAction(tr("Удалить точку"));
+    if (menu.exec(event->screenPos()) == remove) {
+        removePolylineVertex(vertexDot);
+    }
+    event->accept();
 }
 
 void CyberiadaSMEditorTransitionItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
@@ -856,8 +889,10 @@ void CyberiadaSMEditorTransitionItem::mousePressEvent(QGraphicsSceneMouseEvent *
     showDots();
     if (event->button() & Qt::LeftButton) {
         isLeftMouseButtonPressed = true;
-       //        setPreviousPosition(event->scenePos());
-        // emit clicked(this);
+        // a press on a segment arms a vertex insertion, sprung by the drag
+        pressPos = event->pos();
+        pendingSegment = isArcLoop() ? 0 : segmentAt(pressPos);
+        vertexDragArmed = (pendingSegment >= 0);
     }
     QGraphicsItem::mousePressEvent(event);
 }
@@ -870,20 +905,42 @@ void CyberiadaSMEditorTransitionItem::mouseMoveEvent(QGraphicsSceneMouseEvent *e
         return;
     }
 
-   if (isLeftMouseButtonPressed) {
-//        auto dx = event->scenePos().x() - m_previousPosition.x();
-//        auto dy = event->scenePos().y() - m_previousPosition.y();
-//        moveBy(dx,dy);
-//        //        setPreviousPosition(event->scenePos());
-//        emit signalMove(this, dx, dy);
-   }
-   QGraphicsItem::mouseMoveEvent(event);
+    // once the drag leaves the press spot, insert a vertex on the pressed
+    // segment; the same gesture then carries it
+    if (vertexDragArmed &&
+        QLineF(pressPos, event->pos()).length() > 3.0) {
+        vertexDragArmed = false;
+        QPointF p = event->pos() - sourceCenter();
+        Cyberiada::Point cybP(p.x(), p.y());
+        Cyberiada::Polyline pol;
+        if (transition->has_polyline()) {
+            pol = transition->get_geometry_polyline();
+            pol.insert(pol.begin() + pendingSegment, cybP);
+        } else {
+            pol.push_back(cybP);
+        }
+        model->updateGeometry(model->elementToIndex(element), pol);
+        draggingVertex = pendingSegment;
+    }
+    // drag the inserted vertex with the rest of the gesture
+    if (draggingVertex >= 0 && transition->has_polyline()) {
+        Cyberiada::Polyline pol = transition->get_geometry_polyline();
+        if (draggingVertex < int(pol.size())) {
+            QPointF p = event->pos() - sourceCenter();
+            pol.at(draggingVertex) = Cyberiada::Point(p.x(), p.y());
+            model->updateGeometry(model->elementToIndex(element), pol);
+        }
+    }
+    QGraphicsItem::mouseMoveEvent(event);
 }
 
 void CyberiadaSMEditorTransitionItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
    if (event->button() & Qt::LeftButton) {
        isLeftMouseButtonPressed = false;
+       vertexDragArmed = false;
+       pendingSegment = -1;
+       draggingVertex = -1;
    }
    QGraphicsItem::mouseReleaseEvent(event);
 }

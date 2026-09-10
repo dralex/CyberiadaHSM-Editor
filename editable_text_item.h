@@ -46,6 +46,8 @@ public:
     void setTextWidthEnabled(bool on);
     void setTextAlignment(Qt::Alignment alignment);
     void setTextMargin(double newTextMargin);
+    // enter edit mode programmatically (a double click on the owner, say)
+    void startEditing();
 
 protected:
     void focusOutEvent(QFocusEvent *event) override;

@@ -53,6 +53,8 @@ public:
     bool isDeleteable() { return deleteable; }
     void setDeleteable(bool on);
     void deleteDot();
+    // the keyboard modifiers of the last move, for the owner to read
+    Qt::KeyboardModifiers modifiers() const { return lastModifiers; }
 
 signals:
     void previousPositionChanged();
@@ -75,6 +77,7 @@ private:
     unsigned int flags;
     bool deleteable;
     bool dragArmed = false;
+    Qt::KeyboardModifiers lastModifiers = Qt::NoModifier;
     QPointF previousPosition;
 };
 

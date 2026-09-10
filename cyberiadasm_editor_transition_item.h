@@ -115,12 +115,17 @@ protected:
     void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
     void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) override;
+    void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
     void hoverLeaveEvent(QGraphicsSceneHoverEvent *event) override;
     void hoverMoveEvent(QGraphicsSceneHoverEvent *event) override;
     void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
 
 private:
     bool isArcLoop() const;
+    // the path segment (0-based) that a local point falls on, or -1
+    int segmentAt(const QPointF& localPos) const;
+    // erase the polyline vertex behind interior dot dotIndex (endpoints ignored)
+    void removePolylineVertex(int dotIndex);
     void drawArrow(QPainter* painter);
     CyberiadaSMEditorAbstractItem* itemUnderCursor();
     // the attachment of an end without a stored point: the node border toward
@@ -150,6 +155,13 @@ private:
     bool isMouseTraking;
     bool isSourceTraking;
     bool isTargetTraking;
+
+    // a press on a segment arms a vertex insertion; the drag creates it and
+    // then carries the new vertex (its polyline index)
+    int pendingSegment = -1;
+    QPointF pressPos;
+    bool vertexDragArmed = false;
+    int draggingVertex = -1;
 
     void initializeDots() override;
     void updateDots();

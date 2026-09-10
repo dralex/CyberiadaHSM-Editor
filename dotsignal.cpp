@@ -102,6 +102,7 @@ void DotSignal::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
     if(flags & Movable){
         auto dx = event->scenePos().x() - previousPosition.x();
         auto dy = event->scenePos().y() - previousPosition.y();
+        lastModifiers = event->modifiers();
         moveBy(dx,dy);
         setPreviousPosition(event->scenePos());
         emit signalMove(this, dx, dy, event->scenePos());

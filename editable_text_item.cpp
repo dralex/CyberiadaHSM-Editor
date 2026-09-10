@@ -93,10 +93,14 @@ void EditableTextItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) {
         event->ignore();
         return;
     }
+    startEditing();
+    QGraphicsTextItem::mouseDoubleClickEvent(event);
+}
+
+void EditableTextItem::startEditing() {
     setTextInteractionFlags(Qt::TextEditorInteraction);
     setFocus();
     isEdit = true;
-    QGraphicsTextItem::mouseDoubleClickEvent(event);
 }
 
 void EditableTextItem::keyPressEvent(QKeyEvent *event) {
