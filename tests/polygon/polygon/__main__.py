@@ -32,22 +32,41 @@ from . import config as C
 from . import dump as D
 from . import env as E
 from . import oracles
+from . import register as R
+from . import render
 
 
-def cmd_check_script(args):
+def _env():
     env = E.Env.discover()
     if not env.available():
         print("editor binary not found: %s" % env.binary, file=sys.stderr)
-        return 2
-    cfg = C.load(args.config)
-    document = Path(args.diagram)
+        sys.exit(2)
+    return env
+
+
+def _diagram(env, name):
+    document = Path(name)
     if not document.exists():
-        document = env.diagrams / (args.diagram + ".graphml")
+        document = env.diagrams / (name + ".graphml")
+    if not document.exists():
+        print("no diagram %s" % name, file=sys.stderr)
+        sys.exit(2)
+    return document
+
+
+def _register(env):
+    return R.Register(env.polygon / "problems")
+
+
+def cmd_check_script(args):
+    env = _env()
+    cfg = C.load(args.config)
+    document = _diagram(env, args.diagram)
     script = Path(args.script).read_text()
     facts = Path(args.expectations).read_text() if args.expectations else ""
     with tempfile.TemporaryDirectory(prefix="polygon-") as tmp:
         round_ = oracles.Round(env, cfg, document, tmp)
-        result = round_.evaluate(script, expectation_text=facts)
+        result = round_.evaluate(script, expectation_text=facts, render=render.oracle)
         if result.script_error:
             print("script error at line %d: %s" % result.script_error)
         for f in result.findings:
@@ -55,6 +74,53 @@ def cmd_check_script(args):
         if args.dump and result.dump:
             print(D.describe(result.dump.document))
     return 1 if (result.findings or result.script_error) else 0
+
+
+def cmd_check(args):
+    """The regression case of a registered problem: 0 while it reproduces."""
+    env = _env()
+    cfg = C.load(args.config)
+    register = _register(env)
+    problem = register.find(args.problem)
+    if problem is None:
+        print("no problem %s" % args.problem, file=sys.stderr)
+        return 2
+    holds, result = register.check(env, cfg, problem)
+    for f in result.findings:
+        print("%s %s: %s" % (f.kind, f.signature, f.note))
+    if holds:
+        print("%s reproduces: %s" % (problem.id, problem.title))
+        return 0
+    print("%s does not reproduce any more: %s" % (problem.id, problem.title))
+    return 1
+
+
+def cmd_register(args):
+    env = _env()
+    cfg = C.load(args.config)
+    register = _register(env)
+    if args.action == "list":
+        for p in register.problems:
+            print("%s %s %s [%s] %s (%s, hits %d)" % (p.id, p.status, p.kind, p.signature[:60],
+                                                     p.title, p.diagram, p.hits))
+        return 0
+    if args.action == "cases":
+        register.write_cases()
+        print(register.folder / R.CASES_NAME)
+        return 0
+    if args.action == "add":
+        document = _diagram(env, args.diagram)
+        script = Path(args.script).read_text() if args.script else ""
+        facts = Path(args.expectations).read_text() if args.expectations else ""
+        added, result = R.register_script(register, env, cfg, document, script, facts,
+                                          title=args.title or "", producer="manual",
+                                          root=env.root, do_minimize=not args.no_minimize)
+        if result.script_error:
+            print("script error at line %d: %s" % result.script_error)
+        for problem, is_new in added:
+            print("%s %s: %s" % (problem.id, "registered" if is_new else "known", problem.title))
+        return 0
+    return 2
 
 
 def main(argv=None):
@@ -67,6 +133,17 @@ def main(argv=None):
     p.add_argument("--expectations")
     p.add_argument("--dump", action="store_true", help="describe the result")
     p.set_defaults(func=cmd_check_script)
+    p = sub.add_parser("check", help="reproduce a registered problem (the regression case)")
+    p.add_argument("--problem", required=True)
+    p.set_defaults(func=cmd_check)
+    p = sub.add_parser("register", help="the problem register")
+    p.add_argument("action", choices=["list", "add", "cases"])
+    p.add_argument("--diagram")
+    p.add_argument("--script")
+    p.add_argument("--expectations")
+    p.add_argument("--title")
+    p.add_argument("--no-minimize", action="store_true")
+    p.set_defaults(func=cmd_register)
     args = parser.parse_args(argv)
     return args.func(args)
 

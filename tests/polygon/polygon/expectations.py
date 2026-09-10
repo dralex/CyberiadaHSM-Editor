@@ -127,6 +127,10 @@ def check(fact, dump):
         if len(t) != 2:
             return "usage: absent <id>"
         return None if doc.find(t[1]) is None else "%s exists" % t[1]
+    if verb == "exists":
+        if len(t) != 2:
+            return "usage: exists <id>"
+        return None if doc.find(t[1]) is not None else "no element %s" % t[1]
     if verb in ("rect-inside", "no-overlap"):
         if len(t) != 3:
             return "usage: %s <id> <id>" % verb

@@ -213,6 +213,7 @@ def ink_ratio(image, frame, points, probe):
 class RenderResult:
     frame: tuple = None
     frame_error: str = ""
+    skipped: bool = False     # nothing with a size to check
     unpainted: list = None    # [(item, ratio)]
     outside: list = None      # [(child item, parent item)]
 
@@ -223,7 +224,7 @@ def check(dump, image, probe_px, ink_min):
     items = list(dump.scene_items().values())
     frame = scene_frame(items)
     if frame is None:
-        result.frame_error = "no element with a size in the dump"
+        result.skipped = True
         return result
     result.frame = frame
     expected = (int(round(frame[2])), int(round(frame[3])))
@@ -269,6 +270,8 @@ def oracle(round_, script_text, dump):
         return [oracles.Finding(oracles.KIND_RENDER, "render:png:" + oracles.normalize(str(e)), str(e))]
     result = check(dump, image, round_.config.probe_px, round_.config.ink_min)
     findings = []
+    if result.skipped:
+        return findings
     if result.frame_error:
         findings.append(oracles.Finding(oracles.KIND_REVIEW, "render:frame",
                                         result.frame_error, {"png": str(target)}))

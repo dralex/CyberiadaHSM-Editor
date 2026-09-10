@@ -220,6 +220,7 @@ anything.
 | `action <id> <i> <text>` | action `<i>` of the element has that text |
 | `rect-inside <id> <id>` | the scene rect of the first lies within the second |
 | `no-overlap <id> <id>` | the scene rects do not intersect |
+| `exists <id>` / `absent <id>` | the element exists / does not |
 | `undo-depth <n>` | the `== stack` section of `--dump-stack` reports `index: <n>` |
 
 The vocabulary is deliberately small; what it cannot express is left to the
@@ -324,12 +325,14 @@ prefix replay finds the first failing command, then every earlier command is
 dropped in turn while the signature stays. Sessions keep their full history
 in `sessions/`.
 
-Every open problem is a ctest case `polygon-<id>` that runs the reproduction
-and expects the recorded failure. It stays green while the bug is there and
-fails the day a change fixes it, which is the signal to review the
-reproduction, turn it into an ordinary good-file case where that makes sense
-and set the status to `fixed`. The cases are registered by one CMake
-function reading the register, next to the existing tiers.
+Every open problem is a ctest case `polygon-<id>` running
+`python3 -m polygon check --problem <id>`, which replays the reproduction
+with every oracle and exits 0 while the recorded signature reproduces. It
+stays green while the bug is there and fails the day a change fixes it,
+which is the signal to review the reproduction, turn it into an ordinary
+good-file case where that makes sense and set the status to `fixed`. The
+register writes `problems/cases.cmake`, one line per open problem, which
+`tests/CMakeLists.txt` includes next to the existing tiers.
 
 ## LLM backends
 
@@ -389,9 +392,10 @@ tests/polygon/
   sessions/<date>-<seed>/   prompts, answers, feedback, per round
 ```
 
-`tests/CMakeLists.txt` gains `add_polygon_problem_tests()` reading the
-register and reusing `cmake/RunBatchTest.cmake` with `EXPECTED` set to the
-recorded exit code, under the same `L0_ENVIRONMENT`.
+`tests/CMakeLists.txt` runs the unit tests of the package as `polygon-unit`
+and includes `problems/cases.cmake` for the `polygon-<id>` cases, both under
+the `L0_ENVIRONMENT` of the other tiers with the editor binary in
+`POLYGON_INSPECTOR`.
 
 ## Running
 

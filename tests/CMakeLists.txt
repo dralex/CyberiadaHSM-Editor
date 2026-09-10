@@ -210,6 +210,18 @@ if(Python3_Interpreter_FOUND)
   set_tests_properties(polygon-unit PROPERTIES
     TIMEOUT 300
     ENVIRONMENT "${L0_ENVIRONMENT};POLYGON_INSPECTOR=$<TARGET_FILE:CyberiadaInspector>")
+
+  # The polygon regression tier: one case per open problem of the register,
+  # green while the recorded failure reproduces (see docs/POLYGON.md)
+  function(add_polygon_case id)
+    add_test(NAME polygon-${id}
+      COMMAND ${Python3_EXECUTABLE} -m polygon check --problem ${id}
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/polygon)
+    set_tests_properties(polygon-${id} PROPERTIES
+      TIMEOUT 120
+      ENVIRONMENT "${L0_ENVIRONMENT};POLYGON_INSPECTOR=$<TARGET_FILE:CyberiadaInspector>")
+  endfunction()
+  include(${CMAKE_CURRENT_SOURCE_DIR}/polygon/problems/cases.cmake OPTIONAL)
 endif()
 
 # The L2 editing test suite: run the edit script, then compare both the dump

@@ -1,0 +1,222 @@
+# -----------------------------------------------------------------------------
+# The Cyberiada State Machine Editor
+# -----------------------------------------------------------------------------
+#
+# The test polygon: the problem register
+#
+# Copyright (C) 2026 Alexey Fedoseev <aleksey@fedoseev.net>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 3 of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see https://www.gnu.org/licenses/
+#
+# -----------------------------------------------------------------------------
+
+"""The found problems: problems/register.json with one reproduction folder
+per problem, the minimisation of a reproduction and the ctest cases."""
+
+import json
+import shutil
+import subprocess
+import tempfile
+from dataclasses import dataclass, field, asdict
+from datetime import date
+from pathlib import Path
+
+from . import dump as D
+from . import oracles
+from . import render
+
+REGISTER_NAME = "register.json"
+CASES_NAME = "cases.cmake"
+STATUS_OPEN = "open"
+STATUS_FIXED = "fixed"
+STATUS_CLOSED = "closed"
+
+
+@dataclass
+class Problem:
+    id: str
+    kind: str
+    signature: str
+    title: str
+    note: str = ""
+    diagram: str = ""
+    found: str = ""
+    revision: str = ""
+    status: str = STATUS_OPEN
+    hits: int = 1
+    producer: str = ""
+
+    @property
+    def folder(self):
+        return self.id
+
+
+def revision(root):
+    try:
+        return subprocess.run(["git", "-C", str(root), "rev-parse", "--short", "HEAD"],
+                              capture_output=True, text=True, timeout=10).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        return ""
+
+
+def evaluate_script(env, config, diagram, script_text, expectation_text="", workdir=None):
+    """The findings of a script with every oracle, in a temporary workdir."""
+    with tempfile.TemporaryDirectory(prefix="polygon-") as tmp:
+        round_ = oracles.Round(env, config, diagram, workdir or tmp)
+        return round_.evaluate(script_text, 0, expectation_text, render.oracle)
+
+
+class Register:
+    def __init__(self, folder):
+        self.folder = Path(folder)
+        self.problems = []
+        self.load()
+
+    @property
+    def path(self):
+        return self.folder / REGISTER_NAME
+
+    def load(self):
+        self.problems = []
+        if self.path.exists():
+            data = json.loads(self.path.read_text())
+            self.problems = [Problem(**p) for p in data.get("problems", [])]
+
+    def save(self):
+        self.folder.mkdir(parents=True, exist_ok=True)
+        data = {"problems": [asdict(p) for p in self.problems]}
+        self.path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
+        self.write_cases()
+
+    def find(self, id_):
+        for p in self.problems:
+            if p.id == id_:
+                return p
+        return None
+
+    def by_signature(self, signature):
+        for p in self.problems:
+            if p.signature == signature:
+                return p
+        return None
+
+    def next_id(self):
+        numbers = [int(p.id.split("-")[1]) for p in self.problems if p.id.startswith("P-")]
+        return "P-%d" % (max(numbers) + 1 if numbers else 1)
+
+    def open_problems(self):
+        return [p for p in self.problems if p.status == STATUS_OPEN]
+
+    def add(self, finding, diagram, script_text, expectation_text="", title="",
+            producer="", root=None, files=None, plan="", dump_text="", stderr_text=""):
+        """Register a finding with its reproduction; a known signature counts
+        a hit and returns the existing problem."""
+        known = self.by_signature(finding.signature)
+        if known is not None:
+            known.hits += 1
+            self.save()
+            return known, False
+        problem = Problem(id=self.next_id(), kind=finding.kind, signature=finding.signature,
+                          title=title or finding.note[:80], note=finding.note,
+                          diagram=Path(diagram).name, found=date.today().isoformat(),
+                          revision=revision(root) if root else "", producer=producer)
+        folder = self.folder / problem.folder
+        folder.mkdir(parents=True, exist_ok=True)
+        shutil.copy(diagram, folder / "start.graphml")
+        (folder / "script").write_text(script_text)
+        if expectation_text:
+            (folder / "expectations").write_text(expectation_text)
+        if plan:
+            (folder / "plan").write_text(plan)
+        if dump_text:
+            (folder / "dump").write_text(dump_text)
+        if stderr_text:
+            (folder / "stderr").write_text(stderr_text)
+        for name, path in (files or finding.files or {}).items():
+            if path and Path(path).exists():
+                shutil.copy(path, folder / (name + Path(path).suffix))
+        self.problems.append(problem)
+        self.save()
+        return problem, True
+
+    def write_cases(self):
+        lines = ["# generated by the polygon register: one ctest case per open problem,",
+                 "# green while the problem reproduces (see docs/POLYGON.md)"]
+        for p in self.open_problems():
+            lines.append("add_polygon_case(%s)" % p.id)
+        (self.folder / CASES_NAME).write_text("\n".join(lines) + "\n")
+
+    def reproduction(self, problem):
+        """(start document, script text, expectation text) of a problem."""
+        folder = self.folder / problem.folder
+        expectations = folder / "expectations"
+        return (folder / "start.graphml", (folder / "script").read_text(),
+                expectations.read_text() if expectations.exists() else "")
+
+    def check(self, env, config, problem):
+        """True when the recorded signature reproduces."""
+        start, script, facts = self.reproduction(problem)
+        result = evaluate_script(env, config, start, script, facts)
+        return any(f.signature == problem.signature for f in result.findings), result
+
+
+def reproduces(env, config, diagram, script_text, expectation_text, signature):
+    result = evaluate_script(env, config, diagram, script_text, expectation_text)
+    return any(f.signature == signature for f in result.findings)
+
+
+def minimize(env, config, diagram, script_text, expectation_text, signature):
+    """The shortest prefix that reproduces the signature, then every command
+    dropped in turn while the signature holds. Comments are dropped first."""
+    lines = [l for l in script_text.splitlines() if l.strip() and not l.strip().startswith("#")]
+    if not lines:
+        return script_text
+    kept = None
+    for n in range(0, len(lines) + 1):
+        candidate = "\n".join(lines[:n]) + "\n"
+        if reproduces(env, config, diagram, candidate, expectation_text, signature):
+            kept = lines[:n]
+            break
+    if kept is None:
+        return script_text
+    i = len(kept) - 1
+    while i >= 0:
+        candidate = kept[:i] + kept[i + 1:]
+        if reproduces(env, config, diagram, "\n".join(candidate) + "\n", expectation_text, signature):
+            kept = candidate
+        i -= 1
+    return "\n".join(kept) + "\n"
+
+
+def register_script(register, env, config, diagram, script_text, expectation_text="",
+                    title="", producer="", root=None, do_minimize=True, plan=""):
+    """Run a script with every oracle and register every finding; returns
+    [(problem, is_new)]."""
+    result = evaluate_script(env, config, diagram, script_text, expectation_text)
+    out = []
+    for finding in result.findings:
+        if register.by_signature(finding.signature) is not None:
+            out.append(register.add(finding, diagram, script_text))
+            continue
+        text = script_text
+        if do_minimize:
+            text = minimize(env, config, diagram, script_text, expectation_text, finding.signature)
+        # the reproduction files come from one more run of the final script
+        with tempfile.TemporaryDirectory(prefix="polygon-") as tmp:
+            again = oracles.Round(env, config, diagram, tmp).evaluate(text, 0, expectation_text, render.oracle)
+            match = next((f for f in again.findings if f.signature == finding.signature), finding)
+            files = {"render": match.files["png"]} if match.files.get("png") else {}
+            out.append(register.add(match, diagram, text, expectation_text, title, producer, root,
+                                    files, plan, again.run.stdout, "\n".join(again.run.messages())))
+    return out, result
