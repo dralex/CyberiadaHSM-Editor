@@ -121,7 +121,7 @@ def check(fact, dump):
         if i < 0 or i >= len(actions):
             return "%s has %d actions" % (t[1], len(actions))
         expected = " ".join(t[3:])
-        got = actions[i].notation()
+        got = actions[i].notation(escape=True)
         return None if " ".join(got.split()) == " ".join(expected.split()) else "action %d is %r" % (i, got)
     if verb == "absent":
         if len(t) != 2:

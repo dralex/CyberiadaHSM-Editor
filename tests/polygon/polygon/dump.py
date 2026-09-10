@@ -191,15 +191,17 @@ class Action:
     guard: str = ""
     behavior: str = ""
 
-    def notation(self):
-        """The CyberiadaML text of the action, as the script writes it."""
+    def notation(self, escape=False):
+        """The CyberiadaML text of the action; escape=True writes an embedded
+        newline as the script does (\\n)."""
         if self.type == ACTION_TRANSITION:
             head = self.trigger
             if self.guard:
                 head += " [%s]" % self.guard
         else:
             head = self.type
-        return ("%s/ %s" % (head, self.behavior)).rstrip()
+        text = ("%s/ %s" % (head, self.behavior)).rstrip()
+        return text.replace("\n", "\\n") if escape else text
 
     @classmethod
     def from_entries(cls, entries, transition=False):
@@ -573,7 +575,7 @@ def _describe_element(e, machine, depth, lines):
         return
     head = '%s "%s"' % (WORDS.get(e.kind, e.kind.lower()), e.name)
     if e.actions:
-        head += "; " + "; ".join(a.notation() for a in e.actions)
+        head += "; " + "; ".join(a.notation(escape=True) for a in e.actions)
     if e.children:
         head += "; it holds:"
     lines.append(indent + head)
@@ -621,7 +623,7 @@ def describe(document):
                 tgt = _label(machine_find(machine, t.target), machine)
                 text = "  - %s -> %s" % (src, tgt)
                 if t.action is not None:
-                    text += ": " + t.action.notation()
+                    text += ": " + t.action.notation(escape=True)
                 lines.append(text)
         lines.append("")
     return "\n".join(lines).rstrip() + "\n"

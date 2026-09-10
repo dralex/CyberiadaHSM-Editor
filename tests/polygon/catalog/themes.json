@@ -1,0 +1,12 @@
+{
+  "themes": [
+    {"name": "nesting under change", "hint": "resize and move parents while children are inside, reparent in and out, undo across it", "budget": [12, 20]},
+    {"name": "geometry extremes", "hint": "tiny and huge rects, negative coordinates, states far apart, children on the border of the parent", "budget": [10, 16]},
+    {"name": "undo and redo interleaving", "hint": "undo in the middle of a construction, redo, then edit; undo after a deletion", "budget": [12, 20]},
+    {"name": "deletion of parents", "hint": "delete states that hold children and attached transitions, delete a transition source, undo", "budget": [10, 16]},
+    {"name": "identity changes", "hint": "rename and update ids of elements that transitions and comments reference, then edit them", "budget": [10, 16]},
+    {"name": "comments and subjects", "hint": "comments pointing at elements that are moved, reparented, renamed and deleted", "budget": [10, 16]},
+    {"name": "transitions everywhere", "hint": "self transitions, transitions between nesting levels, from and to pseudostates, polylines, then move the ends", "budget": [12, 20]},
+    {"name": "gestures on a crowded diagram", "hint": "drag, resize and draw loops on states that overlap or touch, then delete by click", "budget": [10, 16]}
+  ]
+}

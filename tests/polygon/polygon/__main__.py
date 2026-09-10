@@ -38,6 +38,13 @@ from . import catalog as CAT
 from . import coverage as COV
 from . import fuzzer as F
 from . import session as S
+from . import agent as A
+from . import brief as B
+from . import composer as M
+from . import prompt as P
+from . import runner
+from .adapters import base as adapters
+import json
 
 
 def _env():
@@ -145,6 +152,82 @@ def cmd_fuzz(args):
     return 0
 
 
+def _mission(env, cfg, catalog, coverage, args):
+    return M.compose(args.mission, env, catalog, coverage, args.seed, args.diagram)
+
+
+def _first_message(env, cfg, mission):
+    result = runner.run(env, mission.original if mission.kind == M.REPRODUCE else mission.diagram,
+                        dump=True, stack=True, timeout=cfg.timeout)
+    if result.exit != runner.EXIT_OK:
+        print("cannot open %s: %s" % (mission.name, " ".join(result.messages())), file=sys.stderr)
+        sys.exit(2)
+    dump = D.parse_dump(result.stdout)
+    if mission.kind == M.REPRODUCE:
+        return P.mission_reproduce(B.brief(mission.name, dump.document))
+    return P.mission_combine(mission.name, D.describe(dump.document), P.scene_text(dump), dump.stack,
+                             mission.operations, mission.theme, mission.budget, mission.untried)
+
+
+def cmd_run(args):
+    env = _env()
+    cfg = C.load(args.config)
+    backend = cfg.backend(args.backend)
+    key = C.api_key(backend)
+    if not key:
+        print("no key for backend %s (%s)" % (backend.name, backend.key_env or backend.key_file), file=sys.stderr)
+        return 2
+    catalog = CAT.Catalog()
+    coverage = COV.Coverage(env.polygon / "coverage.json")
+    mission = _mission(env, cfg, catalog, coverage, args)
+    folder = S.session_folder(env.polygon, "agent-" + mission.kind, args.seed)
+    folder.mkdir(parents=True, exist_ok=True)
+    log = open(folder / "conversation.txt", "a")
+    recorder = lambda kind, text: (log.write("---- %s\n%s\n" % (kind, text)), log.flush())
+    adapter = adapters.make(backend, key)
+    producer = A.Agent(adapter, catalog, mission, _first_message(env, cfg, mission), recorder)
+    session = S.Session(env, cfg, mission.diagram, producer, _register(env), coverage, folder,
+                        producer_name="agent:%s:%s" % (backend.name, backend.model), seed=args.seed,
+                        minimize=not args.no_minimize)
+    session.mission = mission
+    session.run(args.rounds or cfg.rounds)
+    (folder / "usage.json").write_text(json.dumps(adapter.usage, indent=2) + "\n")
+    log.close()
+    print("%s: %s, %d calls" % (folder, session.summary(), adapter.calls))
+    for r in session.rounds:
+        for kind, signature, note in r.findings:
+            print("round %d %s %s: %s" % (r.number, kind, signature[:60], note[:100]))
+    return 0
+
+
+def cmd_replay(args):
+    env = _env()
+    cfg = C.load(args.config)
+    data = json.loads((Path(args.folder) / "session.json").read_text())
+    coverage = COV.Coverage(env.polygon / "coverage.json")
+    folder = S.session_folder(env.polygon, "replay", data.get("seed", 0))
+    session = S.Session(env, cfg, data["start"], S.Replay(data["rounds"]), _register(env), coverage,
+                        folder, producer_name="replay", seed=data.get("seed", 0), minimize=False)
+    session.run(len(data["rounds"]))
+    print("%s: %s" % (folder, session.summary()))
+    for r in session.rounds:
+        for kind, signature, note in r.findings:
+            print("round %d %s %s: %s" % (r.number, kind, signature[:60], note[:100]))
+    return 0
+
+
+def cmd_brief(args):
+    env = _env()
+    cfg = C.load(args.config)
+    document = _diagram(env, args.diagram)
+    result = runner.run(env, document, dump=True, timeout=cfg.timeout)
+    if result.exit != runner.EXIT_OK:
+        print(" ".join(result.messages()), file=sys.stderr)
+        return 1
+    print(B.brief(Path(args.diagram).stem, D.parse_dump(result.stdout).document), end="")
+    return 0
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="polygon")
     parser.add_argument("--config", help="the polygon.toml to use")
@@ -173,6 +256,20 @@ def main(argv=None):
     p.add_argument("--no-gestures", action="store_true")
     p.add_argument("--no-minimize", action="store_true")
     p.set_defaults(func=cmd_fuzz)
+    p = sub.add_parser("run", help="an agent session")
+    p.add_argument("--backend", required=True)
+    p.add_argument("--mission", choices=[M.REPRODUCE, M.COMBINE], default=M.COMBINE)
+    p.add_argument("--diagram")
+    p.add_argument("--seed", type=int, default=1)
+    p.add_argument("--rounds", type=int)
+    p.add_argument("--no-minimize", action="store_true")
+    p.set_defaults(func=cmd_run)
+    p = sub.add_parser("replay", help="replay a recorded session without the backend")
+    p.add_argument("folder")
+    p.set_defaults(func=cmd_replay)
+    p = sub.add_parser("brief", help="print the reproduction brief of a diagram")
+    p.add_argument("diagram")
+    p.set_defaults(func=cmd_brief)
     args = parser.parse_args(argv)
     return args.func(args)
 

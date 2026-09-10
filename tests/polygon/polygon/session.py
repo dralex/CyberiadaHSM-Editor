@@ -36,6 +36,8 @@ from . import dump as D
 from . import oracles
 from . import register as R
 from . import render
+from . import runner
+from .adapters.base import AdapterError
 
 MAX_REJECTIONS = 5
 
@@ -70,6 +72,9 @@ class Session:
         self.rounds = []
         self.dump = None
         self.previous_verb = None
+        self.mission = None
+        self.reproduction = None
+        self.error = ""
         self.folder.mkdir(parents=True, exist_ok=True)
         self.work = self.folder / "work"
 
@@ -92,14 +97,38 @@ class Session:
         self.initial_dump()
         total = 0
         for n in range(1, rounds + 1):
-            record = self.round(n)
+            try:
+                record = self.round(n)
+            except AdapterError as e:
+                self.error = str(e)
+                break
             if record is None:
                 break
             self.rounds.append(record)
             total += len(record.findings)
             self.save()
+        self.finish()
         self.save()
         return total
+
+    def finish(self):
+        """A reproduction mission: the structural diff against the original;
+        a match saves the result into the corpus."""
+        if self.mission is None or self.mission.original is None or self.dump is None:
+            return
+        self.work.mkdir(parents=True, exist_ok=True)
+        original = runner.run(self.env, self.mission.original, dump=True,
+                              timeout=self.config.timeout, workdir=self.work)
+        if original.exit != runner.EXIT_OK:
+            return
+        diff = D.structural_diff(D.parse_dump(original.stdout).document, self.dump.document)
+        self.reproduction = {"matches": not diff, "differences": diff}
+        if not diff and self.script:
+            target = self.env.polygon / "corpus" / ("%s-repro-%d.graphml" % (self.mission.name, self.seed))
+            script = runner.write_script(self.work / "final.script", self.text())
+            runner.run(self.env, self.start, script=script, save=target,
+                       timeout=self.config.timeout, workdir=self.work)
+            self.reproduction["saved"] = target.name
 
     def round(self, n):
         rejected = []
@@ -152,7 +181,12 @@ class Session:
 
     def save(self):
         data = {"start": str(self.start), "producer": self.producer_name, "seed": self.seed,
-                "date": date.today().isoformat(),
+                "date": date.today().isoformat(), "error": self.error,
+                "mission": {"kind": self.mission.kind, "name": self.mission.name,
+                            "operations": self.mission.operations,
+                            "theme": self.mission.theme["name"] if self.mission.theme else "",
+                            "untried": self.mission.untried} if self.mission else None,
+                "reproduction": self.reproduction,
                 "rounds": [{"n": r.number, "verb": r.verb, "kind": r.kind, "lines": r.lines,
                             "accepted": r.accepted, "script_error": r.script_error,
                             "findings": r.findings, "expectations": r.expectations,
@@ -166,8 +200,28 @@ class Session:
     def summary(self):
         accepted = sum(1 for r in self.rounds if r.accepted)
         findings = sum(len(r.findings) for r in self.rounds)
-        return "%d rounds, %d accepted, %d findings, %d commands" % (
+        text = "%d rounds, %d accepted, %d findings, %d commands" % (
             len(self.rounds), accepted, findings, len(self.script))
+        if self.reproduction is not None:
+            text += ", reproduction %s" % ("matches" if self.reproduction["matches"] else
+                                           "differs (%d)" % len(self.reproduction["differences"]))
+        if self.error:
+            text += ", stopped: " + self.error
+        return text
+
+
+class Replay:
+    """A producer replaying the rounds of a recorded session."""
+
+    def __init__(self, rounds):
+        self.rounds = list(rounds)
+
+    def next(self, dump, exclude=()):
+        while self.rounds:
+            r = self.rounds.pop(0)
+            if r["accepted"] or not r["script_error"]:
+                return r["lines"], r["verb"], r["kind"], r.get("expectations", ""), r.get("plan", "")
+        return None
 
 
 def session_folder(root, producer, seed):
