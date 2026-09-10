@@ -32,6 +32,7 @@ private slots:
 	void initTestCase();
 	void test_undo_actions();
 	void test_modified_state();
+	void test_new_sm_content();
 
 private:
 	CyberiadaSMEditorWindow* window;
@@ -80,6 +81,23 @@ void TestWindow::test_modified_state()
 	QVERIFY(!window->isWindowModified());
 	// a clean document closes without a prompt
 	QVERIFY(window->close());
+}
+
+void TestWindow::test_new_sm_content()
+{
+	// a frameless machine that already has content is bordered in place by the
+	// New State Machine action; only a further use adds a separate machine
+	QVERIFY(window->openDocument("diagrams/geometry.graphml"));
+	int before = int(model->rootDocument()->get_state_machines().size());
+	QModelIndex smi = model->firstSMIndex();
+	QVERIFY(!model->indexToElement(smi)->has_geometry());
+
+	window->actionNewStateMachine->trigger();
+	QVERIFY(model->indexToElement(smi)->has_geometry());
+	QCOMPARE(int(model->rootDocument()->get_state_machines().size()), before);
+
+	window->actionNewStateMachine->trigger();
+	QCOMPARE(int(model->rootDocument()->get_state_machines().size()), before + 1);
 }
 
 QTEST_MAIN(TestWindow)

@@ -342,8 +342,28 @@ void CyberiadaSMEditorWindow::slotSceneToolChanged(ToolType tool)
 
 void CyberiadaSMEditorWindow::slotNewSM()
 {
-    // several state machines are allowed; each new one is placed clear of the
-    // others (its border geometry is distinct, like a new state)
+    // when no machine has a border yet, the first one adopts the existing
+    // elements: it gets an explicit border around them, rather than a new
+    // empty machine appearing beside the content
+    Cyberiada::LocalDocument* doc = model->rootDocument();
+    if (doc) {
+        std::vector<Cyberiada::StateMachine*> sms = doc->get_state_machines();
+        bool anyBordered = false;
+        for (std::vector<Cyberiada::StateMachine*>::iterator i = sms.begin(); i != sms.end(); i++) {
+            if ((*i)->has_geometry()) { anyBordered = true; break; }
+        }
+        if (!anyBordered) {
+            for (std::vector<Cyberiada::StateMachine*>::iterator i = sms.begin(); i != sms.end(); i++) {
+                Cyberiada::Rect content = (*i)->get_bound_rect(*doc);
+                if (content.valid) {
+                    model->updateGeometry(model->elementToIndex(*i), content);
+                    return;
+                }
+            }
+        }
+    }
+    // otherwise add a new machine, placed clear of the others (distinct
+    // geometry, like a new state)
     scene->addSMItem(Cyberiada::elementSM);
 }
 
