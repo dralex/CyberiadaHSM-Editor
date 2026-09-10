@@ -70,6 +70,8 @@ public:
     // the union of the visible items only (unlike itemsBoundingRect, which
     // counts hidden dots and text)
     QRectF visibleItemsBoundingRect() const;
+    // the visible diagram with the scene margin around it
+    QRectF diagramRect() const;
 
     void  setCurrentTool(ToolType tool);
     ToolType getCurrentTool() { return currentTool; }

@@ -334,7 +334,9 @@ saved document, so each L2 case doubles as a write-read round-trip check.
 
 `--batch <file.graphml> [--script <file>] --export <out.png>` renders the
 scene offscreen into an image file: 1:1 scene units to pixels, white
-background, the selection cleared first. An exported image is the diagram
+background, the selection cleared first. The picture covers the visible
+diagram with the scene margin around it, whatever the scene rect of the
+loaded document was, so the elements an edit script added are in it. An exported image is the diagram
 alone: the grid and the service objects (the region borders and the
 coordinate origins) belong to editing and are forced off for the render, so
 `--service` and the stored grid preference make no difference to a saved

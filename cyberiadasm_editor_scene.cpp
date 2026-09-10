@@ -416,13 +416,17 @@ void CyberiadaSMEditorScene::loadScene(bool fit)
         }
     }
     clearSelection();
-    // qreal margin = std::max(itemsBoundingRect().width(), itemsBoundingRect().height()) * DEFAULT_SCENE_BORDER_MARGIN_PERCENT;
-    qreal margin = DEFAULT_SCENE_BORDER_MARGIN;
-    setSceneRect(visibleItemsBoundingRect().adjusted(-margin, -margin, margin, margin));
+    setSceneRect(diagramRect());
     if (fit && !views().isEmpty()) {
         views().first()->fitInView(sceneRect(), Qt::KeepAspectRatio);
     }
     update();
+}
+
+QRectF CyberiadaSMEditorScene::diagramRect() const
+{
+    qreal margin = DEFAULT_SCENE_BORDER_MARGIN;
+    return visibleItemsBoundingRect().adjusted(-margin, -margin, margin, margin);
 }
 
 // itemsBoundingRect() ignores visibility - union the visible items only, so

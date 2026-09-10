@@ -78,14 +78,16 @@ namespace {
 
 bool renderScene(CyberiadaSMEditorScene* scene, const QString& path, QString* error)
 {
-	QRectF scene_rect = scene->sceneRect();
-	if (scene_rect.isEmpty()) {
+	if (scene->items().isEmpty()) {
 		if (error) *error = "the scene is empty, nothing to export";
 		return false;
 	}
 	// exported images must not show the editing selection or the aids
 	scene->clearSelection();
 	ExportGuard guard;
+	// the visible diagram, not the scene rect of the loaded document: the
+	// edits may have grown it
+	QRectF scene_rect = scene->diagramRect();
 	QRect target(QPoint(0, 0), scene_rect.toRect().size());
 	QString suffix = QFileInfo(path).suffix().toLower();
 
