@@ -83,6 +83,7 @@ public:
     Cyberiada::ID getId() { return element->get_id(); }
     QModelIndex getIndex() { return model->elementToIndex(element); }
     Cyberiada::Element* getElement() { return element; }
+    CyberiadaSMModel* getModel() { return model; }
 
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) = 0;
 

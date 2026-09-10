@@ -667,6 +667,26 @@ void TestScene::test_sm_border()
 	QVERIFY(!item->boundingRect().isEmpty());
 	QVERIFY(scene->items().contains(item));
 
+	// the border has an editable title and no transition handles
+	StateTitle* smTitle = nullptr;
+	DotSignal* smDot = nullptr;
+	for (QGraphicsItem* child : item->childItems()) {
+		if (StateTitle* t = dynamic_cast<StateTitle*>(child)) smTitle = t;
+		if (DotSignal* d = dynamic_cast<DotSignal*>(child)) smDot = d;
+	}
+	QVERIFY(smTitle);
+	QVERIFY(smDot == nullptr);
+
+	// editing the title commits the state machine name
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+	smTitle->setTextInteractionFlags(Qt::TextEditorInteraction);
+	smTitle->setFocus();
+	smTitle->setPlainText("Renamed SM");
+	smTitle->clearFocus();
+	QCoreApplication::processEvents();
+	QCOMPARE(QString(smElem->get_name().c_str()), QString("Renamed SM"));
+
 	// clearing the border removes it, back to frameless
 	QVERIFY(model->updateGeometry(sm, Cyberiada::Rect()));
 	QVERIFY(!smElem->has_geometry());

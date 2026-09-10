@@ -132,7 +132,9 @@ static void dumpTextElement(CyberiadaSMEditorScene* scene, Cyberiada::Element* e
 		const QList<QGraphicsItem*>& children = item->childItems();
 		for (QList<QGraphicsItem*>::const_iterator i = children.begin(); i != children.end(); i++) {
 			EditableTextItem* text = dynamic_cast<EditableTextItem*>(*i);
-			if (text) texts.push_back(text);
+			// the dump mirrors the render: a hidden title (a rect-less state
+			// machine has one but does not draw it) is not listed
+			if (text && text->isVisible()) texts.push_back(text);
 		}
 		// the insertion order of the children is not a part of the contract
 		std::sort(texts.begin(), texts.end(), [](EditableTextItem* a, EditableTextItem* b) {

@@ -27,6 +27,7 @@
 #include <QMenu>
 #include <QGraphicsSceneContextMenuEvent>
 #include "cyberiadasm_editor_sm_item.h"
+#include "cyberiadasm_editor_state_item.h"
 #include "cyberiadasm_model.h"
 #include "myassert.h"
 #include "settings_manager.h"
@@ -46,12 +47,22 @@ CyberiadaSMEditorSMItem::CyberiadaSMEditorSMItem(CyberiadaSMModel* model,
         setPos(rect.x(), rect.y());
     }
     setFlags(ItemIsSelectable);
+    setAcceptHoverEvents(true);   // the resize cursor over the border
 
     isHighlighted = false;
 
-    initializeDots();
-    setDotsPosition();
-    hideDots();
+    // an editable title, like a state, shown only when the border exists
+    title = new StateTitle(QString(element->get_name().c_str()), this);
+    title->setVisible(element->has_geometry() && SettingsManager::instance().getShowText());
+    connect(title, &EditableTextItem::sizeChanged, this, [this]() { setTitlePosition(); update(); });
+    setTitlePosition();
+}
+
+void CyberiadaSMEditorSMItem::setTitlePosition()
+{
+    if (!title || !element->has_geometry()) return;
+    QRectF r = boundingRect();
+    title->setPos(r.left() + 8, r.top() + 4);
 }
 
 void CyberiadaSMEditorSMItem::syncFromModel()
@@ -60,6 +71,12 @@ void CyberiadaSMEditorSMItem::syncFromModel()
     if (element->has_geometry()) {
         QRectF rect = toQtRect(element->get_bound_rect(*(model->rootDocument())));
         setPos(rect.x(), rect.y());
+    }
+    if (title) {
+        QString name = QString(element->get_name().c_str());
+        if (title->toPlainText() != name) title->setPlainText(name);
+        title->setVisible(element->has_geometry() && SettingsManager::instance().getShowText());
+        setTitlePosition();
     }
     CyberiadaSMEditorAbstractItem::syncFromModel();
 }
@@ -97,12 +114,17 @@ void CyberiadaSMEditorSMItem::paint(QPainter* painter, const QStyleOptionGraphic
     painter->setPen(pen);
     QRectF r = boundingRect();
     painter->drawRect(r);
+    // the title tab (folded corner) fits the current title
+    QRectF tb = (title && title->isVisible()) ? title->boundingRect() : QRectF(0, 0, 42, 22);
+    qreal W = tb.width() + 16;
+    qreal H = tb.height() + 8;
+    qreal fold = 10;
     const QPointF name_frame[] = {
         QPointF(r.left(), r.top()),
-        QPointF(r.left() + 50, r.top()),
-        QPointF(r.left() + 50, r.top() + 20),
-        QPointF(r.left() + 40, r.top() + 30),
-        QPointF(r.left(), r.top() + 30)
+        QPointF(r.left() + W, r.top()),
+        QPointF(r.left() + W, r.top() + H - fold),
+        QPointF(r.left() + W - fold, r.top() + H),
+        QPointF(r.left(), r.top() + H)
     };
     painter->drawConvexPolygon(name_frame, 5);
 }

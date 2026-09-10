@@ -623,24 +623,26 @@ void StateTitle::focusOutEvent(QFocusEvent *event)
     cursor.clearSelection();
     setTextCursor(cursor);
 
-    CyberiadaSMEditorStateItem* state = dynamic_cast<CyberiadaSMEditorStateItem*>(parentItem());
-    if (state == nullptr) { return; }
+    // works for any titled item (a state or a state machine border)
+    CyberiadaSMEditorAbstractItem* owner = dynamic_cast<CyberiadaSMEditorAbstractItem*>(parentItem());
+    if (owner == nullptr) { QGraphicsTextItem::focusOutEvent(event); return; }
+    QString current = QString(owner->getElement()->get_name().c_str());
     QString newName = toPlainText().trimmed();
     QGraphicsTextItem::focusOutEvent(event);
 
-    if (newName == state->name()) { return; }
+    if (newName == current) { return; }
 
     if (newName.isEmpty()) {
         QMessageBox::warning(nullptr, "Предупреждение", QString("Имя не может быть пустым!"));
-        setPlainText(state->name());
+        setPlainText(current);
         return;
     }
 
     // the model refuses a name taken on this level
-    if (!state->model->updateTitle(state->model->elementToIndex(state->element), newName)) {
+    if (!owner->getModel()->updateTitle(owner->getIndex(), newName)) {
         QMessageBox::warning(nullptr, "Предупреждение",
-                             QString("Сосстояние с именем \"%1\" уже существует на этом уровне иерархии.").arg(newName));
-        setPlainText(state->name());
+                             QString("Имя \"%1\" уже существует на этом уровне иерархии.").arg(newName));
+        setPlainText(current);
     }
 }
 
@@ -749,8 +751,10 @@ void StateTitle::mouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
 
     if (parentItem()) {
         CyberiadaSMEditorStateItem* state = dynamic_cast<CyberiadaSMEditorStateItem*>(parentItem());
-        state->prevItemUnderCursor->setHighlighted(false);
-        state->updateParent(state->prevItemUnderCursor);
+        if (state != nullptr) {
+            state->prevItemUnderCursor->setHighlighted(false);
+            state->updateParent(state->prevItemUnderCursor);
+        }
     }
 
     if (event->button() == Qt::LeftButton && !hasFocus()) {

@@ -26,6 +26,8 @@
 
 #include "cyberiadasm_editor_items.h"
 
+class StateTitle;
+
 /* -----------------------------------------------------------------------------
  * State Machine Item
  * ----------------------------------------------------------------------------- */
@@ -47,10 +49,16 @@ public:
 
     void syncFromModel() override;
 
+    // the state machine draws no transition handles: no edge starts or ends here
+    void initializeDots() override {}
+
 protected:
     void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
 
 private:
+    void setTitlePosition();
+
+    StateTitle* title = nullptr;
     void updateSizeToFitChildren(CyberiadaSMEditorAbstractItem* child) override;
 };
 
