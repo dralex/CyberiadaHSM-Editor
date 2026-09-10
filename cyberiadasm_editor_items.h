@@ -151,6 +151,8 @@ protected:
     void resizeTop(const QPointF &pt);
 
     void updatePosGeometry();
+    // keep a top-level element within its state machine border (no auto-grow)
+    void clampInsideStateMachine();
     void updateSizeGeometry();
 
     virtual void initializeDots();

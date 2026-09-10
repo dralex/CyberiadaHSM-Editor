@@ -133,7 +133,10 @@ void CyberiadaSMEditorSMItem::paint(QPainter* painter, const QStyleOptionGraphic
 
 void CyberiadaSMEditorSMItem::updateSizeToFitChildren(CyberiadaSMEditorAbstractItem *child)
 {
-    // TODO copy from state
+    Q_UNUSED(child)
+    // a state machine border does not grow to follow its children: they are
+    // clamped inside it instead (clampInsideStateMachine); the user resizes
+    // the border to make room
 }
 
 void CyberiadaSMEditorSMItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
