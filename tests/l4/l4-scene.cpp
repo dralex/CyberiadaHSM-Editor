@@ -63,12 +63,17 @@ private slots:
 	void test_sm_contains();
 	void test_sm_extends();
 	void test_sm_title_size();
+	void test_ctrl_snap_endpoint();
+	void test_double_click_label();
+	void test_segment_drag_vertex();
+	void test_remove_vertex();
 
 private:
 	int countItems(int type);
 	static bool onBorder(const QRectF& box, const QPointF& p);
 	void deleteTransition(const Cyberiada::ID& source, const Cyberiada::ID& target);
-	void mouse(QEvent::Type type, const QPointF& scenePos, Qt::MouseButtons buttons);
+	void mouse(QEvent::Type type, const QPointF& scenePos, Qt::MouseButtons buttons,
+			   Qt::KeyboardModifiers mods = Qt::NoModifier);
 	CyberiadaSMModel* model;
 	CyberiadaSMEditorScene* scene;
 };
@@ -85,13 +90,15 @@ int TestScene::countItems(int type)
 }
 
 // a left button gesture delivered through the scene, as a view would
-void TestScene::mouse(QEvent::Type type, const QPointF& scenePos, Qt::MouseButtons buttons)
+void TestScene::mouse(QEvent::Type type, const QPointF& scenePos, Qt::MouseButtons buttons,
+					  Qt::KeyboardModifiers mods)
 {
 	QGraphicsSceneMouseEvent event(type);
 	event.setScenePos(scenePos);
 	event.setScreenPos(scenePos.toPoint());
 	event.setButton(Qt::LeftButton);
 	event.setButtons(buttons);
+	event.setModifiers(mods);
 	QApplication::sendEvent(scene, &event);
 }
 
@@ -923,6 +930,156 @@ void TestScene::test_sm_title_size()
 	double after = static_cast<const Cyberiada::ElementCollection*>(
 		model->idToElement("G0"))->get_geometry_rect().width;
 	QVERIFY(after > before);
+}
+
+void TestScene::test_ctrl_snap_endpoint()
+{
+	// with Ctrl held, a dragged endpoint locks to the adjacent point on one
+	// axis, so its segment stays strictly horizontal or vertical
+	QVERIFY(model->loadDocument("diagrams/polyline.graphml"));
+	scene->loadScene();
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+
+	CyberiadaSMEditorTransitionItem* tr =
+		dynamic_cast<CyberiadaSMEditorTransitionItem*>(scene->getMap().value("t0"));
+	QVERIFY(tr);
+	const Cyberiada::Transition* t =
+		static_cast<const Cyberiada::Transition*>(model->idToElement("t0"));
+	QVERIFY(t->has_polyline());
+	int lastDot = int(t->get_geometry_polyline().size()) + 1;
+	const Cyberiada::Point& back = t->get_geometry_polyline().back();
+	QPointF adjacent = QPointF(back.x, back.y) + tr->sourceCenter();
+
+	scene->clearSelection();
+	tr->setSelected(true);
+	DotSignal* dot = tr->getDot(lastDot);
+	QVERIFY(dot);
+	dot->setVisible(true);
+	QPointF on = dot->scenePos();
+	QVERIFY(scene->itemAt(on, QTransform()) == dot);
+
+	// (700, 450) is free space below both states; the y delta to the adjacent
+	// point (150) is the smaller, so Ctrl snaps y and the last segment is level
+	QPointF freeTarget(700, 450);
+	mouse(QEvent::GraphicsSceneMousePress, on, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, freeTarget, Qt::LeftButton, Qt::ControlModifier);
+	QPainterPath pp = tr->path();
+	QPointF end = pp.elementAt(pp.elementCount() - 1);
+	QVERIFY(qAbs(end.y() - adjacent.y()) < 0.5);
+	QCOMPARE(end.x(), freeTarget.x());
+	mouse(QEvent::GraphicsSceneMouseRelease, freeTarget, Qt::NoButton);
+
+	// the endpoint tracked, nothing was stored: a fresh scene has it back
+	scene->loadScene();
+	tr = dynamic_cast<CyberiadaSMEditorTransitionItem*>(scene->getMap().value("t0"));
+	QVERIFY(tr);
+	scene->clearSelection();
+	tr->setSelected(true);
+
+	// without Ctrl the same drag does not snap
+	dot = tr->getDot(lastDot);
+	QVERIFY(dot);
+	dot->setVisible(true);
+	on = dot->scenePos();
+	mouse(QEvent::GraphicsSceneMousePress, on, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, freeTarget, Qt::LeftButton);
+	pp = tr->path();
+	end = pp.elementAt(pp.elementCount() - 1);
+	QVERIFY(qAbs(end.y() - adjacent.y()) > 0.5);
+	mouse(QEvent::GraphicsSceneMouseRelease, freeTarget, Qt::NoButton);
+}
+
+void TestScene::test_double_click_label()
+{
+	// a double click on the body edits the label, it does not add a vertex
+	QVERIFY(model->loadDocument("diagrams/polyline.graphml"));
+	scene->loadScene();
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+
+	CyberiadaSMEditorTransitionItem* tr =
+		dynamic_cast<CyberiadaSMEditorTransitionItem*>(scene->getMap().value("t0"));
+	QVERIFY(tr);
+	const Cyberiada::Transition* t =
+		static_cast<const Cyberiada::Transition*>(model->idToElement("t0"));
+	size_t points = t->get_geometry_polyline().size();
+
+	// the middle segment of t0 runs level at (100..500, 300) in scene space
+	mouse(QEvent::GraphicsSceneMouseDoubleClick, QPointF(300, 300), Qt::LeftButton);
+
+	EditableTextItem* label = nullptr;
+	for (QGraphicsItem* child : tr->childItems()) {
+		if ((label = dynamic_cast<EditableTextItem*>(child))) break;
+	}
+	QVERIFY(label);
+	QVERIFY(label->hasFocus());
+	QVERIFY(label->textInteractionFlags() & Qt::TextEditorInteraction);
+	QCOMPARE(t->get_geometry_polyline().size(), points);
+
+	// typing a trigger and committing on the focus out persists the label
+	label->setPlainText("EV / act()");
+	label->clearFocus();
+	QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+	QVERIFY(t->has_action());
+	QCOMPARE(QString(t->get_action().get_trigger().c_str()), QString("EV"));
+	QCOMPARE(QString(t->get_action().get_behavior().c_str()), QString("act()"));
+}
+
+void TestScene::test_segment_drag_vertex()
+{
+	// dragging a segment inserts a polyline vertex and drags it further
+	QVERIFY(model->loadDocument("diagrams/polyline.graphml"));
+	scene->loadScene();
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+
+	CyberiadaSMEditorTransitionItem* tr =
+		dynamic_cast<CyberiadaSMEditorTransitionItem*>(scene->getMap().value("t0"));
+	QVERIFY(tr);
+	const Cyberiada::Transition* t =
+		static_cast<const Cyberiada::Transition*>(model->idToElement("t0"));
+	size_t before = t->get_geometry_polyline().size();
+
+	// press the level middle segment, then drag off it: one vertex is added
+	scene->clearSelection();
+	tr->setSelected(true);
+	mouse(QEvent::GraphicsSceneMousePress, QPointF(300, 300), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, QPointF(300, 360), Qt::LeftButton);
+	QCOMPARE(t->get_geometry_polyline().size(), before + 1);
+
+	// the new dot took the drag: a further move repositions that vertex
+	mouse(QEvent::GraphicsSceneMouseMove, QPointF(300, 400), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, QPointF(300, 400), Qt::NoButton);
+	QCOMPARE(t->get_geometry_polyline().size(), before + 1);
+	const Cyberiada::Point& inserted = t->get_geometry_polyline().at(1);
+	QPointF scenePt = QPointF(inserted.x, inserted.y) + tr->sourceCenter();
+	QVERIFY(qAbs(scenePt.y() - 400.0) < 1.0);
+}
+
+void TestScene::test_remove_vertex()
+{
+	// deleting an interior dot removes its polyline vertex; endpoints are kept
+	QVERIFY(model->loadDocument("diagrams/polyline.graphml"));
+	scene->loadScene();
+
+	CyberiadaSMEditorTransitionItem* tr =
+		dynamic_cast<CyberiadaSMEditorTransitionItem*>(scene->getMap().value("t0"));
+	QVERIFY(tr);
+	const Cyberiada::Transition* t =
+		static_cast<const Cyberiada::Transition*>(model->idToElement("t0"));
+	size_t before = t->get_geometry_polyline().size();
+	QVERIFY(before >= 1);
+
+	DotSignal* vertex = tr->getDot(1);
+	QVERIFY(vertex);
+	vertex->deleteDot();
+	QCOMPARE(t->get_geometry_polyline().size(), before - 1);
+
+	// an endpoint dot has no vertex to remove
+	size_t mid = t->get_geometry_polyline().size();
+	tr->getDot(0)->deleteDot();
+	QCOMPARE(t->get_geometry_polyline().size(), mid);
 }
 
 QTEST_MAIN(TestScene)
