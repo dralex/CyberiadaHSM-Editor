@@ -38,6 +38,14 @@ int runGuiMode(CyberiadaSMEditorApplication& app)
 	return app.exec();
 }
 
+// let the pending events run; an assertion thrown by one is caught by
+// notify() and reported by the flag
+static bool stageFailed(CyberiadaSMEditorApplication& app)
+{
+	app.processEvents();
+	return app.errorReported();
+}
+
 int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName, bool dump,
 				 const QString& script, const QString& save, const QString& exportImage,
 				 bool reconstruct, bool reconstruct_sm, bool strict,
@@ -60,22 +68,21 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName, boo
 		}
 	}
 
-	// let the loaded scene settle; assertions here are caught by notify()
-	app.processEvents();
-	if (app.errorReported()) {
-		return batchInternalError;
-	}
+	// the assertions of every stage are caught by notify(); the flag says so
+	if (stageFailed(app)) return batchInternalError;
 
 	if (dump) {
 		std::cout << "== document" << std::endl;
 		dumpDocument(win.getModel(), std::cout);
 		std::cout << "== scene" << std::endl;
 		dumpScene(win.getScene(), win.getModel(), std::cout);
+		if (stageFailed(app)) return batchInternalError;
 	}
 
 	if (dumpTextMetrics) {
 		std::cout << "== text" << std::endl;
 		dumpText(win.getScene(), win.getModel(), std::cout);
+		if (stageFailed(app)) return batchInternalError;
 	}
 
 	if (dumpUndoStack) {
@@ -89,6 +96,7 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName, boo
 			fprintf(stderr, "cannot export %s\n%s\n", qPrintable(exportImage), qPrintable(render_error));
 			return batchInternalError;
 		}
+		if (stageFailed(app)) return batchInternalError;
 	}
 
 	if (!save.isEmpty()) {
@@ -99,6 +107,7 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName, boo
 			fprintf(stderr, "cannot save %s\n%s\n", qPrintable(save), e.str().c_str());
 			return batchInternalError;
 		}
+		if (stageFailed(app)) return batchInternalError;
 	}
 	return batchOK;
 }

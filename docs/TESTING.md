@@ -155,7 +155,9 @@ Exit codes:
 | 5    | image comparison mismatch                      |
 
 Assertion failures are reported with their `file:line` location (`MY_ASSERT`
-throws it as the error message).
+throws it as the error message). The error flag is checked after every
+stage - the script, the dumps, the export and the save - so an assertion
+thrown while dumping or saving exits with code 3 as well.
 
 `--no-text` hides all text elements (state titles and actions, transition
 labels, comment bodies). Font metrics differ across Qt versions even for the
