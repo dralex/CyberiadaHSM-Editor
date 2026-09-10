@@ -65,6 +65,7 @@ and saved document. Neither case owns a reference file.
 | text  | text metrics: font and layout of every text item vs good text | implemented |
 | reconstruct | reconstruction: the rebuilt geometry, shown and saved, vs good files | implemented |
 | undo  | undo/redo: a script edits and undoes, the dump vs the existing good files | implemented |
+| polygon | exploration: an LLM agent and a fuzzer edit through the batch mode, reference-free checks, see `POLYGON.md` | planned |
 
 ## In-process tests (L4)
 
