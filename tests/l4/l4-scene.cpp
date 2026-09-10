@@ -903,7 +903,8 @@ void TestScene::test_sm_extends()
 		QVERIFY(r.top() >= border.top() - 1.0 && r.bottom() <= border.bottom() + 1.0);
 	}
 	QCOMPARE(states, 3);
-	// the extension was actually needed (three 200-wide states do not fit 400)
+	// the extension was actually needed (three 200-wide states spread wider
+	// than the default border)
 	QVERIFY(after.width > before.width);
 }
 

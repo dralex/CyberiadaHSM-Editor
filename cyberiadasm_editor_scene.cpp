@@ -517,9 +517,14 @@ void CyberiadaSMEditorScene::addSMItem(Cyberiada::ElementType type)
     if (type == Cyberiada::elementSM) {
         // the document has no item, so the new state machine item is built here
         try {
-            QPointF c = freeStateMachinePlace(QSizeF(400, 300));
+            // room for a 2x2 grid of default states (200x100) with a separator
+            // and a border around them
+            const qreal gap = 40;
+            QSizeF smSize(2 * 200 + 3 * gap, 2 * 100 + 3 * gap);   // 520 x 320
+            QPointF c = freeStateMachinePlace(smSize);
             Cyberiada::Element* element = model->newStateMachine("New State Machine",
-                                                                 Cyberiada::Rect(c.x(), c.y(), 400, 300));
+                                                                 Cyberiada::Rect(c.x(), c.y(),
+                                                                                 smSize.width(), smSize.height()));
             if (!element) return;
             currentSM = static_cast<Cyberiada::StateMachine*>(element);
             CyberiadaSMEditorSMItem* sm = new CyberiadaSMEditorSMItem(model, element, NULL);
