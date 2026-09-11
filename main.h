@@ -48,8 +48,9 @@ public:
 		return false;
 	}
 
-	// batch mode: no dialogs, errors go to stderr (see docs/TESTING.md)
-	void setBatchMode(bool b) { batch = b; }
+	// batch mode: no dialogs, errors go to stderr (see docs/TESTING.md); the
+	// property lets the core items check it without the app class typeinfo
+	void setBatchMode(bool b) { batch = b; setProperty("batchMode", b); }
 	bool batchMode() const { return batch; }
 	bool errorReported() const { return failed; }
 

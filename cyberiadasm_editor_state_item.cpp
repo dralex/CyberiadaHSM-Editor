@@ -24,6 +24,7 @@
 #include <QPainter>
 #include <QDebug>
 #include <QCursor>
+#include <QCoreApplication>
 #include <QGraphicsScene>
 #include <QGraphicsSceneMouseEvent>
 #include <QGraphicsRectItem>
@@ -315,6 +316,10 @@ void CyberiadaSMEditorStateItem::initializeActions()
 
 void CyberiadaSMEditorStateItem::addAction(Cyberiada::ActionType type)
 {
+    // batch mode has no user to dismiss a modal dialog: a scripted double
+    // click would otherwise hang in the nested event loop
+    if (qApp && qApp->property("batchMode").toBool()) return;
+
     StateActionDialog dialog(type == Cyberiada::actionEntry ? "entry" : "exit");
 
     if (dialog.exec() == QDialog::Accepted) {
