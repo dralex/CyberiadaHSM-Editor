@@ -200,28 +200,33 @@ endfunction()
 add_stack_dump_test(hierarchy hierarchy)
 add_stack_dump_test(add-elements hierarchy add-elements)
 
-# The polygon unit tests: the package of tests/polygon/ under unittest, with
-# the editor binary and the batch environment (see docs/POLYGON.md)
-find_package(Python3 COMPONENTS Interpreter)
-if(Python3_Interpreter_FOUND)
-  add_test(NAME polygon-unit
-    COMMAND ${Python3_EXECUTABLE} -m unittest discover -s tests -t .
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/polygon)
-  set_tests_properties(polygon-unit PROPERTIES
-    TIMEOUT 300
-    ENVIRONMENT "${L0_ENVIRONMENT};POLYGON_INSPECTOR=$<TARGET_FILE:CyberiadaInspector>")
-
-  # The polygon regression tier: one case per open problem of the register,
-  # green while the recorded failure reproduces (see docs/POLYGON.md)
-  function(add_polygon_case id)
-    add_test(NAME polygon-${id}
-      COMMAND ${Python3_EXECUTABLE} -m polygon check --problem ${id}
+# The polygon is an optional exploratory framework with its own runner
+# (tests/polygon/run-polygon.sh, python -m polygon). It needs Python 3.11+
+# (tomllib) and a configured backend, so it is NOT part of the default test
+# run; enable its ctest tier with -DPOLYGON_TESTS=ON (see docs/POLYGON.md).
+option(POLYGON_TESTS "register the polygon unit tests and regression cases in ctest" OFF)
+if(POLYGON_TESTS)
+  find_package(Python3 COMPONENTS Interpreter)
+  if(Python3_Interpreter_FOUND)
+    add_test(NAME polygon-unit
+      COMMAND ${Python3_EXECUTABLE} -m unittest discover -s tests -t .
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/polygon)
-    set_tests_properties(polygon-${id} PROPERTIES
-      TIMEOUT 120
+    set_tests_properties(polygon-unit PROPERTIES
+      TIMEOUT 300
       ENVIRONMENT "${L0_ENVIRONMENT};POLYGON_INSPECTOR=$<TARGET_FILE:CyberiadaInspector>")
-  endfunction()
-  include(${CMAKE_CURRENT_SOURCE_DIR}/polygon/problems/cases.cmake OPTIONAL)
+
+    # The polygon regression tier: one case per open problem of the register,
+    # green while the recorded failure reproduces (see docs/POLYGON.md)
+    function(add_polygon_case id)
+      add_test(NAME polygon-${id}
+        COMMAND ${Python3_EXECUTABLE} -m polygon check --problem ${id}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/polygon)
+      set_tests_properties(polygon-${id} PROPERTIES
+        TIMEOUT 120
+        ENVIRONMENT "${L0_ENVIRONMENT};POLYGON_INSPECTOR=$<TARGET_FILE:CyberiadaInspector>")
+    endfunction()
+    include(${CMAKE_CURRENT_SOURCE_DIR}/polygon/problems/cases.cmake OPTIONAL)
+  endif()
 endif()
 
 # The L2 editing test suite: run the edit script, then compare both the dump

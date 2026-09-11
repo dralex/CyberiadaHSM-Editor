@@ -334,7 +334,8 @@ prefix replay finds the first failing command, then every earlier command is
 dropped in turn while the signature stays. Sessions keep their full history
 in `sessions/`.
 
-Every open problem is a ctest case `polygon-<id>` running
+With the opt-in ctest tier (`-DPOLYGON_TESTS=ON`) every open problem is a case
+`polygon-<id>` running
 `python3 -m polygon check --problem <id>`, which replays the reproduction
 with every oracle and exits 0 while the recorded signature reproduces. It
 stays green while the bug is there and fails the day a change fixes it,
@@ -414,10 +415,12 @@ tests/polygon/
   tests/                    the unit tests (ctest: polygon-unit)
 ```
 
-`tests/CMakeLists.txt` runs the unit tests of the package as `polygon-unit`
-and includes `problems/cases.cmake` for the `polygon-<id>` cases, both under
-the `L0_ENVIRONMENT` of the other tiers with the editor binary in
-`POLYGON_INSPECTOR`.
+`tests/CMakeLists.txt` can run the unit tests of the package as `polygon-unit`
+and include `problems/cases.cmake` for the `polygon-<id>` cases, both under the
+`L0_ENVIRONMENT` of the other tiers with the editor binary in
+`POLYGON_INSPECTOR`. These are **not** part of the default test run: the polygon
+needs Python 3.11+ (`tomllib`) and a configured backend, so it stays a separate
+framework with its own runner. Add its ctest tier with `-DPOLYGON_TESTS=ON`.
 
 ## Running
 
@@ -428,5 +431,12 @@ POLYGON_LOCAL_KEY=... ./run-polygon.sh --backend local --mission reproduce --see
 ./run-polygon.sh --backend local --mission combine --seed 4711 --rounds 8
 ./run-polygon.sh --producer fuzzer --seed 1 --rounds 200
 ./run-polygon.sh --replay sessions/2026-09-12-4711
-cd ../../build && ctest -R '^polygon-'     # the open problems
+./run-polygon.sh check --problem P-1              # reproduce one registered problem
+```
+
+The ctest tier is off by default; configure the build with `-DPOLYGON_TESTS=ON`
+to also run the problems from `ctest`:
+
+```
+cd ../../build && cmake -DPOLYGON_TESTS=ON . && ctest -R '^polygon-'
 ```

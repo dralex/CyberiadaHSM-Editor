@@ -65,8 +65,8 @@ and saved document. Neither case owns a reference file.
 | text  | text metrics: font and layout of every text item vs good text | implemented |
 | reconstruct | reconstruction: the rebuilt geometry, shown and saved, vs good files | implemented |
 | undo  | undo/redo: a script edits and undoes, the dump vs the existing good files | implemented |
-| polygon-unit | the unit tests of the test polygon package (`tests/polygon/`, see `POLYGON.md`) | implemented |
-| polygon-<id> | one case per open problem of the polygon register, green while it reproduces | implemented |
+| polygon-unit | the unit tests of the test polygon package (`tests/polygon/`, see `POLYGON.md`); opt-in with `-DPOLYGON_TESTS=ON` | implemented |
+| polygon-<id> | one case per open problem of the polygon register, green while it reproduces; opt-in with `-DPOLYGON_TESTS=ON` | implemented |
 
 ## In-process tests (L4)
 

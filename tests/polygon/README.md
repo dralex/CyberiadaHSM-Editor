@@ -20,7 +20,7 @@ cp polygon.example.toml polygon.toml       # fill in the backends; never committ
 ./run-polygon.sh register list|add|cases    # the problem register
 ./run-polygon.sh check --problem P-1        # the regression case of a problem
 ./run-polygon.sh register set-status --problem P-3 --status format --note "..."
-cd ../../build && ctest -R polygon          # the unit tests and the regression cases
+cd ../../build && cmake -DPOLYGON_TESTS=ON . && ctest -R polygon   # opt-in ctest tier
 ```
 
 A backend names its protocol (`chat-completions` for any server speaking
