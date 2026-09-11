@@ -1,0 +1,7 @@
+# the trailing field of new-transition: a bare trigger or the action notation;
+# a transition action without a trigger (a completion transition)
+new-transition G node-0-0-1 node-0-1 GO
+new-transition G node-0-0-2 node-0-1 GO [x > 0]/ run()
+new-transition G node-0-1 node-0-0-2 / done()
+new-transition G node-0-0-2 node-0-0-1
+new-action node-0-0-2-node-0-0-1 / back()

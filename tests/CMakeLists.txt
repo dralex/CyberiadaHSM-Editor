@@ -259,6 +259,7 @@ add_l2_test(update-id geometry)
 add_l2_test(subjects hierarchy)
 add_l2_test(transition-subjects comment-transition)
 add_l2_test(gestures geometry)
+add_l2_test(transition-notation geometry)
 
 # The undo test suite: a script edits and undoes (or redoes) through the
 # batch verbs, and the dump must equal an EXISTING good file - the untouched

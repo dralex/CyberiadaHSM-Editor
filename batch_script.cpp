@@ -63,8 +63,9 @@ static QString restOfLine(const QStringList& tokens, int from)
 }
 
 // action text uses the CyberiadaML notation: 'entry/ behaviour',
-// 'exit/ behaviour' or 'TRIGGER [guard]/ behaviour'
-static bool parseActionText(const QString& text, Cyberiada::ActionType* type,
+// 'exit/ behaviour' or 'TRIGGER [guard]/ behaviour'; a transition may have
+// no trigger ('/ behaviour': the initial or completion transition)
+static bool parseActionText(const QString& text, bool transition, Cyberiada::ActionType* type,
 							QString* trigger, QString* guard, QString* behaviour,
 							QString* error)
 {
@@ -97,7 +98,7 @@ static bool parseActionText(const QString& text, Cyberiada::ActionType* type,
 		return true;
 	}
 	*type = Cyberiada::actionTransition;
-	if (trigger->isEmpty()) { *error = "the action trigger is required"; return false; }
+	if (trigger->isEmpty() && !transition) { *error = "the action trigger is required"; return false; }
 	return true;
 }
 
@@ -157,7 +158,19 @@ static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QStri
 		Cyberiada::Element* target = model->idToElement(tokens.at(3));
 		if (!source) { *error = "unknown source id '" + tokens.at(2) + "'"; return false; }
 		if (!target) { *error = "unknown target id '" + tokens.at(3) + "'"; return false; }
-		Cyberiada::Action action(restOfLine(tokens, 4).toStdString());
+		// the trailing field: a bare trigger, or the full action notation
+		QString text = restOfLine(tokens, 4);
+		Cyberiada::Action action(text.toStdString());
+		if (text.contains(QChar('/'))) {
+			Cyberiada::ActionType type;
+			QString trigger, guard, behaviour;
+			if (!parseActionText(text, true, &type, &trigger, &guard, &behaviour, error)) return false;
+			if (type != Cyberiada::actionTransition) {
+				*error = "entry/exit actions are not allowed on transitions";
+				return false;
+			}
+			action = Cyberiada::Action(trigger.toStdString(), guard.toStdString(), behaviour.toStdString());
+		}
 		return model->newTransition(sm, Cyberiada::transitionExternal, source, target, action) != NULL;
 	} else if (cmd == "undo") {
 		model->undoStack()->undo();
@@ -328,7 +341,7 @@ static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QStri
 		if (text.isEmpty()) { *error = cmd + " requires the action text"; return false; }
 		Cyberiada::ActionType type;
 		QString trigger, guard, behaviour;
-		if (!parseActionText(text, &type, &trigger, &guard, &behaviour, error)) return false;
+		if (!parseActionText(text, is_transition, &type, &trigger, &guard, &behaviour, error)) return false;
 		if (is_transition && type != Cyberiada::actionTransition) {
 			*error = "entry/exit actions are not allowed on transitions";
 			return false;

@@ -247,7 +247,7 @@ multi-line behaviours and comment bodies stay expressible. The commands map
 | `new-formal-comment <parent> <body>` | create a formal (machine-readable) comment |
 | `new-choice <parent> [x y w h]` | create a choice pseudostate (rect optional) |
 | `new-terminate <parent> [x y]` | create a terminate pseudostate |
-| `new-transition <sm> <src> <tgt> [trigger]` | create an external transition |
+| `new-transition <sm> <src> <tgt> [action]` | create an external transition; the trailing text is a bare trigger or the full action notation |
 | `rename <id> <title>` | change the element title |
 | `move <id> x y [w h]` | update point (2 args) or rect (4 args) geometry |
 | `reparent <id> <new-parent-id>` | move the element to another parent |
@@ -292,11 +292,13 @@ undo case (`undo-gestures-undo`) undoes the four steps and must reproduce the
 untouched dump.
 
 The action text uses the CyberiadaML notation: `entry/ behaviour`,
-`exit/ behaviour` or `TRIGGER [guard]/ behaviour`. State actions are addressed
+`exit/ behaviour` or `TRIGGER [guard]/ behaviour`; on a transition the trigger
+may be empty (`/ behaviour`, the initial or completion transition). State
+actions are addressed
 by their 0-based position in the state's action list; a transition holds a
 single action addressed as index 0 - `new-action` only sets it while the
 transition has none, `delete-action` clears it. Guards are not allowed for
-entry/exit activities and a transition-type action requires a trigger; the
+entry/exit activities and a state reaction requires a trigger; the
 violations are reported with specific messages before the model is touched.
 
 A comment subject links a comment (formal or informal) to an element: the

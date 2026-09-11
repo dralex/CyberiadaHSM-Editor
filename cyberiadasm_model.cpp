@@ -418,7 +418,8 @@ bool CyberiadaSMModel::updateAction(const QModelIndex& index,
 			a.update(new_trigger.toStdString(), new_guard.toStdString(), behaviour);
 		}
     } else if (element->get_type() == Cyberiada::elementTransition) {
-		if (new_trigger.length() == 0) return false;
+		// a transition action may have no trigger (initial, completion)
+		if (new_trigger.isEmpty() && new_guard.isEmpty() && new_behaviour.trimmed().isEmpty()) return false;
 		Cyberiada::Transition* trans = static_cast<Cyberiada::Transition*>(element);
 		trans->get_action().update(new_trigger.toStdString(), new_guard.toStdString(),
 								   normalizedBehaviour(new_behaviour).toStdString());
@@ -447,7 +448,7 @@ bool CyberiadaSMModel::newAction(const QModelIndex& index, Cyberiada::ActionType
 			actions.push_back(Cyberiada::Action(type, new_behaviour));
 		}
 	} else if (element->get_type() == Cyberiada::elementTransition) {
-		if (trigger.length() == 0) return false;
+		if (trigger.isEmpty() && guard.isEmpty() && behaviour.trimmed().isEmpty()) return false;
 		Cyberiada::Transition* trans = static_cast<Cyberiada::Transition*>(element);
 		if (trans->has_action()) {
 			// should edit available action
