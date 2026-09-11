@@ -73,6 +73,8 @@ private slots:
 	void test_retarget_id();
 	void test_move_grows_parent();
 	void test_batch_action_guard();
+	void test_grow_skips_rectless_sm();
+	void test_grow_cascades_to_ancestors();
 
 private:
 	int countItems(int type);
@@ -1209,6 +1211,53 @@ void TestScene::test_batch_action_guard()
 	qApp->setProperty("batchMode", QVariant());
 
 	QCOMPARE(state->missingActionType(), int(Cyberiada::actionEntry));
+}
+
+void TestScene::test_grow_skips_rectless_sm()
+{
+	// a rect-less state machine must not be given a stored rect: growing it
+	// would read its uninitialised geometry and persist garbage (P-9, P-14)
+	QVERIFY(model->loadDocument("diagrams/polyline.graphml"));
+	scene->loadScene();
+	Cyberiada::Element* sm = model->idToElement("G0");
+	Cyberiada::Element* n0 = model->idToElement("n0");   // a top-level state, child of G0
+	QVERIFY(sm && n0);
+	QVERIFY(!sm->has_geometry());                        // the SM starts rect-less
+
+	QVERIFY(model->updateGeometry(model->elementToIndex(n0), Cyberiada::Rect(0, 0, 900, 700)));
+	model->growToFitChildren(n0);
+
+	// the SM was skipped: still rect-less, no garbage rect written
+	QVERIFY(!sm->has_geometry());
+}
+
+void TestScene::test_grow_cascades_to_ancestors()
+{
+	// growing a nested child grows its parent AND the grandparent, so a
+	// composite cannot be left outside its own parent (P-12)
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	Cyberiada::Element* child = model->idToElement("node-0-0-1");
+	QVERIFY(child);
+	Cyberiada::ElementCollection* parent =
+		dynamic_cast<Cyberiada::ElementCollection*>(child->get_parent());          // node-0-0
+	Cyberiada::ElementCollection* grand =
+		parent ? dynamic_cast<Cyberiada::ElementCollection*>(parent->get_parent()) : NULL;  // node-0
+	QVERIFY(parent && grand);
+	double gw0 = grand->get_geometry_rect().width;
+
+	QVERIFY(model->updateGeometry(model->elementToIndex(child),
+								  Cyberiada::Rect(-230, -40, 260, 130)));
+	model->growToFitChildren(child);
+
+	// the parent contains the child, and the grandparent grew to contain the parent
+	Cyberiada::Rect pr = parent->get_geometry_rect();
+	Cyberiada::Rect cr = static_cast<const Cyberiada::ElementCollection*>(child)->get_geometry_rect();
+	QVERIFY(std::fabs(cr.x) + cr.width / 2.0 <= pr.width / 2.0 + 0.01);
+	Cyberiada::Rect gr = grand->get_geometry_rect();
+	QVERIFY(std::fabs(pr.x) + pr.width / 2.0 <= gr.width / 2.0 + 0.01);
+	QVERIFY(gr.width > gw0);                              // the grandparent actually grew
+	QVERIFY(!model->idToElement("G")->has_geometry());   // the rect-less SM stays rect-less
 }
 
 QTEST_MAIN(TestScene)
