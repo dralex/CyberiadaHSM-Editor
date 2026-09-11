@@ -22,6 +22,7 @@
  * ----------------------------------------------------------------------------- */
 
 #include <QtTest>
+#include <cmath>
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_editor_scene.h"
 #include "cyberiadasm_editor_transition_item.h"
@@ -69,6 +70,9 @@ private slots:
 	void test_remove_vertex();
 	void test_default_name_unique();
 	void test_reparent_simple();
+	void test_retarget_id();
+	void test_move_grows_parent();
+	void test_batch_action_guard();
 
 private:
 	int countItems(int type);
@@ -1134,6 +1138,77 @@ void TestScene::test_reparent_simple()
 	// the child lives in n0's region, whose parent item is the n0 state
 	QCOMPARE(child->parentItem()->parentItem(), scene->getMap().value("n0"));
 	QVERIFY(static_cast<const Cyberiada::State*>(model->idToElement("n0"))->is_composite_state());
+}
+
+void TestScene::test_retarget_id()
+{
+	// a transition drawn as a self-loop, then retargeted, is renamed to the
+	// endpoint convention source-target (P-4)
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	Cyberiada::StateMachine* sm = dynamic_cast<Cyberiada::StateMachine*>(model->idToElement("G"));
+	Cyberiada::Element* src = model->idToElement("node-0-0-1");
+	Cyberiada::Element* tgt = model->idToElement("node-0-0-2");
+	QVERIFY(sm && src && tgt);
+
+	Cyberiada::Element* t = model->newTransition(sm, Cyberiada::transitionExternal, src, src,
+												 Cyberiada::Action(Cyberiada::actionTransition));
+	QVERIFY(t);
+	QCOMPARE(QString::fromStdString(t->get_id()), QString("node-0-0-1-node-0-0-1"));
+
+	QVERIFY(model->updateGeometry(model->elementToIndex(t),
+								  Cyberiada::ID("node-0-0-1"), Cyberiada::ID("node-0-0-2")));
+	QCOMPARE(QString::fromStdString(t->get_id()), QString("node-0-0-1-node-0-0-2"));
+	QCOMPARE(model->idToElement("node-0-0-1-node-0-0-2"), t);
+	QVERIFY(model->idToElement("node-0-0-1-node-0-0-1") == NULL);
+}
+
+void TestScene::test_move_grows_parent()
+{
+	// a programmatic move that puts a child past its parent grows the parent
+	// so the child stays inside, as a drag does (P-7)
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	Cyberiada::Element* child = model->idToElement("node-0-0-1");
+	QVERIFY(child);
+	Cyberiada::ElementCollection* parent =
+		dynamic_cast<Cyberiada::ElementCollection*>(child->get_parent());
+	QVERIFY(parent);
+
+	// move the child well below the parent's lower edge, then grow
+	QVERIFY(model->updateGeometry(model->elementToIndex(child),
+								  Cyberiada::Rect(100, 150, 320, 180)));
+	model->growToFitChildren(child);
+
+	Cyberiada::Rect pr = parent->get_geometry_rect();
+	Cyberiada::Rect cr = static_cast<const Cyberiada::ElementCollection*>(child)->get_geometry_rect();
+	// the child (centre-relative) is contained in the grown parent
+	QVERIFY(std::fabs(cr.x) + cr.width / 2.0 <= pr.width / 2.0 + 0.01);
+	QVERIFY(std::fabs(cr.y) + cr.height / 2.0 <= pr.height / 2.0 + 0.01);
+}
+
+void TestScene::test_batch_action_guard()
+{
+	// in batch mode a double click must not open the modal action dialog
+	// (it would hang with no user); it adds no action (P-5)
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+	CyberiadaSMEditorStateItem* state =
+		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0-0-2"));
+	QVERIFY(state);
+	QCOMPARE(state->missingActionType(), int(Cyberiada::actionEntry));
+
+	qApp->setProperty("batchMode", true);
+	scene->clearSelection();
+	state->setSelected(true);
+	QPointF centre = state->sceneBoundingRect().center();
+	// the guarded double click returns at once; without the guard exec() hangs
+	mouse(QEvent::GraphicsSceneMouseDoubleClick, centre, Qt::LeftButton);
+	qApp->setProperty("batchMode", QVariant());
+
+	QCOMPARE(state->missingActionType(), int(Cyberiada::actionEntry));
 }
 
 QTEST_MAIN(TestScene)
