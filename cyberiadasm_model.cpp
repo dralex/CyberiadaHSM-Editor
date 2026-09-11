@@ -559,12 +559,22 @@ bool CyberiadaSMModel::updateGeometry(const QModelIndex &index, const Cyberiada:
     if (!element) return false;
     if (element->get_type() != Cyberiada::elementTransition) return false;
     Cyberiada::Transition* trans = static_cast<Cyberiada::Transition*>(element);
-    // TODO
     if (root->find_element_by_id(source) == NULL || root->find_element_by_id(target) == NULL) {
         // the id isn't available in the document
         return false;
     }
     trans->update(source, target);
+    // the id encodes the endpoints (source-target); a retarget renames it so a
+    // transition drawn as a loop no longer keeps its loop id
+    Cyberiada::ID base = source + "-" + target;
+    Cyberiada::ID newId = base;
+    for (int n = 2; root->find_element_by_id(newId) != NULL &&
+                    root->find_element_by_id(newId) != element; n++) {
+        newId = base + "-" + std::to_string(n);
+    }
+    if (newId != element->get_id()) {
+        element->set_id(newId);
+    }
     emit dataChanged(index, index);
     return true;
 }
