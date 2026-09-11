@@ -163,7 +163,9 @@ public:
 	Cyberiada::Element*                 idToElement(const QString& id);
 	
 private:
-	std::string                         snapshot() const;
+	// on failure returns "" and sets ok to false; an empty document (no root)
+	// succeeds with an empty snapshot
+	std::string                         snapshot(bool* ok = nullptr) const;
 	void                                move(Cyberiada::Element* element, Cyberiada::ElementCollection* target_parent);
 	void                                declareGeometry(Cyberiada::DocumentFormat f, bool skip_geometry);
 	
@@ -173,6 +175,7 @@ private:
 	int                                 undoDepth;
 	QString                             undoText;
 	std::string                         undoBefore;
+	bool                                undoBeforeOk;
 	// the file identity, restored after a snapshot decode
 	QString                             filePath;
 	Cyberiada::DocumentFormat           fileFormat;

@@ -43,6 +43,7 @@ CyberiadaSMModel::CyberiadaSMModel(QObject *parent):
 	undo = new QUndoStack(this);
 	undo->setUndoLimit(100);
 	undoDepth = 0;
+	undoBeforeOk = true;
 	fileFormat = Cyberiada::formatCyberiada10;
 	icons[Cyberiada::elementRoot] = QIcon(":/Icons/images/sm-root.png");
 	icons[Cyberiada::elementSM] = QIcon(":/Icons/images/sm.png");
@@ -118,14 +119,18 @@ bool CyberiadaSMModel::readOnly() const
 
 // the snapshot is the Cyberiada 1.0 encoding of the document in memory; an
 // absent or empty document encodes as an empty string
-std::string CyberiadaSMModel::snapshot() const
+std::string CyberiadaSMModel::snapshot(bool* ok) const
 {
+	if (ok) *ok = true;
 	if (!root) return std::string();
 	std::string buffer;
 	try {
 		root->encode(buffer, Cyberiada::formatCyberiada10);
 	} catch (const Cyberiada::Exception& e) {
+		// a failed encode returns "": the caller must not record it as an undo
+		// boundary, or restoreSnapshot("") would reset the document
 		qWarning() << "cannot snapshot the document:" << e.str().c_str();
+		if (ok) *ok = false;
 		return std::string();
 	}
 	return buffer;
@@ -135,7 +140,7 @@ void CyberiadaSMModel::beginUndoStep(const QString& text)
 {
 	if (undoDepth++ == 0) {
 		undoText = text;
-		undoBefore = snapshot();
+		undoBefore = snapshot(&undoBeforeOk);
 	} else if (undoText.isEmpty()) {
 		// the gesture is named by its first mutation
 		undoText = text;
@@ -146,7 +151,11 @@ void CyberiadaSMModel::endUndoStep()
 {
 	if (undoDepth == 0) return;
 	if (--undoDepth > 0) return;
-	std::string after = snapshot();
+	bool afterOk = true;
+	std::string after = snapshot(&afterOk);
+	// a failed snapshot at either boundary must not become an undo step: it
+	// would restore "" and reset the whole document
+	if (!undoBeforeOk || !afterOk) return;
 	if (after == undoBefore) return;
 	undo->push(new DocumentStep(this, undoText.isEmpty() ? tr("edit") : undoText, undoBefore, after));
 }
