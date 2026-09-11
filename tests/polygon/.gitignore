@@ -1,3 +1,5 @@
 sessions/
+problems/
+coverage.json
 __pycache__/
 polygon.toml

@@ -335,7 +335,10 @@ stays green while the bug is there and fails the day a change fixes it,
 which is the signal to review the reproduction, turn it into an ordinary
 good-file case where that makes sense and set the status to `fixed`. The
 register writes `problems/cases.cmake`, one line per open problem, which
-`tests/CMakeLists.txt` includes next to the existing tiers.
+`tests/CMakeLists.txt` includes next to the existing tiers when present.
+The register, the reproductions and the coverage store are local results
+of the machine running the polygon; they are not committed. A problem
+worth keeping is reported to the developers with its reproduction.
 
 ## LLM backends
 
@@ -395,10 +398,10 @@ tests/polygon/
     briefs/                 hand-written briefs overriding the generated ones
   corpus/                   manifest.json (the corpus names), empty.graphml (the
                             start of a reproduction), the accepted reproductions
-  problems/
+  problems/                 local results, not committed
     register.json  cases.cmake
     P-<n>/                  start.graphml, script, expectations, dump, stderr, render.png, plan
-  coverage.json
+  coverage.json             local, not committed
   sessions/<date>-<producer>-<seed>/   session.json, script, round-<n>.dump,
                             conversation.txt, usage.json (not committed)
   tests/                    the unit tests (ctest: polygon-unit)

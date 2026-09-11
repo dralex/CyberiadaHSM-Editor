@@ -29,6 +29,6 @@ the configuration, the sessions or the register.
 
 Layout: `polygon/` the package, `catalog/` the operations, the model card,
 the themes and the hand-written briefs, `corpus/` the start documents and
-the accepted reproductions, `problems/` the register and one folder per
-problem, `coverage.json` the coverage store, `sessions/` the recordings
-(not committed), `tests/` the unit tests.
+the accepted reproductions, `tests/` the unit tests. The results are local
+and not committed: `problems/` the register and one folder per problem,
+`coverage.json` the coverage store, `sessions/` the recordings.

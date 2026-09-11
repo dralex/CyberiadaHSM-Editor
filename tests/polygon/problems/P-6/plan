@@ -1,4 +1,0 @@
-1. Create the initial pseudostate, the top-level and nested states in the required order, then add state entry actions.
-2. Create the initial transition and its action in one `new-transition` command, avoiding the rejected empty-trigger `new-action` call.
-3. Create the remaining transitions and set their action labels with `new-action`.
-4. Verify every parent, transition endpoint, and action text.
