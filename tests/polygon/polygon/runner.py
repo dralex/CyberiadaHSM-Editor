@@ -102,8 +102,11 @@ def run(env, document, script=None, dump=False, stack=False, export=None,
     command.append(str(document))
     result = RunResult(command=command, files=files)
     try:
+        # the editor may echo what a script wrote; never let a stray byte
+        # kill the run
         completed = subprocess.run(command, cwd=workdir, env=env.environ,
                                    capture_output=True, text=True,
+                                   encoding="utf-8", errors="replace",
                                    timeout=timeout)
     except subprocess.TimeoutExpired as e:
         result.timed_out = True

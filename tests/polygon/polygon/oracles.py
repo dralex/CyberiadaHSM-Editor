@@ -34,6 +34,7 @@ from . import expectations
 from . import runner
 
 NUMBER = re.compile(r"-?\d+(?:\.\d+)?")
+PATH = re.compile(r"/\S+")
 
 KIND_CRASH = "crash"
 KIND_ORACLE = "oracle"
@@ -43,8 +44,9 @@ KIND_REVIEW = "review"
 
 
 def normalize(line):
-    """The signature form of a line: every number becomes '#'."""
-    return NUMBER.sub("#", line.strip())
+    """The signature form of a line: every number becomes '#', every file
+    path '<path>'."""
+    return NUMBER.sub("#", PATH.sub("<path>", line.strip()))
 
 
 @dataclass
@@ -76,7 +78,7 @@ def crash_finding(result, stage):
         return Finding(KIND_CRASH, "signal:%s" % result.signal_name,
                        "the %s run died by %s" % (stage, result.signal_name))
     if result.exit == runner.EXIT_INTERNAL:
-        lines = result.messages()
+        lines = [l for l in result.messages() if not l.startswith("export frame ")]
         first = lines[0] if lines else "internal error"
         return Finding(KIND_CRASH, "assert:" + normalize(first),
                        "the %s run: %s" % (stage, first))

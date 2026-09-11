@@ -113,6 +113,7 @@ class OracleTest(unittest.TestCase):
 
     def test_normalize(self):
         self.assertEqual(oracles.normalize("line 12: rect (1.5; -2) x"), "line #: rect (#; #) x")
+        self.assertEqual(oracles.normalize("cannot export /tmp/polygon-a1/export.png"), "cannot export <path>")
 
 
 if __name__ == "__main__":

@@ -65,6 +65,10 @@ class MinimizeTest(unittest.TestCase):
             script = "new-state G0 A\nnew-state G0 B\nnew-state G0 C\n"
             added, result = R.register_script(reg, ENV, CONFIG, DIAGRAMS / "hierarchy.graphml",
                                               script, "count state 8\n", title="too many states")
+            self.assertEqual(added, [])   # a semantic finding is not a defect
+            added, result = R.register_script(reg, ENV, CONFIG, DIAGRAMS / "hierarchy.graphml",
+                                              script, "count state 8\n", title="too many states",
+                                              kinds=None)
             self.assertEqual([p.kind for p, _ in added], [oracles.KIND_SEMANTIC])
             problem = added[0][0]
             self.assertEqual((Path(tmp) / "problems" / problem.id / "script").read_text(), "new-state G0 A\n")

@@ -62,7 +62,7 @@ def _diagram(env, name):
     if not document.exists():
         print("no diagram %s" % name, file=sys.stderr)
         sys.exit(2)
-    return document
+    return document.resolve()
 
 
 def _register(env):
@@ -136,7 +136,8 @@ def cmd_register(args):
         facts = Path(args.expectations).read_text() if args.expectations else ""
         added, result = R.register_script(register, env, cfg, document, script, facts,
                                           title=args.title or "", producer="manual",
-                                          root=env.root, do_minimize=not args.no_minimize)
+                                          root=env.root, do_minimize=not args.no_minimize,
+                                          kinds=None)
         if result.script_error:
             print("script error at line %d: %s" % result.script_error)
         for problem, is_new in added:

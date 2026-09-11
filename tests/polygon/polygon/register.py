@@ -218,13 +218,20 @@ def minimize(env, config, diagram, script_text, expectation_text, signature):
     return "\n".join(kept) + "\n"
 
 
+DEFECT_KINDS = (oracles.KIND_CRASH, oracles.KIND_ORACLE, oracles.KIND_RENDER)
+
+
 def register_script(register, env, config, diagram, script_text, expectation_text="",
-                    title="", producer="", root=None, do_minimize=True, plan=""):
-    """Run a script with every oracle and register every finding; returns
-    [(problem, is_new)]."""
+                    title="", producer="", root=None, do_minimize=True, plan="", kinds=DEFECT_KINDS):
+    """Run a script with every oracle and register the findings of the given
+    kinds (None: every kind); returns [(problem, is_new)]."""
     result = evaluate_script(env, config, diagram, script_text, expectation_text)
     out = []
     for finding in result.findings:
+        # the expectation and review findings are candidates of the session,
+        # not defects; a hand-run `register add` with kinds=None takes them too
+        if kinds is not None and finding.kind not in kinds:
+            continue
         own_title = title if finding is result.findings[0] or not title else finding.note[:80]
         if register.by_signature(finding.signature) is not None:
             out.append(register.add(finding, diagram, script_text))
