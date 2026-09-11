@@ -27,6 +27,9 @@
 #include <QRegularExpression>
 #include <QDebug>
 
+#include <cmath>
+#include <algorithm>
+
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_undo.h"
 #include "settings_manager.h"
@@ -577,6 +580,28 @@ bool CyberiadaSMModel::updateGeometry(const QModelIndex &index, const Cyberiada:
     }
     emit dataChanged(index, index);
     return true;
+}
+
+bool CyberiadaSMModel::growToFitChildren(Cyberiada::Element* moved)
+{
+	if (readOnly() || !moved) return false;
+	Cyberiada::ElementCollection* pc =
+		dynamic_cast<Cyberiada::ElementCollection*>(moved->get_parent());
+	if (!pc || !pc->has_rect_geometry()) return false;   // a rect-less SM has no border
+	Cyberiada::Rect pr = pc->get_geometry_rect();
+	// children are stored relative to the parent centre, so the parent grows
+	// symmetrically about it - no re-basing of the children, one pass
+	double halfW = pr.width / 2.0, halfH = pr.height / 2.0;
+	Cyberiada::ElementList kids = pc->get_children();
+	for (Cyberiada::ElementList::const_iterator i = kids.begin(); i != kids.end(); i++) {
+		Cyberiada::ElementCollection* c = dynamic_cast<Cyberiada::ElementCollection*>(*i);
+		if (!c || !c->has_rect_geometry()) continue;
+		Cyberiada::Rect cr = c->get_geometry_rect();
+		halfW = std::max(halfW, std::fabs(cr.x) + cr.width / 2.0);
+		halfH = std::max(halfH, std::fabs(cr.y) + cr.height / 2.0);
+	}
+	if (halfW * 2.0 == pr.width && halfH * 2.0 == pr.height) return false;
+	return updateGeometry(elementToIndex(pc), Cyberiada::Rect(pr.x, pr.y, halfW * 2.0, halfH * 2.0));
 }
 
 bool CyberiadaSMModel::updateParent(const QModelIndex &index, const Cyberiada::ID &new_parent_id)

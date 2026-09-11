@@ -211,14 +211,18 @@ static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QStri
 		return model->updateTitle(index, title);
 	} else if (cmd == "move") {
 		if (toNumbers(tokens, 2, 4, v)) {
-			return model->updateGeometry(index, Cyberiada::Rect(v[0], v[1], v[2], v[3]));
+			if (!model->updateGeometry(index, Cyberiada::Rect(v[0], v[1], v[2], v[3]))) return false;
+			model->growToFitChildren(element);
+			return true;
 		}
 		if (element->get_type() == Cyberiada::elementChoice) {
 			*error = "the choice requires <x y w h>";
 			return false;
 		}
 		if (toNumbers(tokens, 2, 2, v)) {
-			return model->updateGeometry(index, Cyberiada::Point(v[0], v[1]));
+			if (!model->updateGeometry(index, Cyberiada::Point(v[0], v[1]))) return false;
+			model->growToFitChildren(element);
+			return true;
 		}
 		*error = "move requires <x y> or <x y w h>";
 		return false;

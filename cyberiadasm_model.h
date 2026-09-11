@@ -85,6 +85,10 @@ public:
     bool                                updateGeometry(const QModelIndex& index, const Cyberiada::Polyline& pl);
     bool                                updateGeometry(const QModelIndex& index, const Cyberiada::ID& source, const Cyberiada::ID& target);
     bool                                updateParent(const QModelIndex& index, const Cyberiada::ID& new_parent_id);
+    // grow the parent collection of a moved element symmetrically about its
+    // centre so it contains all its rect children (a programmatic move leaves
+    // a child outside, unlike an interactive drag)
+    bool                                growToFitChildren(Cyberiada::Element* moved);
 	bool                                updateCommentBody(const QModelIndex& index, const QString& body);
     bool                                updateMetainformation(const QModelIndex& index, const QString& parameter, const QString& new_value);
 
