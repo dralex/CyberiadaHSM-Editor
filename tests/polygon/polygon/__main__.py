@@ -119,6 +119,17 @@ def cmd_register(args):
         register.write_cases()
         print(register.folder / R.CASES_NAME)
         return 0
+    if args.action == "set-status":
+        problem = register.find(args.problem or "")
+        if problem is None or args.status not in R.STATUSES:
+            print("usage: register set-status --problem <id> --status %s" % "|".join(R.STATUSES), file=sys.stderr)
+            return 2
+        problem.status = args.status
+        if args.note:
+            problem.note = args.note
+        register.save()
+        print("%s %s" % (problem.id, problem.status))
+        return 0
     if args.action == "add":
         document = _diagram(env, args.diagram)
         script = Path(args.script).read_text() if args.script else ""
@@ -242,7 +253,10 @@ def main(argv=None):
     p.add_argument("--problem", required=True)
     p.set_defaults(func=cmd_check)
     p = sub.add_parser("register", help="the problem register")
-    p.add_argument("action", choices=["list", "add", "cases"])
+    p.add_argument("action", choices=["list", "add", "cases", "set-status"])
+    p.add_argument("--problem")
+    p.add_argument("--status")
+    p.add_argument("--note")
     p.add_argument("--diagram")
     p.add_argument("--script")
     p.add_argument("--expectations")

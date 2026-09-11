@@ -28,6 +28,7 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from . import catalog as CAT
 from . import dump as D
 from . import expectations
 from . import runner
@@ -104,6 +105,8 @@ class Round:
         self.workdir.mkdir(parents=True, exist_ok=True)
         self._start_dump = None
         self.export_frame = None   # (x, y, w, h) the last png export reported
+        # the fields the format does not preserve are no difference
+        self.ignore = set(CAT.format_profile()) | set(getattr(config, "ignore", ()))
 
     def run(self, script_text, name, **options):
         script = runner.write_script(self.workdir / (name + ".script"), script_text)
@@ -162,7 +165,7 @@ class Round:
             return [Finding(KIND_ORACLE, "%s:exit:%d" % (name, second.exit),
                             "the %s run exited %d: %s" % (stage, second.exit, " ".join(second.messages())))]
         try:
-            diff = D.compare(first, second.stdout)
+            diff = D.compare(first, second.stdout, self.ignore)
         except D.DumpError as e:
             return [Finding(KIND_ORACLE, "%s:dump:%s" % (name, normalize(str(e))), str(e))]
         if diff is None:

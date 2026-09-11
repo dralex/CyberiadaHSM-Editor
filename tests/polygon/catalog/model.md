@@ -11,6 +11,8 @@ The model is a CyberiadaML hierarchical state machine (UML statecharts):
 - A transition goes from a source (a state, the initial pseudostate or a
   choice) to a target (a state, a final state, a choice or a terminate
   pseudostate) of the same state machine. It carries at most one action.
+  The format does not distinguish local and external transitions: every
+  transition is local once saved, whatever the editor marks in memory.
 - The action notation: `entry/ behaviour` and `exit/ behaviour` are the
   activities of a state; `TRIGGER [guard]/ behaviour` is a reaction to an
   event, on a state (internal) or on a transition. The guard is optional and

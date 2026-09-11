@@ -83,6 +83,16 @@ class Catalog:
         return "\n".join(lines)
 
 
+def format_profile(path=None):
+    """The fields the serialization format does not preserve (catalog/format.json):
+    {tag: reason}; the round-trip oracles skip them."""
+    path = Path(path) if path else CATALOG_DIR / "format.json"
+    if not path.exists():
+        return {}
+    data = json.loads(path.read_text())
+    return {entry["tag"]: entry.get("reason", "") for entry in data.get("not_preserved", [])}
+
+
 def model_card(path=None):
     path = Path(path) if path else CATALOG_DIR / "model.md"
     return path.read_text() if path.exists() else ""

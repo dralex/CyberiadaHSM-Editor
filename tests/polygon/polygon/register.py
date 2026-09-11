@@ -41,6 +41,8 @@ CASES_NAME = "cases.cmake"
 STATUS_OPEN = "open"
 STATUS_FIXED = "fixed"
 STATUS_CLOSED = "closed"
+STATUS_FORMAT = "format"     # a property of the serialization format, not a defect
+STATUSES = (STATUS_OPEN, STATUS_FIXED, STATUS_CLOSED, STATUS_FORMAT)
 
 
 @dataclass

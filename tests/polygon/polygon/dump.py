@@ -484,9 +484,10 @@ class Difference:
         return "%s:%s" % (self.where.lower().replace(" ", "-"), self.field)
 
 
-def compare(a_text, b_text):
+def compare(a_text, b_text, ignore=()):
     """The first difference of two dumps by the document structure and
-    geometry, then by the scene section; None when they agree."""
+    geometry, then by the scene section; None when they agree. ignore holds
+    the tags (kind:field) of the fields the format does not preserve."""
     da, db = parse_dump(a_text), parse_dump(b_text)
     if da.document is None or db.document is None:
         return Difference("document", "missing", "a document", "no document")
@@ -498,9 +499,16 @@ def compare(a_text, b_text):
             return Difference("meta", "meta", str(ra[2]), str(rb[2]))
         if ra[0] != rb[0] or ra[1] != rb[1]:
             return Difference(ra[0], "identity", record_text(ra), record_text(rb))
+        skipped = False
         for (ka, va), (kb, vb) in zip(ra[2], rb[2]):
             if va != vb:
-                return Difference(ra[0], ka, record_text(ra), record_text(rb))
+                d = Difference(ra[0], ka, record_text(ra), record_text(rb))
+                if d.tag in ignore:
+                    skipped = True
+                    continue
+                return d
+        if skipped:
+            continue
         return Difference(ra[0], "record", record_text(ra), record_text(rb))
     if len(fa) != len(fb):
         extra = fa[len(fb)] if len(fa) > len(fb) else fb[len(fa)]

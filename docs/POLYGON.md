@@ -192,7 +192,13 @@ the number of rounds and the number of model calls, both configured.
 | 3 | the vision review says the picture does not show the plan | `review` |
 
 The tier 1 checks are the no-brain checks: mechanical reruns of the same
-script with other batch options.
+script with other batch options. The comparisons skip the fields the
+serialization format does not preserve, listed in `catalog/format.json`
+with the reference to the standard for each (the transition type: PNST
+1044-2025 6.3.2 says the format cannot distinguish local and external
+transitions); `[oracles] ignore` in the configuration adds tags locally.
+A problem that turns out to be such a property gets the register status
+`format` and no regression case.
 
 ```
   script  --dump                 -> dump A
@@ -393,6 +399,7 @@ tests/polygon/
     adapters/               base.py, chat_completions.py, messages.py
   catalog/
     operations.json         the operation catalog
+    format.json             the fields the format does not preserve
     model.md                the model card of the preamble
     themes.json             the combination themes
     briefs/                 hand-written briefs overriding the generated ones

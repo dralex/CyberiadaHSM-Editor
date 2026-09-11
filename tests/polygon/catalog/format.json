@@ -1,0 +1,7 @@
+{
+  "format": "Cyberiada-GraphML-1.0",
+  "not_preserved": [
+    {"tag": "transition:type",
+     "reason": "PNST 1044-2025 6.3.2: the format cannot distinguish local and external transitions; every transition reads as local"}
+  ]
+}

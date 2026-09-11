@@ -94,6 +94,10 @@ class DumpTest(unittest.TestCase):
         self.assertIn("name='MovingDown'", diff.got)
         b = a.replace("type: loc, source: 'idle', target: 'up'", "type: ext, source: 'idle', target: 'up'")
         self.assertEqual(D.compare(a, b).tag, "transition:type")
+        # the format does not preserve the type: no difference when ignored
+        self.assertIsNone(D.compare(a, b, ignore={"transition:type"}))
+        c = b.replace("name: 'MovingUp'", "name: 'MovingDown'", 1)
+        self.assertEqual(D.compare(a, c, ignore={"transition:type"}).tag, "simple-state:name")
         self.assertIsNotNone(D.compare(a, load("hierarchy").text))
         self.assertIsNone(D.compare(load("geometry").text, load("geometry").text))
 

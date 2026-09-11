@@ -97,6 +97,20 @@ class OracleTest(unittest.TestCase):
             self.assertEqual([f.kind for f in result.findings], [oracles.KIND_ORACLE])
             self.assertTrue(result.findings[0].signature.startswith("replay:"))
 
+    def test_format_profile_skips_the_transition_type(self):
+        # a new transition is external in memory and local after a save or an
+        # undo snapshot: a property of the format, no finding
+        script = "new-state G0 0 0 200 100 A\nnew-state G0 300 0 200 100 B\nnew-transition G0 n0 n1 GO\n"
+        empty = ENV.polygon / "corpus" / "empty.graphml"
+        with tempfile.TemporaryDirectory() as tmp:
+            round_ = oracles.Round(ENV, CONFIG, empty, tmp)
+            result = round_.evaluate(script, 0, "transition n0 n1")
+            self.assertEqual([(f.kind, f.signature) for f in result.findings], [])
+            round_.ignore = set()
+            result = round_.evaluate(script, 0, "")
+            self.assertEqual(sorted(f.signature for f in result.findings),
+                             ["redo-all:transition:type", "save-reopen:transition:type"])
+
     def test_normalize(self):
         self.assertEqual(oracles.normalize("line 12: rect (1.5; -2) x"), "line #: rect (#; #) x")
 
