@@ -637,6 +637,8 @@ def _shape(e, machine):
     if e.kind in COMMENT_KINDS:
         return (e.kind, e.body, tuple((t, _label(machine_find(machine, to), machine), f)
                                        for t, to, f in e.subjects))
+    if e.is_vertex:
+        return (e.kind, "", ())
     return (e.kind, e.name, actions)
 
 

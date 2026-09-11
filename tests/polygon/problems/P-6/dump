@@ -1,0 +1,17 @@
+== document
+LocalDocument: {Document: {id: '', name: '', geometry format: qt, meta: {standard version: '1.0', geometry: 'full', transition order: action first, event propagation: block events}, elements: {State Machine: {id: 'G0', name: 'SM', elements: {Formal Comment: {id: 'nMeta', name: 'CGML_META', body: 'standardVersion/ 1.0
+
+geometry/ full
+
+transitionOrder/ actionFirst
+
+eventPropagation/ block'}, Initial: {id: 'n0', geometry: (100; 100)}, Simple State: {id: 'n1', name: 'Idle', geometry: (250; 50; 200; 100)}, Transition: {id: 'n0-n1', type: ext, source: 'n0', target: 'n1', action: {trigger: '/ floor = 1'}}}}}, bounding rect: (225; 50; 250; 100)}, file: '/home/ubuntu/sources/CyberiadaHSM-Editor/tests/polygon/corpus/empty.graphml', format: cyberiada, format_str: 'Cyberiada-GraphML-1.0'}
+== scene
+  State Machine: {id: 'G0', pos: (0.00; 0.00), rect: (100.00; 0.00; 250.00; 100.00)}
+    Initial: {id: 'n0', pos: (100.00; 100.00), rect: (-10.00; -10.00; 20.00; 20.00)}
+    Simple State: {id: 'n1', pos: (250.00; 50.00), rect: (-100.00; -50.00; 200.00; 100.00)}
+    Transition: {id: 'n0-n1', pos: (0.00; 0.00), rect: (90.00; 73.33; 70.00; 36.67)}
+== stack
+count: 3
+index: 3
+clean: no

@@ -1,0 +1,35 @@
+kind n0 initial
+state Idle parent G0
+state Moving parent G0
+state MovingUp parent n2
+state MovingDown parent n2
+state DoorsOpen parent G0
+kind n1 simple
+kind n2 composite
+kind n2::n0 simple
+kind n2::n1 simple
+kind n3 simple
+count state 5
+count initial 1
+count transition 8
+transition n0 n1
+transition n1 n2::n0
+transition n1 n2::n1
+transition n1 n3
+transition n2 n3
+transition n2::n0 n2::n0
+transition n2::n1 n2::n1
+transition n3 n1
+action n1 0 entry/ lamp_off()
+action n2 0 entry/ lamp_on()
+action n2::n0 0 entry/ motor_up()
+action n2::n1 0 entry/ motor_down()
+action n3 0 entry/ open_doors()\nstart_timer()
+action n0-n1 0 / floor = 1
+action n1-n2::n0 0 CALL [call_floor > floor]/ target = call_floor
+action n1-n2::n1 0 CALL [call_floor < floor]/ target = call_floor
+action n1-n3 0 CALL [call_floor == floor]/
+action n2-n3 0 FLOOR_SENSOR [floor == target]/ stop_motor()
+action n2::n0-n2::n0 0 FLOOR_SENSOR [floor != target]/ floor += 1
+action n2::n1-n2::n1 0 FLOOR_SENSOR [floor != target]/ floor -= 1
+action n3-n1 0 TIMEOUT/ close_doors()

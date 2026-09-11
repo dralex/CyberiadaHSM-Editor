@@ -42,7 +42,9 @@ every transition. You may build the diagram over several rounds.
 
 def generated(document, name):
     machines = document.machines()
-    head = 'Reproduce the diagram "%s".\n' % (machines[0].name if machines else name)
+    title = machines[0].name if machines else name
+    head = 'Reproduce the diagram "%s": name the state machine G0 "%s" (`rename G0 %s`).\n' % (
+        title, title, title)
     return head + D.describe(document) + INSTRUCTIONS
 
 

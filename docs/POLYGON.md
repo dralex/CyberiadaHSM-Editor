@@ -56,7 +56,9 @@ LLM backend is configurable; the agent is never a fixed vendor.
 ```
 
 The composer decides *what* is combined, the agent decides *how*. The
-oracles need no reference: every check compares the run with itself.
+oracles need no reference: every check compares the run with itself. The
+document of a round is the start document with the accumulated script
+replayed from the beginning, so the accumulated script is the reproduction.
 
 ## Missions
 
@@ -201,9 +203,10 @@ script with other batch options.
 ```
 
 A `semantic` or `review` finding is a candidate: the agent may have expected
-the wrong thing. Both are registered with the plan attached and are closed
-by a human. A `crash`, `oracle` or `render` finding is a defect until proven
-otherwise.
+the wrong thing. Both stay in the session record with the plan attached for
+a human to read; `register add` promotes one with its script and
+expectations. A `crash`, `oracle` or `render` finding is a defect until
+proven otherwise and goes to the register at once.
 
 ## Expectation language
 
@@ -350,46 +353,55 @@ max_calls = 40
 
 [backend.cloud]
 kind = "messages"
+base_url = "..."
 model = "..."
-key_env = "POLYGON_CLOUD_KEY"
+key_file = "~/cloud.key"             # or key_env; the first line of the file
 vision = true
 ```
 
 The adapter interface is two calls: `complete(messages) -> text` and
 `supports_images()`. The `chat-completions` kind covers every server speaking the
 chat completions protocol, local ones included; `messages` covers the
-messages protocol. A backend is selected per session on the command line;
-the model name and the backend name are recorded with the session and the
-problems, never the key.
+messages protocol. Both are raw HTTP through the standard library, no vendor
+SDK. A backend is selected per session on the command line; the model name
+and the backend name are recorded with the session and the problems, never
+the key.
 
 ## Layout
 
 ```
 tests/polygon/
-  README.md                 how to run, points here
-  polygon.example.toml      backend and threshold configuration
-  run-polygon.sh            wrapper: env of the ctest tiers + python -m polygon
+  README.md                 how to run
+  polygon.example.toml      backends and thresholds; the real polygon.toml is not committed
+  run-polygon.sh            wrapper: python3 -m polygon <command>
   polygon/                  the package
-    composer.py             missions, seeds, coverage bias
-    adapters/               chat_completions.py, messages.py, base.py
-    fuzzer.py               random valid sequences
-    runner.py               editor subprocess, timeout, reruns
-    dump.py                 dump parser (document + scene)
-    oracles.py              tier 1, expectations, render
-    render.py               ink sampling on the png
-    register.py             problems, signatures, minimization
-    session.py              the round loop, replay
+    __main__.py             run | fuzz | replay | brief | check-script | check | register
+    config.py  env.py       the toml, the keys; the binary and the batch environment
+    runner.py               one editor run: exit code, signal, timeout, streams
+    dump.py                 dump parser, describe(), compare(), structural_diff()
+    expectations.py         the fact language
+    oracles.py  render.py   tier 1 reruns and tier 2; the png ink check
+    catalog.py  coverage.py the operation catalog; the coverage store and its bias
+    fuzzer.py               one valid command or gesture group per round
+    composer.py  brief.py   missions from a seed; the generated briefs
+    prompt.py  agent.py     the preamble, the mission bodies, the feedback; the agent producer
+    session.py              the round loop, the recording, the replay
+    register.py             problems, signatures, minimisation, cases.cmake
+    adapters/               base.py, chat_completions.py, messages.py
   catalog/
     operations.json         the operation catalog
-    briefs/                 descriptions of the corpus diagrams (mission A)
+    model.md                the model card of the preamble
     themes.json             the combination themes
-  corpus/                   start documents: links to tests/diagrams plus
-                            the accepted reproductions
+    briefs/                 hand-written briefs overriding the generated ones
+  corpus/                   manifest.json (the corpus names), empty.graphml (the
+                            start of a reproduction), the accepted reproductions
   problems/
-    register.json
-    P-<n>/                  start.graphml, script, dump, stderr, png, plan
+    register.json  cases.cmake
+    P-<n>/                  start.graphml, script, expectations, dump, stderr, render.png, plan
   coverage.json
-  sessions/<date>-<seed>/   prompts, answers, feedback, per round
+  sessions/<date>-<producer>-<seed>/   session.json, script, round-<n>.dump,
+                            conversation.txt, usage.json (not committed)
+  tests/                    the unit tests (ctest: polygon-unit)
 ```
 
 `tests/CMakeLists.txt` runs the unit tests of the package as `polygon-unit`

@@ -10,7 +10,7 @@
       "found": "2026-09-11",
       "revision": "81e775b",
       "status": "open",
-      "hits": 10,
+      "hits": 18,
       "producer": "manual"
     },
     {
@@ -36,7 +36,7 @@
       "found": "2026-09-11",
       "revision": "81e775b",
       "status": "open",
-      "hits": 6,
+      "hits": 14,
       "producer": "manual"
     },
     {
@@ -61,6 +61,32 @@
       "diagram": "geometry.graphml",
       "found": "2026-09-11",
       "revision": "81e775b",
+      "status": "open",
+      "hits": 1,
+      "producer": "manual"
+    },
+    {
+      "id": "P-6",
+      "kind": "oracle",
+      "signature": "save-reopen:transition:type",
+      "title": "a new transition is external in the document but local after a save",
+      "note": "reopen: expected \"Transition n0-n1 kind='Transition' id='n0-n1' type='ext' source='n0' target='n1' action='/ floor = 1/'\", got \"Transition n0-n1 kind='Transition' id='n0-n1' type='loc' source='n0' target='n1' action='/ floor = 1/'\"",
+      "diagram": "empty.graphml",
+      "found": "2026-09-11",
+      "revision": "821df4c",
+      "status": "open",
+      "hits": 7,
+      "producer": "agent:deepseek:deepseek-v4-pro"
+    },
+    {
+      "id": "P-7",
+      "kind": "render",
+      "signature": "render:outside:simple-state",
+      "title": "a move command leaves a child state outside its parent while a drag grows the parent",
+      "note": "Simple State node-0-0-1 is drawn outside its parent node-0-0",
+      "diagram": "geometry.graphml",
+      "found": "2026-09-11",
+      "revision": "821df4c",
       "status": "open",
       "hits": 1,
       "producer": "manual"

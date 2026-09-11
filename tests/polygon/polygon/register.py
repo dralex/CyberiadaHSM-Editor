@@ -223,6 +223,7 @@ def register_script(register, env, config, diagram, script_text, expectation_tex
     result = evaluate_script(env, config, diagram, script_text, expectation_text)
     out = []
     for finding in result.findings:
+        own_title = title if finding is result.findings[0] or not title else finding.note[:80]
         if register.by_signature(finding.signature) is not None:
             out.append(register.add(finding, diagram, script_text))
             continue
@@ -234,6 +235,6 @@ def register_script(register, env, config, diagram, script_text, expectation_tex
             again = oracles.Round(env, config, diagram, tmp).evaluate(text, 0, expectation_text, render.oracle)
             match = next((f for f in again.findings if f.signature == finding.signature), finding)
             files = {"render": match.files["png"]} if match.files.get("png") else {}
-            out.append(register.add(match, diagram, text, expectation_text, title, producer, root,
+            out.append(register.add(match, diagram, text, expectation_text, own_title, producer, root,
                                     files, plan, again.run.stdout, "\n".join(again.run.messages())))
     return out, result

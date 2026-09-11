@@ -150,7 +150,11 @@ class Session:
             fired = False
             for f in result.findings:
                 record.findings.append((f.kind, f.signature, f.note))
-                fired = fired or f.kind in (oracles.KIND_CRASH, oracles.KIND_ORACLE, oracles.KIND_RENDER)
+                # a semantic or review finding is a candidate for the human
+                # reading the session; the register takes the defects
+                if f.kind in (oracles.KIND_SEMANTIC, oracles.KIND_REVIEW):
+                    continue
+                fired = True
                 self.register_finding(f, lines, expectations, plan, verb)
             self.coverage.record(verb, kind, self.previous_verb, fired)
             self.previous_verb = verb
@@ -171,7 +175,7 @@ class Session:
             self.register.add(finding, self.start, script)
             return known
         added, _ = R.register_script(self.register, self.env, self.config, self.start, script,
-                                     expectations, title=finding.note[:80],
+                                     expectations, title="",
                                      producer=self.producer_name, root=self.env.root,
                                      do_minimize=self.minimize, plan=plan)
         for problem, is_new in added:
