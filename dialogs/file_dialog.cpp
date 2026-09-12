@@ -23,6 +23,7 @@
 
 
 #include <QGridLayout>
+#include <QToolButton>
 
 #include "file_dialog.h"
 #include "settings_manager.h"
@@ -44,9 +45,28 @@ QString CyberiadaFileDialog::selectedFile() const
 void CyberiadaFileDialog::setOptionsWidget(QWidget* options)
 {
     QGridLayout* grid = qobject_cast<QGridLayout*>(layout());
-    if (grid) {
-        grid->addWidget(options, grid->rowCount(), 0, 1, grid->columnCount());
-    }
+    if (!grid) return;
+
+    // a collapsible header hides the options so the file browser gets the room;
+    // the choice is remembered across dialogs
+    QToolButton* toggle = new QToolButton(this);
+    toggle->setCheckable(true);
+    toggle->setAutoRaise(true);
+    toggle->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    toggle->setText(tr("Дополнительные параметры"));
+    bool expanded = SettingsManager::instance().getOptionsExpanded();
+    toggle->setChecked(expanded);
+    toggle->setArrowType(expanded ? Qt::DownArrow : Qt::RightArrow);
+    options->setVisible(expanded);
+
+    connect(toggle, &QToolButton::toggled, this, [options, toggle](bool on) {
+        options->setVisible(on);
+        toggle->setArrowType(on ? Qt::DownArrow : Qt::RightArrow);
+        SettingsManager::instance().setOptionsExpanded(on);
+    });
+
+    grid->addWidget(toggle, grid->rowCount(), 0, 1, grid->columnCount());
+    grid->addWidget(options, grid->rowCount(), 0, 1, grid->columnCount());
 }
 
 void CyberiadaFileDialog::done(int result)

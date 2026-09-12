@@ -48,7 +48,8 @@ void SettingsManager::load() {
 
     lastDirectory = s.value("files/lastDirectory", QDir::currentPath()).toString();
     // the Qt default leaves too little room for the file view
-    dialogSize = s.value("files/dialogSize", QSize(900, 600)).toSize();
+    dialogSize = s.value("files/dialogSize", QSize(1000, 680)).toSize();
+    optionsExpanded = s.value("files/optionsExpanded", true).toBool();
 
     selectionColor = QColor(s.value("display/selectionColor", QColor(Qt::darkGray).name()).toString());
     selectionBorderWidth = s.value("display/selectionBorderWidth", 2).toInt();
@@ -181,6 +182,14 @@ void SettingsManager::setDialogSize(const QSize& value)
     if (dialogSize != value && value.isValid()) {
         dialogSize = value;
         QSettings().setValue("files/dialogSize", value);
+    }
+}
+
+void SettingsManager::setOptionsExpanded(bool value)
+{
+    if (optionsExpanded != value) {
+        optionsExpanded = value;
+        QSettings().setValue("files/optionsExpanded", value);
     }
 }
 

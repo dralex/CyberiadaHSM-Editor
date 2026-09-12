@@ -66,6 +66,9 @@ public:
     void setLastDirectory(const QString& value);
     QSize getDialogSize() const { return dialogSize; }
     void setDialogSize(const QSize& value);
+    // whether the extra options are shown in the file dialogs (collapsible)
+    bool getOptionsExpanded() const { return optionsExpanded; }
+    void setOptionsExpanded(bool value);
 
     QColor getSelectionColor() const { return selectionColor; }
     void setSelectionColor(QColor value);
@@ -116,6 +119,7 @@ private:
     // files
     QString lastDirectory;
     QSize dialogSize;
+    bool optionsExpanded;
 
     // selection
     QColor selectionColor;
