@@ -114,7 +114,7 @@ void EditableTextItem::focusOutEvent(QFocusEvent *event) {
     isEdit = false;
     setPlainText(toPlainText().trimmed());
     QGraphicsTextItem::focusOutEvent(event);
-    // emit editingFinished();
+    emit editingFinished();
 }
 
 void EditableTextItem::hoverEnterEvent(QGraphicsSceneHoverEvent *event) {

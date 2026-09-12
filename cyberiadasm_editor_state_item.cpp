@@ -627,6 +627,16 @@ StateTitle::StateTitle(const QString &text, QGraphicsItem *parent):
     setTextMargin(0);
 }
 
+// a refused title: the warning dialog, or the diagnostics in batch mode
+static void titleRefused(const QString& message)
+{
+    if (qApp && qApp->property("batchMode").toBool()) {
+        fprintf(stderr, "%s\n", qPrintable(message));
+        return;
+    }
+    QMessageBox::warning(nullptr, "Предупреждение", message);
+}
+
 void StateTitle::focusOutEvent(QFocusEvent *event)
 {
     setTextInteractionFlags(Qt::NoTextInteraction);
@@ -646,15 +656,14 @@ void StateTitle::focusOutEvent(QFocusEvent *event)
     if (newName == current) { return; }
 
     if (newName.isEmpty()) {
-        QMessageBox::warning(nullptr, "Предупреждение", QString("Имя не может быть пустым!"));
+        titleRefused(QString("Имя не может быть пустым!"));
         setPlainText(current);
         return;
     }
 
     // the model refuses a name taken on this level
     if (!owner->getModel()->updateTitle(owner->getIndex(), newName)) {
-        QMessageBox::warning(nullptr, "Предупреждение",
-                             QString("Имя \"%1\" уже существует на этом уровне иерархии.").arg(newName));
+        titleRefused(QString("Имя \"%1\" уже существует на этом уровне иерархии.").arg(newName));
         setPlainText(current);
     }
 }

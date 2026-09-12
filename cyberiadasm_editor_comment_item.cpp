@@ -53,7 +53,7 @@ CyberiadaSMEditorCommentItem::CyberiadaSMEditorCommentItem(QObject *parent_objec
     body = new EditableTextItem(comment->get_body().c_str(), this);
     body->setVisible(SettingsManager::instance().getShowText());
     body->setPos(-boundingRect().width() / 2 + 15, - boundingRect().height() / 2);
-    // connect(body, EditableTextItem::editingFinished, this, CyberiadaSMEditorCommentItem::onBodyChanged);
+    connect(body, &EditableTextItem::editingFinished, this, &CyberiadaSMEditorCommentItem::onBodyChanged);
 
     body->setFontRole(element->get_type() == Cyberiada::elementFormalComment ?
                       fontRoleFormalComment : fontRoleComment);
@@ -137,7 +137,6 @@ void CyberiadaSMEditorCommentItem::paint(QPainter* painter, const QStyleOptionGr
     painter->drawConvexPolygon(triangle, 3);
 }
 
-// TODO
 void CyberiadaSMEditorCommentItem::onBodyChanged()
 {
     model->updateCommentBody(model->elementToIndex(element), body->toPlainText());

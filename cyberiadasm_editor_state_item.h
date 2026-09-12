@@ -205,6 +205,7 @@ public:
 
     QString getText();
     QString getBehavior();
+    int protectedLength() const override { return typeText.length(); }
 
 signals:
     void actionDeleted(StateAction* signalOwner);
