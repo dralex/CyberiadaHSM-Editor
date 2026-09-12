@@ -1,39 +1,446 @@
 {
   "operations": [
-    {"verb": "new-state", "args": "<parent> [x y w h] <name>", "effect": "create a state (rect optional)", "targets": ["sm", "composite", "simple"], "form": "model"},
-    {"verb": "new-initial", "args": "<parent> [x y]", "effect": "create an initial pseudostate", "targets": ["sm", "composite", "simple"], "form": "model"},
-    {"verb": "new-final", "args": "<parent> [x y]", "effect": "create a final state", "targets": ["sm", "composite", "simple"], "form": "model"},
-    {"verb": "new-comment", "args": "<parent> <body>", "effect": "create a comment", "targets": ["sm", "composite", "simple"], "form": "model"},
-    {"verb": "new-formal-comment", "args": "<parent> <body>", "effect": "create a formal (machine-readable) comment", "targets": ["sm", "composite", "simple"], "form": "model"},
-    {"verb": "new-choice", "args": "<parent> [x y w h]", "effect": "create a choice pseudostate (rect optional)", "targets": ["sm", "composite", "simple"], "form": "model"},
-    {"verb": "new-terminate", "args": "<parent> [x y]", "effect": "create a terminate pseudostate", "targets": ["sm", "composite", "simple"], "form": "model"},
-    {"verb": "new-transition", "args": "<sm> <src> <tgt> [trigger]", "effect": "create an external/local transition", "targets": ["simple", "composite", "initial", "choice"], "form": "model"},
-    {"verb": "rename", "args": "<id> <title>", "effect": "change the element title (unique among the sibling states)", "targets": ["simple", "composite", "sm"], "form": "model"},
-    {"verb": "move", "args": "<id> x y [w h]", "effect": "update point (2 args) or rect (4 args) geometry", "targets": ["simple", "composite", "initial", "final", "choice", "terminate", "comment"], "form": "model"},
-    {"verb": "reparent", "args": "<id> <new-parent-id>", "effect": "move the element to another parent", "targets": ["simple", "composite", "initial", "final", "choice", "terminate", "comment"], "form": "model"},
-    {"verb": "delete", "args": "<id>", "effect": "delete the element with its children", "targets": ["simple", "composite", "initial", "final", "choice", "terminate", "comment", "transition"], "form": "model"},
-    {"verb": "new-action", "args": "<id> <action-text>", "effect": "add a state action, or set the action of a transition that has none", "targets": ["simple", "composite", "transition"], "form": "model"},
-    {"verb": "update-action", "args": "<id> <i> <action-text>", "effect": "update state action <i>, or the transition action (<i> = 0)", "targets": ["simple", "composite", "transition"], "form": "model"},
-    {"verb": "delete-action", "args": "<id> <i>", "effect": "erase state action <i>, or clear the transition action", "targets": ["simple", "composite", "transition"], "form": "model"},
-    {"verb": "update-comment", "args": "<id> <body>", "effect": "replace the comment body", "targets": ["comment", "formal-comment"], "form": "model"},
-    {"verb": "update-meta", "args": "<parameter> <value>", "effect": "set a document metainformation parameter", "targets": ["document"], "form": "model"},
-    {"verb": "update-id", "args": "<id> <new-id>", "effect": "change the element id", "targets": ["simple", "composite", "initial", "final", "choice", "terminate", "comment", "transition"], "form": "model"},
-    {"verb": "polyline", "args": "<id> [x y ...]", "effect": "replace the transition polyline (no points clear it)", "targets": ["transition"], "form": "model"},
-    {"verb": "new-subject", "args": "<comment> <target> [name|data <fragment>]", "effect": "link the comment to an element", "targets": ["comment", "formal-comment"], "form": "model"},
-    {"verb": "delete-subject", "args": "<comment> <i>", "effect": "remove subject <i> (0-based)", "targets": ["comment", "formal-comment"], "form": "model"},
-    {"verb": "undo", "args": "", "effect": "undo one step", "targets": ["document"], "form": "model"},
-    {"verb": "redo", "args": "", "effect": "redo one step", "targets": ["document"], "form": "model"},
-    {"verb": "press", "args": "x y [ctrl|shift|alt ...]", "effect": "press the left button at the scene point", "targets": [], "form": "gesture"},
-    {"verb": "drag", "args": "x y", "effect": "move the pointer with the button pressed", "targets": [], "form": "gesture"},
-    {"verb": "release", "args": "x y", "effect": "release the button", "targets": [], "form": "gesture"},
-    {"verb": "click", "args": "x y [mods]", "effect": "press and release at one point", "targets": [], "form": "gesture"},
-    {"verb": "double-click", "args": "x y [mods]", "effect": "double click at the point", "targets": [], "form": "gesture"},
-    {"verb": "tool", "args": "select|transition", "effect": "select the scene tool", "targets": [], "form": "gesture"},
-    {"verb": "delete-selected", "args": "", "effect": "delete the selected element", "targets": [], "form": "gesture"},
-    {"verb": "drag-state", "args": "", "effect": "a state dragged by its body: press inside, drag, release", "targets": ["simple", "composite"], "form": "gesture-form"},
-    {"verb": "resize-state", "args": "", "effect": "a state resized from its right border: press 3 px inside the border, drag, release", "targets": ["simple", "composite"], "form": "gesture-form"},
-    {"verb": "draw-loop", "args": "", "effect": "a loop drawn with the transition tool: tool transition, press inside the state, drag, release, tool select", "targets": ["simple", "composite"], "form": "gesture-form"},
-    {"verb": "click-delete", "args": "", "effect": "a state selected by a click and deleted with delete-selected", "targets": ["simple", "composite"], "form": "gesture-form"},
-    {"verb": "double-click-action", "args": "", "effect": "a double click on the free body of a state adds its missing entry or exit action", "targets": ["simple", "composite"], "form": "gesture-form"}
+    {
+      "verb": "new-state",
+      "args": "<parent> [x y w h] <name>",
+      "effect": "create a state (rect optional)",
+      "targets": [
+        "sm",
+        "composite",
+        "simple"
+      ],
+      "form": "model"
+    },
+    {
+      "verb": "new-initial",
+      "args": "<parent> [x y]",
+      "effect": "create an initial pseudostate",
+      "targets": [
+        "sm",
+        "composite",
+        "simple"
+      ],
+      "form": "model"
+    },
+    {
+      "verb": "new-final",
+      "args": "<parent> [x y]",
+      "effect": "create a final state",
+      "targets": [
+        "sm",
+        "composite",
+        "simple"
+      ],
+      "form": "model"
+    },
+    {
+      "verb": "new-comment",
+      "args": "<parent> <body>",
+      "effect": "create a comment",
+      "targets": [
+        "sm",
+        "composite",
+        "simple"
+      ],
+      "form": "model"
+    },
+    {
+      "verb": "new-formal-comment",
+      "args": "<parent> <body>",
+      "effect": "create a formal (machine-readable) comment",
+      "targets": [
+        "sm",
+        "composite",
+        "simple"
+      ],
+      "form": "model"
+    },
+    {
+      "verb": "new-choice",
+      "args": "<parent> [x y w h]",
+      "effect": "create a choice pseudostate (rect optional)",
+      "targets": [
+        "sm",
+        "composite",
+        "simple"
+      ],
+      "form": "model"
+    },
+    {
+      "verb": "new-terminate",
+      "args": "<parent> [x y]",
+      "effect": "create a terminate pseudostate",
+      "targets": [
+        "sm",
+        "composite",
+        "simple"
+      ],
+      "form": "model"
+    },
+    {
+      "verb": "new-transition",
+      "args": "<sm> <src> <tgt> [trigger]",
+      "effect": "create an external/local transition",
+      "targets": [
+        "simple",
+        "composite",
+        "initial",
+        "choice"
+      ],
+      "form": "model"
+    },
+    {
+      "verb": "rename",
+      "args": "<id> <title>",
+      "effect": "change the element title (unique among the sibling states)",
+      "targets": [
+        "simple",
+        "composite",
+        "sm"
+      ],
+      "form": "model"
+    },
+    {
+      "verb": "move",
+      "args": "<id> x y [w h]",
+      "effect": "update point (2 args) or rect (4 args) geometry",
+      "targets": [
+        "simple",
+        "composite",
+        "initial",
+        "final",
+        "choice",
+        "terminate",
+        "comment"
+      ],
+      "form": "model"
+    },
+    {
+      "verb": "reparent",
+      "args": "<id> <new-parent-id>",
+      "effect": "move the element to another parent",
+      "targets": [
+        "simple",
+        "composite",
+        "initial",
+        "final",
+        "choice",
+        "terminate",
+        "comment"
+      ],
+      "form": "model"
+    },
+    {
+      "verb": "delete",
+      "args": "<id>",
+      "effect": "delete the element with its children",
+      "targets": [
+        "simple",
+        "composite",
+        "initial",
+        "final",
+        "choice",
+        "terminate",
+        "comment",
+        "transition"
+      ],
+      "form": "model"
+    },
+    {
+      "verb": "new-action",
+      "args": "<id> <action-text>",
+      "effect": "add a state action, or set the action of a transition that has none",
+      "targets": [
+        "simple",
+        "composite",
+        "transition"
+      ],
+      "form": "model"
+    },
+    {
+      "verb": "update-action",
+      "args": "<id> <i> <action-text>",
+      "effect": "update state action <i>, or the transition action (<i> = 0)",
+      "targets": [
+        "simple",
+        "composite",
+        "transition"
+      ],
+      "form": "model"
+    },
+    {
+      "verb": "delete-action",
+      "args": "<id> <i>",
+      "effect": "erase state action <i>, or clear the transition action",
+      "targets": [
+        "simple",
+        "composite",
+        "transition"
+      ],
+      "form": "model"
+    },
+    {
+      "verb": "update-comment",
+      "args": "<id> <body>",
+      "effect": "replace the comment body",
+      "targets": [
+        "comment",
+        "formal-comment"
+      ],
+      "form": "model"
+    },
+    {
+      "verb": "update-meta",
+      "args": "<parameter> <value>",
+      "effect": "set a document metainformation parameter",
+      "targets": [
+        "document"
+      ],
+      "form": "model"
+    },
+    {
+      "verb": "update-id",
+      "args": "<id> <new-id>",
+      "effect": "change the element id",
+      "targets": [
+        "simple",
+        "composite",
+        "initial",
+        "final",
+        "choice",
+        "terminate",
+        "comment",
+        "transition"
+      ],
+      "form": "model"
+    },
+    {
+      "verb": "polyline",
+      "args": "<id> [x y ...]",
+      "effect": "replace the transition polyline (no points clear it)",
+      "targets": [
+        "transition"
+      ],
+      "form": "model"
+    },
+    {
+      "verb": "new-subject",
+      "args": "<comment> <target> [name|data <fragment>]",
+      "effect": "link the comment to an element",
+      "targets": [
+        "comment",
+        "formal-comment"
+      ],
+      "form": "model"
+    },
+    {
+      "verb": "delete-subject",
+      "args": "<comment> <i>",
+      "effect": "remove subject <i> (0-based)",
+      "targets": [
+        "comment",
+        "formal-comment"
+      ],
+      "form": "model"
+    },
+    {
+      "verb": "undo",
+      "args": "",
+      "effect": "undo one step",
+      "targets": [
+        "document"
+      ],
+      "form": "model"
+    },
+    {
+      "verb": "redo",
+      "args": "",
+      "effect": "redo one step",
+      "targets": [
+        "document"
+      ],
+      "form": "model"
+    },
+    {
+      "verb": "press",
+      "args": "x y [ctrl|shift|alt ...]",
+      "effect": "press the left button at the scene point",
+      "targets": [],
+      "form": "gesture"
+    },
+    {
+      "verb": "drag",
+      "args": "x y",
+      "effect": "move the pointer with the button pressed",
+      "targets": [],
+      "form": "gesture"
+    },
+    {
+      "verb": "release",
+      "args": "x y",
+      "effect": "release the button",
+      "targets": [],
+      "form": "gesture"
+    },
+    {
+      "verb": "click",
+      "args": "x y [mods]",
+      "effect": "press and release at one point",
+      "targets": [],
+      "form": "gesture"
+    },
+    {
+      "verb": "double-click",
+      "args": "x y [mods]",
+      "effect": "double click at the point",
+      "targets": [],
+      "form": "gesture"
+    },
+    {
+      "verb": "tool",
+      "args": "select|transition",
+      "effect": "select the scene tool",
+      "targets": [],
+      "form": "gesture"
+    },
+    {
+      "verb": "delete-selected",
+      "args": "",
+      "effect": "delete the selected element",
+      "targets": [],
+      "form": "gesture"
+    },
+    {
+      "verb": "edit",
+      "args": "<id> <role> [<i>]",
+      "effect": "open the inline editor of a canvas text (role title|action <i>|label|body) for the keystroke verbs",
+      "targets": [],
+      "form": "gesture"
+    },
+    {
+      "verb": "edit-text",
+      "args": "<id> <role> [<i>] <text>",
+      "effect": "open the editor, replace the text and commit in one line",
+      "targets": [],
+      "form": "gesture"
+    },
+    {
+      "verb": "type",
+      "args": "<text>",
+      "effect": "type the text into the editor being edited",
+      "targets": [],
+      "form": "gesture"
+    },
+    {
+      "verb": "key",
+      "args": "<name> [mods]",
+      "effect": "one named key into the editor",
+      "targets": [],
+      "form": "gesture"
+    },
+    {
+      "verb": "select-all",
+      "args": "",
+      "effect": "select the whole editable text",
+      "targets": [],
+      "form": "gesture"
+    },
+    {
+      "verb": "commit",
+      "args": "",
+      "effect": "end the edit and write the text to the model",
+      "targets": [],
+      "form": "gesture"
+    },
+    {
+      "verb": "drag-state",
+      "args": "",
+      "effect": "a state dragged by its body: press inside, drag, release",
+      "targets": [
+        "simple",
+        "composite"
+      ],
+      "form": "gesture-form"
+    },
+    {
+      "verb": "resize-state",
+      "args": "",
+      "effect": "a state resized from its right border: press 3 px inside the border, drag, release",
+      "targets": [
+        "simple",
+        "composite"
+      ],
+      "form": "gesture-form"
+    },
+    {
+      "verb": "draw-loop",
+      "args": "",
+      "effect": "a loop drawn with the transition tool: tool transition, press inside the state, drag, release, tool select",
+      "targets": [
+        "simple",
+        "composite"
+      ],
+      "form": "gesture-form"
+    },
+    {
+      "verb": "click-delete",
+      "args": "",
+      "effect": "a state selected by a click and deleted with delete-selected",
+      "targets": [
+        "simple",
+        "composite"
+      ],
+      "form": "gesture-form"
+    },
+    {
+      "verb": "double-click-action",
+      "args": "",
+      "effect": "a double click on the free body of a state adds its missing entry or exit action",
+      "targets": [
+        "simple",
+        "composite"
+      ],
+      "form": "gesture-form"
+    },
+    {
+      "verb": "edit-title",
+      "args": "",
+      "effect": "rename a state or state machine by editing its title on the canvas",
+      "targets": [
+        "simple",
+        "composite",
+        "sm"
+      ],
+      "form": "gesture-form"
+    },
+    {
+      "verb": "edit-action",
+      "args": "",
+      "effect": "edit the behaviour of a state action on the canvas",
+      "targets": [
+        "simple",
+        "composite"
+      ],
+      "form": "gesture-form"
+    },
+    {
+      "verb": "edit-label",
+      "args": "",
+      "effect": "edit the trigger/guard/behaviour of a transition on the canvas",
+      "targets": [
+        "transition"
+      ],
+      "form": "gesture-form"
+    },
+    {
+      "verb": "edit-body",
+      "args": "",
+      "effect": "edit a comment body on the canvas",
+      "targets": [
+        "comment",
+        "formal-comment"
+      ],
+      "form": "gesture-form"
+    }
   ]
 }

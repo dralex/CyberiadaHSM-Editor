@@ -44,7 +44,8 @@ class CatalogTest(unittest.TestCase):
     def test_catalog(self):
         cat = CAT.Catalog()
         self.assertEqual(len(cat.by_form(CAT.FORM_MODEL)), 23)
-        self.assertEqual(len(cat.by_form(CAT.FORM_GESTURE)), 7)
+        self.assertEqual(len(cat.by_form(CAT.FORM_GESTURE)), 13)
+        self.assertEqual(len(cat.by_form(CAT.FORM_GESTURE_FORM)), 9)
         self.assertIn("| `new-state <parent> [x y w h] <name>` |", cat.table(CAT.FORM_MODEL))
         self.assertIn(("reparent", "simple"), cat.cells())
 
@@ -57,8 +58,9 @@ class CatalogTest(unittest.TestCase):
         for verb in cat.verbs(CAT.FORM_MODEL, CAT.FORM_GESTURE_FORM):
             with self.subTest(verb):
                 result = fuzzer.generate(verb, dump)
-                if verb in ("update-comment", "new-subject", "delete-subject", "redo"):
-                    continue   # no comment, no redo step in this diagram
+                if verb in ("update-comment", "new-subject", "delete-subject", "redo",
+                            "edit-body", "edit-title", "edit-action", "edit-label"):
+                    continue   # no comment, no redo step, no text section in a no-text dump
                 self.assertIsNotNone(result, verb)
                 lines, kind = result
                 self.assertTrue(all(l.split()[0] for l in lines))

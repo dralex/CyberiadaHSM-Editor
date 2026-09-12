@@ -1,12 +1,128 @@
 {
   "themes": [
-    {"name": "nesting under change", "hint": "resize and move parents while children are inside, reparent in and out, undo across it", "budget": [12, 20]},
-    {"name": "geometry extremes", "hint": "tiny and huge rects, negative coordinates, states far apart, children on the border of the parent", "budget": [10, 16]},
-    {"name": "undo and redo interleaving", "hint": "undo in the middle of a construction, redo, then edit; undo after a deletion", "budget": [12, 20]},
-    {"name": "deletion of parents", "hint": "delete states that hold children and attached transitions, delete a transition source, undo", "budget": [10, 16]},
-    {"name": "identity changes", "hint": "rename and update ids of elements that transitions and comments reference, then edit them", "budget": [10, 16]},
-    {"name": "comments and subjects", "hint": "comments pointing at elements that are moved, reparented, renamed and deleted", "budget": [10, 16]},
-    {"name": "transitions everywhere", "hint": "self transitions, transitions between nesting levels, from and to pseudostates, polylines, then move the ends", "budget": [12, 20]},
-    {"name": "gestures on a crowded diagram", "hint": "drag, resize and draw loops on states that overlap or touch, then delete by click", "budget": [10, 16]}
+    {
+      "name": "nesting under change",
+      "start": "corpus",
+      "hint": "resize and move parents while children are inside, reparent in and out, undo across it",
+      "budget": [
+        12,
+        20
+      ]
+    },
+    {
+      "name": "geometry extremes",
+      "start": "corpus",
+      "hint": "tiny and huge rects, negative coordinates, states far apart, children on the border of the parent",
+      "budget": [
+        10,
+        16
+      ]
+    },
+    {
+      "name": "undo and redo interleaving",
+      "start": "corpus",
+      "hint": "undo in the middle of a construction, redo, then edit; undo after a deletion",
+      "budget": [
+        12,
+        20
+      ]
+    },
+    {
+      "name": "deletion of parents",
+      "start": "corpus",
+      "hint": "delete states that hold children and attached transitions, delete a transition source, undo",
+      "budget": [
+        10,
+        16
+      ]
+    },
+    {
+      "name": "identity changes",
+      "start": "corpus",
+      "hint": "rename and update ids of elements that transitions and comments reference, then edit them",
+      "budget": [
+        10,
+        16
+      ]
+    },
+    {
+      "name": "comments and subjects",
+      "start": "corpus",
+      "hint": "comments pointing at elements that are moved, reparented, renamed and deleted",
+      "budget": [
+        10,
+        16
+      ]
+    },
+    {
+      "name": "transitions everywhere",
+      "start": "corpus",
+      "hint": "self transitions, transitions between nesting levels, from and to pseudostates, polylines, then move the ends",
+      "budget": [
+        12,
+        20
+      ]
+    },
+    {
+      "name": "gestures on a crowded diagram",
+      "start": "corpus",
+      "hint": "drag, resize and draw loops on states that overlap or touch, then delete by click",
+      "budget": [
+        10,
+        16
+      ]
+    },
+    {
+      "name": "build from scratch by gestures",
+      "start": "empty",
+      "hint": "draw a real controller (traffic light, vending machine, robot mission) with the tools only: states by placement, transitions by the tool, texts typed on the canvas; no model verbs",
+      "budget": [
+        16,
+        30
+      ],
+      "forms": [
+        "gesture-form"
+      ]
+    },
+    {
+      "name": "refactoring session",
+      "start": "corpus",
+      "hint": "extract a composite state, move a group of states into it, redirect the transitions, rename, then undo half of it",
+      "budget": [
+        14,
+        24
+      ]
+    },
+    {
+      "name": "text-heavy behaviours",
+      "start": "corpus",
+      "hint": "actions and labels as real code in C, Python or a pseudolanguage: multi-line entry and exit, long guards, edits of existing texts, empty and whitespace texts",
+      "budget": [
+        12,
+        20
+      ],
+      "forms": [
+        "gesture-form",
+        "model"
+      ]
+    },
+    {
+      "name": "student session with mistakes",
+      "start": "small",
+      "hint": "build a small controller, make typical errors (wrong parent, duplicate name, a transition from a final state), take the refusals, correct, save and reopen",
+      "budget": [
+        12,
+        20
+      ]
+    },
+    {
+      "name": "sequential growth",
+      "start": "empty",
+      "hint": "start from a single state and extend the system one concern at a time, keeping the diagram clean and non-messy: each round adds a state or a behaviour, children inside their parents, siblings apart, no overlaps",
+      "budget": [
+        20,
+        40
+      ]
+    }
   ]
 }

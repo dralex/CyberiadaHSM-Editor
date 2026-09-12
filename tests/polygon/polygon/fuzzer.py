@@ -37,6 +37,10 @@ DELTAS = (-80, -40, -15, 15, 40, 80)
 TRIGGERS = ("EV", "TICK", "DONE", "CALL", "STOP")
 BEHAVIOURS = ("f()", "g(x)", "reset()", "count += 1")
 GUARDS = ("", "", "x > 0", "ready")
+# the texts an edit writes: names, code-like behaviours, multi-line, edges
+NAMES = ("Idle", "Running", "Waiting state", "S2", "Готово")
+BODIES = ("f()", "red++", "motor_up();\\nlamp_on()", "x = x + 1; y = 0", "note")
+LABELS = ("EV/ f()", "TICK [x > 0]/ g()", "DONE/", "/ init()")
 META = (("transitionOrder", "exitFirst"), ("transitionOrder", "actionFirst"),
         ("eventPropagation", "propagate"), ("author", "fuzzer"), ("target", "none"))
 
@@ -242,6 +246,24 @@ class Fuzzer:
             return None
         return [verb], "document"
 
+    # --- the text forms ----------------------------------------------------
+
+    def gen_text(self, verb, dump):
+        want = {"edit-title": "title", "edit-action": "action",
+                "edit-label": "label", "edit-body": "body"}[verb]
+        options = [t for t in dump.texts if t.fact_role == want]
+        t = self.pick(options)
+        if t is None:
+            return None
+        if want == "title":
+            value = self.pick(NAMES)
+        elif want == "label":
+            value = self.pick(LABELS)
+        else:
+            value = self.pick(BODIES)
+        role = "action 0" if want == "action" else want
+        return ["edit-text %s %s %s" % (t.id, role, value)], "transition" if want == "label" else "state"
+
     # --- the gesture forms -------------------------------------------------
 
     def gen_gesture(self, verb, dump):
@@ -305,6 +327,8 @@ class Fuzzer:
             return self.gen_delete_subject(doc)
         if verb in ("undo", "redo"):
             return self.gen_undo_redo(verb, dump)
+        if verb in ("edit-title", "edit-action", "edit-label", "edit-body"):
+            return self.gen_text(verb, dump)
         return self.gen_gesture(verb, dump)
 
     def next(self, dump, exclude=()):

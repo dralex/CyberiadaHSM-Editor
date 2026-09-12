@@ -1,6 +1,19 @@
 {
   "start": "empty.graphml",
-  "diagrams": ["hierarchy", "geometry", "lift", "choice", "polyline", "two-sms", "cyb-geometry",
-               "label-geometry", "comment-transition", "sources", "meta", "empty-actions",
-               "multiline-actions"]
+  "diagrams": [
+    "hierarchy",
+    "geometry",
+    "lift",
+    "choice",
+    "polyline",
+    "two-sms",
+    "cyb-geometry",
+    "label-geometry",
+    "comment-transition",
+    "sources",
+    "meta",
+    "empty-actions",
+    "multiline-actions"
+  ],
+  "small": "small.graphml"
 }
