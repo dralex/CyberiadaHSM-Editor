@@ -54,6 +54,7 @@ class Round:
     findings: list = field(default_factory=list)   # [(kind, signature, note)]
     expectations: str = ""
     plan: str = ""
+    result: object = field(default=None, repr=False)
 
 
 class Session:
@@ -76,6 +77,8 @@ class Session:
         self.mission = None
         self.reproduction = None
         self.error = ""
+        self.stress = False
+        self.burst = None
         self.folder.mkdir(parents=True, exist_ok=True)
         self.work = self.folder / "work"
 
@@ -84,7 +87,8 @@ class Session:
 
     def evaluate(self, lines, expectations=""):
         round_ = oracles.Round(self.env, self.config, self.start, self.work)
-        return round_.evaluate(self.text(lines), len(self.script), expectations, render.oracle)
+        oracle = None if self.stress else render.oracle
+        return round_.evaluate(self.text(lines), len(self.script), expectations, oracle)
 
     def initial_dump(self):
         result = self.evaluate([])
@@ -108,6 +112,8 @@ class Session:
                 break
             self.rounds.append(record)
             total += len(record.findings)
+            if record.accepted and self.burst:
+                total += self.run_burst(n)
             self.save()
         self.finish()
         self.elapsed = time.time() - getattr(self, "started", time.time())
@@ -142,35 +148,60 @@ class Session:
             lines, verb, kind = step[0], step[1], step[2]
             expectations = step[3] if len(step) > 3 else ""
             plan = step[4] if len(step) > 4 else ""
-            record = Round(n, list(lines), verb, kind, expectations=expectations, plan=plan)
-            result = self.evaluate(lines, expectations)
-            if result.script_error is not None:
-                line, message = result.script_error
-                record.script_error = "line %d: %s" % (line, message)
+            record = self.apply(n, lines, verb, kind, expectations, plan)
+            if record.script_error:
                 rejected.append(verb)
                 if hasattr(self.producer, "rejected"):
-                    self.producer.rejected(record, message, self.dump)
+                    self.producer.rejected(record, record.script_error, self.dump)
                 continue
-            fired = False
-            for f in result.findings:
-                record.findings.append((f.kind, f.signature, f.note))
-                # a semantic or review finding is a candidate for the human
-                # reading the session; the register takes the defects
-                if f.kind in (oracles.KIND_SEMANTIC, oracles.KIND_REVIEW):
-                    continue
-                fired = True
-                self.register_finding(f, lines, expectations, plan, verb)
-            self.coverage.record(verb, kind, self.previous_verb, fired)
-            self.previous_verb = verb
-            record.accepted = result.accepted
-            if result.accepted:
-                self.script += list(lines)
-                self.dump = result.dump
-                (self.folder / ("round-%d.dump" % n)).write_text(result.run.stdout)
             if hasattr(self.producer, "feedback"):
-                self.producer.feedback(record, result)
+                self.producer.feedback(record, record.result)
             return record
         return record
+
+    def apply(self, n, lines, verb, kind, expectations="", plan=""):
+        """Evaluate one step: register the defects, update the coverage and the
+        accepted script and dump, return the record (carrying .result)."""
+        record = Round(n, list(lines), verb, kind, expectations=expectations, plan=plan)
+        result = self.evaluate(lines, expectations)
+        record.result = result
+        if result.script_error is not None:
+            line, message = result.script_error
+            record.script_error = "line %d: %s" % (line, message)
+            return record
+        fired = False
+        for f in result.findings:
+            record.findings.append((f.kind, f.signature, f.note))
+            if f.kind in (oracles.KIND_SEMANTIC, oracles.KIND_REVIEW):
+                continue
+            fired = True
+            self.register_finding(f, lines, expectations, plan, verb)
+        self.coverage.record(verb, kind, self.previous_verb, fired)
+        self.previous_verb = verb
+        record.accepted = result.accepted
+        if result.accepted:
+            self.script += list(lines)
+            self.dump = result.dump
+            (self.folder / ("round-%d.dump" % n)).write_text(result.run.stdout)
+        return record
+
+    def run_burst(self, n):
+        """A burst of fuzzer micro-ops on the current diagram after an accepted
+        agent round; returns the number of findings. A crash or a rejected op
+        stops the burst."""
+        fuzzer, count = self.burst
+        found = 0
+        for k in range(count):
+            step = fuzzer.next(self.dump)
+            if step is None:
+                break
+            lines, verb, kind = step[0], step[1], step[2]
+            record = self.apply(n, lines, "burst:" + verb, kind)
+            self.rounds.append(record)
+            found += len(record.findings)
+            if record.script_error or any(f[0] == oracles.KIND_CRASH for f in record.findings):
+                break
+        return found
 
     def register_finding(self, finding, lines, expectations, plan, verb):
         script = self.text(lines)

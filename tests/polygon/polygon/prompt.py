@@ -95,6 +95,25 @@ def mission_reproduce(brief):
     return "Mission: reproduce a diagram.\n" + brief
 
 
+def mission_explore(domain, budget):
+    return "\n".join([
+        "Mission: design and keep improving %s as a hierarchical state machine." % domain,
+        "",
+        "The empty document already has one state machine, id G0. Draw the states, the",
+        "transitions and the actions of a real, working %s under it (add more state" % domain,
+        "machines with `new-sm <x y w h> <name>` only if the design needs them). Then",
+        "keep improving it: change your mind, move and re-nest states,",
+        "reroute and re-point transitions, rewrite actions, add and remove points on the",
+        "edges, tidy the layout. Make it clean and non-messy: children inside their",
+        "parents with a margin, siblings apart, no overlaps.",
+        "",
+        "Budget: %d to %d commands over the session, a few per round. Between your rounds" % tuple(budget),
+        "the polygon injects random micro-operations, so the ids and geometry may shift;",
+        "read the dump each round and use the ids it shows. Give expectations only for",
+        "what you deliberately changed this round.",
+    ])
+
+
 def mission_combine(name, description, scene, stack, operations, theme, budget, untried):
     lines = ["Mission: stress the editor by combining operations in an order a user",
              "would not plan.", "",

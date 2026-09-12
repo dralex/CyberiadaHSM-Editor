@@ -69,6 +69,7 @@ kinds share the runner, the oracles and the register and differ in the prompt.
 |---|---|---|---|
 | A reproduction | empty document, one state machine | rebuild a corpus diagram from its description, never from the file | structural diff of the result dump against the original dump: kinds, names, nesting, transitions, actions; geometry free |
 | B combination | a corpus diagram (dump given) | combine a drawn subset of operations under a theme so that each step changes what the next one relies on | none beyond the tiers |
+| C exploration | empty document | design and keep improving a real diagram of a given domain; between rounds a fuzzer burst injects random micro-operations on the current diagram | none; the stress profile (crash, save/reopen, undo-all, export) runs each round |
 
 Mission A exercises the creation paths and grows the corpus: every accepted
 reproduction is stored as a new starting document. Mission B exercises the
@@ -82,6 +83,32 @@ text verbs only), refactoring session, text-heavy behaviours (real code in
 C, Python or a pseudolanguage, multi-line, edits), student session with
 mistakes (small start, the refusals and corrections), and sequential growth
 from a single state to a clean complex system.
+
+### Exploration and the fuzzer burst
+
+The exploration mission is the build-then-stress strategy and the default balance
+between the two producers. The agent draws a real diagram of a domain (a lift, a
+vending machine, a robot mission) from the empty document and keeps improving it,
+changing its mind, moving and re-nesting states, rerouting and re-pointing edges,
+rewriting actions. After every accepted agent round a **fuzzer burst** fires K random
+micro-operations on the current diagram: the drags, resizes, endpoint moves and polyline
+point edits a designer would not think to try. The agent supplies coherent, dependent
+state where the worst crashes live; the fuzzer supplies volume and the awkward
+micro-gestures. The balance is layered, not a dial: the fuzzer is the cheap, seeded,
+reproducible breadth over single operations and short sequences, the agent is the
+human-like design history. The ratio is tuned by measurement (the productivity ledger).
+
+The edges are stressed directly. From the document `sp`/`tp`/`polyline` and the scene
+node centres the polygon computes the scene coordinates of every transition handle, then
+drives them by gesture: `add-point` (drag a segment), `move-point` (drag a point dot),
+`remove-point` (click a point dot, `key delete`), and `move-endpoint` (drag an endpoint,
+Ctrl to snap, onto a node to reattach). A pure `fuzz --stress` sweep biases toward the
+gesture forms so the drags and the edge and point edits are exercised while the model
+verbs keep the diagram populated.
+
+The **stress oracle profile** is reference-free: crash and hang, save then reopen,
+undo-all then redo-all, and export success (PNG and SVG exit and write a file). The heavy
+render-content ink check is off for random operations, and no result is predicted.
 
 ### Prompts
 

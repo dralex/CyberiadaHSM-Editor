@@ -232,3 +232,41 @@ class CompetitionTest(unittest.TestCase):
             self.assertIn("flash:m", table)
             self.assertIn("haiku:m", table)
             self.assertIn("match", table)
+
+
+@needs_editor
+class BurstTest(unittest.TestCase):
+    def test_burst_after_accepted_round(self):
+        from polygon import fuzzer as F, catalog as CAT, coverage as COV
+        import tempfile
+        from pathlib import Path
+        answers = ["== plan\nbuild\n== script\nnew-state G0 20 20 150 80 A\nnew-state G0 220 20 150 80 B\n== expectations\n"]
+        with tempfile.TemporaryDirectory() as tmp:
+            cat = CAT.Catalog()
+            cov = COV.Coverage(Path(tmp) / "coverage.json")
+            reg = R.Register(Path(tmp) / "problems")
+            mission = M.compose(M.EXPLORE, ENV, cat, cov, 2)
+            producer = A.Agent(FakeAdapter(answers), cat, mission, "brief")
+            session = S.Session(ENV, CONFIG, mission.diagram, producer, reg, cov, Path(tmp) / "s",
+                                producer_name="agent", seed=2, minimize=False)
+            session.mission = mission
+            session.stress = True
+            burst = F.Fuzzer(cat, cov, 2); burst.gestures_only = True
+            session.burst = (burst, 3)
+            session.run(1)
+            # the agent round plus up to three burst sub-rounds recorded
+            self.assertGreaterEqual(len(session.rounds), 1)
+            self.assertTrue(any(r.verb.startswith("burst:") for r in session.rounds))
+
+
+class ExploreComposeTest(unittest.TestCase):
+    def test_explore_mission(self):
+        from polygon import composer as M2, catalog as CAT, coverage as COV
+        import tempfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as tmp:
+            cov = COV.Coverage(Path(tmp) / "c.json")
+            m = M2.compose(M2.EXPLORE, ENV, CAT.Catalog(), cov, 5)
+            self.assertEqual(m.kind, "explore")
+            self.assertTrue(m.domain)
+            self.assertEqual(m.diagram.name, "empty.graphml")

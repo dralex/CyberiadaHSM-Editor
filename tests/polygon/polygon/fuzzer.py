@@ -406,12 +406,19 @@ class Fuzzer:
     def next(self, dump, exclude=()):
         """(lines, verb, kind) for the next round, or None when nothing
         applies; exclude holds the verbs refused in this round already."""
-        forms = [CAT.FORM_MODEL, CAT.FORM_GESTURE_FORM] if self.gestures else [CAT.FORM_MODEL]
+        if getattr(self, "gestures_only", False):
+            forms = [CAT.FORM_GESTURE_FORM]
+        elif self.gestures:
+            forms = [CAT.FORM_MODEL, CAT.FORM_GESTURE_FORM]
+        else:
+            forms = [CAT.FORM_MODEL]
         ops = [op for op in self.catalog.by_form(*forms) if op.verb not in exclude]
+        bias = getattr(self, "gesture_bias", 1.0)
         for _ in range(30):
             if not ops:
                 return None
-            weights = [self.coverage.verb_weight(op.verb, op.targets) for op in ops]
+            weights = [self.coverage.verb_weight(op.verb, op.targets) *
+                       (bias if op.form == CAT.FORM_GESTURE_FORM else 1.0) for op in ops]
             op = self.rng.choices(ops, weights=weights)[0]
             result = self.generate(op.verb, dump)
             if result is not None:

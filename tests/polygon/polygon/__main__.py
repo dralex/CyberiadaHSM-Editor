@@ -156,6 +156,9 @@ def cmd_fuzz(args):
     folder = S.session_folder(env.polygon, "fuzz", args.seed)
     session = S.Session(env, cfg, document, producer, _register(env), coverage, folder,
                         producer_name="fuzzer", seed=args.seed, minimize=not args.no_minimize)
+    session.stress = getattr(args, "stress", False)
+    if session.stress:
+        producer.gesture_bias = 4.0   # exercise the drags and edge/point edits
     session.run(args.rounds)
     print("%s: %s" % (folder, session.summary()))
     for r in session.rounds:
@@ -178,6 +181,8 @@ def _first_message(env, cfg, mission):
     dump = D.parse_dump(result.stdout)
     if mission.kind == M.REPRODUCE:
         return P.mission_reproduce(B.brief(mission.name, dump.document))
+    if mission.kind == M.EXPLORE:
+        return P.mission_explore(mission.domain, mission.budget)
     return P.mission_combine(mission.name, D.describe(dump.document), P.scene_text(dump), dump.stack,
                              mission.operations, mission.theme, mission.budget, mission.untried)
 
@@ -196,6 +201,12 @@ def _run_session(env, cfg, catalog, coverage, backend, mission, folder, args):
                         producer_name="agent:%s:%s" % (backend.name, backend.model), seed=mission.seed,
                         minimize=not args.no_minimize)
     session.mission = mission
+    if mission.kind == M.EXPLORE:
+        # random micro-op bursts after each accepted agent round; no ink check
+        session.stress = True
+        burst_fuzzer = F.Fuzzer(catalog, coverage, mission.seed, gestures=True)
+        burst_fuzzer.gestures_only = True
+        session.burst = (burst_fuzzer, getattr(args, "burst", 5) or 5)
     session.run(args.rounds or cfg.rounds)
     (folder / "usage.json").write_text(json.dumps(adapter.usage, indent=2) + "\n")
     log.close()
@@ -357,16 +368,18 @@ def main(argv=None):
     p.add_argument("--seed", type=int, default=1)
     p.add_argument("--rounds", type=int, default=20)
     p.add_argument("--no-gestures", action="store_true")
+    p.add_argument("--stress", action="store_true", help="crash/save-reopen/undo-all/export only, no ink check")
     p.add_argument("--no-minimize", action="store_true")
     p.set_defaults(func=cmd_fuzz)
     p = sub.add_parser("run", help="an agent session (one backend, or a comma list to compare)")
     p.add_argument("--backend")
     p.add_argument("--backends", help="a comma list: run the same mission on each and compare")
-    p.add_argument("--mission", choices=[M.REPRODUCE, M.COMBINE], default=M.COMBINE)
+    p.add_argument("--mission", choices=[M.REPRODUCE, M.COMBINE, M.EXPLORE], default=M.COMBINE)
     p.add_argument("--diagram")
     p.add_argument("--theme", help="the combination theme (its start rule and hint)")
     p.add_argument("--seed", type=int, default=1)
     p.add_argument("--rounds", type=int)
+    p.add_argument("--burst", type=int, help="fuzzer micro-ops after each explore round (default 5)")
     p.add_argument("--no-minimize", action="store_true")
     p.set_defaults(func=cmd_run)
     p = sub.add_parser("replay", help="replay a recorded session without the backend")

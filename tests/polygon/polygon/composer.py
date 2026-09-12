@@ -33,6 +33,11 @@ from . import catalog as CAT
 
 REPRODUCE = "reproduce"
 COMBINE = "combine"
+EXPLORE = "explore"
+
+DOMAINS = ("a traffic light", "a vending machine", "a lift controller",
+          "a microwave oven", "a robot patrol mission", "a game character AI",
+          "a turnstile", "a thermostat", "a media player")
 MIN_OPERATIONS = 3
 MAX_OPERATIONS = 6
 MAX_UNTRIED = 4
@@ -49,6 +54,7 @@ class Mission:
     theme: dict = None
     budget: tuple = (0, 0)
     untried: list = field(default_factory=list)
+    domain: str = ""     # the explore mission's design brief subject
 
 
 def corpus(env):
@@ -84,6 +90,9 @@ def compose(kind, env, catalog, coverage, seed, name=None, theme_name=None):
         path = dict(diagrams).get(name) or (env.diagrams / (name + ".graphml"))
     if kind == REPRODUCE:
         return Mission(kind, seed, name, starts["empty"], original=path)
+    if kind == EXPLORE:
+        return Mission(kind, seed, "explore", starts["empty"], domain=rng.choice(DOMAINS),
+                       budget=(12, 30))
     theme = next((t for t in themes() if t["name"] == theme_name), None) if theme_name else rng.choice(themes())
     start = theme.get("start", "corpus")
     if start in starts and starts[start].exists():
