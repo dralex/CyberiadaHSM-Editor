@@ -459,6 +459,42 @@
         "formal-comment"
       ],
       "form": "gesture-form"
+    },
+    {
+      "verb": "add-point",
+      "args": "",
+      "effect": "add a polyline point by dragging a transition segment",
+      "targets": [
+        "transition"
+      ],
+      "form": "gesture-form"
+    },
+    {
+      "verb": "move-point",
+      "args": "",
+      "effect": "move a polyline point by dragging its dot",
+      "targets": [
+        "transition"
+      ],
+      "form": "gesture-form"
+    },
+    {
+      "verb": "remove-point",
+      "args": "",
+      "effect": "remove a polyline point (click its dot, delete key)",
+      "targets": [
+        "transition"
+      ],
+      "form": "gesture-form"
+    },
+    {
+      "verb": "move-endpoint",
+      "args": "",
+      "effect": "drag a transition endpoint to move or reattach it",
+      "targets": [
+        "transition"
+      ],
+      "form": "gesture-form"
     }
   ]
 }

@@ -126,6 +126,17 @@ class Fuzzer:
             args = self.point_args() if self.rng.random() < 0.7 else ""
         return ["%s %s %s" % (verb, parent.id, args)], short_kind(parent)
 
+    def gen_new_sm(self, doc):
+        return ["new-sm %s %s" % (self.rect_args(), self.fresh("SM"))], "document"
+
+    def gen_label(self, doc):
+        t = self.pick(doc.transitions())
+        if t is None:
+            return None
+        if self.rng.random() < 0.3:
+            return ["label %s" % t.id], "transition"   # reset to auto
+        return ["label %s %s" % (t.id, self.point_args())], "transition"
+
     def gen_new_transition(self, doc):
         sources = [e for e in doc.walk() if e.is_state or e.kind in (D.KIND_INITIAL, D.KIND_CHOICE)]
         src = self.pick(sources)
@@ -246,6 +257,61 @@ class Fuzzer:
             return None
         return [verb], "document"
 
+    # --- the edge forms ----------------------------------------------------
+
+    def transitions_with_handles(self, dump):
+        out = []
+        for t in dump.document.transitions() if dump.document else []:
+            h = dump.transition_handles(t.id)
+            if h and h["segments"]:
+                out.append((t, h))
+        return out
+
+    def gen_edge(self, verb, dump):
+        options = self.transitions_with_handles(dump)
+        if verb in ("move-point", "remove-point"):
+            options = [(t, h) for t, h in options if h["vertices"]]
+        pick = self.pick(options)
+        if pick is None:
+            return None
+        t, h = pick
+        sel = self.pick(h["segments"])          # a point on the line, to select it
+        select = "click %d %d" % (round(sel[0]), round(sel[1]))
+        if verb == "add-point":
+            seg = self.pick(h["segments"])
+            dx, dy = self.pick(DELTAS), self.pick(DELTAS)
+            return [select, "press %d %d" % (round(seg[0]), round(seg[1])),
+                    "drag %d %d" % (round(seg[0] + dx), round(seg[1] + dy)),
+                    "release %d %d" % (round(seg[0] + dx), round(seg[1] + dy))], "transition"
+        if verb == "move-point":
+            v = self.pick(h["vertices"])
+            dx, dy = self.pick(DELTAS), self.pick(DELTAS)
+            return [select, "press %d %d" % (round(v[0]), round(v[1])),
+                    "drag %d %d" % (round(v[0] + dx), round(v[1] + dy)),
+                    "release %d %d" % (round(v[0] + dx), round(v[1] + dy))], "transition"
+        if verb == "remove-point":
+            v = self.pick(h["vertices"])
+            return [select, "click %d %d" % (round(v[0]), round(v[1])), "key delete"], "transition"
+        if verb == "move-endpoint":
+            end = self.pick([e for e in (h["source"], h["target"]) if e])
+            if end is None:
+                return None
+            mods = " ctrl" if self.rng.random() < 0.4 else ""
+            if self.rng.random() < 0.5:
+                # reattach: drag toward a random node centre
+                nodes = [i for i in dump.scene_items().values() if i.kind in D.STATE_KINDS]
+                node = self.pick(nodes)
+                if node is None:
+                    return None
+                x, y, w, hh = node.abs_rect
+                to = (x + w / 2.0, y + hh / 2.0)
+            else:
+                to = (end[0] + self.pick(DELTAS), end[1] + self.pick(DELTAS))
+            return [select, "press %d %d%s" % (round(end[0]), round(end[1]), mods),
+                    "drag %d %d" % (round(to[0]), round(to[1])),
+                    "release %d %d" % (round(to[0]), round(to[1]))], "transition"
+        return None
+
     # --- the text forms ----------------------------------------------------
 
     def gen_text(self, verb, dump):
@@ -299,6 +365,10 @@ class Fuzzer:
         if verb in ("new-state", "new-initial", "new-final", "new-comment",
                     "new-formal-comment", "new-choice", "new-terminate"):
             return self.gen_new_node(verb, doc)
+        if verb == "new-sm":
+            return self.gen_new_sm(doc)
+        if verb == "label":
+            return self.gen_label(doc)
         if verb == "new-transition":
             return self.gen_new_transition(doc)
         if verb == "rename":
@@ -329,6 +399,8 @@ class Fuzzer:
             return self.gen_undo_redo(verb, dump)
         if verb in ("edit-title", "edit-action", "edit-label", "edit-body"):
             return self.gen_text(verb, dump)
+        if verb in ("add-point", "move-point", "remove-point", "move-endpoint"):
+            return self.gen_edge(verb, dump)
         return self.gen_gesture(verb, dump)
 
     def next(self, dump, exclude=()):

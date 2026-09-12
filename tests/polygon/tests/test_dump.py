@@ -136,3 +136,14 @@ class TextSectionTest(unittest.TestCase):
         self.assertIn("\\n", action.text)
         self.assertIn("\n", action.plain())
         self.assertNotIn("\\n", action.plain())
+
+
+class HandleTest(unittest.TestCase):
+    def test_transition_handles(self):
+        d = D.parse_dump((GOOD / "polyline-output.txt").read_text())
+        h = d.transition_handles("t0")
+        self.assertEqual(h["source"], (100.0, 200.0))
+        self.assertEqual(h["target"], (500.0, 200.0))
+        self.assertEqual(h["vertices"], [(100.0, 300.0), (500.0, 300.0)])
+        self.assertIn((300.0, 300.0), h["segments"])
+        self.assertIsNone(d.transition_handles("nope"))

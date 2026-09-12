@@ -233,6 +233,8 @@ class Element:
     target: str = ""
     action: Action = None
     polyline: list = field(default_factory=list)
+    sp: tuple = None     # source point, relative to the source centre
+    tp: tuple = None     # target point, relative to the target centre
 
     def walk(self):
         yield self
@@ -286,6 +288,10 @@ def _build(kind, entries, parent=None):
             e.action = Action.from_entries(value, transition=True)
         elif key == "polyline" and isinstance(value, list):
             e.polyline = value
+        elif key == "sp" and isinstance(value, tuple):
+            e.sp = value
+        elif key == "tp" and isinstance(value, tuple):
+            e.tp = value
     return e
 
 
@@ -587,6 +593,34 @@ class Dump:
             if t.id == id_ and t.fact_role == role:
                 return t
         return None
+
+    def transition_handles(self, id_):
+        """Scene coordinates of a transition's editable handles, or None when
+        the transition or its endpoints are not resolvable:
+        {source, target: (x,y) or None; vertices: [(x,y)...] one per polyline
+        point; segments: [(mx,my)...] the segment midpoints of the whole path}.
+        Endpoints and vertices are relative to node centres (see the editor)."""
+        if self.document is None:
+            return None
+        t = self.document.find(id_)
+        if t is None or t.kind != KIND_TRANSITION:
+            return None
+        items = self.scene_items()
+        src, tgt = items.get(t.source), items.get(t.target)
+        if src is None or tgt is None:
+            return None
+        def centre(item):
+            x, y, w, h = item.abs_rect
+            return (x + w / 2.0, y + h / 2.0)
+        scx, scy = centre(src)
+        tcx, tcy = centre(tgt)
+        source = (scx + t.sp[0], scy + t.sp[1]) if t.sp else None
+        target = (tcx + t.tp[0], tcy + t.tp[1]) if t.tp else None
+        vertices = [(scx + px, scy + py) for px, py in t.polyline]
+        # the path: source endpoint, the vertices, target endpoint
+        path = ([source] if source else []) + vertices + ([target] if target else [])
+        segments = [((a[0] + b[0]) / 2.0, (a[1] + b[1]) / 2.0) for a, b in zip(path, path[1:])]
+        return {"source": source, "target": target, "vertices": vertices, "segments": segments}
 
     def abs_box(self, text_item):
         """The absolute rect of a text item: its element's scene origin + pos."""
