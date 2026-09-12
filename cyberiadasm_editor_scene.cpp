@@ -549,6 +549,34 @@ void CyberiadaSMEditorScene::mouseDoubleClickEvent(QGraphicsSceneMouseEvent* eve
 
 void CyberiadaSMEditorScene::addSMItem(Cyberiada::ElementType type)
 {
+    if (type == Cyberiada::elementSM) {
+        // a state machine has no parent and is placed on its own in free space;
+        // it must NOT fall through the child-container logic below, which would
+        // create a second, border-less machine. The window (slotNewSM) already
+        // adopts an existing border-less machine before reaching here, so this
+        // path always means a genuinely new machine.
+        try {
+            // room for a 2x2 grid of default states (200x100) with a separator
+            // and a border around them
+            const qreal gap = 40;
+            QSizeF smSize(2 * 200 + 3 * gap, 2 * 100 + 3 * gap);   // 520 x 320
+            QPointF c = freeStateMachinePlace(smSize);
+            Cyberiada::Element* element = model->newStateMachine("New State Machine",
+                                                                 Cyberiada::Rect(c.x(), c.y(),
+                                                                                 smSize.width(), smSize.height()));
+            if (!element) return;
+            currentSM = static_cast<Cyberiada::StateMachine*>(element);
+            CyberiadaSMEditorSMItem* sm = new CyberiadaSMEditorSMItem(model, element, NULL);
+            elementIdToItemMap.insert(element->get_id(), sm);
+            addItem(sm);
+            sm->setSelected(true);
+        } catch (const Cyberiada::ParametersException& e) {
+            QMessageBox::critical(NULL, tr("Create new state machine"),
+                                  tr("Parameters error:\n") + QString(e.str().c_str()));
+        }
+        return;
+    }
+
     CyberiadaSMEditorAbstractItem* parentCItem = nullptr;
     Cyberiada::ElementCollection* parentColl = nullptr;
     if (selectedItems().size() > 0) {
@@ -597,30 +625,6 @@ void CyberiadaSMEditorScene::addSMItem(Cyberiada::ElementType type)
         center = freePlace(parentColl, QSizeF(200, 100));
     } else {
         center = sceneRect().center();
-    }
-
-    if (type == Cyberiada::elementSM) {
-        // the document has no item, so the new state machine item is built here
-        try {
-            // room for a 2x2 grid of default states (200x100) with a separator
-            // and a border around them
-            const qreal gap = 40;
-            QSizeF smSize(2 * 200 + 3 * gap, 2 * 100 + 3 * gap);   // 520 x 320
-            QPointF c = freeStateMachinePlace(smSize);
-            Cyberiada::Element* element = model->newStateMachine("New State Machine",
-                                                                 Cyberiada::Rect(c.x(), c.y(),
-                                                                                 smSize.width(), smSize.height()));
-            if (!element) return;
-            currentSM = static_cast<Cyberiada::StateMachine*>(element);
-            CyberiadaSMEditorSMItem* sm = new CyberiadaSMEditorSMItem(model, element, NULL);
-            elementIdToItemMap.insert(element->get_id(), sm);
-            addItem(sm);
-            sm->setSelected(true);
-        } catch (const Cyberiada::ParametersException& e) {
-            QMessageBox::critical(NULL, tr("Create new state machine"),
-                                  tr("Parameters error:\n") + QString(e.str().c_str()));
-        }
-        return;
     }
 
     if (parentColl == NULL) return;

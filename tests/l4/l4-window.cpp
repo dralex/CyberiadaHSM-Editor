@@ -33,6 +33,7 @@ private slots:
 	void test_undo_actions();
 	void test_modified_state();
 	void test_new_sm_content();
+	void test_new_sm_from_empty();
 
 private:
 	CyberiadaSMEditorWindow* window;
@@ -98,6 +99,19 @@ void TestWindow::test_new_sm_content()
 
 	window->actionNewStateMachine->trigger();
 	QCOMPARE(int(model->rootDocument()->get_state_machines().size()), before + 1);
+}
+
+void TestWindow::test_new_sm_from_empty()
+{
+	// a fresh, empty document: the New State Machine action creates exactly one
+	// bordered machine, not two (the toolbar double-creation regression)
+	CyberiadaSMEditorWindow w;
+	CyberiadaSMModel* m = w.getModel();
+	QVERIFY(!m->rootDocument() || m->rootDocument()->get_state_machines().empty());
+	w.actionNewStateMachine->trigger();
+	QVERIFY(m->rootDocument());
+	QCOMPARE(int(m->rootDocument()->get_state_machines().size()), 1);
+	QVERIFY(m->indexToElement(m->firstSMIndex())->has_geometry());
 }
 
 QTEST_MAIN(TestWindow)
