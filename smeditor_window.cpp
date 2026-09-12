@@ -374,38 +374,48 @@ void CyberiadaSMEditorWindow::slotNewSM()
 
 void CyberiadaSMEditorWindow::slotNewState()
 {
+    // a fresh element is a sibling in the current machine, not a child of the
+    // element the previous add left selected
+    scene->clearSelection();
     scene->addSMItem(Cyberiada::ElementType::elementSimpleState);
     SMView->update();
 }
 
 void CyberiadaSMEditorWindow::slotNewInitial()
 {
+    scene->clearSelection();
     scene->addSMItem(Cyberiada::ElementType::elementInitial);
 }
 
 void CyberiadaSMEditorWindow::slotNewFinal()
 {
+    scene->clearSelection();
     scene->addSMItem(Cyberiada::ElementType::elementFinal);
 }
 
 void CyberiadaSMEditorWindow::slotNewTerminate()
 {
+    scene->clearSelection();
     scene->addSMItem(Cyberiada::ElementType::elementTerminate);
 }
 
 void CyberiadaSMEditorWindow::slotNewComment()
 {
+    scene->clearSelection();
     scene->addSMItem(Cyberiada::ElementType::elementComment);
 }
 
 void CyberiadaSMEditorWindow::slotNewFormalComment()
 {
+    scene->clearSelection();
     scene->addSMItem(Cyberiada::ElementType::elementFormalComment);
 }
 
 void CyberiadaSMEditorWindow::slotNewChoise()
 {
-    QMessageBox::information(this, "Информация", QString("Пока не реализовано."));
+    scene->clearSelection();
+    scene->addSMItem(Cyberiada::ElementType::elementChoice);
+    SMView->update();
 }
 
 void CyberiadaSMEditorWindow::slotDeleteElement()
