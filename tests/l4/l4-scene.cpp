@@ -77,6 +77,7 @@ private slots:
 	void test_grow_cascades_to_ancestors();
 	void test_reparent_into_descendant();
 	void test_choice_edge_rule();
+	void test_choice_tip_attach();
 	void test_label_move();
 
 private:
@@ -1307,6 +1308,47 @@ void TestScene::test_choice_edge_rule()
 	// one 'else' is accepted, a second is rejected
 	QVERIFY(model->updateAction(i2, 0, "", "else", ""));
 	QVERIFY(!model->updateAction(i1, 0, "", "else", ""));
+}
+
+void TestScene::test_choice_tip_attach()
+{
+	// incoming/outgoing transitions bind to the rhombus tips (the rect-edge
+	// midpoints), whatever the choice rect proportions are
+	QVERIFY(model->loadDocument("diagrams/choice.graphml"));
+	scene->loadScene();
+	Cyberiada::StateMachine* sm = dynamic_cast<Cyberiada::StateMachine*>(model->idToElement("G0"));
+	Cyberiada::Element* choice = model->idToElement("n0");
+	QVERIFY(sm && choice && choice->get_type() == Cyberiada::elementChoice);
+
+	// a definite square rect: the tips are (0,-20),(20,0),(0,20),(-20,0)
+	QVERIFY(model->updateGeometry(model->elementToIndex(choice), Cyberiada::Rect(0, 0, 40, 40)));
+	Cyberiada::State* right = model->newState(sm, std::string("R"), Cyberiada::Action(), Cyberiada::Rect(300, 0, 120, 80));
+	Cyberiada::State* top = model->newState(sm, std::string("T"), Cyberiada::Action(), Cyberiada::Rect(0, -300, 120, 80));
+	QVERIFY(right && top);
+	Cyberiada::Element* out = model->newTransition(sm, Cyberiada::transitionExternal, choice, right,
+												   Cyberiada::Action(Cyberiada::actionTransition));
+	Cyberiada::Element* in = model->newTransition(sm, Cyberiada::transitionExternal, top, choice,
+												  Cyberiada::Action(Cyberiada::actionTransition));
+	QVERIFY(out && in);
+
+	CyberiadaSMEditorTransitionItem* outItem =
+		dynamic_cast<CyberiadaSMEditorTransitionItem*>(scene->getMap().value(out->get_id()));
+	CyberiadaSMEditorTransitionItem* inItem =
+		dynamic_cast<CyberiadaSMEditorTransitionItem*>(scene->getMap().value(in->get_id()));
+	QVERIFY(outItem && inItem);
+
+	// the choice-side endpoint (offset from the choice centre) is the facing tip
+	QPointF sp = outItem->sourcePoint();          // choice is the source, neighbour to the right
+	QVERIFY(qAbs(sp.x() - 20.0) < 0.5 && qAbs(sp.y()) < 0.5);
+	QPointF tp = inItem->targetPoint();           // choice is the target, neighbour above
+	QVERIFY(qAbs(tp.x()) < 0.5 && qAbs(tp.y() + 20.0) < 0.5);
+
+	// a non-square choice binds to its own edge midpoints, not the default size
+	QVERIFY(model->updateGeometry(model->elementToIndex(choice), Cyberiada::Rect(0, 0, 60, 20)));
+	sp = outItem->sourcePoint();
+	QVERIFY(qAbs(sp.x() - 30.0) < 0.5 && qAbs(sp.y()) < 0.5);   // right tip at half-width
+	tp = inItem->targetPoint();
+	QVERIFY(qAbs(tp.x()) < 0.5 && qAbs(tp.y() + 10.0) < 0.5);   // top tip at half-height
 }
 
 void TestScene::test_label_move()
