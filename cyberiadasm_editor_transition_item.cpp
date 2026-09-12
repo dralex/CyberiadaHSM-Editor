@@ -461,6 +461,42 @@ QPointF CyberiadaSMEditorTransitionItem::findIntersectionWithItem(const Cyberiad
         return item->sceneBoundingRect().center();
     }
 
+    // a choice is drawn as a rhombus inscribed in its rect; a transition binds
+    // to the tip (a rect-edge midpoint) that faces its other end, whatever the
+    // rect proportions are
+    if (item->type() == CyberiadaSMEditorAbstractItem::ChoiceItem) {
+        QRectF r = item->sceneBoundingRect();
+        QPointF c = r.center();
+        const QPointF tips[4] = {
+            QPointF(c.x(), r.top()),      // top
+            QPointF(r.right(), c.y()),    // right
+            QPointF(c.x(), r.bottom()),   // bottom
+            QPointF(r.left(), c.y())      // left
+        };
+        // the connected element is the ray end farther from the centre: the
+        // caller passes either centre->toward or an external point->centre
+        QPointF ext = QLineF(start, c).length() >= QLineF(end, c).length() ? start : end;
+        QPointF facing = ext - c;
+        if (facing.isNull()) {
+            *hasIntersections = true;
+            return c;
+        }
+        int best = 0;
+        qreal bestDot = -std::numeric_limits<qreal>::max();
+        for (int i = 0; i < 4; ++i) {
+            QPointF td = tips[i] - c;
+            qreal len = QLineF(c, tips[i]).length();
+            if (len == 0) continue;
+            qreal dot = QPointF::dotProduct(td, facing) / len;
+            if (dot > bestDot) {
+                bestDot = dot;
+                best = i;
+            }
+        }
+        *hasIntersections = true;
+        return tips[best];
+    }
+
     QLineF rayForward(start, start + dir * 1e5);
     QLineF rayBackward(start, start - dir * 1e5);
 
