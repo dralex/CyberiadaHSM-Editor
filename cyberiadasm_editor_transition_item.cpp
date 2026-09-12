@@ -566,6 +566,14 @@ void CyberiadaSMEditorTransitionItem::updateAction()
 void CyberiadaSMEditorTransitionItem::updateActionPosition() {
     if (!actionItem) return;
 
+    // a moved label keeps its stored position, relative to the source centre
+    if (transition->has_geometry_label_point()) {
+        const Cyberiada::Point& lp = transition->get_label_point();
+        actionItem->setPos(QPointF(lp.x, lp.y) + sourceCenter() - actionItem->boundingRect().center());
+        update();
+        return;
+    }
+
     QPointF lastPoint = sourcePoint();
     if(transition->has_polyline() && transition->get_geometry_polyline().size() > 0) {
         Cyberiada::Polyline polyline = transition->get_geometry_polyline();
@@ -1147,4 +1155,67 @@ void TransitionAction::focusOutEvent(QFocusEvent *event)
 
     transition->model->updateAction(transition->model->elementToIndex(transition->element), 0,
                                     getTrigger(), getGuard(), getBehaviour());
+}
+
+void TransitionAction::mousePressEvent(QGraphicsSceneMouseEvent *event)
+{
+    if (isEdit) { EditableTextItem::mousePressEvent(event); return; }
+    if (event->button() == Qt::LeftButton) {
+        // select the transition and arm a possible label drag
+        if (scene()) scene()->clearSelection();
+        if (parentItem()) parentItem()->setSelected(true);
+        dragLast = event->scenePos();
+        dragging = false;
+        event->accept();
+        return;
+    }
+    EditableTextItem::mousePressEvent(event);
+}
+
+void TransitionAction::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
+{
+    if (!isEdit && (event->buttons() & Qt::LeftButton)) {
+        setPos(pos() + event->scenePos() - dragLast);
+        dragLast = event->scenePos();
+        dragging = true;
+        event->accept();
+        return;
+    }
+    EditableTextItem::mouseMoveEvent(event);
+}
+
+void TransitionAction::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
+{
+    if (!isEdit && dragging) {
+        persistLabelPosition();
+        dragging = false;
+        event->accept();
+        return;
+    }
+    EditableTextItem::mouseReleaseEvent(event);
+}
+
+void TransitionAction::persistLabelPosition()
+{
+    CyberiadaSMEditorTransitionItem* t = dynamic_cast<CyberiadaSMEditorTransitionItem*>(parentItem());
+    if (!t || !t->model) return;
+    // the stored point is the label centre relative to the source centre, the
+    // same origin updateActionPosition reads it back with
+    QPointF lp = pos() + boundingRect().center() - t->sourceCenter();
+    t->model->updateLabel(t->model->elementToIndex(t->element), Cyberiada::Point(lp.x(), lp.y()));
+}
+
+void TransitionAction::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
+{
+    if (SettingsManager::instance().getInspectorMode()) { return; }
+    QMenu menu;
+    QAction* reset = menu.addAction(QObject::tr("Сбросить положение метки"));
+    if (menu.exec(event->screenPos()) == reset) {
+        CyberiadaSMEditorTransitionItem* t = dynamic_cast<CyberiadaSMEditorTransitionItem*>(parentItem());
+        if (t && t->model) {
+            // an invalid point clears the stored label, resuming auto-placement
+            t->model->updateLabel(t->model->elementToIndex(t->element), Cyberiada::Point());
+        }
+    }
+    event->accept();
 }

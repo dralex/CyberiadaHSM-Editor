@@ -84,6 +84,8 @@ public:
 	bool                                updateGeometry(const QModelIndex& index, const Cyberiada::Point& source, const Cyberiada::Point& target);
     bool                                updateGeometry(const QModelIndex& index, const Cyberiada::Polyline& pl);
     bool                                updateGeometry(const QModelIndex& index, const Cyberiada::ID& source, const Cyberiada::ID& target);
+    // the transition label position; an invalid point resets it to auto-placement
+    bool                                updateLabel(const QModelIndex& index, const Cyberiada::Point& label_point);
     bool                                updateParent(const QModelIndex& index, const Cyberiada::ID& new_parent_id);
     // grow the parent collection of a moved element symmetrically about its
     // centre so it contains all its rect children (a programmatic move leaves

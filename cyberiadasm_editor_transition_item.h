@@ -189,6 +189,16 @@ protected:
     void paint( QPainter *painter, const QStyleOptionGraphicsItem *o, QWidget *w) override;
 
     void focusOutEvent(QFocusEvent *event) override;
+    // the label can be dragged along the scene; the release persists its point
+    void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
+    void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
+    void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
+    void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
+
+private:
+    void persistLabelPosition();
+    QPointF dragLast;
+    bool dragging = false;
 };
 
 #endif // CYBERIADASMEDITORTRANSITIONITEM_H

@@ -566,6 +566,19 @@ bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada:
 	return true;
 }
 
+bool CyberiadaSMModel::updateLabel(const QModelIndex& index, const Cyberiada::Point& label_point)
+{
+	if (readOnly()) return false;
+	UndoScope scope(this, tr("label"));
+	Cyberiada::Element* element = indexToElement(index);
+	if (!element) return false;
+	if (element->get_type() != Cyberiada::elementTransition) return false;
+	Cyberiada::Transition* trans = static_cast<Cyberiada::Transition*>(element);
+	trans->update_label(label_point);
+	emit dataChanged(index, index);
+	return true;
+}
+
 bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada::Point& source, const Cyberiada::Point& target)
 {
 	if (readOnly()) return false;
