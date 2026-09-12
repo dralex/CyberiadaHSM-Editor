@@ -121,10 +121,15 @@ int main(int argc, char *argv[])
 		}
 		if (batch) {
 			QStringList args = parser.positionalArguments();
-			if (args.size() != 1) {
-				fprintf(stderr, "batch mode requires exactly one document file\n");
+			// a document file is required unless a script bootstraps the
+			// document from scratch (a from-scratch recorded session, whose
+			// first verb is new-sm)
+			if (args.size() > 1 ||
+				(args.size() == 0 && !parser.isSet(scriptOption))) {
+				fprintf(stderr, "batch mode requires one document file, or a --script with no file\n");
 				return batchUsageError;
 			}
+			QString document = args.isEmpty() ? QString() : args.first();
 			Cyberiada::DocumentFormat save_format = Cyberiada::formatCyberiada10;
 			QString format_str = parser.value(saveFormatOption);
 			if (format_str == "yed-ostranna") {
@@ -135,7 +140,7 @@ int main(int argc, char *argv[])
 				fprintf(stderr, "unknown save format %s\n", qPrintable(format_str));
 				return batchUsageError;
 			}
-			return runBatchMode(app, args.first(), parser.isSet(dumpOption),
+			return runBatchMode(app, document, parser.isSet(dumpOption),
 								parser.value(scriptOption), parser.value(saveOption),
 								parser.value(exportOption), parser.isSet(reconstructOption),
 								parser.isSet(reconstructSMOption),

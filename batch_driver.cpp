@@ -55,7 +55,10 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName, boo
 	win.show();
 
 	QString error;
-	if (!win.openDocument(fileName, &error, reconstruct, reconstruct_sm, strict)) {
+	// a from-scratch session has no start document: the script's first verb
+	// (new-sm) bootstraps it
+	if (!fileName.isEmpty() &&
+		!win.openDocument(fileName, &error, reconstruct, reconstruct_sm, strict)) {
 		fprintf(stderr, "cannot load %s\n%s\n", qPrintable(fileName), qPrintable(error));
 		return batchLoadError;
 	}

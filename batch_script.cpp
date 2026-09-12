@@ -177,6 +177,19 @@ static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QStri
 			action = Cyberiada::Action(trigger.toStdString(), guard.toStdString(), behaviour.toStdString());
 		}
 		return model->newTransition(sm, Cyberiada::transitionExternal, source, target, action) != NULL;
+	} else if (cmd == "new-sm") {
+		// the state machine has no parent; the coordinates are optional and
+		// precede the name (like new-state), the machine of a from-scratch
+		// session which otherwise has no verb
+		Cyberiada::Rect r;
+		int name_from = 1;
+		if (toNumbers(tokens, 1, 4, v)) {
+			r = Cyberiada::Rect(v[0], v[1], v[2], v[3]);
+			name_from = 5;
+		}
+		QString name = restOfLine(tokens, name_from);
+		if (name.isEmpty()) { *error = "new-sm requires a name"; return false; }
+		return model->newStateMachine(name.toStdString(), r) != NULL;
 	} else if (cmd == "undo") {
 		model->undoStack()->undo();
 		return true;
@@ -201,6 +214,7 @@ static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QStri
 	if (cmd != "rename" && cmd != "move" && cmd != "reparent" && cmd != "delete" &&
 		cmd != "new-action" && cmd != "update-action" && cmd != "delete-action" &&
 		cmd != "update-comment" && cmd != "update-id" && cmd != "polyline" &&
+		cmd != "label" &&
 		cmd != "new-subject" && cmd != "delete-subject") {
 		*error = "unknown command '" + cmd + "'";
 		return false;
@@ -256,6 +270,19 @@ static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QStri
 			return false;
 		}
 		return model->updateID(index, tokens.at(2));
+	} else if (cmd == "label") {
+		if (element->get_type() != Cyberiada::elementTransition) {
+			*error = "element '" + tokens.at(1) + "' is not a transition";
+			return false;
+		}
+		// with coordinates the label is pinned, without them it is reset to
+		// the automatic placement (an invalid point)
+		Cyberiada::Point p;
+		if (tokens.size() > 2) {
+			if (!toNumbers(tokens, 2, 2, v)) { *error = "label requires <x y> or no coordinates"; return false; }
+			p = Cyberiada::Point(v[0], v[1]);
+		}
+		return model->updateLabel(index, p);
 	} else if (cmd == "polyline") {
 		if (element->get_type() != Cyberiada::elementTransition) {
 			*error = "element '" + tokens.at(1) + "' is not a transition";

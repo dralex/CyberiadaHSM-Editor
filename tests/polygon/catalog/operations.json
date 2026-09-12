@@ -90,6 +90,15 @@
       "form": "model"
     },
     {
+      "verb": "new-sm",
+      "args": "[x y w h] <name>",
+      "effect": "create a state machine (rect optional)",
+      "targets": [
+        "document"
+      ],
+      "form": "model"
+    },
+    {
       "verb": "rename",
       "args": "<id> <title>",
       "effect": "change the element title (unique among the sibling states)",
@@ -218,6 +227,15 @@
       "verb": "polyline",
       "args": "<id> [x y ...]",
       "effect": "replace the transition polyline (no points clear it)",
+      "targets": [
+        "transition"
+      ],
+      "form": "model"
+    },
+    {
+      "verb": "label",
+      "args": "<id> [x y]",
+      "effect": "pin the transition label point (no coordinates reset it to auto-placement)",
       "targets": [
         "transition"
       ],
