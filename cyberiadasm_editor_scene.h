@@ -118,6 +118,10 @@ private:
     // newly added child fits inside it
     void extendStateMachineForChild(CyberiadaSMEditorAbstractItem* smItem, QGraphicsItem* child);
     void  removeItemsForElement(Cyberiada::Element* element);
+    // an item about to be deleted must not stay the mouse grabber or the focus
+    // item: Qt keeps a raw pointer and would deliver the pending event to the
+    // freed object (a use-after-free crash on a mid-gesture model reset)
+    void  releaseInputFor(QGraphicsItem* item);
     void  updateItemsRecursively(CyberiadaSMEditorAbstractItem* parent, Cyberiada::ElementCollection* element);
 
 

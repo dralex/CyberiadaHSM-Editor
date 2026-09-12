@@ -765,24 +765,25 @@ void StateTitle::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 }
 
 void StateTitle::mouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
-    ToolType currentTool = dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool();
-    if(currentTool != ToolType::Select) {
+    CyberiadaSMEditorScene* sc = dynamic_cast<CyberiadaSMEditorScene*>(scene());
+    if (sc && sc->getCurrentTool() != ToolType::Select) {
         event->ignore();
         return;
     }
 
-    if (parentItem()) {
+    if (event->button() == Qt::LeftButton && !hasFocus()) {
+        // a move/reparent release. Finish our own drag state first, because the
+        // reparent below can reset the model and delete this very item - nothing
+        // may touch `this` after updateParent().
+        isMoving = false;
+        isLeftMouseButtonPressed = false;
+        setCursor(QCursor(Qt::ArrowCursor));
+
         CyberiadaSMEditorStateItem* state = dynamic_cast<CyberiadaSMEditorStateItem*>(parentItem());
         if (state != nullptr) {
             if (state->prevItemUnderCursor) state->prevItemUnderCursor->setHighlighted(false);
             state->updateParent(state->prevItemUnderCursor);
         }
-    }
-
-    if (event->button() == Qt::LeftButton && !hasFocus()) {
-        isMoving = false;
-        isLeftMouseButtonPressed = false;
-        setCursor(QCursor(Qt::ArrowCursor));
         return;
     }
 

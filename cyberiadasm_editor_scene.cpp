@@ -214,7 +214,21 @@ void CyberiadaSMEditorScene::removeItemsForElement(Cyberiada::Element* element)
     }
     QGraphicsItem* item = elementIdToItemMap.take(element->get_id());
     if (item) {
+        releaseInputFor(item);
         delete item;
+    }
+}
+
+void CyberiadaSMEditorScene::releaseInputFor(QGraphicsItem* item)
+{
+    if (!item) return;
+    QGraphicsItem* grabber = mouseGrabberItem();
+    if (grabber && (grabber == item || item->isAncestorOf(grabber))) {
+        grabber->ungrabMouse();
+    }
+    QGraphicsItem* focus = focusItem();
+    if (focus && (focus == item || item->isAncestorOf(focus))) {
+        focus->clearFocus();
     }
 }
 
@@ -399,6 +413,10 @@ void CyberiadaSMEditorScene::loadScene(bool fit)
 {
     elementIdToItemMap.clear();
 
+    // clear() frees every item; release the grab and focus first so a pending
+    // gesture is not delivered to a freed item
+    if (QGraphicsItem* grabber = mouseGrabberItem()) grabber->ungrabMouse();
+    if (QGraphicsItem* focus = focusItem()) focus->clearFocus();
     clear();
 
     MY_ASSERT(elementIdToItemMap.isEmpty());
