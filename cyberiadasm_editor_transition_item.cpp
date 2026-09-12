@@ -1173,7 +1173,7 @@ QString TransitionAction::getBehaviour() const
 void TransitionAction::paint(QPainter *painter, const QStyleOptionGraphicsItem *o, QWidget *w) {
     if (!toPlainText().isEmpty()) {
         QColor color = painter->background().color();
-        color.setAlpha(150);
+        color.setAlpha(230);
         painter->setBrush(color);
         painter->setPen(Qt::NoPen);
         painter->drawRect(boundingRect());
