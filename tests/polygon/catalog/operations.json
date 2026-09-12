@@ -7,7 +7,7 @@
     {"verb": "new-formal-comment", "args": "<parent> <body>", "effect": "create a formal (machine-readable) comment", "targets": ["sm", "composite", "simple"], "form": "model"},
     {"verb": "new-choice", "args": "<parent> [x y w h]", "effect": "create a choice pseudostate (rect optional)", "targets": ["sm", "composite", "simple"], "form": "model"},
     {"verb": "new-terminate", "args": "<parent> [x y]", "effect": "create a terminate pseudostate", "targets": ["sm", "composite", "simple"], "form": "model"},
-    {"verb": "new-transition", "args": "<sm> <src> <tgt> [trigger]", "effect": "create an external transition", "targets": ["simple", "composite", "initial", "choice"], "form": "model"},
+    {"verb": "new-transition", "args": "<sm> <src> <tgt> [trigger]", "effect": "create an external/local transition", "targets": ["simple", "composite", "initial", "choice"], "form": "model"},
     {"verb": "rename", "args": "<id> <title>", "effect": "change the element title (unique among the sibling states)", "targets": ["simple", "composite", "sm"], "form": "model"},
     {"verb": "move", "args": "<id> x y [w h]", "effect": "update point (2 args) or rect (4 args) geometry", "targets": ["simple", "composite", "initial", "final", "choice", "terminate", "comment"], "form": "model"},
     {"verb": "reparent", "args": "<id> <new-parent-id>", "effect": "move the element to another parent", "targets": ["simple", "composite", "initial", "final", "choice", "terminate", "comment"], "form": "model"},
