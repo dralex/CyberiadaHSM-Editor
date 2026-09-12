@@ -829,10 +829,18 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
 
             // polyline points
             Cyberiada::Polyline pol = transition->get_geometry_polyline();
-            Cyberiada::Point p = pol.at(i - 1);
-            p.x += dx;
-            p.y += dy;
-            pol.at(i - 1) = p;
+            Cyberiada::Point pt = pol.at(i - 1);
+            pt.x += dx;
+            pt.y += dy;
+            if (mods & Qt::ControlModifier) {
+                // like the endpoints: snap the point onto the axis of its
+                // previous neighbour so the incoming segment stays orthogonal
+                // (the dots and the polyline share the source-centre origin)
+                QPointF neigh = listDots.at(i - 1)->scenePos() - sourceCenter();
+                if (qAbs(pt.x - neigh.x()) <= qAbs(pt.y - neigh.y())) pt.x = neigh.x();
+                else                                                  pt.y = neigh.y();
+            }
+            pol.at(i - 1) = pt;
             model->updateGeometry(model->elementToIndex(element), pol);
             break;
         }
