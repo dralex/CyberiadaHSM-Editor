@@ -28,6 +28,7 @@ producer gets the feedback. Everything is recorded under sessions/."""
 
 import json
 import shutil
+import time
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
@@ -94,6 +95,7 @@ class Session:
 
     def run(self, rounds):
         """rounds rounds; returns the number of findings."""
+        self.started = time.time()
         self.initial_dump()
         total = 0
         for n in range(1, rounds + 1):
@@ -108,6 +110,7 @@ class Session:
             total += len(record.findings)
             self.save()
         self.finish()
+        self.elapsed = time.time() - getattr(self, "started", time.time())
         self.save()
         return total
 
@@ -191,6 +194,7 @@ class Session:
                             "theme": self.mission.theme["name"] if self.mission.theme else "",
                             "untried": self.mission.untried} if self.mission else None,
                 "reproduction": self.reproduction,
+                "elapsed": round(getattr(self, "elapsed", 0.0), 1),
                 "rounds": [{"n": r.number, "verb": r.verb, "kind": r.kind, "lines": r.lines,
                             "accepted": r.accepted, "script_error": r.script_error,
                             "findings": r.findings, "expectations": r.expectations,

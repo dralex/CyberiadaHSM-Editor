@@ -72,9 +72,16 @@ kinds share the runner, the oracles and the register and differ in the prompt.
 
 Mission A exercises the creation paths and grows the corpus: every accepted
 reproduction is stored as a new starting document. Mission B exercises the
-editing paths in sequences nobody planned. Themes: nesting under change,
-geometry extremes, undo/redo interleaving, deletion of parents with attached
-transitions, identity changes, comments and subjects.
+editing paths in sequences nobody planned. Each theme carries a `start` rule
+(`corpus`, `small` or `empty`) so a story can begin from an empty document,
+and an optional `forms` restriction. The stories: nesting under change,
+geometry extremes, undo/redo interleaving, deletion of parents, identity
+changes, comments and subjects, transitions everywhere, gestures on a
+crowded diagram, build from scratch by gestures (empty start, gesture and
+text verbs only), refactoring session, text-heavy behaviours (real code in
+C, Python or a pseudolanguage, multi-line, edits), student session with
+mistakes (small start, the refusals and corrections), and sequential growth
+from a single state to a clean complex system.
 
 ### Prompts
 
@@ -208,6 +215,13 @@ A problem that turns out to be such a property gets the register status
   script  --export out.png/.svg  -> exit 0, files exist
 ```
 
+The polygon runs in text mode by default (`--text`): the canvas texts are
+shown, so the agent edits titles, actions, transition labels and comment
+bodies as a user does, and the render check verifies that every shown text
+leaves ink on the canvas (`shown`/`hidden` facts state what the canvas
+shows). The borders and the containment are still checked on a text-free
+render, which stays reproducible; the L1/L2 editor tiers keep `--no-text`.
+
 A `semantic` or `review` finding is a candidate: the agent may have expected
 the wrong thing. Both stay in the session record with the plan attached for
 a human to read; `register add` promotes one with its script and
@@ -231,6 +245,8 @@ anything.
 | `no-overlap <id> <id>` | the scene rects do not intersect |
 | `exists <id>` / `absent <id>` | the element exists / does not |
 | `undo-depth <n>` | the `== stack` section of `--dump-stack` reports `index: <n>` |
+| `shown <id> <role> <text>` | the canvas shows that text for the element (role `title`, `action`, `label`, `body`) |
+| `hidden <id> <role>` | the element shows no such text on the canvas |
 
 The vocabulary is deliberately small; what it cannot express is left to the
 vision review. The undo-all rerun reuses the evaluator with the facts of the
@@ -286,6 +302,9 @@ of `TESTING.md` and the gesture verbs of the same script:
 | `double-click x y` | double click |
 | `tool select\|transition` | select the scene tool |
 | `delete-selected` | delete the selected element |
+| `edit <id> <role> [<i>]` | open the inline editor of a canvas text |
+| `edit-text <id> <role> [<i>] <text>` | open, replace and commit a canvas text in one line |
+| `type <text>` / `key <name>` / `select-all` / `commit` | drive the open inline editor by keys |
 
 A gesture is one undo step opened on press and closed on release, as in the
 GUI, and the dump after a gesture shows the scene the gesture built, so the
@@ -307,6 +326,15 @@ the previous commands created so that every command is accepted. It brings
 volume and exact reproducibility; the agent brings intent. Both feed the same
 runner, oracles and register, and a fuzzer session is a mission with the
 producer set to `fuzzer`.
+
+## Competition
+
+`run --backends deepseek,haiku` composes one mission and runs it on each
+backend in turn; the pair's folders sit under `sessions/<date>-compare-<seed>/`
+with a `comparison.txt` (wall time, calls, tokens, accepted rounds, commands,
+script errors, defects, reproduction). `productivity.json` accumulates the
+totals per backend across campaigns, printed by `report`. The keys never
+enter any of it; only the backend and the model names are recorded.
 
 ## Problem register
 
@@ -409,9 +437,11 @@ tests/polygon/
   problems/                 local results, not committed
     register.json  cases.cmake
     P-<n>/                  start.graphml, script, expectations, dump, stderr, render.png, plan
-  coverage.json             local, not committed
-  sessions/<date>-<producer>-<seed>/   session.json, script, round-<n>.dump,
-                            conversation.txt, usage.json (not committed)
+  coverage.json  productivity.json  local, not committed
+  sessions/<date>-<producer>-<seed>/   session.json (with elapsed), script,
+                            round-<n>.dump, conversation.txt, usage.json;
+                            <date>-compare-<seed>/ holds a backend pair and
+                            comparison.txt (not committed)
   tests/                    the unit tests (ctest: polygon-unit)
 ```
 

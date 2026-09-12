@@ -202,3 +202,33 @@ class AgentSessionTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CompetitionTest(unittest.TestCase):
+    def test_ledger_and_table(self):
+        from polygon import __main__ as M2
+        import tempfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as tmp:
+            ledger = M2._Ledger(Path(tmp) / "productivity.json")
+            a = {"backend": "flash:m", "rounds": 6, "accepted": 6, "errors": 0, "calls": 6,
+                 "tokens": 200000, "commands": 70, "elapsed": 800.0, "defects": 3,
+                 "candidates": 0, "reproduction": "match"}
+            b = dict(a, backend="haiku:m", calls=12, tokens=100000, commands=36,
+                     elapsed=100.0, defects=1, reproduction="differ 2")
+            ledger.add("flash", a)
+            ledger.add("haiku", b)
+            ledger.add("flash", a)
+            ledger.save()
+            data = json.loads((Path(tmp) / "productivity.json").read_text())
+            self.assertEqual(data["flash"]["sessions"], 2)
+            self.assertEqual(data["flash"]["reproductions_matched"], 2)
+            self.assertEqual(data["haiku"]["defects"], 1)
+
+            class M: pass
+            m = M(); m.kind = "reproduce"; m.name = "lift"; m.seed = 1
+            m.theme = {"name": "text-heavy behaviours"}
+            table = M2._comparison_table(m, [a, b])
+            self.assertIn("flash:m", table)
+            self.assertIn("haiku:m", table)
+            self.assertIn("match", table)

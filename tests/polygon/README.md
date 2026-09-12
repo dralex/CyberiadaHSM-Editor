@@ -13,8 +13,9 @@ tree, so no variables need setting.
 cp polygon.example.toml polygon.toml       # fill in the backends; never committed
 ./run-polygon.sh brief lift                 # the reproduction brief of a diagram
 ./run-polygon.sh fuzz --diagram geometry --seed 1 --rounds 30
-./run-polygon.sh run --backend local --mission reproduce --diagram lift --seed 1
-./run-polygon.sh run --backend local --mission combine --seed 4711 --rounds 8
+./run-polygon.sh run --backend deepseek --mission reproduce --diagram lift --seed 1
+./run-polygon.sh run --backends deepseek,haiku --mission combine --theme "text-heavy behaviours" --seed 7
+./run-polygon.sh report                     # the per-backend productivity ledger
 ./run-polygon.sh replay sessions/<folder>   # the same verdicts without the backend
 ./run-polygon.sh check-script --diagram geometry --script my.script [--expectations my.facts]
 ./run-polygon.sh register list|add|cases    # the problem register
