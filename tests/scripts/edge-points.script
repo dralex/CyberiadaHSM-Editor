@@ -1,0 +1,18 @@
+# edit the polyline of t0 by gesture: add a point, move it, remove one, move an endpoint
+# select the transition by clicking its middle segment (the rect centre is empty space)
+click 300 300
+# add a point: drag the middle segment down
+press 300 300
+drag 300 360
+release 300 360
+# move the interior vertex now at scene (100; 300)
+press 100 300
+drag 140 320
+release 140 320
+# remove the vertex at scene (300; 360): click it, then delete
+click 300 360
+key delete
+# move the source endpoint at scene (100; 200)
+press 100 200
+drag 130 180
+release 130 180

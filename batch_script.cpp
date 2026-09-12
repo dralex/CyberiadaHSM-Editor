@@ -542,7 +542,19 @@ static bool runTextVerb(CyberiadaSMEditorScene* scene, const QStringList& tokens
 		text->clearFocus();
 		return true;
 	}
-	// the keystroke verbs need an item in edit mode
+	if (cmd == "key") {
+		// a key reaches the scene focus item: a text editor or a focused dot
+		if (tokens.size() < 2) { *error = "key requires a name"; return false; }
+		int key;
+		QString text;
+		if (!keyByName(tokens.at(1), &key, &text, error)) return false;
+		Qt::KeyboardModifiers mods;
+		if (!parseModifiers(tokens, 2, &mods, error)) return false;
+		if (mods & Qt::ControlModifier) text.clear();
+		sendKey(scene, key, mods, text);
+		return true;
+	}
+	// type and select-all drive the text editor in progress
 	if (!editingItem(scene)) { *error = "no text is being edited"; return false; }
 	if (cmd == "type") {
 		typeText(scene, restOfLine(tokens, 1));
@@ -552,15 +564,8 @@ static bool runTextVerb(CyberiadaSMEditorScene* scene, const QStringList& tokens
 		sendKey(scene, Qt::Key_A, Qt::ControlModifier, "a");
 		return true;
 	}
-	if (tokens.size() < 2) { *error = "key requires a name"; return false; }
-	int key;
-	QString text;
-	if (!keyByName(tokens.at(1), &key, &text, error)) return false;
-	Qt::KeyboardModifiers mods;
-	if (!parseModifiers(tokens, 2, &mods, error)) return false;
-	if (mods & Qt::ControlModifier) text.clear();
-	sendKey(scene, key, mods, text);
-	return true;
+	*error = "unknown text verb '" + cmd + "'";
+	return false;
 }
 
 static bool parseModifiers(const QStringList& tokens, int from,

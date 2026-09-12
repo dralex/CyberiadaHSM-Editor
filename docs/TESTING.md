@@ -293,6 +293,13 @@ takes the path of the GUI: the item handlers, the tools, the border zones.
 | `edit <id> <role> [<i>]` | open the inline editor of a canvas text (role `title`, `action <i>`, `label`, `body`) and leave it open for the keystroke verbs |
 | `edit-text <id> <role> [<i>] <text>` | open the editor, replace the editable text and commit, in one line (the `entry / ` prefix of an action and a transition label are re-parsed) |
 
+A transition polyline is edited by gesture: click the transition to select it and
+show its point dots, then drag a segment to add a point, drag a point dot to move
+it, click a point dot and press `key delete` to remove it (the delete key on a
+focused point dot mirrors the context menu), or drag an endpoint dot to move or
+reattach it. The `key` verb reaches whatever holds the scene focus, a text editor
+or a point dot.
+
 A gesture is one undo step opened by the press and closed by the release, as
 in the GUI, so `press`, `drag`, `release`, `click`, `double-click` and `tool`
 open no script-level step; `delete-selected` is one step like the model

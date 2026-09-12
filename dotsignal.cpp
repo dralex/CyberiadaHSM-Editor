@@ -118,9 +118,21 @@ void DotSignal::mousePressEvent(QGraphicsSceneMouseEvent *event)
         event->accept();
     } else if(flags & Movable){
         setPreviousPosition(event->scenePos());
+        // a deleteable dot takes focus so the delete key can reach it
+        if (deleteable) setFocus();
     } else {
         QGraphicsItem::mousePressEvent(event);
     }
+}
+
+void DotSignal::keyPressEvent(QKeyEvent *event)
+{
+    if (deleteable && (event->key() == Qt::Key_Delete || event->key() == Qt::Key_Backspace)) {
+        deleteDot();
+        event->accept();
+        return;
+    }
+    QGraphicsRectItem::keyPressEvent(event);
 }
 
 void DotSignal::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
