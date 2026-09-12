@@ -4,6 +4,23 @@ project(CyberiadaInspector VERSION 1.0.0 LANGUAGES CXX)
 
 list(APPEND CMAKE_MODULE_PATH /usr/lib/cmake)
 
+# capture the git revision at configure time for the session-log header
+find_package(Git QUIET)
+set(CYBERIADA_GIT_REVISION "unknown")
+if(Git_FOUND)
+  execute_process(COMMAND ${GIT_EXECUTABLE} -C ${CMAKE_CURRENT_SOURCE_DIR} rev-parse --short HEAD
+    OUTPUT_VARIABLE _rev OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET RESULT_VARIABLE _rc)
+  if(_rc EQUAL 0)
+    set(CYBERIADA_GIT_REVISION "${_rev}")
+    execute_process(COMMAND ${GIT_EXECUTABLE} -C ${CMAKE_CURRENT_SOURCE_DIR} status --porcelain -uno
+      OUTPUT_VARIABLE _dirty OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+    if(_dirty)
+      set(CYBERIADA_GIT_REVISION "${_rev}-dirty")
+    endif()
+  endif()
+endif()
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/version.h.in ${CMAKE_CURRENT_BINARY_DIR}/version.h @ONLY)
+
 set(cyberiadamlpp_DIR /usr/lib/cmake)
 find_package(cyberiadamlpp REQUIRED)
 
@@ -68,6 +85,8 @@ add_library(CyberiadaInspectorCore STATIC
 
 target_include_directories(CyberiadaInspectorCore PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}
+  # the generated version.h lives in the build dir
+  ${CMAKE_CURRENT_BINARY_DIR}
   # the forms are compiled into the core, so its generated headers must be
   # reachable by everything that links it
   ${CMAKE_CURRENT_BINARY_DIR}/CyberiadaInspectorCore_autogen/include

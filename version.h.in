@@ -1,0 +1,18 @@
+/* -----------------------------------------------------------------------------
+ * The Cyberiada State Machine Editor
+ * -----------------------------------------------------------------------------
+ *
+ * Generated version and revision (configure_file, see CMakeLists.txt)
+ *
+ * Copyright (C) 2026 Alexey Fedoseev <aleksey@fedoseev.net>
+ *
+ * ----------------------------------------------------------------------------- */
+
+#ifndef CYBERIADA_VERSION_H
+#define CYBERIADA_VERSION_H
+
+#define CYBERIADA_APP_NAME  "Cyberiada State Machine Editor"
+#define CYBERIADA_VERSION   "@PROJECT_VERSION@"
+#define CYBERIADA_REVISION  "@CYBERIADA_GIT_REVISION@"
+
+#endif // CYBERIADA_VERSION_H
