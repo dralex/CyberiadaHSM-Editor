@@ -276,11 +276,25 @@ takes the path of the GUI: the item handlers, the tools, the border zones.
 | `double-click x y [mods]` | double click at the point |
 | `tool select\|transition` | select the scene tool |
 | `delete-selected` | delete the selected element through the window action |
+| `type <text>` | type the text into the text being edited, key by key (`\n` is Return) |
+| `key <name> [mods]` | one key: return, escape, tab, backspace, delete, left, right, up, down, home, end, space, or a character |
+| `select-all` | select the whole editable text (Ctrl+A) |
+| `commit` | end the edit: the focus-out writes the text to the model |
+| `edit <id> <role> [<i>]` | open the inline editor of a canvas text (role `title`, `action <i>`, `label`, `body`) and leave it open for the keystroke verbs |
+| `edit-text <id> <role> [<i>] <text>` | open the editor, replace the editable text and commit, in one line (the `entry / ` prefix of an action and a transition label are re-parsed) |
 
 A gesture is one undo step opened by the press and closed by the release, as
 in the GUI, so `press`, `drag`, `release`, `click`, `double-click` and `tool`
 open no script-level step; `delete-selected` is one step like the model
-commands. The first gesture activates the scene. A `drag` or `release`
+commands. The text verbs edit the texts on the canvas the way a user does: a
+double click on a text under the select tool opens its inline editor, `type`
+and `key` reach it through the scene as a keyboard would, `commit` ends the
+edit and the owner writes the text to the model (a title renames, an action
+updates its behaviour, a label re-parses its action, a comment its body). They
+need `--text`: with the text hidden the items are not on the canvas and
+`edit-text` fails with a script error. A refused title (empty or taken) is
+reported on stderr in batch mode and the old title restored, where the GUI
+shows a warning. The first gesture activates the scene. A `drag` or `release`
 without a press, a `press` while the button is pressed and a script ending
 with the button pressed are script errors (exit code 4); `delete-selected`
 with nothing selected is one as well. The gesture case (`l2-gestures`) drags

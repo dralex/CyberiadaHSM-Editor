@@ -1,0 +1,13 @@
+# the canvas text verbs with the text shown. edit-text writes a role in one
+# line; edit opens the editor for the keystroke verbs.
+edit-text node-0-1 title Renamed
+new-action node-0-0-1 entry/ start()
+edit-text node-0-0-1 action 0 go();\nwait()
+edit-text edge-2 label EV [g > 0]/ act()
+new-comment G a note
+edit-text n0 body typed on the canvas
+# the keystroke path on a title: open, select all, type, commit
+edit node-0-0-2 title
+select-all
+type Keyed
+commit

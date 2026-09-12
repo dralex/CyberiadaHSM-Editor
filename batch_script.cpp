@@ -26,12 +26,17 @@
 #include <QRegularExpression>
 #include <QApplication>
 #include <QGraphicsSceneMouseEvent>
+#include <QKeyEvent>
+#include <QTextCursor>
 
 #include "batch_script.h"
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_editor_scene.h"
 #include "smeditor_window.h"
 #include "cyberiada_constants.h"
+#include "cyberiadasm_dump.h"
+#include "editable_text_item.h"
+#include "settings_manager.h"
 
 static bool toNumbers(const QStringList& tokens, int from, int count, double* values)
 {
@@ -379,7 +384,156 @@ struct GestureState {
 static bool isGesture(const QString& cmd)
 {
 	return cmd == "press" || cmd == "drag" || cmd == "release" ||
-		cmd == "click" || cmd == "double-click" || cmd == "tool";
+		cmd == "click" || cmd == "double-click" || cmd == "tool" ||
+		cmd == "type" || cmd == "key" || cmd == "select-all" || cmd == "commit" ||
+		cmd == "edit-text" || cmd == "edit";
+}
+
+static bool parseModifiers(const QStringList& tokens, int from,
+						   Qt::KeyboardModifiers* mods, QString* error);
+
+// the text item in edit mode, if any
+static EditableTextItem* editingItem(CyberiadaSMEditorScene* scene)
+{
+	EditableTextItem* text = dynamic_cast<EditableTextItem*>(scene->focusItem());
+	if (text && (text->textInteractionFlags() & Qt::TextEditorInteraction)) return text;
+	return NULL;
+}
+
+// a key press and release delivered through the scene to the focus item
+static void sendKey(CyberiadaSMEditorScene* scene, int key, Qt::KeyboardModifiers mods,
+					const QString& text = QString())
+{
+	QKeyEvent press(QEvent::KeyPress, key, mods, text);
+	QApplication::sendEvent(scene, &press);
+	QKeyEvent release(QEvent::KeyRelease, key, mods, text);
+	QApplication::sendEvent(scene, &release);
+}
+
+static void typeText(CyberiadaSMEditorScene* scene, const QString& text)
+{
+	for (int i = 0; i < text.length(); i++) {
+		QChar c = text.at(i);
+		if (c == QChar('\n')) sendKey(scene, Qt::Key_Return, Qt::NoModifier, "\r");
+		else sendKey(scene, 0, Qt::NoModifier, QString(c));
+	}
+}
+
+static bool keyByName(const QString& name, int* key, QString* text, QString* error)
+{
+	static const struct { const char* name; int key; } names[] = {
+		{"return", Qt::Key_Return}, {"enter", Qt::Key_Enter}, {"escape", Qt::Key_Escape},
+		{"tab", Qt::Key_Tab}, {"backspace", Qt::Key_Backspace}, {"delete", Qt::Key_Delete},
+		{"left", Qt::Key_Left}, {"right", Qt::Key_Right}, {"up", Qt::Key_Up},
+		{"down", Qt::Key_Down}, {"home", Qt::Key_Home}, {"end", Qt::Key_End},
+		{"space", Qt::Key_Space},
+	};
+	text->clear();
+	for (size_t i = 0; i < sizeof(names) / sizeof(names[0]); i++) {
+		if (name == names[i].name) { *key = names[i].key; return true; }
+	}
+	if (name.length() == 1) {
+		*key = name.toUpper().at(0).unicode();
+		*text = name;
+		return true;
+	}
+	*error = "unknown key '" + name + "'";
+	return false;
+}
+
+// the text item of an element by role: title, action <i>, label, body
+static EditableTextItem* textItemByRole(CyberiadaSMEditorScene* scene, const QString& id,
+										const QString& role, int index, QString* error)
+{
+	QGraphicsItem* item = scene->getMap().value(Cyberiada::ID(id.toStdString()), NULL);
+	if (!item) { *error = "unknown id '" + id + "'"; return NULL; }
+	if (!SettingsManager::instance().getShowText()) {
+		*error = "the text is hidden: the text verbs need --text";
+		return NULL;
+	}
+	std::vector<EditableTextItem*> texts = textItemsOf(item);
+	int n = 0;
+	for (size_t i = 0; i < texts.size(); i++) {
+		FontRole fr = texts[i]->getFontRole();
+		bool match = (role == "title" && fr == fontRoleStateTitle) ||
+			(role == "action" && fr == fontRoleStateAction) ||
+			(role == "label" && fr == fontRoleTransition) ||
+			(role == "body" && (fr == fontRoleComment || fr == fontRoleFormalComment));
+		if (!match) continue;
+		if (n == index) return texts[i];
+		n++;
+	}
+	*error = QString("%1 has no %2 text %3").arg(id, role).arg(index);
+	return NULL;
+}
+
+// open the inline editor of an element's text by role and select the editable
+// part; *from is the token index where an edit-text value would start
+static EditableTextItem* openTextItem(CyberiadaSMEditorScene* scene, const QStringList& tokens,
+									  int* from, QString* error)
+{
+	if (tokens.size() < 3) { *error = tokens.first() + " requires <id> <role> [<i>]"; return NULL; }
+	const QString& role = tokens.at(2);
+	int index = 0;
+	*from = 3;
+	if (role == "action") {
+		bool ok = false;
+		if (tokens.size() > 3) index = tokens.at(3).toInt(&ok);
+		if (!ok) { *error = "the action role requires the action index"; return NULL; }
+		*from = 4;
+	} else if (role != "title" && role != "label" && role != "body") {
+		*error = "unknown text role '" + role + "'";
+		return NULL;
+	}
+	EditableTextItem* text = textItemByRole(scene, tokens.at(1), role, index, error);
+	if (!text) return NULL;
+	text->startEditing();
+	QTextCursor cursor = text->textCursor();
+	cursor.setPosition(text->protectedLength());
+	cursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
+	text->setTextCursor(cursor);
+	return text;
+}
+
+static bool runTextVerb(CyberiadaSMEditorScene* scene, const QStringList& tokens, QString* error)
+{
+	const QString& cmd = tokens.first();
+	if (cmd == "commit") {
+		EditableTextItem* text = editingItem(scene);
+		if (!text) { *error = "no text is being edited"; return false; }
+		text->clearFocus();
+		return true;
+	}
+	if (cmd == "edit" || cmd == "edit-text") {
+		int from;
+		EditableTextItem* text = openTextItem(scene, tokens, &from, error);
+		if (!text) return false;
+		if (cmd == "edit") return true;   // leave the editor open for the keystroke verbs
+		QString value = restOfLine(tokens, from);
+		if (value.isEmpty()) sendKey(scene, Qt::Key_Delete, Qt::NoModifier);
+		else typeText(scene, value);
+		text->clearFocus();
+		return true;
+	}
+	// the keystroke verbs need an item in edit mode
+	if (!editingItem(scene)) { *error = "no text is being edited"; return false; }
+	if (cmd == "type") {
+		typeText(scene, restOfLine(tokens, 1));
+		return true;
+	}
+	if (cmd == "select-all") {
+		sendKey(scene, Qt::Key_A, Qt::ControlModifier, "a");
+		return true;
+	}
+	if (tokens.size() < 2) { *error = "key requires a name"; return false; }
+	int key;
+	QString text;
+	if (!keyByName(tokens.at(1), &key, &text, error)) return false;
+	Qt::KeyboardModifiers mods;
+	if (!parseModifiers(tokens, 2, &mods, error)) return false;
+	if (mods & Qt::ControlModifier) text.clear();
+	sendKey(scene, key, mods, text);
+	return true;
 }
 
 static bool parseModifiers(const QStringList& tokens, int from,
@@ -417,6 +571,10 @@ static bool runGesture(CyberiadaSMEditorScene* scene, const QStringList& tokens,
 		QEvent activate(QEvent::WindowActivate);
 		QApplication::sendEvent(scene, &activate);
 		state->activated = true;
+	}
+	if (cmd == "type" || cmd == "key" || cmd == "select-all" || cmd == "commit" ||
+		cmd == "edit-text" || cmd == "edit") {
+		return runTextVerb(scene, tokens, error);
 	}
 	if (cmd == "tool") {
 		if (tokens.size() != 2) { *error = "tool requires a name"; return false; }

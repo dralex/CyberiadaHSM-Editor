@@ -25,6 +25,10 @@
 #define CYBERIADA_SM_DUMP
 
 #include <ostream>
+#include <vector>
+
+class QGraphicsItem;
+class EditableTextItem;
 
 class CyberiadaSMModel;
 class CyberiadaSMEditorScene;
@@ -39,5 +43,9 @@ void dumpText(CyberiadaSMEditorScene* scene, CyberiadaSMModel* model, std::ostre
 
 // the undo stack: the step count, the current index and the clean state
 void dumpStack(CyberiadaSMModel* model, std::ostream& os);
+
+// the visible text items of a scene item sorted by role, y, x: the dump
+// lists them and the script addresses them in this order
+std::vector<EditableTextItem*> textItemsOf(QGraphicsItem* item);
 
 #endif

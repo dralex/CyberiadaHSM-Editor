@@ -129,20 +129,7 @@ static void dumpTextElement(CyberiadaSMEditorScene* scene, Cyberiada::Element* e
 	Cyberiada::ID id = element->get_id();
 	QGraphicsItem* item = scene->getMap().value(id, NULL);
 	if (item && element->get_type() != Cyberiada::elementRoot) {
-		std::vector<EditableTextItem*> texts;
-		const QList<QGraphicsItem*>& children = item->childItems();
-		for (QList<QGraphicsItem*>::const_iterator i = children.begin(); i != children.end(); i++) {
-			EditableTextItem* text = dynamic_cast<EditableTextItem*>(*i);
-			// the dump mirrors the render: a hidden title (a rect-less state
-			// machine has one but does not draw it) is not listed
-			if (text && text->isVisible()) texts.push_back(text);
-		}
-		// the insertion order of the children is not a part of the contract
-		std::sort(texts.begin(), texts.end(), [](EditableTextItem* a, EditableTextItem* b) {
-			if (a->getFontRole() != b->getFontRole()) return a->getFontRole() < b->getFontRole();
-			if (a->pos().y() != b->pos().y()) return a->pos().y() < b->pos().y();
-			return a->pos().x() < b->pos().x();
-		});
+		std::vector<EditableTextItem*> texts = textItemsOf(item);
 		for (size_t i = 0; i < texts.size(); i++) {
 			EditableTextItem* text = texts[i];
 			QFont font = text->font();
@@ -168,6 +155,25 @@ static void dumpTextElement(CyberiadaSMEditorScene* scene, Cyberiada::Element* e
 			dumpTextElement(scene, *i, depth + 1, os);
 		}
 	}
+}
+
+std::vector<EditableTextItem*> textItemsOf(QGraphicsItem* item)
+{
+	std::vector<EditableTextItem*> texts;
+	const QList<QGraphicsItem*>& children = item->childItems();
+	for (QList<QGraphicsItem*>::const_iterator i = children.begin(); i != children.end(); i++) {
+		EditableTextItem* text = dynamic_cast<EditableTextItem*>(*i);
+		// the dump mirrors the render: a hidden title (a rect-less state
+		// machine has one but does not draw it) is not listed
+		if (text && text->isVisible()) texts.push_back(text);
+	}
+	// the insertion order of the children is not a part of the contract
+	std::sort(texts.begin(), texts.end(), [](EditableTextItem* a, EditableTextItem* b) {
+		if (a->getFontRole() != b->getFontRole()) return a->getFontRole() < b->getFontRole();
+		if (a->pos().y() != b->pos().y()) return a->pos().y() < b->pos().y();
+		return a->pos().x() < b->pos().x();
+	});
+	return texts;
 }
 
 void dumpText(CyberiadaSMEditorScene* scene, CyberiadaSMModel* model, std::ostream& os)

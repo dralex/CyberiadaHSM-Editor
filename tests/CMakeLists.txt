@@ -266,6 +266,29 @@ add_l2_test(transition-subjects comment-transition)
 add_l2_test(gestures geometry)
 add_l2_test(transition-notation geometry)
 
+# The L2 text cases run with the text shown: the canvas text verbs need the
+# text items on the canvas (see docs/TESTING.md)
+function(add_l2_text_test case diagram)
+  add_test(NAME l2-${case}
+    COMMAND ${CMAKE_COMMAND}
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
+      -DINPUT=diagrams/${diagram}.graphml
+      -DSCRIPT=scripts/${case}.script
+      -DTEXT=1
+      -DEXPECTED=0
+      -DWORKDIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/l2-${case}.out
+      -DDUMP_GOOD=${CMAKE_CURRENT_SOURCE_DIR}/good/${case}-output.txt
+      -DSAVE_OUT=${CMAKE_CURRENT_BINARY_DIR}/l2-${case}.graphml
+      -DSAVE_GOOD=${CMAKE_CURRENT_SOURCE_DIR}/good/${case}-output.graphml
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunBatchTest.cmake)
+  set_tests_properties(l2-${case} PROPERTIES
+    TIMEOUT 60
+    ENVIRONMENT "${L0_ENVIRONMENT}")
+endfunction()
+
+add_l2_text_test(text-edit geometry)
+
 # The undo test suite: a script edits and undoes (or redoes) through the
 # batch verbs, and the dump must equal an EXISTING good file - the untouched
 # diagram's L1 dump after the undo, the edited L2 dump after the redo - so the
