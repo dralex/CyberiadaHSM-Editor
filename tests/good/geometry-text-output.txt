@@ -6,4 +6,4 @@
       Simple State: {id: 'node-0-1', role: title, font: 'Cyberiada Mono' 12 bold, pos: (-75; -75), size: (150; 27), text: 'node 0-1'}
     Transition: {id: 'edge-0', role: transition, font: 'Cyberiada Mono' 12, pos: (246; 326), size: (8; 27), text: ''}
     Transition: {id: 'edge-1', role: transition, font: 'Cyberiada Mono' 12, pos: (246; 149), size: (8; 27), text: ''}
-    Transition: {id: 'edge-2', role: transition, font: 'Cyberiada Mono' 12, pos: (422; 269), size: (56; 27), text: 'LABEL'}
+    Transition: {id: 'edge-2', role: transition, font: 'Cyberiada Mono' 12, pos: (372; 314), size: (56; 27), text: 'LABEL'}

@@ -75,6 +75,9 @@ private slots:
 	void test_batch_action_guard();
 	void test_grow_skips_rectless_sm();
 	void test_grow_cascades_to_ancestors();
+	void test_reparent_into_descendant();
+	void test_choice_edge_rule();
+	void test_label_move();
 
 private:
 	int countItems(int type);
@@ -1258,6 +1261,75 @@ void TestScene::test_grow_cascades_to_ancestors()
 	QVERIFY(std::fabs(pr.x) + pr.width / 2.0 <= gr.width / 2.0 + 0.01);
 	QVERIFY(gr.width > gw0);                              // the grandparent actually grew
 	QVERIFY(!model->idToElement("G")->has_geometry());   // the rect-less SM stays rect-less
+}
+
+void TestScene::test_reparent_into_descendant()
+{
+	// reparenting an element into its own descendant would free the target
+	// subtree mid-move (use-after-free): it must be refused (P1)
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	Cyberiada::Element* outer = model->idToElement("node-0");
+	Cyberiada::Element* inner = model->idToElement("node-0-0-1");   // a descendant of node-0
+	QVERIFY(outer && inner);
+	const Cyberiada::Element* oldParent = outer->get_parent();
+	QVERIFY(!model->updateParent(model->elementToIndex(outer), "node-0-0-1"));
+	QCOMPARE(outer->get_parent(), oldParent);                       // unchanged, no crash
+	// a normal reparent (into an unrelated composite) still works
+	QVERIFY(model->updateParent(model->elementToIndex(model->idToElement("node-0-1")), "node-0-0"));
+}
+
+void TestScene::test_choice_edge_rule()
+{
+	// a choice's outgoing transition carries only a guard or a single 'else' (P2)
+	QVERIFY(model->loadDocument("diagrams/choice.graphml"));
+	scene->loadScene();
+	Cyberiada::StateMachine* sm = dynamic_cast<Cyberiada::StateMachine*>(model->idToElement("G0"));
+	Cyberiada::Element* choice = model->idToElement("n0");
+	QVERIFY(sm && choice && choice->get_type() == Cyberiada::elementChoice);
+	Cyberiada::State* a = model->newState(sm, std::string("A"), Cyberiada::Action(), Cyberiada::Rect(-100, 200, 100, 60));
+	Cyberiada::State* b = model->newState(sm, std::string("B"), Cyberiada::Action(), Cyberiada::Rect(100, 200, 100, 60));
+	QVERIFY(a && b);
+	Cyberiada::Element* t1 = model->newTransition(sm, Cyberiada::transitionExternal, choice, a,
+												  Cyberiada::Action(Cyberiada::actionTransition));
+	Cyberiada::Element* t2 = model->newTransition(sm, Cyberiada::transitionExternal, choice, b,
+												  Cyberiada::Action(Cyberiada::actionTransition));
+	QVERIFY(t1 && t2);
+	QModelIndex i1 = model->elementToIndex(t1);
+	QModelIndex i2 = model->elementToIndex(t2);
+	// a trigger or a behaviour on a choice edge is rejected
+	QVERIFY(!model->updateAction(i1, 0, "EV", "", ""));
+	QVERIFY(!model->updateAction(i1, 0, "", "", "act()"));
+	// a guard is accepted
+	QVERIFY(model->updateAction(i1, 0, "", "x > 0", ""));
+	QCOMPARE(QString(static_cast<const Cyberiada::Transition*>(t1)->get_action().get_guard().c_str()),
+			 QString("x > 0"));
+	// one 'else' is accepted, a second is rejected
+	QVERIFY(model->updateAction(i2, 0, "", "else", ""));
+	QVERIFY(!model->updateAction(i1, 0, "", "else", ""));
+}
+
+void TestScene::test_label_move()
+{
+	// a transition label position persists and resets (P3)
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	CyberiadaSMEditorTransitionItem* tr =
+		dynamic_cast<CyberiadaSMEditorTransitionItem*>(scene->getMap().value("edge-0"));
+	const Cyberiada::Transition* t =
+		static_cast<const Cyberiada::Transition*>(model->idToElement("edge-0"));
+	QVERIFY(tr && t);
+	QModelIndex idx = model->elementToIndex(model->idToElement("edge-0"));
+
+	QVERIFY(model->updateLabel(idx, Cyberiada::Point(37, -21)));
+	QVERIFY(t->has_geometry_label_point());
+	QCOMPARE(t->get_label_point().x, 37.0f);
+	QCOMPARE(t->get_label_point().y, -21.0f);
+	tr->updateActionPosition();                     // honours the stored point, no crash
+
+	// an invalid point clears the stored label (auto-placement resumes)
+	QVERIFY(model->updateLabel(idx, Cyberiada::Point()));
+	QVERIFY(!t->has_geometry_label_point());
 }
 
 QTEST_MAIN(TestScene)
