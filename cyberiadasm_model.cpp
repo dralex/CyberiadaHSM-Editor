@@ -26,6 +26,7 @@
 #include <QMimeData>
 #include <QRegularExpression>
 #include <QDebug>
+#include <QFile>
 
 #include <cmath>
 #include <algorithm>
@@ -33,8 +34,47 @@
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_undo.h"
 #include "settings_manager.h"
+#include "gesture_log.h"
 #include "myassert.h"
 #include "cyberiada_constants.h"
+
+// the session log helpers: a model mutation is written as its batch verb (see
+// batch_script.cpp) so a recorded session replays as a test. logAction is a
+// no-op while a mouse gesture is in flight (the gesture records the same edit)
+// and while logging is off, so these are cheap.
+namespace {
+	// escape a trailing text field into one physical line (\\ and \n)
+	QString logEsc(const QString& s)
+	{
+		QString r;
+		r.reserve(s.size());
+		for (int i = 0; i < s.size(); i++) {
+			QChar c = s.at(i);
+			if (c == QChar('\\')) r += "\\\\";
+			else if (c == QChar('\n')) r += "\\n";
+			else r += c;
+		}
+		return r;
+	}
+	QString logNum(double v) { return QString::number(v, 'g', 10); }
+	QString logRect(const Cyberiada::Rect& r)
+	{
+		return logNum(r.x) + " " + logNum(r.y) + " " + logNum(r.width) + " " + logNum(r.height);
+	}
+	QString logPt(const Cyberiada::Point& p) { return logNum(p.x) + " " + logNum(p.y); }
+	QString qid(const Cyberiada::Element* e) { return QString::fromStdString(e->get_id()); }
+	// the CyberiadaML action notation the batch parser reads back
+	QString logActionText(const Cyberiada::Action& a)
+	{
+		QString behaviour = QString::fromStdString(a.get_behavior());
+		if (a.get_type() == Cyberiada::actionEntry) return "entry/ " + behaviour;
+		if (a.get_type() == Cyberiada::actionExit) return "exit/ " + behaviour;
+		QString head = QString::fromStdString(a.get_trigger());
+		QString guard = QString::fromStdString(a.get_guard());
+		if (!guard.isEmpty()) head += " [" + guard + "]";
+		return head + "/ " + behaviour;
+	}
+}
 
 CyberiadaSMModel::CyberiadaSMModel(QObject *parent):
 	QAbstractItemModel(parent)
@@ -359,6 +399,8 @@ bool CyberiadaSMModel::updateID(const QModelIndex& index, const QString& new_val
 			}
 		}
 	}
+	GestureLog::instance().logAction("update-id " + QString::fromStdString(old_id) + " " +
+									 QString::fromStdString(new_id));
 	emit dataChanged(index, index);
 	return true;
 }
@@ -394,6 +436,7 @@ bool CyberiadaSMModel::updateTitle(const QModelIndex& index, const QString& new_
 		return false;
 	}
 	element->set_name(new_name);
+	GestureLog::instance().logAction("rename " + qid(element) + " " + logEsc(new_value));
 	emit dataChanged(index, index);
 	return true;
 }
@@ -469,6 +512,22 @@ bool CyberiadaSMModel::updateAction(const QModelIndex& index,
 	} else {
 		return false;
 	}
+	{
+		// read back the stored action so the notation matches exactly
+		int idx = action_index;
+		QString text;
+		if (element->get_type() == Cyberiada::elementSimpleState ||
+			element->get_type() == Cyberiada::elementCompositeState) {
+			Cyberiada::State* st = static_cast<Cyberiada::State*>(element);
+			if (idx >= 0 && (size_t)idx < st->get_actions().size())
+				text = logActionText(st->get_actions().at(idx));
+		} else {
+			idx = 0;
+			text = logActionText(static_cast<Cyberiada::Transition*>(element)->get_action());
+		}
+		GestureLog::instance().logAction("update-action " + qid(element) + " " +
+										 QString::number(idx) + " " + logEsc(text));
+	}
 	emit dataChanged(index, index);
 	return true;
 }
@@ -502,6 +561,17 @@ bool CyberiadaSMModel::newAction(const QModelIndex& index, Cyberiada::ActionType
 	} else {
 		return false;
 	}
+	{
+		QString text;
+		if (element->get_type() == Cyberiada::elementSimpleState ||
+			element->get_type() == Cyberiada::elementCompositeState) {
+			Cyberiada::State* st = static_cast<Cyberiada::State*>(element);
+			if (!st->get_actions().empty()) text = logActionText(st->get_actions().back());
+		} else {
+			text = logActionText(static_cast<Cyberiada::Transition*>(element)->get_action());
+		}
+		GestureLog::instance().logAction("new-action " + qid(element) + " " + logEsc(text));
+	}
 	emit dataChanged(index, index);
 	return true;
 }
@@ -528,6 +598,10 @@ bool CyberiadaSMModel::deleteAction(const QModelIndex& index, int action_index)
 	} else {
 		return false;
 	}
+	{
+		int idx = element->get_type() == Cyberiada::elementTransition ? 0 : action_index;
+		GestureLog::instance().logAction("delete-action " + qid(element) + " " + QString::number(idx));
+	}
 	emit dataChanged(index, index);
 	return true;
 }
@@ -541,6 +615,7 @@ bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada:
 	if (!element->has_point_geometry()) return false;
 	Cyberiada::Vertex* v = static_cast<Cyberiada::Vertex*>(element);
 	v->update_geometry(point);
+	GestureLog::instance().logAction("move " + qid(element) + " " + logPt(point));
 	emit dataChanged(index, index);
 	return true;
 }
@@ -562,6 +637,7 @@ bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada:
 		Cyberiada::ElementCollection* ec = static_cast<Cyberiada::ElementCollection*>(element);
         ec->update_geometry(rect);
 	}
+	GestureLog::instance().logAction("move " + qid(element) + " " + logRect(rect));
 	emit dataChanged(index, index);
 	return true;
 }
@@ -575,6 +651,11 @@ bool CyberiadaSMModel::updateLabel(const QModelIndex& index, const Cyberiada::Po
 	if (element->get_type() != Cyberiada::elementTransition) return false;
 	Cyberiada::Transition* trans = static_cast<Cyberiada::Transition*>(element);
 	trans->update_label(label_point);
+	{
+		QString verb = "label " + qid(element);
+		if (label_point.valid) verb += " " + logPt(label_point);
+		GestureLog::instance().logAction(verb);
+	}
 	emit dataChanged(index, index);
 	return true;
 }
@@ -603,6 +684,13 @@ bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada:
 	Cyberiada::Transition* trans = static_cast<Cyberiada::Transition*>(element);
 	// TODO
     trans->update(pl);
+	{
+		QString verb = "polyline " + qid(element);
+		for (Cyberiada::Polyline::const_iterator i = pl.begin(); i != pl.end(); i++) {
+			verb += " " + logPt(*i);
+		}
+		GestureLog::instance().logAction(verb);
+	}
 	emit dataChanged(index, index);
 	return true;
 }
@@ -687,7 +775,11 @@ bool CyberiadaSMModel::updateParent(const QModelIndex &index, const Cyberiada::I
     if (element->get_type() == Cyberiada::elementInitial) {
         // TODO check
     }
+    // move() frees the original element, so capture the id before the call
+    Cyberiada::ID moved_id = element->get_id();
     move(element, new_parent);
+    GestureLog::instance().logAction("reparent " + QString::fromStdString(moved_id) + " " +
+                                     QString::fromStdString(new_parent_id));
     return true;
 }
 
@@ -700,6 +792,7 @@ bool CyberiadaSMModel::updateCommentBody(const QModelIndex& index, const QString
 	if (element->get_type() != Cyberiada::elementComment &&
 		element->get_type() != Cyberiada::elementFormalComment) return false;
 	static_cast<Cyberiada::Comment*>(element)->set_body(body.toStdString());
+	GestureLog::instance().logAction("update-comment " + qid(element) + " " + logEsc(body));
 	emit dataChanged(index, index);
 	return true;
 }
@@ -740,6 +833,7 @@ bool CyberiadaSMModel::updateMetainformation(const QModelIndex& index, const QSt
 	} else {
 		meta.set_string(name, value);
 	}
+	GestureLog::instance().logAction("update-meta " + parameter + " " + logEsc(new_value));
 	// re-serialize the meta comment; save() does not do it
 	root->update_metainfo_element();
 	QModelIndex comment_index = elementToIndex(root->get_meta_element());
@@ -791,6 +885,12 @@ Cyberiada::StateMachine *CyberiadaSMModel::newStateMachine(const Cyberiada::Stri
     Cyberiada::StateMachine* element = root->new_state_machine(sm_name, r);
     endInsertRows();
 
+    if (element) {
+        QString verb = "new-sm";
+        if (r.valid) verb += " " + logRect(r);
+        verb += " " + logEsc(QString::fromStdString(sm_name));
+        GestureLog::instance().logAction(verb);
+    }
     return element;
 }
 
@@ -809,6 +909,12 @@ Cyberiada::State *CyberiadaSMModel::newState(Cyberiada::ElementCollection *paren
     Cyberiada::State* element = root->new_state(parent, state_name, a, r, region, color);
     endInsertRows();
 
+    if (element) {
+        QString verb = "new-state " + qid(parent);
+        if (r.valid) verb += " " + logRect(r);
+        verb += " " + logEsc(QString::fromStdString(state_name));
+        GestureLog::instance().logAction(verb);
+    }
     return element;
 }
 
@@ -825,6 +931,11 @@ Cyberiada::InitialPseudostate *CyberiadaSMModel::newInitial(Cyberiada::ElementCo
     Cyberiada::InitialPseudostate* element = root->new_initial(parent, p);
     endInsertRows();
 
+    if (element) {
+        QString verb = "new-initial " + qid(parent);
+        if (p.valid) verb += " " + logPt(p);
+        GestureLog::instance().logAction(verb);
+    }
     return element;
 }
 
@@ -841,6 +952,11 @@ Cyberiada::FinalState *CyberiadaSMModel::newFinal(Cyberiada::ElementCollection *
     Cyberiada::FinalState* element = root->new_final(parent, p);
     endInsertRows();
 
+    if (element) {
+        QString verb = "new-final " + qid(parent);
+        if (p.valid) verb += " " + logPt(p);
+        GestureLog::instance().logAction(verb);
+    }
     return element;
 }
 
@@ -858,6 +974,11 @@ Cyberiada::ChoicePseudostate *CyberiadaSMModel::newChoice(Cyberiada::ElementColl
     Cyberiada::ChoicePseudostate* element = root->new_choice(parent, r, color);
     endInsertRows();
 
+    if (element) {
+        QString verb = "new-choice " + qid(parent);
+        if (r.valid) verb += " " + logRect(r);
+        GestureLog::instance().logAction(verb);
+    }
     return element;
 }
 
@@ -874,6 +995,11 @@ Cyberiada::TerminatePseudostate *CyberiadaSMModel::newTerminate(Cyberiada::Eleme
     Cyberiada::TerminatePseudostate* element = root->new_terminate(parent, p);
     endInsertRows();
 
+    if (element) {
+        QString verb = "new-terminate " + qid(parent);
+        if (p.valid) verb += " " + logPt(p);
+        GestureLog::instance().logAction(verb);
+    }
     return element;
 }
 
@@ -895,6 +1021,16 @@ Cyberiada::Transition *CyberiadaSMModel::newTransition(Cyberiada::StateMachine *
     Cyberiada::Transition* element = root->new_transition(sm, ttype, source, target, action, pl, sp, tp, label_point, label_rect, color);
     endInsertRows();
 
+    if (element) {
+        QString verb = "new-transition " + qid(sm) + " " + qid(source) + " " + qid(target);
+        // append the action notation only for a non-empty action, so an
+        // ordinary drawn edge stays a bare new-transition
+        if (!action.get_trigger().empty() || !action.get_guard().empty() ||
+            !action.get_behavior().empty()) {
+            verb += " " + logEsc(logActionText(action));
+        }
+        GestureLog::instance().logAction(verb);
+    }
     return element;
 }
 
@@ -912,6 +1048,10 @@ Cyberiada::Comment *CyberiadaSMModel::newComment(Cyberiada::ElementCollection *p
     Cyberiada::Comment* element = root->new_comment(parent, body, rect, color, markup);
     endInsertRows();
 
+    if (element) {
+        GestureLog::instance().logAction("new-comment " + qid(parent) + " " +
+                                         logEsc(QString::fromStdString(body)));
+    }
     return element;
 }
 
@@ -930,6 +1070,10 @@ Cyberiada::Comment *CyberiadaSMModel::newFormalComment(Cyberiada::ElementCollect
     Cyberiada::Comment* element = root->new_formal_comment(parent, body, rect, color, markup);
     endInsertRows();
 
+    if (element) {
+        GestureLog::instance().logAction("new-formal-comment " + qid(parent) + " " +
+                                         logEsc(QString::fromStdString(body)));
+    }
     return element;
 }
 
@@ -950,6 +1094,12 @@ bool CyberiadaSMModel::newCommentSubject(const QModelIndex& index, Cyberiada::El
     } else {
         root->add_comment_to_element_body(comment, target, fragment.toStdString());
     }
+    {
+        QString verb = "new-subject " + qid(element) + " " + qid(target);
+        if (type == Cyberiada::commentSubjectName) verb += " name " + logEsc(fragment);
+        else if (type == Cyberiada::commentSubjectData) verb += " data " + logEsc(fragment);
+        GestureLog::instance().logAction(verb);
+    }
     emit dataChanged(index, index);
     return true;
 }
@@ -965,6 +1115,8 @@ bool CyberiadaSMModel::deleteCommentSubject(const QModelIndex& index, int subjec
     Cyberiada::Comment* comment = static_cast<Cyberiada::Comment*>(element);
     if (subject_index < 0 || (size_t)subject_index >= comment->get_subjects().size()) return false;
     comment->remove_subject((size_t)subject_index);
+    GestureLog::instance().logAction("delete-subject " + qid(element) + " " +
+                                     QString::number(subject_index));
     emit dataChanged(index, index);
     return true;
 }
@@ -991,6 +1143,13 @@ bool CyberiadaSMModel::deleteElement(const QModelIndex &index)
     if (!child_element) return false;
     Cyberiada::ElementCollection* parent_element = dynamic_cast<Cyberiada::ElementCollection*>(child_element->get_parent());
     MY_ASSERT(parent_element);
+
+    // the top-level delete cascades to the attached transitions; the replay
+    // delete cascades the same way, so only the outermost call is logged
+    if (deleteDepth == 0) {
+        GestureLog::instance().logAction("delete " + qid(child_element));
+    }
+    deleteDepth++;
 
     // strip the comment subjects referencing the deleted elements
     Cyberiada::ElementList doomed;
@@ -1044,6 +1203,7 @@ bool CyberiadaSMModel::deleteElement(const QModelIndex &index)
     beginRemoveRows(elementToIndex(parent_element), row, row);
     parent_element->remove_element(child_element->get_id());
     endRemoveRows();
+    deleteDepth--;
     return true;
 }
 
@@ -1243,6 +1403,23 @@ Cyberiada::LocalDocument* CyberiadaSMModel::rootDocument()
 	} else {
 		return NULL;
 	}
+}
+
+bool CyberiadaSMModel::writeSnapshotFile(const QString& path) const
+{
+	if (!root) return false;
+	std::string buffer;
+	try {
+		root->encode(buffer, Cyberiada::formatCyberiada10);
+	} catch (const Cyberiada::Exception& e) {
+		qWarning() << "cannot snapshot the document for the session log:" << e.str().c_str();
+		return false;
+	}
+	QFile f(path);
+	if (!f.open(QIODevice::WriteOnly | QIODevice::Truncate)) return false;
+	f.write(buffer.data(), buffer.size());
+	f.close();
+	return true;
 }
 
 bool CyberiadaSMModel::isStateIndex(const QModelIndex& index) const

@@ -36,6 +36,7 @@ void SettingsManager::load() {
 
     showTransitionText = s.value("display/showTransitionText", true).toBool();
     showServiceObjects = s.value("display/showServiceObjects", false).toBool();
+    loggingEnabled = s.value("logging/enabled", false).toBool();
 
     printMode = s.value("display/printMode", false).toBool();
     snapMode = s.value("display/snapMode", false).toBool();
@@ -61,6 +62,7 @@ void SettingsManager::loadDefaults()
 
     setShowTransitionText(true);
     setShowServiceObjects(false);
+    setLoggingEnabled(false);
 
     setPrintMode(false);
     setSnapMode(false);
@@ -131,6 +133,14 @@ void SettingsManager::setShowServiceObjects(bool value) {
         showServiceObjects = value;
         QSettings().setValue("display/showServiceObjects", value);
         emit serviceObjectsChanged(value);
+    }
+}
+
+void SettingsManager::setLoggingEnabled(bool value) {
+    if (loggingEnabled != value) {
+        loggingEnabled = value;
+        QSettings().setValue("logging/enabled", value);
+        emit loggingChanged(value);
     }
 }
 

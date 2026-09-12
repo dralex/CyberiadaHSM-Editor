@@ -152,6 +152,11 @@ public:
 	const Cyberiada::LocalDocument*     rootDocument() const;
 	Cyberiada::LocalDocument*           rootDocument();
 
+	// write the document to a file without touching its own file identity
+	// (the session-log start snapshot); false if there is no document to write
+	// or the encoding fails
+	bool                                writeSnapshotFile(const QString& path) const;
+
 	// UNDO: one step per user gesture, the whole document snapshotted
 	// around the mutations between the two calls (the calls nest; an
 	// unbracketed mutation is a step of its own)
@@ -174,6 +179,10 @@ private:
 	Cyberiada::LocalDocument*           root;
 	QString                             lastLoadError;
 	QUndoStack*                         undo;
+	// suppresses the session-log delete verb for the cascade deletions (an
+	// attached transition removed with its endpoint) so a replay never
+	// deletes an element the parent delete already removed
+	int                                 deleteDepth = 0;
 	int                                 undoDepth;
 	QString                             undoText;
 	std::string                         undoBefore;

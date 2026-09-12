@@ -27,6 +27,10 @@ public:
     bool getShowTransitionText() const { return showTransitionText; }
     void setShowTransitionText(bool value);
 
+    // record the session (gestures and model actions) to a replayable script
+    bool getLoggingEnabled() const { return loggingEnabled; }
+    void setLoggingEnabled(bool value);
+
     // the auxiliary objects explaining the structure: the region borders and
     // the coordinate origins of the scene, the states and the regions
     bool getShowServiceObjects() const { return showServiceObjects; }
@@ -76,6 +80,7 @@ signals:
     void gridSettingsChanged();
     void showTransitionTextChanged(bool);
     void serviceObjectsChanged(bool);
+    void loggingChanged(bool);
     void inspectorModeChanged(bool);
     void printModeChanged(bool);
     void snapModeChanged(bool);
@@ -96,6 +101,7 @@ private:
     // visualisation
     bool showTransitionText;
     bool showServiceObjects;
+    bool loggingEnabled;
     bool showText = true;
 
     // modes

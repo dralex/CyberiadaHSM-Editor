@@ -60,6 +60,7 @@ private slots:
     void                    slotCleanChanged(bool clean);
     void                    slotInspectorModeChanged(bool on);
     void                    slotServiceObjectsChanged(bool on);
+    void                    slotLoggingChanged(bool on);
 
 public slots:
 	void                    slotFileOpen();
@@ -75,6 +76,7 @@ public slots:
     void                    slotPreferences();
     void                    slotGridVisibilityTriggered(bool on);
     void                    slotServiceObjectsTriggered(bool on);
+    void                    slotLogSessionTriggered(bool on);
 
     void                    slotNewSM();
     void                    slotNewState();

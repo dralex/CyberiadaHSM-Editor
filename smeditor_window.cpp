@@ -36,6 +36,7 @@
 #include "dialogs/export_image_dialog.h"
 #include "settings_manager.h"
 #include "cyberiadasm_render.h"
+#include "gesture_log.h"
 
 
 CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
@@ -60,6 +61,9 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     QUndoStack* stack = model->undoStack();
     connect(actionUndo, &QAction::triggered, stack, &QUndoStack::undo);
     connect(actionRedo, &QAction::triggered, stack, &QUndoStack::redo);
+    // the session log records the undo/redo the user triggered
+    connect(actionUndo, &QAction::triggered, this, []() { GestureLog::instance().logAction("undo"); });
+    connect(actionRedo, &QAction::triggered, this, []() { GestureLog::instance().logAction("redo"); });
     connect(actionFitContent, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotFitContent);
     connect(stack, &QUndoStack::canUndoChanged, actionUndo, &QAction::setEnabled);
     connect(stack, &QUndoStack::canRedoChanged, actionRedo, &QAction::setEnabled);
@@ -124,6 +128,7 @@ bool CyberiadaSMEditorWindow::confirmDiscard()
 void CyberiadaSMEditorWindow::closeEvent(QCloseEvent* event)
 {
     if (confirmDiscard()) {
+        GestureLog::instance().endSession();
         event->accept();
     } else {
         event->ignore();
@@ -179,6 +184,11 @@ bool CyberiadaSMEditorWindow::openDocument(const QString& fileName, QString* err
     QFileInfo fileInfo(fileName);
     openFileName = fileInfo.fileName();
     updateTitle();
+    // a new document begins a new session so the start snapshot matches it
+    if (GestureLog::instance().isActive()) {
+        GestureLog::instance().endSession();
+        GestureLog::instance().startSession(model);
+    }
     return true;
 }
 
@@ -273,6 +283,10 @@ void CyberiadaSMEditorWindow::initializeTools()
     // the same setting is reachable from the preferences, so the action follows it
     connect(&SettingsManager::instance(), &SettingsManager::serviceObjectsChanged,
             this, &CyberiadaSMEditorWindow::slotServiceObjectsChanged);
+    connect(&SettingsManager::instance(), &SettingsManager::loggingChanged,
+            this, &CyberiadaSMEditorWindow::slotLoggingChanged);
+    // the exit line is written on a clean quit; its absence marks a crash
+    connect(qApp, &QCoreApplication::aboutToQuit, this, []() { GestureLog::instance().endSession(); });
 
     // TODO
     SettingsManager& sm = SettingsManager::instance();
@@ -282,6 +296,8 @@ void CyberiadaSMEditorWindow::initializeTools()
     slotInspectorModeChanged(sm.getInspectorMode());
     actionServiceObjects->setChecked(sm.getShowServiceObjects());
     actionSnapMode->setChecked(sm.getSnapMode());
+    // seed the action and open the session if logging is on at launch
+    slotLoggingChanged(sm.getLoggingEnabled());
 }
 
 void CyberiadaSMEditorWindow::slotToolSelected(QAction *action)
@@ -301,6 +317,13 @@ void CyberiadaSMEditorWindow::slotToolSelected(QAction *action)
     }
     sceneView->setCurrentTool(currentTool);
     scene->setCurrentTool(currentTool);
+    // the log records the two tools the batch language knows; the others do
+    // not change the model and are replayed by the mouse gestures alone
+    if (currentTool == ToolType::Select) {
+        GestureLog::instance().logGesture("tool select");
+    } else if (currentTool == ToolType::Transition) {
+        GestureLog::instance().logGesture("tool transition");
+    }
 }
 
 void CyberiadaSMEditorWindow::slotFitContent() {
@@ -330,6 +353,21 @@ void CyberiadaSMEditorWindow::slotGridVisibilityTriggered(bool on)
     SettingsManager& sm = SettingsManager::instance();
     sm.setShowGrid(on);
     // scene->enableGrid(on);
+}
+
+void CyberiadaSMEditorWindow::slotLogSessionTriggered(bool on)
+{
+    SettingsManager::instance().setLoggingEnabled(on);
+}
+
+void CyberiadaSMEditorWindow::slotLoggingChanged(bool on)
+{
+    actionLogSession->setChecked(on);
+    if (on) {
+        GestureLog::instance().startSession(model);
+    } else {
+        GestureLog::instance().endSession();
+    }
 }
 
 // the scene switched the tool itself (a drag from a border box): the

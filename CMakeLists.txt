@@ -81,6 +81,7 @@ add_library(CyberiadaInspectorCore STATIC
   dialogs/save_file_dialog.h dialogs/save_file_dialog.cpp dialogs/save_file_dialog.ui
   dialogs/preferences_dialog.h dialogs/preferences_dialog.cpp dialogs/preferences_dialog.ui
   settings_manager.h settings_manager.cpp
+  gesture_log.h gesture_log.cpp
 )
 
 target_include_directories(CyberiadaInspectorCore PUBLIC

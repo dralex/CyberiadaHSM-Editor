@@ -43,6 +43,7 @@
 #include "cyberiada_constants.h"
 #include "smeditor_window.h"
 #include "settings_manager.h"
+#include "gesture_log.h"
 #include "myassert.h"
 
 static double DEFAULT_SCENE_X = -500;
@@ -454,11 +455,50 @@ void CyberiadaSMEditorScene::beginTransientTool(ToolType tool)
     emit toolChanged(tool);
 }
 
+// the session log coordinates and the keyboard modifiers, in the batch script
+// spelling (press/drag/release ... x y [ctrl|shift|alt])
+static QString logPoint(const QPointF& p)
+{
+    return QString("%1 %2").arg(p.x()).arg(p.y());
+}
+
+static QString logMods(Qt::KeyboardModifiers mods)
+{
+    QString s;
+    if (mods & Qt::ControlModifier) s += " ctrl";
+    if (mods & Qt::ShiftModifier)   s += " shift";
+    if (mods & Qt::AltModifier)     s += " alt";
+    return s;
+}
+
 // a mouse gesture is one undo step whatever it writes on the way
 void CyberiadaSMEditorScene::mousePressEvent(QGraphicsSceneMouseEvent* event)
 {
     model->beginUndoStep(QString());
+    if (event->button() == Qt::LeftButton) {
+        // the model edits the gesture triggers are recorded as the gesture, not
+        // twice as semantic verbs
+        GestureLog::instance().enterGesture();
+        GestureLog::instance().logGesture("press " + logPoint(event->scenePos()) +
+                                          logMods(event->modifiers()));
+        loggingPressed = true;
+        loggingLastPoint = event->scenePos();
+    }
     QGraphicsScene::mousePressEvent(event);
+}
+
+void CyberiadaSMEditorScene::mouseMoveEvent(QGraphicsSceneMouseEvent* event)
+{
+    if (loggingPressed && (event->buttons() & Qt::LeftButton)) {
+        QPointF p = event->scenePos();
+        // decimate: a few pixels between the recorded points is enough to
+        // reproduce the drag, the release carries the exact final point
+        if ((p - loggingLastPoint).manhattanLength() >= 3) {
+            GestureLog::instance().logGesture("drag " + logPoint(p));
+            loggingLastPoint = p;
+        }
+    }
+    QGraphicsScene::mouseMoveEvent(event);
 }
 
 void CyberiadaSMEditorScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* event)
@@ -468,7 +508,25 @@ void CyberiadaSMEditorScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* event)
         setCurrentTool(ToolType::Select);
         emit toolChanged(ToolType::Select);
     }
+    if (event->button() == Qt::LeftButton && loggingPressed) {
+        GestureLog::instance().logGesture("release " + logPoint(event->scenePos()));
+        loggingPressed = false;
+        GestureLog::instance().leaveGesture();
+    }
     model->endUndoStep();
+}
+
+void CyberiadaSMEditorScene::mouseDoubleClickEvent(QGraphicsSceneMouseEvent* event)
+{
+    if (event->button() == Qt::LeftButton) {
+        GestureLog::instance().enterGesture();
+        GestureLog::instance().logGesture("double-click " + logPoint(event->scenePos()) +
+                                          logMods(event->modifiers()));
+    }
+    QGraphicsScene::mouseDoubleClickEvent(event);
+    if (event->button() == Qt::LeftButton) {
+        GestureLog::instance().leaveGesture();
+    }
 }
 
 void CyberiadaSMEditorScene::addSMItem(Cyberiada::ElementType type)

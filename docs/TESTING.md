@@ -355,6 +355,37 @@ writes in the metainformation (`geometry/ full`, or `none` when the geometry
 is skipped) - the standard resolves the geometry mode from that parameter. The test runner also re-opens every
 saved document, so each L2 case doubles as a write-read round-trip check.
 
+A document file is required, except with `--script`: a `--batch --script <file>`
+with no document runs against an empty in-memory document, so a recorded
+from-scratch session (whose first verb is `new-sm`) replays as a test.
+
+## Session logging
+
+The editor can record a live session as an edit script in this very language,
+so a real bug - a segfault above all - becomes a replayable test. `View ->
+Запись сессии` toggles it (off by default, persisted like the grid option);
+`--batch` forces it off so a replayed test is never re-logged. Enabling it opens
+a session folder (`CYBERIADA_SESSION_LOG_DIR`, else the per-user application
+data location) holding:
+
+- `start.graphml` - the document as it stood when logging began. A from-scratch
+  launch has no document, so no snapshot is written and the session replays with
+  no start document.
+- `session.script` - a header (`# <app> <version> rev <sha>`), the document line
+  (`# document start.graphml` or `# document (empty)`), a `# start <ISO>` line,
+  the recorded verbs, and a `# exit <ISO>` line on a clean quit. A crash never
+  writes the exit line, so a `# start` with no `# exit` is the crash marker.
+
+The recording is hybrid. Raw mouse input is logged as the gesture verbs
+(`press`/`drag`/`release`/`double-click`, the pointer moves decimated; `tool`
+from the toolbar); menu, dialog and property edits are logged as the semantic
+model verbs (`new-sm`, `new-state`, `move`, `rename`, `reparent`, `delete`,
+`label`, `new-action`, `undo`/`redo`, ...). A model edit driven by a mouse
+gesture is suppressed while the gesture is in flight and recorded once as the
+gesture, so a replayed session never applies it twice. To replay a folder:
+`CyberiadaInspector --batch --script <dir>/session.script <dir>/start.graphml`
+(drop the file for a from-scratch session).
+
 ## Rendering and image comparison
 
 `--batch <file.graphml> [--script <file>] --export <out.png>` renders the

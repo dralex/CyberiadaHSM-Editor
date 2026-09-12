@@ -118,6 +118,7 @@
     <addaction name="actionGridVisibility"/>
     <addaction name="actionServiceObjects"/>
     <addaction name="actionSnapMode"/>
+    <addaction name="actionLogSession"/>
     <addaction name="separator"/>
     <addaction name="actionPreferences"/>
     <addaction name="separator"/>
@@ -489,6 +490,17 @@
     <string>Grid</string>
    </property>
   </action>
+  <action name="actionLogSession">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Запись сессии</string>
+   </property>
+   <property name="toolTip">
+    <string>Записывать жесты и действия в воспроизводимый скрипт</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -823,6 +835,22 @@
    </hints>
   </connection>
   <connection>
+   <sender>actionLogSession</sender>
+   <signal>triggered(bool)</signal>
+   <receiver>SMEditorWindow</receiver>
+   <slot>slotLogSessionTriggered(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>511</x>
+     <y>383</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
    <sender>actionPreferences</sender>
    <signal>triggered()</signal>
    <receiver>SMEditorWindow</receiver>
@@ -873,6 +901,7 @@
   <slot>slotNewChoise()</slot>
   <slot>slotFileExport()</slot>
   <slot>slotGridVisibilityTriggered(bool)</slot>
+  <slot>slotLogSessionTriggered(bool)</slot>
   <slot>slotPreferences()</slot>
   <slot>slotDeleteElement()</slot>
  </slots>

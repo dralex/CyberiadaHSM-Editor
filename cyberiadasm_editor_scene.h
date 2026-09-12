@@ -102,7 +102,9 @@ public slots:
 protected:
     void  drawBackground(QPainter *painter, const QRectF &);
     void  mousePressEvent(QGraphicsSceneMouseEvent* event) override;
+    void  mouseMoveEvent(QGraphicsSceneMouseEvent* event) override;
     void  mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
+    void  mouseDoubleClickEvent(QGraphicsSceneMouseEvent* event) override;
 
 private:
     void  addItemsRecursively(QGraphicsItem* parent, Cyberiada::ElementCollection* element);
@@ -132,6 +134,11 @@ private:
     bool transientTool = false;
     // the selection to bring back after a snapshot restore
     QList<Cyberiada::ID> selectedBeforeReset;
+
+    // the session logger: a left-button gesture is recorded as press/drag/
+    // release, its intermediate moves decimated to a few pixels
+    bool    loggingPressed = false;
+    QPointF loggingLastPoint;
 };
 
 #endif
