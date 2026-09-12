@@ -38,12 +38,13 @@ GestureLog& GestureLog::instance()
 }
 
 // the base folder holding the session subfolders; the env override keeps the
-// tests self-contained, otherwise the per-user application data location
+// tests self-contained, otherwise the user's home directory
 static QString sessionsRoot()
 {
     QString env = qEnvironmentVariable("CYBERIADA_SESSION_LOG_DIR");
     if (!env.isEmpty()) return env;
-    QString base = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QString base = QStandardPaths::writableLocation(QStandardPaths::HomeLocation);
+    if (base.isEmpty()) base = QDir::homePath();
     if (base.isEmpty()) base = QDir::currentPath();
     return QDir(base).filePath("sessions");
 }
