@@ -634,6 +634,11 @@ bool CyberiadaSMModel::updateParent(const QModelIndex &index, const Cyberiada::I
     if (!element) return false;
     Cyberiada::ElementCollection* new_parent = dynamic_cast<Cyberiada::ElementCollection*>(idToElement(new_parent_id.c_str()));
     if (!new_parent) return false;
+    // reparenting into the element itself or one of its descendants would free
+    // the target subtree mid-move (use-after-free in move()): refuse it
+    for (const Cyberiada::Element* a = new_parent; a; a = a->get_parent()) {
+        if (a == element) return false;
+    }
     if (parent(index) == elementToIndex(new_parent)) return true;
     if (element->get_type() == Cyberiada::elementInitial) {
         // TODO check
