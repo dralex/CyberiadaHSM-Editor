@@ -138,6 +138,14 @@ for a document they cannot express, they disable the geometry skipping, and the
 skipped geometry disables the other options - the library allows no flag beside
 it. The image export dialog derives the file suffix from the selected format.
 
+`l4-log` checks the session logger (see *Session logging* below): a from-scratch
+session records `new-sm` first and no start snapshot, and replays on a fresh
+empty window to the identical document dump; a left-button gesture is recorded
+as `press`/`drag`/`release` with the moves decimated; a model edit inside a
+mouse gesture is suppressed (recorded once as the gesture) while an edit outside
+one is logged; and a session left without its exit line - a crash - keeps the
+`# start` marker with no `# exit`.
+
 ## Batch mode contract
 
 `CyberiadaInspector --batch <file.graphml>` opens the document through the same
