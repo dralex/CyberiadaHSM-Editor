@@ -407,6 +407,26 @@ static QString normalizedBehaviour(const QString& behaviour)
 	return s.trimmed();
 }
 
+// another outgoing transition of the choice already carries the 'else' guard
+// (the default branch of a choice is unique)
+static bool choiceHasElse(const Cyberiada::LocalDocument* root, const Cyberiada::Element* choice,
+						  const Cyberiada::Element* exclude)
+{
+	if (!root || !choice) return false;
+	Cyberiada::ConstStateMachineList sms = root->get_state_machines();
+	for (Cyberiada::ConstStateMachineList::const_iterator s = sms.begin(); s != sms.end(); s++) {
+		std::vector<const Cyberiada::Transition*> trans = (*s)->get_transitions();
+		for (std::vector<const Cyberiada::Transition*>::const_iterator t = trans.begin(); t != trans.end(); t++) {
+			if (static_cast<const Cyberiada::Element*>(*t) == exclude) continue;
+			if ((*t)->source_element_id() == choice->get_id() &&
+				(*t)->get_action().get_guard() == "else") {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 bool CyberiadaSMModel::updateAction(const QModelIndex& index,
 									int action_index, const QString& new_trigger, const QString& new_guard,
 									const QString& new_behaviour)
@@ -430,11 +450,22 @@ bool CyberiadaSMModel::updateAction(const QModelIndex& index,
 			a.update(new_trigger.toStdString(), new_guard.toStdString(), behaviour);
 		}
     } else if (element->get_type() == Cyberiada::elementTransition) {
-		// a transition action may have no trigger (initial, completion)
-		if (new_trigger.isEmpty() && new_guard.isEmpty() && new_behaviour.trimmed().isEmpty()) return false;
 		Cyberiada::Transition* trans = static_cast<Cyberiada::Transition*>(element);
-		trans->get_action().update(new_trigger.toStdString(), new_guard.toStdString(),
-								   normalizedBehaviour(new_behaviour).toStdString());
+		Cyberiada::Element* src = idToElement(trans->source_element_id().c_str());
+		if (src && src->get_type() == Cyberiada::elementChoice) {
+			// an outgoing edge of a choice carries only a guard or the default
+			// 'else', never a trigger or a behaviour, and only one edge is 'else'
+			if (!new_trigger.trimmed().isEmpty() || !new_behaviour.trimmed().isEmpty()) return false;
+			QString guard = new_guard.trimmed();
+			if (guard.isEmpty()) return false;
+			if (guard == "else" && choiceHasElse(root, src, element)) return false;
+			trans->get_action().update(std::string(), guard.toStdString(), std::string());
+		} else {
+			// a transition action may have no trigger (initial, completion)
+			if (new_trigger.isEmpty() && new_guard.isEmpty() && new_behaviour.trimmed().isEmpty()) return false;
+			trans->get_action().update(new_trigger.toStdString(), new_guard.toStdString(),
+									   normalizedBehaviour(new_behaviour).toStdString());
+		}
 	} else {
 		return false;
 	}
