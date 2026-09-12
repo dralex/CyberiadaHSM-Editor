@@ -232,6 +232,7 @@ void CyberiadaSMEditorStateItem::updateRegion()
 
     region->setRect(-width()/2, -(height() - top_delta - bottom_delta) / 2, width(), height() - top_delta - bottom_delta);
     region->setPos(0, (top_delta - bottom_delta)/2 );
+    region_action_inset = top_delta + bottom_delta;
 }
 
 QRectF CyberiadaSMEditorStateItem::boundingRect() const

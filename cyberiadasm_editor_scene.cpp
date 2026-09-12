@@ -675,9 +675,25 @@ void CyberiadaSMEditorScene::addSMItem(Cyberiada::ElementType type)
     if (item) {
         // a new object dropped in a bordered machine stays inside it: the
         // border extends to contain it (unlike a drag, which is clamped)
-        CyberiadaSMEditorAbstractItem* smItem = dynamic_cast<CyberiadaSMEditorSMItem*>(parentCItem);
+        CyberiadaSMEditorSMItem* smItem = dynamic_cast<CyberiadaSMEditorSMItem*>(parentCItem);
         if (smItem && smItem->getElement()->has_geometry()) {
             extendStateMachineForChild(smItem, item);
+        } else if (parentCItem &&
+                   dynamic_cast<Cyberiada::ElementCollection*>(parentCItem->getElement()) &&
+                   parentCItem->getElement()->has_geometry()) {
+            // a composite state parent: grow it (and its ancestors) to contain
+            // the new child, in model coordinates
+            model->growToFitChildren(element);
+            // a parent with entry/exit action blocks needs extra height, since
+            // its child region is inset by those blocks
+            CyberiadaSMEditorStateItem* st = dynamic_cast<CyberiadaSMEditorStateItem*>(parentCItem);
+            if (st && st->actionInset() > 0.5) {
+                Cyberiada::Rect r =
+                    static_cast<Cyberiada::ElementCollection*>(parentCItem->getElement())->get_geometry_rect();
+                model->updateGeometry(parentCItem->getIndex(),
+                                      Cyberiada::Rect(r.x, r.y, r.width, r.height + st->actionInset()));
+                model->growToFitChildren(element);   // re-cascade the extra height up to the SM
+            }
         }
         item->setSelected(true);
     }

@@ -75,6 +75,10 @@ public:
     // create the region on demand when the state turned composite
     StateRegion* ensureRegion();
     void updateRegion();
+    // the vertical space the title and the entry/exit action blocks take out of
+    // the child region (updated by updateRegion); a nested child needs the
+    // parent taller by this much
+    qreal actionInset() const { return region_action_inset; }
 
     QRectF boundingRect() const override;
 
@@ -123,6 +127,7 @@ private:
 
     QRectF m_rect;
     StateRegion* region = nullptr;
+    qreal region_action_inset = 0;
     const Cyberiada::State* state;
     std::vector<StateAction*> actions;
 

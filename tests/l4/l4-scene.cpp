@@ -78,6 +78,7 @@ private slots:
 	void test_reparent_into_descendant();
 	void test_choice_edge_rule();
 	void test_choice_tip_attach();
+	void test_nested_state_grows_parent();
 	void test_label_move();
 
 private:
@@ -1349,6 +1350,36 @@ void TestScene::test_choice_tip_attach()
 	QVERIFY(qAbs(sp.x() - 30.0) < 0.5 && qAbs(sp.y()) < 0.5);   // right tip at half-width
 	tp = inItem->targetPoint();
 	QVERIFY(qAbs(tp.x()) < 0.5 && qAbs(tp.y() + 10.0) < 0.5);   // top tip at half-height
+}
+
+void TestScene::test_nested_state_grows_parent()
+{
+	// adding a state inside a composite grows the composite to contain it (#7)
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	Cyberiada::ElementCollection* comp =
+		dynamic_cast<Cyberiada::ElementCollection*>(model->idToElement("node-0-0"));
+	QVERIFY(comp && comp->has_geometry());
+	QGraphicsItem* compItem = scene->getMap().value("node-0-0");
+	QVERIFY(compItem);
+	scene->clearSelection();
+	compItem->setSelected(true);
+
+	scene->addSMItem(Cyberiada::elementSimpleState);
+
+	// the parent contains every rect child, the newly added one included
+	Cyberiada::Rect pr = comp->get_geometry_rect();
+	bool foundNew = false;
+	const Cyberiada::ElementList& kids = comp->get_children();
+	for (Cyberiada::ElementList::const_iterator i = kids.begin(); i != kids.end(); i++) {
+		Cyberiada::ElementCollection* c = dynamic_cast<Cyberiada::ElementCollection*>(*i);
+		if (!c || !c->has_geometry()) continue;
+		Cyberiada::Rect cr = c->get_geometry_rect();
+		QVERIFY(std::fabs(cr.x) + cr.width / 2.0 <= pr.width / 2.0 + 0.01);
+		QVERIFY(std::fabs(cr.y) + cr.height / 2.0 <= pr.height / 2.0 + 0.01);
+		if (QString(c->get_name().c_str()) == "New state") foundNew = true;
+	}
+	QVERIFY(foundNew);
 }
 
 void TestScene::test_label_move()
