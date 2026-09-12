@@ -148,7 +148,8 @@ class Session:
                 line, message = result.script_error
                 record.script_error = "line %d: %s" % (line, message)
                 rejected.append(verb)
-                self.producer.rejected(record, message) if hasattr(self.producer, "rejected") else None
+                if hasattr(self.producer, "rejected"):
+                    self.producer.rejected(record, message, self.dump)
                 continue
             fired = False
             for f in result.findings:

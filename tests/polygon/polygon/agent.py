@@ -73,10 +73,13 @@ class Agent:
                                   "at least one command."})
         return None
 
-    def rejected(self, record, message):
-        """The session retries the round: tell the agent what was refused."""
-        self.messages.append({"role": "user", "content": P.feedback(
-            record.number, False, record.script_error, [], [], None)})
+    def rejected(self, record, message, dump=None):
+        """The session retries the round: tell the agent what was refused and
+        re-show the current document so it uses the real ids, not invented ones."""
+        text = P.feedback(record.number, False, record.script_error, [], [], dump)
+        text += ("\nThe document was not changed. Use only the ids the dump above "
+                 "shows; a created element gets the next free id in creation order.")
+        self.messages.append({"role": "user", "content": text})
 
     def feedback(self, record, result):
         failures = []
