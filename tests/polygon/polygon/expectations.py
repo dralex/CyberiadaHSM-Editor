@@ -146,6 +146,21 @@ def check(fact, dump):
         if dump.stack is None:
             return "no stack section in the dump"
         return None if str(dump.stack.index) == t[1] else "the undo index is %d" % dump.stack.index
+    if verb in ("shown", "hidden"):
+        # shown <id> <role> <text> | hidden <id> <role>
+        if len(t) < 3 or (verb == "shown" and len(t) < 4):
+            return "usage: %s <id> <role>%s" % (verb, " <text>" if verb == "shown" else "")
+        role = t[2]
+        if role not in ("title", "action", "label", "body"):
+            return "unknown text role %r" % role
+        item = dump.text_of(t[1], role)
+        if verb == "hidden":
+            return None if item is None else "%s shows %r" % (t[1], item.plain())
+        if item is None:
+            return "%s shows no %s text" % (t[1], role)
+        want = " ".join(t[3:])
+        got = item.text
+        return None if " ".join(got.split()) == " ".join(want.split()) else "the %s text is %r" % (role, got)
     return "unknown fact %r" % verb
 
 

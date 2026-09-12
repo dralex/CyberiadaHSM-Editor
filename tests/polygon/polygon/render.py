@@ -216,6 +216,7 @@ class RenderResult:
     skipped: bool = False     # nothing with a size to check
     unpainted: list = None    # [(item, ratio)]
     outside: list = None      # [(child item, parent item)]
+    blank_text: list = None   # [text item] a shown text that left no ink
 
 
 def check(dump, image, probe_px, ink_min, frame=None):
@@ -256,25 +257,39 @@ def check(dump, image, probe_px, ink_min, frame=None):
     return result
 
 
+def box_has_ink(image, frame, box):
+    """Any non-white pixel inside the box (in scene coordinates)."""
+    x, y, w, h = box
+    x0, y0 = int(round(x - frame[0])), int(round(y - frame[1]))
+    for py in range(max(0, y0), min(image.height, y0 + int(round(h)) + 1)):
+        for px in range(max(0, x0), min(image.width, x0 + int(round(w)) + 1)):
+            if image.ink(px, py):
+                return True
+    return False
+
+
 def oracle(round_, script_text, dump):
-    """The tier 3 callable of oracles.Round.evaluate: the png export of the
-    tier 1 run, or a fresh one, checked against the dump."""
+    """The tier 3 callable of oracles.Round.evaluate: the borders and the
+    containment are checked on a text-free render (reproducible); the shown
+    texts must leave ink on a text render."""
     from . import oracles
     from . import runner
-    target = round_.workdir / "export.png"
-    if not target.exists():
-        result = round_.run(script_text, "export-png", export=target)
-        if result.exit != runner.EXIT_OK or not target.exists():
-            return []
-        round_.export_frame = oracles.export_frame(result)
+    import dataclasses
+    findings = []
+    # borders and containment: a text-free render and its text-free dump
+    target = round_.workdir / "render.png"
+    border = round_.run(script_text, "render", export=target, dump=True, text=False)
+    if border.exit != runner.EXIT_OK or not target.exists():
+        return findings
+    frame = oracles.export_frame(border)
     try:
         image = decode_png(target)
-    except (PngError, zlib.error) as e:
+        ntdump = D.parse_dump(border.stdout)
+    except (PngError, zlib.error, D.DumpError) as e:
         return [oracles.Finding(oracles.KIND_RENDER, "render:png:" + oracles.normalize(str(e)), str(e))]
-    result = check(dump, image, round_.config.probe_px, round_.config.ink_min, round_.export_frame)
-    findings = []
+    result = check(ntdump, image, round_.config.probe_px, round_.config.ink_min, frame)
     if result.skipped:
-        return findings
+        result = dataclasses.replace(result, unpainted=[], outside=[])
     if result.frame_error:
         findings.append(oracles.Finding(oracles.KIND_REVIEW, "render:frame",
                                         result.frame_error, {"png": str(target)}))
@@ -289,4 +304,34 @@ def oracle(round_, script_text, dump):
             oracles.KIND_RENDER, "render:outside:%s" % item.kind.lower().replace(" ", "-"),
             "%s %s is drawn outside its parent %s" % (item.kind, item.id, parent.id),
             {"png": str(target)}))
+    if round_.text and dump.texts:
+        findings += text_ink_check(round_, script_text, dump)
+    return findings
+
+
+def text_ink_check(round_, script_text, dump):
+    """Every shown text must leave ink inside its box on a text render."""
+    from . import oracles
+    from . import runner
+    target = round_.workdir / "render-text.png"
+    result = round_.run(script_text, "render-text", export=target, text=True)
+    if result.exit != runner.EXIT_OK or not target.exists():
+        return []
+    frame = oracles.export_frame(result)
+    if frame is None:
+        return []
+    try:
+        image = decode_png(target)
+    except (PngError, zlib.error):
+        return []
+    findings = []
+    for t in dump.texts:
+        box = dump.abs_box(t)
+        if box is None or box[2] <= 0 or box[3] <= 0:
+            continue
+        if not box_has_ink(image, frame, box):
+            findings.append(oracles.Finding(
+                oracles.KIND_RENDER, "render:blank-text:%s" % t.fact_role,
+                "the %s text of %s (%r) leaves no ink on the canvas" % (t.fact_role, t.id, t.plain()),
+                {"png": str(target)}))
     return findings

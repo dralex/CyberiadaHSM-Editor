@@ -408,6 +408,50 @@ class Stack:
     clean: bool = True
 
 
+# the roles the == text section uses, mapped to the fact role words
+TEXT_ROLE = {"title": "title", "action": "action", "transition": "label",
+             "comment": "body", "formal comment": "body"}
+
+TEXT_LINE = re.compile(
+    r"^ *(.+?): \{id: '(.*?)', role: (.+?), font: '(.*?)' (\d+)( bold)?, "
+    r"pos: \(([^;]+); ([^)]+)\), size: \(([^;]+); ([^)]+)\), text: '(.*)'\}$")
+
+
+@dataclass
+class TextItem:
+    kind: str
+    id: str
+    role: str          # the raw dump role
+    family: str
+    points: int
+    bold: bool
+    pos: tuple         # local to the element origin, as the scene item
+    size: tuple
+    text: str          # the escaped one-line form (\n for a newline)
+
+    @property
+    def fact_role(self):
+        return TEXT_ROLE.get(self.role, self.role)
+
+    def plain(self):
+        return self.text.replace("\\n", "\n").replace("\\\\", "\\")
+
+
+def parse_text(text):
+    items = []
+    for line in text.splitlines():
+        if not line.strip():
+            continue
+        m = TEXT_LINE.match(line)
+        if not m:
+            raise DumpError("malformed text line: %s" % line)
+        kind, id_, role, family, points, bold, px, py, w, h, body = m.groups()
+        items.append(TextItem(kind=kind.strip(), id=id_, role=role, family=family,
+                              points=int(points), bold=bool(bold),
+                              pos=(float(px), float(py)), size=(float(w), float(h)), text=body))
+    return items
+
+
 def parse_stack(text):
     stack = Stack()
     for line in text.splitlines():
@@ -530,10 +574,27 @@ class Dump:
     document: Document = None
     scene: list = field(default_factory=list)
     stack: Stack = None
+    texts: list = field(default_factory=list)
     text: str = ""
 
     def scene_items(self):
         return {item.id: item for root in self.scene for item in root.walk()}
+
+    def text_of(self, id_, role):
+        """The visible text of an element by fact role (title|action|label|body),
+        or None. For actions the first one; add an index to text_items."""
+        for t in self.texts:
+            if t.id == id_ and t.fact_role == role:
+                return t
+        return None
+
+    def abs_box(self, text_item):
+        """The absolute rect of a text item: its element's scene origin + pos."""
+        item = self.scene_items().get(text_item.id)
+        if item is None:
+            return None
+        ox, oy = item.origin
+        return (ox + text_item.pos[0], oy + text_item.pos[1], text_item.size[0], text_item.size[1])
 
 
 def parse_dump(text):
@@ -545,6 +606,8 @@ def parse_dump(text):
         dump.scene = parse_scene(parts["scene"])
     if "stack" in parts:
         dump.stack = parse_stack(parts["stack"])
+    if "text" in parts:
+        dump.texts = parse_text(parts["text"])
     return dump
 
 

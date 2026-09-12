@@ -119,3 +119,20 @@ class DumpTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TextSectionTest(unittest.TestCase):
+    def test_parse_text_lines(self):
+        d = D.parse_dump((GOOD / "geometry-text-output.txt").read_text())
+        self.assertEqual(len(d.texts), 8)
+        title = d.text_of("node-0-1", "title")
+        self.assertEqual(title.text, "node 0-1")
+        self.assertTrue(all(t.family == "Cyberiada Mono" for t in d.texts))
+        self.assertTrue(d.text_of("node-0", "title").bold)
+
+    def test_multiline_plain(self):
+        d = D.parse_dump((GOOD / "multiline-actions-text-output.txt").read_text())
+        action = next(t for t in d.texts if t.fact_role == "action")
+        self.assertIn("\\n", action.text)
+        self.assertIn("\n", action.plain())
+        self.assertNotIn("\\n", action.plain())

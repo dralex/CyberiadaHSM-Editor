@@ -54,6 +54,7 @@ class Config:
     calls: int = DEFAULT_CALLS
     probe_px: int = DEFAULT_PROBE_PX
     ink_min: float = DEFAULT_INK_MIN
+    text: bool = True                            # show and check the canvas texts
     ignore: list = field(default_factory=list)   # [oracles] ignore: more tags to skip
     backends: dict = field(default_factory=dict)
 
@@ -94,6 +95,7 @@ def load(path=None):
     config.probe_px = int(render.get("probe_px", config.probe_px))
     config.ink_min = float(render.get("ink_min", config.ink_min))
     config.ignore = list(data.get("oracles", {}).get("ignore", []))
+    config.text = bool(run.get("text", config.text))
     for name, b in data.get("backend", {}).items():
         config.backends[name] = Backend(
             name=name, kind=b["kind"], model=b["model"],

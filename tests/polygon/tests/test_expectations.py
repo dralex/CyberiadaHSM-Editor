@@ -69,3 +69,12 @@ class ExpectationTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TextFactTest(unittest.TestCase):
+    def test_shown_hidden(self):
+        dump = load("geometry")
+        dump.texts = D.parse_dump((GOOD / "geometry-text-output.txt").read_text()).texts
+        self.assertEqual(X.evaluate("shown node-0-1 title node 0-1\nhidden node-0-1 body", dump), [])
+        fails = X.evaluate("shown node-0-1 title Wrong\nhidden node-0-1 title\nshown node-0-1 label x", dump)
+        self.assertEqual(len(fails), 3)

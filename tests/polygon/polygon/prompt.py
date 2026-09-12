@@ -59,6 +59,9 @@ facts to verify on the result, one per line, from this vocabulary:
   rect-inside <id> <id>           the first scene rect lies inside the second
   no-overlap <id> <id>
   undo-depth <n>                  the undo stack index
+  shown <id> <role> <text>        the canvas shows the text for the element
+                                  (role title|action|label|body; \n a newline)
+  hidden <id> <role>              the element shows no such text
 
 Example answer:
 

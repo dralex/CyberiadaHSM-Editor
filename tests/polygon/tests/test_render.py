@@ -77,3 +77,25 @@ class RenderOracleTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+@needs_editor
+class TextInkTest(unittest.TestCase):
+    def test_shown_text_leaves_ink(self):
+        script = "edit-text node-0-1 title Renamed\n"
+        with tempfile.TemporaryDirectory() as tmp:
+            round_ = oracles.Round(ENV, CONFIG, DIAGRAMS / "geometry.graphml", tmp)
+            result = round_.evaluate(script, 0, "", render.oracle)
+            blanks = [f for f in result.findings if f.signature.startswith("render:blank-text")]
+            self.assertEqual(blanks, [])
+            self.assertTrue(round_.text)
+
+    def test_blank_text_is_found(self):
+        # a text box placed in an empty area of the image has no ink
+        d = D.parse_dump((GOOD / "geometry-output.txt").read_text())
+        d.texts = [D.TextItem("Simple State", "node-0-1", "title", "Cyberiada Mono", 12, True,
+                              (5000, 5000), (100, 20), "ghost")]
+        image = render.decode_png(GOOD / "geometry-render.png")
+        frame = render.scene_frame(list(d.scene_items().values()))
+        box = d.abs_box(d.texts[0])
+        self.assertFalse(render.box_has_ink(image, frame, box))

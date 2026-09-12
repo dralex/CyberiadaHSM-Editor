@@ -107,18 +107,20 @@ class Round:
         self.workdir.mkdir(parents=True, exist_ok=True)
         self._start_dump = None
         self.export_frame = None   # (x, y, w, h) the last png export reported
+        self.text = getattr(config, "text", True)   # show and check the canvas texts
         # the fields the format does not preserve are no difference
         self.ignore = set(CAT.format_profile()) | set(getattr(config, "ignore", ()))
 
     def run(self, script_text, name, **options):
         script = runner.write_script(self.workdir / (name + ".script"), script_text)
+        options.setdefault("text", self.text)
         return runner.run(self.env, self.start, script=script, timeout=self.config.timeout,
                           workdir=self.workdir, **options)
 
     def start_dump(self):
         if self._start_dump is None:
             result = runner.run(self.env, self.start, dump=True, timeout=self.config.timeout,
-                                workdir=self.workdir)
+                                workdir=self.workdir, text=self.text)
             self._start_dump = result
         return self._start_dump
 
@@ -128,7 +130,7 @@ class Round:
         oracle failure, later ones are the round's own script error. family
         limits the tier 1 reruns to one oracle family (the signature head)."""
         out = RoundResult()
-        main = self.run(script_text, "main", dump=True, stack=True)
+        main = self.run(script_text, "main", dump=True, stack=True, dump_text=self.text)
         out.run = main
         crash = crash_finding(main, "main")
         if crash:
@@ -197,7 +199,7 @@ class Round:
                                     "the save run exited %d: %s" % (save.exit, " ".join(save.messages()))))
         else:
             reopen = runner.run(self.env, saved, dump=True, timeout=self.config.timeout,
-                                workdir=self.workdir)
+                                workdir=self.workdir, text=self.text)
             findings += self._compare("save-reopen", main.stdout, reopen, "reopen")
         return findings
 
@@ -217,6 +219,7 @@ class Round:
         for suffix in ("png", "svg"):
             target = self.workdir / ("export." + suffix)
             result = self.run(script_text, "export-" + suffix, export=target)
+            # text export failures are the same class; keep the text on
             if suffix == "png":
                 self.export_frame = export_frame(result)
             crash = crash_finding(result, "export " + suffix)
