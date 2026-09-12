@@ -11,6 +11,7 @@
 #ifndef CYBERIADA_VERSION_H
 #define CYBERIADA_VERSION_H
 
+#define CYBERIADA_VENDOR    "Cyberiada"
 #define CYBERIADA_APP_NAME  "Cyberiada State Machine Editor"
 #define CYBERIADA_VERSION   "@PROJECT_VERSION@"
 #define CYBERIADA_REVISION  "@CYBERIADA_GIT_REVISION@"

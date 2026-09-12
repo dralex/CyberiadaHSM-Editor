@@ -29,10 +29,16 @@
 #include "fontmanager.h"
 #include "batch_driver.h"
 #include "cyberiadasm_render.h"
+#include "version.h"
 
 int main(int argc, char *argv[])
 {
 	CyberiadaSMEditorApplication app(argc, argv);
+	// name the application so QSettings stores under Cyberiada/<app>, not bare
+	// ~/.config; must precede the first SettingsManager (QSettings) access
+	QCoreApplication::setOrganizationName(CYBERIADA_VENDOR);
+	QCoreApplication::setApplicationName(CYBERIADA_APP_NAME);
+	QCoreApplication::setApplicationVersion(CYBERIADA_VERSION);
 	// QApplication adopts the user's locale; keep the printf-family numeric
 	// formatting locale-independent - the graphml writer depends on it
 	setlocale(LC_NUMERIC, "C");
