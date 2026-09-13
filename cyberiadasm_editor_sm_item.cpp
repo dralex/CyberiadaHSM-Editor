@@ -190,18 +190,3 @@ void CyberiadaSMEditorSMItem::updateSizeToFitChildren(CyberiadaSMEditorAbstractI
     }
 }
 
-void CyberiadaSMEditorSMItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
-{
-    if (!isEditable() || !element->has_geometry()) {
-        event->ignore();
-        return;
-    }
-    QMenu menu;
-    QAction* removeBorder = menu.addAction(QObject::tr("Убрать границу автомата"));
-    QAction* chosen = menu.exec(event->screenPos());
-    if (chosen == removeBorder) {
-        // an invalid rect clears the border: the machine returns to frameless
-        model->updateGeometry(model->elementToIndex(element), Cyberiada::Rect());
-    }
-    event->accept();
-}

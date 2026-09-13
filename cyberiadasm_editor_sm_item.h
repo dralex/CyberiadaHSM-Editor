@@ -56,9 +56,6 @@ public:
     qreal minimumWidth() const override;
     qreal minimumHeight() const override;
 
-protected:
-    void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
-
 private:
     void setTitlePosition();
     qreal titleTabWidth() const;
