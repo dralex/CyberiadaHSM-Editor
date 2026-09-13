@@ -32,6 +32,8 @@
 
 #include "cyberiada_constants.h"
 
+class QRubberBand;
+
 class CyberiadaSMGraphicsView: public QGraphicsView {
 Q_OBJECT
 
@@ -46,12 +48,34 @@ public:
 
     void setCurrentTool(ToolType tool);
 
+    // the uniform zoom factor (1.0 == 100%); setScale re-zooms around the view
+    // centre and both paths emit scaleChanged so the zoom combo stays in sync
+    qreal currentScale() const;
+    void  setScale(qreal scale);
+
+public slots:
+    void  zoomIn()  { zoomBy(1.25); }
+    void  zoomOut() { zoomBy(0.8); }
+
+signals:
+    void scaleChanged(qreal scale);
+
 protected:
     void wheelEvent(QWheelEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *event) override;
+    void mouseReleaseEvent(QMouseEvent *event) override;
+    void contextMenuEvent(QContextMenuEvent *event) override;
 
 private:
+    // scale by a factor about the cursor and announce the new scale
+    void zoomBy(qreal factor);
+
     ToolType currentTool = ToolType::Select;
+    // the zoom tool's rubber band: a left drag zooms to the framed rect
+    QRubberBand* zoomBand = nullptr;
+    QPoint       zoomOrigin;
+    bool         zoomDragging = false;
 };
 
 #endif

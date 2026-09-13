@@ -219,6 +219,28 @@ void CyberiadaSMEditorScene::removeItemsForElement(Cyberiada::Element* element)
     }
 }
 
+void CyberiadaSMEditorScene::noteModified(const QModelIndex& index)
+{
+    const Cyberiada::Element* element = model->indexToElement(index);
+    // walk up to the owning state machine and remember it for zoom-to-SM
+    for (const Cyberiada::Element* e = element; e; e = e->get_parent()) {
+        if (e->get_type() == Cyberiada::elementSM) {
+            lastModifiedSM = e->get_id();
+            return;
+        }
+    }
+}
+
+QRectF CyberiadaSMEditorScene::recentlyModifiedSMRect() const
+{
+    Cyberiada::ID id = lastModifiedSM;
+    if (id.empty() && currentSM) id = currentSM->get_id();
+    if (id.empty()) return QRectF();
+    QGraphicsItem* item = elementIdToItemMap.value(id);
+    if (!item) return QRectF();
+    return item->sceneBoundingRect();
+}
+
 void CyberiadaSMEditorScene::releaseInputFor(QGraphicsItem* item)
 {
     if (!item) return;
@@ -244,12 +266,14 @@ void CyberiadaSMEditorScene::slotRowsInserted(const QModelIndex& parent, int fir
             addElementItem(element, parent_item);
         }
     }
+    noteModified(parent);
     update();
 }
 
 void CyberiadaSMEditorScene::slotRowsAboutToBeRemoved(const QModelIndex& parent, int first, int last)
 {
     // the indexes are still valid here, before the model frees the elements
+    noteModified(parent);
     for (int row = first; row <= last; row++) {
         Cyberiada::Element* element = model->indexToElement(model->index(row, 0, parent));
         if (element) {
@@ -261,6 +285,7 @@ void CyberiadaSMEditorScene::slotRowsAboutToBeRemoved(const QModelIndex& parent,
 
 void CyberiadaSMEditorScene::slotModelDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight)
 {
+    noteModified(topLeft);
     Cyberiada::Element* element = model->indexToElement(topLeft);
     if (!element) return;
     CyberiadaSMEditorAbstractItem* current_item = dynamic_cast<CyberiadaSMEditorAbstractItem*>(elementIdToItemMap.value(element->get_id()));

@@ -77,9 +77,18 @@ enum FontRole {
 enum class ToolType {
     Select,
     Pan,
-    ZoomIn,
-    ZoomOut,
+    Zoom,
     Transition,
+    // the element creation tools: rect-drawing (SM, state) and click-placement
+    // (initial, final, choice, terminate, comment, formal comment)
+    NewSM,
+    NewState,
+    NewInitial,
+    NewFinal,
+    NewChoice,
+    NewTerminate,
+    NewComment,
+    NewFormalComment,
 };
 
 #endif

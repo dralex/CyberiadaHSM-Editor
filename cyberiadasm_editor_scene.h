@@ -81,6 +81,10 @@ public:
     void addSMItem(Cyberiada::ElementType type);
     CyberiadaSMEditorTransitionItem* addTransition(CyberiadaSMEditorAbstractItem* source, CyberiadaSMEditorAbstractItem* target);
 
+    // the scene rect of the state machine whose content changed most recently
+    // (for the zoom-to-SM action); a null rect if none is known
+    QRectF recentlyModifiedSMRect() const;
+
 signals:
     void  toolChanged(ToolType tool);
 
@@ -136,6 +140,9 @@ private:
 
     ToolType currentTool = ToolType::Select;
     bool transientTool = false;
+    // the id of the state machine whose content changed most recently
+    Cyberiada::ID lastModifiedSM;
+    void noteModified(const QModelIndex& index);
     // the selection to bring back after a snapshot restore
     QList<Cyberiada::ID> selectedBeforeReset;
 

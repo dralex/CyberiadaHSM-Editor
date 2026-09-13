@@ -149,12 +149,7 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="actionZoomIn"/>
-   <addaction name="actionZoomOut"/>
    <addaction name="actionFitContent"/>
-   <addaction name="separator"/>
-   <addaction name="actionSelectTool"/>
-   <addaction name="actionPan"/>
    <addaction name="separator"/>
    <addaction name="actionUndo"/>
    <addaction name="actionRedo"/>
@@ -177,10 +172,15 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="actionSelectTool"/>
+   <addaction name="actionPan"/>
+   <addaction name="actionZoomTool"/>
+   <addaction name="separator"/>
    <addaction name="actionNewStateMachine"/>
    <addaction name="actionNewState"/>
    <addaction name="actionNewInitial"/>
    <addaction name="actionNewFinal"/>
+   <addaction name="actionNewChoise"/>
    <addaction name="actionNewTerminate"/>
    <addaction name="actionNewComment"/>
    <addaction name="actionNewFormalComment"/>
@@ -228,10 +228,22 @@
     <string>Ctrl+Q</string>
    </property>
   </action>
-  <action name="actionZoomIn">
+  <action name="actionZoomTool">
    <property name="checkable">
     <bool>true</bool>
    </property>
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/zoom-in.png</normaloff>:/Icons/images/zoom-in.png</iconset>
+   </property>
+   <property name="text">
+    <string>Zoom</string>
+   </property>
+   <property name="toolTip">
+    <string>Zoom: left click in, right click out, drag to a rectangle</string>
+   </property>
+  </action>
+  <action name="actionZoomIn">
    <property name="icon">
     <iconset resource="smeditor.qrc">
      <normaloff>:/Icons/images/zoom-in.png</normaloff>:/Icons/images/zoom-in.png</iconset>
@@ -241,15 +253,24 @@
    </property>
   </action>
   <action name="actionZoomOut">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
    <property name="icon">
     <iconset resource="smeditor.qrc">
      <normaloff>:/Icons/images/zoom-out.png</normaloff>:/Icons/images/zoom-out.png</iconset>
    </property>
    <property name="text">
     <string>Zoom Out</string>
+   </property>
+  </action>
+  <action name="actionZoomToSM">
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/sm.png</normaloff>:/Icons/images/sm.png</iconset>
+   </property>
+   <property name="text">
+    <string>Zoom to SM</string>
+   </property>
+   <property name="toolTip">
+    <string>Zoom to the recently modified state machine</string>
    </property>
   </action>
   <action name="actionFitContent">

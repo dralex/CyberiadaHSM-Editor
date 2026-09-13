@@ -26,8 +26,12 @@
 #include <QDebug>
 #include <QDir>
 #include <QMessageBox>
+#include <QToolBar>
+#include <QComboBox>
+#include <QSignalBlocker>
 
 #include "smeditor_window.h"
+#include "cyberiadasm_editor_view.h"
 #include "myassert.h"
 #include "fontmanager.h"
 #include "dialogs/preferences_dialog.h"
@@ -246,18 +250,46 @@ void CyberiadaSMEditorWindow::slotFileExport()
 
 void CyberiadaSMEditorWindow::initializeTools()
 {
-    toolGroup = new QActionGroup(this);
-    toolGroup->addAction(actionSelectTool);
-    toolGroup->addAction(actionZoomIn);
-    toolGroup->addAction(actionZoomOut);
-    toolGroup->addAction(actionPan);
-    toolGroup->addAction(actionNewTransition);
+    // the modal tools, one exclusive group; the scene is the single source of
+    // truth for the active tool, this map ties each tool to its toolbar action
+    toolActMap[ToolType::Select]     = actionSelectTool;
+    toolActMap[ToolType::Pan]        = actionPan;
+    toolActMap[ToolType::Zoom]       = actionZoomTool;
+    toolActMap[ToolType::Transition] = actionNewTransition;
 
+    toolGroup = new QActionGroup(this);
+    for (QAction* a : toolActMap.values()) {
+        a->setCheckable(true);
+        toolGroup->addAction(a);
+    }
     toolGroup->setExclusive(true);
     actionSelectTool->setChecked(true);
 
     connect(toolGroup, &QActionGroup::triggered, this, &CyberiadaSMEditorWindow::slotToolSelected);
     connect(scene, &CyberiadaSMEditorScene::toolChanged, this, &CyberiadaSMEditorWindow::slotSceneToolChanged);
+
+    // the zoom tool-options toolbar: actions (not tools), shown only when the
+    // zoom tool is active
+    zoomOptionsToolBar = addToolBar(tr("Zoom"));
+    zoomOptionsToolBar->setObjectName("zoomOptionsToolBar");
+    zoomOptionsToolBar->addAction(actionZoomIn);
+    zoomOptionsToolBar->addAction(actionZoomOut);
+    zoomOptionsToolBar->addAction(actionFitContent);   // already wired to slotFitContent in the constructor
+    zoomOptionsToolBar->addAction(actionZoomToSM);
+    zoomCombo = new QComboBox(zoomOptionsToolBar);
+    zoomCombo->setEditable(true);
+    zoomCombo->addItems(QStringList() << "25%" << "50%" << "75%" << "100%" << "150%" << "200%" << "400%");
+    zoomCombo->setCurrentText("100%");
+    zoomOptionsToolBar->addWidget(zoomCombo);
+    zoomOptionsToolBar->setVisible(false);
+    toolOptionBars[ToolType::Zoom] = zoomOptionsToolBar;
+
+    connect(actionZoomIn, &QAction::triggered, sceneView, &CyberiadaSMGraphicsView::zoomIn);
+    connect(actionZoomOut, &QAction::triggered, sceneView, &CyberiadaSMGraphicsView::zoomOut);
+    connect(actionZoomToSM, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotZoomToSM);
+    connect(sceneView, &CyberiadaSMGraphicsView::scaleChanged, this, &CyberiadaSMEditorWindow::slotZoomScaleChanged);
+    connect(zoomCombo, &QComboBox::currentTextChanged, this, &CyberiadaSMEditorWindow::slotZoomComboActivated);
+
     emit toolGroup->triggered(actionSelectTool);
 
     // everything that modifies the document is switched off while it is inspected
@@ -302,23 +334,17 @@ void CyberiadaSMEditorWindow::initializeTools()
 
 void CyberiadaSMEditorWindow::slotToolSelected(QAction *action)
 {
-    if (action == actionSelectTool) {
-        currentTool = ToolType::Select;
-    } else if (action == actionZoomIn) {
-        currentTool = ToolType::ZoomIn;
-    } else if (action == actionZoomOut) {
-        currentTool = ToolType::ZoomOut;
-    } else if (action == actionPan) {
-        currentTool = ToolType::Pan;
-    } else if (action == actionNewTransition) {
-        currentTool = ToolType::Transition;
-    } else {
-        currentTool = ToolType::Select;
-    }
-    sceneView->setCurrentTool(currentTool);
+    currentTool = toolActMap.key(action, ToolType::Select);
+    // the scene is the source of truth; setting it emits nothing, so drive the
+    // view and the option bars here
     scene->setCurrentTool(currentTool);
-    // the log records the two tools the batch language knows; the others do
-    // not change the model and are replayed by the mouse gestures alone
+    sceneView->setCurrentTool(currentTool);
+    // show the active tool's options toolbar, hide the others
+    for (auto i = toolOptionBars.constBegin(); i != toolOptionBars.constEnd(); i++) {
+        i.value()->setVisible(i.key() == currentTool);
+    }
+    // the log records the tools the batch language replays; pan/zoom are view
+    // only and change nothing in the model
     if (currentTool == ToolType::Select) {
         GestureLog::instance().logGesture("tool select");
     } else if (currentTool == ToolType::Transition) {
@@ -330,6 +356,30 @@ void CyberiadaSMEditorWindow::slotFitContent() {
     QRectF bounds = scene->visibleItemsBoundingRect();
     if (bounds.isNull()) return;
     sceneView->fitInView(bounds, Qt::KeepAspectRatio);
+}
+
+void CyberiadaSMEditorWindow::slotZoomToSM() {
+    QRectF bounds = scene->recentlyModifiedSMRect();
+    if (bounds.isNull()) { slotFitContent(); return; }
+    sceneView->fitInView(bounds, Qt::KeepAspectRatio);
+}
+
+void CyberiadaSMEditorWindow::slotZoomScaleChanged(qreal scale) {
+    // reflect the view scale in the combo without re-triggering a zoom
+    QString text = QString("%1%").arg(qRound(scale * 100.0));
+    if (zoomCombo && zoomCombo->currentText() != text) {
+        QSignalBlocker block(zoomCombo);
+        zoomCombo->setCurrentText(text);
+    }
+}
+
+void CyberiadaSMEditorWindow::slotZoomComboActivated() {
+    if (!zoomCombo) return;
+    QString text = zoomCombo->currentText();
+    text.remove('%').remove(' ');
+    bool ok = false;
+    double percent = text.toDouble(&ok);
+    if (ok && percent > 0.0) sceneView->setScale(percent / 100.0);
 }
 
 void CyberiadaSMEditorWindow::slotPreferences()
@@ -374,12 +424,15 @@ void CyberiadaSMEditorWindow::slotLoggingChanged(bool on)
 // toolbar follows without triggering the tool again
 void CyberiadaSMEditorWindow::slotSceneToolChanged(ToolType tool)
 {
+    // the scene switched the tool itself (a transient transition, or an
+    // auto-revert to Select after a creation): sync the view, the toolbar
+    // check and the option bars, without pushing the tool back to the scene
     currentTool = tool;
     sceneView->setCurrentTool(tool);
-    if (tool == ToolType::Transition) {
-        actionNewTransition->setChecked(true);
-    } else if (tool == ToolType::Select) {
-        actionSelectTool->setChecked(true);
+    QAction* action = toolActMap.value(tool, nullptr);
+    if (action) action->setChecked(true);
+    for (auto i = toolOptionBars.constBegin(); i != toolOptionBars.constEnd(); i++) {
+        i.value()->setVisible(i.key() == tool);
     }
 }
 

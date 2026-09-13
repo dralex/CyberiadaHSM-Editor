@@ -27,6 +27,9 @@
 #include "cyberiadasm_editor_view.h"
 
 #include <QDebug>
+#include <QRubberBand>
+#include <QMouseEvent>
+#include <QContextMenuEvent>
 
 CyberiadaSMGraphicsView::CyberiadaSMGraphicsView(QWidget *parent):
 	QGraphicsView(parent)
@@ -56,16 +59,21 @@ void CyberiadaSMGraphicsView::setCurrentTool(ToolType tool) {
     unsetCursor();
 
     switch (currentTool) {
-    case ToolType::ZoomIn:
+    case ToolType::Zoom:
         setCursor(QPixmap(":/Icons/images/zoom-in-32.png"));
-        break;
-    case ToolType::ZoomOut:
-        setCursor(QPixmap(":/Icons/images/zoom-out-32.png"));
         break;
     case ToolType::Pan:
         setDragMode(QGraphicsView::ScrollHandDrag);
         break;
     case ToolType::Transition:
+    case ToolType::NewSM:
+    case ToolType::NewState:
+    case ToolType::NewInitial:
+    case ToolType::NewFinal:
+    case ToolType::NewChoice:
+    case ToolType::NewTerminate:
+    case ToolType::NewComment:
+    case ToolType::NewFormalComment:
         setCursor(Qt::CrossCursor);
         break;
     default:
@@ -74,14 +82,29 @@ void CyberiadaSMGraphicsView::setCurrentTool(ToolType tool) {
     }
 }
 
+qreal CyberiadaSMGraphicsView::currentScale() const
+{
+    return transform().m11();
+}
+
+void CyberiadaSMGraphicsView::setScale(qreal scale)
+{
+    if (scale <= 0.0) return;
+    QTransform t;
+    t.scale(scale, scale);
+    setTransform(t);
+    emit scaleChanged(currentScale());
+}
+
+void CyberiadaSMGraphicsView::zoomBy(qreal factor)
+{
+    scale(factor, factor);
+    emit scaleChanged(currentScale());
+}
+
 void CyberiadaSMGraphicsView::wheelEvent(QWheelEvent *event) {
     if (event->modifiers() & Qt::ControlModifier){
-        double scaleFactor = 1.1;
-        if (event->angleDelta().y() > 0) {
-            scale(scaleFactor, scaleFactor);
-        } else {
-            scale(1.0 / scaleFactor, 1.0 / scaleFactor);
-        }
+        zoomBy(event->angleDelta().y() > 0 ? 1.1 : 1.0 / 1.1);
     }
     else {
         QGraphicsView::wheelEvent(event);
@@ -90,11 +113,56 @@ void CyberiadaSMGraphicsView::wheelEvent(QWheelEvent *event) {
 
 void CyberiadaSMGraphicsView::mousePressEvent(QMouseEvent *event)
 {
-    if (currentTool == ToolType::ZoomIn) {
-        scale(1.25, 1.25);
-    } else if (currentTool == ToolType::ZoomOut) {
-        scale(0.8, 0.8);
-    } else {
-        QGraphicsView::mousePressEvent(event);
+    if (currentTool == ToolType::Zoom) {
+        if (event->button() == Qt::RightButton) {
+            zoomBy(0.8);                       // right click zooms out
+        } else if (event->button() == Qt::LeftButton) {
+            // arm a rubber band; a plain click zooms in, a drag zooms to the rect
+            zoomOrigin = event->pos();
+            zoomDragging = false;
+            if (!zoomBand) zoomBand = new QRubberBand(QRubberBand::Rectangle, viewport());
+            zoomBand->setGeometry(QRect(zoomOrigin, QSize()));
+            zoomBand->show();
+        }
+        event->accept();
+        return;
     }
+    QGraphicsView::mousePressEvent(event);
+}
+
+void CyberiadaSMGraphicsView::mouseMoveEvent(QMouseEvent *event)
+{
+    if (currentTool == ToolType::Zoom && zoomBand && zoomBand->isVisible()) {
+        if ((event->pos() - zoomOrigin).manhattanLength() >= 8) zoomDragging = true;
+        zoomBand->setGeometry(QRect(zoomOrigin, event->pos()).normalized());
+        event->accept();
+        return;
+    }
+    QGraphicsView::mouseMoveEvent(event);
+}
+
+void CyberiadaSMGraphicsView::mouseReleaseEvent(QMouseEvent *event)
+{
+    if (currentTool == ToolType::Zoom && zoomBand && zoomBand->isVisible() &&
+        event->button() == Qt::LeftButton) {
+        QRect band = zoomBand->geometry();
+        zoomBand->hide();
+        if (zoomDragging && band.width() > 4 && band.height() > 4) {
+            fitInView(mapToScene(band).boundingRect(), Qt::KeepAspectRatio);
+            emit scaleChanged(currentScale());
+        } else {
+            zoomBy(1.25);                      // a plain click zooms in
+        }
+        zoomDragging = false;
+        event->accept();
+        return;
+    }
+    QGraphicsView::mouseReleaseEvent(event);
+}
+
+void CyberiadaSMGraphicsView::contextMenuEvent(QContextMenuEvent *event)
+{
+    // the zoom tool uses the right button to zoom out, so no context menu then
+    if (currentTool == ToolType::Zoom) { event->accept(); return; }
+    QGraphicsView::contextMenuEvent(event);
 }

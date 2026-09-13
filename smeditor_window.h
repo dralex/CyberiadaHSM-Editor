@@ -29,6 +29,9 @@
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_editor_scene.h"
 
+class QToolBar;
+class QComboBox;
+
 class CyberiadaSMEditorWindow: public QMainWindow, public Ui_SMEditorWindow {
 Q_OBJECT
 public:
@@ -73,6 +76,9 @@ public slots:
     void                    slotToolSelected(QAction *action);
     void                    slotSceneToolChanged(ToolType tool);
     void                    slotFitContent();
+    void                    slotZoomToSM();
+    void                    slotZoomScaleChanged(qreal scale);
+    void                    slotZoomComboActivated();
     void                    slotPreferences();
     void                    slotGridVisibilityTriggered(bool on);
     void                    slotServiceObjectsTriggered(bool on);
@@ -99,6 +105,10 @@ private:
     QString openFileName;
 
     QMap<ToolType, QAction*> toolActMap;
+    // the contextual tool-options toolbars, shown only while their tool is active
+    QMap<ToolType, QToolBar*> toolOptionBars;
+    QToolBar* zoomOptionsToolBar = nullptr;
+    QComboBox* zoomCombo = nullptr;
 };
 
 #endif
