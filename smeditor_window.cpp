@@ -47,7 +47,12 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
 	QMainWindow(parent)
 {
 	setupUi(this);
-	
+
+	// layout: the drawing scene expands, the tree/property panel keeps its width
+	// on the right (the vertical tool toolbar stays docked on the left)
+	vSplitter->setStretchFactor(0, 1);
+	vSplitter->setStretchFactor(1, 0);
+
 	model = new CyberiadaSMModel(this);
 	SMView->setModel(model);
 	SMView->setRootIndex(model->rootIndex());

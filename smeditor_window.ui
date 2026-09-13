@@ -39,6 +39,7 @@
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
       </property>
+      <widget class="CyberiadaSMGraphicsView" name="sceneView"/>
       <widget class="QSplitter" name="hSplitter">
        <property name="orientation">
         <enum>Qt::Vertical</enum>
@@ -68,7 +69,6 @@
        </widget>
        <widget class="CyberiadaSMPropertiesWidget" name="propertiesWidget" native="true"/>
       </widget>
-      <widget class="CyberiadaSMGraphicsView" name="sceneView"/>
      </widget>
     </item>
    </layout>
