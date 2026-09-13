@@ -657,7 +657,7 @@ void StateTitle::focusOutEvent(QFocusEvent *event)
     if (newName == current) { return; }
 
     if (newName.isEmpty()) {
-        titleRefused(QString("Имя не может быть пустым!"));
+        // an empty name silently keeps the previous one, no warning box
         setPlainText(current);
         return;
     }
