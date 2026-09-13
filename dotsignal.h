@@ -59,7 +59,7 @@ public:
 signals:
     void previousPositionChanged();
     void signalPress(QGraphicsItem *signalOwner);
-    void signalMouseRelease();
+    void signalMouseRelease(QGraphicsItem *signalOwner, QPointF p);
     void signalMove(QGraphicsItem *signalOwner, qreal dx, qreal dy, QPointF p);
     void signalDelete(QGraphicsItem *signalOwner);
     void signalDragStarted(QGraphicsItem *signalOwner);

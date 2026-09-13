@@ -107,7 +107,8 @@ private slots:
     void onSourceSizeChanged(CyberiadaSMEditorAbstractItem::CornerFlags side, qreal d);
     void onTargetSizeChanged(CyberiadaSMEditorAbstractItem::CornerFlags side, qreal d);
     void slotMoveDot(QGraphicsItem *signalOwner, qreal dx, qreal dy, QPointF p);
-    void slotMouseReleaseDot();
+    void slotMouseReleaseDot(QGraphicsItem *signalOwner, QPointF p);
+    bool isAncestorOf(CyberiadaSMEditorAbstractItem *anc, CyberiadaSMEditorAbstractItem *item) const;
     void slotDeleteDot(QGraphicsItem *signalOwner);
 
 protected:

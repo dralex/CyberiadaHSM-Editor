@@ -848,10 +848,61 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
     }
 }
 
-void CyberiadaSMEditorTransitionItem::slotMouseReleaseDot()
+// true when anc is item's element or one of its ancestors in the model tree
+bool CyberiadaSMEditorTransitionItem::isAncestorOf(CyberiadaSMEditorAbstractItem *anc,
+                                                   CyberiadaSMEditorAbstractItem *item) const
+{
+    if (!anc || !item) return false;
+    Cyberiada::Element* target = anc->getElement();
+    for (Cyberiada::Element* e = item->getElement(); e; e = e->get_parent()) {
+        if (e == target) return true;
+    }
+    return false;
+}
+
+void CyberiadaSMEditorTransitionItem::slotMouseReleaseDot(QGraphicsItem *signalOwner, QPointF p)
 {
     isSourceTraking = false;
     isTargetTraking = false;
+
+    if (SettingsManager::instance().getInspectorMode()) { return; }
+
+    // a single-drag transition draw (or a quick drag-to-release) seeds a
+    // self-loop and delivers no move to the grabbed endpoint dot, so the loop
+    // survives. Bind the loose endpoint here if it was released over a
+    // different item; released over the same one it stays a self-loop.
+    if (source() != target()) { return; }
+    if (listDots.isEmpty()) { return; }
+
+    int idx = listDots.indexOf(dynamic_cast<DotSignal*>(signalOwner));
+    if (idx != 0 && idx != listDots.size() - 1) { return; }
+
+    prevPosition = p;
+    CyberiadaSMEditorAbstractItem* cItem = itemUnderCursor();
+    if (!cItem) { return; }
+
+    prepareGeometryChange();
+    bool hasIntersections = false;
+    if (idx == listDots.size() - 1) {
+        // a small drag that ends over an ancestor of the source (the parent SM
+        // it sits in) is a self-loop being placed, not a retarget to the parent
+        if (cItem == target() || isAncestorOf(cItem, source())) { return; }
+        QPointF newPoint = findIntersectionWithItem(cItem, p, sourceCenter(), &hasIntersections) -
+                           cItem->sceneBoundingRect().center();
+        if (!hasIntersections) { return; }
+        isTargetTraking = false;
+        setTarget(cItem);
+        setTargetPoint(newPoint);
+    } else {
+        if (cItem == source() || isAncestorOf(cItem, target())) { return; }
+        QPointF newPoint = findIntersectionWithItem(cItem, p, targetCenter(), &hasIntersections) -
+                           cItem->sceneBoundingRect().center();
+        if (!hasIntersections) { return; }
+        isSourceTraking = false;
+        setSource(cItem);
+        setSourcePoint(newPoint);
+    }
+    setDotsPosition();
 }
 
 void CyberiadaSMEditorTransitionItem::slotDeleteDot(QGraphicsItem *signalOwner)
