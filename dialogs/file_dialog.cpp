@@ -53,7 +53,7 @@ void CyberiadaFileDialog::setOptionsWidget(QWidget* options)
     toggle->setCheckable(true);
     toggle->setAutoRaise(true);
     toggle->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-    toggle->setText(tr("Дополнительные параметры"));
+    toggle->setText(tr("Advanced options"));
     bool expanded = SettingsManager::instance().getOptionsExpanded();
     toggle->setChecked(expanded);
     toggle->setArrowType(expanded ? Qt::DownArrow : Qt::RightArrow);

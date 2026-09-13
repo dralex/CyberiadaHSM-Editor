@@ -104,7 +104,7 @@ QRectF CyberiadaSMEditorTransitionItem::boundingRect() const
 {
     MY_ASSERT(model);
     MY_ASSERT(model->rootDocument());
-    return path().boundingRect().adjusted(-10, -10, 10, 10); // Увеличиваем область для стрелки
+    return path().boundingRect().adjusted(-10, -10, 10, 10); // enlarge the area for the arrowhead
 }
 
 void CyberiadaSMEditorTransitionItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
@@ -200,7 +200,7 @@ QPointF CyberiadaSMEditorTransitionItem::sourceCenter() const
 {
     Cyberiada::ID id = transition->source_element_id();
 
-    if(!elementIdToItemMap.value(id)) return QPoint(); //костыль
+    if(!elementIdToItemMap.value(id)) return QPoint(); // workaround
     MY_ASSERT(elementIdToItemMap.value(id));
     return (elementIdToItemMap.value(id))->sceneBoundingRect().center();
 }
@@ -254,7 +254,7 @@ void CyberiadaSMEditorTransitionItem::setTargetPoint(const QPointF &point)
 
 QPointF CyberiadaSMEditorTransitionItem::targetCenter() const
 {
-    if(!elementIdToItemMap.value(transition->target_element_id())) return QPoint(); //костыль
+    if(!elementIdToItemMap.value(transition->target_element_id())) return QPoint(); // workaround
     MY_ASSERT(elementIdToItemMap.value(transition->target_element_id()));
     return (elementIdToItemMap.value(transition->target_element_id()))->sceneBoundingRect().center();
 }
@@ -985,7 +985,7 @@ void CyberiadaSMEditorTransitionItem::contextMenuEvent(QGraphicsSceneContextMenu
     if (vertexDot < 0) { return; }
 
     QMenu menu;
-    QAction* remove = menu.addAction(tr("Удалить точку"));
+    QAction* remove = menu.addAction(tr("Delete point"));
     if (menu.exec(event->screenPos()) == remove) {
         removePolylineVertex(vertexDot);
     }
@@ -1318,7 +1318,7 @@ void TransitionAction::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 {
     if (SettingsManager::instance().getInspectorMode()) { return; }
     QMenu menu;
-    QAction* reset = menu.addAction(QObject::tr("Сбросить положение метки"));
+    QAction* reset = menu.addAction(QObject::tr("Reset label position"));
     if (menu.exec(event->screenPos()) == reset) {
         CyberiadaSMEditorTransitionItem* t = dynamic_cast<CyberiadaSMEditorTransitionItem*>(parentItem());
         if (t && t->model) {

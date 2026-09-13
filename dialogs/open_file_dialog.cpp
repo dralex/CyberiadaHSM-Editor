@@ -28,14 +28,14 @@
 
 
 OpenFileDialog::OpenFileDialog(QWidget *parent)
-    : CyberiadaFileDialog(parent, tr("Открыть файл диаграммы"),
+    : CyberiadaFileDialog(parent, tr("Open a diagram file"),
                           tr("CyberiadaML graph (*.graphml)"))
     , ui(new Ui::OpenFileOptions)
     , options(new QWidget(this))
 {
     setFileMode(QFileDialog::ExistingFile);
     setAcceptMode(QFileDialog::AcceptOpen);
-    setLabelText(QFileDialog::Accept, tr("Открыть"));
+    setLabelText(QFileDialog::Accept, tr("Open"));
 
     ui->setupUi(options);
     setOptionsWidget(options);

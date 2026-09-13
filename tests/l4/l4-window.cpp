@@ -36,6 +36,7 @@ private slots:
 	void test_creation_tools_arm();
 	void test_view_roundtrip();
 	void test_menu_refactor();
+	void test_edit_action_gating();
 
 private:
 	CyberiadaSMEditorWindow* window;
@@ -134,10 +135,12 @@ void TestWindow::test_menu_refactor()
 	QVERIFY(mt.contains(window->actionOpen) && mt.contains(window->actionSave) &&
 			mt.contains(window->actionExport));
 
-	// #7/#9: the clipboard toolbar holds cut/copy/paste/delete
-	QList<QAction*> et = window->editToolBar->actions();
-	QVERIFY(et.contains(window->actionCut) && et.contains(window->actionCopy) &&
-			et.contains(window->actionPaste) && et.contains(window->actionDeleteElement));
+	// #4/#7/#9: cut/copy/paste/delete sit on the main toolbar right after undo/redo
+	int iRedo = mt.indexOf(window->actionRedo);
+	int iCut = mt.indexOf(window->actionCut);
+	QVERIFY(iRedo >= 0 && iCut > iRedo);
+	QVERIFY(mt.contains(window->actionCopy) && mt.contains(window->actionPaste) &&
+			mt.contains(window->actionDeleteElement));
 
 	// #7: delete has left the tool palette
 	QVERIFY(!window->elementToolBar->actions().contains(window->actionDeleteElement));
@@ -148,6 +151,40 @@ void TestWindow::test_menu_refactor()
 			em.contains(window->actionDeleteElement) && em.contains(window->actionInspectorMode));
 	QVERIFY(em.contains(window->menuTools->menuAction()));
 	QVERIFY(window->menuTools->actions().contains(window->actionNewState));
+}
+
+void TestWindow::test_edit_action_gating()
+{
+	// #2: cut/copy/paste/delete track the selection (an SM is not copyable but its
+	// border can be deleted); paste stays off until something is copied
+	QVERIFY(window->openDocument("diagrams/geometry.graphml"));
+	CyberiadaSMEditorScene* scene = window->getScene();
+	scene->clearSelection();
+	QCoreApplication::processEvents();
+	QVERIFY(!window->actionCopy->isEnabled());
+	QVERIFY(!window->actionCut->isEnabled());
+	QVERIFY(!window->actionDeleteElement->isEnabled());
+	QVERIFY(!window->actionPaste->isEnabled());
+
+	// a simple state: copy/cut/delete enabled
+	QGraphicsItem* st = scene->getMap().value("node-0-1");
+	QVERIFY(st);
+	st->setSelected(true);
+	QCoreApplication::processEvents();
+	QVERIFY(window->actionCopy->isEnabled());
+	QVERIFY(window->actionCut->isEnabled());
+	QVERIFY(window->actionDeleteElement->isEnabled());
+
+	// the state machine: not copyable, but delete (border clear) is allowed
+	scene->clearSelection();
+	Cyberiada::Element* sm = window->getModel()->indexToElement(window->getModel()->firstSMIndex());
+	QVERIFY(sm && sm->get_type() == Cyberiada::elementSM);
+	QGraphicsItem* smItem = scene->getMap().value(sm->get_id());
+	QVERIFY(smItem);
+	smItem->setSelected(true);
+	QCoreApplication::processEvents();
+	QVERIFY(!window->actionCopy->isEnabled());
+	QVERIFY(window->actionDeleteElement->isEnabled());
 }
 
 QTEST_MAIN(TestWindow)

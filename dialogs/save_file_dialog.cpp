@@ -34,7 +34,7 @@ static const int formatReasonRole = Qt::UserRole + 1;
 
 
 SaveFileDialog::SaveFileDialog(QWidget* parent, const Cyberiada::LocalDocument* document)
-    : CyberiadaFileDialog(parent, tr("Сохранить диаграмму"),
+    : CyberiadaFileDialog(parent, tr("Save the diagram"),
                           tr("CyberiadaML graph (*.graphml)"))
     , ui(new Ui::SaveFileOptions)
     , options(new QWidget(this))
@@ -42,7 +42,7 @@ SaveFileDialog::SaveFileDialog(QWidget* parent, const Cyberiada::LocalDocument* 
     setFileMode(QFileDialog::AnyFile);
     setAcceptMode(QFileDialog::AcceptSave);
     setDefaultSuffix("graphml");
-    setLabelText(QFileDialog::Accept, tr("Сохранить"));
+    setLabelText(QFileDialog::Accept, tr("Save"));
 
     ui->setupUi(options);
     setOptionsWidget(options);
@@ -52,14 +52,14 @@ SaveFileDialog::SaveFileDialog(QWidget* parent, const Cyberiada::LocalDocument* 
     QString yed_reason;
     if (document) {
         if (document->get_state_machines().size() != 1) {
-            yed_reason = tr("формат yEd хранит только одну машину состояний");
+            yed_reason = tr("the yEd format stores only one state machine");
         } else if (!document->has_geometry()) {
-            yed_reason = tr("формат yEd требует геометрию диаграммы");
+            yed_reason = tr("the yEd format requires diagram geometry");
         } else if (!document->find_elements_by_type(Cyberiada::elementTerminate).empty()) {
-            yed_reason = tr("формат yEd не поддерживает терминальные псевдосостояния");
+            yed_reason = tr("the yEd format does not support terminate pseudostates");
         }
     } else {
-        yed_reason = tr("документ не открыт");
+        yed_reason = tr("the document is not open");
     }
 
     addFormat(Cyberiada::formatCyberiada10, tr("CyberiadaML-GraphML 1.0"),
@@ -132,7 +132,7 @@ void SaveFileDialog::slotFormatChanged(int index)
     for (int i = 0; i < ui->formatComboBox->count(); i++) {
         QString reason = ui->formatComboBox->itemData(i, formatReasonRole).toString();
         if (!reason.isEmpty()) {
-            hint = tr("Форматы yEd недоступны: ") + reason;
+            hint = tr("yEd formats are unavailable: ") + reason;
             break;
         }
     }

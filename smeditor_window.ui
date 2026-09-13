@@ -162,25 +162,15 @@
    <addaction name="actionUndo"/>
    <addaction name="actionRedo"/>
    <addaction name="separator"/>
-   <addaction name="actionGridVisibility"/>
-   <addaction name="actionServiceObjects"/>
-   <addaction name="actionInspectorMode"/>
-   <addaction name="actionLogSession"/>
-  </widget>
-  <widget class="QToolBar" name="editToolBar">
-   <property name="windowTitle">
-    <string>Edit</string>
-   </property>
-   <attribute name="toolBarArea">
-    <enum>TopToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>false</bool>
-   </attribute>
    <addaction name="actionCut"/>
    <addaction name="actionCopy"/>
    <addaction name="actionPaste"/>
    <addaction name="actionDeleteElement"/>
+   <addaction name="separator"/>
+   <addaction name="actionGridVisibility"/>
+   <addaction name="actionServiceObjects"/>
+   <addaction name="actionInspectorMode"/>
+   <addaction name="actionLogSession"/>
   </widget>
   <widget class="QToolBar" name="elementToolBar">
    <property name="windowTitle">
@@ -342,7 +332,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Текст на переходах</string>
+    <string>Transition text</string>
    </property>
   </action>
   <action name="actionInspectorMode">
@@ -354,12 +344,12 @@
      <normaloff>:/Icons/images/inspector-mode.png</normaloff>:/Icons/images/inspector-mode.png</iconset>
    </property>
    <property name="text">
-    <string>Режим инспектора</string>
+    <string>Inspector mode</string>
    </property>
   </action>
   <action name="actionPreferences">
    <property name="text">
-    <string>Настройки</string>
+    <string>Preferences</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+I</string>
@@ -442,7 +432,7 @@
      <normaloff>:/Icons/images/snap-mode.png</normaloff>:/Icons/images/snap-mode.png</iconset>
    </property>
    <property name="text">
-    <string>Прилипание</string>
+    <string>Snap to grid</string>
    </property>
   </action>
   <action name="actionNewState">
@@ -571,10 +561,10 @@
      <normaloff>:/Icons/images/special-markers.png</normaloff>:/Icons/images/special-markers.png</iconset>
    </property>
    <property name="text">
-    <string>Служебные объекты</string>
+    <string>Service objects</string>
    </property>
    <property name="toolTip">
-    <string>Границы регионов и начала координат</string>
+    <string>Region borders and coordinate origins</string>
    </property>
   </action>
   <action name="actionGridVisibility">
@@ -598,10 +588,10 @@
      <normaloff>:/Icons/images/logging.png</normaloff>:/Icons/images/logging.png</iconset>
    </property>
    <property name="text">
-    <string>Запись сессии</string>
+    <string>Record session</string>
    </property>
    <property name="toolTip">
-    <string>Записывать жесты и действия в воспроизводимый скрипт</string>
+    <string>Record gestures and actions to a replayable script</string>
    </property>
   </action>
  </widget>

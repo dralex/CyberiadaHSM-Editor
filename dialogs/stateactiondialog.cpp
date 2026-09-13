@@ -36,10 +36,10 @@
 StateActionDialog::StateActionDialog(const QString& keyword, QWidget* parent):
     QDialog(parent), keyword(keyword)
 {
-    setWindowTitle(tr("Новое действие"));
+    setWindowTitle(tr("New action"));
     auto* layout = new QVBoxLayout(this);
 
-    layout->addWidget(new QLabel(tr("Действие:"), this));
+    layout->addWidget(new QLabel(tr("Action:"), this));
 
     actionEdit = new QPlainTextEdit(this);
     actionEdit->setFont(FontManager::instance().font(fontRoleStateAction));
@@ -78,8 +78,8 @@ QString StateActionDialog::getBehaviour() const
 void StateActionDialog::slotAccept()
 {
     if (!parseInput()) {
-        QMessageBox::warning(this, tr("Новое действие"),
-                             tr("Действие должно начинаться с '%1/'").arg(keyword));
+        QMessageBox::warning(this, tr("New action"),
+                             tr("The action must start with '%1/'").arg(keyword));
         return;
     }
     accept();

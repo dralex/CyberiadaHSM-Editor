@@ -85,12 +85,35 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     connect(stack, &QUndoStack::cleanChanged, this, &CyberiadaSMEditorWindow::slotCleanChanged);
     actionUndo->setEnabled(false);
     actionRedo->setEnabled(false);
-    actionPaste->setEnabled(false);
+    // cut/copy/paste/delete follow the selection and the clipboard
+    connect(scene, &QGraphicsScene::selectionChanged, this, &CyberiadaSMEditorWindow::updateEditActions);
+    updateEditActions();
+}
+
+void CyberiadaSMEditorWindow::updateEditActions()
+{
+    Cyberiada::Element* el = nullptr;
+    if (!scene->selectedItems().isEmpty()) {
+        if (CyberiadaSMEditorAbstractItem* item =
+                dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene->selectedItems().first())) {
+            el = item->getElement();
+        }
+    }
+    bool inspector = SettingsManager::instance().getInspectorMode();
+    bool hasElement = (el != nullptr);
+    bool copyable = hasElement && el->get_type() != Cyberiada::elementSM;   // an SM is not copyable
+    actionCut->setEnabled(copyable && !inspector);
+    actionCopy->setEnabled(copyable && !inspector);
+    actionDeleteElement->setEnabled(hasElement && !inspector);
+    actionPaste->setEnabled(clipboardElement != nullptr && !inspector);
 }
 
 // the actions die before the model's stack, whose destructor still signals
 CyberiadaSMEditorWindow::~CyberiadaSMEditorWindow()
 {
+    // the scene (a child) is torn down after this body: stop its selectionChanged
+    // from reaching updateEditActions while its items are being destroyed
+    if (scene) scene->disconnect(this);
     model->undoStack()->disconnect(this);
     delete clipboardElement;
 }
@@ -268,7 +291,7 @@ void CyberiadaSMEditorWindow::slotFileExport()
     if (!fileName.isEmpty()) {
         QString error;
         if (!renderScene(scene, fileName, &error)) {
-            QMessageBox::critical(this, tr("Ошибка"), error);
+            QMessageBox::critical(this, tr("Error"), error);
         }
     }
 }
@@ -333,10 +356,8 @@ void CyberiadaSMEditorWindow::initializeTools()
     editGroup->setExclusive(false);
     editGroup->addAction(actionNew);
     editGroup->addAction(actionSave);
-    editGroup->addAction(actionDeleteElement);
-    editGroup->addAction(actionCut);
-    editGroup->addAction(actionCopy);
-    editGroup->addAction(actionPaste);
+    // cut/copy/paste/delete are governed by updateEditActions (selection + inspector),
+    // not the bulk editGroup, so they can react to the current selection
     editGroup->addAction(actionUndo);
     editGroup->addAction(actionRedo);
 
@@ -516,7 +537,7 @@ void CyberiadaSMEditorWindow::slotCopy()
     delete clipboardElement;
     clipboardElement = el->copy(nullptr);   // a detached template for later pastes
     clipboardParentId = el->get_parent() ? el->get_parent()->get_id() : Cyberiada::ID();
-    actionPaste->setEnabled(clipboardElement != nullptr);
+    updateEditActions();
 }
 
 void CyberiadaSMEditorWindow::slotCut()
@@ -530,7 +551,7 @@ void CyberiadaSMEditorWindow::slotCut()
     delete clipboardElement;
     clipboardElement = el->copy(nullptr);
     clipboardParentId = el->get_parent() ? el->get_parent()->get_id() : Cyberiada::ID();
-    actionPaste->setEnabled(clipboardElement != nullptr);
+    updateEditActions();
     model->deleteElement(model->elementToIndex(el));
 }
 
@@ -560,6 +581,7 @@ void CyberiadaSMEditorWindow::slotInspectorModeChanged(bool on)
     editGroup->setEnabled(!on);
     actionUndo->setEnabled(!on && model->undoStack()->canUndo());
     actionRedo->setEnabled(!on && model->undoStack()->canRedo());
+    updateEditActions();   // cut/copy/paste/delete follow the inspector state too
     // disable the creation tools while inspecting, but keep select/pan/zoom so
     // the document can still be navigated
     for (auto i = toolActMap.constBegin(); i != toolActMap.constEnd(); i++) {

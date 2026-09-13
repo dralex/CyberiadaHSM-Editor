@@ -547,12 +547,12 @@ void CyberiadaSMEditorStateItem::contextMenuEvent(QGraphicsSceneContextMenuEvent
 
     QMenu menu;
 
-    QAction *deleteAction = menu.addAction("Удалить");
-    QAction *addTransitionAction = menu.addAction("Добавить переход");
-    QAction *addEntryAction = menu.addAction("Добавить entry");
-    QAction *addExitAction = menu.addAction("Добавить exit");
-    QAction *addDoAction = menu.addAction("Добавить do");
-    QAction *unlinkAction = menu.addAction("Отвязать");
+    QAction *deleteAction = menu.addAction(tr("Delete"));
+    QAction *addTransitionAction = menu.addAction(tr("Add transition"));
+    QAction *addEntryAction = menu.addAction(tr("Add entry"));
+    QAction *addExitAction = menu.addAction(tr("Add exit"));
+    QAction *addDoAction = menu.addAction(tr("Add do"));
+    QAction *unlinkAction = menu.addAction(tr("Unlink"));
 
     if(entry != nullptr) {
         addEntryAction->setEnabled(false);
@@ -609,7 +609,7 @@ static void titleRefused(const QString& message)
         fprintf(stderr, "%s\n", qPrintable(message));
         return;
     }
-    QMessageBox::warning(nullptr, "Предупреждение", message);
+    QMessageBox::warning(nullptr, QObject::tr("Warning"), message);
 }
 
 void StateTitle::focusOutEvent(QFocusEvent *event)
@@ -638,7 +638,7 @@ void StateTitle::focusOutEvent(QFocusEvent *event)
 
     // the model refuses a name taken on this level
     if (!owner->getModel()->updateTitle(owner->getIndex(), newName)) {
-        titleRefused(QString("Имя \"%1\" уже существует на этом уровне иерархии.").arg(newName));
+        titleRefused(tr("The name \"%1\" already exists at this hierarchy level.").arg(newName));
         setPlainText(current);
     }
 }
@@ -782,7 +782,7 @@ void StateRegion::paint(QPainter *painter, const QStyleOptionGraphicsItem *optio
         painter->drawRect(rect());
 
         painter->setBrush(Qt::blue);
-        painter->drawEllipse(QPointF(0, 0), 2, 2); // Центр системы координат
+        painter->drawEllipse(QPointF(0, 0), 2, 2); // coordinate system origin
     }
 }
 
@@ -843,33 +843,33 @@ void StateAction::keyPressEvent(QKeyEvent *event)
     const int protectedLen = typeText.length();
     int textLen = document()->toPlainText().length();
 
-    // Разрешаем копирование (Ctrl+C)
+    // allow copy (Ctrl+C)
     if (event->matches(QKeySequence::Copy)) {
         QGraphicsTextItem::keyPressEvent(event);
         return;
     }
 
-    // Блокируем ввод любых символов, если курсор в запретной зоне
+    // block any input while the cursor is in the protected zone
     if (((cursor.position() <= protectedLen && textLen > protectedLen) ||
          (cursor.position() < protectedLen && textLen >= protectedLen)) && !event->text().isEmpty()) {
         event->ignore();
         return;
     }
 
-    // Обработка выделения
+    // handle the selection
     if (cursor.hasSelection()) {
         int selStart = cursor.selectionStart();
         int selEnd = cursor.selectionEnd();
 
-        // При удалении или вводе — защищаем запретную часть
+        // on delete or input, protect the reserved prefix
         if ((event->key() == Qt::Key_Backspace || event->key() == Qt::Key_Delete || !event->text().isEmpty())) {
-            // Если выделение задевает запретную зону
+            // the selection touches the protected zone
             if (selStart < protectedLen && selEnd > protectedLen) {
                 cursor.setPosition(protectedLen);
                 cursor.setPosition(selEnd, QTextCursor::KeepAnchor);
                 setTextCursor(cursor);
             }
-            // Если полностью в запретной зоне — блокируем
+            // fully inside the protected zone: block
             else if (selEnd < protectedLen) {
                 event->ignore();
                 return;
@@ -877,7 +877,7 @@ void StateAction::keyPressEvent(QKeyEvent *event)
         }
     }
 
-    // Блок перемещения в запретную зону
+    // block moving into the protected zone
     if (cursor.position() < protectedLen &&
         (event->key() == Qt::Key_Backspace || event->key() == Qt::Key_Left)) {
         event->ignore();
@@ -923,8 +923,8 @@ void StateAction::contextMenuEvent(QGraphicsSceneContextMenuEvent *event) {
 
     QMenu menu;
 
-    QAction *deleteAction = menu.addAction("Удалить");
-    QAction *editAction = menu.addAction("Редактировать текст");
+    QAction *deleteAction = menu.addAction(tr("Delete"));
+    QAction *editAction = menu.addAction(tr("Edit text"));
 
     QAction *selectedAction = menu.exec(event->screenPos());
 

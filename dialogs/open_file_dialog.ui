@@ -18,46 +18,46 @@
    <item>
     <widget class="QGroupBox" name="optionsBox">
      <property name="title">
-      <string>Параметры открытия</string>
+      <string>Open options</string>
      </property>
      <layout class="QVBoxLayout" name="optionsLayout">
       <item>
        <widget class="QCheckBox" name="inspectorCheckBox">
         <property name="toolTip">
-         <string>Документ открывается только для просмотра, так, как он записан в файле</string>
+         <string>The document opens read-only, exactly as written in the file</string>
         </property>
         <property name="text">
-         <string>Открыть в режиме инспектора</string>
+         <string>Open in inspector mode</string>
         </property>
        </widget>
       </item>
       <item>
        <widget class="QCheckBox" name="reconstructCheckBox">
         <property name="toolTip">
-         <string>Восстановить отсутствующую геометрию средствами библиотеки</string>
+         <string>Reconstruct missing geometry with the library</string>
         </property>
         <property name="text">
-         <string>Реконструкция геометрии</string>
+         <string>Geometry reconstruction</string>
         </property>
        </widget>
       </item>
       <item>
        <widget class="QCheckBox" name="reconstructSMCheckBox">
         <property name="toolTip">
-         <string>Создать отсутствующую границу автомата при реконструкции</string>
+         <string>Create the missing state machine border during reconstruction</string>
         </property>
         <property name="text">
-         <string>Реконструкция границы автомата</string>
+         <string>State machine border reconstruction</string>
         </property>
        </widget>
       </item>
       <item>
        <widget class="QCheckBox" name="strictCheckBox">
         <property name="toolTip">
-         <string>Проверить документ по всем требованиям стандарта</string>
+         <string>Validate the document against all standard requirements</string>
         </property>
         <property name="text">
-         <string>Строгая проверка стандарта</string>
+         <string>Strict standard validation</string>
         </property>
        </widget>
       </item>

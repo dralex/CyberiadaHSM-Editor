@@ -64,6 +64,8 @@ private slots:
     void                    slotInspectorModeChanged(bool on);
     void                    slotServiceObjectsChanged(bool on);
     void                    slotLoggingChanged(bool on);
+    // enable cut/copy/paste/delete only for a fitting selection (and not in inspector mode)
+    void                    updateEditActions();
 
 public slots:
 	void                    slotFileNew();

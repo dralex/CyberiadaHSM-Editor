@@ -25,13 +25,13 @@
 
 
 ExportImageDialog::ExportImageDialog(QWidget* parent)
-    : CyberiadaFileDialog(parent, tr("Экспорт сцены как изображение"),
+    : CyberiadaFileDialog(parent, tr("Export the scene as an image"),
                           tr("PNG (*.png);;JPEG (*.jpg *.jpeg);;BMP (*.bmp);;TIFF (*.tiff);;"
                              "SVG (*.svg);;PDF (*.pdf)"))
 {
     setFileMode(QFileDialog::AnyFile);
     setAcceptMode(QFileDialog::AcceptSave);
-    setLabelText(QFileDialog::Accept, tr("Экспортировать"));
+    setLabelText(QFileDialog::Accept, tr("Export"));
     setDefaultSuffix("png");
 
     connect(this, &QFileDialog::filterSelected, this, &ExportImageDialog::slotFilterSelected);
