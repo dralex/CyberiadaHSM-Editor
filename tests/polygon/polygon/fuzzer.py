@@ -110,152 +110,67 @@ class Fuzzer:
         head = self.pick(TRIGGERS) + (" [%s]" % guard if guard else "")
         return "%s/ %s" % (head, self.pick(BEHAVIOURS))
 
-    # --- the model verbs ---------------------------------------------------
+    # --- container geometry from the scene dump -------------------------
 
-    def gen_new_node(self, verb, doc):
-        parent = self.pick(self.containers(doc))
-        if parent is None:
-            return None
-        if verb == "new-state":
-            args = (self.rect_args() + " " if self.rng.random() < 0.7 else "") + self.fresh("S")
-        elif verb in ("new-comment", "new-formal-comment"):
-            args = "note " + self.fresh("c")
-        elif verb == "new-choice":
-            args = self.rect_args() if self.rng.random() < 0.7 else ""
-        else:
-            args = self.point_args() if self.rng.random() < 0.7 else ""
-        return ["%s %s %s" % (verb, parent.id, args)], short_kind(parent)
+    def container_items(self, dump):
+        """Scene items that can hold a new element: state machines and states."""
+        return [i for i in dump.scene_items().values()
+                if i.kind in (D.KIND_SM,) + D.STATE_KINDS and i.rect[2] > 40 and i.rect[3] > 40]
 
-    def gen_new_sm(self, doc):
-        return ["new-sm %s %s" % (self.rect_args(), self.fresh("SM"))], "document"
+    def inside_point(self, item):
+        """A point comfortably inside a scene item's rect."""
+        x, y, w, h = item.abs_rect
+        return (round(x + w * self.rng.uniform(0.3, 0.7)), round(y + h * self.rng.uniform(0.3, 0.7)))
 
-    def gen_label(self, doc):
-        t = self.pick(doc.transitions())
-        if t is None:
-            return None
-        if self.rng.random() < 0.3:
-            return ["label %s" % t.id], "transition"   # reset to auto
-        return ["label %s %s" % (t.id, self.point_args())], "transition"
+    def free_point(self, dump):
+        """A point away from the existing elements, for a new top-level machine."""
+        items = list(dump.scene_items().values())
+        for _ in range(20):
+            p = (self.rng.randint(-100, 900), self.rng.randint(-100, 700))
+            if all(not self._inside(p, i.abs_rect) for i in items):
+                return p
+        return (self.rng.randint(600, 1000), self.rng.randint(400, 700))
 
-    def gen_new_transition(self, doc):
-        sources = [e for e in doc.walk() if e.is_state or e.kind in (D.KIND_INITIAL, D.KIND_CHOICE)]
-        src = self.pick(sources)
-        if src is None:
-            return None
-        machine = self.machine_of(src)
-        targets = [e for e in machine.walk() if e.is_state or e.kind in (D.KIND_FINAL, D.KIND_CHOICE, D.KIND_TERMINATE)]
-        tgt = self.pick(targets)
-        if tgt is None:
-            return None
-        trigger = self.pick(TRIGGERS) if self.rng.random() < 0.7 else ""
-        return ["new-transition %s %s %s %s" % (machine.id, src.id, tgt.id, trigger)], short_kind(src)
+    @staticmethod
+    def _inside(p, rect):
+        x, y, w, h = rect
+        return x <= p[0] <= x + w and y <= p[1] <= y + h
 
-    def gen_rename(self, doc):
-        e = self.pick(doc.states() + doc.machines())
-        if e is None:
-            return None
-        return ["rename %s %s" % (e.id, self.fresh("Name"))], short_kind(e)
+    # --- the tool emitters (creation by the reworked tools) ----------------
 
-    def gen_move(self, doc):
-        e = self.pick([e for e in self.nodes(doc) if e.geometry is not None])
-        if e is None:
+    def emit_creation(self, tool, dump):
+        """`tool <name>` then a click or a rect draw at a valid point; the tool
+        reverts to select on release. Returns (lines, kind)."""
+        if tool.family == CAT.FAMILY_RECT and tool.name == "new-sm":
+            x, y = self.free_point(dump)
+            w, h = self.pick(RECT_SIZES), self.pick(RECT_SIZES[:3])
+            return (["tool new-sm", "press %d %d" % (x, y),
+                     "drag %d %d" % (x + w, y + h), "release %d %d" % (x + w, y + h)], "sm")
+        container = self.pick(self.container_items(dump))
+        if container is None:
             return None
-        g = e.geometry
-        dx, dy = self.pick(DELTAS), self.pick(DELTAS)
-        if len(g) == 4:
-            w = max(40, g[2] + self.pick(DELTAS))
-            h = max(40, g[3] + self.pick(DELTAS))
-            return ["move %s %d %d %d %d" % (e.id, g[0] + dx, g[1] + dy, w, h)], short_kind(e)
-        return ["move %s %d %d" % (e.id, g[0] + dx, g[1] + dy)], short_kind(e)
+        x, y = self.inside_point(container)
+        if tool.family == CAT.FAMILY_RECT:            # new-state
+            w, h = self.pick((80, 120, 160)), self.pick((60, 80, 100))
+            if self.rng.random() < 0.3:
+                return (["tool new-state", "click %d %d" % (x, y)], tool.element)
+            return (["tool new-state", "press %d %d" % (x, y),
+                     "drag %d %d" % (x + w, y + h), "release %d %d" % (x + w, y + h)], tool.element)
+        return (["tool %s" % tool.name, "click %d %d" % (x, y)], tool.element)   # place tool
 
-    def gen_reparent(self, doc):
-        e = self.pick(self.nodes(doc))
-        if e is None:
+    def emit_transition(self, dump):
+        """`tool transition` then press a source state and drag to a target."""
+        states = self.sized_states(dump)
+        if not states:
             return None
-        inside = set(x.id for x in e.walk())
-        parents = [c for c in self.containers(doc) if c.id not in inside and c is not e.parent]
-        parent = self.pick(parents)
-        if parent is None:
-            return None
-        return ["reparent %s %s" % (e.id, parent.id)], short_kind(e)
-
-    def gen_delete(self, doc):
-        e = self.pick(self.nodes(doc) + doc.transitions())
-        if e is None:
-            return None
-        return ["delete %s" % e.id], short_kind(e)
-
-    def gen_new_action(self, doc):
-        states = doc.states()
-        transitions = [t for t in doc.transitions() if t.action is None]
-        e = self.pick(states + transitions)
-        if e is None:
-            return None
-        kind = "transition" if e.kind == D.KIND_TRANSITION else self.pick(("entry", "exit", "transition"))
-        return ["new-action %s %s" % (e.id, self.action_text(kind))], short_kind(e)
-
-    def gen_update_action(self, verb, doc):
-        candidates = [e for e in doc.states() if e.actions] + [t for t in doc.transitions() if t.action]
-        e = self.pick(candidates)
-        if e is None:
-            return None
-        if e.kind == D.KIND_TRANSITION:
-            i, kind = 0, "transition"
-        else:
-            i = self.rng.randrange(len(e.actions))
-            kind = e.actions[i].type
-        if verb == "delete-action":
-            return ["delete-action %s %d" % (e.id, i)], short_kind(e)
-        return ["update-action %s %d %s" % (e.id, i, self.action_text(kind))], short_kind(e)
-
-    def gen_update_comment(self, doc):
-        e = self.pick([e for e in doc.elements(*D.COMMENT_KINDS) if not e.is_meta])
-        if e is None:
-            return None
-        return ["update-comment %s %s" % (e.id, self.fresh("body "))], short_kind(e)
-
-    def gen_update_meta(self, doc):
-        key, value = self.pick(META)
-        return ["update-meta %s %s" % (key, value)], "document"
-
-    def gen_update_id(self, doc):
-        e = self.pick(self.nodes(doc) + doc.transitions())
-        if e is None:
-            return None
-        return ["update-id %s %s" % (e.id, self.fresh("id"))], short_kind(e)
-
-    def gen_polyline(self, doc):
-        t = self.pick(doc.transitions())
-        if t is None:
-            return None
-        n = self.rng.randint(0, 3)
-        points = " ".join(self.point_args() for _ in range(n))
-        return [("polyline %s %s" % (t.id, points)).rstrip()], "transition"
-
-    def gen_new_subject(self, doc):
-        c = self.pick([e for e in doc.elements(*D.COMMENT_KINDS) if not e.is_meta])
-        target = self.pick([e for e in self.nodes(doc) + doc.transitions() if e is not c])
-        if c is None or target is None:
-            return None
-        form = self.pick(("", "name", "data"))
-        extra = "" if not form else " %s %s" % (form, (target.name or target.body or "x")[:4] or "x")
-        return ["new-subject %s %s%s" % (c.id, target.id, extra)], short_kind(c)
-
-    def gen_delete_subject(self, doc):
-        c = self.pick([e for e in doc.elements(*D.COMMENT_KINDS) if e.subjects and not e.is_meta])
-        if c is None:
-            return None
-        return ["delete-subject %s %d" % (c.id, self.rng.randrange(len(c.subjects)))], short_kind(c)
-
-    def gen_undo_redo(self, verb, dump):
-        stack = dump.stack
-        if stack is None:
-            return None
-        if verb == "undo" and stack.index == 0:
-            return None
-        if verb == "redo" and stack.index >= stack.count:
-            return None
-        return [verb], "document"
+        src = self.pick(states)
+        sx, sy, sw, sh = src.abs_rect
+        press = (round(sx + sw - BODY_INSET), round(sy + sh - BODY_INSET))
+        tgt = self.pick(states)
+        tx, ty, tw, th = tgt.abs_rect
+        to = (round(tx + tw / 2.0), round(ty + th / 2.0))
+        return (["tool transition", "press %d %d" % press,
+                 "drag %d %d" % to, "release %d %d" % to], "transition")
 
     # --- the edge forms ----------------------------------------------------
 
@@ -358,71 +273,63 @@ class Fuzzer:
             return ["double-click %d %d" % (bx, by)], kind
         return None
 
-    # --- the draw ------------------------------------------------------------
+    def gen_undo_redo(self, verb, dump):
+        stack = dump.stack
+        if stack is None:
+            return None
+        if verb == "undo" and stack.index == 0:
+            return None
+        if verb == "redo" and stack.index >= stack.count:
+            return None
+        return [verb], "document"
 
-    def generate(self, verb, dump):
-        doc = dump.document
-        if verb in ("new-state", "new-initial", "new-final", "new-comment",
-                    "new-formal-comment", "new-choice", "new-terminate"):
-            return self.gen_new_node(verb, doc)
-        if verb == "new-sm":
-            return self.gen_new_sm(doc)
-        if verb == "label":
-            return self.gen_label(doc)
-        if verb == "new-transition":
-            return self.gen_new_transition(doc)
-        if verb == "rename":
-            return self.gen_rename(doc)
-        if verb == "move":
-            return self.gen_move(doc)
-        if verb == "reparent":
-            return self.gen_reparent(doc)
-        if verb == "delete":
-            return self.gen_delete(doc)
-        if verb == "new-action":
-            return self.gen_new_action(doc)
-        if verb in ("update-action", "delete-action"):
-            return self.gen_update_action(verb, doc)
-        if verb == "update-comment":
-            return self.gen_update_comment(doc)
-        if verb == "update-meta":
-            return self.gen_update_meta(doc)
-        if verb == "update-id":
-            return self.gen_update_id(doc)
-        if verb == "polyline":
-            return self.gen_polyline(doc)
-        if verb == "new-subject":
-            return self.gen_new_subject(doc)
-        if verb == "delete-subject":
-            return self.gen_delete_subject(doc)
-        if verb in ("undo", "redo"):
-            return self.gen_undo_redo(verb, dump)
-        if verb in ("edit-title", "edit-action", "edit-label", "edit-body"):
-            return self.gen_text(verb, dump)
-        if verb in ("add-point", "move-point", "remove-point", "move-endpoint"):
-            return self.gen_edge(verb, dump)
-        return self.gen_gesture(verb, dump)
+    # --- the lean tool-driven draw -----------------------------------------
+
+    MANIPULATIONS = ("drag-state", "resize-state", "click-delete", "double-click-action",
+                     "edit-title", "edit-action", "edit-label", "edit-body",
+                     "add-point", "move-point", "remove-point", "move-endpoint",
+                     "undo", "redo")
+
+    def actions(self):
+        """The names the fuzzer chooses among: the creation tools, the
+        transition draw, and the select-tool manipulations. gestures_only
+        (the explore burst) restricts to the manipulations."""
+        if getattr(self, "gestures_only", False):
+            return list(self.MANIPULATIONS)
+        names = [t.name for t in CAT.creation_tools()] + ["draw-transition"]
+        return names + list(self.MANIPULATIONS)
+
+    def generate(self, name, dump):
+        if name == "draw-transition":
+            return self.emit_transition(dump)
+        tool = next((t for t in CAT.creation_tools() if t.name == name), None)
+        if tool is not None:
+            return self.emit_creation(tool, dump)
+        if name in ("edit-title", "edit-action", "edit-label", "edit-body"):
+            return self.gen_text(name, dump)
+        if name in ("add-point", "move-point", "remove-point", "move-endpoint"):
+            return self.gen_edge(name, dump)
+        if name in ("undo", "redo"):
+            return self.gen_undo_redo(name, dump)
+        return self.gen_gesture(name, dump)
+
+    def kind_of(self, name):
+        tool = next((t for t in CAT.creation_tools() if t.name == name), None)
+        return tool.element if tool else ("transition" if "point" in name or name == "draw-transition"
+                                          or name == "edit-label" else "state")
 
     def next(self, dump, exclude=()):
-        """(lines, verb, kind) for the next round, or None when nothing
-        applies; exclude holds the verbs refused in this round already."""
-        if getattr(self, "gestures_only", False):
-            forms = [CAT.FORM_GESTURE_FORM]
-        elif self.gestures:
-            forms = [CAT.FORM_MODEL, CAT.FORM_GESTURE_FORM]
-        else:
-            forms = [CAT.FORM_MODEL]
-        ops = [op for op in self.catalog.by_form(*forms) if op.verb not in exclude]
-        bias = getattr(self, "gesture_bias", 1.0)
-        for _ in range(30):
-            if not ops:
+        """(lines, verb, kind) for the next round: a tool or a manipulation,
+        weighted by the coverage store; None when nothing applies."""
+        names = [n for n in self.actions() if n not in exclude]
+        for _ in range(40):
+            if not names:
                 return None
-            weights = [self.coverage.verb_weight(op.verb, op.targets) *
-                       (bias if op.form == CAT.FORM_GESTURE_FORM else 1.0) for op in ops]
-            op = self.rng.choices(ops, weights=weights)[0]
-            result = self.generate(op.verb, dump)
+            weights = [self.coverage.weight(n, self.kind_of(n)) for n in names]
+            name = self.rng.choices(names, weights=weights)[0]
+            result = self.generate(name, dump)
             if result is not None:
                 lines, kind = result
-                return lines, op.verb, kind
-            ops.remove(op)
+                return lines, name, kind
+            names.remove(name)
         return None

@@ -34,6 +34,7 @@ from . import catalog as CAT
 REPRODUCE = "reproduce"
 COMBINE = "combine"
 EXPLORE = "explore"
+TOUR = "tour"
 
 DOMAINS = ("a traffic light", "a vending machine", "a lift controller",
           "a microwave oven", "a robot patrol mission", "a game character AI",
@@ -93,6 +94,8 @@ def compose(kind, env, catalog, coverage, seed, name=None, theme_name=None):
     if kind == EXPLORE:
         return Mission(kind, seed, "explore", starts["empty"], domain=rng.choice(DOMAINS),
                        budget=(12, 30))
+    if kind == TOUR:
+        return Mission(kind, seed, "tour", starts["empty"], budget=(20, 40))
     theme = next((t for t in themes() if t["name"] == theme_name), None) if theme_name else rng.choice(themes())
     start = theme.get("start", "corpus")
     if start in starts and starts[start].exists():

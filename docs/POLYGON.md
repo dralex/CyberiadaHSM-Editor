@@ -84,6 +84,30 @@ C, Python or a pseudolanguage, multi-line, edits), student session with
 mistakes (small start, the refusals and corrections), and sequential growth
 from a single state to a clean complex system.
 
+### The tool tour and the tool-driven fuzzer
+
+The editor's tools were rebuilt into twelve: the select tool, pan and zoom, the transition
+tool, and eight element-creation tools (a state machine, a state, the four pseudostates,
+a comment and a formal comment). The rect tools (state machine, state) draw a rubber-band
+rect or place a default size on a click; the six placement tools create on a click; the
+container is the element under the press point, and a creation tool reverts to select after
+one use. `catalog/tools.json` is the polygon's model of them.
+
+The **tour mission** is the systematic build-from-scratch strategy: the agent works through
+the tools one at a time, using each in several ways (a single element, several, inside a
+container, at an extreme position, then undo, in combination with what it built) before
+moving to the next. It is pure agent, no fuzzer burst, and runs the full oracles including
+the render-content check, so a tool that draws nothing is a finding. It complements the
+free-design `explore` mission.
+
+The **fuzzer** is a lean tool-driven core: it picks a tool or a select-tool manipulation
+weighted by coverage, and emits the gesture — a creation tool draws or places, the
+transition tool presses a source and drags to a target, the select tool drags, resizes,
+edits text, drives the transition point dots, or deletes. Creation goes through the real
+tools, not the model verbs, so the fuzzer exercises the same paths a user does. The
+gesture-less model-only verbs (metainformation, id changes, comment subjects, whole-polyline
+replacement) are left to the agent and the good-file cases.
+
 ### Exploration and the fuzzer burst
 
 The exploration mission is the build-then-stress strategy and the default balance

@@ -95,6 +95,32 @@ def mission_reproduce(brief):
     return "Mission: reproduce a diagram.\n" + brief
 
 
+TOUR_PATTERNS = ("place a single one", "place several", "place one inside a state or a "
+                 "state machine", "at an extreme position (tiny, huge or negative "
+                 "coordinates)", "then undo and redo it", "combine it with what you already "
+                 "built (a transition between two states, a comment on a state)")
+
+
+def mission_tour(tools, budget):
+    lines = ["Mission: exercise every editing tool of the editor, systematically, one tool at",
+             "a time.", "",
+             "The empty document has one state machine, id G0. Work through the tools below in",
+             "order. For each tool, use it in several different ways before moving to the next:",
+             ""]
+    for name, how in tools:
+        lines.append("  - %s: %s" % (name, how))
+    lines += ["",
+              "For each tool try, where it makes sense: %s." % "; ".join(TOUR_PATTERNS),
+              "",
+              "Select a tool with `tool <name>`; a creation tool draws a rect",
+              "(`press`/`drag`/`release`) or places on a `click`, then reverts to the select",
+              "tool. Build a coherent, tidy diagram as you go: children inside their parents,",
+              "siblings apart. Budget: %d to %d commands over the session, a few per round." % tuple(budget),
+              "Read the dump each round, use the ids it shows, and give expectations for what",
+              "you added this round. Announce in the plan which tool you are exercising."]
+    return "\n".join(lines)
+
+
 def mission_explore(domain, budget):
     return "\n".join([
         "Mission: design and keep improving %s as a hierarchical state machine." % domain,

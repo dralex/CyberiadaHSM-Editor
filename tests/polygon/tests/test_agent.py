@@ -270,3 +270,21 @@ class ExploreComposeTest(unittest.TestCase):
             self.assertEqual(m.kind, "explore")
             self.assertTrue(m.domain)
             self.assertEqual(m.diagram.name, "empty.graphml")
+
+
+class TourComposeTest(unittest.TestCase):
+    def test_tour_mission(self):
+        from polygon import composer as M2, catalog as CAT, coverage as COV, prompt as P2
+        from polygon.__main__ import _tour_tools
+        import tempfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as tmp:
+            cov = COV.Coverage(Path(tmp) / "c.json")
+            m = M2.compose(M2.TOUR, ENV, CAT.Catalog(), cov, 7)
+            self.assertEqual(m.kind, "tour")
+            self.assertEqual(m.diagram.name, "empty.graphml")
+            body = P2.mission_tour(_tour_tools(), m.budget)
+            self.assertIn("one tool at", body)
+            self.assertIn("new-state", body)
+            self.assertIn("new-comment", body)
+            self.assertNotIn("pan", body)   # view tools are excluded
