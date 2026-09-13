@@ -111,7 +111,7 @@ QString CyberiadaSMGraphicsView::viewState() const
 
 void CyberiadaSMGraphicsView::applyViewState(const QString& state)
 {
-    QStringList parts = state.split(' ', Qt::SkipEmptyParts);
+    QStringList parts = state.split(' ', QString::SkipEmptyParts);
     if (parts.isEmpty()) return;
     bool ok = false;
     double scale = parts.at(0).toDouble(&ok);
