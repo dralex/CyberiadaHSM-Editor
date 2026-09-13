@@ -45,6 +45,7 @@ from . import prompt as P
 from . import runner
 from . import tour as TOUR
 from . import toolcover as TC
+from .drills import nesting as DRILLS
 from .adapters import base as adapters
 import json
 
@@ -146,6 +147,34 @@ def cmd_register(args):
             print("%s %s: %s" % (problem.id, "registered" if is_new else "known", problem.title))
         return 0
     return 2
+
+
+DRILL_CLASSES = {"nesting": DRILLS.NestingDrill, "pseudostate": DRILLS.PseudostateDrill}
+
+
+def cmd_drill(args):
+    """A deterministic drill: escalate one feature, check its invariants."""
+    env = _env()
+    cfg = C.load(args.config)
+    catalog = CAT.Catalog()
+    coverage = COV.Coverage(env.polygon / "coverage.json")
+    which = list(DRILL_CLASSES) if args.which == "all" else [args.which]
+    start = env.polygon / "corpus" / "empty.graphml"
+    total = 0
+    for name in which:
+        producer = DRILL_CLASSES[name](catalog, coverage, args.seed, budget=args.rounds)
+        folder = S.session_folder(env.polygon, "drill-" + name, args.seed)
+        session = S.Session(env, cfg, start, producer, _register(env), coverage, folder,
+                            producer_name="drill:" + name, seed=args.seed, minimize=not args.no_minimize)
+        session.stress = True
+        session.invariant = True
+        session.run(args.rounds)
+        print("%s [%s]: %s" % (folder, name, session.summary()))
+        for r in session.rounds:
+            for kind, signature, note in r.findings:
+                print("  round %d %s %s: %s" % (r.number, kind, signature[:60], note[:80]))
+        total += 1
+    return 0
 
 
 def cmd_tour(args):
@@ -428,6 +457,12 @@ def main(argv=None):
     p.set_defaults(func=cmd_tour)
     p = sub.add_parser("tour-report", help="the tool-coverage matrix")
     p.set_defaults(func=cmd_tour_report)
+    p = sub.add_parser("drill", help="a deterministic drill (escalate one feature, check invariants)")
+    p.add_argument("--which", default="all", choices=["all"] + list(DRILL_CLASSES))
+    p.add_argument("--seed", type=int, default=1)
+    p.add_argument("--rounds", type=int, default=20)
+    p.add_argument("--no-minimize", action="store_true")
+    p.set_defaults(func=cmd_drill)
     p = sub.add_parser("run", help="an agent session (one backend, or a comma list to compare)")
     p.add_argument("--backend")
     p.add_argument("--backends", help="a comma list: run the same mission on each and compare")
