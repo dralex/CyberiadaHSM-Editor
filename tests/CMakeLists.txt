@@ -37,7 +37,7 @@ set_property(DIRECTORY APPEND PROPERTY TEST_INCLUDE_FILES
 function(add_l0_test name expected_code)
   add_test(NAME l0-${name}
     COMMAND ${CMAKE_COMMAND}
-      -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaEditor>
       -DINPUT=${CMAKE_CURRENT_SOURCE_DIR}/diagrams/${name}.graphml
       -DEXPECTED=${expected_code}
       -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunBatchTest.cmake)
@@ -76,7 +76,7 @@ endforeach()
 function(add_l0_strict_test name expected_code)
   add_test(NAME l0-strict-${name}
     COMMAND ${CMAKE_COMMAND}
-      -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaEditor>
       -DINPUT=${CMAKE_CURRENT_SOURCE_DIR}/diagrams/${name}.graphml
       -DEXPECTED=${expected_code}
       -DSTRICT=1
@@ -93,7 +93,7 @@ add_l0_strict_test(meta 2)
 # the reconstruction mode repairs malformed geometry instead
 add_test(NAME l0-point-comment-reconstruct
   COMMAND ${CMAKE_COMMAND}
-    -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
+    -DBATCH_BIN=$<TARGET_FILE:CyberiadaEditor>
     -DINPUT=${CMAKE_CURRENT_SOURCE_DIR}/diagrams/broken-point-comment.graphml
     -DEXPECTED=0
     -DRECONSTRUCT=1
@@ -105,7 +105,7 @@ set_tests_properties(l0-point-comment-reconstruct PROPERTIES
 # a missing file argument is a usage error
 add_test(NAME l0-usage
   COMMAND ${CMAKE_COMMAND}
-    -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
+    -DBATCH_BIN=$<TARGET_FILE:CyberiadaEditor>
     -DEXPECTED=1
     -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunBatchTest.cmake)
 set_tests_properties(l0-usage PROPERTIES TIMEOUT 60 ENVIRONMENT "${L0_ENVIRONMENT}")
@@ -116,7 +116,7 @@ set_tests_properties(l0-usage PROPERTIES TIMEOUT 60 ENVIRONMENT "${L0_ENVIRONMEN
 function(add_l1_test name)
   add_test(NAME l1-${name}
     COMMAND ${CMAKE_COMMAND}
-      -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaEditor>
       -DINPUT=diagrams/${name}.graphml
       -DEXPECTED=0
       -DWORKDIR=${CMAKE_CURRENT_SOURCE_DIR}
@@ -153,7 +153,7 @@ endforeach()
 function(add_text_dump_test name)
   add_test(NAME text-${name}
     COMMAND ${CMAKE_COMMAND}
-      -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaEditor>
       -DINPUT=diagrams/${name}.graphml
       -DTEXT=1
       -DDUMP_TEXT=1
@@ -183,7 +183,7 @@ function(add_stack_dump_test name diagram)
   endif()
   add_test(NAME stack-${name}
     COMMAND ${CMAKE_COMMAND}
-      -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaEditor>
       -DINPUT=diagrams/${diagram}.graphml
       ${_script}
       -DDUMP_STACK=1
@@ -213,7 +213,7 @@ if(POLYGON_TESTS)
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/polygon)
     set_tests_properties(polygon-unit PROPERTIES
       TIMEOUT 300
-      ENVIRONMENT "${L0_ENVIRONMENT};POLYGON_INSPECTOR=$<TARGET_FILE:CyberiadaInspector>")
+      ENVIRONMENT "${L0_ENVIRONMENT};POLYGON_INSPECTOR=$<TARGET_FILE:CyberiadaEditor>")
 
     # The polygon regression tier: one case per open problem of the register,
     # green while the recorded failure reproduces (see docs/POLYGON.md)
@@ -223,7 +223,7 @@ if(POLYGON_TESTS)
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/polygon)
       set_tests_properties(polygon-${id} PROPERTIES
         TIMEOUT 120
-        ENVIRONMENT "${L0_ENVIRONMENT};POLYGON_INSPECTOR=$<TARGET_FILE:CyberiadaInspector>")
+        ENVIRONMENT "${L0_ENVIRONMENT};POLYGON_INSPECTOR=$<TARGET_FILE:CyberiadaEditor>")
     endfunction()
     include(${CMAKE_CURRENT_SOURCE_DIR}/polygon/problems/cases.cmake OPTIONAL)
   endif()
@@ -235,7 +235,7 @@ endif()
 function(add_l2_test case diagram)
   add_test(NAME l2-${case}
     COMMAND ${CMAKE_COMMAND}
-      -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaEditor>
       -DINPUT=diagrams/${diagram}.graphml
       -DSCRIPT=scripts/${case}.script
       -DEXPECTED=0
@@ -272,7 +272,7 @@ add_l2_test(edge-points polyline)
 function(add_l2_text_test case diagram)
   add_test(NAME l2-${case}
     COMMAND ${CMAKE_COMMAND}
-      -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaEditor>
       -DINPUT=diagrams/${diagram}.graphml
       -DSCRIPT=scripts/${case}.script
       -DTEXT=1
@@ -303,7 +303,7 @@ function(add_undo_test case diagram good)
   endif()
   add_test(NAME undo-${case}
     COMMAND ${CMAKE_COMMAND}
-      -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaEditor>
       -DINPUT=diagrams/${diagram}.graphml
       -DSCRIPT=scripts/${case}.script
       -DEXPECTED=0
@@ -334,7 +334,7 @@ function(add_reconstruct_test name)
   endif()
   add_test(NAME ${_suffix}-${name}
     COMMAND ${CMAKE_COMMAND}
-      -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaEditor>
       -DINPUT=diagrams/${name}.graphml
       -DRECONSTRUCT=1 ${_sm}
       -DEXPECTED=0
@@ -360,7 +360,7 @@ add_reconstruct_test(geometry)
 function(add_inspect_render_test name)
   add_test(NAME inspect-render-${name}
     COMMAND ${CMAKE_COMMAND}
-      -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaEditor>
       -DINPUT=diagrams/${name}.graphml
       -DINSPECT=1
       -DEXPECTED=0
@@ -380,7 +380,7 @@ add_inspect_render_test(cyb-geometry)
 function(add_inspect_reject_test case diagram)
   add_test(NAME inspect-reject-${case}
     COMMAND ${CMAKE_COMMAND}
-      -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaEditor>
       -DINPUT=diagrams/${diagram}.graphml
       -DSCRIPT=scripts/${case}.script
       -DINSPECT=1
@@ -403,7 +403,7 @@ add_inspect_reject_test(vertices choice)
 function(add_save_format_test diagram format)
   add_test(NAME save-${format}-${diagram}
     COMMAND ${CMAKE_COMMAND}
-      -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaEditor>
       -DINPUT=diagrams/${diagram}.graphml
       -DSAVE_FORMAT=${format}
       -DEXPECTED=0
@@ -423,7 +423,7 @@ add_save_format_test(geometry yed-berloga)
 function(add_save_reject_test diagram format)
   add_test(NAME save-reject-${format}-${diagram}
     COMMAND ${CMAKE_COMMAND}
-      -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaEditor>
       -DINPUT=diagrams/${diagram}.graphml
       -DSAVE_FORMAT=${format}
       -DEXPECTED=3
@@ -442,7 +442,7 @@ add_save_reject_test(two-sms yed-ostranna)
 function(add_l3_test diagram)
   add_test(NAME l3-${diagram}
     COMMAND ${CMAKE_COMMAND}
-      -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaEditor>
       -DINPUT=diagrams/${diagram}.graphml
       -DEXPECTED=0
       -DWORKDIR=${CMAKE_CURRENT_SOURCE_DIR}
@@ -460,7 +460,7 @@ endfunction()
 function(add_l3_svg_test diagram)
   add_test(NAME l3-svg-${diagram}
     COMMAND ${CMAKE_COMMAND}
-      -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaEditor>
       -DINPUT=diagrams/${diagram}.graphml
       -DEXPECTED=0
       -DWORKDIR=${CMAKE_CURRENT_SOURCE_DIR}
@@ -475,7 +475,7 @@ endfunction()
 function(add_l3_pdf_test diagram)
   add_test(NAME l3-pdf-${diagram}
     COMMAND ${CMAKE_COMMAND}
-      -DBATCH_BIN=$<TARGET_FILE:CyberiadaInspector>
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaEditor>
       -DINPUT=diagrams/${diagram}.graphml
       -DEXPECTED=0
       -DWORKDIR=${CMAKE_CURRENT_SOURCE_DIR}
@@ -503,7 +503,7 @@ add_l3_test(polyline)
 # (see docs/TESTING.md)
 function(add_l4_test name)
   add_executable(l4-${name} l4/l4-${name}.cpp)
-  target_link_libraries(l4-${name} CyberiadaInspectorCore Qt5::Test)
+  target_link_libraries(l4-${name} CyberiadaEditorCore Qt5::Test)
   add_test(NAME l4-${name} COMMAND l4-${name})
   set_tests_properties(l4-${name} PROPERTIES
     TIMEOUT 60

@@ -6,7 +6,7 @@ the found problems are kept with their reproductions and become regression
 cases. The architecture is in `docs/POLYGON.md`.
 
 Python 3.11+ and the standard library only. The editor must be built
-(`build/CyberiadaInspector`); the batch environment is read from the build
+(`build/CyberiadaEditor`); the batch environment is read from the build
 tree, so no variables need setting.
 
 ```

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(CyberiadaInspector VERSION 1.0.0 LANGUAGES CXX)
+project(CyberiadaEditor VERSION 1.0.0 LANGUAGES CXX)
 
 list(APPEND CMAKE_MODULE_PATH /usr/lib/cmake)
 
@@ -47,7 +47,7 @@ find_package(Qt5Svg REQUIRED)
 
 # the core library: everything but the entry point, linkable from the
 # in-process tests (see docs/TESTING.md, L4)
-add_library(CyberiadaInspectorCore STATIC
+add_library(CyberiadaEditorCore STATIC
   smeditor_window.ui
   # the resources live in the core so the in-process tests get the bundled
   # font and the icons too; FontManager pulls them in with Q_INIT_RESOURCE
@@ -84,22 +84,22 @@ add_library(CyberiadaInspectorCore STATIC
   gesture_log.h gesture_log.cpp
 )
 
-target_include_directories(CyberiadaInspectorCore PUBLIC
+target_include_directories(CyberiadaEditorCore PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}
   # the generated version.h lives in the build dir
   ${CMAKE_CURRENT_BINARY_DIR}
   # the forms are compiled into the core, so its generated headers must be
   # reachable by everything that links it
-  ${CMAKE_CURRENT_BINARY_DIR}/CyberiadaInspectorCore_autogen/include
+  ${CMAKE_CURRENT_BINARY_DIR}/CyberiadaEditorCore_autogen/include
   ${QTPROPERTYBROWSER_INCLUDE_DIR}
   ${cyberiadaml_INCLUDE_DIRS}
   ${cyberiadamlpp_INCLUDE_DIRS}
   )
-target_link_directories(CyberiadaInspectorCore PUBLIC
+target_link_directories(CyberiadaEditorCore PUBLIC
   ${cyberiadaml_LIBRARY}
   ${cyberiadamlpp_LIBRARY}
   )
-target_link_libraries(CyberiadaInspectorCore PUBLIC
+target_link_libraries(CyberiadaEditorCore PUBLIC
   Qt5::Widgets
   Qt5::Svg
   ${QTPROPERTYBROWSER_LIBRARY}
@@ -107,10 +107,10 @@ target_link_libraries(CyberiadaInspectorCore PUBLIC
   ${cyberiadamlpp_LIBRARIES}
   )
 
-add_executable(CyberiadaInspector
+add_executable(CyberiadaEditor
   main.cpp
 )
-target_link_libraries(CyberiadaInspector CyberiadaInspectorCore)
+target_link_libraries(CyberiadaEditor CyberiadaEditorCore)
 
 enable_testing()
 add_subdirectory(tests)

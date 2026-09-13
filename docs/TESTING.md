@@ -12,7 +12,7 @@ good references.
   run-tests.sh  /  ctest
     |   per test: diagram .graphml [+ command script] + good files
     v
-  CyberiadaInspector --batch <file>   (QT_QPA_PLATFORM=offscreen)
+  CyberiadaEditor --batch <file>   (QT_QPA_PLATFORM=offscreen)
   +------------------------------------------------------+
   | full application: window + scene + model             |
   | batch driver instead of app.exec():                  |
@@ -70,7 +70,7 @@ and saved document. Neither case owns a reference file.
 
 ## In-process tests (L4)
 
-The editor sources are built into the `CyberiadaInspectorCore` static
+The editor sources are built into the `CyberiadaEditorCore` static
 library; the executable adds only `main.cpp`. The resources are a part of the
 library as well, so the tests get the bundled font and the icons. The L4
 tests (`tests/l4/`) link the library and drive the model and the scene
@@ -148,7 +148,7 @@ one is logged; and a session left without its exit line - a crash - keeps the
 
 ## Batch mode contract
 
-`CyberiadaInspector --batch <file.graphml>` opens the document through the same
+`CyberiadaEditor --batch <file.graphml>` opens the document through the same
 code path as the GUI (minus the dialogs) and exits. No dialog is ever shown in
 batch mode; all diagnostics go to stderr.
 
@@ -398,7 +398,7 @@ model verbs (`new-sm`, `new-state`, `move`, `rename`, `reparent`, `delete`,
 `label`, `new-action`, `undo`/`redo`, ...). A model edit driven by a mouse
 gesture is suppressed while the gesture is in flight and recorded once as the
 gesture, so a replayed session never applies it twice. To replay a folder:
-`CyberiadaInspector --batch --script <dir>/session.script <dir>/start.graphml`
+`CyberiadaEditor --batch --script <dir>/session.script <dir>/start.graphml`
 (drop the file for a from-scratch session).
 
 ## Rendering and image comparison

@@ -31,7 +31,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 BINARY_ENV = "POLYGON_INSPECTOR"
-BINARY_NAME = "CyberiadaInspector"
+BINARY_NAME = "CyberiadaEditor"
 
 
 def repo_root():

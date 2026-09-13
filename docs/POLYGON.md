@@ -34,7 +34,7 @@ LLM backend is configurable; the agent is never a fixed vendor.
                   |  == plan / == script / == expectations
                   v
        +------------------------------ runner --------------------------------+
-       |  CyberiadaInspector --batch <doc> --script <s> --dump --dump-stack |
+       |  CyberiadaEditor --batch <doc> --script <s> --dump --dump-stack |
        |  subprocess, timeout, signal and exit code capture                 |
        |  reruns: --save + reopen | undo-all / redo-all | --export          |
        +-------------------------------+------------------------------------+

@@ -2,7 +2,7 @@
 # Regenerate the good files from the current build and show the diff --
 # good files must never be committed without reviewing it (see docs/TESTING.md)
 cd "$(dirname "$0")" || exit 1
-BIN=../build/CyberiadaInspector
+BIN=../build/CyberiadaEditor
 TESTFILE=../build/tests/CTestTestfile.cmake
 [ -x "$BIN" ] || { echo "build the project first"; exit 1; }
 # reuse the runtime environment baked into the test suite
