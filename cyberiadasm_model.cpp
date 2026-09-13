@@ -1600,6 +1600,125 @@ void CyberiadaSMModel::move(Cyberiada::Element* element, Cyberiada::ElementColle
     emit dataChanged(newSourceIndex, newSourceIndex);
 }
 
+// pre-order (parent before children) walk of a subtree into a flat list
+static void collectSubtree(Cyberiada::Element* e, std::vector<Cyberiada::Element*>& out)
+{
+    out.push_back(e);
+    if (Cyberiada::ElementCollection* c = dynamic_cast<Cyberiada::ElementCollection*>(e)) {
+        const Cyberiada::ElementList& kids = c->get_children();
+        for (Cyberiada::ElementList::const_iterator i = kids.begin(); i != kids.end(); i++) {
+            collectSubtree(*i, out);
+        }
+    }
+}
+
+// a fresh vertex-style id, qualified by a nested parent, unique in the document
+// (mirrors Document::generate_vertex_id, which is private)
+static Cyberiada::ID freshVertexId(const Cyberiada::Document* root, const Cyberiada::Element* parent)
+{
+    std::string base;
+    if (parent && parent->get_type() != Cyberiada::elementRoot &&
+        parent->get_type() != Cyberiada::elementSM) {
+        base = parent->get_id() + "::";
+    }
+    for (int n = 0; ; n++) {
+        Cyberiada::ID cand = base + "n" + std::to_string(n);
+        if (!root->find_element_by_id(cand)) return cand;
+    }
+}
+
+// a fresh transition id (source-target, then source-target#N) unique in the document
+static Cyberiada::ID freshTransitionId(const Cyberiada::Document* root,
+                                       const Cyberiada::ID& s, const Cyberiada::ID& t)
+{
+    Cyberiada::ID base = s + "-" + t;
+    Cyberiada::ID cand = base;
+    for (int n = 0; root->find_element_by_id(cand); n++) {
+        cand = base + "#" + std::to_string(n);
+    }
+    return cand;
+}
+
+// offset a transition's stored points so a copy does not overlap its original
+static void shiftTransition(Cyberiada::Transition* t, double dx, double dy)
+{
+    Cyberiada::Point sp = t->has_geometry_source_point() ? t->get_source_point() : Cyberiada::Point();
+    Cyberiada::Point tp = t->has_geometry_target_point() ? t->get_target_point() : Cyberiada::Point();
+    if (sp.valid) sp = Cyberiada::Point(sp.x + dx, sp.y + dy);
+    if (tp.valid) tp = Cyberiada::Point(tp.x + dx, tp.y + dy);
+    if (sp.valid || tp.valid) t->update(sp, tp);
+    if (t->has_polyline()) {
+        Cyberiada::Polyline pl = t->get_geometry_polyline();
+        for (size_t i = 0; i < pl.size(); i++) pl[i] = Cyberiada::Point(pl[i].x + dx, pl[i].y + dy);
+        t->update(pl);
+    }
+    if (t->has_geometry_label_point()) {
+        Cyberiada::Point lp = t->get_label_point();
+        t->update_label(Cyberiada::Point(lp.x + dx, lp.y + dy));
+    }
+}
+
+Cyberiada::Element* CyberiadaSMModel::pasteElement(Cyberiada::ElementCollection* parent,
+                                                   const Cyberiada::Element* src)
+{
+    if (readOnly() || !parent || !src || !root) return NULL;
+    if (src->get_type() == Cyberiada::elementSM) return NULL;   // never paste a State Machine
+
+    const double PASTE_OFFSET = 20.0;
+    UndoScope scope(this, tr("paste"));
+    beginResetModel();
+
+    // deep clone (keeps ids/names) into the target, then add it so the id
+    // generators and remap see the whole subtree
+    Cyberiada::Element* copied = src->copy(parent);
+    parent->add_element(copied);
+    if (Cyberiada::ElementCollection* subtree = dynamic_cast<Cyberiada::ElementCollection*>(copied)) {
+        root->rebind_subjects(*subtree);
+    }
+
+    std::vector<Cyberiada::Element*> all;
+    collectSubtree(copied, all);
+
+    // fresh ids for every node, recording old -> new (pre-order, so a parent's
+    // new id is set before its children qualify against it)
+    std::map<Cyberiada::ID, Cyberiada::ID> idmap;
+    for (size_t i = 0; i < all.size(); i++) {
+        if (all[i]->get_type() == Cyberiada::elementTransition) continue;
+        Cyberiada::ID oldId = all[i]->get_id();
+        Cyberiada::ID newId = freshVertexId(root, all[i]->get_parent());
+        all[i]->set_id(newId);
+        idmap[oldId] = newId;
+    }
+    // remap the transitions: endpoints inside the pasted set follow the copies,
+    // endpoints outside keep their original ids (a parallel transition)
+    for (size_t i = 0; i < all.size(); i++) {
+        if (all[i]->get_type() != Cyberiada::elementTransition) continue;
+        Cyberiada::Transition* t = static_cast<Cyberiada::Transition*>(all[i]);
+        Cyberiada::ID s = t->source_element_id(), tg = t->target_element_id();
+        if (idmap.count(s)) s = idmap[s];
+        if (idmap.count(tg)) tg = idmap[tg];
+        t->update(s, tg);
+        t->set_id(freshTransitionId(root, s, tg));
+    }
+
+    // a unique name for the pasted element among its new siblings
+    if (isState(copied)) {
+        copied->set_name(uniqueStateName(parent, copied->get_name()));
+    }
+
+    // shift the copy a little off the original (the subtree follows a node shift;
+    // a standalone transition keeps its endpoints, so shift its points instead)
+    if (copied->get_type() == Cyberiada::elementTransition) {
+        shiftTransition(static_cast<Cyberiada::Transition*>(copied), PASTE_OFFSET, PASTE_OFFSET);
+    } else {
+        shiftGeometry(copied, PASTE_OFFSET, PASTE_OFFSET);
+    }
+
+    endResetModel();
+    GestureLog::instance().logAction("paste " + qid(copied));
+    return copied;
+}
+
 bool CyberiadaSMModel::dropMimeData(const QMimeData *data,
                                     Qt::DropAction action,
                                     int row, int column,

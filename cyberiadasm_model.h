@@ -123,6 +123,11 @@ public:
                                                    const Cyberiada::Rect& rect = Cyberiada::Rect(),
                                                    const Cyberiada::Color& color = Cyberiada::Color(),
                                                    const Cyberiada::String& markup = Cyberiada::String());
+    // deep-copy src into parent as a sibling: fresh ids, a unique name, remapped
+    // internal transitions, and points shifted a little (for cut/copy/paste). The
+    // returned element is the pasted copy, or NULL. A State Machine is never pasted.
+    Cyberiada::Element*                 pasteElement(Cyberiada::ElementCollection* parent,
+                                                     const Cyberiada::Element* src);
 
     bool                                newCommentSubject(const QModelIndex& index, Cyberiada::Element* target,
                                                           Cyberiada::CommentSubjectType type, const QString& fragment);
