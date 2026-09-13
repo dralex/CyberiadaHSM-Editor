@@ -457,9 +457,18 @@ QPointF CyberiadaSMEditorTransitionItem::findIntersectionWithItem(const Cyberiad
         return QPointF();
     }
 
+    // a pseudostate (initial/final/terminate) is a circle: attach on its border,
+    // on the side facing the other endpoint, not at the centre
     if (item->type() == CyberiadaSMEditorAbstractItem::VertexItem) {
+        QPointF c = item->sceneBoundingRect().center();
+        // the connected element is the ray end farther from the centre (the
+        // caller passes either centre->toward or an external point->centre)
+        QPointF ext = QLineF(start, c).length() >= QLineF(end, c).length() ? start : end;
+        QPointF facing = ext - c;
         *hasIntersections = true;
-        return item->sceneBoundingRect().center();
+        qreal len = QLineF(QPointF(0, 0), facing).length();
+        if (len == 0) return c;
+        return c + facing / len * VERTEX_POINT_RADIUS;
     }
 
     // a choice is drawn as a rhombus inscribed in its rect; a transition binds
