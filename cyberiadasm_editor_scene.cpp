@@ -260,10 +260,28 @@ void CyberiadaSMEditorScene::releaseInputFor(QGraphicsItem* item)
 
 void CyberiadaSMEditorScene::slotRowsInserted(const QModelIndex& parent, int first, int last)
 {
-    // only the displayed state machine has items: a parent without an item
-    // (the document, another state machine) gets nothing
     QGraphicsItem* parent_item = graphicsParentFor(model->indexToElement(parent));
-    if (!parent_item) return;
+    if (!parent_item) {
+        // the document root has no item, so a newly inserted top-level state
+        // machine would get none: build any state machine still missing one,
+        // as loadScene does (the root index gives no usable child element)
+        std::vector<Cyberiada::StateMachine*> sms = model->rootDocument()->get_state_machines();
+        for (std::vector<Cyberiada::StateMachine*>::iterator i = sms.begin(); i != sms.end(); i++) {
+            if (elementIdToItemMap.value((*i)->get_id())) continue;
+            addItemsRecursively(NULL, *i);
+            QGraphicsItem* smItem = elementIdToItemMap.value((*i)->get_id());
+            if (auto sm = dynamic_cast<CyberiadaSMEditorSMItem*>(smItem)) {
+                connect(sm, &CyberiadaSMEditorAbstractItem::sizeChanged,
+                        this, &CyberiadaSMEditorScene::slotSMSizeChanged);
+            }
+            if (!currentSM) currentSM = *i;
+            // note the machine directly: the document-root parent index has no
+            // usable element for noteModified() to resolve
+            lastModifiedSM = (*i)->get_id();
+        }
+        update();
+        return;
+    }
     for (int row = first; row <= last; row++) {
         Cyberiada::Element* element = model->indexToElement(model->index(row, 0, parent));
         if (element) {
