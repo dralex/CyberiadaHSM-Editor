@@ -149,8 +149,6 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="actionFitContent"/>
-   <addaction name="separator"/>
    <addaction name="actionUndo"/>
    <addaction name="actionRedo"/>
    <addaction name="separator"/>
@@ -264,7 +262,7 @@
   <action name="actionZoomToSM">
    <property name="icon">
     <iconset resource="smeditor.qrc">
-     <normaloff>:/Icons/images/sm.png</normaloff>:/Icons/images/sm.png</iconset>
+     <normaloff>:/Icons/images/fit-sm.png</normaloff>:/Icons/images/fit-sm.png</iconset>
    </property>
    <property name="text">
     <string>Zoom to SM</string>
@@ -453,6 +451,10 @@
    </property>
   </action>
   <action name="actionNewChoise">
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/choice.png</normaloff>:/Icons/images/choice.png</iconset>
+   </property>
    <property name="text">
     <string>New Choise</string>
    </property>
