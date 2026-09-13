@@ -41,6 +41,7 @@ KIND_ORACLE = "oracle"
 KIND_SEMANTIC = "semantic"
 KIND_RENDER = "render"
 KIND_REVIEW = "review"
+KIND_INVARIANT = "invariant"   # a drill invariant: a guaranteed property, registered on failure
 
 
 def normalize(line):
@@ -124,7 +125,8 @@ class Round:
             self._start_dump = result
         return self._start_dump
 
-    def evaluate(self, script_text, prefix_lines=0, expectation_text="", render=None, family=None):
+    def evaluate(self, script_text, prefix_lines=0, expectation_text="", render=None, family=None,
+                 invariant=False):
         """Run the script with every oracle. prefix_lines: the lines of the
         script the previous round accepted; an error inside them is a replay
         oracle failure, later ones are the round's own script error. family
@@ -155,8 +157,10 @@ class Round:
             out.findings.append(Finding(KIND_ORACLE, "dump:" + normalize(str(e)), str(e)))
             return out
         out.findings += self.tier1(script_text, main, out.dump, family)
+        fact_kind = KIND_INVARIANT if invariant else KIND_SEMANTIC
         for fact, reason in expectations.evaluate(expectation_text, out.dump):
-            out.findings.append(Finding(KIND_SEMANTIC, "expect:" + normalize(fact), reason))
+            out.findings.append(Finding(fact_kind, "invariant:" + normalize(fact) if invariant
+                                        else "expect:" + normalize(fact), reason))
         if render is not None and family in (None, "render"):
             out.findings += render(self, script_text, out.dump)
         return out

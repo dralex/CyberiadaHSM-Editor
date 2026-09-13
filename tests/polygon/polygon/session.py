@@ -79,6 +79,7 @@ class Session:
         self.error = ""
         self.stress = False
         self.burst = None
+        self.invariant = False   # a drill: expectation failures are invariants (registered)
         self.folder.mkdir(parents=True, exist_ok=True)
         self.work = self.folder / "work"
 
@@ -88,7 +89,8 @@ class Session:
     def evaluate(self, lines, expectations=""):
         round_ = oracles.Round(self.env, self.config, self.start, self.work)
         oracle = None if self.stress else render.oracle
-        return round_.evaluate(self.text(lines), len(self.script), expectations, oracle)
+        return round_.evaluate(self.text(lines), len(self.script), expectations, oracle,
+                               invariant=self.invariant)
 
     def initial_dump(self):
         result = self.evaluate([])
