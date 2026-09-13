@@ -37,6 +37,7 @@ class TestScene: public QObject {
 
 private slots:
 	void initTestCase();
+	void cleanup();
 	void test_load_scene();
 	void test_item_hierarchy();
 	void test_item_geometry();
@@ -86,6 +87,12 @@ private slots:
 	void test_transition_from_initial();
 	void test_transition_boxes_tool();
 	void test_label_move();
+	void test_label_drag_tracks();
+	void test_single_drag_retargets();
+	void test_vertex_border_attach();
+	void test_vertex_grows_parent();
+	void test_command_sm_has_item();
+	void test_frameless_border_persists();
 
 private:
 	int countItems(int type);
@@ -108,9 +115,9 @@ int TestScene::countItems(int type)
 	return count;
 }
 
-// a left button gesture delivered through the scene, as a view would
-void TestScene::mouse(QEvent::Type type, const QPointF& scenePos, Qt::MouseButtons buttons,
-					  Qt::KeyboardModifiers mods)
+// a left button gesture delivered through a given scene, as a view would
+static void sceneMouse(CyberiadaSMEditorScene* sc, QEvent::Type type, const QPointF& scenePos,
+					   Qt::MouseButtons buttons, Qt::KeyboardModifiers mods = Qt::NoModifier)
 {
 	QGraphicsSceneMouseEvent event(type);
 	event.setScenePos(scenePos);
@@ -118,7 +125,14 @@ void TestScene::mouse(QEvent::Type type, const QPointF& scenePos, Qt::MouseButto
 	event.setButton(Qt::LeftButton);
 	event.setButtons(buttons);
 	event.setModifiers(mods);
-	QApplication::sendEvent(scene, &event);
+	QApplication::sendEvent(sc, &event);
+}
+
+// a left button gesture delivered through the shared scene
+void TestScene::mouse(QEvent::Type type, const QPointF& scenePos, Qt::MouseButtons buttons,
+					  Qt::KeyboardModifiers mods)
+{
+	sceneMouse(scene, type, scenePos, buttons, mods);
 }
 
 // on the boundary of a (rounded) box: inside it grown by a pixel, outside
@@ -150,6 +164,15 @@ void TestScene::initTestCase()
 	scene = new CyberiadaSMEditorScene(model, this);
 	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
 	scene->loadScene();
+}
+
+void TestScene::cleanup()
+{
+	// the model and scene are shared across tests: drop any mouse grab a gesture
+	// left behind so it cannot reach into the next test's events
+	if (scene) {
+		if (QGraphicsItem* g = scene->mouseGrabberItem()) g->ungrabMouse();
+	}
 }
 
 void TestScene::test_load_scene()
@@ -1473,6 +1496,20 @@ void TestScene::test_comment_name()
 	}
 }
 
+static const Cyberiada::Transition* findTransition(CyberiadaSMModel* model,
+												   const Cyberiada::ID& src, const Cyberiada::ID& tgt)
+{
+	std::vector<Cyberiada::StateMachine*> sms = model->rootDocument()->get_state_machines();
+	for (size_t i = 0; i < sms.size(); i++) {
+		std::vector<Cyberiada::Transition*> trs = sms[i]->get_transitions();
+		for (size_t j = 0; j < trs.size(); j++) {
+			if (trs[j]->source_element_id() == src && trs[j]->target_element_id() == tgt)
+				return trs[j];
+		}
+	}
+	return nullptr;
+}
+
 static int transitionsFrom(CyberiadaSMModel* model, const Cyberiada::ID& src)
 {
 	int n = 0;
@@ -1557,6 +1594,180 @@ void TestScene::test_label_move()
 	// an invalid point clears the stored label (auto-placement resumes)
 	QVERIFY(model->updateLabel(idx, Cyberiada::Point()));
 	QVERIFY(!t->has_geometry_label_point());
+}
+
+void TestScene::test_label_drag_tracks()
+{
+	// a label dragged by the mouse tracks the cursor from where it is shown; a
+	// reflow triggered mid-drag must not snap it back to the auto midpoint (#5).
+	// A private scene keeps the shared scene's grab/edit state out of the gesture.
+	CyberiadaSMModel m(nullptr);
+	CyberiadaSMEditorScene s(&m, nullptr);
+	QVERIFY(m.loadDocument("diagrams/geometry.graphml"));
+	s.loadScene();
+	// let the queued font signal settle so the label has its real metrics (an
+	// unlaid-out label has a degenerate hit area and unstable event routing)
+	QCoreApplication::processEvents();
+	// edge-2 carries an action, so its label has a real (stable) hit area
+	CyberiadaSMEditorTransitionItem* tr =
+		dynamic_cast<CyberiadaSMEditorTransitionItem*>(s.getMap().value("edge-2"));
+	QVERIFY(tr);
+	TransitionAction* label = nullptr;
+	for (QGraphicsItem* c : tr->childItems())
+		if ((label = dynamic_cast<TransitionAction*>(c))) break;
+	QVERIFY(label);
+	label->setVisible(true);
+	QVERIFY(!label->toPlainText().isEmpty());
+
+	// grab the label so the gesture routes to it regardless of the (lazily laid
+	// out, font-dependent) hit area; measure pos(), which text layout can't shift
+	s.setCurrentTool(ToolType::Select);
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(&s, &activate);
+	label->grabMouse();
+	QPointF anchor = label->scenePos();
+	QPointF delta(25, 18);
+	// press then a warm-up move: the move anchors dragLast (a late-activating
+	// grab can miss the press), so what follows tracks the cursor exactly
+	sceneMouse(&s, QEvent::GraphicsSceneMousePress, anchor, Qt::LeftButton);
+	sceneMouse(&s, QEvent::GraphicsSceneMouseMove, anchor, Qt::LeftButton);
+	QVERIFY2(label->isDragging(), "the label did not receive the drag");
+	QPointF startPos = label->pos();
+	tr->updateActionPosition();   // a mid-drag reflow must not snap the label back
+	sceneMouse(&s, QEvent::GraphicsSceneMouseMove, anchor + delta, Qt::LeftButton);
+	sceneMouse(&s, QEvent::GraphicsSceneMouseRelease, anchor + delta, Qt::NoButton);
+
+	QPointF moved = label->pos() - startPos;
+	QVERIFY2(QLineF(moved, delta).length() < 3.0, "label did not track the cursor");
+}
+
+void TestScene::test_single_drag_retargets()
+{
+	// a transition drawn with a single drag from a state to another state binds
+	// to that state on release, not left as the seeded self-loop (P-22..P-25)
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	QGraphicsItem* fromItem = scene->getMap().value("node-0-1");
+	QGraphicsItem* toItem = scene->getMap().value("node-0-0-2");
+	QVERIFY(fromItem && toItem);
+	QPointF from = fromItem->sceneBoundingRect().center();
+	QPointF to = toItem->sceneBoundingRect().center();
+
+	scene->setCurrentTool(ToolType::Transition);
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+	mouse(QEvent::GraphicsSceneMousePress, from, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, to, Qt::LeftButton);   // one effective drag
+	mouse(QEvent::GraphicsSceneMouseRelease, to, Qt::NoButton);
+
+	const Cyberiada::Transition* ext = findTransition(model, "node-0-1", "node-0-0-2");
+	QVERIFY2(ext, "single drag did not bind the target on release");
+	QCOMPARE(int(ext->get_transition_type()), int(Cyberiada::transitionExternal));
+	QVERIFY2(!findTransition(model, "node-0-1", "node-0-1"), "a stray self-loop was left");
+}
+
+void TestScene::test_vertex_border_attach()
+{
+	// a transition endpoint on a pseudostate attaches on the circle border, at
+	// the vertex radius from its centre, not at the centre (#2)
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	QGraphicsItem* fromItem = scene->getMap().value("node-0-0-2");
+	QGraphicsItem* initItem = scene->getMap().value("node-0-0-0");   // an initial vertex
+	QVERIFY(fromItem && initItem);
+	QPointF from = fromItem->sceneBoundingRect().center();
+	QPointF to = initItem->sceneBoundingRect().center();
+
+	scene->setCurrentTool(ToolType::Transition);
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+	mouse(QEvent::GraphicsSceneMousePress, from, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, to, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, to, Qt::NoButton);
+
+	const Cyberiada::Transition* t = findTransition(model, "node-0-0-2", "node-0-0-0");
+	QVERIFY2(t, "the transition did not bind to the initial");
+	// the endpoint attaches on the circle border at display time (whether or not
+	// the point is written back), so measure the item's shown target point
+	CyberiadaSMEditorTransitionItem* item =
+		dynamic_cast<CyberiadaSMEditorTransitionItem*>(scene->getMap().value(t->get_id()));
+	QVERIFY(item);
+	QPointF tp = item->targetPoint();
+	qreal r = std::hypot(tp.x(), tp.y());
+	QVERIFY2(qAbs(r - VERTEX_POINT_RADIUS) < 0.5,
+			 qPrintable(QString("target attaches at %1, expected %2").arg(r).arg(VERTEX_POINT_RADIUS)));
+}
+
+void TestScene::test_vertex_grows_parent()
+{
+	// dragging an initial pseudostate to the parent edge extends the parent to
+	// keep containing it, as a state child does (#3)
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	Cyberiada::ElementCollection* comp =
+		dynamic_cast<Cyberiada::ElementCollection*>(model->idToElement("node-0-0"));
+	const Cyberiada::Vertex* init =
+		dynamic_cast<const Cyberiada::Vertex*>(model->idToElement("node-0-0-0"));
+	QGraphicsItem* initItem = scene->getMap().value("node-0-0-0");
+	QVERIFY(comp && init && initItem);
+
+	scene->setCurrentTool(ToolType::Select);
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+	scene->clearSelection();
+	initItem->setSelected(true);
+
+	QPointF start = initItem->sceneBoundingRect().center();
+	QPointF far = start + QPointF(-400, -300);   // out past the parent's edge
+	mouse(QEvent::GraphicsSceneMousePress, start, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, far, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, far, Qt::NoButton);
+
+	Cyberiada::Point vp = init->get_geometry_point();
+	Cyberiada::Rect pr = comp->get_geometry_rect();
+	QVERIFY2(std::fabs(double(vp.x)) + VERTEX_POINT_RADIUS <= pr.width / 2.0 + 0.5,
+			 "parent did not grow to contain the moved vertex (x)");
+	QVERIFY2(std::fabs(double(vp.y)) + VERTEX_POINT_RADIUS <= pr.height / 2.0 + 0.5,
+			 "parent did not grow to contain the moved vertex (y)");
+}
+
+void TestScene::test_command_sm_has_item()
+{
+	// a state machine added to the document (as the new-sm command does) gets a
+	// scene item, not only on the next reopen (P-15/P-16)
+	CyberiadaSMModel m(nullptr);
+	CyberiadaSMEditorScene s(&m, nullptr);
+	QVERIFY(m.loadDocument("diagrams/geometry.graphml"));
+	s.loadScene();
+	auto countSM = [&]() {
+		int n = 0;
+		for (auto i = s.getMap().begin(); i != s.getMap().end(); i++)
+			if ((*i)->type() == CyberiadaSMEditorAbstractItem::SMItem) n++;
+		return n;
+	};
+	int before = countSM();
+	Cyberiada::StateMachine* sm =
+		m.newStateMachine("SM added by command", Cyberiada::Rect(178, 285, 300, 80));
+	QVERIFY(sm);
+	QVERIFY2(s.getMap().value(sm->get_id()) != nullptr,
+			 "the added state machine got no scene item");
+	QCOMPARE(countSM(), before + 1);
+}
+
+void TestScene::test_frameless_border_persists()
+{
+	// a border added to a geometry-less document (format none) upgrades it to a
+	// format that serialises the geometry, so the border saves and undoes (P-21)
+	CyberiadaSMModel m(nullptr);
+	Cyberiada::StateMachine* sm = m.newStateMachine("SM", Cyberiada::Rect());  // frameless
+	QVERIFY(sm);
+	QVERIFY(!sm->has_geometry());
+	QCOMPARE(int(m.rootDocument()->get_geometry_format()), int(Cyberiada::geometryFormatNone));
+
+	QVERIFY(m.updateGeometry(m.elementToIndex(sm), Cyberiada::Rect(100, 100, 200, 100)));
+	QVERIFY(sm->has_geometry());
+	QVERIFY2(m.rootDocument()->get_geometry_format() != Cyberiada::geometryFormatNone,
+			 "the document kept format none, so the border would not be saved");
 }
 
 QTEST_MAIN(TestScene)
