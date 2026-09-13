@@ -29,6 +29,7 @@
 #include "myassert.h"
 #include "cyberiada_constants.h"
 #include "cyberiadasm_editor_vertex_item.h"
+#include "cyberiadasm_editor_state_item.h"
 #include "cyberiadasm_editor_scene.h"
 #include "settings_manager.h"
 
@@ -152,6 +153,22 @@ void CyberiadaSMEditorVertexItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event
     }
 
     QGraphicsItem::mouseMoveEvent(event);
+
+    // a pseudostate dragged to the parent edge extends the parent, like a state
+    if (parentItem()) {
+        CyberiadaSMEditorAbstractItem* parent = dynamic_cast<CyberiadaSMEditorAbstractItem*>(parentItem());
+        if (parent) {
+            parent->updateSizeToFitChildren(this);
+        }
+        StateRegion* stateArea = dynamic_cast<StateRegion*>(parentItem());
+        if (stateArea) {
+            parent = dynamic_cast<CyberiadaSMEditorAbstractItem*>(stateArea->parentItem());
+            if (parent) {
+                parent->updateSizeToFitChildren(this);
+            }
+        }
+    }
+
     emit geometryChanged();
 }
 
