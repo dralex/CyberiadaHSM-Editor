@@ -162,6 +162,7 @@
    <addaction name="actionGridVisibility"/>
    <addaction name="actionServiceObjects"/>
    <addaction name="actionInspectorMode"/>
+   <addaction name="actionLogSession"/>
   </widget>
   <widget class="QToolBar" name="elementToolBar">
    <property name="windowTitle">
@@ -493,6 +494,10 @@
   <action name="actionLogSession">
    <property name="checkable">
     <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/logging.png</normaloff>:/Icons/images/logging.png</iconset>
    </property>
    <property name="text">
     <string>Запись сессии</string>

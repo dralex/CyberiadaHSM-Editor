@@ -30,6 +30,7 @@
         <file>images/snap-mode.png</file>
         <file>images/grid.png</file>
         <file>images/special-markers.png</file>
+        <file>images/logging.png</file>
         <file>images/undo.png</file>
         <file>images/redo.png</file>
     </qresource>
