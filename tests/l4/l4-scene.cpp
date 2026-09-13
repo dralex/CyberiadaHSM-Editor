@@ -93,6 +93,7 @@ private slots:
 	void test_vertex_grows_parent();
 	void test_command_sm_has_item();
 	void test_frameless_border_persists();
+	void test_promoted_composite_region_stable();
 
 private:
 	int countItems(int type);
@@ -1768,6 +1769,34 @@ void TestScene::test_frameless_border_persists()
 	QVERIFY(sm->has_geometry());
 	QVERIFY2(m.rootDocument()->get_geometry_format() != Cyberiada::geometryFormatNone,
 			 "the document kept format none, so the border would not be saved");
+}
+
+void TestScene::test_promoted_composite_region_stable()
+{
+	// a simple state promoted to composite by gaining a child must place its
+	// region below the title just as a reload does, so a child (and the
+	// transitions attached to it) keep their scene position across a reload (P-18)
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	Cyberiada::ElementCollection* simple =
+		dynamic_cast<Cyberiada::ElementCollection*>(model->idToElement("node-0-1"));  // a simple state
+	QVERIFY(simple && !simple->has_children());
+
+	Cyberiada::State* child = model->newState(simple, "child", Cyberiada::Action(),
+											  Cyberiada::Rect(0, 0, 40, 30));
+	QVERIFY(child);
+	QGraphicsItem* childItem = scene->getMap().value(child->get_id());
+	QVERIFY(childItem);
+	QPointF promoted = childItem->scenePos();
+
+	scene->loadScene();   // rebuild from the model, as reopen/redo-all does
+	childItem = scene->getMap().value(child->get_id());
+	QVERIFY(childItem);
+	QPointF reloaded = childItem->scenePos();
+
+	QVERIFY2(QLineF(promoted, reloaded).length() < 0.5,
+			 qPrintable(QString("child moved on reload: %1,%2 -> %3,%4")
+						.arg(promoted.x()).arg(promoted.y()).arg(reloaded.x()).arg(reloaded.y())));
 }
 
 QTEST_MAIN(TestScene)

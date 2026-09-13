@@ -184,6 +184,10 @@ StateRegion *CyberiadaSMEditorStateItem::ensureRegion()
     if (state->is_composite_state() && region == nullptr) {
         region = new StateRegion(this);
         region->setVisibleRegon(SettingsManager::instance().getShowServiceObjects());
+        // position the fresh region below the title/actions, as a
+        // composite-from-load does: a state promoted to composite otherwise
+        // leaves its region at (0,0), shifting the children on the next reload
+        updateRegion();
     }
     return region;
 }
