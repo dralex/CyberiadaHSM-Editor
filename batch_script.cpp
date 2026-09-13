@@ -689,6 +689,20 @@ bool runEditScript(CyberiadaSMEditorWindow* win, const QString& path, QString* e
 					win->actionDeleteElement->trigger();
 					ok = true;
 				}
+			} else if (cmd == "copy" || cmd == "cut") {
+				if (scene->selectedItems().isEmpty()) {
+					message = "nothing is selected";
+				} else {
+					(cmd == "copy" ? win->actionCopy : win->actionCut)->trigger();
+					ok = true;
+				}
+			} else if (cmd == "paste") {
+				if (!win->hasClipboard()) {
+					message = "the clipboard is empty";
+				} else {
+					win->actionPaste->trigger();
+					ok = true;
+				}
 			} else {
 				ok = runCommand(model, tokens, &message);
 			}

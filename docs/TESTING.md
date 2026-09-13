@@ -286,6 +286,8 @@ takes the path of the GUI: the item handlers, the tools, the border zones.
 | `double-click x y [mods]` | double click at the point |
 | `tool <name>` | select the scene tool: `select`, `pan`, `zoom`, `transition`, or a creation tool (`new-sm`, `new-state`, `new-initial`, `new-final`, `new-choice`, `new-terminate`, `new-comment`, `new-formal-comment`). The rect tools (`new-sm`, `new-state`) create from a drawn `press`/`drag`/`release` (a plain click uses a default size); the placement tools create on a click; every creation tool reverts to `select` afterwards |
 | `delete-selected` | delete the selected element through the window action |
+| `copy` / `cut` | copy or cut the selected element to the clipboard (a state copies its subtree; a state machine is not copyable) |
+| `paste` | paste the clipboard element as a sibling of the original, with a fresh id, a unique name and a +20 geometry offset |
 | `type <text>` | type the text into the text being edited, key by key (`\n` is Return) |
 | `key <name> [mods]` | one key: return, escape, tab, backspace, delete, left, right, up, down, home, end, space, or a character |
 | `select-all` | select the whole editable text (Ctrl+A) |

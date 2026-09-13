@@ -113,6 +113,10 @@ private:
     // a detached deep clone of the last copied/cut element (nullptr when empty),
     // and the id of its original parent collection (the paste target level)
     Cyberiada::Element* clipboardElement = nullptr;
+public:
+    // the batch paste verb guards on this
+    bool hasClipboard() const { return clipboardElement != nullptr; }
+private:
     Cyberiada::ID clipboardParentId;
 
     QMap<ToolType, QAction*> toolActMap;
