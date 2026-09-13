@@ -74,6 +74,10 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     connect(actionUndo, &QAction::triggered, this, []() { GestureLog::instance().logAction("undo"); });
     connect(actionRedo, &QAction::triggered, this, []() { GestureLog::instance().logAction("redo"); });
     connect(actionFitContent, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotFitContent);
+    connect(actionNew, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotFileNew);
+    connect(actionCut, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotCut);
+    connect(actionCopy, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotCopy);
+    connect(actionPaste, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotPaste);
     connect(stack, &QUndoStack::canUndoChanged, actionUndo, &QAction::setEnabled);
     connect(stack, &QUndoStack::canRedoChanged, actionRedo, &QAction::setEnabled);
     connect(stack, &QUndoStack::undoTextChanged, this, &CyberiadaSMEditorWindow::slotUndoTextChanged);
@@ -81,12 +85,14 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     connect(stack, &QUndoStack::cleanChanged, this, &CyberiadaSMEditorWindow::slotCleanChanged);
     actionUndo->setEnabled(false);
     actionRedo->setEnabled(false);
+    actionPaste->setEnabled(false);
 }
 
 // the actions die before the model's stack, whose destructor still signals
 CyberiadaSMEditorWindow::~CyberiadaSMEditorWindow()
 {
     model->undoStack()->disconnect(this);
+    delete clipboardElement;
 }
 
 void CyberiadaSMEditorWindow::slotUndoTextChanged(const QString& text)
@@ -149,6 +155,15 @@ void CyberiadaSMEditorWindow::slotModelReset()
 {
     SMView->setRootIndex(model->rootIndex());
     SMView->expandToDepth(2);
+}
+
+void CyberiadaSMEditorWindow::slotFileNew()
+{
+    if (!confirmDiscard()) return;
+    model->reset();
+    model->undoStack()->clear();
+    openFileName = QString();
+    updateTitle();
 }
 
 void CyberiadaSMEditorWindow::slotFileOpen()
@@ -319,6 +334,9 @@ void CyberiadaSMEditorWindow::initializeTools()
     editGroup->addAction(actionNew);
     editGroup->addAction(actionSave);
     editGroup->addAction(actionDeleteElement);
+    editGroup->addAction(actionCut);
+    editGroup->addAction(actionCopy);
+    editGroup->addAction(actionPaste);
     editGroup->addAction(actionUndo);
     editGroup->addAction(actionRedo);
 
@@ -485,6 +503,50 @@ void CyberiadaSMEditorWindow::slotDeleteElement()
         dotToDelete->deleteDot();
         return;
     }
+}
+
+void CyberiadaSMEditorWindow::slotCopy()
+{
+    if (scene->selectedItems().isEmpty()) return;
+    CyberiadaSMEditorAbstractItem* item =
+        dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene->selectedItems().first());
+    if (!item) return;
+    Cyberiada::Element* el = item->getElement();
+    if (!el || el->get_type() == Cyberiada::elementSM) return;   // a State Machine is not copyable
+    delete clipboardElement;
+    clipboardElement = el->copy(nullptr);   // a detached template for later pastes
+    clipboardParentId = el->get_parent() ? el->get_parent()->get_id() : Cyberiada::ID();
+    actionPaste->setEnabled(clipboardElement != nullptr);
+}
+
+void CyberiadaSMEditorWindow::slotCut()
+{
+    if (scene->selectedItems().isEmpty()) return;
+    CyberiadaSMEditorAbstractItem* item =
+        dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene->selectedItems().first());
+    if (!item) return;
+    Cyberiada::Element* el = item->getElement();
+    if (!el || el->get_type() == Cyberiada::elementSM) return;
+    delete clipboardElement;
+    clipboardElement = el->copy(nullptr);
+    clipboardParentId = el->get_parent() ? el->get_parent()->get_id() : Cyberiada::ID();
+    actionPaste->setEnabled(clipboardElement != nullptr);
+    model->deleteElement(model->elementToIndex(el));
+}
+
+void CyberiadaSMEditorWindow::slotPaste()
+{
+    if (!clipboardElement) return;
+    // paste onto the copied element's original hierarchy level if it still exists,
+    // else the first state machine
+    Cyberiada::ElementCollection* target = dynamic_cast<Cyberiada::ElementCollection*>(
+        model->idToElement(QString::fromStdString(clipboardParentId)));
+    if (!target && model->rootDocument()) {
+        std::vector<Cyberiada::StateMachine*> sms = model->rootDocument()->get_state_machines();
+        if (!sms.empty()) target = sms.front();
+    }
+    if (!target) return;
+    model->pasteElement(target, clipboardElement);
 }
 
 void CyberiadaSMEditorWindow::slotInspectorModeTriggered(bool on)

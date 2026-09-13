@@ -99,10 +99,31 @@
     <property name="title">
      <string>&amp;Edit</string>
     </property>
+    <widget class="QMenu" name="menuTools">
+     <property name="title">
+      <string>Tools</string>
+     </property>
+     <addaction name="actionNewState"/>
+     <addaction name="actionNewInitial"/>
+     <addaction name="actionNewFinal"/>
+     <addaction name="actionNewTerminate"/>
+     <addaction name="actionNewComment"/>
+     <addaction name="actionNewFormalComment"/>
+     <addaction name="actionNewTransition"/>
+     <addaction name="actionNewChoise"/>
+     <addaction name="actionNewStateMachine"/>
+    </widget>
+    <addaction name="actionCut"/>
+    <addaction name="actionCopy"/>
+    <addaction name="actionPaste"/>
+    <addaction name="actionDeleteElement"/>
+    <addaction name="separator"/>
     <addaction name="actionUndo"/>
     <addaction name="actionRedo"/>
     <addaction name="separator"/>
-    <addaction name="actionDeleteElement"/>
+    <addaction name="menuTools"/>
+    <addaction name="separator"/>
+    <addaction name="actionInspectorMode"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
@@ -114,7 +135,6 @@
     <addaction name="actionFitContent"/>
     <addaction name="separator"/>
     <addaction name="actionTransitionText"/>
-    <addaction name="actionInspectorMode"/>
     <addaction name="actionGridVisibility"/>
     <addaction name="actionServiceObjects"/>
     <addaction name="actionSnapMode"/>
@@ -123,24 +143,9 @@
     <addaction name="actionPreferences"/>
     <addaction name="separator"/>
    </widget>
-   <widget class="QMenu" name="menuElements">
-    <property name="title">
-     <string>Elements</string>
-    </property>
-    <addaction name="actionNewState"/>
-    <addaction name="actionNewInitial"/>
-    <addaction name="actionNewFinal"/>
-    <addaction name="actionNewTerminate"/>
-    <addaction name="actionNewComment"/>
-    <addaction name="actionNewFormalComment"/>
-    <addaction name="actionNewTransition"/>
-    <addaction name="actionNewChoise"/>
-    <addaction name="actionNewStateMachine"/>
-   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
    <addaction name="menuView"/>
-   <addaction name="menuElements"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <attribute name="toolBarArea">
@@ -149,6 +154,11 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="actionNew"/>
+   <addaction name="actionOpen"/>
+   <addaction name="actionSave"/>
+   <addaction name="actionExport"/>
+   <addaction name="separator"/>
    <addaction name="actionUndo"/>
    <addaction name="actionRedo"/>
    <addaction name="separator"/>
@@ -156,6 +166,21 @@
    <addaction name="actionServiceObjects"/>
    <addaction name="actionInspectorMode"/>
    <addaction name="actionLogSession"/>
+  </widget>
+  <widget class="QToolBar" name="editToolBar">
+   <property name="windowTitle">
+    <string>Edit</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionCut"/>
+   <addaction name="actionCopy"/>
+   <addaction name="actionPaste"/>
+   <addaction name="actionDeleteElement"/>
   </widget>
   <widget class="QToolBar" name="elementToolBar">
    <property name="windowTitle">
@@ -183,8 +208,6 @@
    <addaction name="actionNewComment"/>
    <addaction name="actionNewFormalComment"/>
    <addaction name="actionNewTransition"/>
-   <addaction name="separator"/>
-   <addaction name="actionDeleteElement"/>
   </widget>
   <action name="actionUndo">
    <property name="icon">
@@ -211,6 +234,10 @@
    </property>
   </action>
   <action name="actionOpen">
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/document-open.png</normaloff>:/Icons/images/document-open.png</iconset>
+   </property>
    <property name="text">
     <string>&amp;Open...</string>
    </property>
@@ -350,7 +377,47 @@
     <string>Del</string>
    </property>
   </action>
+  <action name="actionCut">
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/edit-cut.png</normaloff>:/Icons/images/edit-cut.png</iconset>
+   </property>
+   <property name="text">
+    <string>Cut</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+X</string>
+   </property>
+  </action>
+  <action name="actionCopy">
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/edit-copy.png</normaloff>:/Icons/images/edit-copy.png</iconset>
+   </property>
+   <property name="text">
+    <string>Copy</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+C</string>
+   </property>
+  </action>
+  <action name="actionPaste">
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/edit-paste.png</normaloff>:/Icons/images/edit-paste.png</iconset>
+   </property>
+   <property name="text">
+    <string>Paste</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+V</string>
+   </property>
+  </action>
   <action name="actionSave">
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/document-save.png</normaloff>:/Icons/images/document-save.png</iconset>
+   </property>
    <property name="text">
     <string>&amp;Save...</string>
    </property>
@@ -469,6 +536,10 @@
    </property>
   </action>
   <action name="actionExport">
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/document-export.png</normaloff>:/Icons/images/document-export.png</iconset>
+   </property>
    <property name="text">
     <string>Export...</string>
    </property>
@@ -477,6 +548,10 @@
    </property>
   </action>
   <action name="actionNew">
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/document-new.png</normaloff>:/Icons/images/document-new.png</iconset>
+   </property>
    <property name="text">
     <string>New</string>
    </property>

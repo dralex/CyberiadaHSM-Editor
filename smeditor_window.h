@@ -66,6 +66,7 @@ private slots:
     void                    slotLoggingChanged(bool on);
 
 public slots:
+	void                    slotFileNew();
 	void                    slotFileOpen();
     void                    slotFileSave();
     void                    slotFileSaveAs();
@@ -94,6 +95,9 @@ public slots:
     void                    slotNewChoise();
 
     void                    slotDeleteElement();
+    void                    slotCopy();
+    void                    slotCut();
+    void                    slotPaste();
 
 private:
 	CyberiadaSMModel*       model;
@@ -103,6 +107,11 @@ private:
     ToolType currentTool = ToolType::Select;
 
     QString openFileName;
+
+    // a detached deep clone of the last copied/cut element (nullptr when empty),
+    // and the id of its original parent collection (the paste target level)
+    Cyberiada::Element* clipboardElement = nullptr;
+    Cyberiada::ID clipboardParentId;
 
     QMap<ToolType, QAction*> toolActMap;
     // the contextual tool-options toolbars, shown only while their tool is active
