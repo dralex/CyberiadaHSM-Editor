@@ -810,12 +810,20 @@ StateAction::StateAction(const Cyberiada::Action* action, QGraphicsItem *parent)
         typeText = QString("");
     }
     if (!typeText.isEmpty()) {
-        // a multiline behaviour starts under the keyword, as in the document
-        if (behaviour.contains('\n')) {
-            typeText += QString("/\n");
-        } else {
-            typeText += QString(" / ");
+        // the behaviour starts under the keyword (on its own line) when it is
+        // itself multiline or the single line would not fit the state's width;
+        // otherwise it stays on one line ("entry / behaviour")
+        bool nextLine = behaviour.contains('\n');
+        if (!nextLine) {
+            QString oneLine = typeText + QString(" / ") + behaviour;
+            qreal avail = -1.0;
+            if (parentItem()) avail = parentItem()->boundingRect().width() - textMargin;
+            QFontMetricsF fm(font());
+            if (avail > 0 && fm.horizontalAdvance(oneLine) > avail) {
+                nextLine = true;
+            }
         }
+        typeText += nextLine ? QString("/\n") : QString(" / ");
     }
 
     setPlainText(typeText + behaviour);
