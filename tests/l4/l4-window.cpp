@@ -24,6 +24,7 @@
 #include <QtTest>
 #include "smeditor_window.h"
 #include "cyberiadasm_model.h"
+#include "cyberiadasm_editor_view.h"
 
 class TestWindow: public QObject {
 	Q_OBJECT
@@ -33,6 +34,7 @@ private slots:
 	void test_undo_actions();
 	void test_modified_state();
 	void test_creation_tools_arm();
+	void test_view_roundtrip();
 
 private:
 	CyberiadaSMEditorWindow* window;
@@ -99,6 +101,26 @@ void TestWindow::test_creation_tools_arm()
 	QCOMPARE(int(window->getScene()->getCurrentTool()), int(ToolType::Transition));
 	window->actionSelectTool->trigger();
 	QCOMPARE(int(window->getScene()->getCurrentTool()), int(ToolType::Select));
+}
+
+void TestWindow::test_view_roundtrip()
+{
+	// the editor view (scale) is saved in the document and restored on reopen
+	QVERIFY(window->openDocument("diagrams/geometry.graphml"));
+	window->sceneView->setScale(1.5);
+	QString saved = model->editorView();
+	QVERIFY(saved.isEmpty());                       // not written until a save
+	model->setEditorView(window->sceneView->viewState());
+	QVERIFY(model->editorView().startsWith("1.5"));
+
+	QTemporaryDir dir;
+	QVERIFY(dir.isValid());
+	QString path = dir.filePath("view.graphml");
+	model->saveAsDocument(path, Cyberiada::formatCyberiada10, true);
+
+	QVERIFY(window->openDocument(path));
+	QVERIFY(model->editorView().startsWith("1.5"));  // round-tripped through the file
+	QVERIFY(qAbs(window->sceneView->currentScale() - 1.5) < 0.01);   // applied to the view
 }
 
 QTEST_MAIN(TestWindow)

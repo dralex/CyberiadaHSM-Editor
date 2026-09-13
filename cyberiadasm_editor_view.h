@@ -53,6 +53,10 @@ public:
     qreal currentScale() const;
     void  setScale(qreal scale);
 
+    // the view state persisted in the document (scale and scroll offsets)
+    QString viewState() const;
+    void    applyViewState(const QString& state);
+
 public slots:
     void  zoomIn()  { zoomBy(1.25); }
     void  zoomOut() { zoomBy(0.8); }

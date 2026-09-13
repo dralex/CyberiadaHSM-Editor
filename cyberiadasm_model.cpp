@@ -1405,6 +1405,19 @@ Cyberiada::LocalDocument* CyberiadaSMModel::rootDocument()
 	}
 }
 
+QString CyberiadaSMModel::editorView() const
+{
+	if (!root) return QString();
+	return QString::fromStdString(root->meta().get_string("cyberiadaEditorView"));
+}
+
+void CyberiadaSMModel::setEditorView(const QString& value)
+{
+	if (!root || readOnly()) return;
+	root->meta().set_string("cyberiadaEditorView", value.toStdString());
+	root->update_metainfo_element();
+}
+
 bool CyberiadaSMModel::writeSnapshotFile(const QString& path) const
 {
 	if (!root) return false;

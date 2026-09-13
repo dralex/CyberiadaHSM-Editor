@@ -30,6 +30,7 @@
 #include <QRubberBand>
 #include <QMouseEvent>
 #include <QContextMenuEvent>
+#include <QScrollBar>
 
 CyberiadaSMGraphicsView::CyberiadaSMGraphicsView(QWidget *parent):
 	QGraphicsView(parent)
@@ -100,6 +101,25 @@ void CyberiadaSMGraphicsView::zoomBy(qreal factor)
 {
     scale(factor, factor);
     emit scaleChanged(currentScale());
+}
+
+QString CyberiadaSMGraphicsView::viewState() const
+{
+    return QString("%1 %2 %3").arg(currentScale())
+        .arg(horizontalScrollBar()->value()).arg(verticalScrollBar()->value());
+}
+
+void CyberiadaSMGraphicsView::applyViewState(const QString& state)
+{
+    QStringList parts = state.split(' ', Qt::SkipEmptyParts);
+    if (parts.isEmpty()) return;
+    bool ok = false;
+    double scale = parts.at(0).toDouble(&ok);
+    if (ok && scale > 0.0) setScale(scale);
+    if (parts.size() >= 3) {
+        horizontalScrollBar()->setValue(parts.at(1).toInt());
+        verticalScrollBar()->setValue(parts.at(2).toInt());
+    }
 }
 
 void CyberiadaSMGraphicsView::wheelEvent(QWheelEvent *event) {

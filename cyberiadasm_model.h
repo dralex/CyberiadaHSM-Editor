@@ -157,6 +157,11 @@ public:
 	// or the encoding fails
 	bool                                writeSnapshotFile(const QString& path) const;
 
+	// the editor view saved in the document metainformation (cyberiadaEditorView);
+	// setEditorView writes it quietly (no undo step) just before a save
+	QString                             editorView() const;
+	void                                setEditorView(const QString& value);
+
 	// UNDO: one step per user gesture, the whole document snapshotted
 	// around the mutations between the two calls (the calls nest; an
 	// unbracketed mutation is a step of its own)
