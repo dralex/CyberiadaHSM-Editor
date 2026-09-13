@@ -43,6 +43,8 @@ from . import brief as B
 from . import composer as M
 from . import prompt as P
 from . import runner
+from . import tour as TOUR
+from . import toolcover as TC
 from .adapters import base as adapters
 import json
 
@@ -144,6 +146,35 @@ def cmd_register(args):
             print("%s %s: %s" % (problem.id, "registered" if is_new else "known", problem.title))
         return 0
     return 2
+
+
+def cmd_tour(args):
+    """The deterministic tool tour: walk the (tool, pattern) matrix, no LLM."""
+    env = _env()
+    cfg = C.load(args.config)
+    catalog = CAT.Catalog()
+    coverage = COV.Coverage(env.polygon / "coverage.json")
+    toolcover = TC.ToolCoverage(env.polygon / "toolcover.json")
+    start = env.polygon / "corpus" / "empty.graphml"
+    producer = TOUR.DeterministicTour(catalog, coverage, toolcover, args.seed)
+    folder = S.session_folder(env.polygon, "tour", args.seed)
+    session = S.Session(env, cfg, start, producer, _register(env), coverage, folder,
+                        producer_name="tour", seed=args.seed, minimize=not args.no_minimize)
+    session.stress = True
+    session.run(args.rounds)
+    toolcover.save()
+    print("%s: %s" % (folder, session.summary()))
+    print(toolcover.report())
+    for r in session.rounds:
+        for kind, signature, note in r.findings:
+            print("round %d %s %s: %s" % (r.number, kind, signature[:60], note[:90]))
+    return 0
+
+
+def cmd_tour_report(args):
+    env = _env()
+    print(TC.ToolCoverage(env.polygon / "toolcover.json").report())
+    return 0
 
 
 def cmd_fuzz(args):
@@ -390,6 +421,13 @@ def main(argv=None):
     p.add_argument("--stress", action="store_true", help="crash/save-reopen/undo-all/export only, no ink check")
     p.add_argument("--no-minimize", action="store_true")
     p.set_defaults(func=cmd_fuzz)
+    p = sub.add_parser("tour", help="the deterministic tool tour (no backend)")
+    p.add_argument("--seed", type=int, default=1)
+    p.add_argument("--rounds", type=int, default=60)
+    p.add_argument("--no-minimize", action="store_true")
+    p.set_defaults(func=cmd_tour)
+    p = sub.add_parser("tour-report", help="the tool-coverage matrix")
+    p.set_defaults(func=cmd_tour_report)
     p = sub.add_parser("run", help="an agent session (one backend, or a comma list to compare)")
     p.add_argument("--backend")
     p.add_argument("--backends", help="a comma list: run the same mission on each and compare")

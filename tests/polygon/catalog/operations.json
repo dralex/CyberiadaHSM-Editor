@@ -329,6 +329,27 @@
       "form": "gesture"
     },
     {
+      "verb": "copy",
+      "args": "",
+      "effect": "copy the selected element to the clipboard",
+      "targets": [],
+      "form": "gesture"
+    },
+    {
+      "verb": "cut",
+      "args": "",
+      "effect": "cut the selected element to the clipboard",
+      "targets": [],
+      "form": "gesture"
+    },
+    {
+      "verb": "paste",
+      "args": "",
+      "effect": "paste the clipboard element as a sibling with a fresh id and +20 offset",
+      "targets": [],
+      "form": "gesture"
+    },
+    {
       "verb": "edit",
       "args": "<id> <role> [<i>]",
       "effect": "open the inline editor of a canvas text (role title|action <i>|label|body) for the keystroke verbs",
@@ -493,6 +514,26 @@
       "effect": "drag a transition endpoint to move or reattach it",
       "targets": [
         "transition"
+      ],
+      "form": "gesture-form"
+    },
+    {
+      "verb": "copy-paste",
+      "args": "",
+      "effect": "select a state, copy it, paste a duplicate",
+      "targets": [
+        "simple",
+        "composite"
+      ],
+      "form": "gesture-form"
+    },
+    {
+      "verb": "cut-paste",
+      "args": "",
+      "effect": "select a state, cut it, paste it back",
+      "targets": [
+        "simple",
+        "composite"
       ],
       "form": "gesture-form"
     }

@@ -158,6 +158,17 @@ class Fuzzer:
                      "drag %d %d" % (x + w, y + h), "release %d %d" % (x + w, y + h)], tool.element)
         return (["tool %s" % tool.name, "click %d %d" % (x, y)], tool.element)   # place tool
 
+    def emit_clipboard(self, dump, cut=False):
+        """Select a state by a click on its body, copy or cut it, then paste."""
+        states = self.sized_states(dump)
+        if not states:
+            return None
+        item = self.pick(states)
+        x, y, w, h = item.abs_rect
+        bx, by = round(x + w - BODY_INSET), round(y + h - BODY_INSET)
+        verb = "cut" if cut else "copy"
+        return (["click %d %d" % (bx, by), verb, "paste"], "state")
+
     def emit_transition(self, dump):
         """`tool transition` then press a source state and drag to a target."""
         states = self.sized_states(dump)
@@ -288,7 +299,7 @@ class Fuzzer:
     MANIPULATIONS = ("drag-state", "resize-state", "click-delete", "double-click-action",
                      "edit-title", "edit-action", "edit-label", "edit-body",
                      "add-point", "move-point", "remove-point", "move-endpoint",
-                     "undo", "redo")
+                     "copy-paste", "cut-paste", "undo", "redo")
 
     def actions(self):
         """The names the fuzzer chooses among: the creation tools, the
@@ -311,6 +322,10 @@ class Fuzzer:
             return self.gen_edge(name, dump)
         if name in ("undo", "redo"):
             return self.gen_undo_redo(name, dump)
+        if name == "copy-paste":
+            return self.emit_clipboard(dump, cut=False)
+        if name == "cut-paste":
+            return self.emit_clipboard(dump, cut=True)
         return self.gen_gesture(name, dump)
 
     def kind_of(self, name):
