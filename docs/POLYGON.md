@@ -84,6 +84,30 @@ C, Python or a pseudolanguage, multi-line, edits), student session with
 mistakes (small start, the refusals and corrections), and sequential growth
 from a single state to a clean complex system.
 
+### The drill class
+
+A drill takes one editor feature and escalates its complexity through a deterministic
+operation sequence, checking feature-specific **reversibility and conservation invariants**
+the generic oracles miss. Drills target the dependent-history logic where the worst bugs
+live. Each drill is a producer on a small base (`polygon/drills/`), holding a state model
+and a step counter; each round is one escalation step returning a script and its invariant
+facts. The invariants are guaranteed properties, so a violation registers as a defect
+(`invariant` kind), unlike an agent's expectations which stay candidates.
+
+The drills: **nesting** (create, reparent deeper, move out then in; depth grows, out-then-in
+restores, a child stays inside its parent); **pseudostate** (initial and final in and out of
+states, and the unique-initial gesture that reproduces the two-initial hang); **transition-points**
+(add, move, remove polyline points; the endpoints stay); **rebind** (drag a transition's
+endpoint across states; the transition connects the new pair, asserted by endpoints not the
+renamed id); **choice** (a choice and escalating guarded branches); **action** (escalate a
+state's action list; add-then-delete restores it); **resize** (border resize and grow-to-fit
+when a child is dragged past the border); **copy-paste** (build a subtree and duplicate it).
+
+Deterministic drills are the primary, guaranteed-coverage form, run with `drill --which
+<name|all>` and no LLM. An agent drill is an optional realism variant. A reversibility step
+emits an operation and its inverse in one round and asserts the pre-operation structure is
+restored, catching corruption that save-reopen and undo-all miss.
+
 ### The tool tour and the tool-driven fuzzer
 
 The editor's tools were rebuilt into twelve: the select tool, pan and zoom, the transition

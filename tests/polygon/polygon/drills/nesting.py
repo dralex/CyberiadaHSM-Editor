@@ -83,25 +83,40 @@ class PseudostateDrill(Drill):
 
     def emit(self, dump):
         doc = dump.document
-        if doc is None:
-            return None
         machine = self.machine(doc)
         if machine is None:
             return None
-        states = self.states(doc)
+        states = [e for e in doc.walk() if e.is_state]
         step = self.step
         if step == 0:
-            # a state to place pseudostates into
-            return ["new-state %s 60 60 300 200 Host" % machine.id], "state", ""
+            return ["new-state %s 60 60 300 220 Host" % machine.id], "state", ""
         host = states[0].id if states else machine.id
         if step == 1:
-            return ["new-final %s" % host], "final", "count final 1"
+            # a final and an initial placed inside the host by the tool gesture
+            hx, hy = self._host_point(dump, host)
+            return (["tool new-initial", "click %d %d" % (hx, hy)], "initial", "")
         if step == 2:
-            return ["new-initial %s" % host], "initial", "count initial 1"
+            hx, hy = self._host_point(dump, host, dy=60)
+            return (["tool new-final", "click %d %d" % (hx, hy)], "final", "")
         if step == 3:
-            # the unique-initial rule: a second initial on the same level
-            return ["new-initial %s" % host], "initial", "count initial 1"
-        # escalate: initials and finals at the machine level too
-        if step % 2 == 0:
-            return ["new-final %s" % machine.id], "final", ""
-        return ["new-initial %s" % machine.id], "initial", "count initial 1"
+            # the unique-initial probe: a second initial in the host by gesture.
+            # the editor must reject or refuse it; a hang here is the P-1 defect,
+            # caught by the crash oracle (no invariant fact - it is a gesture,
+            # a possible no-op that the tool may silently drop)
+            hx, hy = self._host_point(dump, host, dy=-40)
+            return (["tool new-initial", "click %d %d" % (hx, hy)], "initial", "")
+        # escalate: pseudostates at the machine level and in more states
+        if step % 3 == 0:
+            return ["new-state %s 60 60 260 180 %s" % (machine.id, self.fresh("S"))], "state", ""
+        target = self.rng.choice(states).id if states else machine.id
+        verb = self.rng.choice(["new-final", "new-initial", "new-terminate"])
+        px, py = self._host_point(dump, target, dy=self.rng.choice([-40, 0, 40]))
+        return (["tool %s" % verb, "click %d %d" % (px, py)], "state", "")
+
+    def _host_point(self, dump, host_id, dy=0):
+        item = dump.scene_items().get(host_id)
+        if item is None:
+            m = dump.document.machines()[0]
+            item = dump.scene_items().get(m.id)
+        x, y, w, h = item.abs_rect
+        return round(x + w * 0.5), round(y + h * 0.5 + dy)

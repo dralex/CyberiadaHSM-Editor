@@ -46,6 +46,7 @@ from . import runner
 from . import tour as TOUR
 from . import toolcover as TC
 from .drills import nesting as DRILLS
+from .drills import features as DRILLF
 from .adapters import base as adapters
 import json
 
@@ -149,7 +150,12 @@ def cmd_register(args):
     return 2
 
 
-DRILL_CLASSES = {"nesting": DRILLS.NestingDrill, "pseudostate": DRILLS.PseudostateDrill}
+DRILL_CLASSES = {
+    "nesting": DRILLS.NestingDrill, "pseudostate": DRILLS.PseudostateDrill,
+    "transition-points": DRILLF.TransitionPointDrill, "rebind": DRILLF.RebindDrill,
+    "choice": DRILLF.ChoiceDrill, "action": DRILLF.ActionDrill,
+    "resize": DRILLF.ResizeDrill, "copy-paste": DRILLF.CopyPasteDrill,
+}
 
 
 def cmd_drill(args):
