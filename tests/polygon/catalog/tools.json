@@ -1,0 +1,16 @@
+{
+  "tools": [
+    {"name": "select", "family": "manipulate", "element": "", "default": null},
+    {"name": "transition", "family": "transition", "element": "transition", "default": null},
+    {"name": "new-sm", "family": "rect", "element": "sm", "default": [520, 320]},
+    {"name": "new-state", "family": "rect", "element": "simple", "default": [200, 100]},
+    {"name": "new-initial", "family": "place", "element": "initial", "default": null},
+    {"name": "new-final", "family": "place", "element": "final", "default": null},
+    {"name": "new-choice", "family": "place", "element": "choice", "default": null},
+    {"name": "new-terminate", "family": "place", "element": "terminate", "default": null},
+    {"name": "new-comment", "family": "place", "element": "comment", "default": null},
+    {"name": "new-formal-comment", "family": "place", "element": "formal-comment", "default": null},
+    {"name": "pan", "family": "view", "element": "", "default": null},
+    {"name": "zoom", "family": "view", "element": "", "default": null}
+  ]
+}

@@ -93,6 +93,34 @@ def format_profile(path=None):
     return {entry["tag"]: entry.get("reason", "") for entry in data.get("not_preserved", [])}
 
 
+# the tool families of the reworked editor (catalog/tools.json)
+FAMILY_RECT = "rect"          # new-sm, new-state: draw a rect or click for a default
+FAMILY_PLACE = "place"        # the six pseudostate/comment tools: click to place
+FAMILY_TRANSITION = "transition"
+FAMILY_MANIPULATE = "manipulate"   # the select tool: drag, resize, edit, delete
+FAMILY_VIEW = "view"          # pan, zoom: not used for editing
+
+
+class Tool:
+    def __init__(self, name, family, element, default):
+        self.name = name
+        self.family = family
+        self.element = element
+        self.default = default   # [w, h] for a rect tool, else None
+
+
+def tools(path=None):
+    import json
+    path = Path(path) if path else CATALOG_DIR / "tools.json"
+    data = json.loads(path.read_text())
+    return [Tool(t["name"], t["family"], t["element"], t["default"]) for t in data["tools"]]
+
+
+def creation_tools(path=None):
+    """The eight element-creation tools (rect and place families)."""
+    return [t for t in tools(path) if t.family in (FAMILY_RECT, FAMILY_PLACE)]
+
+
 def model_card(path=None):
     path = Path(path) if path else CATALOG_DIR / "model.md"
     return path.read_text() if path.exists() else ""

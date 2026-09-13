@@ -49,22 +49,26 @@ class CatalogTest(unittest.TestCase):
         self.assertIn("| `new-state <parent> [x y w h] <name>` |", cat.table(CAT.FORM_MODEL))
         self.assertIn(("reparent", "simple"), cat.cells())
 
-    def test_every_verb_generates(self):
+    def test_tool_model(self):
+        ts = CAT.tools()
+        self.assertEqual(len(ts), 12)
+        self.assertEqual(len(CAT.creation_tools()), 8)
+        self.assertEqual({t.name for t in ts if t.family == CAT.FAMILY_RECT}, {"new-sm", "new-state"})
+
+    def test_creation_and_manipulation_generate(self):
         cat = CAT.Catalog()
         cov = COV.Coverage(Path(tempfile.mkdtemp()) / "coverage.json")
         fuzzer = F.Fuzzer(cat, cov, 7)
-        dump = load("geometry")
-        # a comment with a subject and a state with actions widen the corpus
-        for verb in cat.verbs(CAT.FORM_MODEL, CAT.FORM_GESTURE_FORM):
-            with self.subTest(verb):
-                result = fuzzer.generate(verb, dump)
-                if verb in ("update-comment", "new-subject", "delete-subject", "redo",
-                            "edit-body", "edit-title", "edit-action", "edit-label",
-                            "move-point", "remove-point", "add-point", "move-endpoint"):
-                    continue   # no comment/redo/text/polyline-handles in the geometry dump
-                self.assertIsNotNone(result, verb)
-                lines, kind = result
-                self.assertTrue(all(l.split()[0] for l in lines))
+        dump = load("geometry")   # a populated diagram: states, transitions
+        # every creation tool emits a `tool <name>` gesture
+        for tool in CAT.creation_tools():
+            r = fuzzer.emit_creation(tool, dump)
+            self.assertIsNotNone(r, tool.name)
+            self.assertTrue(r[0][0].startswith("tool "))
+        # the transition draw and the select-tool manipulations
+        self.assertIsNotNone(fuzzer.emit_transition(dump))
+        for name in ("drag-state", "resize-state", "click-delete", "add-point", "move-endpoint"):
+            self.assertIsNotNone(fuzzer.generate(name, dump), name)
 
     def test_seed_determinism(self):
         cat = CAT.Catalog()
@@ -98,7 +102,7 @@ class FuzzSessionTest(unittest.TestCase):
             cat = CAT.Catalog()
             cov = COV.Coverage(Path(tmp) / "coverage.json")
             reg = R.Register(Path(tmp) / "problems")
-            producer = F.Fuzzer(cat, cov, 11, gestures=False)
+            producer = F.Fuzzer(cat, cov, 11)
             session = S.Session(ENV, CONFIG, DIAGRAMS / "hierarchy.graphml", producer, reg, cov,
                                 Path(tmp) / "s", producer_name="fuzzer", seed=11, minimize=False)
             session.run(6)
