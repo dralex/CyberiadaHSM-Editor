@@ -50,6 +50,14 @@ CyberiadaSMEditorCommentItem::CyberiadaSMEditorCommentItem(QObject *parent_objec
         setPos(QPointF(r.x, r.y));
     }
 
+    // the comment name: bold, at the top, shown only when the name is set
+    title = new EditableTextItem(comment->get_name().c_str(), this);
+    title->setFontRole(fontRoleStateTitle);
+    title->setTextAlignment(Qt::AlignLeft);
+    title->setVisible(SettingsManager::instance().getShowText() && comment->has_name() &&
+                      !comment->get_name().empty());
+    connect(title, &EditableTextItem::editingFinished, this, &CyberiadaSMEditorCommentItem::onTitleChanged);
+
     body = new EditableTextItem(comment->get_body().c_str(), this);
     body->setVisible(SettingsManager::instance().getShowText());
     body->setPos(-boundingRect().width() / 2 + 15, - boundingRect().height() / 2);
@@ -57,6 +65,7 @@ CyberiadaSMEditorCommentItem::CyberiadaSMEditorCommentItem(QObject *parent_objec
 
     body->setFontRole(element->get_type() == Cyberiada::elementFormalComment ?
                       fontRoleFormalComment : fontRoleComment);
+    body->setTextAlignment(Qt::AlignLeft);
 
     commentBrush = QBrush(QColor(0xff, 0xcc, 0));
 
@@ -142,11 +151,23 @@ void CyberiadaSMEditorCommentItem::onBodyChanged()
     model->updateCommentBody(model->elementToIndex(element), body->toPlainText());
 }
 
+void CyberiadaSMEditorCommentItem::onTitleChanged()
+{
+    model->updateTitle(model->elementToIndex(element), title->toPlainText());
+}
+
 void CyberiadaSMEditorCommentItem::setTextPosition()
 {
-    QRectF oldRect = boundingRect();
-    QRectF titleRect = body->boundingRect();
-    body->setPos(oldRect.x() + (oldRect.width() - titleRect.width()) / 2 , oldRect.y());
+    // the text is left-aligned and stacked from the top: the name (bold, when
+    // set) then the body below it
+    QRectF r = boundingRect();
+    const qreal margin = 8;
+    qreal top = r.top();
+    if (title->isVisible()) {
+        title->setPos(r.left() + margin, top);
+        top += title->boundingRect().height();
+    }
+    body->setPos(r.left() + margin, top);
 }
 
 void CyberiadaSMEditorCommentItem::syncFromModel()
@@ -156,6 +177,10 @@ void CyberiadaSMEditorCommentItem::syncFromModel()
         Cyberiada::Rect r = comment->get_geometry_rect();
         setPos(r.x, r.y);
     }
+    // refresh the name and its visibility
+    QString name = comment->has_name() ? QString::fromStdString(comment->get_name()) : QString();
+    if (title->toPlainText() != name) title->setPlainText(name);
+    title->setVisible(SettingsManager::instance().getShowText() && !name.isEmpty());
     setTextPosition();
     CyberiadaSMEditorAbstractItem::syncFromModel();
 }

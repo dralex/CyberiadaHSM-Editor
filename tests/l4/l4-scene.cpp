@@ -29,6 +29,8 @@
 #include "cyberiadasm_editor_state_item.h"
 #include "dotsignal.h"
 #include "settings_manager.h"
+#include "cyberiadasm_dump.h"
+#include "editable_text_item.h"
 
 class TestScene: public QObject {
 	Q_OBJECT
@@ -80,6 +82,7 @@ private slots:
 	void test_choice_tip_attach();
 	void test_nested_state_grows_parent();
 	void test_creation_tools();
+	void test_comment_name();
 	void test_label_move();
 
 private:
@@ -1435,6 +1438,37 @@ void TestScene::test_creation_tools()
 	mouse(QEvent::GraphicsSceneMouseRelease, p, Qt::NoButton);
 	QCOMPARE(int(sm->find_elements_by_type(Cyberiada::elementInitial).size()), initialsBefore + 1);
 	QCOMPARE(int(scene->getCurrentTool()), int(ToolType::Select));
+}
+
+void TestScene::test_comment_name()
+{
+	// a comment name is shown as a bold title at the top; empty means no title
+	QVERIFY(model->loadDocument("diagrams/comment-transition.graphml"));
+	scene->loadScene();
+	Cyberiada::Element* c = model->idToElement("n2");
+	QVERIFY(c && c->get_type() == Cyberiada::elementComment);
+	QGraphicsItem* item = scene->getMap().value(c->get_id());
+	QVERIFY(item);
+
+	QVERIFY(model->updateTitle(model->elementToIndex(c), "Note"));
+	bool found = false;
+	std::vector<EditableTextItem*> texts = textItemsOf(item);
+	for (size_t i = 0; i < texts.size(); i++) {
+		if (texts[i]->getFontRole() == fontRoleStateTitle) {
+			QCOMPARE(texts[i]->toPlainText(), QString("Note"));
+			QVERIFY(texts[i]->isVisible());
+			QVERIFY(texts[i]->font().bold());
+			found = true;
+		}
+	}
+	QVERIFY(found);
+
+	// clearing the name hides the title again
+	QVERIFY(model->updateTitle(model->elementToIndex(c), ""));
+	texts = textItemsOf(item);
+	for (size_t i = 0; i < texts.size(); i++) {
+		if (texts[i]->getFontRole() == fontRoleStateTitle) QVERIFY(!texts[i]->isVisible());
+	}
 }
 
 void TestScene::test_label_move()
