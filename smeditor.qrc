@@ -35,6 +35,13 @@
         <file>images/logging.png</file>
         <file>images/undo.png</file>
         <file>images/redo.png</file>
+        <file>images/document-new.png</file>
+        <file>images/document-open.png</file>
+        <file>images/document-save.png</file>
+        <file>images/document-export.png</file>
+        <file>images/edit-cut.png</file>
+        <file>images/edit-copy.png</file>
+        <file>images/edit-paste.png</file>
     </qresource>
     <qresource prefix="/Fonts">
         <file>fonts/cyberiada-mono.ttf</file>
