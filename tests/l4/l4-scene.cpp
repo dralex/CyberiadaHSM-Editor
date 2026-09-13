@@ -83,6 +83,8 @@ private slots:
 	void test_nested_state_grows_parent();
 	void test_creation_tools();
 	void test_comment_name();
+	void test_transition_from_initial();
+	void test_transition_boxes_tool();
 	void test_label_move();
 
 private:
@@ -1469,6 +1471,69 @@ void TestScene::test_comment_name()
 	for (size_t i = 0; i < texts.size(); i++) {
 		if (texts[i]->getFontRole() == fontRoleStateTitle) QVERIFY(!texts[i]->isVisible());
 	}
+}
+
+static int transitionsFrom(CyberiadaSMModel* model, const Cyberiada::ID& src)
+{
+	int n = 0;
+	std::vector<Cyberiada::StateMachine*> sms = model->rootDocument()->get_state_machines();
+	for (size_t i = 0; i < sms.size(); i++) {
+		std::vector<Cyberiada::Transition*> trs = sms[i]->get_transitions();
+		for (size_t j = 0; j < trs.size(); j++) {
+			if (trs[j]->source_element_id() == src) n++;
+		}
+	}
+	return n;
+}
+
+void TestScene::test_transition_from_initial()
+{
+	// a transition can be drawn from an initial pseudostate by a body drag under
+	// the transition tool (previously only states could begin one)
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	QGraphicsItem* initItem = scene->getMap().value("node-0-0-0");   // an initial vertex
+	QGraphicsItem* stateItem = scene->getMap().value("node-0-0-1");  // a sibling state
+	QVERIFY(initItem && stateItem);
+	QPointF from = initItem->sceneBoundingRect().center();
+	QPointF to = stateItem->sceneBoundingRect().center();
+
+	int before = transitionsFrom(model, "node-0-0-0");
+	scene->setCurrentTool(ToolType::Transition);
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+	mouse(QEvent::GraphicsSceneMousePress, from, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, (from + to) / 2, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, to, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, to, Qt::NoButton);
+
+	QCOMPARE(transitionsFrom(model, "node-0-0-0"), before + 1);
+	// the one-shot tool returned to select
+	QCOMPARE(int(scene->getCurrentTool()), int(ToolType::Select));
+}
+
+void TestScene::test_transition_boxes_tool()
+{
+	// the source boxes show on a selected source item only under the transition
+	// tool; a count of visible DotSignal children reflects it
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	QGraphicsItem* stateItem = scene->getMap().value("node-0-0-1");
+	QVERIFY(stateItem);
+	scene->clearSelection();
+	stateItem->setSelected(true);
+
+	scene->setCurrentTool(ToolType::Select);
+	int underSelect = 0;
+	for (QGraphicsItem* c : stateItem->childItems())
+		if (dynamic_cast<DotSignal*>(c) && c->isVisible()) underSelect++;
+	QCOMPARE(underSelect, 0);   // no source boxes under the select tool
+
+	scene->setCurrentTool(ToolType::Transition);
+	int underTransition = 0;
+	for (QGraphicsItem* c : stateItem->childItems())
+		if (dynamic_cast<DotSignal*>(c) && c->isVisible()) underTransition++;
+	QCOMPARE(underTransition, 8);   // a state shows all 8 source boxes
 }
 
 void TestScene::test_label_move()
