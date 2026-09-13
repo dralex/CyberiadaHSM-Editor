@@ -94,6 +94,10 @@ private slots:
 	void test_command_sm_has_item();
 	void test_frameless_border_persists();
 	void test_promoted_composite_region_stable();
+	void test_paste_state();
+	void test_paste_transition();
+	void test_sm_not_pasteable();
+	void test_action_multiline();
 
 private:
 	int countItems(int type);
@@ -339,7 +343,8 @@ void TestScene::test_action_edit()
 		if ((action = dynamic_cast<StateAction*>(child))) break;
 	}
 	QVERIFY(action);
-	QCOMPARE(action->toPlainText(), QString("entry / first()"));
+	// the prefix may sit on its own line when it doesn't fit (#6); the behaviour is stable
+	QCOMPARE(action->getBehavior(), QString("first()"));
 
 	// the in-scene edit path: focus, retype, commit on the focus out
 	QEvent activate(QEvent::WindowActivate);
@@ -1797,6 +1802,92 @@ void TestScene::test_promoted_composite_region_stable()
 	QVERIFY2(QLineF(promoted, reloaded).length() < 0.5,
 			 qPrintable(QString("child moved on reload: %1,%2 -> %3,%4")
 						.arg(promoted.x()).arg(promoted.y()).arg(reloaded.x()).arg(reloaded.y())));
+}
+
+void TestScene::test_paste_state()
+{
+	// pasting a state produces a sibling with a fresh id and a unique name, in
+	// one undo step (#9)
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	Cyberiada::Element* src = model->idToElement("node-0-1");   // a simple state
+	Cyberiada::ElementCollection* parent =
+		dynamic_cast<Cyberiada::ElementCollection*>(src->get_parent());
+	QVERIFY(src && parent);
+	int before = model->undoStack()->count();
+
+	Cyberiada::Element* pasted = model->pasteElement(parent, src);
+	QVERIFY(pasted);
+	QVERIFY(pasted->get_id() != src->get_id());                 // fresh id
+	QVERIFY(pasted->get_name() != src->get_name());             // unique name
+	QCOMPARE(pasted->get_parent(), src->get_parent());          // same hierarchy level
+	QCOMPARE(model->undoStack()->count(), before + 1);          // one undo step
+}
+
+void TestScene::test_paste_transition()
+{
+	// a pasted transition keeps its source and target but gets a fresh id and
+	// slightly shifted points (#9)
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	Cyberiada::Transition* src =
+		static_cast<Cyberiada::Transition*>(model->idToElement("edge-2"));  // has stored points
+	QVERIFY(src && src->has_geometry_source_point());
+	Cyberiada::ElementCollection* parent =
+		dynamic_cast<Cyberiada::ElementCollection*>(src->get_parent());
+	QVERIFY(parent);
+	Cyberiada::ID s = src->source_element_id(), t = src->target_element_id();
+	Cyberiada::Point sp = src->get_source_point();
+
+	const Cyberiada::Transition* pasted =
+		dynamic_cast<const Cyberiada::Transition*>(model->pasteElement(parent, src));
+	QVERIFY(pasted);
+	QVERIFY(pasted->get_id() != src->get_id());                 // fresh id
+	QCOMPARE(pasted->source_element_id(), s);                   // same source
+	QCOMPARE(pasted->target_element_id(), t);                   // same target
+	QVERIFY(pasted->has_geometry_source_point());
+	QVERIFY(pasted->get_source_point().x != sp.x || pasted->get_source_point().y != sp.y);  // shifted
+}
+
+void TestScene::test_sm_not_pasteable()
+{
+	// a State Machine can never be pasted (#9)
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	Cyberiada::Element* sm = model->indexToElement(model->firstSMIndex());
+	QVERIFY(sm && sm->get_type() == Cyberiada::elementSM);
+	Cyberiada::ElementCollection* root =
+		dynamic_cast<Cyberiada::ElementCollection*>(sm->get_parent());
+	QCOMPARE(model->pasteElement(root, sm), (Cyberiada::Element*)nullptr);
+}
+
+void TestScene::test_action_multiline()
+{
+	// a state action's behaviour drops to its own line when the single line would
+	// not fit the state width, and stays on one line when it fits (#6)
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	CyberiadaSMEditorStateItem* state =
+		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0-1"));
+	QVERIFY(state);
+	QModelIndex idx = model->elementToIndex(model->idToElement("node-0-1"));
+
+	auto entryText = [&]() -> QString {
+		for (QGraphicsItem* c : state->childItems())
+			if (StateAction* a = dynamic_cast<StateAction*>(c))
+				if (a->toPlainText().startsWith("entry")) return a->toPlainText();
+		return QString();
+	};
+
+	QVERIFY(model->newAction(idx, Cyberiada::actionEntry, QString(), QString(), "f()"));
+	QVERIFY2(!entryText().contains('\n'), "a short action should stay on one line");
+	QVERIFY(model->deleteAction(idx, 0));
+
+	QVERIFY(model->newAction(idx, Cyberiada::actionEntry, QString(), QString(),
+							 "a_very_long_behaviour_that_cannot_fit()"));
+	QString t = entryText();
+	QVERIFY2(t.startsWith("entry/\n"), "a long action should break after entry/");
+	QVERIFY2(!t.mid(QString("entry/\n").length()).contains('\n'), "the behaviour keeps its own line");
 }
 
 QTEST_MAIN(TestScene)

@@ -35,6 +35,7 @@ private slots:
 	void test_modified_state();
 	void test_creation_tools_arm();
 	void test_view_roundtrip();
+	void test_menu_refactor();
 
 private:
 	CyberiadaSMEditorWindow* window;
@@ -121,6 +122,32 @@ void TestWindow::test_view_roundtrip()
 	QVERIFY(window->openDocument(path));
 	QVERIFY(model->editorView().startsWith("1.5"));  // round-tripped through the file
 	QVERIFY(qAbs(window->sceneView->currentScale() - 1.5) < 0.01);   // applied to the view
+}
+
+void TestWindow::test_menu_refactor()
+{
+	// #8: the file actions lead the main toolbar, before undo
+	QList<QAction*> mt = window->mainToolBar->actions();
+	int iNew = mt.indexOf(window->actionNew);
+	int iUndo = mt.indexOf(window->actionUndo);
+	QVERIFY(iNew >= 0 && iUndo >= 0 && iNew < iUndo);
+	QVERIFY(mt.contains(window->actionOpen) && mt.contains(window->actionSave) &&
+			mt.contains(window->actionExport));
+
+	// #7/#9: the clipboard toolbar holds cut/copy/paste/delete
+	QList<QAction*> et = window->editToolBar->actions();
+	QVERIFY(et.contains(window->actionCut) && et.contains(window->actionCopy) &&
+			et.contains(window->actionPaste) && et.contains(window->actionDeleteElement));
+
+	// #7: delete has left the tool palette
+	QVERIFY(!window->elementToolBar->actions().contains(window->actionDeleteElement));
+
+	// the Edit menu hosts clipboard, delete, the Tools submenu and the inspector
+	QList<QAction*> em = window->menuEdit->actions();
+	QVERIFY(em.contains(window->actionCut) && em.contains(window->actionPaste) &&
+			em.contains(window->actionDeleteElement) && em.contains(window->actionInspectorMode));
+	QVERIFY(em.contains(window->menuTools->menuAction()));
+	QVERIFY(window->menuTools->actions().contains(window->actionNewState));
 }
 
 QTEST_MAIN(TestWindow)
