@@ -211,10 +211,13 @@ class Session:
         if known is not None:
             self.register.add(finding, self.start, script)
             return known
+        # an invariant failure keeps its escalation script (a count invariant
+        # can fail from both sides, so minimisation would mislead)
+        minimize = self.minimize and finding.kind != oracles.KIND_INVARIANT
         added, _ = R.register_script(self.register, self.env, self.config, self.start, script,
                                      expectations, title="",
                                      producer=self.producer_name, root=self.env.root,
-                                     do_minimize=self.minimize, plan=plan)
+                                     do_minimize=minimize, plan=plan, invariant=self.invariant)
         for problem, is_new in added:
             if problem.signature == finding.signature:
                 return problem

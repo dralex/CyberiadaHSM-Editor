@@ -72,12 +72,13 @@ def revision(root):
         return ""
 
 
-def evaluate_script(env, config, diagram, script_text, expectation_text="", workdir=None, family=None):
+def evaluate_script(env, config, diagram, script_text, expectation_text="", workdir=None,
+                    family=None, invariant=False):
     """The findings of a script with every oracle (or one family), in a
-    temporary workdir."""
+    temporary workdir. invariant raises expectation failures as invariants."""
     with tempfile.TemporaryDirectory(prefix="polygon-") as tmp:
         round_ = oracles.Round(env, config, diagram, workdir or tmp)
-        return round_.evaluate(script_text, 0, expectation_text, render.oracle, family)
+        return round_.evaluate(script_text, 0, expectation_text, render.oracle, family, invariant)
 
 
 def family_of(signature):
@@ -184,7 +185,8 @@ class Register:
 
 def reproduces(env, config, diagram, script_text, expectation_text, signature):
     result = evaluate_script(env, config, diagram, script_text, expectation_text,
-                             family=family_of(signature))
+                             family=family_of(signature),
+                             invariant=signature.startswith("invariant:"))
     return any(f.signature == signature for f in result.findings)
 
 
@@ -222,10 +224,11 @@ DEFECT_KINDS = (oracles.KIND_CRASH, oracles.KIND_ORACLE, oracles.KIND_RENDER, or
 
 
 def register_script(register, env, config, diagram, script_text, expectation_text="",
-                    title="", producer="", root=None, do_minimize=True, plan="", kinds=DEFECT_KINDS):
+                    title="", producer="", root=None, do_minimize=True, plan="", kinds=DEFECT_KINDS,
+                    invariant=False):
     """Run a script with every oracle and register the findings of the given
     kinds (None: every kind); returns [(problem, is_new)]."""
-    result = evaluate_script(env, config, diagram, script_text, expectation_text)
+    result = evaluate_script(env, config, diagram, script_text, expectation_text, invariant=invariant)
     out = []
     for finding in result.findings:
         # the expectation and review findings are candidates of the session,
@@ -241,7 +244,7 @@ def register_script(register, env, config, diagram, script_text, expectation_tex
             text = minimize(env, config, diagram, script_text, expectation_text, finding.signature)
         # the reproduction files come from one more run of the final script
         with tempfile.TemporaryDirectory(prefix="polygon-") as tmp:
-            again = oracles.Round(env, config, diagram, tmp).evaluate(text, 0, expectation_text, render.oracle)
+            again = oracles.Round(env, config, diagram, tmp).evaluate(text, 0, expectation_text, render.oracle, invariant=invariant)
             match = next((f for f in again.findings if f.signature == finding.signature), finding)
             files = {"render": match.files["png"]} if match.files.get("png") else {}
             out.append(register.add(match, diagram, text, expectation_text, own_title, producer, root,
