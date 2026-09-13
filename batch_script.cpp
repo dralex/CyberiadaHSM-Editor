@@ -610,9 +610,17 @@ static bool runGesture(CyberiadaSMEditorScene* scene, const QStringList& tokens,
 	}
 	if (cmd == "tool") {
 		if (tokens.size() != 2) { *error = "tool requires a name"; return false; }
-		if (tokens.at(1) == "select") scene->setCurrentTool(ToolType::Select);
-		else if (tokens.at(1) == "transition") scene->setCurrentTool(ToolType::Transition);
-		else { *error = "unknown tool '" + tokens.at(1) + "'"; return false; }
+		static const QMap<QString, ToolType> tools = {
+			{"select", ToolType::Select}, {"pan", ToolType::Pan}, {"zoom", ToolType::Zoom},
+			{"transition", ToolType::Transition},
+			{"new-sm", ToolType::NewSM}, {"new-state", ToolType::NewState},
+			{"new-initial", ToolType::NewInitial}, {"new-final", ToolType::NewFinal},
+			{"new-choice", ToolType::NewChoice}, {"new-terminate", ToolType::NewTerminate},
+			{"new-comment", ToolType::NewComment}, {"new-formal-comment", ToolType::NewFormalComment},
+		};
+		QMap<QString, ToolType>::const_iterator it = tools.find(tokens.at(1));
+		if (it == tools.end()) { *error = "unknown tool '" + tokens.at(1) + "'"; return false; }
+		scene->setCurrentTool(it.value());
 		return true;
 	}
 	double v[2];

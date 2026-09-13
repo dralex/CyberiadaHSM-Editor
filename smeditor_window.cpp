@@ -347,11 +347,15 @@ void CyberiadaSMEditorWindow::slotToolSelected(QAction *action)
     }
     // the log records the tools the batch language replays; pan/zoom are view
     // only and change nothing in the model
-    if (currentTool == ToolType::Select) {
-        GestureLog::instance().logGesture("tool select");
-    } else if (currentTool == ToolType::Transition) {
-        GestureLog::instance().logGesture("tool transition");
-    }
+    static const QMap<ToolType, QString> verbs = {
+        {ToolType::Select, "select"}, {ToolType::Transition, "transition"},
+        {ToolType::NewSM, "new-sm"}, {ToolType::NewState, "new-state"},
+        {ToolType::NewInitial, "new-initial"}, {ToolType::NewFinal, "new-final"},
+        {ToolType::NewChoice, "new-choice"}, {ToolType::NewTerminate, "new-terminate"},
+        {ToolType::NewComment, "new-comment"}, {ToolType::NewFormalComment, "new-formal-comment"},
+    };
+    QMap<ToolType, QString>::const_iterator v = verbs.find(currentTool);
+    if (v != verbs.end()) GestureLog::instance().logGesture("tool " + v.value());
 }
 
 void CyberiadaSMEditorWindow::slotFitContent() {

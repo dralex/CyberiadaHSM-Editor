@@ -316,8 +316,8 @@
     },
     {
       "verb": "tool",
-      "args": "select|transition",
-      "effect": "select the scene tool",
+      "args": "select|pan|zoom|transition|new-sm|new-state|new-initial|new-final|new-choice|new-terminate|new-comment|new-formal-comment",
+      "effect": "select the scene tool; the creation tools draw a rect (new-sm, new-state) or place on click, then revert to select",
       "targets": [],
       "form": "gesture"
     },

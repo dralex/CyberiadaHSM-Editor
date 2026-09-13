@@ -284,7 +284,7 @@ takes the path of the GUI: the item handlers, the tools, the border zones.
 | `release x y` | release the button |
 | `click x y [mods]` | press and release at one point |
 | `double-click x y [mods]` | double click at the point |
-| `tool select\|transition` | select the scene tool |
+| `tool <name>` | select the scene tool: `select`, `pan`, `zoom`, `transition`, or a creation tool (`new-sm`, `new-state`, `new-initial`, `new-final`, `new-choice`, `new-terminate`, `new-comment`, `new-formal-comment`). The rect tools (`new-sm`, `new-state`) create from a drawn `press`/`drag`/`release` (a plain click uses a default size); the placement tools create on a click; every creation tool reverts to `select` afterwards |
 | `delete-selected` | delete the selected element through the window action |
 | `type <text>` | type the text into the text being edited, key by key (`\n` is Return) |
 | `key <name> [mods]` | one key: return, escape, tab, backspace, delete, left, right, up, down, home, end, space, or a character |
