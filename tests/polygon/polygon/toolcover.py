@@ -46,9 +46,10 @@ def tool_actions():
     """The names the tour covers: the creation tools, the transition draw, the
     clipboard, and the select-tool manipulations."""
     creation = [t.name for t in CAT.creation_tools()]
-    return creation + ["transition", "copy-paste", "cut-paste",
-                       "drag-state", "resize-state", "edit-title", "edit-action",
-                       "edit-label", "add-point", "move-point", "remove-point",
+    return creation + ["draw-transition", "copy-paste", "cut-paste",
+                       "drag-state", "resize-state", "double-click-action",
+                       "edit-title", "edit-action", "edit-label",
+                       "add-point", "move-point", "remove-point",
                        "move-endpoint", "click-delete"]
 
 

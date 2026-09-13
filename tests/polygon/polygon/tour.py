@@ -39,8 +39,7 @@ class DeterministicTour:
         """Pick the next untried (action, pattern) cell whose gesture applies,
         emit it with the pattern variation, record the cell."""
         cells = self.toolcover.untried() or self.toolcover.all_cells()
-        self.rng.shuffle(cells)
-        for action, pattern in cells:
+        for action, pattern in cells:   # already in prerequisite order
             if action in exclude:
                 continue
             step = self.emit(action, pattern, dump)
