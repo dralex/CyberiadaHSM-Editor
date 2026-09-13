@@ -510,6 +510,8 @@ void CyberiadaSMEditorStateItem::startTransition()
 {
     CyberiadaSMEditorScene* cScene = dynamic_cast<CyberiadaSMEditorScene*>(scene());
     if (!cScene) return;
+    // the transition tool is one-shot: the select tool returns with the release
+    cScene->beginTransientTool(ToolType::Transition);
     CyberiadaSMEditorTransitionItem* trans = cScene->addTransition(this, this);
     if (!trans) return;
     trans->setSelected(true);
@@ -521,8 +523,7 @@ void CyberiadaSMEditorStateItem::slotTransitionFromBox()
 {
     CyberiadaSMEditorScene* cScene = dynamic_cast<CyberiadaSMEditorScene*>(scene());
     if (!cScene || !element->has_geometry() || SettingsManager::instance().getInspectorMode()) return;
-    // the tool follows the gesture and returns with the release
-    cScene->beginTransientTool(ToolType::Transition);
+    // startTransition arms the transient transition tool
     startTransition();
 }
 

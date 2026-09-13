@@ -143,6 +143,17 @@ private:
     // the id of the state machine whose content changed most recently
     Cyberiada::ID lastModifiedSM;
     void noteModified(const QModelIndex& index);
+
+    // element creation by a drawing/placement tool
+    bool             creating = false;
+    QPointF          creationStart;
+    QGraphicsRectItem* creationPreview = nullptr;
+    bool  handleCreationPress(QGraphicsSceneMouseEvent* event);
+    void  handleCreationMove(QGraphicsSceneMouseEvent* event);
+    void  handleCreationRelease(QGraphicsSceneMouseEvent* event);
+    // build the element for the active creation tool from a drawn scene rect
+    // (a click passes a null-size rect and a default size is used)
+    void  createByTool(ToolType tool, const QRectF& sceneRect);
     // the selection to bring back after a snapshot restore
     QList<Cyberiada::ID> selectedBeforeReset;
 

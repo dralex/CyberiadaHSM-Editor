@@ -28,6 +28,8 @@
 #include <QPainter>
 #include <QGraphicsView>
 #include <QGraphicsScene>
+#include <QGraphicsRectItem>
+#include <QGraphicsSceneMouseEvent>
 #include <QCursor>
 #include <QMessageBox>
 
@@ -514,6 +516,35 @@ static QString logMods(Qt::KeyboardModifiers mods)
     return s;
 }
 
+// the element creation tools: rect-drawing (SM, state) and click-placement
+static bool isRectTool(ToolType t)
+{
+    return t == ToolType::NewSM || t == ToolType::NewState;
+}
+
+static bool isCreationTool(ToolType t)
+{
+    return isRectTool(t) ||
+        t == ToolType::NewInitial || t == ToolType::NewFinal ||
+        t == ToolType::NewChoice || t == ToolType::NewTerminate ||
+        t == ToolType::NewComment || t == ToolType::NewFormalComment;
+}
+
+static Cyberiada::ElementType toolElementType(ToolType t)
+{
+    switch (t) {
+    case ToolType::NewSM:           return Cyberiada::elementSM;
+    case ToolType::NewState:        return Cyberiada::elementSimpleState;
+    case ToolType::NewInitial:      return Cyberiada::elementInitial;
+    case ToolType::NewFinal:        return Cyberiada::elementFinal;
+    case ToolType::NewChoice:       return Cyberiada::elementChoice;
+    case ToolType::NewTerminate:    return Cyberiada::elementTerminate;
+    case ToolType::NewComment:      return Cyberiada::elementComment;
+    case ToolType::NewFormalComment:return Cyberiada::elementFormalComment;
+    default:                        return Cyberiada::elementRoot;
+    }
+}
+
 // a mouse gesture is one undo step whatever it writes on the way
 void CyberiadaSMEditorScene::mousePressEvent(QGraphicsSceneMouseEvent* event)
 {
@@ -526,6 +557,11 @@ void CyberiadaSMEditorScene::mousePressEvent(QGraphicsSceneMouseEvent* event)
                                           logMods(event->modifiers()));
         loggingPressed = true;
         loggingLastPoint = event->scenePos();
+    }
+    if (event->button() == Qt::LeftButton && isCreationTool(currentTool) &&
+        handleCreationPress(event)) {
+        event->accept();
+        return;
     }
     QGraphicsScene::mousePressEvent(event);
 }
@@ -541,15 +577,24 @@ void CyberiadaSMEditorScene::mouseMoveEvent(QGraphicsSceneMouseEvent* event)
             loggingLastPoint = p;
         }
     }
+    if (creating) {
+        handleCreationMove(event);
+        event->accept();
+        return;
+    }
     QGraphicsScene::mouseMoveEvent(event);
 }
 
 void CyberiadaSMEditorScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* event)
 {
-    QGraphicsScene::mouseReleaseEvent(event);
-    if (transientTool) {
-        setCurrentTool(ToolType::Select);
-        emit toolChanged(ToolType::Select);
+    if (creating && event->button() == Qt::LeftButton) {
+        handleCreationRelease(event);   // creates the element and reverts to Select
+    } else {
+        QGraphicsScene::mouseReleaseEvent(event);
+        if (transientTool) {
+            setCurrentTool(ToolType::Select);
+            emit toolChanged(ToolType::Select);
+        }
     }
     if (event->button() == Qt::LeftButton && loggingPressed) {
         GestureLog::instance().logGesture("release " + logPoint(event->scenePos()));
@@ -557,6 +602,45 @@ void CyberiadaSMEditorScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* event)
         GestureLog::instance().leaveGesture();
     }
     model->endUndoStep();
+}
+
+bool CyberiadaSMEditorScene::handleCreationPress(QGraphicsSceneMouseEvent* event)
+{
+    creating = true;
+    creationStart = event->scenePos();
+    if (isRectTool(currentTool)) {
+        creationPreview = new QGraphicsRectItem(QRectF(creationStart, creationStart));
+        QPen pen(Qt::DashLine);
+        pen.setColor(Qt::gray);
+        creationPreview->setPen(pen);
+        creationPreview->setZValue(1e6);
+        addItem(creationPreview);
+    }
+    return true;
+}
+
+void CyberiadaSMEditorScene::handleCreationMove(QGraphicsSceneMouseEvent* event)
+{
+    if (creationPreview) {
+        creationPreview->setRect(QRectF(creationStart, event->scenePos()).normalized());
+    }
+}
+
+void CyberiadaSMEditorScene::handleCreationRelease(QGraphicsSceneMouseEvent* event)
+{
+    ToolType tool = currentTool;
+    QRectF rect(creationStart, event->scenePos());
+    rect = rect.normalized();
+    if (creationPreview) {
+        removeItem(creationPreview);
+        delete creationPreview;
+        creationPreview = nullptr;
+    }
+    creating = false;
+    createByTool(tool, rect);
+    // a creation tool is one-shot: back to the selection tool
+    setCurrentTool(ToolType::Select);
+    emit toolChanged(ToolType::Select);
 }
 
 void CyberiadaSMEditorScene::mouseDoubleClickEvent(QGraphicsSceneMouseEvent* event)
@@ -719,6 +803,120 @@ void CyberiadaSMEditorScene::addSMItem(Cyberiada::ElementType type)
                                       Cyberiada::Rect(r.x, r.y, r.width, r.height + st->actionInset()));
                 model->growToFitChildren(element);   // re-cascade the extra height up to the SM
             }
+        }
+        item->setSelected(true);
+    }
+}
+
+void CyberiadaSMEditorScene::createByTool(ToolType tool, const QRectF& sceneRect)
+{
+    Cyberiada::ElementType et = toolElementType(tool);
+    bool tiny = sceneRect.width() < 10 || sceneRect.height() < 10;
+
+    if (tool == ToolType::NewSM) {
+        QRectF r = tiny ? QRectF(creationStart.x() - 260, creationStart.y() - 160, 520, 320) : sceneRect;
+        // adopt a border-less machine (objects but no drawn border) if one is
+        // the only machine, extending it to cover the drawn rect and its content
+        std::vector<Cyberiada::StateMachine*> sms;
+        if (model->rootDocument()) sms = model->rootDocument()->get_state_machines();
+        Cyberiada::StateMachine* borderless = nullptr;
+        bool anyBordered = false;
+        for (std::vector<Cyberiada::StateMachine*>::iterator i = sms.begin(); i != sms.end(); i++) {
+            if ((*i)->has_geometry()) anyBordered = true;
+            else if (!borderless) borderless = *i;
+        }
+        if (borderless && !anyBordered) {
+            QRectF total = r;
+            Cyberiada::Rect content = borderless->get_bound_rect(*model->rootDocument());
+            if (content.valid) {
+                total = total.united(QRectF(content.x - content.width / 2, content.y - content.height / 2,
+                                            content.width, content.height));
+            }
+            model->updateGeometry(model->elementToIndex(borderless),
+                                  Cyberiada::Rect(total.center().x(), total.center().y(),
+                                                  total.width(), total.height()));
+            return;
+        }
+        Cyberiada::Element* element = model->newStateMachine("New State Machine",
+            Cyberiada::Rect(r.center().x(), r.center().y(), r.width(), r.height()));
+        if (!element) return;
+        currentSM = static_cast<Cyberiada::StateMachine*>(element);
+        CyberiadaSMEditorSMItem* smi = new CyberiadaSMEditorSMItem(model, element, NULL);
+        elementIdToItemMap.insert(element->get_id(), smi);
+        addItem(smi);
+        smi->setSelected(true);
+        return;
+    }
+
+    // a child element: find the collection under the start point
+    CyberiadaSMEditorAbstractItem* parentCItem = nullptr;
+    Cyberiada::ElementCollection* parentColl = nullptr;
+    for (QGraphicsItem* gi : items(creationStart)) {
+        CyberiadaSMEditorAbstractItem* ci = dynamic_cast<CyberiadaSMEditorAbstractItem*>(gi);
+        if (ci && (ci->type() == CyberiadaSMEditorAbstractItem::SMItem ||
+                   ci->type() == CyberiadaSMEditorAbstractItem::StateItem ||
+                   ci->type() == CyberiadaSMEditorAbstractItem::CompositeStateItem)) {
+            parentCItem = ci;
+            parentColl = static_cast<Cyberiada::ElementCollection*>(ci->getElement());
+            break;
+        }
+    }
+    if (!parentColl) {
+        if (!currentSM) { addSMItem(et); return; }   // empty canvas: auto-place
+        parentColl = static_cast<Cyberiada::ElementCollection*>(currentSM);
+        parentCItem = dynamic_cast<CyberiadaSMEditorAbstractItem*>(elementIdToItemMap.value(currentSM->get_id()));
+    }
+
+    QGraphicsItem* gp = graphicsParentFor(parentColl);
+    QPointF c = gp ? gp->mapFromScene(sceneRect.center()) : sceneRect.center();
+    double w = tiny ? 200 : sceneRect.width();
+    double h = tiny ? 100 : sceneRect.height();
+
+    Cyberiada::Element* element = NULL;
+    try {
+        switch (et) {
+        case Cyberiada::elementSimpleState:
+            element = model->newState(parentColl, model->uniqueStateName(parentColl, "New state"),
+                                      Cyberiada::Action(), Cyberiada::Rect(c.x(), c.y(), w, h));
+            break;
+        case Cyberiada::elementChoice:
+            element = model->newChoice(parentColl, Cyberiada::Rect(c.x(), c.y(),
+                                                                   CHOICE_DEFAULT_SIZE, CHOICE_DEFAULT_SIZE));
+            break;
+        case Cyberiada::elementComment:
+            element = model->newComment(parentColl, "New comment", Cyberiada::Rect(c.x(), c.y(), 200, 100));
+            break;
+        case Cyberiada::elementFormalComment:
+            element = model->newFormalComment(parentColl, "New formal comment", Cyberiada::Rect(c.x(), c.y(), 200, 100));
+            break;
+        case Cyberiada::elementInitial:
+            element = model->newInitial(parentColl, Cyberiada::Point(c.x(), c.y()));
+            break;
+        case Cyberiada::elementFinal:
+            element = model->newFinal(parentColl, Cyberiada::Point(c.x(), c.y()));
+            break;
+        case Cyberiada::elementTerminate:
+            element = model->newTerminate(parentColl, Cyberiada::Point(c.x(), c.y()));
+            break;
+        default:
+            return;
+        }
+    } catch (const Cyberiada::ParametersException& e) {
+        QMessageBox::critical(NULL, tr("Create new element"),
+                              tr("Parameters error:\n") + QString(e.str().c_str()));
+        return;
+    }
+    if (!element) return;
+
+    QGraphicsItem* item = elementIdToItemMap.value(element->get_id());
+    if (item) {
+        CyberiadaSMEditorSMItem* smItem = dynamic_cast<CyberiadaSMEditorSMItem*>(parentCItem);
+        if (smItem && smItem->getElement()->has_geometry()) {
+            extendStateMachineForChild(smItem, item);
+        } else if (parentCItem &&
+                   dynamic_cast<Cyberiada::ElementCollection*>(parentCItem->getElement()) &&
+                   parentCItem->getElement()->has_geometry()) {
+            model->growToFitChildren(element);
         }
         item->setSelected(true);
     }

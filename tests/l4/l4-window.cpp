@@ -32,8 +32,7 @@ private slots:
 	void initTestCase();
 	void test_undo_actions();
 	void test_modified_state();
-	void test_new_sm_content();
-	void test_new_sm_from_empty();
+	void test_creation_tools_arm();
 
 private:
 	CyberiadaSMEditorWindow* window;
@@ -84,34 +83,22 @@ void TestWindow::test_modified_state()
 	QVERIFY(window->close());
 }
 
-void TestWindow::test_new_sm_content()
+void TestWindow::test_creation_tools_arm()
 {
-	// a frameless machine that already has content is bordered in place by the
-	// New State Machine action; only a further use adds a separate machine
+	// the element creation actions are modal tools now: triggering one arms the
+	// matching tool on the scene instead of creating immediately (the drawing
+	// and placement themselves are covered by l4-scene)
 	QVERIFY(window->openDocument("diagrams/geometry.graphml"));
-	int before = int(model->rootDocument()->get_state_machines().size());
-	QModelIndex smi = model->firstSMIndex();
-	QVERIFY(!model->indexToElement(smi)->has_geometry());
-
+	window->actionNewState->trigger();
+	QCOMPARE(int(window->getScene()->getCurrentTool()), int(ToolType::NewState));
 	window->actionNewStateMachine->trigger();
-	QVERIFY(model->indexToElement(smi)->has_geometry());
-	QCOMPARE(int(model->rootDocument()->get_state_machines().size()), before);
-
-	window->actionNewStateMachine->trigger();
-	QCOMPARE(int(model->rootDocument()->get_state_machines().size()), before + 1);
-}
-
-void TestWindow::test_new_sm_from_empty()
-{
-	// a fresh, empty document: the New State Machine action creates exactly one
-	// bordered machine, not two (the toolbar double-creation regression)
-	CyberiadaSMEditorWindow w;
-	CyberiadaSMModel* m = w.getModel();
-	QVERIFY(!m->rootDocument() || m->rootDocument()->get_state_machines().empty());
-	w.actionNewStateMachine->trigger();
-	QVERIFY(m->rootDocument());
-	QCOMPARE(int(m->rootDocument()->get_state_machines().size()), 1);
-	QVERIFY(m->indexToElement(m->firstSMIndex())->has_geometry());
+	QCOMPARE(int(window->getScene()->getCurrentTool()), int(ToolType::NewSM));
+	window->actionNewChoise->trigger();
+	QCOMPARE(int(window->getScene()->getCurrentTool()), int(ToolType::NewChoice));
+	window->actionNewTransition->trigger();
+	QCOMPARE(int(window->getScene()->getCurrentTool()), int(ToolType::Transition));
+	window->actionSelectTool->trigger();
+	QCOMPARE(int(window->getScene()->getCurrentTool()), int(ToolType::Select));
 }
 
 QTEST_MAIN(TestWindow)

@@ -252,10 +252,18 @@ void CyberiadaSMEditorWindow::initializeTools()
 {
     // the modal tools, one exclusive group; the scene is the single source of
     // truth for the active tool, this map ties each tool to its toolbar action
-    toolActMap[ToolType::Select]     = actionSelectTool;
-    toolActMap[ToolType::Pan]        = actionPan;
-    toolActMap[ToolType::Zoom]       = actionZoomTool;
-    toolActMap[ToolType::Transition] = actionNewTransition;
+    toolActMap[ToolType::Select]           = actionSelectTool;
+    toolActMap[ToolType::Pan]              = actionPan;
+    toolActMap[ToolType::Zoom]             = actionZoomTool;
+    toolActMap[ToolType::Transition]       = actionNewTransition;
+    toolActMap[ToolType::NewSM]            = actionNewStateMachine;
+    toolActMap[ToolType::NewState]         = actionNewState;
+    toolActMap[ToolType::NewInitial]       = actionNewInitial;
+    toolActMap[ToolType::NewFinal]         = actionNewFinal;
+    toolActMap[ToolType::NewChoice]        = actionNewChoise;
+    toolActMap[ToolType::NewTerminate]     = actionNewTerminate;
+    toolActMap[ToolType::NewComment]       = actionNewComment;
+    toolActMap[ToolType::NewFormalComment] = actionNewFormalComment;
 
     toolGroup = new QActionGroup(this);
     for (QAction* a : toolActMap.values()) {
@@ -292,20 +300,14 @@ void CyberiadaSMEditorWindow::initializeTools()
 
     emit toolGroup->triggered(actionSelectTool);
 
-    // everything that modifies the document is switched off while it is inspected
+    // the document-mutating, non-tool actions are switched off while the
+    // document is inspected. The creation tools live in the exclusive toolGroup
+    // (an action belongs to one group only); inspector mode disables the whole
+    // element toolbar (slotInspectorModeChanged), which covers them.
     editGroup = new QActionGroup(this);
     editGroup->setExclusive(false);
     editGroup->addAction(actionNew);
     editGroup->addAction(actionSave);
-    editGroup->addAction(actionNewStateMachine);
-    editGroup->addAction(actionNewState);
-    editGroup->addAction(actionNewInitial);
-    editGroup->addAction(actionNewFinal);
-    editGroup->addAction(actionNewTerminate);
-    editGroup->addAction(actionNewChoise);
-    editGroup->addAction(actionNewComment);
-    editGroup->addAction(actionNewFormalComment);
-    editGroup->addAction(actionNewTransition);
     editGroup->addAction(actionDeleteElement);
     editGroup->addAction(actionUndo);
     editGroup->addAction(actionRedo);
@@ -436,78 +438,18 @@ void CyberiadaSMEditorWindow::slotSceneToolChanged(ToolType tool)
     }
 }
 
-void CyberiadaSMEditorWindow::slotNewSM()
-{
-    // when no machine has a border yet, the first one adopts the existing
-    // elements: it gets an explicit border around them, rather than a new
-    // empty machine appearing beside the content
-    Cyberiada::LocalDocument* doc = model->rootDocument();
-    if (doc) {
-        std::vector<Cyberiada::StateMachine*> sms = doc->get_state_machines();
-        bool anyBordered = false;
-        for (std::vector<Cyberiada::StateMachine*>::iterator i = sms.begin(); i != sms.end(); i++) {
-            if ((*i)->has_geometry()) { anyBordered = true; break; }
-        }
-        if (!anyBordered) {
-            for (std::vector<Cyberiada::StateMachine*>::iterator i = sms.begin(); i != sms.end(); i++) {
-                Cyberiada::Rect content = (*i)->get_bound_rect(*doc);
-                if (content.valid) {
-                    model->updateGeometry(model->elementToIndex(*i), content);
-                    return;
-                }
-            }
-        }
-    }
-    // otherwise add a new machine, placed clear of the others (distinct
-    // geometry, like a new state)
-    scene->addSMItem(Cyberiada::elementSM);
-}
-
-void CyberiadaSMEditorWindow::slotNewState()
-{
-    // a fresh element is a sibling in the current machine, not a child of the
-    // element the previous add left selected
-    scene->clearSelection();
-    scene->addSMItem(Cyberiada::ElementType::elementSimpleState);
-    SMView->update();
-}
-
-void CyberiadaSMEditorWindow::slotNewInitial()
-{
-    scene->clearSelection();
-    scene->addSMItem(Cyberiada::ElementType::elementInitial);
-}
-
-void CyberiadaSMEditorWindow::slotNewFinal()
-{
-    scene->clearSelection();
-    scene->addSMItem(Cyberiada::ElementType::elementFinal);
-}
-
-void CyberiadaSMEditorWindow::slotNewTerminate()
-{
-    scene->clearSelection();
-    scene->addSMItem(Cyberiada::ElementType::elementTerminate);
-}
-
-void CyberiadaSMEditorWindow::slotNewComment()
-{
-    scene->clearSelection();
-    scene->addSMItem(Cyberiada::ElementType::elementComment);
-}
-
-void CyberiadaSMEditorWindow::slotNewFormalComment()
-{
-    scene->clearSelection();
-    scene->addSMItem(Cyberiada::ElementType::elementFormalComment);
-}
-
-void CyberiadaSMEditorWindow::slotNewChoise()
-{
-    scene->clearSelection();
-    scene->addSMItem(Cyberiada::ElementType::elementChoice);
-    SMView->update();
-}
+// the element creation actions are modal tools now: they arm the tool through
+// the exclusive tool group (slotToolSelected); the element is drawn/placed on
+// the canvas. These slots stay for the .ui action connections but do no
+// immediate creation.
+void CyberiadaSMEditorWindow::slotNewSM() {}
+void CyberiadaSMEditorWindow::slotNewState() {}
+void CyberiadaSMEditorWindow::slotNewInitial() {}
+void CyberiadaSMEditorWindow::slotNewFinal() {}
+void CyberiadaSMEditorWindow::slotNewTerminate() {}
+void CyberiadaSMEditorWindow::slotNewComment() {}
+void CyberiadaSMEditorWindow::slotNewFormalComment() {}
+void CyberiadaSMEditorWindow::slotNewChoise() {}
 
 void CyberiadaSMEditorWindow::slotDeleteElement()
 {
@@ -535,7 +477,18 @@ void CyberiadaSMEditorWindow::slotInspectorModeChanged(bool on)
     editGroup->setEnabled(!on);
     actionUndo->setEnabled(!on && model->undoStack()->canUndo());
     actionRedo->setEnabled(!on && model->undoStack()->canRedo());
-    elementToolBar->setEnabled(!on);
+    // disable the creation tools while inspecting, but keep select/pan/zoom so
+    // the document can still be navigated
+    for (auto i = toolActMap.constBegin(); i != toolActMap.constEnd(); i++) {
+        if (i.key() != ToolType::Select && i.key() != ToolType::Pan && i.key() != ToolType::Zoom) {
+            i.value()->setEnabled(!on);
+        }
+    }
+    if (on && currentTool != ToolType::Select && currentTool != ToolType::Pan &&
+        currentTool != ToolType::Zoom) {
+        actionSelectTool->setChecked(true);
+        slotToolSelected(actionSelectTool);
+    }
 
     updateTitle();
 }

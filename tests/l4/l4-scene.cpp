@@ -79,6 +79,7 @@ private slots:
 	void test_choice_edge_rule();
 	void test_choice_tip_attach();
 	void test_nested_state_grows_parent();
+	void test_creation_tools();
 	void test_label_move();
 
 private:
@@ -1380,6 +1381,60 @@ void TestScene::test_nested_state_grows_parent()
 		if (QString(c->get_name().c_str()) == "New state") foundNew = true;
 	}
 	QVERIFY(foundNew);
+}
+
+// count the state children of a collection
+static int countStates(const Cyberiada::ElementCollection* c)
+{
+	int n = 0;
+	Cyberiada::ConstElementList kids = c->get_children();
+	for (Cyberiada::ConstElementList::const_iterator i = kids.begin(); i != kids.end(); i++) {
+		if ((*i)->get_type() == Cyberiada::elementSimpleState ||
+			(*i)->get_type() == Cyberiada::elementCompositeState) n++;
+	}
+	return n;
+}
+
+void TestScene::test_creation_tools()
+{
+	// the creation tools draw/place elements and revert to Select afterwards
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	Cyberiada::ElementCollection* sm =
+		dynamic_cast<Cyberiada::ElementCollection*>(model->indexToElement(model->firstSMIndex()));
+	QVERIFY(sm && !sm->has_geometry());
+
+	// the SM tool over a border-less machine adopts it (gives it a border)
+	QGraphicsItem* smItem = scene->getMap().value(sm->get_id());
+	QVERIFY(smItem);
+	QPointF centre = smItem->sceneBoundingRect().center();
+	int smsBefore = int(model->rootDocument()->get_state_machines().size());
+	scene->setCurrentTool(ToolType::NewSM);
+	mouse(QEvent::GraphicsSceneMousePress,   centre + QPointF(-60, -60), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove,    centre + QPointF(260, 200), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, centre + QPointF(260, 200), Qt::NoButton);
+	QVERIFY(sm->has_geometry());
+	QCOMPARE(int(model->rootDocument()->get_state_machines().size()), smsBefore);
+	QCOMPARE(int(scene->getCurrentTool()), int(ToolType::Select));   // one-shot
+
+	// the state tool draws a state inside the machine
+	int statesBefore = countStates(sm);
+	QRectF smRect = scene->getMap().value(sm->get_id())->sceneBoundingRect();
+	scene->setCurrentTool(ToolType::NewState);
+	mouse(QEvent::GraphicsSceneMousePress,   smRect.center() + QPointF(-100, -50), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove,    smRect.center() + QPointF(100, 50), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, smRect.center() + QPointF(100, 50), Qt::NoButton);
+	QCOMPARE(countStates(sm), statesBefore + 1);
+	QCOMPARE(int(scene->getCurrentTool()), int(ToolType::Select));
+
+	// a click-placement tool drops an element at the point
+	int initialsBefore = int(sm->find_elements_by_type(Cyberiada::elementInitial).size());
+	scene->setCurrentTool(ToolType::NewInitial);
+	QPointF p = scene->getMap().value(sm->get_id())->sceneBoundingRect().center();
+	mouse(QEvent::GraphicsSceneMousePress,   p, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, p, Qt::NoButton);
+	QCOMPARE(int(sm->find_elements_by_type(Cyberiada::elementInitial).size()), initialsBefore + 1);
+	QCOMPARE(int(scene->getCurrentTool()), int(ToolType::Select));
 }
 
 void TestScene::test_label_move()
