@@ -40,9 +40,9 @@ OpenFileDialog::OpenFileDialog(QWidget *parent)
     ui->setupUi(options);
     setOptionsWidget(options);
 
-    // the document is inspected until the user asks for the editing
-    ui->inspectorCheckBox->setChecked(true);
-    slotInspectorToggled(true);
+    // documents open in edit mode by default; inspection is opt-in
+    ui->inspectorCheckBox->setChecked(false);
+    slotInspectorToggled(false);
     slotReconstructToggled(false);
 
     connect(ui->inspectorCheckBox, &QCheckBox::toggled, this, &OpenFileDialog::slotInspectorToggled);

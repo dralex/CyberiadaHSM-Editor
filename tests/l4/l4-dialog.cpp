@@ -61,19 +61,24 @@ void TestDialog::test_options_injected()
 
 void TestDialog::test_default_options()
 {
-	// the document is inspected until the user asks for the editing, and the
+	// documents open in edit mode by default (inspection is opt-in); an
 	// inspected document is never given the geometry it does not have
 	OpenFileDialog dlg;
 	QCheckBox* inspector = dlg.findChild<QCheckBox*>("inspectorCheckBox");
 	QCheckBox* reconstruct = dlg.findChild<QCheckBox*>("reconstructCheckBox");
 	QCheckBox* reconstructSM = dlg.findChild<QCheckBox*>("reconstructSMCheckBox");
 	QVERIFY(inspector && reconstruct && reconstructSM);
-	QVERIFY(dlg.inspectorModeEnabled());
+	QVERIFY(!dlg.inspectorModeEnabled());
+	QVERIFY(reconstruct->isEnabled());
 	QVERIFY(!dlg.reconstructionEnabled());
-	QVERIFY(!reconstruct->isEnabled());
 	QVERIFY(!dlg.reconstructionSMEnabled());
 	QVERIFY(!reconstructSM->isEnabled());
 	QVERIFY(!dlg.strictModeEnabled());
+
+	// turning inspection on disables reconstruction
+	inspector->setChecked(true);
+	QVERIFY(dlg.inspectorModeEnabled());
+	QVERIFY(!reconstruct->isEnabled());
 
 	inspector->setChecked(false);
 	QVERIFY(!dlg.inspectorModeEnabled());
