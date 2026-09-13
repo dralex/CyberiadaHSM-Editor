@@ -627,6 +627,12 @@ bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada:
 	Cyberiada::Element* element = indexToElement(index);
     if (!element) return false;
     if (!element->has_rect_geometry()) return false;
+    // a border set on a geometry-less document (format "none") is otherwise lost:
+    // its snapshot omits geometry, so the change neither saves nor undoes. Adopt
+    // the Qt format so the rect is serialised, undoable and persisted.
+    if (rect.valid && root && root->get_geometry_format() == Cyberiada::geometryFormatNone) {
+        root->set_geometry(Cyberiada::geometryFormatQt);
+    }
     if (element->get_type() == Cyberiada::elementChoice) {
 		Cyberiada::ChoicePseudostate* choice = static_cast<Cyberiada::ChoicePseudostate*>(element);
 		choice->update_geometry(rect);
