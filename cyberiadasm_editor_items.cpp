@@ -29,6 +29,7 @@
 #include "cyberiadasm_editor_items.h"
 #include "cyberiadasm_editor_scene.h"
 #include "cyberiadasm_editor_state_item.h"
+#include "cyberiadasm_editor_transition_item.h"
 #include "settings_manager.h"
 #include "myassert.h"
 #include "cyberiada_constants.h"
@@ -195,13 +196,35 @@ QVariant CyberiadaSMEditorAbstractItem::itemChange(GraphicsItemChange change, co
     if (change == ItemParentHasChanged) {
         handleParentChange();
     }
+    if (change == ItemSelectedHasChanged) {
+        refreshTransitionDots();
+    }
     return QGraphicsItem::itemChange(change, value);
 }
 
 void CyberiadaSMEditorAbstractItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
-    if (!element->has_geometry() ||
-        dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select ) {
+    CyberiadaSMEditorScene* cScene = dynamic_cast<CyberiadaSMEditorScene*>(scene());
+
+    // the transition tool works like selection but only starts transitions:
+    // pressing an item selects it (its source boxes appear) and, for a valid
+    // source, arms a body-drag that draws a transition
+    if (cScene && cScene->getCurrentTool() == ToolType::Transition) {
+        if (event->button() == Qt::LeftButton) {
+            scene()->clearSelection();
+            setSelected(true);
+            if (transitionSourceEnabled && element->has_geometry() &&
+                !SettingsManager::instance().getInspectorMode()) {
+                creatingOfTrans = true;
+            }
+            event->accept();
+        } else {
+            event->ignore();
+        }
+        return;
+    }
+
+    if (!element->has_geometry() || (cScene && cScene->getCurrentTool() != ToolType::Select)) {
         event->ignore();
         return;
     }
@@ -216,17 +239,18 @@ void CyberiadaSMEditorAbstractItem::mousePressEvent(QGraphicsSceneMouseEvent *ev
 
     if (event->button() & Qt::LeftButton) {
         isLeftMouseButtonPressed = true;
-        // setPreviousPosition(event->scenePos());
-        // setPreviousPosition(event->pos());
-        // emit clicked(this);
     }
     QGraphicsItem::mousePressEvent(event);
-
-    showDots();
 }
 
 void CyberiadaSMEditorAbstractItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
+    if (creatingOfTrans) {
+        creatingOfTrans = false;
+        startTransition();
+        return;
+    }
+
     if (!isEditable()) {
         event->ignore();
         return;
@@ -314,7 +338,6 @@ void CyberiadaSMEditorAbstractItem::hoverEnterEvent(QGraphicsSceneHoverEvent *ev
     }
 
     setDotsPosition();
-    showDots();
     QGraphicsItem::hoverEnterEvent(event);
 }
 
@@ -326,7 +349,6 @@ void CyberiadaSMEditorAbstractItem::hoverLeaveEvent(QGraphicsSceneHoverEvent *ev
     }
 
     cornerFlags = 0;
-    hideDots();
     unsetCursor();
     QGraphicsItem::hoverLeaveEvent( event );
 }
@@ -504,6 +526,52 @@ void CyberiadaSMEditorAbstractItem::hideDots()
     if(cornerGrabber[0] == nullptr) return;
     for(int i = 0; i < 8; i++){
         cornerGrabber[i]->setVisible(false);
+    }
+}
+
+void CyberiadaSMEditorAbstractItem::startTransition()
+{
+    // the generic source (a pseudostate or the choice) cannot always be its own
+    // target (an initial has no incoming), so a self-loop seed would be
+    // rejected: draw a rubber-band line and create the transition on release,
+    // when a valid target is known. (States override this with the self-loop
+    // seed, which they can retarget.)
+    CyberiadaSMEditorScene* cScene = dynamic_cast<CyberiadaSMEditorScene*>(scene());
+    if (cScene) cScene->beginTransitionDraw(this);
+}
+
+void CyberiadaSMEditorAbstractItem::slotTransitionFromBox()
+{
+    if (!element->has_geometry() || SettingsManager::instance().getInspectorMode()) return;
+    startTransition();
+}
+
+void CyberiadaSMEditorAbstractItem::enableTransitionSourceDots(const QList<int>& indices)
+{
+    setDotsPosition();   // create/position the grabbers if needed
+    for (int i = 0; i < indices.size(); i++) {
+        int idx = indices.at(i);
+        if (idx < 0 || idx >= 8 || cornerGrabber[idx] == nullptr) continue;
+        cornerGrabber[idx]->setDotFlags(DotSignal::TransitionSource);
+        connect(cornerGrabber[idx], &DotSignal::signalDragStarted,
+                this, &CyberiadaSMEditorAbstractItem::slotTransitionFromBox);
+    }
+    transitionSourceDots = indices;
+    transitionSourceEnabled = !indices.isEmpty();
+    hideDots();
+}
+
+void CyberiadaSMEditorAbstractItem::refreshTransitionDots()
+{
+    if (cornerGrabber[0] == nullptr) return;
+    CyberiadaSMEditorScene* cScene = dynamic_cast<CyberiadaSMEditorScene*>(scene());
+    bool show = transitionSourceEnabled && cScene &&
+                cScene->getCurrentTool() == ToolType::Transition &&
+                isSelected() && element->has_geometry() &&
+                !SettingsManager::instance().getInspectorMode();
+    setDotsPosition();
+    for (int i = 0; i < 8; i++) {
+        cornerGrabber[i]->setVisible(show && transitionSourceDots.contains(i));
     }
 }
 

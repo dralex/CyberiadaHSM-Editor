@@ -27,6 +27,7 @@
 #include <QGraphicsItem>
 #include <QObject>
 #include <QBrush>
+#include <QList>
 
 #include "cyberiadasm_model.h"
 #include "dotsignal.h"
@@ -161,10 +162,33 @@ protected:
     virtual void showDots();
     virtual void hideDots();
 
+    // the transition tool: any source item can begin a transition, by a body
+    // drag or from its "green box" source grabbers. Virtual: states seed a
+    // self-loop and retarget it; other sources draw a rubber-band line
+    virtual void startTransition();
+    // mark the given grabber indices as transition sources (states: all 8;
+    // the choice/vertices: the 4 edge midpoints, i.e. the rhombus tips)
+    void enableTransitionSourceDots(const QList<int>& indices);
+
+public:
+    // show the source boxes only under the transition tool, on the selected
+    // item (called by the scene on a tool change)
+    void refreshTransitionDots();
+
+protected:
     CyberiadaSMEditorAbstractItem* collectionUnderItem();
+
+protected slots:
+    void slotTransitionFromBox();
 
 private:
     void handleParentChange();
+
+protected:
+    // a body/box drag under the transition tool is drawing a transition
+    bool creatingOfTrans = false;
+    bool transitionSourceEnabled = false;
+    QList<int> transitionSourceDots;
 };
 
 #endif

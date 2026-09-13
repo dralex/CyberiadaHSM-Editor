@@ -429,7 +429,8 @@ CyberiadaSMEditorAbstractItem *CyberiadaSMEditorTransitionItem::itemUnderCursor(
 
         if (cItem->type() == CyberiadaSMEditorAbstractItem::StateItem ||
             cItem->type() == CyberiadaSMEditorAbstractItem::CompositeStateItem ||
-            cItem->type() == CyberiadaSMEditorAbstractItem::VertexItem) {
+            cItem->type() == CyberiadaSMEditorAbstractItem::VertexItem ||
+            cItem->type() == CyberiadaSMEditorAbstractItem::ChoiceItem) {
             return cItem;
         }
     }

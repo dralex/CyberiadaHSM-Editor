@@ -40,6 +40,7 @@ public:
     void syncFromModel() override;
 
     QRectF boundingRect() const override;
+    QPainterPath shape() const override;
 
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
 

@@ -92,7 +92,8 @@ public:
 private:
     void initializeActions();
     void addAction(Cyberiada::ActionType type);
-    void startTransition();
+    // a state can self-loop, so it draws with the self-loop-then-retarget seed
+    void startTransition() override;
     void updateSizeToFitChildren(CyberiadaSMEditorAbstractItem* child) override;
 
 signals:
@@ -103,7 +104,6 @@ signals:
     void aboutToDelete();
 
 private slots:
-    void slotTransitionFromBox();
     void onTextItemSizeChanged();
     void onActionDeleted(StateAction* signalOwner);
     void onActionChanged(StateAction* signalOwner);
@@ -114,7 +114,6 @@ private slots:
 protected:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
 
-    void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
     void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) override;
@@ -130,8 +129,6 @@ private:
     qreal region_action_inset = 0;
     const Cyberiada::State* state;
     std::vector<StateAction*> actions;
-
-    bool creatingOfTrans;
     
     void updateParent(CyberiadaSMEditorAbstractItem* newParent);
 

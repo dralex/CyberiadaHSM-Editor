@@ -77,19 +77,14 @@ CyberiadaSMEditorStateItem::CyberiadaSMEditorStateItem(QObject *parent_object,
     }
 
     isHighlighted = false;
-    creatingOfTrans = false;
 
     initializeDots();
     setDotsPosition();
     hideDots();
-    // a drag from a border box draws a transition from the state
-    if (element->has_geometry()) {
-        for (int i = 0; i < 8; i++) {
-            cornerGrabber[i]->setDotFlags(DotSignal::TransitionSource);
-            connect(cornerGrabber[i], &DotSignal::signalDragStarted,
-                    this, &CyberiadaSMEditorStateItem::slotTransitionFromBox);
-        }
-    }
+    // a state draws a transition from any of its 8 border boxes
+    enableTransitionSourceDots(QList<int>() << GrabberTop << GrabberBottom << GrabberLeft
+                               << GrabberRight << GrabberTopLeft << GrabberTopRight
+                               << GrabberBottomLeft << GrabberBottomRight);
 }
 
 // TODO
@@ -453,22 +448,17 @@ void CyberiadaSMEditorStateItem::paint(QPainter *painter, const QStyleOptionGrap
 
 }
 
-void CyberiadaSMEditorStateItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
+void CyberiadaSMEditorStateItem::startTransition()
 {
-    // the transition tool draws from the pressed state; the select tool never does
     CyberiadaSMEditorScene* cScene = dynamic_cast<CyberiadaSMEditorScene*>(scene());
-    if (cScene && cScene->getCurrentTool() == ToolType::Transition) {
-        if (event->button() == Qt::LeftButton && element->has_geometry() &&
-            !SettingsManager::instance().getInspectorMode()) {
-            creatingOfTrans = true;
-            event->accept();
-        } else {
-            event->ignore();
-        }
-        return;
-    }
-
-    CyberiadaSMEditorAbstractItem::mousePressEvent(event);
+    if (!cScene) return;
+    // a state can be its own target: seed a self-loop and let the drag retarget
+    cScene->beginTransientTool(ToolType::Transition);
+    CyberiadaSMEditorTransitionItem* trans = cScene->addTransition(this, this);
+    if (!trans) return;
+    trans->setSelected(true);
+    trans->getDot(1)->setVisible(true);
+    trans->getDot(1)->grabMouse();
 }
 
 void CyberiadaSMEditorStateItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
@@ -506,27 +496,6 @@ void CyberiadaSMEditorStateItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 }
 
 // a new loop whose target dot takes the current drag over
-void CyberiadaSMEditorStateItem::startTransition()
-{
-    CyberiadaSMEditorScene* cScene = dynamic_cast<CyberiadaSMEditorScene*>(scene());
-    if (!cScene) return;
-    // the transition tool is one-shot: the select tool returns with the release
-    cScene->beginTransientTool(ToolType::Transition);
-    CyberiadaSMEditorTransitionItem* trans = cScene->addTransition(this, this);
-    if (!trans) return;
-    trans->setSelected(true);
-    trans->getDot(1)->setVisible(true);
-    trans->getDot(1)->grabMouse();
-}
-
-void CyberiadaSMEditorStateItem::slotTransitionFromBox()
-{
-    CyberiadaSMEditorScene* cScene = dynamic_cast<CyberiadaSMEditorScene*>(scene());
-    if (!cScene || !element->has_geometry() || SettingsManager::instance().getInspectorMode()) return;
-    // startTransition arms the transient transition tool
-    startTransition();
-}
-
 int CyberiadaSMEditorStateItem::missingActionType() const
 {
     if (!entry) return Cyberiada::actionEntry;

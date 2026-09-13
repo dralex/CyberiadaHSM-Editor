@@ -29,7 +29,9 @@
 #include <QGraphicsView>
 #include <QGraphicsScene>
 #include <QGraphicsRectItem>
+#include <QGraphicsLineItem>
 #include <QGraphicsSceneMouseEvent>
+#include <QPen>
 #include <QCursor>
 #include <QMessageBox>
 
@@ -491,13 +493,26 @@ QRectF CyberiadaSMEditorScene::visibleItemsBoundingRect() const
 void CyberiadaSMEditorScene::setCurrentTool(ToolType tool) {
     currentTool = tool;
     transientTool = false;
+    refreshToolDecorations();
 }
 
 void CyberiadaSMEditorScene::beginTransientTool(ToolType tool)
 {
     currentTool = tool;
     transientTool = true;
+    refreshToolDecorations();
     emit toolChanged(tool);
+}
+
+void CyberiadaSMEditorScene::refreshToolDecorations()
+{
+    // the transition source boxes show only under the transition tool: refresh
+    // every item when the tool changes
+    for (QGraphicsItem* item : items()) {
+        if (CyberiadaSMEditorAbstractItem* ci = dynamic_cast<CyberiadaSMEditorAbstractItem*>(item)) {
+            ci->refreshTransitionDots();
+        }
+    }
 }
 
 // the session log coordinates and the keyboard modifiers, in the batch script
@@ -577,6 +592,11 @@ void CyberiadaSMEditorScene::mouseMoveEvent(QGraphicsSceneMouseEvent* event)
             loggingLastPoint = p;
         }
     }
+    if (transitionDrawLine) {
+        transitionDrawLine->setLine(QLineF(transitionDrawLine->line().p1(), event->scenePos()));
+        event->accept();
+        return;
+    }
     if (creating) {
         handleCreationMove(event);
         event->accept();
@@ -587,7 +607,9 @@ void CyberiadaSMEditorScene::mouseMoveEvent(QGraphicsSceneMouseEvent* event)
 
 void CyberiadaSMEditorScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* event)
 {
-    if (creating && event->button() == Qt::LeftButton) {
+    if (transitionDrawLine && event->button() == Qt::LeftButton) {
+        finishTransitionDraw(event->scenePos());   // creates the transition and reverts to Select
+    } else if (creating && event->button() == Qt::LeftButton) {
         handleCreationRelease(event);   // creates the element and reverts to Select
     } else {
         QGraphicsScene::mouseReleaseEvent(event);
@@ -1020,6 +1042,60 @@ CyberiadaSMEditorTransitionItem* CyberiadaSMEditorScene::addTransition(Cyberiada
         // error = true;
         return nullptr;
     }
+}
+
+void CyberiadaSMEditorScene::beginTransitionDraw(CyberiadaSMEditorAbstractItem* source)
+{
+    if (!source) return;
+    beginTransientTool(ToolType::Transition);   // one-shot: back to select on release
+    transitionSource = source;
+    QPointF c = source->sceneBoundingRect().center();
+    transitionDrawLine = new QGraphicsLineItem(QLineF(c, c));
+    QPen pen(Qt::black, 1, Qt::DashLine);
+    transitionDrawLine->setPen(pen);
+    transitionDrawLine->setZValue(1e6);
+    addItem(transitionDrawLine);
+}
+
+void CyberiadaSMEditorScene::finishTransitionDraw(const QPointF& scenePos)
+{
+    CyberiadaSMEditorAbstractItem* src = transitionSource;
+    if (transitionDrawLine) {
+        removeItem(transitionDrawLine);
+        delete transitionDrawLine;
+        transitionDrawLine = nullptr;
+    }
+    transitionSource = nullptr;
+
+    // a valid target under the release point
+    CyberiadaSMEditorAbstractItem* target = nullptr;
+    for (QGraphicsItem* gi : items(scenePos)) {
+        CyberiadaSMEditorAbstractItem* ci = dynamic_cast<CyberiadaSMEditorAbstractItem*>(gi);
+        if (ci && (ci->type() == CyberiadaSMEditorAbstractItem::StateItem ||
+                   ci->type() == CyberiadaSMEditorAbstractItem::CompositeStateItem ||
+                   ci->type() == CyberiadaSMEditorAbstractItem::VertexItem ||
+                   ci->type() == CyberiadaSMEditorAbstractItem::ChoiceItem)) {
+            target = ci;
+            break;
+        }
+    }
+    if (src && target && currentSM) {
+        try {
+            // an invalid pair (e.g. into an initial) is silently dropped, no dialog
+            Cyberiada::Element* element = model->newTransition(
+                currentSM, Cyberiada::transitionExternal, src->getElement(), target->getElement(),
+                Cyberiada::Action(Cyberiada::actionTransition));
+            if (element) {
+                QGraphicsItem* item = elementIdToItemMap.value(element->get_id());
+                if (item) item->setSelected(true);
+            }
+        } catch (const Cyberiada::Exception&) {
+            // not a valid source/target pair
+        }
+    }
+    // the transition tool is one-shot
+    setCurrentTool(ToolType::Select);
+    emit toolChanged(ToolType::Select);
 }
 
 void CyberiadaSMEditorScene::drawBackground(QPainter* painter, const QRectF& exposed)

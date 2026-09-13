@@ -80,6 +80,9 @@ public:
 
     void addSMItem(Cyberiada::ElementType type);
     CyberiadaSMEditorTransitionItem* addTransition(CyberiadaSMEditorAbstractItem* source, CyberiadaSMEditorAbstractItem* target);
+    // draw a transition with a rubber-band line, creating it on release over a
+    // valid target (used by sources that cannot seed a self-loop)
+    void beginTransitionDraw(CyberiadaSMEditorAbstractItem* source);
 
     // the scene rect of the state machine whose content changed most recently
     // (for the zoom-to-SM action); a null rect if none is known
@@ -122,6 +125,8 @@ private:
     // newly added child fits inside it
     void extendStateMachineForChild(CyberiadaSMEditorAbstractItem* smItem, QGraphicsItem* child);
     void  removeItemsForElement(Cyberiada::Element* element);
+    // show/hide the transition source boxes on all items when the tool changes
+    void  refreshToolDecorations();
     // an item about to be deleted must not stay the mouse grabber or the focus
     // item: Qt keeps a raw pointer and would deliver the pending event to the
     // freed object (a use-after-free crash on a mid-gesture model reset)
@@ -148,6 +153,10 @@ private:
     bool             creating = false;
     QPointF          creationStart;
     QGraphicsRectItem* creationPreview = nullptr;
+    // the transition rubber-band draw (from a pseudostate or the choice)
+    QGraphicsLineItem* transitionDrawLine = nullptr;
+    CyberiadaSMEditorAbstractItem* transitionSource = nullptr;
+    void  finishTransitionDraw(const QPointF& scenePos);
     bool  handleCreationPress(QGraphicsSceneMouseEvent* event);
     void  handleCreationMove(QGraphicsSceneMouseEvent* event);
     void  handleCreationRelease(QGraphicsSceneMouseEvent* event);

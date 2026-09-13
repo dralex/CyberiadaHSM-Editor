@@ -53,6 +53,25 @@ CyberiadaSMEditorChoiceItem::CyberiadaSMEditorChoiceItem(CyberiadaSMModel* model
     initializeDots();
     setDotsPosition();
     hideDots();
+    // begin a transition from the four rhombus tips (or a body drag)
+    enableTransitionSourceDots(QList<int>() << GrabberTop << GrabberBottom
+                               << GrabberLeft << GrabberRight);
+}
+
+QPainterPath CyberiadaSMEditorChoiceItem::shape() const
+{
+    // the hit/attach shape is the rhombus, not the bounding rect, so the source
+    // boxes and the transition endpoints match the drawn diamond
+    QRectF r = boundingRect();
+    QPolygonF diamond;
+    diamond << QPointF(r.left() + r.width() / 2.0, r.top())
+            << QPointF(r.right(), r.top() + r.height() / 2.0)
+            << QPointF(r.left() + r.width() / 2.0, r.bottom())
+            << QPointF(r.left(), r.top() + r.height() / 2.0);
+    QPainterPath path;
+    path.addPolygon(diamond);
+    path.closeSubpath();
+    return path;
 }
 
 void CyberiadaSMEditorChoiceItem::syncFromModel()
@@ -98,6 +117,12 @@ void CyberiadaSMEditorChoiceItem::paint(QPainter* painter, const QStyleOptionGra
 
 void CyberiadaSMEditorChoiceItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
+    if (creatingOfTrans) {
+        creatingOfTrans = false;
+        startTransition();
+        return;
+    }
+
     if (!isEditable()) {
         event->ignore();
         return;

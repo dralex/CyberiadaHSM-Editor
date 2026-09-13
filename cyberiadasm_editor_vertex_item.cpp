@@ -51,6 +51,9 @@ CyberiadaSMEditorVertexItem::CyberiadaSMEditorVertexItem(CyberiadaSMModel* model
     initializeDots();
     setDotsPosition();
     hideDots();
+    // begin a transition from the four cardinal boxes (or a body drag)
+    enableTransitionSourceDots(QList<int>() << GrabberTop << GrabberBottom
+                               << GrabberLeft << GrabberRight);
 }
 
 void CyberiadaSMEditorVertexItem::syncFromModel()
@@ -131,6 +134,12 @@ void CyberiadaSMEditorVertexItem::paint(QPainter* painter, const QStyleOptionGra
 
 void CyberiadaSMEditorVertexItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
+    if (creatingOfTrans) {
+        creatingOfTrans = false;
+        startTransition();
+        return;
+    }
+
     if (!isEditable()) {
         event->ignore();
         return;
