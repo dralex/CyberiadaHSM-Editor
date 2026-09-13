@@ -183,8 +183,25 @@ def _first_message(env, cfg, mission):
         return P.mission_reproduce(B.brief(mission.name, dump.document))
     if mission.kind == M.EXPLORE:
         return P.mission_explore(mission.domain, mission.budget)
+    if mission.kind == M.TOUR:
+        return P.mission_tour(_tour_tools(), mission.budget)
     return P.mission_combine(mission.name, D.describe(dump.document), P.scene_text(dump), dump.stack,
                              mission.operations, mission.theme, mission.budget, mission.untried)
+
+
+def _tour_tools():
+    """(tool name, how-to) pairs for the tour prompt, from the tool model."""
+    how = {CAT.FAMILY_RECT: "draw a rect or click for a default size",
+           CAT.FAMILY_PLACE: "click to place", CAT.FAMILY_TRANSITION:
+           "press a source state and drag to a target", CAT.FAMILY_MANIPULATE:
+           "drag to move, drag a border to resize, double-click to edit text, "
+           "drag the point dots of a transition, delete the selected element"}
+    out = []
+    for t in CAT.tools():
+        if t.family == CAT.FAMILY_VIEW:
+            continue
+        out.append((t.name, how.get(t.family, "")))
+    return out
 
 
 def _run_session(env, cfg, catalog, coverage, backend, mission, folder, args):
@@ -207,6 +224,8 @@ def _run_session(env, cfg, catalog, coverage, backend, mission, folder, args):
         burst_fuzzer = F.Fuzzer(catalog, coverage, mission.seed, gestures=True)
         burst_fuzzer.gestures_only = True
         session.burst = (burst_fuzzer, getattr(args, "burst", 5) or 5)
+    # the tour is pure systematic agent: no burst, full oracles (a tool that
+    # draws nothing is a finding)
     session.run(args.rounds or cfg.rounds)
     (folder / "usage.json").write_text(json.dumps(adapter.usage, indent=2) + "\n")
     log.close()
@@ -374,7 +393,7 @@ def main(argv=None):
     p = sub.add_parser("run", help="an agent session (one backend, or a comma list to compare)")
     p.add_argument("--backend")
     p.add_argument("--backends", help="a comma list: run the same mission on each and compare")
-    p.add_argument("--mission", choices=[M.REPRODUCE, M.COMBINE, M.EXPLORE], default=M.COMBINE)
+    p.add_argument("--mission", choices=[M.REPRODUCE, M.COMBINE, M.EXPLORE, M.TOUR], default=M.COMBINE)
     p.add_argument("--diagram")
     p.add_argument("--theme", help="the combination theme (its start rule and hint)")
     p.add_argument("--seed", type=int, default=1)
