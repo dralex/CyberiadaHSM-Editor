@@ -612,6 +612,10 @@ void CyberiadaSMEditorTransitionItem::updateAction()
 void CyberiadaSMEditorTransitionItem::updateActionPosition() {
     if (!actionItem) return;
 
+    // while the user drags the label, leave it where the drag puts it: a reflow
+    // triggered mid-drag must not snap it back to the auto midpoint
+    if (actionItem->isDragging()) return;
+
     // a moved label keeps its stored position, relative to the source centre
     if (transition->has_geometry_label_point()) {
         const Cyberiada::Point& lp = transition->get_label_point();

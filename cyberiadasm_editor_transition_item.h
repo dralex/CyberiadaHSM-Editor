@@ -185,6 +185,7 @@ public:
     QString getTrigger() const;
     QString getGuard() const;
     QString getBehaviour() const;
+    bool isDragging() const { return dragging; }
 
 protected:
     void paint( QPainter *painter, const QStyleOptionGraphicsItem *o, QWidget *w) override;
