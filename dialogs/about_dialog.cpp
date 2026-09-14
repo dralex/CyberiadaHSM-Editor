@@ -63,6 +63,13 @@ AboutDialog::AboutDialog(QWidget* parent):
     authors->setOpenExternalLinks(true);
     layout->addWidget(authors);
 
+    QLabel* project = new QLabel(
+        tr("<p align=\"center\"><a href=\"https://platform.kruzhok.org/programming\">"
+           "Cyberiada Project</a></p>"), this);
+    project->setTextInteractionFlags(Qt::TextBrowserInteraction);
+    project->setOpenExternalLinks(true);
+    layout->addWidget(project);
+
     QDialogButtonBox* buttons = new QDialogButtonBox(QDialogButtonBox::Close, this);
     connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
     layout->addWidget(buttons);
