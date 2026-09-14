@@ -1,0 +1,19 @@
+set(CPACK_VERBATIM_VARIABLES YES)
+set(CPACK_PACKAGE_VENDOR "Kruzhok Association")
+set(CPACK_PACKAGE_CONTACT "aleksey@fedoseev.net")
+set(CPACK_RESOURCE_FILE_LICENSE "@CMAKE_CURRENT_SOURCE_DIR@/LICENSE")
+set(CPACK_RESOURCE_FILE_README "@CMAKE_CURRENT_SOURCE_DIR@/README.md")
+
+# a single runtime package for the editor
+set(CPACK_DEB_COMPONENT_INSTALL YES)
+set(CPACK_COMPONENTS_ALL runtime)
+set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
+set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
+set(CPACK_DEBIAN_PACKAGE_SECTION "electronics")
+
+set(CPACK_DEBIAN_RUNTIME_PACKAGE_NAME "cyberiada-editor")
+set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "The Qt editor for Cyberiada state machine diagrams")
+# the Cyberiada libraries carry no dpkg shlibs, so name them explicitly; the Qt
+# and system libraries are resolved from the binary by dpkg-shlibdeps
+set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+set(CPACK_DEBIAN_RUNTIME_PACKAGE_DEPENDS "libcyberiadaml (>= 1.0.6), libcyberiadamlpp (>= 1.0.6)")

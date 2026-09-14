@@ -16,9 +16,19 @@ the GNU Free Documentation License (version 1.3).
 
 ## Installation
 
-Create `build` directory: `mkdir build && cd build`
+Configure and build with CMake:
 
-Run `cmake ..` to build the library binaries and the test program.
+```
+cmake -B build
+cmake --build build
+```
+
+If the dependencies are not in the default system location, point
+`find_package` at them with `-DCMAKE_PREFIX_PATH=<prefix>`.
+
+Build a Debian package with `cpack -G DEB` from the build directory.
+
+To build on Windows, see [docs/BUILDING-WINDOWS.md](docs/BUILDING-WINDOWS.md).
 
 ## Testing
 

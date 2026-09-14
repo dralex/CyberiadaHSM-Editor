@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Cyberiada State Machine Editor
+GenericName=State Machine Editor
+Comment=Edit Cyberiada hierarchical state machine diagrams
+Exec=CyberiadaEditor %f
+Icon=cyberiada-editor
+Terminal=false
+Categories=Development;Engineering;
+MimeType=application/x-cyberiada-graphml+xml;
+Keywords=HSM;statechart;state machine;CyberiadaML;GraphML;

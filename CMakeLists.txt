@@ -2,7 +2,11 @@ cmake_minimum_required(VERSION 3.10)
 
 project(CyberiadaEditor VERSION 1.0.0 LANGUAGES CXX)
 
-list(APPEND CMAKE_MODULE_PATH /usr/lib/cmake)
+# the system CMake package configs live here on Debian/Ubuntu; on other
+# platforms the Cyberiada dependencies are found through CMAKE_PREFIX_PATH
+if(UNIX)
+  list(APPEND CMAKE_MODULE_PATH /usr/lib/cmake)
+endif()
 
 # capture the git revision at configure time for the session-log header
 find_package(Git QUIET)
@@ -21,10 +25,16 @@ if(Git_FOUND)
 endif()
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/version.h.in ${CMAKE_CURRENT_BINARY_DIR}/version.h @ONLY)
 
-set(cyberiadamlpp_DIR /usr/lib/cmake)
+# default the dependency package dirs to the Debian/Ubuntu location, but let a
+# user override (Windows, or a local prefix) via -D<pkg>_DIR or CMAKE_PREFIX_PATH
+if(UNIX AND NOT cyberiadamlpp_DIR)
+  set(cyberiadamlpp_DIR /usr/lib/cmake)
+endif()
 find_package(cyberiadamlpp REQUIRED)
 
-set(cyberiadaml_DIR /usr/lib/cmake)
+if(UNIX AND NOT cyberiadaml_DIR)
+  set(cyberiadaml_DIR /usr/lib/cmake)
+endif()
 find_package(cyberiadaml REQUIRED)
 
 find_package(QtPropertyBrowser REQUIRED)
@@ -95,10 +105,6 @@ target_include_directories(CyberiadaEditorCore PUBLIC
   ${cyberiadaml_INCLUDE_DIRS}
   ${cyberiadamlpp_INCLUDE_DIRS}
   )
-target_link_directories(CyberiadaEditorCore PUBLIC
-  ${cyberiadaml_LIBRARY}
-  ${cyberiadamlpp_LIBRARY}
-  )
 target_link_libraries(CyberiadaEditorCore PUBLIC
   Qt5::Widgets
   Qt5::Svg
@@ -111,6 +117,24 @@ add_executable(CyberiadaEditor
   main.cpp
 )
 target_link_libraries(CyberiadaEditor CyberiadaEditorCore)
+
+# installation and Debian packaging (mirrors the Cyberiada libraries)
+include(GNUInstallDirs)
+install(TARGETS CyberiadaEditor
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT runtime)
+if(UNIX AND NOT APPLE)
+  install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/packaging/cyberiada-editor.desktop
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/applications COMPONENT runtime)
+  install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/images/cyberiada.png
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/pixmaps
+    RENAME cyberiada-editor.png COMPONENT runtime)
+endif()
+
+set(CPACK_PACKAGE_NAME "cyberiada-editor")
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/CyberiadaEditorPackOptions.cmake.in"
+               "${CMAKE_CURRENT_BINARY_DIR}/CyberiadaEditorPackOptions.cmake" @ONLY)
+set(CPACK_PROJECT_CONFIG_FILE "${CMAKE_CURRENT_BINARY_DIR}/CyberiadaEditorPackOptions.cmake")
+include(CPack)
 
 enable_testing()
 add_subdirectory(tests)
