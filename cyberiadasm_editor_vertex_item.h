@@ -25,7 +25,28 @@
 #define CYBERIADASMEDITORVERTEXITEM_H
 
 #include "cyberiadasm_editor_items.h"
+#include "editable_text_item.h"
 #include "dotsignal.h"
+
+class CyberiadaSMEditorVertexItem;
+
+/* -----------------------------------------------------------------------------
+ * Vertex Name
+ * ----------------------------------------------------------------------------- */
+
+// the editable name drawn under a pseudostate/final point; a press falls through
+// to the point (so it drags), a double click edits it, and the empty name is a
+// valid state (the vertex simply shows none)
+class VertexTitle : public EditableTextItem {
+public:
+    VertexTitle(const QString& text, CyberiadaSMEditorVertexItem* parent);
+
+protected:
+    void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
+    void mouseMoveEvent(QGraphicsSceneMouseEvent* event) override;
+    void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
+    void focusOutEvent(QFocusEvent* event) override;
+};
 
 /* -----------------------------------------------------------------------------
  * Vertex Item
@@ -46,11 +67,15 @@ public:
 protected:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
+    void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) override;
     void hoverMoveEvent(QGraphicsSceneHoverEvent *event);
 
 private:
     QRectF fullCircle() const;
     QRectF partialCircle() const;
+    void setTitlePosition();
+
+    VertexTitle* title = nullptr;
 };
 
 

@@ -24,6 +24,7 @@
 #include <QDebug>
 #include <QPainter>
 #include <QColor>
+#include <QTextCursor>
 #include <math.h>
 
 #include "myassert.h"
@@ -49,6 +50,12 @@ CyberiadaSMEditorVertexItem::CyberiadaSMEditorVertexItem(CyberiadaSMModel* model
     setAcceptHoverEvents(true);
     setFlags(ItemIsSelectable | ItemSendsGeometryChanges);
 
+    // the editable name, shown under the point when it is set
+    title = new VertexTitle(QString(element->get_name().c_str()), this);
+    title->setVisible(SettingsManager::instance().getShowText() && !element->get_name().empty());
+    connect(title, &EditableTextItem::sizeChanged, this, [this]() { setTitlePosition(); });
+    setTitlePosition();
+
     initializeDots();
     setDotsPosition();
     hideDots();
@@ -57,11 +64,42 @@ CyberiadaSMEditorVertexItem::CyberiadaSMEditorVertexItem(CyberiadaSMModel* model
                                << GrabberLeft << GrabberRight);
 }
 
+void CyberiadaSMEditorVertexItem::setTitlePosition()
+{
+    if (!title) return;
+    QRectF tb = title->boundingRect();
+    // centred under the point circle
+    title->setPos(-tb.width() / 2.0, VERTEX_POINT_RADIUS + 2);
+}
+
 void CyberiadaSMEditorVertexItem::syncFromModel()
 {
     Cyberiada::Rect r = element->get_bound_rect(*(model->rootDocument()));
     setPos(r.x, r.y);
+    if (title) {
+        QString name = QString(element->get_name().c_str());
+        if (title->toPlainText() != name) title->setPlainText(name);
+        // keep it while editing even if empty, so the caret has somewhere to sit
+        title->setVisible(SettingsManager::instance().getShowText() &&
+                          (!name.isEmpty() || title->hasFocus()));
+        setTitlePosition();
+    }
     CyberiadaSMEditorAbstractItem::syncFromModel();
+}
+
+void CyberiadaSMEditorVertexItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
+{
+    if (event->button() != Qt::LeftButton || !isEditable()) {
+        QGraphicsItem::mouseDoubleClickEvent(event);
+        return;
+    }
+    // a double click names the point (or edits the existing name), like a
+    // transition label; the empty name is allowed and simply shows nothing
+    event->accept();
+    if (title) {
+        title->setVisible(true);
+        title->startEditing();
+    }
 }
 
 QRectF CyberiadaSMEditorVertexItem::boundingRect() const
@@ -181,4 +219,57 @@ void CyberiadaSMEditorVertexItem::hoverMoveEvent(QGraphicsSceneHoverEvent *event
 
     setCursor(QCursor(Qt::SizeAllCursor));
     QGraphicsItem::hoverMoveEvent(event);
+}
+
+/* -----------------------------------------------------------------------------
+ * Vertex Name
+ * ----------------------------------------------------------------------------- */
+
+VertexTitle::VertexTitle(const QString& text, CyberiadaSMEditorVertexItem* parent):
+    EditableTextItem(text, parent)
+{
+    setFontRole(fontRoleTransition);   // a light label, like a transition label
+    setTextAlignment(Qt::AlignCenter);
+    setTextWidthEnabled(false);        // the label hugs its text
+    setTextMargin(0);
+}
+
+void VertexTitle::mousePressEvent(QGraphicsSceneMouseEvent *event)
+{
+    // while editing, place the caret; otherwise the press belongs to the point,
+    // so ignore it and let the vertex drag (the name is edited by a double click)
+    if (hasFocus()) { QGraphicsTextItem::mousePressEvent(event); return; }
+    event->ignore();
+}
+
+void VertexTitle::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
+{
+    if (hasFocus()) { QGraphicsTextItem::mouseMoveEvent(event); return; }
+    event->ignore();
+}
+
+void VertexTitle::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
+{
+    if (hasFocus()) { QGraphicsTextItem::mouseReleaseEvent(event); return; }
+    event->ignore();
+}
+
+void VertexTitle::focusOutEvent(QFocusEvent *event)
+{
+    setTextInteractionFlags(Qt::NoTextInteraction);
+    isEdit = false;
+    QTextCursor cursor = textCursor();
+    cursor.clearSelection();
+    setTextCursor(cursor);
+
+    CyberiadaSMEditorAbstractItem* owner = dynamic_cast<CyberiadaSMEditorAbstractItem*>(parentItem());
+    QString newName = toPlainText().trimmed();
+    QGraphicsTextItem::focusOutEvent(event);
+    if (!owner) return;
+
+    QString current = QString(owner->getElement()->get_name().c_str());
+    if (newName != current) {
+        // a vertex may be nameless, so the empty name is allowed (it clears it)
+        owner->getModel()->updateTitle(owner->getIndex(), newName);
+    }
 }

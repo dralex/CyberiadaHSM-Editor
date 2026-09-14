@@ -28,6 +28,7 @@
 #include "cyberiadasm_editor_scene.h"
 #include "cyberiadasm_editor_transition_item.h"
 #include "cyberiadasm_editor_state_item.h"
+#include "cyberiadasm_editor_vertex_item.h"
 #include "dotsignal.h"
 #include "settings_manager.h"
 #include "cyberiadasm_dump.h"
@@ -102,6 +103,7 @@ private slots:
 	void test_action_multiline();
 	void test_name_only_state();
 	void test_title_drag_through();
+	void test_vertex_name();
 	// runs last: it reloads and modifies the shared document
 	void test_directional_grow();
 
@@ -647,6 +649,68 @@ void TestScene::test_title_drag_through()
 
 	// a double click on the name starts editing (focus goes to the title text item)
 	QPoint dc = view.mapFromScene(child->sceneBoundingRect().center());
+	post(QEvent::MouseButtonPress, dc, Qt::LeftButton, Qt::LeftButton);
+	post(QEvent::MouseButtonRelease, dc, Qt::LeftButton, Qt::NoButton);
+	QMouseEvent dce(QEvent::MouseButtonDblClick, dc, vp->mapToGlobal(dc),
+	                Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+	QApplication::sendEvent(vp, &dce);
+	QVERIFY(dynamic_cast<QGraphicsTextItem*>(scene->focusItem()) != nullptr);
+}
+
+void TestScene::test_vertex_name()
+{
+	// a point object (initial/final/terminate) shows its name centred under the
+	// point when set, and a double click edits it
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+
+	// node-0-0-0 is an initial pseudostate
+	CyberiadaSMEditorVertexItem* v =
+		dynamic_cast<CyberiadaSMEditorVertexItem*>(scene->getMap().value("node-0-0-0"));
+	QVERIFY(v);
+
+	auto vertexName = [](CyberiadaSMEditorVertexItem* it) -> QGraphicsTextItem* {
+		for (QGraphicsItem* c : it->childItems())
+			if (QGraphicsTextItem* t = dynamic_cast<QGraphicsTextItem*>(c)) return t;
+		return nullptr;
+	};
+
+	// initially unnamed: the label carries no text
+	QGraphicsTextItem* label = vertexName(v);
+	QVERIFY(label);
+	QVERIFY(label->toPlainText().isEmpty());
+
+	// naming it through the model shows the name, centred below the point
+	QVERIFY(model->updateTitle(model->elementToIndex(model->idToElement("node-0-0-0")), "Begin"));
+	label = vertexName(v);
+	QVERIFY(label && label->isVisible());
+	QCOMPARE(label->toPlainText(), QString("Begin"));
+	QVERIFY(label->pos().y() >= VERTEX_POINT_RADIUS);                 // under the point
+	QVERIFY(std::fabs(label->pos().x() + label->boundingRect().width() / 2.0) < 1.0);  // centred
+
+	// a double click on the point starts editing the name (through a real view);
+	// use a fresh final with no transition on it, so the point is unoccluded
+	Cyberiada::ElementCollection* sm =
+		dynamic_cast<Cyberiada::ElementCollection*>(model->indexToElement(model->firstSMIndex()));
+	QVERIFY(sm);
+	Cyberiada::Element* fin = model->newFinal(sm, Cyberiada::Point(1000, 0));
+	QVERIFY(fin);
+	CyberiadaSMEditorVertexItem* fv =
+		dynamic_cast<CyberiadaSMEditorVertexItem*>(scene->getMap().value(fin->get_id()));
+	QVERIFY(fv);
+
+	QGraphicsView view(scene);
+	view.resize(800, 600);
+	view.show();
+	QVERIFY(QTest::qWaitForWindowExposed(&view));
+	view.setTransform(QTransform());
+	view.centerOn(fv);
+	QPoint dc = view.mapFromScene(fv->scenePos());   // the point itself, not the label below
+	QWidget* vp = view.viewport();
+	auto post = [&](QEvent::Type t, QPoint p, Qt::MouseButton b, Qt::MouseButtons bs) {
+		QMouseEvent me(t, p, vp->mapToGlobal(p), b, bs, Qt::NoModifier);
+		QApplication::sendEvent(vp, &me);
+	};
 	post(QEvent::MouseButtonPress, dc, Qt::LeftButton, Qt::LeftButton);
 	post(QEvent::MouseButtonRelease, dc, Qt::LeftButton, Qt::NoButton);
 	QMouseEvent dce(QEvent::MouseButtonDblClick, dc, vp->mapToGlobal(dc),
