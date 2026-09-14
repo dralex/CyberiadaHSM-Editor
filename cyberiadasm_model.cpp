@@ -924,6 +924,8 @@ Cyberiada::State *CyberiadaSMModel::newState(Cyberiada::ElementCollection *paren
     beginInsertRows(elementToIndex(parent), row, row);
     Cyberiada::State* element = root->new_state(parent, state_name, a, r, region, color);
     endInsertRows();
+    // a child placed past the parent border grows the parent to contain it
+    if (element) growToFitChildren(element);
 
     if (element) {
         QString verb = "new-state " + qid(parent);
@@ -1712,6 +1714,9 @@ Cyberiada::Element* CyberiadaSMModel::pasteElement(Cyberiada::ElementCollection*
         shiftTransition(static_cast<Cyberiada::Transition*>(copied), PASTE_OFFSET, PASTE_OFFSET);
     } else {
         shiftGeometry(copied, PASTE_OFFSET, PASTE_OFFSET);
+        // the shifted copy may fall past the parent border (repeated pastes drift
+        // outward); grow the parent so the pasted element stays inside it
+        growToFitChildren(copied);
     }
 
     endResetModel();
