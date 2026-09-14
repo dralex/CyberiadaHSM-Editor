@@ -592,6 +592,12 @@ void CyberiadaSMEditorStateItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent 
         return;
     }
     event->accept();
+    // a double click on the name edits it (the title lets presses fall through, so
+    // the box routes the edit); elsewhere on the box it adds a missing action block
+    if (title && title->isVisible() && title->sceneBoundingRect().contains(event->scenePos())) {
+        title->startEditing();
+        return;
+    }
     int type = missingActionType();
     if (type >= 0) {
         addAction(Cyberiada::ActionType(type));
@@ -720,7 +726,19 @@ void StateTitle::focusOutEvent(QFocusEvent *event)
     }
 }
 
+// a state's name must not be a drag dead zone: when it is not being edited, a
+// press over the title of a STATE falls through to the state, whose body drag then
+// moves it and grows its parent (the same anywhere on the box, including the
+// centred name of a bare state); the name is edited by a double click routed by
+// the state. The SM has no body drag, so its title keeps its own handling.
+static bool titleFallsThrough(QGraphicsItem* parent, bool editing)
+{
+    return !editing && dynamic_cast<CyberiadaSMEditorStateItem*>(parent) != nullptr;
+}
+
 void StateTitle::mousePressEvent(QGraphicsSceneMouseEvent *event) {
+    if (titleFallsThrough(parentItem(), hasFocus())) { event->ignore(); return; }
+
     ToolType currentTool = dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool();
     if(currentTool != ToolType::Select) {
         event->ignore();
@@ -757,6 +775,8 @@ void StateTitle::mousePressEvent(QGraphicsSceneMouseEvent *event) {
 
 void StateTitle::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
+    if (titleFallsThrough(parentItem(), hasFocus())) { event->ignore(); return; }
+
     ToolType currentTool = dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool();
     CyberiadaSMEditorStateItem* state = nullptr;
 
@@ -817,6 +837,8 @@ void StateTitle::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 }
 
 void StateTitle::mouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
+    if (titleFallsThrough(parentItem(), hasFocus())) { event->ignore(); return; }
+
     CyberiadaSMEditorScene* sc = dynamic_cast<CyberiadaSMEditorScene*>(scene());
     if (sc && sc->getCurrentTool() != ToolType::Select) {
         event->ignore();

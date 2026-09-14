@@ -22,6 +22,7 @@
  * ----------------------------------------------------------------------------- */
 
 #include <QtTest>
+#include <QGraphicsView>
 #include <cmath>
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_editor_scene.h"
@@ -100,6 +101,7 @@ private slots:
 	void test_sm_not_pasteable();
 	void test_action_multiline();
 	void test_name_only_state();
+	void test_title_drag_through();
 	// runs last: it reloads and modifies the shared document
 	void test_directional_grow();
 
@@ -598,6 +600,59 @@ void TestScene::test_name_only_state()
 	QVERIFY(title);
 	box = st->rect();
 	QVERIFY(std::fabs(title->pos().y() - box.top()) < 2.0);
+}
+
+void TestScene::test_title_drag_through()
+{
+	// a bare state's name is centred over the box; a press on it must not be a drag
+	// dead zone - it falls through to the state, which drags and grows its parent -
+	// while a double click on it still edits the name. Driven through a real view so
+	// the grab/hover pipeline matches the GUI.
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+
+	// node-0-0-1 is a name-only simple state (centred title) inside composite node-0-0
+	CyberiadaSMEditorStateItem* child =
+		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0-0-1"));
+	QGraphicsItem* parent = scene->getMap().value("node-0-0");
+	QVERIFY(child && parent && child->isNameOnly());
+
+	QGraphicsView view(scene);
+	view.resize(1200, 800);
+	view.show();
+	QVERIFY(QTest::qWaitForWindowExposed(&view));
+	view.setTransform(QTransform());
+	view.centerOn(child);
+
+	QPointF nameCenter = child->sceneBoundingRect().center();   // the centred name
+	QWidget* vp = view.viewport();
+	auto post = [&](QEvent::Type t, QPoint p, Qt::MouseButton b, Qt::MouseButtons bs) {
+		QMouseEvent me(t, p, vp->mapToGlobal(p), b, bs, Qt::NoModifier);
+		QApplication::sendEvent(vp, &me);
+	};
+
+	// press on the name -> the STATE grabs the drag (the title fell through)
+	post(QEvent::MouseButtonPress, view.mapFromScene(nameCenter), Qt::LeftButton, Qt::LeftButton);
+	QCOMPARE(dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene->mouseGrabberItem()),
+	         static_cast<CyberiadaSMEditorAbstractItem*>(child));
+	for (int i = 1; i <= 6; i++)
+		post(QEvent::MouseMove, view.mapFromScene(nameCenter + QPointF(120.0 * i / 6.0, 0)),
+		     Qt::NoButton, Qt::LeftButton);
+	post(QEvent::MouseButtonRelease, view.mapFromScene(nameCenter + QPointF(120, 0)),
+	     Qt::LeftButton, Qt::NoButton);
+	// the drag moved the state (the name did not swallow the gesture); the parent
+	// grow itself is covered by test_directional_grow / test_move_grows_parent
+	QVERIFY(child->sceneBoundingRect().center().x() > nameCenter.x() + 1.0);
+	(void)parent;
+
+	// a double click on the name starts editing (focus goes to the title text item)
+	QPoint dc = view.mapFromScene(child->sceneBoundingRect().center());
+	post(QEvent::MouseButtonPress, dc, Qt::LeftButton, Qt::LeftButton);
+	post(QEvent::MouseButtonRelease, dc, Qt::LeftButton, Qt::NoButton);
+	QMouseEvent dce(QEvent::MouseButtonDblClick, dc, vp->mapToGlobal(dc),
+	                Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+	QApplication::sendEvent(vp, &dce);
+	QVERIFY(dynamic_cast<QGraphicsTextItem*>(scene->focusItem()) != nullptr);
 }
 
 void TestScene::test_directional_grow()
