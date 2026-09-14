@@ -28,6 +28,7 @@ import random
 
 from .. import dump as D
 from .. import fuzzer as F
+from .model import Model
 
 
 class Drill:
@@ -44,10 +45,22 @@ class Drill:
         self.budget = budget
         self.step = 0
         self.counter = 0
+        # the shadow model; a drill that maintains it in lock-step sets
+        # tracks_model and gets full-document equivalence for free
+        self.model = Model()
+        self.tracks_model = False
 
     def fresh(self, prefix):
         self.counter += 1
         return "%s%d" % (prefix, self.counter)
+
+    def merged(self, dump, own=""):
+        """The drill's own invariant facts plus, when the drill tracks the
+        shadow model, the model's full equivalence facts."""
+        facts = [l for l in own.splitlines() if l.strip()]
+        if self.tracks_model:
+            facts += self.model.check_facts(dump)
+        return "\n".join(facts)
 
     # --- helpers on the current dump --------------------------------------
 

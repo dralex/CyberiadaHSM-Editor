@@ -45,32 +45,37 @@ class NestingDrill(Drill):
     def __init__(self, *a, **k):
         super().__init__(*a, **k)
         self.names = []      # created state names, outer to inner
+        self.nodes = {}      # name -> model element
+        self.tracks_model = True
 
     def emit(self, dump):
         doc = dump.document
         machine = self.machine(doc)
         if machine is None:
             return None
+        if self.model.machine_name is None:
+            self.model.set_machine(machine.name)
         # every third step (once there is depth) exercises out-then-in
         if len(self.names) >= 1 and self.step % 3 == 2:
             inner = _id_by_name(doc, self.names[-1])
             if inner is None or inner.parent is None:
-                return self._create(doc, machine)
+                return self._create(dump, doc, machine)
             parent = inner.parent.id
             lines = ["reparent %s %s" % (inner.id, machine.id),
                      "reparent %s %s" % (inner.id, parent)]
-            # the round trip must restore the nesting and conserve the count
-            exp = "state %s parent %s\ncount state %d" % (inner.name, parent, len(self.states(doc)))
-            return lines, "state", exp
-        return self._create(doc, machine)
+            # the round trip leaves the model untouched: the whole document must
+            # come back identical (checked by the merged model equivalence facts)
+            return lines, "state", self.merged(dump)
+        return self._create(dump, doc, machine)
 
-    def _create(self, doc, machine):
+    def _create(self, dump, doc, machine):
         name = self.fresh("N")
-        parent = _id_by_name(doc, self.names[-1]).id if self.names and _id_by_name(doc, self.names[-1]) else machine.id
+        parent_name = self.names[-1] if self.names else None
+        parent = _id_by_name(doc, parent_name).id if parent_name and _id_by_name(doc, parent_name) else machine.id
         self.names.append(name)
+        self.nodes[name] = self.model.add(D.KIND_SIMPLE, name, self.nodes.get(parent_name))
         # nested inside the deepest state, with a margin
-        exp = "state %s parent %s" % (name, parent)
-        return ["new-state %s 40 40 220 140 %s" % (parent, name)], "state", exp
+        return ["new-state %s 40 40 220 140 %s" % (parent, name)], "state", self.merged(dump)
 
 
 class PseudostateDrill(Drill):
