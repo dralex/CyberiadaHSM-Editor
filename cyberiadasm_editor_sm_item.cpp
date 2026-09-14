@@ -173,20 +173,32 @@ void CyberiadaSMEditorSMItem::paint(QPainter* painter, const QStyleOptionGraphic
 
 void CyberiadaSMEditorSMItem::updateSizeToFitChildren(CyberiadaSMEditorAbstractItem *child)
 {
-    // the border grows to make room for a child moved toward or past its edge
-    // (symmetrically, keeping the centre, so the other children do not shift)
+    // the border grows to make room for a child moved toward or past its edge,
+    // only on the crossed side, and the other children re-base so they stay put
     if (!child || !element->has_geometry()) return;
     Cyberiada::Rect border =
         static_cast<Cyberiada::ElementCollection*>(element)->get_geometry_rect();
-    QRectF cb = child->boundingRect();
-    QPointF cp = child->pos();
-    const double pad = 10.0;
-    double needW = 2.0 * (std::fabs(cp.x()) + cb.width() / 2.0 + pad);
-    double needH = 2.0 * (std::fabs(cp.y()) + cb.height() / 2.0 + pad);
-    double newW = std::max((double)border.width, needW);
-    double newH = std::max((double)border.height, needH);
-    if (newW > border.width + 0.5 || newH > border.height + 0.5) {
-        model->updateGeometry(getIndex(), Cyberiada::Rect(border.x, border.y, newW, newH));
-    }
+
+    const qreal pad = 10.0;
+    // the border rect is centre-based; the child in the border's own frame
+    QRectF inner(-border.width / 2 + pad, -border.height / 2 + pad,
+                 border.width - 2 * pad, border.height - 2 * pad);
+    QRectF childRect = mapRectFromItem(child, child->boundingRect());
+
+    qreal overLeft   = inner.left()       - childRect.left();
+    qreal overRight  = childRect.right()  - inner.right();
+    qreal overTop    = inner.top()        - childRect.top();
+    qreal overBottom = childRect.bottom() - inner.bottom();
+
+    // grow symmetrically about the centre so the other children keep their place
+    // and the dragged child keeps tracking the cursor (a centre shift would fight
+    // the live drag); the border stretches to swallow the overspill
+    qreal addW = 2.0 * std::max(0.0, std::max(overLeft, overRight));
+    qreal addH = 2.0 * std::max(0.0, std::max(overTop, overBottom));
+
+    const qreal eps = 0.01;
+    if (addW < eps && addH < eps) return;
+    model->updateGeometry(getIndex(),
+        Cyberiada::Rect(border.x, border.y, border.width + addW, border.height + addH));
 }
 

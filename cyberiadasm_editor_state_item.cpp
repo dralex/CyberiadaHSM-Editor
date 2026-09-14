@@ -330,47 +330,42 @@ void CyberiadaSMEditorStateItem::addAction(Cyberiada::ActionType type)
 
 void CyberiadaSMEditorStateItem::updateSizeToFitChildren(CyberiadaSMEditorAbstractItem* child)
 {
+    if (!child || !element->has_geometry()) return;
+
     prepareGeometryChange();
 
-    QRectF rect = child->mapRectToParent(child->boundingRect());
+    // the child measured in this state's own frame; a child is parented to the
+    // region, which sits below the title/entry inset, so map through it
+    QRectF childRect = mapRectFromItem(child, child->boundingRect());
 
-    QRectF newRect = boundingRect().united(rect);
+    // the inner box the child must stay within: the region (the area left for
+    // nested states below the title / entry / exit blocks) or the state rect
+    QRectF inner = region ? mapRectFromItem(region, region->rect()) : rect();
 
-    if (newRect.width() - boundingRect().width() == 0 && newRect.height() - boundingRect().height() == 0) {
-        return;
-    }
-    Cyberiada::Rect r = Cyberiada::Rect(x(),
-                                        y(),
-                                        newRect.width(),
-                                        newRect.height());
+    // how far the child spills past each side of the inner box
+    qreal overLeft   = inner.left()       - childRect.left();
+    qreal overRight  = childRect.right()  - inner.right();
+    qreal overTop    = inner.top()        - childRect.top();
+    qreal overBottom = childRect.bottom() - inner.bottom();
 
-    // Cyberiada::Rect r = Cyberiada::Rect(pos().x() + (newRect.width() - boundingRect().width()) / 2,
-    //                                     pos().y() + (newRect.height() - boundingRect().height()) / 2,
-    if(newRect.x() < boundingRect().x()) {
-        // qDebug() << "1";
-        r = Cyberiada::Rect(r.x - (newRect.width() - boundingRect().width()) / 2, r.y, r.width - (newRect.width() - boundingRect().width()) / 2, r.height);
-        model->updateGeometry(model->elementToIndex(element), r);
-        emit sizeChanged(CornerFlags::Left, + (newRect.width() - boundingRect().width()) / 2);
-    }
-    else if (newRect.width() - boundingRect().width() != 0){
-        // qDebug() << "2";
-        r = Cyberiada::Rect(r.x + (newRect.width() - boundingRect().width()) / 2, r.y, r.width, r.height);
-        model->updateGeometry(model->elementToIndex(element), r);
-        emit sizeChanged(CornerFlags::Right, (newRect.width() - boundingRect().width()) / 2);
-    }
+    // grow symmetrically about the centre: the centre stays put so every other
+    // child keeps its place and the dragged child keeps tracking the cursor (a
+    // centre shift would fight the live drag), while the state - and with it the
+    // inner region box - stretches to swallow the overspill on the crossed side
+    qreal addW = 2.0 * std::max(0.0, std::max(overLeft, overRight));
+    qreal addH = 2.0 * std::max(0.0, std::max(overTop, overBottom));
 
-    if(newRect.y() < boundingRect().y()) {
-        // qDebug() << "3";
-        r = Cyberiada::Rect(r.x, r.y - (newRect.height() - boundingRect().height()) / 2, r.width, r.height);
-        model->updateGeometry(model->elementToIndex(element), r);
-        emit sizeChanged(CornerFlags::Top, - (newRect.height() - boundingRect().height()) / 2);
-    }
-    else if (newRect.height() - boundingRect().height() != 0) {
-        // qDebug() << "4";
-        r = Cyberiada::Rect(r.x, r.y + (newRect.height() - boundingRect().height()) / 2, r.width, r.height);
-        model->updateGeometry(model->elementToIndex(element), r);
-        emit sizeChanged(CornerFlags::Bottom, (newRect.height() - boundingRect().height()) / 2);
-    }
+    const qreal eps = 0.01;
+    if (addW < eps && addH < eps) return;
+
+    Cyberiada::Rect r = state->get_geometry_rect();
+    r.width += addW;
+    r.height += addH;
+    model->updateGeometry(model->elementToIndex(element), r);
+
+    // the region follows the state size; refresh it so the inner box is in step
+    // for the next step of the same drag gesture
+    if (region) updateRegion();
 }
 
 void CyberiadaSMEditorStateItem::onTextItemSizeChanged()
