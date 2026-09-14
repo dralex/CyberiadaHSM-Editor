@@ -25,13 +25,26 @@
 ctest bakes into build/tests/CTestTestfile.cmake (offscreen platform, the
 private fontconfig, the Qt library paths)."""
 
+import hashlib
 import os
 import re
+import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 
 BINARY_ENV = "POLYGON_INSPECTOR"
 BINARY_NAME = "CyberiadaEditor"
+
+# the shared libraries whose version decides the editor's behaviour; a finding
+# is only comparable across runs that link the same ones
+TRACKED_LIBS = ("libcyberiadamlpp", "libcyberiadaml", "libhtgeom", "libhtreegeom")
+
+
+def _digest(path):
+    try:
+        return hashlib.sha256(Path(path).read_bytes()).hexdigest()[:8]
+    except OSError:
+        return "?"
 
 
 def repo_root():
@@ -76,12 +89,45 @@ class Env:
     def available(self):
         return self.binary.exists()
 
+    def resolved_libs(self):
+        """The tracked shared libraries the binary actually links, resolved
+        under this env's library paths (not the ambient ones)."""
+        libs = {}
+        try:
+            out = subprocess.run(["ldd", str(self.binary)], capture_output=True,
+                                 text=True, env=self.environ, timeout=15).stdout
+        except (OSError, subprocess.SubprocessError):
+            return libs
+        for line in out.splitlines():
+            m = re.match(r"\s*(lib\S+?\.so\S*)\s*=>\s*(\S+)", line)
+            if m and any(m.group(1).startswith(p) for p in TRACKED_LIBS):
+                libs[m.group(1)] = m.group(2)
+        return libs
+
+    def fingerprint(self):
+        """A compact identity of the runtime that ran a script: the editor
+        binary and each tracked library it links, by a short content hash.
+        Recorded with a finding so a later check can tell whether it reproduces
+        under the same runtime or a different one."""
+        libs = self.resolved_libs()
+        parts = ["bin:" + _digest(self.binary)]
+        for name in sorted(libs):
+            parts.append("%s:%s" % (name.split(".so")[0], _digest(libs[name])))
+        return " ".join(parts)
+
     @classmethod
     def discover(cls, root=None):
         root = Path(root) if root else repo_root()
         binary = Path(os.environ.get(BINARY_ENV) or root / "build" / BINARY_NAME)
         environ = dict(os.environ)
-        if "QT_QPA_PLATFORM" not in environ:
-            # outside ctest: take the baked environment of the build tree
-            environ.update(ctest_environment(root / "build"))
+        # always pin the build tree's library and plugin paths so a manual run
+        # loads the same libraries ctest does; a stale system libcyberiadaml
+        # otherwise shadows the freshly built one and findings stop reproducing
+        baked = ctest_environment(root / "build")
+        for key, value in baked.items():
+            if key == "LD_LIBRARY_PATH":
+                existing = environ.get(key)
+                environ[key] = value if not existing else value + os.pathsep + existing
+            else:
+                environ.setdefault(key, value)
         return cls(root=root, binary=binary, environ=environ)

@@ -55,6 +55,7 @@ class Problem:
     diagram: str = ""
     found: str = ""
     revision: str = ""
+    env: str = ""                # the runtime fingerprint that found it
     status: str = STATUS_OPEN
     hits: int = 1
     producer: str = ""
@@ -131,7 +132,8 @@ class Register:
         return [p for p in self.problems if p.status == STATUS_OPEN]
 
     def add(self, finding, diagram, script_text, expectation_text="", title="",
-            producer="", root=None, files=None, plan="", dump_text="", stderr_text=""):
+            producer="", root=None, files=None, plan="", dump_text="", stderr_text="",
+            env_fp=""):
         """Register a finding with its reproduction; a known signature counts
         a hit and returns the existing problem."""
         known = self.by_signature(finding.signature)
@@ -142,7 +144,7 @@ class Register:
         problem = Problem(id=self.next_id(), kind=finding.kind, signature=finding.signature,
                           title=title or finding.note[:80], note=finding.note,
                           diagram=Path(diagram).name, found=date.today().isoformat(),
-                          revision=revision(root) if root else "", producer=producer)
+                          revision=revision(root) if root else "", env=env_fp, producer=producer)
         folder = self.folder / problem.folder
         folder.mkdir(parents=True, exist_ok=True)
         shutil.copy(diagram, folder / "start.graphml")
@@ -177,10 +179,29 @@ class Register:
                 expectations.read_text() if expectations.exists() else "")
 
     def check(self, env, config, problem):
-        """True when the recorded signature reproduces."""
+        """True when the recorded signature reproduces. Evaluated in the
+        signature's own oracle mode, so an invariant problem is checked as an
+        invariant (else its signature could never match)."""
         start, script, facts = self.reproduction(problem)
-        result = evaluate_script(env, config, start, script, facts)
+        result = evaluate_script(env, config, start, script, facts,
+                                 family=family_of(problem.signature),
+                                 invariant=problem.signature.startswith("invariant:"))
         return any(f.signature == problem.signature for f in result.findings), result
+
+    def env_mismatch(self, env, problem):
+        """A human note when the current runtime differs from the one that
+        recorded the problem, so a non-reproduction is read as a runtime change
+        rather than a fix; None when they match or none was recorded."""
+        if not problem.env:
+            return None
+        now = env.fingerprint()
+        if now == problem.env:
+            return None
+        was = dict(p.split(":", 1) for p in problem.env.split() if ":" in p)
+        cur = dict(p.split(":", 1) for p in now.split() if ":" in p)
+        changed = [k for k in sorted(set(was) | set(cur)) if was.get(k) != cur.get(k)]
+        return "runtime differs from when %s was recorded (%s)" % (
+            problem.id, ", ".join("%s %s->%s" % (k, was.get(k, "-"), cur.get(k, "-")) for k in changed))
 
 
 def reproduces(env, config, diagram, script_text, expectation_text, signature):
@@ -229,6 +250,7 @@ def register_script(register, env, config, diagram, script_text, expectation_tex
     """Run a script with every oracle and register the findings of the given
     kinds (None: every kind); returns [(problem, is_new)]."""
     result = evaluate_script(env, config, diagram, script_text, expectation_text, invariant=invariant)
+    env_fp = env.fingerprint()
     out = []
     for finding in result.findings:
         # the expectation and review findings are candidates of the session,
@@ -248,5 +270,6 @@ def register_script(register, env, config, diagram, script_text, expectation_tex
             match = next((f for f in again.findings if f.signature == finding.signature), finding)
             files = {"render": match.files["png"]} if match.files.get("png") else {}
             out.append(register.add(match, diagram, text, expectation_text, own_title, producer, root,
-                                    files, plan, again.run.stdout, "\n".join(again.run.messages())))
+                                    files, plan, again.run.stdout, "\n".join(again.run.messages()),
+                                    env_fp=env_fp))
     return out, result

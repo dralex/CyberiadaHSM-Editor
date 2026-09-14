@@ -211,8 +211,10 @@ class Session:
         if known is not None:
             self.register.add(finding, self.start, script)
             return known
-        # an invariant failure keeps its escalation script (a count invariant
-        # can fail from both sides, so minimisation would mislead)
+        # an invariant failure keeps its escalation script: its signature keeps
+        # only the fact shape (ids become #), which a shorter prefix can satisfy
+        # for an unrelated reason (too few elements, or a non-containing sibling
+        # pair), so minimisation would mislead
         minimize = self.minimize and finding.kind != oracles.KIND_INVARIANT
         added, _ = R.register_script(self.register, self.env, self.config, self.start, script,
                                      expectations, title="",

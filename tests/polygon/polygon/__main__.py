@@ -104,9 +104,16 @@ def cmd_check(args):
     holds, result = register.check(env, cfg, problem)
     for f in result.findings:
         print("%s %s: %s" % (f.kind, f.signature, f.note))
+    mismatch = register.env_mismatch(env, problem)
+    if mismatch:
+        print("NOTE: %s" % mismatch, file=sys.stderr)
     if holds:
         print("%s reproduces: %s" % (problem.id, problem.title))
         return 0
+    if mismatch:
+        print("%s does not reproduce here, but the runtime changed - rebuild/point at the "
+              "recorded runtime before concluding it is fixed" % problem.id)
+        return 1
     print("%s does not reproduce any more: %s" % (problem.id, problem.title))
     return 1
 

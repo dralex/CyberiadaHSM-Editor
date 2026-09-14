@@ -25,6 +25,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from polygon import env as E
 from polygon import oracles
 from polygon import register as R
 from tests.helpers import CONFIG, DIAGRAMS, ENV, needs_editor
@@ -74,6 +75,45 @@ class MinimizeTest(unittest.TestCase):
             self.assertEqual((Path(tmp) / "problems" / problem.id / "script").read_text(), "new-state G0 A\n")
             holds, _ = reg.check(ENV, CONFIG, problem)
             self.assertTrue(holds)
+
+
+class EnvReproducibilityTest(unittest.TestCase):
+    def test_discover_pins_the_build_library_path(self):
+        # a manual run (platform var already set) must still get the build
+        # tree's LD_LIBRARY_PATH, or a stale system library shadows the build
+        env = E.Env.discover()
+        self.assertIn("LD_LIBRARY_PATH", env.environ)
+        self.assertIn("_prefix/lib", env.environ["LD_LIBRARY_PATH"])
+
+    def test_env_mismatch_only_fires_on_a_real_difference(self):
+        reg = R.Register(Path(tempfile.mkdtemp()) / "problems")
+        env = E.Env.discover()
+        fp = "bin:aaaa libcyberiadaml:bbbb"
+        same = R.Problem(id="P-1", kind="oracle", signature="x", title="t", env=fp)
+        # a problem with no recorded runtime never warns (old entries)
+        legacy = R.Problem(id="P-2", kind="oracle", signature="x", title="t")
+        self.assertIsNone(reg.env_mismatch(env, legacy))
+
+        class Fixed:
+            def fingerprint(self):
+                return fp
+        self.assertIsNone(reg.env_mismatch(Fixed(), same))
+
+        class Drifted:
+            def fingerprint(self):
+                return "bin:aaaa libcyberiadaml:cccc"
+        msg = reg.env_mismatch(Drifted(), same)
+        self.assertIn("libcyberiadaml", msg)
+        self.assertIn("bbbb->cccc", msg)
+
+
+@needs_editor
+class FingerprintTest(unittest.TestCase):
+    def test_fingerprint_names_the_binary_and_tracked_libs(self):
+        fp = ENV.fingerprint()
+        self.assertIn("bin:", fp)
+        self.assertIn("libcyberiadaml:", fp)
+        self.assertNotIn(":?", fp)      # every tracked library resolved
 
 
 if __name__ == "__main__":
