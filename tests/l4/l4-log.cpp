@@ -149,6 +149,9 @@ void TestLog::test_gesture_recording()
 	QVERIFY(script.contains("\npress 10 10"));
 	QVERIFY(script.contains("\ndrag 40 40"));
 	QVERIFY(script.contains("\nrelease 40 40"));
+	// each press records a comment noting what it landed on (here empty canvas),
+	// so a replay that contradicts the GUI is diagnosable from the log
+	QVERIFY(script.contains("# on "));
 }
 
 // a model edit during a mouse gesture is recorded as the gesture, not twice as

@@ -591,6 +591,32 @@ static Cyberiada::ElementType toolElementType(ToolType t)
 }
 
 // a mouse gesture is one undo step whatever it writes on the way
+// a human-readable note of what a press lands on, recorded in the gesture log as
+// a comment: the element under the cursor and which part - body, title, region or
+// an action block. The part decides which item grabs the drag, so a replay that
+// contradicts the GUI (e.g. a title grabbing a body drag) is visible in the log.
+static QString pressTargetNote(QGraphicsScene* scene, const QPointF& scenePos)
+{
+    for (QGraphicsItem* gi : scene->items(scenePos)) {
+        if (StateTitle* t = dynamic_cast<StateTitle*>(gi)) {
+            CyberiadaSMEditorAbstractItem* st = dynamic_cast<CyberiadaSMEditorAbstractItem*>(t->parentItem());
+            return (st ? QString::fromStdString(st->getElement()->get_id()) : QString("?")) + " title";
+        }
+        if (StateAction* a = dynamic_cast<StateAction*>(gi)) {
+            CyberiadaSMEditorAbstractItem* st = dynamic_cast<CyberiadaSMEditorAbstractItem*>(a->parentItem());
+            return (st ? QString::fromStdString(st->getElement()->get_id()) : QString("?")) + " action";
+        }
+        if (StateRegion* r = dynamic_cast<StateRegion*>(gi)) {
+            CyberiadaSMEditorAbstractItem* st = dynamic_cast<CyberiadaSMEditorAbstractItem*>(r->parentItem());
+            return (st ? QString::fromStdString(st->getElement()->get_id()) : QString("?")) + " region";
+        }
+        if (CyberiadaSMEditorAbstractItem* ci = dynamic_cast<CyberiadaSMEditorAbstractItem*>(gi)) {
+            return QString::fromStdString(ci->getElement()->get_id()) + " body";
+        }
+    }
+    return QString("empty");
+}
+
 void CyberiadaSMEditorScene::mousePressEvent(QGraphicsSceneMouseEvent* event)
 {
     model->beginUndoStep(QString());
@@ -598,6 +624,8 @@ void CyberiadaSMEditorScene::mousePressEvent(QGraphicsSceneMouseEvent* event)
         // the model edits the gesture triggers are recorded as the gesture, not
         // twice as semantic verbs
         GestureLog::instance().enterGesture();
+        // a comment (skipped on replay) recording what the press hit, for diagnosis
+        GestureLog::instance().logGesture("# on " + pressTargetNote(this, event->scenePos()));
         GestureLog::instance().logGesture("press " + logPoint(event->scenePos()) +
                                           logMods(event->modifiers()));
         loggingPressed = true;
