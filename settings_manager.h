@@ -69,6 +69,9 @@ public:
     // whether the extra options are shown in the file dialogs (collapsible)
     bool getOptionsExpanded() const { return optionsExpanded; }
     void setOptionsExpanded(bool value);
+    // the last resolution chosen in the image export dialog (96 = 1:1)
+    int getExportDpi() const { return exportDpi; }
+    void setExportDpi(int value);
 
     QColor getSelectionColor() const { return selectionColor; }
     void setSelectionColor(QColor value);
@@ -120,6 +123,7 @@ private:
     QString lastDirectory;
     QSize dialogSize;
     bool optionsExpanded;
+    int exportDpi;
 
     // selection
     QColor selectionColor;

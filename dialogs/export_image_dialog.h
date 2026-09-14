@@ -26,6 +26,8 @@
 
 #include "file_dialog.h"
 
+class QSpinBox;
+
 // the scene image export: the suffix follows the selected image format
 class ExportImageDialog : public CyberiadaFileDialog
 {
@@ -36,11 +38,16 @@ public:
 
     // the suffix of the selected image format
     void updateSuffix();
+    // the chosen raster resolution (96 = one scene unit per pixel)
+    int dpi() const;
 
     void accept() override;
 
 private slots:
     void slotFilterSelected(const QString& filter);
+
+private:
+    QSpinBox* dpiSpin;
 };
 
 #endif // EXPORT_IMAGE_DIALOG_H

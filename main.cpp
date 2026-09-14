@@ -60,6 +60,8 @@ int main(int argc, char *argv[])
 	parser.addOption(saveOption);
 	QCommandLineOption exportOption("export", "Export the scene image in batch mode.", "file");
 	parser.addOption(exportOption);
+	QCommandLineOption dpiOption("dpi", "Raster export resolution (96 = 1:1, default 96).", "n", "96");
+	parser.addOption(dpiOption);
 	QCommandLineOption noTextOption("no-text", "Hide the text elements in batch mode (font-independent output).");
 	parser.addOption(noTextOption);
 	QCommandLineOption textOption("text", "Show the text elements in batch mode, overriding --no-text.");
@@ -151,7 +153,8 @@ int main(int argc, char *argv[])
 								parser.value(exportOption), parser.isSet(reconstructOption),
 								parser.isSet(reconstructSMOption),
 								parser.isSet(strictOption), save_format,
-								parser.isSet(dumpTextOption), parser.isSet(dumpStackOption));
+								parser.isSet(dumpTextOption), parser.isSet(dumpStackOption),
+								parser.value(dpiOption).toInt());
 		}
 		return runGuiMode(app);
 	} catch(const QString& error) {

@@ -50,6 +50,7 @@ void SettingsManager::load() {
     // the Qt default leaves too little room for the file view
     dialogSize = s.value("files/dialogSize", QSize(1000, 680)).toSize();
     optionsExpanded = s.value("files/optionsExpanded", true).toBool();
+    exportDpi = s.value("export/dpi", 96).toInt();
 
     selectionColor = QColor(s.value("display/selectionColor", QColor(Qt::darkGray).name()).toString());
     selectionBorderWidth = s.value("display/selectionBorderWidth", 2).toInt();
@@ -190,6 +191,14 @@ void SettingsManager::setOptionsExpanded(bool value)
     if (optionsExpanded != value) {
         optionsExpanded = value;
         QSettings().setValue("files/optionsExpanded", value);
+    }
+}
+
+void SettingsManager::setExportDpi(int value)
+{
+    if (exportDpi != value) {
+        exportDpi = value;
+        QSettings().setValue("export/dpi", value);
     }
 }
 

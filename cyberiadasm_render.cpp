@@ -76,7 +76,7 @@ namespace {
 	};
 }
 
-bool renderScene(CyberiadaSMEditorScene* scene, const QString& path, QString* error)
+bool renderScene(CyberiadaSMEditorScene* scene, const QString& path, QString* error, int dpi)
 {
 	if (scene->items().isEmpty()) {
 		if (error) *error = "the scene is empty, nothing to export";
@@ -137,15 +137,24 @@ bool renderScene(CyberiadaSMEditorScene* scene, const QString& path, QString* er
 		return true;
 	}
 
-	QImage image(target.size(), QImage::Format_ARGB32);
+	// the raster output is scaled by dpi/96 (96 keeps the historic 1:1 pixel
+	// size); scene->render maps the scene rect onto the enlarged target, so the
+	// whole diagram scales with it, and the dpi is stamped into the file
+	if (dpi <= 0) dpi = 96;
+	double scale = dpi / 96.0;
+	QRect raster(QPoint(0, 0), (QSizeF(target.size()) * scale).toSize());
+	QImage image(raster.size(), QImage::Format_ARGB32);
 	if (image.isNull()) {
 		if (error) *error = "cannot allocate the image";
 		return false;
 	}
+	int dpm = qRound(dpi / 0.0254);   // dots per metre = dpi / (metres per inch)
+	image.setDotsPerMeterX(dpm);
+	image.setDotsPerMeterY(dpm);
 	image.fill(Qt::white);
 	QPainter painter(&image);
-	preparePainter(painter, target);
-	scene->render(&painter, target, scene_rect);
+	preparePainter(painter, raster);
+	scene->render(&painter, raster, scene_rect);
 	painter.end();
 	if (!image.save(path)) {
 		if (error) *error = "cannot save the image " + path;

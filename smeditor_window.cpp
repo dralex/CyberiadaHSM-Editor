@@ -292,7 +292,7 @@ void CyberiadaSMEditorWindow::slotFileExport()
     QString fileName = dlg.selectedFile();
     if (!fileName.isEmpty()) {
         QString error;
-        if (!renderScene(scene, fileName, &error)) {
+        if (!renderScene(scene, fileName, &error, dlg.dpi())) {
             QMessageBox::critical(this, tr("Error"), error);
         }
     }

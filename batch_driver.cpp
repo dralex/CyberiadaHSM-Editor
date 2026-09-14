@@ -49,7 +49,8 @@ static bool stageFailed(CyberiadaSMEditorApplication& app)
 int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName, bool dump,
 				 const QString& script, const QString& save, const QString& exportImage,
 				 bool reconstruct, bool reconstruct_sm, bool strict,
-				 Cyberiada::DocumentFormat saveFormat, bool dumpTextMetrics, bool dumpUndoStack)
+				 Cyberiada::DocumentFormat saveFormat, bool dumpTextMetrics, bool dumpUndoStack,
+				 int exportDpi)
 {
 	CyberiadaSMEditorWindow win;
 	win.show();
@@ -95,7 +96,7 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName, boo
 
 	if (!exportImage.isEmpty()) {
 		QString render_error;
-		if (!renderScene(win.getScene(), exportImage, &render_error)) {
+		if (!renderScene(win.getScene(), exportImage, &render_error, exportDpi)) {
 			fprintf(stderr, "cannot export %s\n%s\n", qPrintable(exportImage), qPrintable(render_error));
 			return batchInternalError;
 		}

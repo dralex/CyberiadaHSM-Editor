@@ -28,9 +28,12 @@
 
 class CyberiadaSMEditorScene;
 
-// render the scene 1:1 into an image file (the selection is cleared first);
-// the raster formats are chosen by the file suffix, svg and pdf are vector
-bool renderScene(CyberiadaSMEditorScene* scene, const QString& path, QString* error);
+// render the scene into an image file (the selection is cleared first); the
+// raster formats are chosen by the file suffix, svg and pdf are vector. dpi
+// scales the raster output (96 = one scene unit per pixel, today's 1:1) and is
+// stamped into the image; it does not affect the vector formats.
+bool renderScene(CyberiadaSMEditorScene* scene, const QString& path, QString* error,
+                 int dpi = 96);
 
 // compare two images: a pixel differs when any channel delta exceeds epsilon,
 // the images match when the differing fraction is not above max_diff_fraction;
