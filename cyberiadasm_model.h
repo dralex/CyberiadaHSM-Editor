@@ -87,15 +87,21 @@ public:
     // the transition label position; an invalid point resets it to auto-placement
     bool                                updateLabel(const QModelIndex& index, const Cyberiada::Point& label_point);
     bool                                updateParent(const QModelIndex& index, const Cyberiada::ID& new_parent_id);
-    // grow the parent collection of a moved element symmetrically about its
-    // centre so it contains all its rect children (a programmatic move leaves
-    // a child outside, unlike an interactive drag)
-    bool                                growToFitChildren(Cyberiada::Element* moved);
+    // grow the parent collection of a moved element so it contains all its rect
+    // children (a programmatic move leaves a child outside, unlike an interactive
+    // drag). directional: extend only the pushed edges and re-base the siblings to
+    // hold their absolute place (paste/move); otherwise grow about the centre so
+    // the existing children keep their stored positions (create).
+    bool                                growToFitChildren(Cyberiada::Element* moved, bool directional = true);
     // the half-extent (from the collection centre, each axis) its children need;
     // the collection's own rect is excluded, so it is the bare content a border
     // must contain - the shared floor for resize clamps and auto-grow
     void                                childrenHalfExtent(const Cyberiada::ElementCollection* pc,
                                                            double& halfW, double& halfH) const;
+    void                                childrenExtent(const Cyberiada::ElementCollection* pc,
+                                                       double& left, double& right,
+                                                       double& top, double& bottom) const;
+    void                                rebaseChildren(Cyberiada::ElementCollection* pc, double dx, double dy);
 	bool                                updateCommentBody(const QModelIndex& index, const QString& body);
     bool                                updateMetainformation(const QModelIndex& index, const QString& parameter, const QString& new_value);
 
@@ -202,6 +208,7 @@ private:
 	QString                             undoText;
 	std::string                         undoBefore;
 	bool                                undoBeforeOk;
+	bool                                m_growing = false;   // growToFitChildren re-entrancy guard
 	// the file identity, restored after a snapshot decode
 	QString                             filePath;
 	Cyberiada::DocumentFormat           fileFormat;

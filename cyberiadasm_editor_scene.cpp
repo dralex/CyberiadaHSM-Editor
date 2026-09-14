@@ -842,9 +842,9 @@ void CyberiadaSMEditorScene::addSMItem(Cyberiada::ElementType type)
         } else if (parentCItem &&
                    dynamic_cast<Cyberiada::ElementCollection*>(parentCItem->getElement()) &&
                    parentCItem->getElement()->has_geometry()) {
-            // a composite state parent: grow it (and its ancestors) to contain
-            // the new child, in model coordinates
-            model->growToFitChildren(element);
+            // a composite state parent: grow it (and its ancestors) about the
+            // centre to contain the new child, keeping the existing children put
+            model->growToFitChildren(element, false);
             // a parent with entry/exit action blocks needs extra height, since
             // its child region is inset by those blocks
             CyberiadaSMEditorStateItem* st = dynamic_cast<CyberiadaSMEditorStateItem*>(parentCItem);
@@ -853,7 +853,7 @@ void CyberiadaSMEditorScene::addSMItem(Cyberiada::ElementType type)
                     static_cast<Cyberiada::ElementCollection*>(parentCItem->getElement())->get_geometry_rect();
                 model->updateGeometry(parentCItem->getIndex(),
                                       Cyberiada::Rect(r.x, r.y, r.width, r.height + st->actionInset()));
-                model->growToFitChildren(element);   // re-cascade the extra height up to the SM
+                model->growToFitChildren(element, false);   // re-cascade the extra height up to the SM
             }
         }
         item->setSelected(true);
@@ -968,7 +968,7 @@ void CyberiadaSMEditorScene::createByTool(ToolType tool, const QRectF& sceneRect
         } else if (parentCItem &&
                    dynamic_cast<Cyberiada::ElementCollection*>(parentCItem->getElement()) &&
                    parentCItem->getElement()->has_geometry()) {
-            model->growToFitChildren(element);
+            model->growToFitChildren(element, false);
         }
         item->setSelected(true);
     }

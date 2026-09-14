@@ -26,6 +26,7 @@
 
 #include <QGraphicsItem>
 #include <QObject>
+#include <QMargins>
 #include <QBrush>
 #include <QList>
 
@@ -165,10 +166,21 @@ protected:
     // the smallest the element may be resized to (a box has a floor)
     virtual qreal minimumWidth() const;
     virtual qreal minimumHeight() const;
-    // a container resizes symmetrically about its centre (like its auto-grow), so
-    // its children keep their absolute places and never spill past the border; a
-    // leaf keeps the directional resize that holds the opposite edge
-    virtual bool  symmetricResize() const { return false; }
+
+public:
+    // directional resize support: apply a new border rect (SCENE coordinates),
+    // clamped per side so the content stays inside the inset region, re-basing the
+    // children to hold their absolute places. Used by the border drag and the
+    // property editor for both state machines and composite states.
+    void applyBorderRect(QRectF borderScene);
+protected:
+    // the bounding box of the child elements in SCENE coordinates (invalid if none)
+    QRectF contentBox() const;
+    // the gap the title / action blocks take on each side (children may not enter)
+    virtual QMarginsF contentInset() const { return QMarginsF(); }
+    // the intrinsic floor when there is no content (a leaf keeps ELEMENT_MIN)
+    virtual qreal minSpanWidth() const;
+    virtual qreal minSpanHeight() const;
     void updateSizeGeometry();
 
     virtual void initializeDots();

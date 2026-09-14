@@ -86,9 +86,10 @@ public:
     // has no children and keeps the base minimum)
     qreal minimumWidth() const override;
     qreal minimumHeight() const override;
-    // a composite resizes about its centre so its nested states hold their
-    // places; a simple state keeps the directional resize
-    bool  symmetricResize() const override;
+    // a composite reserves the title / entry / exit / internal blocks as an inset
+    // the children may not enter
+    QMarginsF contentInset() const override;
+    qreal minSpanHeight() const override;
 
     void syncFromModel() override;
 
@@ -135,6 +136,8 @@ private:
     QRectF m_rect;
     StateRegion* region = nullptr;
     qreal region_action_inset = 0;
+    qreal m_topInset = 0;      // title + entry + internal-transition blocks
+    qreal m_bottomInset = 0;   // exit block
     const Cyberiada::State* state;
     std::vector<StateAction*> actions;
     // the internal-transition action blocks (type actionTransition), tracked so

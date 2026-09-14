@@ -540,64 +540,71 @@ void TestScene::test_container_resize_clamp()
 	QGraphicsItem* child = scene->getMap().value("node-0-0-1");
 	QVERIFY(child);
 	QPointF childBefore = child->scenePos();
-	Cyberiada::Rect before = el->get_geometry_rect();
 
-	// ask for an absurdly small rect at the same centre
+	// ask for an absurdly small rect at the current centre
+	Cyberiada::Rect before = el->get_geometry_rect();
 	comp->resizeToRect(Cyberiada::Rect(before.x, before.y, 10, 10));
 	Cyberiada::Rect after = el->get_geometry_rect();
 
-	// clamped to the content floor, not the requested 10x10
+	// clamped directionally to contain the content, not the requested 10x10
 	QVERIFY(after.width  > 10);
 	QVERIFY(after.height > 10);
-	// the centre held, so the nested state did not move
-	QCOMPARE(after.x, before.x);
-	QCOMPARE(after.y, before.y);
+	// the nested states hold their absolute positions across the clamp
 	QCOMPARE(child->scenePos(), childBefore);
-	// the child still fits inside the clamped border
-	QVERIFY(after.width  >= child->boundingRect().width());
-	QVERIFY(after.height >= child->boundingRect().height());
+	// the child fits inside the clamped border
+	QVERIFY(child->sceneBoundingRect().left()   >= comp->sceneBoundingRect().left()   - 0.5);
+	QVERIFY(child->sceneBoundingRect().right()  <= comp->sceneBoundingRect().right()  + 0.5);
+	QVERIFY(child->sceneBoundingRect().top()    >= comp->sceneBoundingRect().top()    - 0.5);
+	QVERIFY(child->sceneBoundingRect().bottom() <= comp->sceneBoundingRect().bottom() + 0.5);
 }
 
 void TestScene::test_directional_grow()
 {
-	// dragging a child past a parent's edge extends only that edge (the opposite
-	// edge holds), the other children keep their absolute places, and the dragged
-	// child tracks the cursor
+	// moving a child past a parent's edge extends only that edge: the opposite edge
+	// holds and the other children keep their absolute places (the parent centre
+	// shifts and the siblings re-base). A clean inside layout is set up first, since
+	// the fixture deliberately places some children outside their parents.
 	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
 	scene->loadScene();
-	QEvent activate(QEvent::WindowActivate);
-	QApplication::sendEvent(scene, &activate);
-	scene->setCurrentTool(ToolType::Select);
 
-	CyberiadaSMEditorStateItem* parent =
-		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0-0"));
-	CyberiadaSMEditorStateItem* child =
-		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0-0-1"));
-	CyberiadaSMEditorStateItem* sibling =
-		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0-0-2"));
+	Cyberiada::ElementCollection* parent =
+		dynamic_cast<Cyberiada::ElementCollection*>(model->idToElement("node-0"));
+	Cyberiada::Element* child   = model->idToElement("node-0-0");
+	Cyberiada::Element* sibling = model->idToElement("node-0-1");
 	QVERIFY(parent && child && sibling);
+	QCOMPARE(child->get_parent(), (Cyberiada::Element*)parent);
+	QCOMPARE(sibling->get_parent(), (Cyberiada::Element*)parent);
 
-	qreal leftBefore  = parent->sceneBoundingRect().left();
-	qreal rightBefore = parent->sceneBoundingRect().right();
-	QRectF siblingBefore = sibling->sceneBoundingRect();
+	// a clean layout: both children well inside a 400x400 parent
+	QVERIFY(model->updateGeometry(model->elementToIndex(parent), Cyberiada::Rect(0, 0, 400, 400)));
+	QVERIFY(model->updateGeometry(model->elementToIndex(child),  Cyberiada::Rect(-100, 0, 100, 100)));
+	QVERIFY(model->updateGeometry(model->elementToIndex(sibling), Cyberiada::Rect(100, 0, 100, 100)));
 
-	QPointF from = child->sceneBoundingRect().center();
-	QPointF to(rightBefore + 200.0, from.y());
-	scene->clearSelection();
-	mouse(QEvent::GraphicsSceneMousePress, from, Qt::LeftButton);
-	for (qreal x = from.x() + 40.0; x < to.x(); x += 40.0)
-		mouse(QEvent::GraphicsSceneMouseMove, QPointF(x, from.y()), Qt::LeftButton);
-	mouse(QEvent::GraphicsSceneMouseMove, to, Qt::LeftButton);
-	mouse(QEvent::GraphicsSceneMouseRelease, to, Qt::NoButton);
+	Cyberiada::Rect p0 = parent->get_geometry_rect();
+	Cyberiada::Rect s0 = static_cast<const Cyberiada::ElementCollection*>(sibling)->get_geometry_rect();
+	double leftBefore  = p0.x - p0.width / 2.0;              // parent edges, absolute (parent frame is G)
+	double rightBefore = p0.x + p0.width / 2.0;
+	double sibAbsX0    = p0.x + s0.x;                        // sibling centre, absolute
 
-	// only the crossed (right) edge moved; the left edge held
-	QVERIFY(std::fabs(parent->sceneBoundingRect().left() - leftBefore) < 1.0);
-	QVERIFY(parent->sceneBoundingRect().right() > rightBefore + 1.0);
-	// the sibling kept its absolute place
-	QVERIFY(std::fabs(sibling->sceneBoundingRect().left() - siblingBefore.left()) < 1.0);
-	QVERIFY(std::fabs(sibling->sceneBoundingRect().top() - siblingBefore.top()) < 1.0);
-	// the dragged child ended inside the grown parent
-	QVERIFY(child->sceneBoundingRect().right() <= parent->sceneBoundingRect().right() + 1.0);
+	// push the child out past the right edge, then grow directionally
+	QVERIFY(model->updateGeometry(model->elementToIndex(child), Cyberiada::Rect(250, 0, 100, 100)));
+	double childAbsX0 = p0.x + 250.0;                        // the child's absolute centre after the move
+	model->growToFitChildren(child, true);
+
+	Cyberiada::Rect p1 = parent->get_geometry_rect();
+	Cyberiada::Rect s1 = static_cast<const Cyberiada::ElementCollection*>(sibling)->get_geometry_rect();
+	Cyberiada::Rect c1 = static_cast<const Cyberiada::ElementCollection*>(child)->get_geometry_rect();
+
+	// the left edge held, only the right edge extended
+	QVERIFY(std::fabs((p1.x - p1.width / 2.0) - leftBefore) < 0.5);
+	QVERIFY(p1.x + p1.width / 2.0 > rightBefore + 0.5);
+	// the sibling and the moved child kept their absolute places
+	QVERIFY(std::fabs((p1.x + s1.x) - sibAbsX0) < 0.5);
+	QVERIFY(std::fabs((p1.x + c1.x) - childAbsX0) < 0.5);
+	// the child is now contained on the right
+	QVERIFY(c1.x + c1.width / 2.0 <= p1.width / 2.0 + 0.5);
+	// the move did not reparent it
+	QCOMPARE(child->get_parent(), (Cyberiada::Element*)parent);
 }
 
 void TestScene::test_box_transition()

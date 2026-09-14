@@ -55,8 +55,9 @@ public:
     // the border cannot be smaller than its title tab or its content
     qreal minimumWidth() const override;
     qreal minimumHeight() const override;
-    // the machine resizes about its centre so its states hold their places
-    bool  symmetricResize() const override { return true; }
+    // the machine floors at its title tab / content
+    qreal minSpanWidth() const override;
+    qreal minSpanHeight() const override;
 
 private:
     void setTitlePosition();

@@ -264,19 +264,20 @@ void CyberiadaSMEditorAbstractItem::mouseMoveEvent(QGraphicsSceneMouseEvent *eve
     }
 
     QPointF pt = event->pos();
+    QPointF scenePt = event->scenePos();
 
     switch (cornerFlags) {
     case Top:
         updatePosGeometry();
         break;
     case Bottom:
-        resizeBottom(pt);
+        resizeBottom(scenePt);
         break;
     case Left:
         updatePosGeometry();
         break;
     case Right:
-        resizeRight(pt);
+        resizeRight(scenePt);
         break;
     case TopLeft:
         updatePosGeometry();
@@ -290,8 +291,8 @@ void CyberiadaSMEditorAbstractItem::mouseMoveEvent(QGraphicsSceneMouseEvent *eve
     //     resizeLeft(pt);
     //     break;
     case BottomRight:
-        resizeBottom(pt);
-        resizeRight(pt);
+        resizeBottom(scenePt);
+        resizeRight(scenePt);
         break;
     default:
         // if (isLeftMouseButtonPressed) {
@@ -419,61 +420,80 @@ void CyberiadaSMEditorAbstractItem::hoverMoveEvent(QGraphicsSceneHoverEvent *eve
     QGraphicsItem::hoverMoveEvent(event);
 }
 
-void CyberiadaSMEditorAbstractItem::resizeRight(const QPointF &pt)
+// pt is the cursor in SCENE coordinates (the item's own coords are unstable while
+// the centre moves during the resize)
+void CyberiadaSMEditorAbstractItem::resizeRight(const QPointF &scenePt)
 {
-    QRectF tmpRect = boundingRect();
-    if( pt.x() < tmpRect.left() )
-        return;
-    if (symmetricResize()) {
-        // a container resizes about its centre: the floor keeps the children
-        // inside and no re-base is needed (directional resize would need scene
-        // coordinates and a per-side content clamp, like the child extension)
-        prepareGeometryChange();
-        qreal newW = qMax(2.0 * pt.x(), (double)minimumWidth());
-        model->updateGeometry(model->elementToIndex(element),
-                              Cyberiada::Rect(pos().x(), pos().y(), newW, tmpRect.height()));
-        return;
-    }
-    qreal widthOffset =  ( pt.x() - tmpRect.left() );
-    qreal minW = minimumWidth();
-    if( widthOffset < minW )
-        widthOffset = minW;         // cannot resize below the floor
-    tmpRect.setWidth( widthOffset );
-    prepareGeometryChange();
-    qreal delta = (widthOffset - boundingRect().width()) / 2;
-    Cyberiada::Rect r = Cyberiada::Rect(pos().x() + delta,
-                                        pos().y(),
-                                        tmpRect.width(),
-                                        tmpRect.height());
-    model->updateGeometry(model->elementToIndex(element), r);
-    emit sizeChanged(CornerFlags::Right, delta);
+    // directional: keep the left edge, move the right edge to the cursor
+    QRectF border = sceneBoundingRect();
+    if (scenePt.x() <= border.left()) return;
+    border.setRight(scenePt.x());
+    applyBorderRect(border);
 }
 
-void CyberiadaSMEditorAbstractItem::resizeBottom(const QPointF &pt)
+void CyberiadaSMEditorAbstractItem::resizeBottom(const QPointF &scenePt)
 {
-    QRectF tmpRect = boundingRect();
-    if( pt.y() < tmpRect.top() )
-        return;
-    if (symmetricResize()) {
-        prepareGeometryChange();
-        qreal newH = qMax(2.0 * pt.y(), (double)minimumHeight());
-        model->updateGeometry(model->elementToIndex(element),
-                              Cyberiada::Rect(pos().x(), pos().y(), tmpRect.width(), newH));
-        return;
+    QRectF border = sceneBoundingRect();
+    if (scenePt.y() <= border.top()) return;
+    border.setBottom(scenePt.y());
+    applyBorderRect(border);
+}
+
+// the child elements' bounding box in scene coordinates (invalid if none)
+QRectF CyberiadaSMEditorAbstractItem::contentBox() const
+{
+    QRectF box;
+    Cyberiada::ElementCollection* coll = dynamic_cast<Cyberiada::ElementCollection*>(element);
+    if (!coll) return box;
+    const CyberiadaSMEditorScene* sc = dynamic_cast<const CyberiadaSMEditorScene*>(scene());
+    if (!sc) return box;
+    QMap<Cyberiada::ID, QGraphicsItem*>& map =
+        const_cast<CyberiadaSMEditorScene*>(sc)->getMap();
+    Cyberiada::ElementList kids = coll->get_children();
+    for (Cyberiada::ElementList::const_iterator i = kids.begin(); i != kids.end(); i++) {
+        QGraphicsItem* ci = map.value((*i)->get_id());
+        if (ci) box = box.united(ci->sceneBoundingRect());
     }
-    qreal heightOffset =  ( pt.y() - tmpRect.top() );
-    qreal minH = minimumHeight();
-    if( heightOffset < minH )
-        heightOffset = minH;        // cannot resize below the floor
-    tmpRect.setHeight( heightOffset );
+    return box;
+}
+
+qreal CyberiadaSMEditorAbstractItem::minSpanWidth() const  { return ELEMENT_MIN_SIZE; }
+qreal CyberiadaSMEditorAbstractItem::minSpanHeight() const { return ELEMENT_MIN_SIZE; }
+
+void CyberiadaSMEditorAbstractItem::applyBorderRect(QRectF borderScene)
+{
+    Cyberiada::ElementCollection* coll = dynamic_cast<Cyberiada::ElementCollection*>(element);
+    if (!coll) return;
+    // clamp each edge so the content stays inside the inset region (children may
+    // not enter the title / action bands)
+    QRectF content = contentBox();
+    QMarginsF ins = contentInset();
+    if (content.isValid()) {
+        borderScene.setLeft(qMin(borderScene.left(), content.left() - ins.left()));
+        borderScene.setRight(qMax(borderScene.right(), content.right() + ins.right()));
+        borderScene.setTop(qMin(borderScene.top(), content.top() - ins.top()));
+        borderScene.setBottom(qMax(borderScene.bottom(), content.bottom() + ins.bottom()));
+    }
+    // the intrinsic floor (title tab / ELEMENT_MIN) when the content is small
+    if (borderScene.width() < minSpanWidth()) {
+        qreal c = borderScene.center().x();
+        borderScene.setLeft(c - minSpanWidth() / 2.0);
+        borderScene.setRight(c + minSpanWidth() / 2.0);
+    }
+    if (borderScene.height() < minSpanHeight()) {
+        qreal c = borderScene.center().y();
+        borderScene.setTop(c - minSpanHeight() / 2.0);
+        borderScene.setBottom(c + minSpanHeight() / 2.0);
+    }
     prepareGeometryChange();
-    qreal delta = (heightOffset - boundingRect().height()) / 2;
-    Cyberiada::Rect r = Cyberiada::Rect(pos().x(),
-                                        pos().y() + delta,
-                                        tmpRect.width(),
-                                        tmpRect.height());
-    model->updateGeometry(model->elementToIndex(element), r);
-    emit sizeChanged(CornerFlags::Bottom, delta);
+    // the centre moves by the same delta in the model as in the scene (no scale),
+    // so re-base the children by that delta to hold their absolute places
+    Cyberiada::Rect old = coll->get_geometry_rect();
+    QPointF delta = borderScene.center() - scenePos();
+    model->updateGeometry(model->elementToIndex(element),
+        Cyberiada::Rect(old.x + delta.x(), old.y + delta.y(), borderScene.width(), borderScene.height()));
+    if (delta.x() != 0.0) emit sizeChanged(CornerFlags::Right, delta.x());
+    if (delta.y() != 0.0) emit sizeChanged(CornerFlags::Bottom, delta.y());
 }
 
 qreal CyberiadaSMEditorAbstractItem::minimumWidth() const { return ELEMENT_MIN_SIZE; }
@@ -499,19 +519,13 @@ void CyberiadaSMEditorAbstractItem::resizeToRect(const Cyberiada::Rect& req)
         model->updateGeometry(model->elementToIndex(element), req);
         return;
     }
+    // express the requested (centre-based) rect in scene coordinates and apply it
+    // through the shared path: per-side content clamp + children re-base
     Cyberiada::Rect cur = coll->get_geometry_rect();
-    // clamp to the floor that keeps the children inside (per-type via the virtual
-    // minimums), exactly as the border drag does
-    qreal w = qMax((qreal)req.width, minimumWidth());
-    qreal h = qMax((qreal)req.height, minimumHeight());
-    prepareGeometryChange();
-    model->updateGeometry(model->elementToIndex(element), Cyberiada::Rect(req.x, req.y, w, h));
-    // hold the children's absolute positions when the centre moves: shift each by
-    // the opposite of the centre delta, the same re-base the border drag emits
-    qreal dx = req.x - cur.x;
-    qreal dy = req.y - cur.y;
-    if (dx != 0.0) emit sizeChanged(CornerFlags::Right, dx);
-    if (dy != 0.0) emit sizeChanged(CornerFlags::Bottom, dy);
+    QPointF centreScene = scenePos() + QPointF(req.x - cur.x, req.y - cur.y);
+    QRectF border(centreScene.x() - req.width / 2.0, centreScene.y() - req.height / 2.0,
+                  req.width, req.height);
+    applyBorderRect(border);
 }
 
 void CyberiadaSMEditorAbstractItem::initializeDots()

@@ -779,34 +779,108 @@ void CyberiadaSMModel::childrenHalfExtent(const Cyberiada::ElementCollection* pc
 	}
 }
 
-bool CyberiadaSMModel::growToFitChildren(Cyberiada::Element* moved)
+// the children's bounding box relative to pc's centre (each edge), or all-zero if none
+void CyberiadaSMModel::childrenExtent(const Cyberiada::ElementCollection* pc,
+									  double& left, double& right, double& top, double& bottom) const
+{
+	left = right = top = bottom = 0.0;
+	bool any = false;
+	if (!pc) return;
+	Cyberiada::ConstElementList kids = pc->get_children();
+	for (Cyberiada::ConstElementList::const_iterator i = kids.begin(); i != kids.end(); i++) {
+		double l, r, t, b;
+		const Cyberiada::ElementCollection* c = dynamic_cast<const Cyberiada::ElementCollection*>(*i);
+		if (c && c->has_geometry()) {
+			Cyberiada::Rect cr = c->get_geometry_rect();
+			l = cr.x - cr.width / 2.0; r = cr.x + cr.width / 2.0;
+			t = cr.y - cr.height / 2.0; b = cr.y + cr.height / 2.0;
+		} else {
+			const Cyberiada::Vertex* v = dynamic_cast<const Cyberiada::Vertex*>(*i);
+			if (!(v && v->has_point_geometry() && v->has_geometry())) continue;
+			Cyberiada::Point vp = v->get_geometry_point();
+			l = vp.x - VERTEX_POINT_RADIUS; r = vp.x + VERTEX_POINT_RADIUS;
+			t = vp.y - VERTEX_POINT_RADIUS; b = vp.y + VERTEX_POINT_RADIUS;
+		}
+		if (!any) { left = l; right = r; top = t; bottom = b; any = true; }
+		else { left = std::min(left, l); right = std::max(right, r);
+			   top = std::min(top, t); bottom = std::max(bottom, b); }
+	}
+}
+
+// shift every direct child of pc by (dx, dy) so it holds its absolute place when
+// the parent centre moves during a directional grow
+void CyberiadaSMModel::rebaseChildren(Cyberiada::ElementCollection* pc, double dx, double dy)
+{
+	if (!pc || (std::fabs(dx) < 1e-6 && std::fabs(dy) < 1e-6)) return;
+	Cyberiada::ElementList kids = pc->get_children();
+	for (Cyberiada::ElementList::const_iterator i = kids.begin(); i != kids.end(); i++) {
+		Cyberiada::ElementCollection* c = dynamic_cast<Cyberiada::ElementCollection*>(*i);
+		if (c && c->has_geometry()) {
+			Cyberiada::Rect cr = c->get_geometry_rect();
+			updateGeometry(elementToIndex(c), Cyberiada::Rect(cr.x + dx, cr.y + dy, cr.width, cr.height), false);
+			continue;
+		}
+		Cyberiada::Vertex* v = dynamic_cast<Cyberiada::Vertex*>(*i);
+		if (v && v->has_point_geometry() && v->has_geometry()) {
+			Cyberiada::Point vp = v->get_geometry_point();
+			updateGeometry(elementToIndex(v), Cyberiada::Point(vp.x + dx, vp.y + dy), false);
+		}
+	}
+}
+
+bool CyberiadaSMModel::growToFitChildren(Cyberiada::Element* moved, bool directional)
 {
 	if (readOnly() || !moved) return false;
+	// re-entrancy guard: the re-base below writes child geometry, which can loop
+	// back here through the scene
+	if (m_growing) return false;
+	m_growing = true;
 	bool grew = false;
 	// walk up: a grown parent may in turn no longer fit its own parent. Stop at
 	// a collection without a real rectangle - a rect-less SM keeps no border and
 	// reconstructs it from its content, so it must not be given a stored rect.
-	// has_rect_geometry() is a type flag (always true) and cannot tell them apart.
 	for (Cyberiada::Element* e = moved; e; ) {
 		Cyberiada::ElementCollection* pc =
 			dynamic_cast<Cyberiada::ElementCollection*>(e->get_parent());
 		if (!pc || !pc->has_geometry()) break;
 		Cyberiada::Rect pr = pc->get_geometry_rect();
-		// children are stored relative to the parent centre, so the parent grows
-		// symmetrically about it - no re-basing of the children, one pass
-		double halfW = pr.width / 2.0, halfH = pr.height / 2.0;
-		double chW, chH;
-		childrenHalfExtent(pc, chW, chH);
-		halfW = std::max(halfW, chW);
-		halfH = std::max(halfH, chH);
-		if ((halfW * 2.0 != pr.width || halfH * 2.0 != pr.height) &&
-			std::isfinite(halfW) && std::isfinite(halfH) &&
-			std::isfinite(pr.x) && std::isfinite(pr.y)) {
-			updateGeometry(elementToIndex(pc), Cyberiada::Rect(pr.x, pr.y, halfW * 2.0, halfH * 2.0), false);
-			grew = true;
+		if (!std::isfinite(pr.x) || !std::isfinite(pr.y)) break;
+		if (pr.width <= 0.0 || pr.height <= 0.0 || pc->get_id().empty()) break;
+		double cl, cr, ct, cb;
+		childrenExtent(pc, cl, cr, ct, cb);
+		if (!(std::isfinite(cl) && std::isfinite(cr) && std::isfinite(ct) && std::isfinite(cb))) {
+			e = pc;
+			continue;
+		}
+		if (directional) {
+			// extend each edge outward to include the content, keeping the edges
+			// the content does not push, and re-base the children to hold their
+			// absolute place - the directional counterpart of the drag grow
+			double L = std::min(-pr.width / 2.0, cl),  R = std::max(pr.width / 2.0, cr);
+			double T = std::min(-pr.height / 2.0, ct), B = std::max(pr.height / 2.0, cb);
+			if (R - L != pr.width || B - T != pr.height) {
+				double offX = (L + R) / 2.0, offY = (T + B) / 2.0;   // centre shift
+				rebaseChildren(pc, -offX, -offY);                    // hold children absolute
+				updateGeometry(elementToIndex(pc),
+							   Cyberiada::Rect(pr.x + offX, pr.y + offY, R - L, B - T), false);
+				grew = true;
+			}
+		} else {
+			// contain the new child by growing about the current centre (children
+			// keep their stored positions) - used on create, where the freshly
+			// placed child is the only one that may fall outside
+			double halfW = std::max(std::fabs(cl), std::fabs(cr));
+			double halfH = std::max(std::fabs(ct), std::fabs(cb));
+			double newW = std::max((double)pr.width, 2.0 * halfW);
+			double newH = std::max((double)pr.height, 2.0 * halfH);
+			if (newW > pr.width + 0.001 || newH > pr.height + 0.001) {
+				updateGeometry(elementToIndex(pc), Cyberiada::Rect(pr.x, pr.y, newW, newH), false);
+				grew = true;
+			}
 		}
 		e = pc;
 	}
+	m_growing = false;
 	return grew;
 }
 
@@ -960,8 +1034,9 @@ Cyberiada::State *CyberiadaSMModel::newState(Cyberiada::ElementCollection *paren
     beginInsertRows(elementToIndex(parent), row, row);
     Cyberiada::State* element = root->new_state(parent, state_name, a, r, region, color);
     endInsertRows();
-    // a child placed past the parent border grows the parent to contain it
-    if (element) growToFitChildren(element);
+    // a child placed past the parent border grows the parent to contain it (about
+    // the centre - a freshly created child keeps the siblings where they are)
+    if (element) growToFitChildren(element, false);
 
     if (element) {
         QString verb = "new-state " + qid(parent);

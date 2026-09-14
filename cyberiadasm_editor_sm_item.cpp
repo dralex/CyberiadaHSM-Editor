@@ -92,6 +92,18 @@ qreal CyberiadaSMEditorSMItem::minimumHeight() const
     return std::max(std::max((qreal)ELEMENT_MIN_SIZE, titleH), (qreal)(2.0 * hh));
 }
 
+qreal CyberiadaSMEditorSMItem::minSpanWidth() const
+{
+    // the border cannot be narrower than its title tab
+    return std::max((qreal)ELEMENT_MIN_SIZE, titleTabWidth());
+}
+
+qreal CyberiadaSMEditorSMItem::minSpanHeight() const
+{
+    qreal titleH = (title && title->isVisible()) ? title->boundingRect().height() + 8 : 0;
+    return std::max((qreal)ELEMENT_MIN_SIZE, titleH);
+}
+
 void CyberiadaSMEditorSMItem::syncFromModel()
 {
     prepareGeometryChange();

@@ -238,6 +238,8 @@ void CyberiadaSMEditorStateItem::updateRegion()
     region->setRect(-width()/2, -(height() - top_delta - bottom_delta) / 2, width(), height() - top_delta - bottom_delta);
     region->setPos(0, (top_delta - bottom_delta)/2 );
     region_action_inset = top_delta + bottom_delta;
+    m_topInset = top_delta;
+    m_bottomInset = bottom_delta;
 }
 
 QRectF CyberiadaSMEditorStateItem::boundingRect() const
@@ -247,9 +249,20 @@ QRectF CyberiadaSMEditorStateItem::boundingRect() const
     return rect();
 }
 
-bool CyberiadaSMEditorStateItem::symmetricResize() const
+QMarginsF CyberiadaSMEditorStateItem::contentInset() const
 {
-    return state->is_composite_state();
+    // the children live in the region, inset below the title / entry / internal
+    // blocks (top) and above the exit block (bottom); the region spans full width
+    if (!state->is_composite_state()) return QMarginsF();
+    return QMarginsF(0, m_topInset, 0, m_bottomInset);
+}
+
+qreal CyberiadaSMEditorStateItem::minSpanHeight() const
+{
+    // a composite keeps room for its action blocks even with no children
+    if (!state->is_composite_state())
+        return CyberiadaSMEditorAbstractItem::minSpanHeight();
+    return std::max((qreal)ELEMENT_MIN_SIZE, (qreal)(region_action_inset + ELEMENT_MIN_SIZE));
 }
 
 qreal CyberiadaSMEditorStateItem::minimumWidth() const
