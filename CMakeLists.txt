@@ -85,6 +85,7 @@ add_library(CyberiadaEditorCore STATIC
   cyberiadasm_editor_comment_item.h cyberiadasm_editor_comment_item.cpp
   fontmanager.h fontmanager.cpp
   dialogs/stateactiondialog.h dialogs/stateactiondialog.cpp
+  dialogs/about_dialog.h dialogs/about_dialog.cpp
   dialogs/export_image_dialog.h dialogs/export_image_dialog.cpp
   dialogs/file_dialog.h dialogs/file_dialog.cpp
   dialogs/open_file_dialog.h dialogs/open_file_dialog.cpp dialogs/open_file_dialog.ui

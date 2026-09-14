@@ -83,6 +83,7 @@ public slots:
     void                    slotZoomScaleChanged(qreal scale);
     void                    slotZoomComboActivated();
     void                    slotPreferences();
+    void                    slotAbout();
     void                    slotGridVisibilityTriggered(bool on);
     void                    slotServiceObjectsTriggered(bool on);
     void                    slotLogSessionTriggered(bool on);

@@ -35,6 +35,7 @@
 #include "myassert.h"
 #include "fontmanager.h"
 #include "dialogs/preferences_dialog.h"
+#include "dialogs/about_dialog.h"
 #include "dialogs/open_file_dialog.h"
 #include "dialogs/save_file_dialog.h"
 #include "dialogs/export_image_dialog.h"
@@ -440,6 +441,12 @@ void CyberiadaSMEditorWindow::slotZoomComboActivated() {
 void CyberiadaSMEditorWindow::slotPreferences()
 {
     PreferencesDialog dlg(this);
+    dlg.exec();
+}
+
+void CyberiadaSMEditorWindow::slotAbout()
+{
+    AboutDialog dlg(this);
     dlg.exec();
 }
 

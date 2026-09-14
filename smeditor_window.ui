@@ -143,9 +143,16 @@
     <addaction name="actionPreferences"/>
     <addaction name="separator"/>
    </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="actionAbout"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
    <addaction name="menuView"/>
+   <addaction name="menuHelp"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <attribute name="toolBarArea">
@@ -353,6 +360,11 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+I</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>About</string>
    </property>
   </action>
   <action name="actionDeleteElement">
@@ -960,6 +972,22 @@
    </hints>
   </connection>
   <connection>
+   <sender>actionAbout</sender>
+   <signal>triggered()</signal>
+   <receiver>SMEditorWindow</receiver>
+   <slot>slotAbout()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>511</x>
+     <y>383</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
    <sender>actionDeleteElement</sender>
    <signal>triggered()</signal>
    <receiver>SMEditorWindow</receiver>
@@ -997,5 +1025,6 @@
   <slot>slotLogSessionTriggered(bool)</slot>
   <slot>slotPreferences()</slot>
   <slot>slotDeleteElement()</slot>
+  <slot>slotAbout()</slot>
  </slots>
 </ui>

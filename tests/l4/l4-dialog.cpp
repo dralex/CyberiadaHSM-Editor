@@ -30,7 +30,10 @@
 #include "dialogs/save_file_dialog.h"
 #include "dialogs/export_image_dialog.h"
 #include "dialogs/stateactiondialog.h"
+#include "dialogs/about_dialog.h"
+#include "version.h"
 #include <QPlainTextEdit>
+#include <QLabel>
 
 class TestDialog: public QObject {
 	Q_OBJECT
@@ -44,6 +47,7 @@ private slots:
 	void test_save_refused_format();
 	void test_export_image();
 	void test_action_dialog();
+	void test_about_dialog();
 };
 
 void TestDialog::test_options_injected()
@@ -213,6 +217,25 @@ void TestDialog::test_action_dialog()
 	// a damaged keyword is refused
 	edit->setPlainText("entrance/ foo();");
 	QVERIFY(!dialog.parseInput());
+}
+
+void TestDialog::test_about_dialog()
+{
+	AboutDialog dialog;
+	// the logo resource is bundled and loads
+	QLabel* logo = nullptr;
+	QString allText;
+	// QLabel::pixmap() returns a const QPixmap* on Qt 5.12 (the minimum)
+	for (QLabel* l : dialog.findChildren<QLabel*>()) {
+		if (l->pixmap() && !l->pixmap()->isNull()) logo = l;
+		allText += l->text();
+	}
+	QVERIFY(logo);
+	// the box names the application and shows the version and revision
+	QVERIFY(allText.contains(CYBERIADA_APP_NAME));
+	QVERIFY(allText.contains(CYBERIADA_VERSION));
+	QVERIFY(allText.contains(CYBERIADA_REVISION));
+	QVERIFY(allText.contains("fedoseev.net"));
 }
 
 #include "l4-dialog.moc"
