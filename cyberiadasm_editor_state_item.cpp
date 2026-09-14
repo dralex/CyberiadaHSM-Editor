@@ -288,11 +288,23 @@ qreal CyberiadaSMEditorStateItem::minimumHeight() const
     return std::max((qreal)ELEMENT_MIN_SIZE, (qreal)(2.0 * hh + region_action_inset));
 }
 
+bool CyberiadaSMEditorStateItem::isNameOnly() const
+{
+    return !state->has_actions() && !state->is_composite_state();
+}
+
 void CyberiadaSMEditorStateItem::setTextPosition()
 {
     // TODO refactor
     QRectF oldRect = rect();
     QRectF titleRect = title->boundingRect();
+    // a bare state (no actions, no children) centres the name in the box; any
+    // action or nested state turns it into the top header, with the blocks below
+    if (isNameOnly()) {
+        title->setPos(oldRect.x() + (oldRect.width() - titleRect.width()) / 2,
+                      oldRect.y() + (oldRect.height() - titleRect.height()) / 2);
+        return;
+    }
     title->setPos(oldRect.x() + (oldRect.width() - titleRect.width()) / 2 , oldRect.y());
 
     // the entry is pinned to the top-left of the region under the title and
@@ -498,7 +510,9 @@ void CyberiadaSMEditorStateItem::paint(QPainter *painter, const QStyleOptionGrap
     QPainterPath path;
     QRectF tmpRect = rect();
     path.addRoundedRect(tmpRect, ROUNDED_RECT_RADIUS, ROUNDED_RECT_RADIUS);
-    if (SettingsManager::instance().getShowText()) {
+    // the header separator is drawn only when the name sits in the top header;
+    // a bare state shows the name centred with no separating line
+    if (SettingsManager::instance().getShowText() && !isNameOnly()) {
         qreal titleHeight = title->boundingRect().height();
         painter->drawLine(QPointF(tmpRect.x(), tmpRect.y() + titleHeight), QPointF(tmpRect.right(), tmpRect.y() + titleHeight));
     }

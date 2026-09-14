@@ -71,6 +71,10 @@ public:
     qreal height() const;
     QString name() const;
 
+    // a bare state - only a name, no actions and no nested states - shows the name
+    // centred in the box; adding any action or child moves it to the top header
+    bool isNameOnly() const;
+
     StateRegion* getRegion();
     // create the region on demand when the state turned composite
     StateRegion* ensureRegion();

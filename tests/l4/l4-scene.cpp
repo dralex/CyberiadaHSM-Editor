@@ -99,6 +99,7 @@ private slots:
 	void test_paste_transition();
 	void test_sm_not_pasteable();
 	void test_action_multiline();
+	void test_name_only_state();
 	// runs last: it reloads and modifies the shared document
 	void test_directional_grow();
 
@@ -556,6 +557,47 @@ void TestScene::test_container_resize_clamp()
 	QVERIFY(child->sceneBoundingRect().right()  <= comp->sceneBoundingRect().right()  + 0.5);
 	QVERIFY(child->sceneBoundingRect().top()    >= comp->sceneBoundingRect().top()    - 0.5);
 	QVERIFY(child->sceneBoundingRect().bottom() <= comp->sceneBoundingRect().bottom() + 0.5);
+}
+
+// find the state's own title text item (not an action block)
+static StateTitle* stateTitle(CyberiadaSMEditorStateItem* s)
+{
+	for (QGraphicsItem* c : s->childItems()) {
+		if (StateTitle* t = dynamic_cast<StateTitle*>(c)) return t;
+	}
+	return nullptr;
+}
+
+void TestScene::test_name_only_state()
+{
+	// a bare state (only a name) centres the name in the box; adding an action
+	// moves it back to the top header
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+
+	CyberiadaSMEditorStateItem* st =
+		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0-0-1"));
+	QVERIFY(st);
+	QVERIFY(st->isNameOnly());
+
+	StateTitle* title = stateTitle(st);
+	QVERIFY(title);
+	QRectF box = st->rect();
+	// the title is vertically centred (its middle near the box middle), not at the top
+	qreal titleMidY = title->pos().y() + title->boundingRect().height() / 2.0;
+	QVERIFY(std::fabs(titleMidY - box.center().y()) < 2.0);
+	QVERIFY(title->pos().y() > box.top() + 2.0);
+
+	// add an entry action -> no longer name-only, the title returns to the top
+	QVERIFY(model->newAction(model->elementToIndex(model->idToElement("node-0-0-1")),
+							 Cyberiada::actionEntry, QString(), QString(), "foo();"));
+	st = dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0-0-1"));
+	QVERIFY(st);
+	QVERIFY(!st->isNameOnly());
+	title = stateTitle(st);
+	QVERIFY(title);
+	box = st->rect();
+	QVERIFY(std::fabs(title->pos().y() - box.top()) < 2.0);
 }
 
 void TestScene::test_directional_grow()
