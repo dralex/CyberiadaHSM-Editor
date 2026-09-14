@@ -620,13 +620,28 @@ bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada:
 	return true;
 }
 
-bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada::Rect& rect)
+bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada::Rect& rect, bool record)
 {
 	if (readOnly()) return false;
 	UndoScope scope(this, tr("geometry"));
 	Cyberiada::Element* element = indexToElement(index);
     if (!element) return false;
     if (!element->has_rect_geometry()) return false;
+    // an update that leaves the rect unchanged is not a user gesture: skip it so
+    // it pushes no undo step and records no (possibly id-less, unreplayable) move
+    // - a scene item may re-apply its own geometry while it is being built
+    {
+        Cyberiada::Rect current;
+        if (element->get_type() == Cyberiada::elementChoice) {
+            current = static_cast<Cyberiada::ChoicePseudostate*>(element)->get_geometry_rect();
+        } else if (element->get_type() == Cyberiada::elementComment ||
+                   element->get_type() == Cyberiada::elementFormalComment) {
+            current = static_cast<Cyberiada::Comment*>(element)->get_geometry_rect();
+        } else {
+            current = static_cast<Cyberiada::ElementCollection*>(element)->get_geometry_rect();
+        }
+        if (current.valid && rect.valid && current.almost_equal(rect)) return true;
+    }
     // a border set on a geometry-less document (format "none") is otherwise lost:
     // its snapshot omits geometry, so the change neither saves nor undoes. Adopt
     // the Qt format so the rect is serialised, undoable and persisted.
@@ -643,7 +658,9 @@ bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada:
 		Cyberiada::ElementCollection* ec = static_cast<Cyberiada::ElementCollection*>(element);
         ec->update_geometry(rect);
 	}
-	GestureLog::instance().logAction("move " + qid(element) + " " + logRect(rect));
+	// a derived grow (growToFitChildren) is reproduced on replay by re-creating
+	// the child, so it must not record a gesture of its own
+	if (record) GestureLog::instance().logAction("move " + qid(element) + " " + logRect(rect));
 	emit dataChanged(index, index);
 	return true;
 }
@@ -766,7 +783,7 @@ bool CyberiadaSMModel::growToFitChildren(Cyberiada::Element* moved)
 		if ((halfW * 2.0 != pr.width || halfH * 2.0 != pr.height) &&
 			std::isfinite(halfW) && std::isfinite(halfH) &&
 			std::isfinite(pr.x) && std::isfinite(pr.y)) {
-			updateGeometry(elementToIndex(pc), Cyberiada::Rect(pr.x, pr.y, halfW * 2.0, halfH * 2.0));
+			updateGeometry(elementToIndex(pc), Cyberiada::Rect(pr.x, pr.y, halfW * 2.0, halfH * 2.0), false);
 			grew = true;
 		}
 		e = pc;
