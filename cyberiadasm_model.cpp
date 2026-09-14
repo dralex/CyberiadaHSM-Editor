@@ -606,7 +606,7 @@ bool CyberiadaSMModel::deleteAction(const QModelIndex& index, int action_index)
 	return true;
 }
 
-bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada::Point& point)
+bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada::Point& point, bool record)
 {
 	if (readOnly()) return false;
 	UndoScope scope(this, tr("geometry"));
@@ -614,8 +614,13 @@ bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada:
 	if (!element) return false;
 	if (!element->has_point_geometry()) return false;
 	Cyberiada::Vertex* v = static_cast<Cyberiada::Vertex*>(element);
+	if (v->has_geometry()) {
+		Cyberiada::Point cur = v->get_geometry_point();
+		if (std::fabs(cur.x - point.x) < 0.001 && std::fabs(cur.y - point.y) < 0.001) return true;
+	}
 	v->update_geometry(point);
-	GestureLog::instance().logAction("move " + qid(element) + " " + logPt(point));
+	// a derived re-base is reproduced on replay, so it records no gesture
+	if (record) GestureLog::instance().logAction("move " + qid(element) + " " + logPt(point));
 	emit dataChanged(index, index);
 	return true;
 }

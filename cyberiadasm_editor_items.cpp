@@ -236,6 +236,9 @@ void CyberiadaSMEditorAbstractItem::mousePressEvent(QGraphicsSceneMouseEvent *ev
 
     // the press decides the gesture: no prior hover or selection is needed
     cornerFlags = borderZone(event->pos());
+    // remember where the cursor grabbed the item, to place it in scene space
+    // during a body drag
+    grabOffset = scenePos() - event->scenePos();
 
     if (event->button() & Qt::LeftButton) {
         isLeftMouseButtonPressed = true;
@@ -422,9 +425,9 @@ void CyberiadaSMEditorAbstractItem::resizeRight(const QPointF &pt)
     if( pt.x() < tmpRect.left() )
         return;
     if (symmetricResize()) {
-        // the centre is fixed (item coords centre it at 0), so the right edge at
-        // pt.x makes the width 2*pt.x; the floor keeps the children inside and no
-        // re-base is needed
+        // a container resizes about its centre: the floor keeps the children
+        // inside and no re-base is needed (directional resize would need scene
+        // coordinates and a per-side content clamp, like the child extension)
         prepareGeometryChange();
         qreal newW = qMax(2.0 * pt.x(), (double)minimumWidth());
         model->updateGeometry(model->elementToIndex(element),

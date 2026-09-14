@@ -394,20 +394,25 @@ void CyberiadaSMEditorStateItem::updateSizeToFitChildren(CyberiadaSMEditorAbstra
     qreal overTop    = inner.top()        - childRect.top();
     qreal overBottom = childRect.bottom() - inner.bottom();
 
-    // grow symmetrically about the centre: the centre stays put so every other
-    // child keeps its place and the dragged child keeps tracking the cursor (a
-    // centre shift would fight the live drag), while the state - and with it the
-    // inner region box - stretches to swallow the overspill on the crossed side
-    qreal addW = 2.0 * std::max(0.0, std::max(overLeft, overRight));
-    qreal addH = 2.0 * std::max(0.0, std::max(overTop, overBottom));
-
+    // grow only the crossed edge, keeping the opposite edge fixed: the centre
+    // shifts by half the growth, and every child re-bases by that half to hold
+    // its absolute place. The dragged child's model was committed from the cursor
+    // just before this call, so re-basing it too lands it back on the cursor.
     const qreal eps = 0.01;
-    if (addW < eps && addH < eps) return;
-
     Cyberiada::Rect r = state->get_geometry_rect();
-    r.width += addW;
-    r.height += addH;
+    CornerFlags sideX = CornerFlags(0), sideY = CornerFlags(0);
+    qreal dX = 0.0, dY = 0.0;
+
+    if (overRight > eps)      { r.x += overRight / 2; r.width += overRight; sideX = CornerFlags::Right; dX = overRight / 2; }
+    else if (overLeft > eps)  { r.x -= overLeft / 2;  r.width += overLeft;  sideX = CornerFlags::Left;  dX = overLeft / 2; }
+    if (overBottom > eps)     { r.y += overBottom / 2; r.height += overBottom; sideY = CornerFlags::Bottom; dY = overBottom / 2; }
+    else if (overTop > eps)   { r.y -= overTop / 2;   r.height += overTop;  sideY = CornerFlags::Top;   dY = overTop / 2; }
+
+    if (!sideX && !sideY) return;
+
     model->updateGeometry(model->elementToIndex(element), r);
+    if (sideX) emit sizeChanged(sideX, dX);
+    if (sideY) emit sizeChanged(sideY, dY);
 
     // the region follows the state size; refresh it so the inner box is in step
     // for the next step of the same drag gesture
@@ -517,14 +522,18 @@ void CyberiadaSMEditorStateItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
     // a drag of the body moves the state like a drag of its border zones
     bool bodyDrag = isEditable() && isLeftMouseButtonPressed && cornerFlags == 0;
     if (bodyDrag) {
-        setFlag(ItemIsMovable);
+        // place the state at the cursor in SCENE space (not via ItemIsMovable,
+        // whose parent-anchored delta would drift when the container grows
+        // directionally under the drag) and commit its model BEFORE the parent
+        // grow, so the parent's re-base holds this state at the cursor too
+        QPointF target = event->scenePos() + grabOffset;
+        setPos(parentItem() ? parentItem()->mapFromScene(target) : target);
+        Cyberiada::Rect r(pos().x(), pos().y(), boundingRect().width(), boundingRect().height());
+        model->updateGeometry(model->elementToIndex(element), r);
     }
 
     // if you want to update this, update StateTitle::mouseMoveEvent as well
     CyberiadaSMEditorAbstractItem::mouseMoveEvent(event);
-    if (bodyDrag) {
-        updatePosGeometry();
-    }
     CyberiadaSMEditorAbstractItem* newParent = collectionUnderItem();
 
     if (prevItemUnderCursor == newParent) return;

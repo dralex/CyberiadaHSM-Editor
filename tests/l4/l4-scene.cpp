@@ -99,6 +99,8 @@ private slots:
 	void test_paste_transition();
 	void test_sm_not_pasteable();
 	void test_action_multiline();
+	// runs last: it reloads and modifies the shared document
+	void test_directional_grow();
 
 private:
 	int countItems(int type);
@@ -554,6 +556,48 @@ void TestScene::test_container_resize_clamp()
 	// the child still fits inside the clamped border
 	QVERIFY(after.width  >= child->boundingRect().width());
 	QVERIFY(after.height >= child->boundingRect().height());
+}
+
+void TestScene::test_directional_grow()
+{
+	// dragging a child past a parent's edge extends only that edge (the opposite
+	// edge holds), the other children keep their absolute places, and the dragged
+	// child tracks the cursor
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+	scene->setCurrentTool(ToolType::Select);
+
+	CyberiadaSMEditorStateItem* parent =
+		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0-0"));
+	CyberiadaSMEditorStateItem* child =
+		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0-0-1"));
+	CyberiadaSMEditorStateItem* sibling =
+		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0-0-2"));
+	QVERIFY(parent && child && sibling);
+
+	qreal leftBefore  = parent->sceneBoundingRect().left();
+	qreal rightBefore = parent->sceneBoundingRect().right();
+	QRectF siblingBefore = sibling->sceneBoundingRect();
+
+	QPointF from = child->sceneBoundingRect().center();
+	QPointF to(rightBefore + 200.0, from.y());
+	scene->clearSelection();
+	mouse(QEvent::GraphicsSceneMousePress, from, Qt::LeftButton);
+	for (qreal x = from.x() + 40.0; x < to.x(); x += 40.0)
+		mouse(QEvent::GraphicsSceneMouseMove, QPointF(x, from.y()), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, to, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, to, Qt::NoButton);
+
+	// only the crossed (right) edge moved; the left edge held
+	QVERIFY(std::fabs(parent->sceneBoundingRect().left() - leftBefore) < 1.0);
+	QVERIFY(parent->sceneBoundingRect().right() > rightBefore + 1.0);
+	// the sibling kept its absolute place
+	QVERIFY(std::fabs(sibling->sceneBoundingRect().left() - siblingBefore.left()) < 1.0);
+	QVERIFY(std::fabs(sibling->sceneBoundingRect().top() - siblingBefore.top()) < 1.0);
+	// the dragged child ended inside the grown parent
+	QVERIFY(child->sceneBoundingRect().right() <= parent->sceneBoundingRect().right() + 1.0);
 }
 
 void TestScene::test_box_transition()

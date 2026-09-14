@@ -79,7 +79,7 @@ public:
 												  const QString& guard = QString(),
 												  const QString& behaviour = QString());
 	bool                                deleteAction(const QModelIndex& index, int action_index = -1);
-	bool                                updateGeometry(const QModelIndex& index, const Cyberiada::Point& point);
+	bool                                updateGeometry(const QModelIndex& index, const Cyberiada::Point& point, bool record = true);
 	bool                                updateGeometry(const QModelIndex& index, const Cyberiada::Rect& rect, bool record = true);
 	bool                                updateGeometry(const QModelIndex& index, const Cyberiada::Point& source, const Cyberiada::Point& target);
     bool                                updateGeometry(const QModelIndex& index, const Cyberiada::Polyline& pl);

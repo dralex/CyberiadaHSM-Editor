@@ -110,6 +110,11 @@ public:
     virtual void syncFromModel();
     virtual void updateSizeToFitChildren(CyberiadaSMEditorAbstractItem* child);
 
+    // the offset (item origin - cursor) captured at press, so a body drag can
+    // place the item at the cursor in SCENE space each move - immune to the
+    // container moving under it when it grows directionally
+    QPointF grabOffset;
+
     // apply a centre-based geometry (e.g. from the property editor) the way the
     // border drag does: clamp to the minimum that contains the children, and
     // hold the children's absolute positions when the centre moves

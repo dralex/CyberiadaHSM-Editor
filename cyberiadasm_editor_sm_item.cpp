@@ -187,15 +187,23 @@ void CyberiadaSMEditorSMItem::updateSizeToFitChildren(CyberiadaSMEditorAbstractI
     qreal overTop    = inner.top()        - childRect.top();
     qreal overBottom = childRect.bottom() - inner.bottom();
 
-    // grow symmetrically about the centre so the other children keep their place
-    // and the dragged child keeps tracking the cursor (a centre shift would fight
-    // the live drag); the border stretches to swallow the overspill
-    qreal addW = 2.0 * std::max(0.0, std::max(overLeft, overRight));
-    qreal addH = 2.0 * std::max(0.0, std::max(overTop, overBottom));
-
+    // grow only the crossed edge, keeping the opposite edge fixed: the centre
+    // shifts by half the growth, and every child re-bases by that half to hold
+    // its absolute place (the dragged child's model was committed from the cursor
+    // just before this call, so re-basing it too lands it back on the cursor)
     const qreal eps = 0.01;
-    if (addW < eps && addH < eps) return;
-    model->updateGeometry(getIndex(),
-        Cyberiada::Rect(border.x, border.y, border.width + addW, border.height + addH));
+    CornerFlags sideX = CornerFlags(0), sideY = CornerFlags(0);
+    qreal dX = 0.0, dY = 0.0;
+
+    if (overRight > eps)      { border.x += overRight / 2; border.width += overRight; sideX = CornerFlags::Right; dX = overRight / 2; }
+    else if (overLeft > eps)  { border.x -= overLeft / 2;  border.width += overLeft;  sideX = CornerFlags::Left;  dX = overLeft / 2; }
+    if (overBottom > eps)     { border.y += overBottom / 2; border.height += overBottom; sideY = CornerFlags::Bottom; dY = overBottom / 2; }
+    else if (overTop > eps)   { border.y -= overTop / 2;   border.height += overTop;  sideY = CornerFlags::Top;   dY = overTop / 2; }
+
+    if (!sideX && !sideY) return;
+
+    model->updateGeometry(getIndex(), border);
+    if (sideX) emit sizeChanged(sideX, dX);
+    if (sideY) emit sizeChanged(sideY, dY);
 }
 
