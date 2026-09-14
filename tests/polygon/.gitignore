@@ -4,3 +4,4 @@ coverage.json
 productivity.json
 __pycache__/
 polygon.toml
+toolcover.json

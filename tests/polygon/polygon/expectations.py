@@ -46,6 +46,9 @@ def parse(text):
     return facts
 
 
+RECT_TOLERANCE = 1.5   # the pixel rounding the writer applies
+
+
 def _rect_inside(a, b):
     ax, ay, aw, ah = a
     bx, by, bw, bh = b
@@ -161,6 +164,21 @@ def check(fact, dump):
         want = " ".join(t[3:])
         got = item.text
         return None if " ".join(got.split()) == " ".join(want.split()) else "the %s text is %r" % (role, got)
+    if verb == "rect":
+        # rect <id> <x> <y> <w> <h>: the scene rect within a small tolerance
+        if len(t) != 6:
+            return "usage: rect <id> <x> <y> <w> <h>"
+        item = items.get(t[1])
+        if item is None:
+            return "no scene item %s" % t[1]
+        try:
+            want = tuple(float(v) for v in t[2:6])
+        except ValueError:
+            return "rect wants four numbers"
+        got = item.abs_rect
+        if all(abs(g - w) <= RECT_TOLERANCE for g, w in zip(got, want)):
+            return None
+        return "%s rect is %s, not %s" % (t[1], tuple(round(g, 1) for g in got), want)
     return "unknown fact %r" % verb
 
 
