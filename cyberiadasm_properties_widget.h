@@ -32,6 +32,8 @@
 
 #include "cyberiadasm_model.h"
 
+class CyberiadaSMEditorScene;
+
 class CyberiadaSMPropertiesWidget: public QtTreePropertyBrowser {
 Q_OBJECT
 
@@ -39,6 +41,9 @@ public:
 	CyberiadaSMPropertiesWidget(QWidget *parent = NULL);
 
 	void                     setModel(CyberiadaSMModel* model);
+	// the scene supplies the graphics item for an element so a geometry edit can
+	// clamp to content and re-base the nested states, as the border drag does
+	void                     setScene(CyberiadaSMEditorScene* scene);
 
 public slots:
 	void                     slotElementSelected(const QModelIndex& index);
@@ -51,6 +56,7 @@ public slots:
 private:
 	
 	CyberiadaSMModel*        model;
+	CyberiadaSMEditorScene*  scene = nullptr;
 	Cyberiada::Element*      element;
     bool                     updating;
 

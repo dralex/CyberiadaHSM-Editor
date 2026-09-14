@@ -27,6 +27,8 @@
 #include "cyberiadasm_properties_widget.h"
 #include "cyberiada_constants.h"
 #include "settings_manager.h"
+#include "cyberiadasm_editor_scene.h"
+#include "cyberiadasm_editor_items.h"
 
 CyberiadaSMPropertiesWidget::CyberiadaSMPropertiesWidget(QWidget *parent):
 	QtTreePropertyBrowser(parent), model(NULL), element(NULL)
@@ -162,6 +164,11 @@ CyberiadaSMPropertiesWidget::CyberiadaSMPropertiesWidget(QWidget *parent):
 	setResizeMode(ResizeToContents);
 
     updating = false;
+}
+
+void CyberiadaSMPropertiesWidget::setScene(CyberiadaSMEditorScene* scene)
+{
+	this->scene = scene;
 }
 
 void CyberiadaSMPropertiesWidget::setModel(CyberiadaSMModel* model)
@@ -512,7 +519,16 @@ void CyberiadaSMPropertiesWidget::slotPropertyChanged(QtProperty* p)
 
                     if (cp.name == propGroupRect) {
                         QRectF newRect = rectManager->value(p);
-                        model->updateGeometry(i, Cyberiada::Rect(newRect.x(), newRect.y(), newRect.width(), newRect.height()));
+                        Cyberiada::Rect req(newRect.x(), newRect.y(), newRect.width(), newRect.height());
+                        // route a container edit through its item so it clamps to
+                        // content and holds the nested states, like a border drag
+                        CyberiadaSMEditorAbstractItem* item = scene ?
+                            dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene->getMap().value(element->get_id())) : nullptr;
+                        if (item) {
+                            item->resizeToRect(req);
+                        } else {
+                            model->updateGeometry(i, req);
+                        }
                     }
 
                     if (cp.name == propColor) {

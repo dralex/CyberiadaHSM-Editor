@@ -110,6 +110,11 @@ public:
     virtual void syncFromModel();
     virtual void updateSizeToFitChildren(CyberiadaSMEditorAbstractItem* child);
 
+    // apply a centre-based geometry (e.g. from the property editor) the way the
+    // border drag does: clamp to the minimum that contains the children, and
+    // hold the children's absolute positions when the centre moves
+    virtual void resizeToRect(const Cyberiada::Rect& req);
+
 protected:
     CyberiadaSMModel* model;
     Cyberiada::Element* element;
@@ -155,6 +160,10 @@ protected:
     // the smallest the element may be resized to (a box has a floor)
     virtual qreal minimumWidth() const;
     virtual qreal minimumHeight() const;
+    // a container resizes symmetrically about its centre (like its auto-grow), so
+    // its children keep their absolute places and never spill past the border; a
+    // leaf keeps the directional resize that holds the opposite edge
+    virtual bool  symmetricResize() const { return false; }
     void updateSizeGeometry();
 
     virtual void initializeDots();

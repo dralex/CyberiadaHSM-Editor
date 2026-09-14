@@ -51,6 +51,7 @@ private slots:
 	void test_double_click_action();
 	void test_action_layout();
 	void test_border_resize();
+	void test_container_resize_clamp();
 	void test_box_transition();
 	void test_auto_attach();
 	void test_new_element_place();
@@ -521,6 +522,38 @@ void TestScene::test_border_resize()
 	QCOMPARE(element->get_geometry_rect().width, before.width + 27);
 	QCOMPARE(element->get_geometry_rect().height, after.height);
 	QVERIFY(model->deleteAction(index, 0));
+}
+
+void TestScene::test_container_resize_clamp()
+{
+	// the property-editor path (resizeToRect) must not shrink a composite below
+	// its content, and its nested states keep their absolute positions
+	CyberiadaSMEditorStateItem* comp =
+		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0-0"));
+	QVERIFY(comp);
+	const Cyberiada::State* el =
+		static_cast<const Cyberiada::State*>(model->idToElement("node-0-0"));
+	QVERIFY(el->is_composite_state());
+
+	QGraphicsItem* child = scene->getMap().value("node-0-0-1");
+	QVERIFY(child);
+	QPointF childBefore = child->scenePos();
+	Cyberiada::Rect before = el->get_geometry_rect();
+
+	// ask for an absurdly small rect at the same centre
+	comp->resizeToRect(Cyberiada::Rect(before.x, before.y, 10, 10));
+	Cyberiada::Rect after = el->get_geometry_rect();
+
+	// clamped to the content floor, not the requested 10x10
+	QVERIFY(after.width  > 10);
+	QVERIFY(after.height > 10);
+	// the centre held, so the nested state did not move
+	QCOMPARE(after.x, before.x);
+	QCOMPARE(after.y, before.y);
+	QCOMPARE(child->scenePos(), childBefore);
+	// the child still fits inside the clamped border
+	QVERIFY(after.width  >= child->boundingRect().width());
+	QVERIFY(after.height >= child->boundingRect().height());
 }
 
 void TestScene::test_box_transition()

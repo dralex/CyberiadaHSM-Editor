@@ -421,6 +421,16 @@ void CyberiadaSMEditorAbstractItem::resizeRight(const QPointF &pt)
     QRectF tmpRect = boundingRect();
     if( pt.x() < tmpRect.left() )
         return;
+    if (symmetricResize()) {
+        // the centre is fixed (item coords centre it at 0), so the right edge at
+        // pt.x makes the width 2*pt.x; the floor keeps the children inside and no
+        // re-base is needed
+        prepareGeometryChange();
+        qreal newW = qMax(2.0 * pt.x(), (double)minimumWidth());
+        model->updateGeometry(model->elementToIndex(element),
+                              Cyberiada::Rect(pos().x(), pos().y(), newW, tmpRect.height()));
+        return;
+    }
     qreal widthOffset =  ( pt.x() - tmpRect.left() );
     qreal minW = minimumWidth();
     if( widthOffset < minW )
@@ -441,6 +451,13 @@ void CyberiadaSMEditorAbstractItem::resizeBottom(const QPointF &pt)
     QRectF tmpRect = boundingRect();
     if( pt.y() < tmpRect.top() )
         return;
+    if (symmetricResize()) {
+        prepareGeometryChange();
+        qreal newH = qMax(2.0 * pt.y(), (double)minimumHeight());
+        model->updateGeometry(model->elementToIndex(element),
+                              Cyberiada::Rect(pos().x(), pos().y(), tmpRect.width(), newH));
+        return;
+    }
     qreal heightOffset =  ( pt.y() - tmpRect.top() );
     qreal minH = minimumHeight();
     if( heightOffset < minH )
@@ -469,6 +486,29 @@ void CyberiadaSMEditorAbstractItem::updatePosGeometry()
                                         boundingRect().width(),
                                         boundingRect().height());
     model->updateGeometry(model->elementToIndex(element), r);
+}
+
+void CyberiadaSMEditorAbstractItem::resizeToRect(const Cyberiada::Rect& req)
+{
+    Cyberiada::ElementCollection* coll = dynamic_cast<Cyberiada::ElementCollection*>(element);
+    if (!coll || !element->has_geometry()) {
+        // a leaf element (comment, choice, vertex) has no children to contain
+        model->updateGeometry(model->elementToIndex(element), req);
+        return;
+    }
+    Cyberiada::Rect cur = coll->get_geometry_rect();
+    // clamp to the floor that keeps the children inside (per-type via the virtual
+    // minimums), exactly as the border drag does
+    qreal w = qMax((qreal)req.width, minimumWidth());
+    qreal h = qMax((qreal)req.height, minimumHeight());
+    prepareGeometryChange();
+    model->updateGeometry(model->elementToIndex(element), Cyberiada::Rect(req.x, req.y, w, h));
+    // hold the children's absolute positions when the centre moves: shift each by
+    // the opposite of the centre delta, the same re-base the border drag emits
+    qreal dx = req.x - cur.x;
+    qreal dy = req.y - cur.y;
+    if (dx != 0.0) emit sizeChanged(CornerFlags::Right, dx);
+    if (dy != 0.0) emit sizeChanged(CornerFlags::Bottom, dy);
 }
 
 void CyberiadaSMEditorAbstractItem::initializeDots()

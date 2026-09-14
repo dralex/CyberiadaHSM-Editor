@@ -223,6 +223,12 @@ void CyberiadaSMEditorStateItem::updateRegion()
             top_delta += entry->boundingRect().height();
             region->setTopLine(true);
         }
+        // the internal-transition block shares the top area with the entry, so
+        // its height is reserved out of the child region too
+        for (StateAction* a : internalActions) {
+            top_delta += a->boundingRect().height();
+            region->setTopLine(true);
+        }
         if (exit) {
             bottom_delta += exit->boundingRect().height();
             region->setBottomLine(true);
@@ -241,6 +247,34 @@ QRectF CyberiadaSMEditorStateItem::boundingRect() const
     return rect();
 }
 
+bool CyberiadaSMEditorStateItem::symmetricResize() const
+{
+    return state->is_composite_state();
+}
+
+qreal CyberiadaSMEditorStateItem::minimumWidth() const
+{
+    // a simple state has no children: keep the base floor
+    if (!state->is_composite_state())
+        return CyberiadaSMEditorAbstractItem::minimumWidth();
+    // children live in the region, whose width equals the state width
+    double hw, hh;
+    model->childrenHalfExtent(static_cast<const Cyberiada::ElementCollection*>(element), hw, hh);
+    return std::max((qreal)ELEMENT_MIN_SIZE, (qreal)(2.0 * hw));
+}
+
+qreal CyberiadaSMEditorStateItem::minimumHeight() const
+{
+    if (!state->is_composite_state())
+        return CyberiadaSMEditorAbstractItem::minimumHeight();
+    // the region (child area) sits below the title/entry/internal blocks and
+    // above the exit block, so the state must be that much taller than the
+    // content to keep the children inside the region
+    double hw, hh;
+    model->childrenHalfExtent(static_cast<const Cyberiada::ElementCollection*>(element), hw, hh);
+    return std::max((qreal)ELEMENT_MIN_SIZE, (qreal)(2.0 * hh + region_action_inset));
+}
+
 void CyberiadaSMEditorStateItem::setTextPosition()
 {
     // TODO refactor
@@ -250,8 +284,15 @@ void CyberiadaSMEditorStateItem::setTextPosition()
 
     // the entry is pinned to the top-left of the region under the title and
     // the exit to its bottom-left, in the simple and the composite state alike
+    qreal top = oldRect.y() + titleRect.height();
     if (entry != nullptr) {
-        entry->setPos(oldRect.x() + 15, oldRect.y() + titleRect.height());
+        entry->setPos(oldRect.x() + 15, top);
+        top += entry->boundingRect().height();
+    }
+    // the internal transitions stack below the entry
+    for (StateAction* a : internalActions) {
+        a->setPos(oldRect.x() + 15, top);
+        top += a->boundingRect().height();
     }
     if (exit != nullptr) {
         exit->setPos(oldRect.x() + 15, oldRect.bottom() - exit->boundingRect().height());
@@ -291,6 +332,7 @@ void CyberiadaSMEditorStateItem::initializeActions()
         action->deleteLater();
     }
     actions.clear();
+    internalActions.clear();
     entry = nullptr;
     exit = nullptr;
 
@@ -303,6 +345,10 @@ void CyberiadaSMEditorStateItem::initializeActions()
             entry = action;
         } else if (type == Cyberiada::actionExit) {
             exit = action;
+        } else {
+            // an internal transition (trigger/guard/behaviour) shares the top
+            // block with the entry action
+            internalActions.push_back(action);
         }
         connect(action, &EditableTextItem::sizeChanged, this, &CyberiadaSMEditorStateItem::onTextItemSizeChanged);
         connect(action, &StateAction::actionDeleted, this, &CyberiadaSMEditorStateItem::onActionDeleted);

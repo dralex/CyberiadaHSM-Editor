@@ -91,6 +91,11 @@ public:
     // centre so it contains all its rect children (a programmatic move leaves
     // a child outside, unlike an interactive drag)
     bool                                growToFitChildren(Cyberiada::Element* moved);
+    // the half-extent (from the collection centre, each axis) its children need;
+    // the collection's own rect is excluded, so it is the bare content a border
+    // must contain - the shared floor for resize clamps and auto-grow
+    void                                childrenHalfExtent(const Cyberiada::ElementCollection* pc,
+                                                           double& halfW, double& halfH) const;
 	bool                                updateCommentBody(const QModelIndex& index, const QString& body);
     bool                                updateMetainformation(const QModelIndex& index, const QString& parameter, const QString& new_value);
 

@@ -82,6 +82,14 @@ public:
 
     QRectF boundingRect() const override;
 
+    // a composite floors at its content plus the action inset (a simple state
+    // has no children and keeps the base minimum)
+    qreal minimumWidth() const override;
+    qreal minimumHeight() const override;
+    // a composite resizes about its centre so its nested states hold their
+    // places; a simple state keeps the directional resize
+    bool  symmetricResize() const override;
+
     void syncFromModel() override;
 
     void setTextPosition();
@@ -129,6 +137,9 @@ private:
     qreal region_action_inset = 0;
     const Cyberiada::State* state;
     std::vector<StateAction*> actions;
+    // the internal-transition action blocks (type actionTransition), tracked so
+    // their height is reserved in the region inset and they can be laid out
+    std::vector<StateAction*> internalActions;
     
     void updateParent(CyberiadaSMEditorAbstractItem* newParent);
 
@@ -146,7 +157,12 @@ class StateRegion : public QGraphicsRectItem
 {
 public:
     explicit StateRegion(QGraphicsItem *parent = NULL):
-        QGraphicsRectItem(parent) {}
+        QGraphicsRectItem(parent) {
+        // the region spans the composite's full width and sits above it, so it
+        // must never intercept the border press that drives resize
+        setAcceptedMouseButtons(Qt::NoButton);
+        setAcceptHoverEvents(false);
+    }
 
     bool getTopLine() { return topLine; }
     bool getBottomLine() { return bottomLine; }

@@ -74,25 +74,22 @@ qreal CyberiadaSMEditorSMItem::titleTabWidth() const
     return title->boundingRect().width() + 16;   // the tab padding
 }
 
-Cyberiada::Rect CyberiadaSMEditorSMItem::contentRect() const
-{
-    return static_cast<Cyberiada::ElementCollection*>(element)
-        ->ElementCollection::get_bound_rect(*(model->rootDocument()));
-}
-
 qreal CyberiadaSMEditorSMItem::minimumWidth() const
 {
-    Cyberiada::Rect c = contentRect();
-    qreal contentW = c.valid ? c.width : 0;
-    return std::max(std::max((qreal)ELEMENT_MIN_SIZE, titleTabWidth()), contentW);
+    // the floor is the children's extent (from the centre), not the current
+    // border: ElementCollection::get_bound_rect would union the border in and
+    // pin the minimum to the current size, so the SM could never be shrunk
+    double hw, hh;
+    model->childrenHalfExtent(static_cast<Cyberiada::ElementCollection*>(element), hw, hh);
+    return std::max(std::max((qreal)ELEMENT_MIN_SIZE, titleTabWidth()), (qreal)(2.0 * hw));
 }
 
 qreal CyberiadaSMEditorSMItem::minimumHeight() const
 {
-    Cyberiada::Rect c = contentRect();
-    qreal contentH = c.valid ? c.height : 0;
+    double hw, hh;
+    model->childrenHalfExtent(static_cast<Cyberiada::ElementCollection*>(element), hw, hh);
     qreal titleH = (title && title->isVisible()) ? title->boundingRect().height() + 8 : 0;
-    return std::max(std::max((qreal)ELEMENT_MIN_SIZE, titleH), contentH);
+    return std::max(std::max((qreal)ELEMENT_MIN_SIZE, titleH), (qreal)(2.0 * hh));
 }
 
 void CyberiadaSMEditorSMItem::syncFromModel()

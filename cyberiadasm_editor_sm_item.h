@@ -55,11 +55,12 @@ public:
     // the border cannot be smaller than its title tab or its content
     qreal minimumWidth() const override;
     qreal minimumHeight() const override;
+    // the machine resizes about its centre so its states hold their places
+    bool  symmetricResize() const override { return true; }
 
 private:
     void setTitlePosition();
     qreal titleTabWidth() const;
-    Cyberiada::Rect contentRect() const;
 
     StateTitle* title = nullptr;
     bool adjustingForTitle = false;

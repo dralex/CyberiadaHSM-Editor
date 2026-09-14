@@ -60,6 +60,7 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
 	propertiesWidget->setModel(model);
     scene = new CyberiadaSMEditorScene(model, this);
 	sceneView->setScene(scene);
+	propertiesWidget->setScene(scene);
 
     openFileName = QString();
     initializeTools();

@@ -746,6 +746,34 @@ bool CyberiadaSMModel::updateGeometry(const QModelIndex &index, const Cyberiada:
     return true;
 }
 
+// the half-extent the children of pc need from its centre, on each axis; the
+// parent's own rect is excluded, so this is the bare content the border must
+// hold. Children are stored parent-centre-relative, so |centre| + half-size is
+// the reach; a point pseudostate reaches its vertex radius about its point.
+void CyberiadaSMModel::childrenHalfExtent(const Cyberiada::ElementCollection* pc,
+										  double& halfW, double& halfH) const
+{
+	halfW = 0.0;
+	halfH = 0.0;
+	if (!pc) return;
+	Cyberiada::ConstElementList kids = pc->get_children();
+	for (Cyberiada::ConstElementList::const_iterator i = kids.begin(); i != kids.end(); i++) {
+		const Cyberiada::ElementCollection* c = dynamic_cast<const Cyberiada::ElementCollection*>(*i);
+		if (c && c->has_geometry()) {
+			Cyberiada::Rect cr = c->get_geometry_rect();
+			halfW = std::max(halfW, std::fabs(cr.x) + cr.width / 2.0);
+			halfH = std::max(halfH, std::fabs(cr.y) + cr.height / 2.0);
+			continue;
+		}
+		const Cyberiada::Vertex* v = dynamic_cast<const Cyberiada::Vertex*>(*i);
+		if (v && v->has_point_geometry() && v->has_geometry()) {
+			Cyberiada::Point vp = v->get_geometry_point();
+			halfW = std::max(halfW, std::fabs(double(vp.x)) + double(VERTEX_POINT_RADIUS));
+			halfH = std::max(halfH, std::fabs(double(vp.y)) + double(VERTEX_POINT_RADIUS));
+		}
+	}
+}
+
 bool CyberiadaSMModel::growToFitChildren(Cyberiada::Element* moved)
 {
 	if (readOnly() || !moved) return false;
@@ -762,24 +790,10 @@ bool CyberiadaSMModel::growToFitChildren(Cyberiada::Element* moved)
 		// children are stored relative to the parent centre, so the parent grows
 		// symmetrically about it - no re-basing of the children, one pass
 		double halfW = pr.width / 2.0, halfH = pr.height / 2.0;
-		Cyberiada::ElementList kids = pc->get_children();
-		for (Cyberiada::ElementList::const_iterator i = kids.begin(); i != kids.end(); i++) {
-			Cyberiada::ElementCollection* c = dynamic_cast<Cyberiada::ElementCollection*>(*i);
-			if (c && c->has_geometry()) {
-				Cyberiada::Rect cr = c->get_geometry_rect();
-				halfW = std::max(halfW, std::fabs(cr.x) + cr.width / 2.0);
-				halfH = std::max(halfH, std::fabs(cr.y) + cr.height / 2.0);
-				continue;
-			}
-			// a pseudostate is a point child: it occupies a circle of the vertex
-			// radius about its point, so it too can require the parent to grow
-			Cyberiada::Vertex* v = dynamic_cast<Cyberiada::Vertex*>(*i);
-			if (v && v->has_point_geometry() && v->has_geometry()) {
-				Cyberiada::Point vp = v->get_geometry_point();
-				halfW = std::max(halfW, std::fabs(double(vp.x)) + double(VERTEX_POINT_RADIUS));
-				halfH = std::max(halfH, std::fabs(double(vp.y)) + double(VERTEX_POINT_RADIUS));
-			}
-		}
+		double chW, chH;
+		childrenHalfExtent(pc, chW, chH);
+		halfW = std::max(halfW, chW);
+		halfH = std::max(halfH, chH);
 		if ((halfW * 2.0 != pr.width || halfH * 2.0 != pr.height) &&
 			std::isfinite(halfW) && std::isfinite(halfH) &&
 			std::isfinite(pr.x) && std::isfinite(pr.y)) {
