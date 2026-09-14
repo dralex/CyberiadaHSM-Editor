@@ -36,6 +36,7 @@
 #include <QMessageBox>
 
 #include <cmath>
+#include <cstdio>
 #include "cyberiadasm_editor_scene.h"
 #include "cyberiadasm_editor_items.h"
 #include "cyberiadasm_editor_sm_item.h"
@@ -56,6 +57,17 @@ static double DEFAULT_SCENE_WIDTH = 1000;
 static double DEFAULT_SCENE_HEIGHT = 1000;
 static double DEFAULT_SCENE_DELTA = 0.2;
 static double DEFAULT_SCENE_BORDER_MARGIN = 50;
+
+// report a creation error: a modal box in the GUI, a stderr line in batch mode
+// (a modal exec() would hang the headless batch run)
+static void showError(const QString& title, const QString& text)
+{
+    if (qApp && qApp->property("batchMode").toBool()) {
+        fprintf(stderr, "%s: %s\n", qPrintable(title), qPrintable(text));
+        return;
+    }
+    QMessageBox::critical(NULL, title, text);
+}
 
 CyberiadaSMEditorScene::CyberiadaSMEditorScene(CyberiadaSMModel* _model, QObject *_parent):
     QGraphicsScene(_parent), model(_model), currentSM(NULL)
@@ -720,7 +732,7 @@ void CyberiadaSMEditorScene::addSMItem(Cyberiada::ElementType type)
             addItem(sm);
             sm->setSelected(true);
         } catch (const Cyberiada::ParametersException& e) {
-            QMessageBox::critical(NULL, tr("Create new state machine"),
+            showError(tr("Create new state machine"),
                                   tr("Parameters error:\n") + QString(e.str().c_str()));
         }
         return;
@@ -813,7 +825,7 @@ void CyberiadaSMEditorScene::addSMItem(Cyberiada::ElementType type)
             return;
         }
     } catch (const Cyberiada::ParametersException& e) {
-        QMessageBox::critical(NULL, tr("Create new element"),
+        showError(tr("Create new element"),
                               tr("Parameters error:\n") + QString(e.str().c_str()));
         return;
     }
@@ -942,7 +954,7 @@ void CyberiadaSMEditorScene::createByTool(ToolType tool, const QRectF& sceneRect
             return;
         }
     } catch (const Cyberiada::ParametersException& e) {
-        QMessageBox::critical(NULL, tr("Create new element"),
+        showError(tr("Create new element"),
                               tr("Parameters error:\n") + QString(e.str().c_str()));
         return;
     }
@@ -1055,7 +1067,7 @@ CyberiadaSMEditorTransitionItem* CyberiadaSMEditorScene::addTransition(Cyberiada
         }
         return transition;
     } catch (const Cyberiada::ParametersException& e){
-        QMessageBox::critical(NULL, tr("Create new transition"),
+        showError(tr("Create new transition"),
                               tr("Parameters error:\n") + QString(e.str().c_str()));
         // error = true;
         return nullptr;
