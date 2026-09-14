@@ -47,6 +47,7 @@ from . import tour as TOUR
 from . import toolcover as TC
 from .drills import nesting as DRILLS
 from .drills import features as DRILLF
+from .drills import compound as DRILLC
 from .adapters import base as adapters
 import json
 
@@ -155,6 +156,7 @@ DRILL_CLASSES = {
     "transition-points": DRILLF.TransitionPointDrill, "rebind": DRILLF.RebindDrill,
     "choice": DRILLF.ChoiceDrill, "action": DRILLF.ActionDrill,
     "resize": DRILLF.ResizeDrill, "copy-paste": DRILLF.CopyPasteDrill,
+    "compound": DRILLC.CompoundDrill,
 }
 
 
@@ -169,6 +171,8 @@ def cmd_drill(args):
     total = 0
     for name in which:
         producer = DRILL_CLASSES[name](catalog, coverage, args.seed, budget=args.rounds)
+        if getattr(args, "boundary", False) and hasattr(producer, "boundary"):
+            producer.boundary = True
         folder = S.session_folder(env.polygon, "drill-" + name, args.seed)
         session = S.Session(env, cfg, start, producer, _register(env), coverage, folder,
                             producer_name="drill:" + name, seed=args.seed, minimize=not args.no_minimize)
@@ -467,6 +471,7 @@ def main(argv=None):
     p.add_argument("--which", default="all", choices=["all"] + list(DRILL_CLASSES))
     p.add_argument("--seed", type=int, default=1)
     p.add_argument("--rounds", type=int, default=20)
+    p.add_argument("--boundary", action="store_true", help="drive features to extremes (compound drill)")
     p.add_argument("--no-minimize", action="store_true")
     p.set_defaults(func=cmd_drill)
     p = sub.add_parser("run", help="an agent session (one backend, or a comma list to compare)")

@@ -29,13 +29,14 @@ from polygon import catalog as CAT
 from polygon import coverage as COV
 from polygon import dump as D
 from polygon import oracles
-from polygon.drills import nesting, features
+from polygon.drills import nesting, features, compound
 from tests.helpers import GOOD
 
 ALL_DRILLS = [nesting.NestingDrill, nesting.PseudostateDrill,
               features.TransitionPointDrill, features.RebindDrill,
               features.ChoiceDrill, features.ActionDrill,
-              features.ResizeDrill, features.CopyPasteDrill]
+              features.ResizeDrill, features.CopyPasteDrill,
+              compound.CompoundDrill]
 
 
 def dump_with_stack(name):
@@ -66,6 +67,36 @@ class DrillTest(unittest.TestCase):
         first = d.next(doc)
         self.assertIn("new-state", first[0][0])
         self.assertTrue(d.names)
+
+    def test_compound_interleaves_and_tracks_the_model(self):
+        cov = COV.Coverage(Path(tempfile.mkdtemp()) / "c.json")
+        d = compound.CompoundDrill(CAT.Catalog(), cov, 5, budget=30)
+        doc = dump_with_stack("hierarchy")
+        verbs = set()
+        for _ in range(30):
+            step = d.next(doc)
+            self.assertIsNotNone(step)
+            for line in step[0]:
+                verbs.add(line.split()[0])
+        # the model was grounded from the 8-state hierarchy every round
+        self.assertGreaterEqual(len(d.model.states()), 8)
+        # more than one kind of operation was emitted (interleaving)
+        self.assertTrue(len(verbs & {"new-state", "new-transition", "new-action",
+                                     "reparent", "delete", "paste"}) >= 2)
+
+    def test_boundary_reaches_extreme_rects(self):
+        cov = COV.Coverage(Path(tempfile.mkdtemp()) / "c.json")
+        d = compound.CompoundDrill(CAT.Catalog(), cov, 2, budget=20)
+        d.boundary = True
+        doc = dump_with_stack("hierarchy")
+        widths = set()
+        for _ in range(20):
+            step = d.next(doc)
+            for line in step[0]:
+                if line.startswith("new-state"):
+                    widths.add(int(line.split()[4]))   # the w field
+        # tiny and huge widths both appear
+        self.assertTrue(any(w <= 40 for w in widths) and any(w >= 1000 for w in widths))
 
     def test_invariant_kind_registers(self):
         # KIND_INVARIANT is a defect kind (registered), unlike KIND_SEMANTIC

@@ -108,6 +108,50 @@ Deterministic drills are the primary, guaranteed-coverage form, run with `drill 
 emits an operation and its inverse in one round and asserts the pre-operation structure is
 restored, catching corruption that save-reopen and undo-all miss.
 
+#### The shadow model
+
+The feature-specific invariants above check one property of one operation. A drill can go
+deeper by carrying a **shadow model** (`polygon/drills/model.py`): an abstract mirror of the
+whole document — states, pseudostates, their nesting and actions, and transitions by their
+endpoints. The model is name- and structure-keyed and never predicts ids; it **reconciles**
+with the dump each round, matching an element by kind, name and its chain of ancestor names
+(a state that gains children flips Simple↔Composite, matched under one token). After every
+operation the model turns its expected structure into fact lines in the ordinary expectation
+vocabulary (`count`, `state … parent`, `transition`, `action`, `rect-inside`), and the round
+checks the editor's dump against **all** of them. Any divergence is a full-document
+equivalence failure, registered as an `invariant` defect.
+
+The model checks **structure exactly** and **geometry where the editor is deterministic**:
+containment and grow-only as bounds (`rect-inside`), and an explicit rect as an exact fact
+(`rect <id> <x> <y> <w> <h>`, within a small tolerance) where a placement is fully specified.
+It deliberately does not shadow the layout engine pixel-for-pixel — that would re-implement
+the code under test — so a layout-dependent position is asserted only as a bound.
+
+A drill opts in by setting `tracks_model` and keeping the model in lock-step; the base merges
+the model's equivalence facts with the drill's own invariants. **nesting** tracks the model,
+so its deep chain is checked for full containment and conservation at every level.
+
+#### The compound drill and cross-feature invariants
+
+The **compound** drill (`drill --which compound`) interleaves the features over the whole
+accumulated structure, which is where dependent-history bugs actually live. Each round it
+**grounds** the model from the real dump, then predicts exactly **one** operation's delta —
+nest a state, add a cross-level transition, add an action, reparent a state, delete a
+subtree, or copy-paste — and the equivalence check verifies the editor produced that delta
+and nothing else. Re-grounding each round keeps the model from drifting over a long history.
+
+The cross-feature invariants fall out of the full-document check for free: a **reparent** must
+keep the state's incident transitions (the model re-asserts every transition by its
+endpoints), a **delete** must carry its whole subtree and its incident transitions, and an
+**action** must survive a reparent or resize of its state. Copy-paste assigns fresh ids and
+names the model cannot predict, so a paste round relies on the generic oracles and the next
+round's re-grounding to catch a corrupt result.
+
+The **boundary** sweep (`drill --which compound --boundary`) drives the features to extremes —
+deep nesting, long action lists, many transitions, and tiny, huge and negative-origin rects —
+with the same equivalence check throughout; here a crash or a broken containment bound is the
+expected catch.
+
 ### The tool tour and the tool-driven fuzzer
 
 The editor's tools were rebuilt into twelve: the select tool, pan and zoom, the transition
