@@ -496,6 +496,9 @@ void CyberiadaSMEditorStateItem::paint(QPainter *painter, const QStyleOptionGrap
     Q_UNUSED(widget)
 
     QPen pen = QPen(Qt::black, 2, Qt::SolidLine);
+    if (Cyberiada::element_has_color(element)) {
+        pen.setColor(QColor(QString::fromStdString(Cyberiada::element_get_color(element))));
+    }
     if (isSelected() || isHighlighted) {
         SettingsManager& sm = SettingsManager::instance();
         pen.setColor(sm.getSelectionColor());

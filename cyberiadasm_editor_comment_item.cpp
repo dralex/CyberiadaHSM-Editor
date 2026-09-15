@@ -106,6 +106,9 @@ void CyberiadaSMEditorCommentItem::paint(QPainter* painter, const QStyleOptionGr
 
     QPen pen = QPen(Qt::black, 1, Qt::SolidLine);
     QBrush brush = commentBrush;
+    if (Cyberiada::element_has_color(element)) {
+        pen.setColor(QColor(QString::fromStdString(Cyberiada::element_get_color(element))));
+    }
     if (isSelected()) {
         SettingsManager& sm = SettingsManager::instance();
         pen.setColor(sm.getSelectionColor());

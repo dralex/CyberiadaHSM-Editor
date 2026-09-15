@@ -110,6 +110,9 @@ QRectF CyberiadaSMEditorTransitionItem::boundingRect() const
 void CyberiadaSMEditorTransitionItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
     QPen pen = QPen(Qt::black, 2, Qt::SolidLine);
+    if (Cyberiada::element_has_color(element)) {
+        pen.setColor(QColor(QString::fromStdString(Cyberiada::element_get_color(element))));
+    }
     if (isSelected()) {
         SettingsManager& sm = SettingsManager::instance();
         pen.setColor(sm.getSelectionColor());
@@ -363,6 +366,9 @@ void CyberiadaSMEditorTransitionItem::drawArrow(QPainter* painter)
     SettingsManager& sm = SettingsManager::instance();
 
     QPen pen(Qt::black, 1);
+    if (Cyberiada::element_has_color(element)) {
+        pen.setColor(QColor(QString::fromStdString(Cyberiada::element_get_color(element))));
+    }
     if (isSelected()) {
         pen.setColor(sm.getSelectionColor());
         pen.setWidth(sm.getSelectionBorderWidth());

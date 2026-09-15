@@ -99,6 +99,9 @@ QRectF CyberiadaSMEditorChoiceItem::boundingRect() const
 void CyberiadaSMEditorChoiceItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*)
 {
     QColor color(Qt::black);
+    if (Cyberiada::element_has_color(element)) {
+        color = QColor(QString::fromStdString(Cyberiada::element_get_color(element)));
+    }
     if (isSelected()) {
         color = SettingsManager::instance().getSelectionColor();
     }
