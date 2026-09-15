@@ -49,8 +49,12 @@ private slots:
 	void test_geometry_declaration();
 	void test_undo_redo();
 	void test_move_subjects();
+	void test_reparent_free_slot();
+	void test_paste_free_slot();
+	void test_paste_grows_packed_parent();
 
 private:
+	static bool rectsOverlap(const Cyberiada::Rect& a, const Cyberiada::Rect& b);
 	QModelIndex indexOf(const char* id);
 	QString documentDump();
 	CyberiadaSMModel* model;
@@ -422,6 +426,82 @@ void TestModel::test_move_subjects()
 	QTemporaryDir dir;
 	QVERIFY(dir.isValid());
 	model->saveAsDocument(dir.filePath("moved.graphml"), Cyberiada::formatCyberiada10);
+}
+
+bool TestModel::rectsOverlap(const Cyberiada::Rect& a, const Cyberiada::Rect& b)
+{
+	const double tol = 0.5;   // edge-touching is not an overlap
+	return a.x - a.width / 2 < b.x + b.width / 2 - tol &&
+		   b.x - b.width / 2 < a.x + a.width / 2 - tol &&
+		   a.y - a.height / 2 < b.y + b.height / 2 - tol &&
+		   b.y - b.height / 2 < a.y + a.height / 2 - tol;
+}
+
+void TestModel::test_reparent_free_slot()
+{
+	// a child reparented onto a spot already taken by a sibling is relocated to a
+	// free slot instead of overlapping it (EDIT-NODE-6)
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	Cyberiada::ElementCollection* sm = static_cast<Cyberiada::ElementCollection*>(
+		model->idToElement("G"));
+	QVERIFY(sm);
+	Cyberiada::State* p = model->newState(sm, "PR", Cyberiada::Action(), Cyberiada::Rect(0, 0, 600, 400));
+	Cyberiada::State* a = model->newState(p, "AR", Cyberiada::Action(), Cyberiada::Rect(0, 0, 120, 80));
+	QVERIFY(p && a);
+	Cyberiada::ID p_id = p->get_id(), a_id = a->get_id();
+	// a sibling of P sharing P's frame origin: its absolute place coincides with A,
+	// so a plain reparent would drop it onto A
+	Cyberiada::State* b = model->newState(sm, "BR", Cyberiada::Action(), Cyberiada::Rect(0, 0, 120, 80));
+	QVERIFY(b);
+	Cyberiada::ID b_id = b->get_id();
+	QVERIFY(model->updateParent(indexOf(b_id.c_str()), p_id));
+	Cyberiada::Element* moved = model->idToElement(b_id.c_str());
+	QVERIFY(moved);
+	QCOMPARE(moved->get_parent()->get_id(), p_id);
+	Cyberiada::Rect ar = static_cast<const Cyberiada::ElementCollection*>(
+		model->idToElement(a_id.c_str()))->get_geometry_rect();
+	Cyberiada::Rect br = static_cast<const Cyberiada::ElementCollection*>(moved)->get_geometry_rect();
+	QVERIFY(!rectsOverlap(ar, br));
+}
+
+void TestModel::test_paste_free_slot()
+{
+	// pasting into a populated parent: the copy clears the source (own-width offset)
+	// and any other child it would land on (EDIT-NODE-6)
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	Cyberiada::ElementCollection* sm = static_cast<Cyberiada::ElementCollection*>(
+		model->idToElement("G"));
+	QVERIFY(sm);
+	Cyberiada::State* p = model->newState(sm, "PP", Cyberiada::Action(), Cyberiada::Rect(0, 0, 600, 400));
+	Cyberiada::State* a = model->newState(p, "AP", Cyberiada::Action(), Cyberiada::Rect(-100, 0, 120, 80));
+	// B sits where A's paste offset (own width + 20) would land the copy
+	Cyberiada::State* b = model->newState(p, "BP", Cyberiada::Action(), Cyberiada::Rect(60, 0, 120, 80));
+	QVERIFY(p && a && b);
+	Cyberiada::Rect ar = a->get_geometry_rect(), br = b->get_geometry_rect();
+	Cyberiada::Element* copy = model->pasteElement(p, a);
+	QVERIFY(copy);
+	Cyberiada::Rect cr = static_cast<const Cyberiada::ElementCollection*>(copy)->get_geometry_rect();
+	QVERIFY(!rectsOverlap(cr, ar));
+	QVERIFY(!rectsOverlap(cr, br));
+}
+
+void TestModel::test_paste_grows_packed_parent()
+{
+	// a parent packed by its child grows to re-contain a pasted copy pushed outside
+	// its border (EDIT-NODE-2), and the two children stay clear (EDIT-NODE-6)
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	Cyberiada::ElementCollection* sm = static_cast<Cyberiada::ElementCollection*>(
+		model->idToElement("G"));
+	QVERIFY(sm);
+	Cyberiada::State* p = model->newState(sm, "PG", Cyberiada::Action(), Cyberiada::Rect(0, 0, 140, 100));
+	Cyberiada::State* a = model->newState(p, "AG", Cyberiada::Action(), Cyberiada::Rect(0, 0, 120, 80));
+	QVERIFY(p && a);
+	double before = p->get_geometry_rect().width;
+	Cyberiada::Element* copy = model->pasteElement(p, a);
+	QVERIFY(copy);
+	QVERIFY(p->get_geometry_rect().width > before);   // grew to hold the copy
+	Cyberiada::Rect cr = static_cast<const Cyberiada::ElementCollection*>(copy)->get_geometry_rect();
+	QVERIFY(!rectsOverlap(cr, a->get_geometry_rect()));
 }
 
 QTEST_MAIN(TestModel)

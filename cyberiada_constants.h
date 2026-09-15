@@ -33,6 +33,8 @@
 #define COMMENT_ANGLE_CORNER 10
 // the smallest width and height of a resized element
 #define ELEMENT_MIN_SIZE     10
+// the clearance kept between a placed child and its siblings (paste/reparent)
+#define PLACEMENT_GAP        20
 
 // Metainformation constants
 #define METAINFORMATION_AUTHOR            "Author"
