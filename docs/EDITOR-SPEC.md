@@ -39,10 +39,10 @@ the dump:
 - **[C] crash-free** — the operation completes and leaves a loadable document;
   checked by running it and inspecting the exit and the reload.
 - **[U] universal law** — a property quantified over the *whole* model or scene
-  that must hold after *any* operation. Checked by graph/rectangle arithmetic on
-  the dump, with no prediction of the specific operation — this is the machine
-  form of a person's "that looks wrong". A [U] law names the exact offending
-  pair, so it reproduces minimally.
+  that must hold after *any* operation (an editing-mode invariant — see Modes).
+  Checked by graph/rectangle arithmetic on the dump, with no prediction of the
+  specific operation — this is the machine form of a person's "that looks wrong".
+  A [U] law names the exact offending pair, so it reproduces minimally.
 - **[A] action-effect** — the specific result an operation must produce (a
   placement, an offset, a rename). Checked by predicting it in the shadow model
   and comparing.
@@ -54,6 +54,23 @@ A requirement records its **source** (an authority clause, or *design* for edito
 behaviour) and its additional **status** - *open* (still in discussion, temporary
 exception, etc.)
 
+### Editing and inspection modes
+
+Two modes decide whether the geometric requirements are enforced:
+
+- **Editing mode** (the default): operations mutate the document and the editor's *recovery*
+  keeps it spec-compliant — a container grows to fit its content (`EDIT-NODE-2`), a grown or
+  reparented element pushes its siblings clear (`EDIT-NODE-6`), and the geometry is
+  reconstructed on request. The `[U]` geometric laws hold after every operation because this
+  recovery maintains them.
+- **Inspection mode**: the document is read-only and drawn as faithfully as possible to its
+  stored geometry — the recovery is suspended, so a loaded diagram may break the `[U]`
+  geometric laws and is shown as-is (see §4.10). No operation runs, so nothing enforces or
+  breaks a law.
+
+A `[U]` geometric law is therefore an **editing-mode** invariant, and the test system checks
+it in editing mode; inspection mode is where a non-compliant diagram is read without change.
+
 ## 3. Where the specification sits
 
 ```
@@ -62,7 +79,7 @@ exception, etc.)
  │ ПНСТ 984  │──structure───▶│ STRUCT  SEM      │───[U]─────▶│  model+scene │
  │ UML2      │               ├──────────────────┤            │  dump        │
  ├───────────┤  geometry     │ NODE  EDGE  TEXT │───[U]/[A]─▶│              │─▶ polygon laws
- │ editor    │──interaction─▶│ TOOL             │───[A]─────▶│  graph +     │   (every round)
+ │ editor    │──interaction─▶│ TOOL  INSPECT    │───[A]─────▶│  graph +     │   (every round)
  │ design    │  history      │ HIST             │───[I]─────▶│  rectangle   │
  ├───────────┤               ├──────────────────┤            │  arithmetic  │─▶ ctest cases
  │ ПНСТ 1044 │──round-trip──▶│ ROBUST IO META   │───[I]/[C]─▶│              │   (per requirement)
@@ -121,6 +138,10 @@ over those rows; nothing more than the existing dump is needed.
   guarded. Only one guard is allowed to have `else` guard. *PNST 984*
 
 ### 4.3 State machines/states/pseudostates/comments geometry and layout — NODES
+
+The `[U]` laws below are editing-mode invariants: the editor's recovery maintains them after
+each operation (grow-to-fit, push-siblings). Inspection mode suspends them and shows the stored
+geometry as-is (see Modes and §4.10).
 
 - `EDIT-NODE-1` MUST [U]: a parent's rect contains every child's rect with a
   margin. The parent's rect should consider the actual region rect available for children
@@ -247,6 +268,21 @@ over those rows; nothing more than the existing dump is needed.
   through the comment-body path. *design*
 - `EDIT-META-3` MUST [I]: editing the metainformation changes no diagram element and no
   geometry, and the metainformation round-trips through save and reopen. *PNST 1044*
+
+### 4.10 Inspection mode — INSPECT
+
+- `EDIT-INSPECT-1` MUST [C]: in inspection mode the document is read-only — every editing
+  operation (create, delete, rename, move, resize, reparent, action edit, paste,
+  metainformation) is refused and changes nothing. *design*
+- `EDIT-INSPECT-2` MUST [A]: a diagram is drawn from its stored geometry — a composite state's
+  region follows the document's region rect, not the layout reconstructed from its title and
+  actions; the geometric recovery (the `[U]` NODE/EDGE laws) is suspended, so a diagram whose
+  stored geometry breaks them is shown as-is. *design*
+- `EDIT-INSPECT-3` MUST [A]: inspection and geometry reconstruction are mutually exclusive — an
+  inspected document is never given the geometry it does not have. *design*
+- `EDIT-INSPECT-4` SHOULD [I]: leaving inspection mode re-applies the editing layout and the
+  recovery — the region follows the text again and the `[U]` compliance laws regain force.
+  *design*
 
 ## 5. Coverage
 
