@@ -241,7 +241,8 @@ def minimize(env, config, diagram, script_text, expectation_text, signature):
     return "\n".join(kept) + "\n"
 
 
-DEFECT_KINDS = (oracles.KIND_CRASH, oracles.KIND_ORACLE, oracles.KIND_RENDER, oracles.KIND_INVARIANT)
+DEFECT_KINDS = (oracles.KIND_CRASH, oracles.KIND_ORACLE, oracles.KIND_RENDER,
+                oracles.KIND_INVARIANT, oracles.KIND_LAW)
 
 
 def register_script(register, env, config, diagram, script_text, expectation_text="",

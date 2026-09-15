@@ -31,6 +31,7 @@ from pathlib import Path
 from . import catalog as CAT
 from . import dump as D
 from . import expectations
+from . import laws as LAWS
 from . import runner
 
 NUMBER = re.compile(r"-?\d+(?:\.\d+)?")
@@ -42,6 +43,7 @@ KIND_SEMANTIC = "semantic"
 KIND_RENDER = "render"
 KIND_REVIEW = "review"
 KIND_INVARIANT = "invariant"   # a drill invariant: a guaranteed property, registered on failure
+KIND_LAW = "law"               # a standing EDITOR-SPEC universal law, checked every round
 
 
 def normalize(line):
@@ -157,6 +159,7 @@ class Round:
             out.findings.append(Finding(KIND_ORACLE, "dump:" + normalize(str(e)), str(e)))
             return out
         out.findings += self.tier1(script_text, main, out.dump, family)
+        out.findings += self.standing_laws(out.dump, family)
         fact_kind = KIND_INVARIANT if invariant else KIND_SEMANTIC
         for fact, reason in expectations.evaluate(expectation_text, out.dump):
             out.findings.append(Finding(fact_kind, "invariant:" + normalize(fact) if invariant
@@ -164,6 +167,18 @@ class Round:
         if render is not None and family in (None, "render"):
             out.findings += render(self, script_text, out.dump)
         return out
+
+    def standing_laws(self, dump, family=None):
+        """The EDITOR-SPEC universal laws over the whole dump, always-on and
+        reference-free. Runs in every mode; its signature keeps the requirement
+        id, so a violation traces to the specification and reproduces minimally."""
+        if dump is None or family not in (None, "law"):
+            return []
+        findings = []
+        for v in LAWS.check(dump):
+            findings.append(Finding(KIND_LAW, "law:%s:%s" % (v.req, normalize(v.detail)),
+                                    "%s: %s" % (v.req, v.detail)))
+        return findings
 
     def _compare(self, name, first, second, stage):
         crash = crash_finding(second, stage)

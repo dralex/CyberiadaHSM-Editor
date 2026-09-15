@@ -358,13 +358,22 @@ The check kinds of `EDITOR-SPEC` (§2) map onto these tiers: **[C] crash-free** 
 the tier-1 crash and hang check; **[I] identity** is the tier-1 save/reopen and
 undo-all/redo-all reruns; **[A] action-effect** is a tier-2 expectation (a
 candidate) or, guaranteed, the drill and shadow-model equivalence; **[U]
-universal law** is today only the render check's containment and overlap
-arithmetic (tier 3), which is off in the stress profile. The intended next step
-is a standing **[U]** law oracle that holds the geometric and structural laws
-over the whole scene after every operation, in every mode, drawing the laws from
-`EDITOR-SPEC` the way tier 1 draws the ignored fields from `catalog/format.json`.
-Reference-free like tier 1 — a property, not a prediction — it names the exact
-offending pair, so a violation reproduces minimally. Not yet implemented.
+universal law** is the standing law oracle below.
+
+The **standing law oracle** (`polygon/laws.py`) holds the `[U]` geometric and
+structural laws of `EDITOR-SPEC` over the whole dump after every operation, in
+every mode — it is inserted in `Round.evaluate` right after tier 1, so it is
+always on and never behind the render gate. Each law reads one parsed dump and
+yields the requirement it enforces and the offending detail; a violation is a
+`law` finding whose signature keeps the requirement id (`law:NODE-1:…`), so it
+traces to the specification and, like a drill invariant, reproduces minimally and
+skips minimisation. Reference-free like tier 1 — a property, not a prediction. The
+hard laws (unique ids, one-parent, endpoints in one machine, composite⇔children,
+no dangling reference, one initial per level, endpoint kinds, containment, the
+hidden metainformation node) register as defects and are silent on the good
+corpus; the overlap law (`NODE-6`) is implemented but gated report-only until the
+overlap-semantics decisions (the paste offset, the reconstruct layout) are
+settled.
 
 ## Expectation language
 

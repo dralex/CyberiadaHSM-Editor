@@ -211,11 +211,11 @@ class Session:
         if known is not None:
             self.register.add(finding, self.start, script)
             return known
-        # an invariant failure keeps its escalation script: its signature keeps
-        # only the fact shape (ids become #), which a shorter prefix can satisfy
-        # for an unrelated reason (too few elements, or a non-containing sibling
-        # pair), so minimisation would mislead
-        minimize = self.minimize and finding.kind != oracles.KIND_INVARIANT
+        # an invariant or a standing-law failure keeps its escalation script: its
+        # signature keeps only the fact/law shape (ids become #), which a shorter
+        # prefix can satisfy for an unrelated reason (too few elements, or a
+        # non-containing sibling pair), so minimisation would mislead
+        minimize = self.minimize and finding.kind not in (oracles.KIND_INVARIANT, oracles.KIND_LAW)
         added, _ = R.register_script(self.register, self.env, self.config, self.start, script,
                                      expectations, title="",
                                      producer=self.producer_name, root=self.env.root,
