@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.2 (2026-09-15)
+**Document version:** 0.3 (2026-09-15)
 
 **Related authorities:**
 
