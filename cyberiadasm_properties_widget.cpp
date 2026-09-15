@@ -532,9 +532,7 @@ void CyberiadaSMPropertiesWidget::slotPropertyChanged(QtProperty* p)
                     }
 
                     if (cp.name == propColor) {
-                        // TODO
-                        // stringManager->value(p);
-                        // model->
+                        model->setColor(i, stringManager->value(p));
                     }
 //                     QtProperty* color_prop = constructProperty(propColor);
 //                     stringManager->setValue(color_prop, QString(col.c_str()));
