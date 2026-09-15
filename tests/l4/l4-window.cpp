@@ -47,6 +47,10 @@ void TestWindow::initTestCase()
 {
 	window = new CyberiadaSMEditorWindow();
 	model = window->getModel();
+	// the viewport restore is deferred until the window is shown with a real size
+	window->resize(1200, 800);
+	window->show();
+	QVERIFY(QTest::qWaitForWindowExposed(window));
 	QVERIFY(window->openDocument("diagrams/geometry.graphml"));
 }
 
@@ -122,6 +126,8 @@ void TestWindow::test_view_roundtrip()
 
 	QVERIFY(window->openDocument(path));
 	QVERIFY(model->editorView().startsWith("1.5"));  // round-tripped through the file
+	// the restore is deferred to after the layout settles: spin the loop for it
+	QTest::qWait(20);
 	QVERIFY(qAbs(window->sceneView->currentScale() - 1.5) < 0.01);   // applied to the view
 }
 

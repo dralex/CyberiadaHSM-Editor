@@ -51,13 +51,18 @@ public:
 
 protected:
     void                    closeEvent(QCloseEvent* event) override;
+    void                    showEvent(QShowEvent* event) override;
 
 private:
     void                    initializeTools();
     void                    updateTitle();
+    // on load: expand the tree fully and widen the right panel to fit its content
+    void                    expandAndWidenTree();
 
 private slots:
     void                    slotModelReset();
+    // restore the saved viewport once the window/splitter reach their final size
+    void                    restoreSavedView();
     void                    slotUndoTextChanged(const QString& text);
     void                    slotRedoTextChanged(const QString& text);
     void                    slotCleanChanged(bool clean);
@@ -110,6 +115,8 @@ private:
     ToolType currentTool = ToolType::Select;
 
     QString openFileName;
+    // the saved viewport waiting to be applied after the layout settles
+    QString pendingViewState;
 
     // a detached deep clone of the last copied/cut element (nullptr when empty),
     // and the id of its original parent collection (the paste target level)

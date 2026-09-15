@@ -29,6 +29,9 @@
 #include <QToolBar>
 #include <QComboBox>
 #include <QSignalBlocker>
+#include <QTimer>
+#include <QShowEvent>
+#include <QScrollBar>
 
 #include "smeditor_window.h"
 #include "cyberiadasm_editor_view.h"
@@ -179,7 +182,44 @@ void CyberiadaSMEditorWindow::closeEvent(QCloseEvent* event)
 void CyberiadaSMEditorWindow::slotModelReset()
 {
     SMView->setRootIndex(model->rootIndex());
-    SMView->expandToDepth(2);
+    expandAndWidenTree();
+}
+
+void CyberiadaSMEditorWindow::expandAndWidenTree()
+{
+    // the whole structure is shown, and the right panel grows to fit the deepest
+    // node (grow-only: it never shrinks, and always leaves room for the scene)
+    SMView->expandAll();
+    SMView->resizeColumnToContents(0);
+    int treeWidth = SMView->columnWidth(0) + 2 * SMView->frameWidth() +
+                    SMView->verticalScrollBar()->sizeHint().width() + 8;
+    QList<int> sizes = vSplitter->sizes();
+    if (sizes.size() == 2 && treeWidth > sizes.at(1)) {
+        int total = sizes.at(0) + sizes.at(1);
+        int right = qMin(treeWidth, total - 100);
+        if (right > sizes.at(1)) {
+            vSplitter->setSizes(QList<int>() << (total - right) << right);
+        }
+    }
+}
+
+void CyberiadaSMEditorWindow::restoreSavedView()
+{
+    if (pendingViewState.isEmpty()) return;
+    // wait until the scene view has a real (laid-out) size, so the scrollbar-based
+    // pan restores against the final width; the show path re-arms this otherwise
+    if (sceneView->viewport()->width() <= 0) return;
+    // re-fit the panel to the now-final width, then restore zoom + pan
+    expandAndWidenTree();
+    sceneView->applyViewState(pendingViewState);
+    pendingViewState.clear();
+}
+
+void CyberiadaSMEditorWindow::showEvent(QShowEvent* event)
+{
+    QMainWindow::showEvent(event);
+    // the layout is final only once the window is shown: apply a pending viewport
+    QTimer::singleShot(0, this, &CyberiadaSMEditorWindow::restoreSavedView);
 }
 
 void CyberiadaSMEditorWindow::slotFileNew()
@@ -223,15 +263,18 @@ bool CyberiadaSMEditorWindow::openDocument(const QString& fileName, QString* err
         return false;
     }
     SMView->setRootIndex(model->rootIndex());
-    SMView->expandToDepth(2);
+    // show the full structure and widen the right panel to fit it
+    expandAndWidenTree();
     QModelIndex sm = model->firstSMIndex();
     if (sm.isValid()) {
         scene->loadScene();
         SMView->select(sm);
     }
-    // restore the saved editor view, if the document carries one, over the fit
-    QString view = model->editorView();
-    if (!view.isEmpty()) sceneView->applyViewState(view);
+    // restore the saved editor view only after the layout has settled, so the
+    // scrollbar-based pan lands against the final scene-view size (the interim
+    // fit from loadScene stands until then)
+    pendingViewState = model->editorView();
+    QTimer::singleShot(0, this, &CyberiadaSMEditorWindow::restoreSavedView);
 
     QFileInfo fileInfo(fileName);
     openFileName = fileInfo.fileName();
