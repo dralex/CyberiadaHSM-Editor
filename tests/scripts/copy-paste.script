@@ -1,10 +1,11 @@
 # copy and paste a state: click to select, copy, paste -> a sibling with a
-# fresh id and a +20 offset; then cut a state and paste it back
+# fresh id and a +20 offset; then cut a state and paste it back. Gadget sits
+# clear of the pasted Widget copy so the editor keeps it where it is placed
 new-state G0 100 100 160 90 Widget
 click 100 100
 copy
 paste
-new-state G0 400 100 160 90 Gadget
-click 400 100
+new-state G0 560 100 160 90 Gadget
+click 560 100
 cut
 paste

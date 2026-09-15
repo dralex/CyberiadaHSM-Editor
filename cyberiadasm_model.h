@@ -107,6 +107,14 @@ public:
     void                                pushSiblingsClear(Cyberiada::Element* pc,
                                                           const Cyberiada::Rect& oldRect,
                                                           const Cyberiada::Rect& newRect);
+    // a centre in pc's child frame where a (w x h) box clears every existing child
+    // (skipping `skip` and transitions); keeps `preferred` when it is already free,
+    // else the nearest free slot (paste/reparent place the incoming child clear of
+    // its new siblings instead of overlapping them)
+    Cyberiada::Point                    freeChildCentre(const Cyberiada::ElementCollection* pc,
+                                                        const Cyberiada::Element* skip,
+                                                        double w, double h,
+                                                        const Cyberiada::Point& preferred) const;
 	bool                                updateCommentBody(const QModelIndex& index, const QString& body);
     bool                                updateMetainformation(const QModelIndex& index, const QString& parameter, const QString& new_value);
 
