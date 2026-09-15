@@ -441,6 +441,18 @@ bool CyberiadaSMModel::updateTitle(const QModelIndex& index, const QString& new_
 	return true;
 }
 
+bool CyberiadaSMModel::setColor(const QModelIndex& index, const QString& color)
+{
+	if (readOnly()) return false;
+	UndoScope scope(this, tr("color"));
+	Cyberiada::Element* element = indexToElement(index);
+	if (!element) return false;
+	if (!Cyberiada::element_set_color(element, color.toStdString())) return false;
+	GestureLog::instance().logAction("set-color " + qid(element) + " " + logEsc(color));
+	emit dataChanged(index, index);
+	return true;
+}
+
 // blank lines separate the action blocks in the document text format, so a
 // stored behaviour must not contain them - the saved file would not load back
 static QString normalizedBehaviour(const QString& behaviour)

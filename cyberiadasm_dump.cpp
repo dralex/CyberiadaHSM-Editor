@@ -75,9 +75,13 @@ static void dumpSceneElement(CyberiadaSMEditorScene* scene, Cyberiada::Element* 
 		}
 		QString geometry = QString("pos: (%1; %2), rect: (%3; %4; %5; %6)")
 			.arg(numbers[0], numbers[1], numbers[2], numbers[3], numbers[4], numbers[5]);
+		std::string color;
+		if (Cyberiada::element_has_color(element)) {
+			color = ", color: '" + Cyberiada::element_get_color(element) + "'";
+		}
 		os << std::string(size_t(depth) * 2, ' ')
 		   << elementTypeName(element->get_type())
-		   << ": {id: '" << id << "', " << geometry.toStdString() << "}" << std::endl;
+		   << ": {id: '" << id << "', " << geometry.toStdString() << color << "}" << std::endl;
 	}
 	Cyberiada::ElementCollection* collection = dynamic_cast<Cyberiada::ElementCollection*>(element);
 	if (collection) {

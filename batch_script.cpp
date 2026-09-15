@@ -214,7 +214,7 @@ static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QStri
 	if (cmd != "rename" && cmd != "move" && cmd != "reparent" && cmd != "delete" &&
 		cmd != "new-action" && cmd != "update-action" && cmd != "delete-action" &&
 		cmd != "update-comment" && cmd != "update-id" && cmd != "polyline" &&
-		cmd != "label" &&
+		cmd != "label" && cmd != "set-color" &&
 		cmd != "new-subject" && cmd != "delete-subject") {
 		*error = "unknown command '" + cmd + "'";
 		return false;
@@ -228,6 +228,10 @@ static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QStri
 		QString title = restOfLine(tokens, 2);
 		if (title.isEmpty()) { *error = "rename requires a title"; return false; }
 		return model->updateTitle(index, title);
+	} else if (cmd == "set-color") {
+		QString color = restOfLine(tokens, 2);
+		if (!model->setColor(index, color)) { *error = "cannot colour '" + tokens.at(1) + "'"; return false; }
+		return true;
 	} else if (cmd == "move") {
 		if (toNumbers(tokens, 2, 4, v)) {
 			if (!model->updateGeometry(index, Cyberiada::Rect(v[0], v[1], v[2], v[3]))) return false;
