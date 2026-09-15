@@ -75,6 +75,13 @@ class CompoundDrill(Drill):
         parent_id = container.dump_id if container is not None else machine.id
         name = self.fresh("K")
         x, y, w, h = self._placement()
+        # spread the siblings so the editor does not stack them (a real overlap
+        # of two states is a NODE-6 defect; two states placed at the same coords
+        # is the producer's doing, not the editor's)
+        siblings = (container.children if container is not None
+                    else [e for e in self.model.elements if e.parent is None])
+        n = sum(1 for c in siblings if c.kind in D.STATE_KINDS)
+        x += n * (w + 40)
         self.model.add(D.KIND_SIMPLE, name, container)
         return ["new-state %s %d %d %d %d %s" % (parent_id, x, y, w, h, name)]
 

@@ -369,11 +369,9 @@ yields the requirement it enforces and the offending detail; a violation is a
 traces to the specification and, like a drill invariant, reproduces minimally and
 skips minimisation. Reference-free like tier 1 — a property, not a prediction. The
 hard laws (unique ids, one-parent, endpoints in one machine, composite⇔children,
-no dangling reference, one initial per level, endpoint kinds, containment, the
-hidden metainformation node) register as defects and are silent on the good
-corpus; the overlap law (`NODE-6`) is implemented but gated report-only until the
-overlap-semantics decisions (the paste offset, the reconstruct layout) are
-settled.
+no dangling reference, one initial per level, endpoint kinds, containment, sibling
+no-overlap, the hidden metainformation node) register as defects and are silent on
+the good corpus.
 
 ## Expectation language
 

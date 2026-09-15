@@ -59,13 +59,8 @@ class CorpusTest(unittest.TestCase):
     """Running every hard law over every good dump yields no violation; the
     gated laws flag exactly the known, recorded conflicts (Phase 2)."""
 
-    # (good file, requirement) the gated laws currently flag; each is a
-    # deliberate open item in the plan's Phase 2, not a regression
-    EXPECTED_GATED = {
-        ("copy-paste-output.txt", "NODE-6"),          # paste overlaps its source (C2)
-        ("hierarchy-reconstruct-output.txt", "NODE-6"),      # reconstruct overlap (C1)
-        ("hierarchy-reconstruct-sm-output.txt", "NODE-6"),   # reconstruct overlap (C1)
-    }
+    # the gated laws have all been promoted to hard; the good corpus is clean
+    EXPECTED_GATED = set()
 
     def _corpus(self):
         for path in sorted(glob.glob(str(GOOD / "*-output.txt"))):

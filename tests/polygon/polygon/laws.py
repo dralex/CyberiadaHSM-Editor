@@ -189,7 +189,7 @@ def containment(dump):                                   # EDIT-NODE-1
             yield Violation("NODE-1", "%s is drawn outside its parent %s" % (item.id, parent.id))
 
 
-def no_overlap(dump):                                    # EDIT-NODE-6  (gated)
+def no_overlap(dump):                                    # EDIT-NODE-6
     by_parent = {}
     for item in dump.scene_items().values():
         if item.kind in D.STATE_KINDS and not _degenerate(item.rect):
@@ -204,12 +204,11 @@ def no_overlap(dump):                                    # EDIT-NODE-6  (gated)
 # --- the registry ---------------------------------------------------------
 
 # hard laws run always-on and register as defects; gated laws are implemented
-# and tested but not yet registered (pending the EDITOR-SPEC decisions on the
-# overlap semantics and the endpoint-on-border tolerance)
+# and tested but not yet registered (pending an EDITOR-SPEC decision)
 HARD = [unique_ids, no_cycle, endpoints_same_machine, composite_by_children,
         no_dangling, one_initial_per_parent, endpoint_kinds, meta_hidden,
-        containment]
-GATED = [no_overlap]
+        containment, no_overlap]
+GATED = []
 
 
 def check(dump, gated=False):

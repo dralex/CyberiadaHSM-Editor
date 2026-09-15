@@ -115,9 +115,9 @@ it checks in a comment):
 
 Requirements with **no dedicated case yet** — the gaps to fill: `SEM-1` (one initial per
 level — only the polygon pseudostate drill and the standing law cover it), `NODE-6` (sibling
-no-overlap — the polygon standing law only), `EDGE-6` (the comment-subject link is not drawn
-yet), `TOOL-7` (pan/zoom not drivable in batch). The first two are held by the polygon; the
-last two await the editor additions. Colour (`IO-4`/`IO-5`/`NODE-10`/`EDGE-14`) is covered
+no-overlap — the polygon standing law, now a hard defect, plus the reconstruct and copy-paste
+goldens), `EDGE-6` (the comment-subject link is not drawn yet), `TOOL-7` (pan/zoom not drivable
+in batch). The first two are held by the polygon; the last two await the editor additions. Colour (`IO-4`/`IO-5`/`NODE-10`/`EDGE-14`) is covered
 by `l2 set-color`.
 
 ## In-process tests (L4)
