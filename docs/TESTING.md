@@ -91,6 +91,7 @@ specification §2):
 | HIST                    | [I]        | undo                             |
 | IO                      | [I]/[C]    | L1, reconstruct, L2 save/reject  |
 | META                    | [U]/[A]/[I]| L1, L2                           |
+| INSPECT                 | [C]/[A]/[I]| inspect-reject, inspect-render   |
 
 The exploratory polygon runs the same requirements as standing laws over long histories;
 `POLYGON.md` maps the check kinds to its oracles.
@@ -112,6 +113,7 @@ it checks in a comment):
 | HIST   | `undo`/`redo-all` layer, `undo-all`, `test_gesture_recording`, `gestures-undo` |
 | IO     | `save-*`, `l1-*` dumps, `reconstruct-*`, export `test_export_image`, `l3-*` |
 | META   | `l2 update-meta`, `inspect-reject update-meta`, the `meta` diagram; META-1 (node hidden) via the `l1` scene dump |
+| INSPECT| `inspect-reject-*` (editing refused under `--inspect`, `EDIT-INSPECT-1`); `inspect-render-*` (stored-geometry render vs a good image, `EDIT-INSPECT-2`) |
 
 Requirements with **no dedicated case yet** — the gaps to fill: `SEM-1` (one initial per
 level — only the polygon pseudostate drill and the standing law cover it), `NODE-6` (sibling
