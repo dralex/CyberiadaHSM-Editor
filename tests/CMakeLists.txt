@@ -267,6 +267,7 @@ add_l2_test(gestures geometry)
 add_l2_test(transition-notation geometry)
 add_l2_test(edge-points polyline)
 add_l2_test(copy-paste empty)
+add_l2_test(set-color empty)
 
 # The L2 text cases run with the text shown: the canvas text verbs need the
 # text items on the canvas (see docs/TESTING.md)

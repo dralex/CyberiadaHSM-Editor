@@ -1,0 +1,17 @@
+== document
+LocalDocument: {Document: {id: '', name: '', geometry format: qt, meta: {standard version: '1.0', geometry: 'full', transition order: action first, event propagation: block events}, elements: {State Machine: {id: 'G0', name: 'SM', elements: {Formal Comment: {id: 'nMeta', name: 'CGML_META', body: 'standardVersion/ 1.0
+
+geometry/ full
+
+transitionOrder/ actionFirst
+
+eventPropagation/ block'}, Simple State: {id: 'n0', name: 'A', geometry: (100; 100; 200; 140), color: #ff0000}, Simple State: {id: 'n1', name: 'B', geometry: (500; 100; 200; 140), color: #00ff00}, Initial: {id: 'n2', geometry: (200; 350), color: #ffaa00}, Final: {id: 'n3', geometry: (500; 350), color: #00aaff}, Terminate: {id: 'n4', geometry: (700; 350), color: #aa00ff}, Choice: {id: 'n5', geometry: (850; 100; 60; 60), color: #445566}, Transition: {id: 'n0-n1', type: ext, source: 'n0', target: 'n1', action: {trigger: 'EV'}}}}}, bounding rect: (440; 190; 880; 320)}, file: 'diagrams/empty.graphml', format: cyberiada, format_str: 'Cyberiada-GraphML-1.0'}
+== scene
+  State Machine: {id: 'G0', pos: (0.00; 0.00), rect: (0.00; 30.00; 880.00; 320.00)}
+    Simple State: {id: 'n0', pos: (100.00; 100.00), rect: (-100.00; -70.00; 200.00; 140.00), color: '#ff0000'}
+    Simple State: {id: 'n1', pos: (500.00; 100.00), rect: (-100.00; -70.00; 200.00; 140.00), color: '#00ff00'}
+    Initial: {id: 'n2', pos: (200.00; 350.00), rect: (-10.00; -10.00; 20.00; 20.00), color: '#ffaa00'}
+    Final: {id: 'n3', pos: (500.00; 350.00), rect: (-10.00; -10.00; 20.00; 20.00), color: '#00aaff'}
+    Terminate: {id: 'n4', pos: (700.00; 350.00), rect: (-10.00; -10.00; 20.00; 20.00), color: '#aa00ff'}
+    Choice: {id: 'n5', pos: (850.00; 100.00), rect: (-30.00; -30.00; 60.00; 60.00), color: '#445566'}
+    Transition: {id: 'n0-n1', pos: (0.00; 0.00), rect: (190.00; 90.00; 220.00; 20.00), color: '#0000ff'}

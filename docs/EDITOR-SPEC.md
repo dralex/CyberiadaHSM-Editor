@@ -146,6 +146,10 @@ over those rows; nothing more than the existing dump is needed.
   center of a state. *PNST 984*
 - `EDIT-NODE-9` MUST [U]: a comment name is shown in the top of the element if set. *PNST
   984*
+- `EDIT-NODE-10` MUST [U]: a node with a colour is drawn in it — the outline of a state, a
+  composite, a state machine, a choice, a comment or a terminate; the fill of an initial;
+  the outer-circle outline and the inner-circle fill of a final. The selection highlight
+  overrides it while selected. *design*
 
 ### 4.4 Transitions/comment links geometry and layout — EDGES
 
@@ -174,6 +178,8 @@ over those rows; nothing more than the existing dump is needed.
  editing. *design*
 - `EDIT-EDGE-12` SHOULD [U]: a transition's label sits near its path by default.
 - `EDIT-EDGE-13` MAY [A]: the label position and size can be changed. *design*
+- `EDIT-EDGE-14` MUST [U]: a transition with a colour draws its line and arrow in it; the
+  selection highlight overrides it while selected. *design*
 
 ### 4.5 Text of names, actions, and labels — TEXT
 
@@ -225,8 +231,10 @@ over those rows; nothing more than the existing dump is needed.
   *design*
 - `EDIT-IO-3` MUST [I]: geometry round-trips losslessly *design.*
 - `EDIT-IO-4` MUST [I]: an element's colour is a persisted attribute and round-trips
-  through save and reopen. *PNST 1044.* Note: colour is set at creation and shown in the
-  property panel; there is no interactive recolour affordance yet.
+  through save and reopen. *PNST 1044.*
+- `EDIT-IO-5` MUST [A]: an element's colour is editable — from the property menu and the
+  `set-color` verb — for every node and edge (state, composite, state machine, choice,
+  initial, final, terminate, comment, transition); the change is one undo step. *design*
 
 ### 4.9 Metainformation — META
 

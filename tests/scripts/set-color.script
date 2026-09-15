@@ -1,0 +1,17 @@
+new-state G0 100 100 200 140 A
+new-state G0 500 100 200 140 B
+new-transition G0 n0 n1 EV
+tool new-initial
+click 200 350
+tool new-final
+click 500 350
+tool new-terminate
+click 700 350
+new-choice G0 850 100 60 60
+set-color n0 #ff0000
+set-color n1 #00ff00
+set-color n0-n1 #0000ff
+set-color n2 #ffaa00
+set-color n3 #00aaff
+set-color n4 #aa00ff
+set-color n5 #445566
