@@ -6,6 +6,11 @@ driven through the batch mode instead of the GUI event loop. Test verdicts come
 from exit codes, canonical stdout dumps and produced files compared against
 good references.
 
+The behaviour under test is written down in `docs/EDITOR-SPEC.md` — the root
+specification of the editor's required behaviour, its requirements identified
+`EDIT-<AREA>-<n>`. Every layer here checks those requirements; a verdict traces
+to the requirement it holds.
+
 ## Architecture
 
 ```
@@ -55,6 +60,9 @@ and saved document. Neither case owns a reference file.
 
 ## Test layers
 
+Each layer checks a class of `EDITOR-SPEC` requirements. The layers below are the
+mechanism; the matrix after them maps each specification area to the layers that hold it.
+
 | Layer | What is checked                                                | Status      |
 |-------|----------------------------------------------------------------|-------------|
 | L0    | smoke: every diagram opens offscreen, the process exits clean  | implemented |
@@ -67,6 +75,25 @@ and saved document. Neither case owns a reference file.
 | undo  | undo/redo: a script edits and undoes, the dump vs the existing good files | implemented |
 | polygon-unit | the unit tests of the test polygon package (`tests/polygon/`, see `POLYGON.md`); opt-in with `-DPOLYGON_TESTS=ON` | implemented |
 | polygon-<id> | one case per open problem of the polygon register, green while it reproduces; opt-in with `-DPOLYGON_TESTS=ON` | implemented |
+
+Which layer checks which `EDITOR-SPEC` area (the check kind is the requirement's, see the
+specification §2):
+
+| Area (`EDITOR-SPEC` §4) | Check kind | ctest layers                     |
+|-------------------------|------------|----------------------------------|
+| ROBUST                  | [C]        | L0, L2, undo                     |
+| STRUCT                  | [U]        | L1, L4                           |
+| SEM                     | [U]        | L4                               |
+| NODE                    | [U]/[A]    | L1, L3, reconstruct              |
+| EDGE                    | [U]/[A]    | L2, L3, reconstruct              |
+| TEXT                    | [U]/[A]    | text, L3                         |
+| TOOL                    | [A]        | L2, L4                           |
+| HIST                    | [I]        | undo                             |
+| IO                      | [I]/[C]    | L1, reconstruct, L2 save/reject  |
+| META                    | [U]/[A]/[I]| L1, L2                           |
+
+The exploratory polygon runs the same requirements as standing laws over long histories;
+`POLYGON.md` maps the check kinds to its oracles.
 
 ## In-process tests (L4)
 
@@ -532,7 +559,9 @@ Diagram conventions:
   `good/<name>-output.txt`, so equal names would share one good file;
 * good files follow the sibling-library convention:
   `good/<name>-output.txt` (canonical dump) and, for the L2 cases,
-  `good/<case>-output.graphml` (saved document).
+  `good/<case>-output.graphml` (saved document);
+* a case may name the `EDITOR-SPEC` requirement it exercises (`EDIT-<AREA>-<n>`),
+  so a failure names both the layer and the requirement it broke.
 
 The scene is exported to the vector formats as well: `--export <file>.svg`
 writes it through `QSvgGenerator` and `--export <file>.pdf` through

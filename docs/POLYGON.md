@@ -8,6 +8,11 @@ editing operations in low-predicted ways through the batch mode, judges every
 run with reference-free checks, and keeps the found problems with their
 reproductions for bugfixing.
 
+The behaviour it judges is the one written down in `docs/EDITOR-SPEC.md` — the
+root specification of the editor's required behaviour. Its requirements become
+the polygon's standing laws, the way the good-file tests take their references
+from reviewed dumps.
+
 The tool lives in `tests/polygon/`, is written in Python 3 with the standard
 library and one HTTP client, and runs the editor binary exactly as the ctest
 tiers do: offscreen, `--batch`, `--no-text`, hermetic fonts and config. The
@@ -200,7 +205,9 @@ verbs keep the diagram populated.
 
 The **stress oracle profile** is reference-free: crash and hang, save then reopen,
 undo-all then redo-all, and export success (PNG and SVG exit and write a file). The heavy
-render-content ink check is off for random operations, and no result is predicted.
+render-content ink check is off for random operations, and no result is predicted for the
+agent. A universal law is not a prediction but a property of the result, so the standing
+`[U]` laws (when added) belong to this profile as well.
 
 ### Prompts
 
@@ -346,6 +353,18 @@ the wrong thing. Both stay in the session record with the plan attached for
 a human to read; `register add` promotes one with its script and
 expectations. A `crash`, `oracle` or `render` finding is a defect until
 proven otherwise and goes to the register at once.
+
+The check kinds of `EDITOR-SPEC` (§2) map onto these tiers: **[C] crash-free** is
+the tier-1 crash and hang check; **[I] identity** is the tier-1 save/reopen and
+undo-all/redo-all reruns; **[A] action-effect** is a tier-2 expectation (a
+candidate) or, guaranteed, the drill and shadow-model equivalence; **[U]
+universal law** is today only the render check's containment and overlap
+arithmetic (tier 3), which is off in the stress profile. The intended next step
+is a standing **[U]** law oracle that holds the geometric and structural laws
+over the whole scene after every operation, in every mode, drawing the laws from
+`EDITOR-SPEC` the way tier 1 draws the ignored fields from `catalog/format.json`.
+Reference-free like tier 1 — a property, not a prediction — it names the exact
+offending pair, so a violation reproduces minimally. Not yet implemented.
 
 ## Expectation language
 
