@@ -95,6 +95,30 @@ specification §2):
 The exploratory polygon runs the same requirements as standing laws over long histories;
 `POLYGON.md` maps the check kinds to its oracles.
 
+### Requirement coverage
+
+Representative cases per `EDITOR-SPEC` area (not exhaustive; a case may cite the requirement
+it checks in a comment):
+
+| Area   | Cases (examples) |
+|--------|------------------|
+| ROBUST | `l0-*` smoke, `l4 test_crash_marker`, `test_batch_action_guard`, `test_edit_action_gating`, the `inspect-reject-*` cases |
+| STRUCT | `l1-*` / `l4 test_item_hierarchy`, `test_load_scene`; names `test_name_edit`, `test_default_name_unique`, `test_name_only_state`; delete `l2 delete` + `test_delete`; subjects `l2 subjects`, `transition-subjects`, `test_move_subjects` |
+| SEM    | `test_choice_edge_rule`, `test_choice_tip_attach`; endpoint kinds via the transition cases |
+| NODE   | grow `test_move_grows_parent`, `test_nested_state_grows_parent`, `test_grow_cascades_to_ancestors`, `test_grow_skips_rectless_sm`; resize `test_border_resize`, `test_directional_grow`, `test_container_resize_clamp`; place `test_new_element_place`; comment name `test_comment_name`; blocks `test_action_layout`; frame `reconstruct-sm-*` |
+| EDGE   | attach `test_auto_attach`, `test_ctrl_snap_endpoint`, `test_choice_tip_attach`; points `l2 edge-points`, `test_point_edit`, `test_loop_polyline`; rebind `test_retarget_id`, `test_box_transition`; label `test_label_move`, `test_label_drag_tracks`, `label-geometry-*` |
+| TEXT   | `test_action_edit`, `test_action_multiline`, `test_double_click_action`, `test_double_click_label`, `l2 text-edit`, `transition-notation`, the `text` metrics layer |
+| TOOL   | `test_creation_tools`, `test_creation_tools_arm`, `test_new_{state,choice,comment,sm}_place`, paste `test_paste_state`, `test_paste_transition`, `l2 copy-paste`, drag `test_body_drag` |
+| HIST   | `undo`/`redo-all` layer, `undo-all`, `test_gesture_recording`, `gestures-undo` |
+| IO     | `save-*`, `l1-*` dumps, `reconstruct-*`, export `test_export_image`, `l3-*` |
+| META   | `l2 update-meta`, `inspect-reject update-meta`, the `meta` diagram; META-1 (node hidden) via the `l1` scene dump |
+
+Requirements with **no dedicated case yet** — the gaps to fill: `SEM-1` (one initial per
+level — only the polygon pseudostate drill and the standing law cover it), `NODE-6` (sibling
+no-overlap — the polygon standing law only), `EDGE-6` (the comment-subject link is not drawn
+yet), `IO-4` (colour — no batch path yet), `TOOL-7` (pan/zoom not drivable in batch). The
+first two are held by the polygon; the last three await the editor additions.
+
 ## In-process tests (L4)
 
 The editor sources are built into the `CyberiadaEditorCore` static
