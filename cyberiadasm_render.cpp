@@ -85,9 +85,10 @@ bool renderScene(CyberiadaSMEditorScene* scene, const QString& path, QString* er
 	// exported images must not show the editing selection or the aids
 	scene->clearSelection();
 	ExportGuard guard;
-	// the visible diagram, not the scene rect of the loaded document: the
-	// edits may have grown it
-	QRectF scene_rect = scene->diagramRect();
+	// the image is the diagram's own size: the union of the visible items (the SM
+	// border, or the document bounding geometry across several machines) with no
+	// margin - only a 1px pad so the outermost 2px border stroke is not clipped
+	QRectF scene_rect = scene->visibleItemsBoundingRect().adjusted(-1, -1, 1, 1);
 	// the frame of the picture in scene units, for the tools reading the export
 	fprintf(stderr, "export frame %g %g %g %g\n", scene_rect.x(), scene_rect.y(),
 			scene_rect.width(), scene_rect.height());
