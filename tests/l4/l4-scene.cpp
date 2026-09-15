@@ -81,6 +81,7 @@ private slots:
 	void test_batch_action_guard();
 	void test_grow_skips_rectless_sm();
 	void test_grow_cascades_to_ancestors();
+	void test_grow_pushes_siblings();
 	void test_reparent_into_descendant();
 	void test_choice_edge_rule();
 	void test_choice_tip_attach();
@@ -1545,6 +1546,39 @@ void TestScene::test_grow_cascades_to_ancestors()
 	QVERIFY(std::fabs(pr.x) + pr.width / 2.0 <= gr.width / 2.0 + 0.01);
 	QVERIFY(gr.width > gw0);                              // the grandparent actually grew
 	QVERIFY(!model->idToElement("G")->has_geometry());   // the rect-less SM stays rect-less
+}
+
+void TestScene::test_grow_pushes_siblings()
+{
+	// a container that grows to fit its content must push its siblings aside
+	// instead of overlapping them (NODE-6)
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	// node-0-0 and node-0-1 are siblings inside node-0
+	Cyberiada::ElementCollection* outer =
+		dynamic_cast<Cyberiada::ElementCollection*>(model->idToElement("node-0-0"));
+	Cyberiada::ElementCollection* sibling =
+		dynamic_cast<Cyberiada::ElementCollection*>(model->idToElement("node-0-1"));
+	Cyberiada::ElementCollection* grand =
+		dynamic_cast<Cyberiada::ElementCollection*>(model->idToElement("node-0"));
+	QVERIFY(outer && sibling && grand);
+	double siblingX0 = sibling->get_geometry_rect().x;
+	// push a child of the outer far to the right so the outer must grow rightward,
+	// past its right sibling
+	Cyberiada::Element* child = model->idToElement("node-0-0-2");
+	QVERIFY(child);
+	QVERIFY(model->updateGeometry(model->elementToIndex(child),
+								  Cyberiada::Rect(500, 25, 150, 150)));
+	model->growToFitChildren(child);
+
+	Cyberiada::Rect outerR = outer->get_geometry_rect();
+	Cyberiada::Rect sibR = sibling->get_geometry_rect();
+	// the sibling was pushed to the right and no longer overlaps the grown outer
+	QVERIFY(sibR.x > siblingX0);
+	QVERIFY(outerR.x + outerR.width / 2.0 <= sibR.x - sibR.width / 2.0 + 0.5);
+	// the grandparent grew to still contain the pushed sibling
+	Cyberiada::Rect gr = grand->get_geometry_rect();
+	QVERIFY(std::fabs(sibR.x) + sibR.width / 2.0 <= gr.width / 2.0 + 0.5);
 }
 
 void TestScene::test_reparent_into_descendant()

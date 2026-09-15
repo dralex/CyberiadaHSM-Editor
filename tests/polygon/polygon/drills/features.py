@@ -165,7 +165,8 @@ class ActionDrill(Drill):
 
 class ResizeDrill(Drill):
     """Resize a state by its border and by moving a child past the border; the
-    parent must keep containing the child (grow-to-fit)."""
+    parent must keep containing the child (grow-to-fit) and, growing toward a
+    sibling, push it aside rather than overlap it."""
 
     name = "resize"
 
@@ -177,25 +178,35 @@ class ResizeDrill(Drill):
         states = _states(doc)
         if not states:
             return ["new-state %s 100 100 300 220 Outer" % m.id], "state", ""
-        if len(states) < 2:
-            outer = states[0].id
-            return ["new-state %s 30 30 120 90 Inner" % outer], "state", "rect-inside %s::n0 %s" % (outer, outer)
-        outer = states[0]
+        outer = next((s for s in states if s.name == "Outer"), states[0])
         inner = next((s for s in states if s.parent and s.parent.id == outer.id), None)
+        if inner is None:
+            return (["new-state %s 30 30 120 90 Inner" % outer.id], "state",
+                    "rect-inside %s::n0 %s" % (outer.id, outer.id))
+        # a top-level sibling to the right of the outer: a grow toward it must
+        # push it aside, never overlap it (NODE-6)
+        sibling = next((s for s in states
+                        if s.parent and s.parent.id == m.id and s.id != outer.id), None)
+        if sibling is None:
+            return ["new-state %s 520 100 160 110 Sibling" % m.id], "state", ""
         item = dump.scene_items().get(outer.id)
         x, y, w, h = item.abs_rect
-        if self.step % 2 == 1 and inner is not None:
-            # drag the inner state toward the outer border to force a grow
+        if self.step % 2 == 1:
+            # drag the inner state toward the outer's RIGHT border to force the
+            # outer to auto-grow toward the sibling: it must push it aside, not
+            # overlap it (NODE-6), and keep containing the inner
             ii = dump.scene_items().get(inner.id)
-            ix, iy = ii.abs_rect[0] + ii.abs_rect[2] / 2, ii.abs_rect[1] + ii.abs_rect[3] / 2
-            return (["press %d %d" % (round(ix), round(iy)),
-                     "drag %d %d" % (round(x + w - 5), round(y + h - 5)),
-                     "release %d %d" % (round(x + w + 40), round(y + h + 40))], "state",
-                    "rect-inside %s %s" % (inner.id, outer.id))
-        # resize the outer by its right border
+            iy = ii.abs_rect[1] + ii.abs_rect[3] / 2
+            return (["press %d %d" % (round(ii.abs_rect[0] + ii.abs_rect[2] / 2), round(iy)),
+                     "drag %d %d" % (round(x + w - 5), round(iy)),
+                     "release %d %d" % (round(x + w + 40), round(iy))], "state",
+                    "rect-inside %s %s\nno-overlap %s %s" % (inner.id, outer.id, outer.id, sibling.id))
+        # resize the outer by its right border toward the sibling: this too must
+        # push the sibling aside, never overlap it
         return (["press %d %d" % (round(x + w - 3), round(y + h / 2)),
                  "drag %d %d" % (round(x + w + 60), round(y + h / 2)),
-                 "release %d %d" % (round(x + w + 60), round(y + h / 2))], "state", "")
+                 "release %d %d" % (round(x + w + 60), round(y + h / 2))], "state",
+                "no-overlap %s %s" % (outer.id, sibling.id))
 
 
 class CopyPasteDrill(Drill):

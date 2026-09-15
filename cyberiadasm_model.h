@@ -103,6 +103,10 @@ public:
                                                        double& left, double& right,
                                                        double& top, double& bottom) const;
     void                                rebaseChildren(Cyberiada::ElementCollection* pc, double dx, double dy);
+    // shift pc's siblings out of the way when pc grew from oldRect to newRect
+    void                                pushSiblingsClear(Cyberiada::Element* pc,
+                                                          const Cyberiada::Rect& oldRect,
+                                                          const Cyberiada::Rect& newRect);
 	bool                                updateCommentBody(const QModelIndex& index, const QString& body);
     bool                                updateMetainformation(const QModelIndex& index, const QString& parameter, const QString& new_value);
 

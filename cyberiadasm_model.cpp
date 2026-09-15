@@ -647,18 +647,16 @@ bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada:
     // an update that leaves the rect unchanged is not a user gesture: skip it so
     // it pushes no undo step and records no (possibly id-less, unreplayable) move
     // - a scene item may re-apply its own geometry while it is being built
-    {
-        Cyberiada::Rect current;
-        if (element->get_type() == Cyberiada::elementChoice) {
-            current = static_cast<Cyberiada::ChoicePseudostate*>(element)->get_geometry_rect();
-        } else if (element->get_type() == Cyberiada::elementComment ||
-                   element->get_type() == Cyberiada::elementFormalComment) {
-            current = static_cast<Cyberiada::Comment*>(element)->get_geometry_rect();
-        } else {
-            current = static_cast<Cyberiada::ElementCollection*>(element)->get_geometry_rect();
-        }
-        if (current.valid && rect.valid && current.almost_equal(rect)) return true;
+    Cyberiada::Rect current;
+    if (element->get_type() == Cyberiada::elementChoice) {
+        current = static_cast<Cyberiada::ChoicePseudostate*>(element)->get_geometry_rect();
+    } else if (element->get_type() == Cyberiada::elementComment ||
+               element->get_type() == Cyberiada::elementFormalComment) {
+        current = static_cast<Cyberiada::Comment*>(element)->get_geometry_rect();
+    } else {
+        current = static_cast<Cyberiada::ElementCollection*>(element)->get_geometry_rect();
     }
+    if (current.valid && rect.valid && current.almost_equal(rect)) return true;
     // a border set on a geometry-less document (format "none") is otherwise lost:
     // its snapshot omits geometry, so the change neither saves nor undoes. Adopt
     // the Qt format so the rect is serialised, undoable and persisted.
@@ -679,6 +677,13 @@ bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada:
 	// the child, so it must not record a gesture of its own
 	if (record) GestureLog::instance().logAction("move " + qid(element) + " " + logRect(rect));
 	emit dataChanged(index, index);
+	// a grow (the rect got larger) may reach the element's siblings: push them
+	// clear so a container never overlaps a peer (NODE-6). A plain move (same
+	// size) or a shrink pushes nothing.
+	if (current.valid && rect.valid &&
+		(rect.width > current.width + 0.01 || rect.height > current.height + 0.01)) {
+		pushSiblingsClear(element, current, rect);
+	}
 	return true;
 }
 
@@ -836,6 +841,62 @@ void CyberiadaSMModel::rebaseChildren(Cyberiada::ElementCollection* pc, double d
 		if (v && v->has_point_geometry() && v->has_geometry()) {
 			Cyberiada::Point vp = v->get_geometry_point();
 			updateGeometry(elementToIndex(v), Cyberiada::Point(vp.x + dx, vp.y + dy), false);
+		}
+	}
+}
+
+// pc just grew from oldRect to newRect (same parent-centre frame); shift the
+// siblings it grew into outward by the per-side expansion so they no longer
+// overlap it. Every sibling on a side moves by the same amount, so their mutual
+// spacing is kept and no new sibling-sibling overlap appears; the caller's
+// walk-up then grows pc's parent to re-contain the pushed siblings.
+void CyberiadaSMModel::pushSiblingsClear(Cyberiada::Element* pc,
+										 const Cyberiada::Rect& oldRect,
+										 const Cyberiada::Rect& newRect)
+{
+	if (!pc) return;
+	Cyberiada::ElementCollection* gp = dynamic_cast<Cyberiada::ElementCollection*>(pc->get_parent());
+	if (!gp) return;   // a top-level pc has no siblings
+
+	double oL = oldRect.x - oldRect.width / 2.0,  oR = oldRect.x + oldRect.width / 2.0;
+	double oT = oldRect.y - oldRect.height / 2.0, oB = oldRect.y + oldRect.height / 2.0;
+	double nL = newRect.x - newRect.width / 2.0,  nR = newRect.x + newRect.width / 2.0;
+	double nT = newRect.y - newRect.height / 2.0, nB = newRect.y + newRect.height / 2.0;
+	double eL = std::max(0.0, oL - nL), eR = std::max(0.0, nR - oR);
+	double eT = std::max(0.0, oT - nT), eB = std::max(0.0, nB - oB);
+	if (eL == 0.0 && eR == 0.0 && eT == 0.0 && eB == 0.0) return;
+
+	Cyberiada::ElementList kids = gp->get_children();
+	for (Cyberiada::ElementList::const_iterator i = kids.begin(); i != kids.end(); i++) {
+		Cyberiada::Element* s = *i;
+		if (s == pc) continue;
+		const Cyberiada::ElementCollection* sc = dynamic_cast<const Cyberiada::ElementCollection*>(s);
+		const Cyberiada::Vertex* sv = dynamic_cast<const Cyberiada::Vertex*>(s);
+		double cx, cy, hw, hh;
+		if (sc && sc->has_geometry()) {
+			Cyberiada::Rect r = sc->get_geometry_rect();
+			cx = r.x; cy = r.y; hw = r.width / 2.0; hh = r.height / 2.0;
+		} else if (sv && sv->has_point_geometry() && sv->has_geometry()) {
+			Cyberiada::Point p = sv->get_geometry_point();
+			cx = p.x; cy = p.y; hw = hh = VERTEX_POINT_RADIUS;
+		} else {
+			continue;
+		}
+		double sl = cx - hw, sr = cx + hw, st = cy - hh, sb = cy + hh;
+		// skip a pre-existing overlap (not ours) and a sibling pc never reached
+		bool overOld = sl < oR && oL < sr && st < oB && oT < sb;
+		bool overNew = sl < nR && nL < sr && st < nB && nT < sb;
+		if (overOld || !overNew) continue;
+		double dx = 0.0, dy = 0.0;
+		if (sl >= oR)      dx = eR;
+		else if (sr <= oL) dx = -eL;
+		if (st >= oB)      dy = eB;
+		else if (sb <= oT) dy = -eT;
+		if (dx == 0.0 && dy == 0.0) continue;
+		if (sc && sc->has_geometry()) {
+			updateGeometry(elementToIndex(s), Cyberiada::Rect(cx + dx, cy + dy, hw * 2.0, hh * 2.0), false);
+		} else {
+			updateGeometry(elementToIndex(s), Cyberiada::Point(cx + dx, cy + dy), false);
 		}
 	}
 }
