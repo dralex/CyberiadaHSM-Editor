@@ -202,8 +202,9 @@ over those rows; nothing more than the existing dump is needed.
   default size on a bare click. *design*
 - `EDIT-TOOL-3` MUST [A]: a creation tool reverts to select after one use.
   *design*
-- `EDIT-TOOL-4` MUST [A]: copy-paste places a sibling with a fresh id offset by
-  a fixed step. *design*
+- `EDIT-TOOL-4` MUST [A]: copy-paste places a sibling with a fresh id, cleared of
+  the source's box so the two do not overlap (`EDIT-NODE-6`), and grows the parent
+  to keep the copy inside it. *design*
 - `EDIT-TOOL-5` MUST [A]: a state machine is not copyable. *design*
 - `EDIT-TOOL-6` MUST [A]: while the selection tool is used a drag moves the element;
   dragging a child past the parent border grows the parent (the interactive side of

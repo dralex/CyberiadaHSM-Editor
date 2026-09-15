@@ -1642,6 +1642,18 @@ static void ancestorsOffset(const Cyberiada::Element* parent, double& x, double&
     }
 }
 
+static double elementRectWidth(const Cyberiada::Element* element)
+{
+    if (!element->has_rect_geometry()) return 0.0;
+    Cyberiada::ElementType type = element->get_type();
+    if (type == Cyberiada::elementChoice) {
+        return static_cast<const Cyberiada::ChoicePseudostate*>(element)->get_geometry_rect().width;
+    } else if (type == Cyberiada::elementComment || type == Cyberiada::elementFormalComment) {
+        return static_cast<const Cyberiada::Comment*>(element)->get_geometry_rect().width;
+    }
+    return static_cast<const Cyberiada::ElementCollection*>(element)->get_geometry_rect().width;
+}
+
 static void shiftGeometry(Cyberiada::Element* element, double dx, double dy)
 {
     Cyberiada::ElementType type = element->get_type();
@@ -1836,9 +1848,14 @@ Cyberiada::Element* CyberiadaSMModel::pasteElement(Cyberiada::ElementCollection*
     if (copied->get_type() == Cyberiada::elementTransition) {
         shiftTransition(static_cast<Cyberiada::Transition*>(copied), PASTE_OFFSET, PASTE_OFFSET);
     } else {
-        shiftGeometry(copied, PASTE_OFFSET, PASTE_OFFSET);
-        // the shifted copy may fall past the parent border (repeated pastes drift
-        // outward); grow the parent so the pasted element stays inside it
+        // clear the source's box so the copy does not overlap it (a sibling
+        // overlap is a NODE-6 violation); shift a rect element by its own width
+        double dx = PASTE_OFFSET, dy = PASTE_OFFSET;
+        double w = elementRectWidth(copied);
+        if (w > 0.0) { dx = w + PASTE_OFFSET; dy = 0.0; }
+        shiftGeometry(copied, dx, dy);
+        // the shifted copy may fall past the parent border; grow the parent so
+        // the pasted element stays inside it
         growToFitChildren(copied);
     }
 
