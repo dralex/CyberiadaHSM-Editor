@@ -373,6 +373,11 @@ no dangling reference, one initial per level, endpoint kinds, containment, sibli
 no-overlap, the hidden metainformation node) register as defects and are silent on
 the good corpus.
 
+The `[U]` geometric laws are editing-mode invariants (`EDITOR-SPEC` §4.10): the editor's
+recovery maintains them, but inspection mode suspends it and shows the stored geometry as-is.
+The polygon runs the editor in editing mode (never `--inspect`), so the laws apply; an
+inspection-mode dump is exempt.
+
 ## Expectation language
 
 One fact per line, evaluated on the parsed dump (`== document` for the
