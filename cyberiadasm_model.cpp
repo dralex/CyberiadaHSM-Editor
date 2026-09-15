@@ -893,12 +893,85 @@ void CyberiadaSMModel::pushSiblingsClear(Cyberiada::Element* pc,
 		if (st >= oB)      dy = eB;
 		else if (sb <= oT) dy = -eT;
 		if (dx == 0.0 && dy == 0.0) continue;
+		// push in the cleared direction, then settle to a slot clear of the other
+		// siblings too - a uniform push can shove s into a third sibling (a cascade
+		// overlap); freeChildCentre resolves it and is a no-op when the push sufficed
+		Cyberiada::Point f = freeChildCentre(gp, s, hw * 2.0, hh * 2.0,
+											 Cyberiada::Point(cx + dx, cy + dy));
 		if (sc && sc->has_geometry()) {
-			updateGeometry(elementToIndex(s), Cyberiada::Rect(cx + dx, cy + dy, hw * 2.0, hh * 2.0), false);
+			updateGeometry(elementToIndex(s), Cyberiada::Rect(f.x, f.y, hw * 2.0, hh * 2.0), false);
 		} else {
-			updateGeometry(elementToIndex(s), Cyberiada::Point(cx + dx, cy + dy), false);
+			updateGeometry(elementToIndex(s), Cyberiada::Point(f.x, f.y), false);
 		}
 	}
+}
+
+static bool elementRect(const Cyberiada::Element* element, Cyberiada::Rect& out);
+
+// find a centre in pc's child frame where a (w x h) box clears every existing
+// child (skipping `skip` and transitions): keep `preferred` when it is already
+// free, else the nearest free slot on a grid around it, else right of the content.
+// paste/reparent place the incoming child clear of its new siblings (EDIT-NODE-6);
+// the caller's growToFitChildren then grows pc to re-contain a slot that spilt out.
+Cyberiada::Point CyberiadaSMModel::freeChildCentre(const Cyberiada::ElementCollection* pc,
+                                                   const Cyberiada::Element* skip,
+                                                   double w, double h,
+                                                   const Cyberiada::Point& preferred) const
+{
+	if (w <= 0.0 || h <= 0.0) return preferred;   // no box to place
+	struct Box { double l, r, t, b; };
+	std::vector<Box> taken;
+	double contentRight = 0.0;
+	if (pc) {
+		Cyberiada::ConstElementList kids = pc->get_children();
+		for (Cyberiada::ConstElementList::const_iterator i = kids.begin(); i != kids.end(); i++) {
+			if (*i == skip || (*i)->get_type() == Cyberiada::elementTransition) continue;
+			double cx, cy, hw, hh;
+			const Cyberiada::ElementCollection* c = dynamic_cast<const Cyberiada::ElementCollection*>(*i);
+			const Cyberiada::Vertex* v = dynamic_cast<const Cyberiada::Vertex*>(*i);
+			if (c && c->has_geometry()) {
+				Cyberiada::Rect r = c->get_geometry_rect();
+				if (r.width <= 0.0 || r.height <= 0.0) continue;
+				cx = r.x; cy = r.y; hw = r.width / 2.0; hh = r.height / 2.0;
+			} else if (v && v->has_point_geometry() && v->has_geometry()) {
+				Cyberiada::Point p = v->get_geometry_point();
+				cx = p.x; cy = p.y; hw = hh = VERTEX_POINT_RADIUS;
+			} else {
+				continue;
+			}
+			Box box = { cx - hw, cx + hw, cy - hh, cy + hh };
+			taken.push_back(box);
+			contentRight = taken.size() == 1 ? box.r : std::max(contentRight, box.r);
+		}
+	}
+	if (taken.empty()) return preferred;   // nothing to clear, keep the position
+
+	const double g = PLACEMENT_GAP, hw = w / 2.0, hh = h / 2.0;
+	// a box centred at (cx, cy) sits clear of every taken box with a g gap
+	auto clear = [&](double cx, double cy) {
+		for (size_t k = 0; k < taken.size(); k++) {
+			const Box& t = taken[k];
+			if (cx - hw < t.r + g && t.l - g < cx + hw &&
+				cy - hh < t.b + g && t.t - g < cy + hh) return false;
+		}
+		return true;
+	};
+	if (clear(preferred.x, preferred.y)) return preferred;
+
+	// scan expanding rings around the preferred centre - the nearest free slot
+	const double stepX = w + g, stepY = h + g;
+	for (int ring = 1; ring <= 8; ring++) {
+		for (int dr = -ring; dr <= ring; dr++) {
+			for (int dc = -ring; dc <= ring; dc++) {
+				int ar = dr < 0 ? -dr : dr, ac = dc < 0 ? -dc : dc;
+				if ((ar > ac ? ar : ac) != ring) continue;   // ring perimeter only
+				double cx = preferred.x + dc * stepX, cy = preferred.y + dr * stepY;
+				if (clear(cx, cy)) return Cyberiada::Point(cx, cy);
+			}
+		}
+	}
+	// packed: place right of the content (x-clearance alone makes it non-overlapping)
+	return Cyberiada::Point(contentRight + hw + g, preferred.y);
 }
 
 bool CyberiadaSMModel::growToFitChildren(Cyberiada::Element* moved, bool directional)
@@ -977,9 +1050,19 @@ bool CyberiadaSMModel::updateParent(const QModelIndex &index, const Cyberiada::I
     // move() frees the original element, so capture the id before the call
     Cyberiada::ID moved_id = element->get_id();
     move(element, new_parent);
-    // move() keeps the child's absolute position but does not grow the new
-    // parent; grow it so the reparented child stays inside it (as paste does)
+    // move() keeps the child's absolute position but does not grow the new parent
+    // or clear its existing children; if the drop overlaps a sibling, relocate the
+    // moved child to a free slot, then grow the parent so it stays inside (as paste)
     if (Cyberiada::Element* moved = idToElement(moved_id.c_str())) {
+        Cyberiada::Rect r;
+        if (elementRect(moved, r)) {
+            Cyberiada::Point f = freeChildCentre(new_parent, moved, r.width, r.height,
+                                                 Cyberiada::Point(r.x, r.y));
+            if (f.x != r.x || f.y != r.y) {
+                updateGeometry(elementToIndex(moved),
+                               Cyberiada::Rect(f.x, f.y, r.width, r.height), false);
+            }
+        }
         growToFitChildren(moved);
     }
     GestureLog::instance().logAction("reparent " + QString::fromStdString(moved_id) + " " +
@@ -1112,6 +1195,18 @@ Cyberiada::State *CyberiadaSMModel::newState(Cyberiada::ElementCollection *paren
     beginInsertRows(elementToIndex(parent), row, row);
     Cyberiada::State* element = root->new_state(parent, state_name, a, r, region, color);
     endInsertRows();
+    // keep siblings clear (EDIT-NODE-6): a create asked at a taken spot - the GUI
+    // pre-picks a free place, a script may pass overlapping coords - is relocated.
+    // a default create carries no concrete rect yet (the scene sizes it later): skip
+    Cyberiada::Rect er;
+    if (element && elementRect(element, er) && er.valid && er.width > 0.0 && er.height > 0.0) {
+        Cyberiada::Point f = freeChildCentre(parent, element, er.width, er.height,
+                                             Cyberiada::Point(er.x, er.y));
+        if (f.x != er.x || f.y != er.y) {
+            updateGeometry(elementToIndex(element),
+                           Cyberiada::Rect(f.x, f.y, er.width, er.height), false);
+        }
+    }
     // a child placed past the parent border grows the parent to contain it (about
     // the centre - a freshly created child keeps the siblings where they are)
     if (element) growToFitChildren(element, false);
@@ -1720,6 +1815,21 @@ static double elementRectWidth(const Cyberiada::Element* element)
     return static_cast<const Cyberiada::ElementCollection*>(element)->get_geometry_rect().width;
 }
 
+// the rect of a rect-geometry element (choice/comment/collection); false otherwise
+static bool elementRect(const Cyberiada::Element* element, Cyberiada::Rect& out)
+{
+    if (!element->has_rect_geometry()) return false;
+    Cyberiada::ElementType type = element->get_type();
+    if (type == Cyberiada::elementChoice) {
+        out = static_cast<const Cyberiada::ChoicePseudostate*>(element)->get_geometry_rect();
+    } else if (type == Cyberiada::elementComment || type == Cyberiada::elementFormalComment) {
+        out = static_cast<const Cyberiada::Comment*>(element)->get_geometry_rect();
+    } else {
+        out = static_cast<const Cyberiada::ElementCollection*>(element)->get_geometry_rect();
+    }
+    return true;
+}
+
 static void shiftGeometry(Cyberiada::Element* element, double dx, double dy)
 {
     Cyberiada::ElementType type = element->get_type();
@@ -1920,8 +2030,15 @@ Cyberiada::Element* CyberiadaSMModel::pasteElement(Cyberiada::ElementCollection*
         double w = elementRectWidth(copied);
         if (w > 0.0) { dx = w + PASTE_OFFSET; dy = 0.0; }
         shiftGeometry(copied, dx, dy);
-        // the shifted copy may fall past the parent border; grow the parent so
-        // the pasted element stays inside it
+        // that offset clears the source; if the shifted spot still overlaps another
+        // existing child of the target parent, relocate the copy to a free slot
+        Cyberiada::Rect r;
+        if (elementRect(copied, r)) {
+            Cyberiada::Point f = freeChildCentre(parent, copied, r.width, r.height,
+                                                 Cyberiada::Point(r.x, r.y));
+            if (f.x != r.x || f.y != r.y) shiftGeometry(copied, f.x - r.x, f.y - r.y);
+        }
+        // the copy may fall past the parent border; grow the parent to hold it
         growToFitChildren(copied);
     }
 

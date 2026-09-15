@@ -5,9 +5,9 @@ geometry/ full
 
 transitionOrder/ actionFirst
 
-eventPropagation/ block'}, Simple State: {id: 'n0', name: 'Widget', geometry: (100; 100; 160; 90)}, Simple State: {id: 'n1', name: 'Widget 1', geometry: (280; 100; 160; 90)}, Simple State: {id: 'n3', name: 'Gadget 1', geometry: (580; 100; 160; 90)}}}}, bounding rect: (340; 100; 640; 90)}, file: 'diagrams/empty.graphml', format: cyberiada, format_str: 'Cyberiada-GraphML-1.0'}
+eventPropagation/ block'}, Simple State: {id: 'n0', name: 'Widget', geometry: (100; 100; 160; 90)}, Simple State: {id: 'n1', name: 'Widget 1', geometry: (280; 100; 160; 90)}, Simple State: {id: 'n3', name: 'Gadget 1', geometry: (740; 100; 160; 90)}}}}, bounding rect: (420; 100; 800; 90)}, file: 'diagrams/empty.graphml', format: cyberiada, format_str: 'Cyberiada-GraphML-1.0'}
 == scene
-  State Machine: {id: 'G0', pos: (0.00; 0.00), rect: (20.00; 55.00; 640.00; 90.00)}
+  State Machine: {id: 'G0', pos: (0.00; 0.00), rect: (20.00; 55.00; 800.00; 90.00)}
     Simple State: {id: 'n0', pos: (100.00; 100.00), rect: (-80.00; -45.00; 160.00; 90.00)}
     Simple State: {id: 'n1', pos: (280.00; 100.00), rect: (-80.00; -45.00; 160.00; 90.00)}
-    Simple State: {id: 'n3', pos: (580.00; 100.00), rect: (-80.00; -45.00; 160.00; 90.00)}
+    Simple State: {id: 'n3', pos: (740.00; 100.00), rect: (-80.00; -45.00; 160.00; 90.00)}
