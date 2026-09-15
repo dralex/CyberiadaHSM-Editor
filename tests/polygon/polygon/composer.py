@@ -35,6 +35,7 @@ REPRODUCE = "reproduce"
 COMBINE = "combine"
 EXPLORE = "explore"
 TOUR = "tour"
+DRAW = "draw"
 
 DOMAINS = ("a traffic light", "a vending machine", "a lift controller",
           "a microwave oven", "a robot patrol mission", "a game character AI",
@@ -56,6 +57,7 @@ class Mission:
     budget: tuple = (0, 0)
     untried: list = field(default_factory=list)
     domain: str = ""     # the explore mission's design brief subject
+    story: dict = None   # the draw mission's diagram to draw (catalog/stories.json)
 
 
 def corpus(env):
@@ -82,7 +84,11 @@ def themes():
     return json.loads((CAT.CATALOG_DIR / "themes.json").read_text())["themes"]
 
 
-def compose(kind, env, catalog, coverage, seed, name=None, theme_name=None):
+def stories():
+    return json.loads((CAT.CATALOG_DIR / "stories.json").read_text())["stories"]
+
+
+def compose(kind, env, catalog, coverage, seed, name=None, theme_name=None, story_name=None):
     rng = random.Random(seed)
     diagrams, starts = corpus(env)
     if name is None:
@@ -96,6 +102,12 @@ def compose(kind, env, catalog, coverage, seed, name=None, theme_name=None):
                        budget=(12, 30))
     if kind == TOUR:
         return Mission(kind, seed, "tour", starts["empty"], budget=(20, 40))
+    if kind == DRAW:
+        all_stories = stories()
+        story = next((s for s in all_stories if s["name"] == story_name), None) if story_name \
+            else rng.choice(all_stories)
+        return Mission(kind, seed, "draw-" + story["name"], starts["empty"], story=story,
+                       budget=tuple(story["budget"]))
     theme = next((t for t in themes() if t["name"] == theme_name), None) if theme_name else rng.choice(themes())
     start = theme.get("start", "corpus")
     if start in starts and starts[start].exists():

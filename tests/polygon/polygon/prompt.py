@@ -140,6 +140,46 @@ def mission_explore(domain, budget):
     ])
 
 
+# the drawing rules the editor enforces, in the agent's terms - kept in step with
+# docs/EDITOR-SPEC.md section 4 (the id in brackets is the requirement it renders)
+DRAWING_RULES = """The editor keeps a diagram well-formed; draw so these hold, and the
+editor will maintain them for you:
+  - a child sits inside its parent with a margin; a parent grows to fit its
+    children and never shrinks below them [NODE-1, NODE-2]
+  - sibling elements do not overlap; keep them apart [NODE-6, NODE-7]
+  - one initial pseudostate per state (or per the top machine) [SEM-1]; a
+    transition's endpoints are legal kinds - nothing leaves a final, nothing
+    enters an initial [SEM-2]; a choice's outgoing transitions are guarded with
+    one [else] branch [SEM-3]
+  - a state's name is non-empty and unique among its siblings [STRUCT-2]; every
+    element has one parent, no cycles [STRUCT-3]; a composite state has children,
+    a leaf is simple or a pseudostate [STRUCT-6]
+  - a transition ends on the border of a rectangular state, on the drawn circle
+    of an initial/final, or on a rhombus vertex of a choice [EDGE-1..4]; the line
+    ends in an arrow [EDGE-5]; a self-loop stays a loop [EDGE-8]
+  - a set colour is drawn on the node or on the transition line and arrow
+    [NODE-10, EDGE-14]
+"""
+
+
+def mission_draw(story, budget):
+    return "\n".join([
+        "Mission: draw %s as a clean hierarchical state machine." % story["subject"],
+        "",
+        "The empty document already has one state machine, id G0. Draw the whole",
+        "diagram under it - the states, the nesting, the pseudostates, the",
+        "transitions and the actions - following this shape:",
+        "",
+        story["hint"].strip(),
+        "",
+        DRAWING_RULES,
+        "Budget: %d to %d commands over the session, a few per round. Read the dump" % tuple(budget),
+        "each round and use the ids it shows; give expectations for what you added",
+        "this round. Keep the layout tidy: children inside their parents with a",
+        "margin, siblings apart, no overlaps.",
+    ])
+
+
 def mission_combine(name, description, scene, stack, operations, theme, budget, untried):
     lines = ["Mission: stress the editor by combining operations in an order a user",
              "would not plan.", "",

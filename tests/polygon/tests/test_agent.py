@@ -22,6 +22,7 @@
 # -----------------------------------------------------------------------------
 
 import json
+import re
 import tempfile
 import threading
 import unittest
@@ -72,6 +73,22 @@ class PromptTest(unittest.TestCase):
         self.assertIn("entry/ behaviour", text)
         self.assertIn("== expectations", text)
 
+    def test_mission_draw(self):
+        story = M.stories()[0]
+        text = P.mission_draw(story, (12, 20))
+        self.assertIn(story["subject"], text)
+        self.assertIn(story["hint"].strip().splitlines()[0], text)
+        self.assertIn(P.DRAWING_RULES, text)
+        self.assertIn("12 to 20 commands", text)
+
+    def test_drawing_rules_cite_real_ids(self):
+        # every EDIT-<AREA>-<n> the drawing rules cite must exist in the spec
+        ids = set(re.findall(r"(?:STRUCT|SEM|NODE|EDGE)-\d+", P.DRAWING_RULES))
+        self.assertTrue(ids)
+        spec = (POLYGON.parent.parent / "docs" / "EDITOR-SPEC.md").read_text()
+        for rid in ids:
+            self.assertIn("EDIT-" + rid, spec, "%s not in EDITOR-SPEC" % rid)
+
 
 class BriefTest(unittest.TestCase):
     def test_lift_brief(self):
@@ -94,6 +111,28 @@ class ComposerTest(unittest.TestCase):
             r = M.compose(M.REPRODUCE, ENV, cat, cov, 1, "lift")
             self.assertEqual(r.original.name, "lift.graphml")
             self.assertEqual(r.diagram.name, "empty.graphml")
+
+    def test_stories_load(self):
+        ss = M.stories()
+        self.assertTrue(ss)
+        for s in ss:
+            for key in ("name", "subject", "hint", "budget", "source"):
+                self.assertIn(key, s)
+            self.assertEqual(len(s["budget"]), 2)
+            self.assertLess(s["budget"][0], s["budget"][1])
+
+    def test_compose_draw(self):
+        cat = CAT.Catalog()
+        with tempfile.TemporaryDirectory() as tmp:
+            cov = COV.Coverage(Path(tmp) / "c.json")
+            a = M.compose(M.DRAW, ENV, cat, cov, 3)
+            b = M.compose(M.DRAW, ENV, cat, cov, 3)
+            self.assertEqual(a.story["name"], b.story["name"])   # deterministic by seed
+            self.assertEqual(a.diagram.name, "empty.graphml")
+            self.assertEqual(tuple(a.budget), tuple(a.story["budget"]))
+            named = M.compose(M.DRAW, ENV, cat, cov, 1, story_name="toaster-oven")
+            self.assertEqual(named.story["name"], "toaster-oven")
+            self.assertEqual(named.name, "draw-toaster-oven")
 
 
 class StubHandler(BaseHTTPRequestHandler):

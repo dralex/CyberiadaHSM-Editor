@@ -75,6 +75,7 @@ kinds share the runner, the oracles and the register and differ in the prompt.
 | A reproduction | empty document, one state machine | rebuild a corpus diagram from its description, never from the file | structural diff of the result dump against the original dump: kinds, names, nesting, transitions, actions; geometry free |
 | B combination | a corpus diagram (dump given) | combine a drawn subset of operations under a theme so that each step changes what the next one relies on | none beyond the tiers |
 | C exploration | empty document | design and keep improving a real diagram of a given domain; between rounds a fuzzer burst injects random micro-operations on the current diagram | none; the stress profile (crash, save/reopen, undo-all, export) runs each round |
+| D drawing | empty document | draw one named diagram (a drawing story) cleanly from scratch; the intro presents the editor's rules so the drawing stays well-formed; no fuzzer burst | none; the stress profile runs each round |
 
 Mission A exercises the creation paths and grows the corpus: every accepted
 reproduction is stored as a new starting document. Mission B exercises the
@@ -88,6 +89,29 @@ text verbs only), refactoring session, text-heavy behaviours (real code in
 C, Python or a pseudolanguage, multi-line, edits), student session with
 mistakes (small start, the refusals and corrections), and sequential growth
 from a single state to a clean complex system.
+
+### Drawing stories
+
+The **drawing mission** (`run --mission draw`) asks the agent to draw one named
+diagram from an empty document. The diagrams are **drawing stories** in
+`catalog/stories.json` — each a `name`, a one-line `subject`, a `hint` giving the
+states, nesting, pseudostates and key transitions to draw, a `budget`, and a
+`source`. They are taken from the example statecharts of *Practical UML
+Statecharts in C/C++* (`docs/PSiCC2.pdf`), filtered to the elements the editor
+supports (simple/composite states, `initial`/`final`/`choice`/`terminate`
+pseudostates, event/guard/action transitions, entry/exit/internal behaviours,
+comments — no history, orthogonal regions, fork/join or submachines). Pick one
+with `--story <name>`, or let the seed choose.
+
+Unlike exploration, a drawing session does not inject fuzzer bursts: it is a
+clean build of a known machine. Its intro **presents the editor's rules**
+(`prompt.DRAWING_RULES`, kept in step with `EDITOR-SPEC` §4): containment and
+grow-to-fit, siblings apart, one initial per region, legal endpoint kinds,
+guarded choices, unique names, endpoints on the border, an arrow on the line,
+colour drawn per kind. The agent draws to satisfy them and the reference-free
+tiers (crash, save/reopen, undo-all, export) plus the standing `[U]` laws check
+that the drawn diagram does. A clean drawing can be kept as a corpus document,
+as a reproduction is.
 
 ### The drill class
 
