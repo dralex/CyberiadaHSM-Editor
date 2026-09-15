@@ -72,6 +72,8 @@ public:
     QRectF visibleItemsBoundingRect() const;
     // the visible diagram with the scene margin around it
     QRectF diagramRect() const;
+    // convert any point labels to rect labels before an interactive save (edit mode)
+    void migrateLabelsToRect();
 
     void  setCurrentTool(ToolType tool);
     ToolType getCurrentTool() { return currentTool; }

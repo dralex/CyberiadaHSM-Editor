@@ -615,21 +615,50 @@ void CyberiadaSMEditorTransitionItem::updateAction()
     updateActionPosition();
 }
 
+void CyberiadaSMEditorTransitionItem::migrateLabelToRect()
+{
+    // only an explicitly placed point label migrates; auto-placed labels stay auto,
+    // rects stay rects, and inspection keeps the original geometry
+    if (!actionItem || SettingsManager::instance().getInspectorMode()) return;
+    if (!transition->has_geometry_label_point()) return;
+
+    Cyberiada::Point lp = transition->get_label_point();   // the label centre
+    QRectF bb = actionItem->boundingRect();
+    // a direct element write (not model->updateLabel): no undo step, no dirty flag
+    static_cast<Cyberiada::Transition*>(element)->update_label(
+        Cyberiada::Rect(lp.x, lp.y, bb.width(), bb.height()));
+    updateActionPosition();
+}
+
 void CyberiadaSMEditorTransitionItem::updateActionPosition() {
     if (!actionItem) return;
 
     // while the user drags the label, leave it where the drag puts it: a reflow
-    // triggered mid-drag must not snap it back to the auto midpoint
-    if (actionItem->isDragging()) return;
+    // triggered mid-drag must not snap it back to the auto midpoint. While the user
+    // types, leave the top-left where it is so the box grows downward.
+    if (actionItem->isDragging() || actionItem->isEditing()) return;
 
-    // a moved label keeps its stored position, relative to the source centre
+    // a moved label keeps its stored box, its centre relative to the source centre;
+    // the fixed width makes the text wrap and the height grow downward
+    if (transition->has_geometry_label_rect()) {
+        const Cyberiada::Rect& lr = transition->get_label_rect();
+        actionItem->setTextWidth(lr.width);
+        QPointF centre = QPointF(lr.x, lr.y) + sourceCenter();
+        actionItem->setPos(centre - actionItem->boundingRect().center());
+        update();
+        return;
+    }
+
+    // a legacy/inspection point label keeps its stored centre, natural width
     if (transition->has_geometry_label_point()) {
         const Cyberiada::Point& lp = transition->get_label_point();
+        actionItem->setTextWidth(-1);
         actionItem->setPos(QPointF(lp.x, lp.y) + sourceCenter() - actionItem->boundingRect().center());
         update();
         return;
     }
 
+    actionItem->setTextWidth(-1);
     QPointF lastPoint = sourcePoint();
     if(transition->has_polyline() && transition->get_geometry_polyline().size() > 0) {
         Cyberiada::Polyline polyline = transition->get_geometry_polyline();
@@ -1267,9 +1296,13 @@ void TransitionAction::focusOutEvent(QFocusEvent *event)
     QGraphicsTextItem::focusOutEvent(event);
 
     CyberiadaSMEditorTransitionItem* transition = dynamic_cast<CyberiadaSMEditorTransitionItem*>(parentItem());
+    if (!transition) return;
 
+    // commit the action text first (it re-syncs the label from the model), then
+    // store the label box sized from that text, so a freshly typed label is a rect
     transition->model->updateAction(transition->model->elementToIndex(transition->element), 0,
                                     getTrigger(), getGuard(), getBehaviour());
+    persistLabelPosition();
 }
 
 void TransitionAction::mousePressEvent(QGraphicsSceneMouseEvent *event)
@@ -1314,10 +1347,19 @@ void TransitionAction::persistLabelPosition()
 {
     CyberiadaSMEditorTransitionItem* t = dynamic_cast<CyberiadaSMEditorTransitionItem*>(parentItem());
     if (!t || !t->model) return;
-    // the stored point is the label centre relative to the source centre, the
-    // same origin updateActionPosition reads it back with
-    QPointF lp = pos() + boundingRect().center() - t->sourceCenter();
-    t->model->updateLabel(t->model->elementToIndex(t->element), Cyberiada::Point(lp.x(), lp.y()));
+    QModelIndex index = t->model->elementToIndex(t->element);
+    // an empty label carries no box: reset to auto-placement
+    if (toPlainText().trimmed().isEmpty()) {
+        t->model->updateLabel(index, Cyberiada::Rect());
+        return;
+    }
+    // the label is a box: its centre relative to the source centre (the origin
+    // updateActionPosition reads back), the current width (natural on the first
+    // migration from a point), and the wrapped height. A point label becomes a
+    // rect the first time it is moved or edited.
+    qreal w = (textWidth() > 0) ? textWidth() : boundingRect().width();
+    QPointF centre = pos() + boundingRect().center() - t->sourceCenter();
+    t->model->updateLabel(index, Cyberiada::Rect(centre.x(), centre.y(), w, boundingRect().height()));
 }
 
 void TransitionAction::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)

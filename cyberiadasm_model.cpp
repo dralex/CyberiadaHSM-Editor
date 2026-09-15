@@ -705,6 +705,24 @@ bool CyberiadaSMModel::updateLabel(const QModelIndex& index, const Cyberiada::Po
 	return true;
 }
 
+bool CyberiadaSMModel::updateLabel(const QModelIndex& index, const Cyberiada::Rect& label_rect)
+{
+	if (readOnly()) return false;
+	UndoScope scope(this, tr("label"));
+	Cyberiada::Element* element = indexToElement(index);
+	if (!element) return false;
+	if (element->get_type() != Cyberiada::elementTransition) return false;
+	Cyberiada::Transition* trans = static_cast<Cyberiada::Transition*>(element);
+	trans->update_label(label_rect);
+	{
+		QString verb = "label " + qid(element);
+		if (label_rect.valid) verb += " " + logRect(label_rect);
+		GestureLog::instance().logAction(verb);
+	}
+	emit dataChanged(index, index);
+	return true;
+}
+
 bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada::Point& source, const Cyberiada::Point& target)
 {
 	if (readOnly()) return false;
@@ -1968,6 +1986,9 @@ static void shiftTransition(Cyberiada::Transition* t, double dx, double dy)
     if (t->has_geometry_label_point()) {
         Cyberiada::Point lp = t->get_label_point();
         t->update_label(Cyberiada::Point(lp.x + dx, lp.y + dy));
+    } else if (t->has_geometry_label_rect()) {
+        Cyberiada::Rect lr = t->get_label_rect();
+        t->update_label(Cyberiada::Rect(lr.x + dx, lr.y + dy, lr.width, lr.height));
     }
 }
 

@@ -122,7 +122,7 @@ act()
         <point x="0.000000" y="105.000000"/>
       </data>
       <data key="dLabelGeometry">
-        <point x="300.000000" y="150.000000"/>
+        <rect x="209.375000" y="136.500000" width="181.250000" height="27.000000"/>
       </data>
     </edge>
   </graph>

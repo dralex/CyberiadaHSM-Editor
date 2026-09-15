@@ -501,6 +501,17 @@ void CyberiadaSMEditorScene::loadScene(bool fit)
     update();
 }
 
+void CyberiadaSMEditorScene::migrateLabelsToRect()
+{
+    // called just before an interactive save so a saved diagram carries rect
+    // labels; batch and inspection leave the stored geometry untouched
+    for (auto item : items()) {
+        if (auto tr = dynamic_cast<CyberiadaSMEditorTransitionItem*>(item)) {
+            tr->migrateLabelToRect();
+        }
+    }
+}
+
 QRectF CyberiadaSMEditorScene::diagramRect() const
 {
     qreal margin = DEFAULT_SCENE_BORDER_MARGIN;

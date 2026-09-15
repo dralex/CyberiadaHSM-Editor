@@ -73,8 +73,8 @@ protected slots:
     void applyFont();
 
 protected:
-    bool isEdit;
-    bool align;
+    bool isEdit = false;
+    bool align = false;
     bool isTextWidthEnabled = true;
     FontRole fontRole = fontRoleStateAction;
     // the comment body keeps the default: it wraps at the full element width

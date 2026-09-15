@@ -66,6 +66,13 @@ public:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = nullptr);
     QPainterPath shape() const override;
 
+    // convert a stored label POINT to a label RECT sized from the current text, so
+    // an old point-label diagram becomes a rect one in edit mode; a no-op in
+    // inspection mode and for labels that are already rects or auto-placed. Silent
+    // (a direct element write): it neither pushes an undo step nor marks the
+    // document modified, so opening a file does not dirty it.
+    void migrateLabelToRect();
+
     CyberiadaSMEditorAbstractItem *source() const;
     void setSource(CyberiadaSMEditorAbstractItem *newSource);
     QPointF sourcePoint() const;
@@ -186,6 +193,7 @@ public:
     QString getGuard() const;
     QString getBehaviour() const;
     bool isDragging() const { return dragging; }
+    bool isEditing() const { return isEdit; }
 
 protected:
     void paint( QPainter *painter, const QStyleOptionGraphicsItem *o, QWidget *w) override;

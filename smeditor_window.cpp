@@ -248,7 +248,8 @@ void CyberiadaSMEditorWindow::slotFileSave()
 {
     if (model->rootDocument() && !model->rootDocument()->get_file_path().empty()) {
         try {
-            model->setEditorView(sceneView->viewState());   // persist the current view
+            scene->migrateLabelsToRect();                    // point labels become rects
+            model->setEditorView(sceneView->viewState());    // persist the current view
             model->saveDocument();
         } catch (const Cyberiada::Exception& e) {
             QMessageBox::critical(this, tr("Save State Machine"),
@@ -269,7 +270,8 @@ void CyberiadaSMEditorWindow::slotFileSaveAs()
         return;
     }
     try {
-        model->setEditorView(sceneView->viewState());   // persist the current view
+        scene->migrateLabelsToRect();                    // point labels become rects
+        model->setEditorView(sceneView->viewState());    // persist the current view
         model->saveAsDocument(fileName, dlg.selectedFormat(), dlg.roundEnabled(),
                               dlg.skipGeometryEnabled(), dlg.checkInitialEnabled(),
                               dlg.strictActionsEnabled(), dlg.skipEmptyBehaviorEnabled());

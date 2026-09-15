@@ -279,11 +279,14 @@ static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QStri
 			*error = "element '" + tokens.at(1) + "' is not a transition";
 			return false;
 		}
-		// with coordinates the label is pinned, without them it is reset to
-		// the automatic placement (an invalid point)
+		// <x y w h> pins a label box, <x y> a label point, nothing resets it to
+		// the automatic placement (an invalid geometry)
+		if (toNumbers(tokens, 2, 4, v)) {
+			return model->updateLabel(index, Cyberiada::Rect(v[0], v[1], v[2], v[3]));
+		}
 		Cyberiada::Point p;
 		if (tokens.size() > 2) {
-			if (!toNumbers(tokens, 2, 2, v)) { *error = "label requires <x y> or no coordinates"; return false; }
+			if (!toNumbers(tokens, 2, 2, v)) { *error = "label requires <x y>, <x y w h> or no coordinates"; return false; }
 			p = Cyberiada::Point(v[0], v[1]);
 		}
 		return model->updateLabel(index, p);

@@ -105,6 +105,7 @@ private slots:
 	void test_name_only_state();
 	void test_title_drag_through();
 	void test_vertex_name();
+	void test_label_rect();
 	// runs last: it reloads and modifies the shared document
 	void test_directional_grow();
 
@@ -718,6 +719,47 @@ void TestScene::test_vertex_name()
 	                Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
 	QApplication::sendEvent(vp, &dce);
 	QVERIFY(dynamic_cast<QGraphicsTextItem*>(scene->focusItem()) != nullptr);
+}
+
+void TestScene::test_label_rect()
+{
+	// an edge label is a box: it wraps to the stored width and grows downward; a
+	// wider box re-wraps shorter; a point label migrates to a rect on demand
+	QVERIFY(model->loadDocument("diagrams/label-geometry.graphml"));
+	scene->loadScene();
+
+	const Cyberiada::Transition* t =
+		static_cast<const Cyberiada::Transition*>(model->idToElement("n0-n1"));
+	QVERIFY(t && t->has_geometry_label_rect());
+	QCOMPARE(t->get_label_rect().width, 60.0);
+
+	CyberiadaSMEditorTransitionItem* tr =
+		dynamic_cast<CyberiadaSMEditorTransitionItem*>(scene->getMap().value("n0-n1"));
+	QVERIFY(tr);
+	EditableTextItem* label = nullptr;
+	for (QGraphicsItem* c : tr->childItems())
+		if ((label = dynamic_cast<EditableTextItem*>(c))) break;
+	QVERIFY(label);
+	// wraps to the stored 60 px width and grows downward (several lines)
+	QCOMPARE(label->textWidth(), 60.0);
+	QVERIFY(label->boundingRect().height() > 40.0);
+
+	// widen the box -> the text re-wraps to fewer lines
+	Cyberiada::Rect lr = t->get_label_rect();
+	QVERIFY(model->updateLabel(model->elementToIndex(model->idToElement("n0-n1")),
+							   Cyberiada::Rect(lr.x, lr.y, 300, 27)));
+	QCOMPARE(label->textWidth(), 300.0);
+	QVERIFY(label->boundingRect().height() < 40.0);
+
+	// a point label migrates to a rect on demand (edit mode); a rect stays a rect
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	const Cyberiada::Transition* e2 =
+		static_cast<const Cyberiada::Transition*>(model->idToElement("edge-2"));
+	QVERIFY(e2 && e2->has_geometry_label_point());
+	scene->migrateLabelsToRect();
+	QVERIFY(e2->has_geometry_label_rect());
+	QVERIFY(!e2->has_geometry_label_point());
 }
 
 void TestScene::test_directional_grow()
