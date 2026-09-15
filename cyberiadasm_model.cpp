@@ -916,6 +916,11 @@ bool CyberiadaSMModel::updateParent(const QModelIndex &index, const Cyberiada::I
     // move() frees the original element, so capture the id before the call
     Cyberiada::ID moved_id = element->get_id();
     move(element, new_parent);
+    // move() keeps the child's absolute position but does not grow the new
+    // parent; grow it so the reparented child stays inside it (as paste does)
+    if (Cyberiada::Element* moved = idToElement(moved_id.c_str())) {
+        growToFitChildren(moved);
+    }
     GestureLog::instance().logAction("reparent " + QString::fromStdString(moved_id) + " " +
                                      QString::fromStdString(new_parent_id));
     return true;

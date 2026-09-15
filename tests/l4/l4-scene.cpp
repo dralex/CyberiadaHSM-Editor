@@ -1071,8 +1071,6 @@ void TestScene::test_reparent()
 	QVERIFY(scene->getMap().value("node-0-1"));
 	Cyberiada::Rect before = static_cast<const Cyberiada::State*>(
 		model->idToElement("node-0-1"))->get_geometry_rect();
-	Cyberiada::Rect step = static_cast<const Cyberiada::State*>(
-		model->idToElement("node-0-0"))->get_geometry_rect();
 	QVERIFY(model->updateParent(model->elementToIndex(model->idToElement("node-0-1")), "node-0-0"));
 	QGraphicsItem* item = scene->getMap().value("node-0-1");
 	QVERIFY(item);
@@ -1081,13 +1079,17 @@ void TestScene::test_reparent()
 			 model->idToElement("node-0-1"));
 	QVERIFY(item->parentItem());
 	QCOMPARE(item->parentItem()->parentItem(), scene->getMap().value("node-0-0"));
-	// the model keeps the absolute position across the reparent: the rect
-	// is re-expressed relative to the new parent (one level deeper)
+	// the child keeps its size and the new parent grew to contain it: its box,
+	// relative to the new parent's centre, lies within the parent's rect
 	Cyberiada::Rect after = static_cast<const Cyberiada::State*>(
 		model->idToElement("node-0-1"))->get_geometry_rect();
-	QCOMPARE(after.x, before.x - step.x);
-	QCOMPARE(after.y, before.y - step.y);
+	Cyberiada::Rect parent = static_cast<const Cyberiada::State*>(
+		model->idToElement("node-0-0"))->get_geometry_rect();
 	QCOMPARE(after.width, before.width);
+	QVERIFY(after.x - after.width / 2.0 >= -parent.width / 2.0 - 2.0);
+	QVERIFY(after.x + after.width / 2.0 <= parent.width / 2.0 + 2.0);
+	QVERIFY(after.y - after.height / 2.0 >= -parent.height / 2.0 - 2.0);
+	QVERIFY(after.y + after.height / 2.0 <= parent.height / 2.0 + 2.0);
 }
 
 void TestScene::test_delete()
