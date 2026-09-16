@@ -107,6 +107,7 @@ private slots:
 	void test_vertex_name();
 	void test_label_rect();
 	void test_meta_locked();
+	void test_comment_relayout();
 	// runs last: it reloads and modifies the shared document
 	void test_directional_grow();
 
@@ -761,6 +762,28 @@ void TestScene::test_label_rect()
 	scene->migrateLabelsToRect();
 	QVERIFY(e2->has_geometry_label_rect());
 	QVERIFY(!e2->has_geometry_label_point());
+}
+
+void TestScene::test_comment_relayout()
+{
+	// changing a comment body re-lays-out its auto-sized box (P-26/P-27): the item
+	// must not keep the stale size, or save/reopen disagree
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	Cyberiada::ElementCollection* sm =
+		dynamic_cast<Cyberiada::ElementCollection*>(model->indexToElement(model->firstSMIndex()));
+	QVERIFY(sm);
+	// a comment created with no rect keeps an auto-managed box sized to its text
+	Cyberiada::Element* c = model->newComment(sm, "short");
+	QVERIFY(c && !c->has_geometry());
+	QGraphicsItem* item = scene->getMap().value(c->get_id());
+	QVERIFY(item);
+	qreal h0 = item->boundingRect().height();
+
+	// a taller (multi-line) body must grow the box
+	QVERIFY(model->updateCommentBody(model->elementToIndex(c),
+									 "line one\nline two\nline three\nline four"));
+	QVERIFY(item->boundingRect().height() > h0 + 1.0);
 }
 
 void TestScene::test_meta_locked()

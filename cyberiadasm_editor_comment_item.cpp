@@ -184,6 +184,11 @@ void CyberiadaSMEditorCommentItem::syncFromModel()
     QString name = comment->has_name() ? QString::fromStdString(comment->get_name()) : QString();
     if (title->toPlainText() != name) title->setPlainText(name);
     title->setVisible(SettingsManager::instance().getShowText() && !name.isEmpty());
+    // refresh the body too, so the auto-sized box re-lays-out when the body changes
+    // (otherwise a stale box survives an edit and disagrees on save/reopen)
+    QString bodyText = QString::fromStdString(comment->get_body());
+    if (body->toPlainText() != bodyText) body->setPlainText(bodyText);
+    body->setVisible(SettingsManager::instance().getShowText());
     setTextPosition();
     CyberiadaSMEditorAbstractItem::syncFromModel();
 }
