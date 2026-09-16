@@ -117,6 +117,9 @@ private slots:
     void slotMouseReleaseDot(QGraphicsItem *signalOwner, QPointF p);
     bool isAncestorOf(CyberiadaSMEditorAbstractItem *anc, CyberiadaSMEditorAbstractItem *item) const;
     void slotDeleteDot(QGraphicsItem *signalOwner);
+    // the label-box corner handles: directional width resize, opposite side anchored
+    void slotMoveLabelHandle(QGraphicsItem *signalOwner, qreal dx, qreal dy, QPointF p);
+    void slotReleaseLabelHandle(QGraphicsItem *signalOwner, QPointF p);
 
 protected:
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
@@ -156,6 +159,10 @@ private:
     QPointF prevPosition;
 
     QList<DotSignal *> listDots;
+    // the four label-box corner handles (green boxes), shown when the transition
+    // is selected under the selection tool; a drag resizes the label rect
+    QList<DotSignal *> labelDots;
+    bool labelHandleDragging = false;
 
     QMap<Cyberiada::ID, QGraphicsItem*>& elementIdToItemMap;
 
@@ -176,6 +183,8 @@ private:
     void showDots() override;
     void hideDots() override;
     void setDotsPosition() override;
+    void initializeLabelDots();
+    void setLabelDotsPosition();
 };
 
 

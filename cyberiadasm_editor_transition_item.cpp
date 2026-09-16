@@ -77,6 +77,8 @@ CyberiadaSMEditorTransitionItem::CyberiadaSMEditorTransitionItem(QObject *parent
     connect(&SettingsManager::instance(), &SettingsManager::showTransitionTextChanged, this, &CyberiadaSMEditorTransitionItem::setActionVisibility);
     // the label is centered on the polyline, so it follows its own size
     connect(actionItem, &EditableTextItem::sizeChanged, this, &CyberiadaSMEditorTransitionItem::updateActionPosition);
+    // the corner handles follow the label box as it reflows
+    connect(actionItem, &EditableTextItem::sizeChanged, this, &CyberiadaSMEditorTransitionItem::setLabelDotsPosition);
 
     connect(target(), &CyberiadaSMEditorAbstractItem::geometryChanged, this, &CyberiadaSMEditorTransitionItem::onTargetGeomertyChanged);
     connect(source(), &CyberiadaSMEditorAbstractItem::geometryChanged, this, &CyberiadaSMEditorTransitionItem::onSourceGeomertyChanged);
@@ -85,6 +87,7 @@ CyberiadaSMEditorTransitionItem::CyberiadaSMEditorTransitionItem(QObject *parent
 
     updateActionPosition();
     initializeDots();
+    initializeLabelDots();
     hideDots();
 }
 
@@ -98,6 +101,11 @@ CyberiadaSMEditorTransitionItem::~CyberiadaSMEditorTransitionItem()
         }
         listDots.clear();
     }
+
+    foreach (DotSignal *dot, labelDots) {
+        dot->deleteLater();
+    }
+    labelDots.clear();
 }
 
 QRectF CyberiadaSMEditorTransitionItem::boundingRect() const
@@ -636,7 +644,7 @@ void CyberiadaSMEditorTransitionItem::updateActionPosition() {
     // while the user drags the label, leave it where the drag puts it: a reflow
     // triggered mid-drag must not snap it back to the auto midpoint. While the user
     // types, leave the top-left where it is so the box grows downward.
-    if (actionItem->isDragging() || actionItem->isEditing()) return;
+    if (actionItem->isDragging() || actionItem->isEditing() || labelHandleDragging) return;
 
     // a moved label keeps its stored box, its centre relative to the source centre;
     // the fixed width makes the text wrap and the height grow downward
@@ -1224,11 +1232,21 @@ void CyberiadaSMEditorTransitionItem::showDots()
     foreach( DotSignal* dot, listDots ) {
         dot->setVisible(true);
     }
+    // the label handles appear only when the label carries visible text
+    bool showLabel = actionItem && actionItem->isVisible() &&
+                     !actionItem->toPlainText().trimmed().isEmpty();
+    foreach( DotSignal* dot, labelDots ) {
+        dot->setVisible(showLabel);
+    }
+    if (showLabel) setLabelDotsPosition();
 }
 
 void CyberiadaSMEditorTransitionItem::hideDots()
 {
     foreach( DotSignal* dot, listDots ) {
+        dot->setVisible(false);
+    }
+    foreach( DotSignal* dot, labelDots ) {
         dot->setVisible(false);
     }
 }
@@ -1245,6 +1263,70 @@ void CyberiadaSMEditorTransitionItem::setDotsPosition()
         QPointF point = linePath.elementAt(i);
         listDots.at(i)->setPos(point);
     }
+}
+
+void CyberiadaSMEditorTransitionItem::initializeLabelDots()
+{
+    // four corner handles for the label box (order: TL, TR, BL, BR)
+    for (int i = 0; i < 4; i++) {
+        DotSignal* dot = new DotSignal(QPointF(0, 0), this);
+        connect(dot, &DotSignal::signalMove, this, &CyberiadaSMEditorTransitionItem::slotMoveLabelHandle);
+        connect(dot, &DotSignal::signalMouseRelease, this, &CyberiadaSMEditorTransitionItem::slotReleaseLabelHandle);
+        dot->setDotFlags(DotSignal::Movable);
+        dot->setVisible(false);
+        labelDots.append(dot);
+    }
+}
+
+void CyberiadaSMEditorTransitionItem::setLabelDotsPosition()
+{
+    if (labelDots.size() < 4 || !actionItem) return;
+    // the label box in scene coordinates (the transition item sits at the origin)
+    QRectF b = actionItem->boundingRect();
+    QPointF tl = actionItem->pos();
+    labelDots.at(0)->setPos(tl);
+    labelDots.at(1)->setPos(tl + QPointF(b.width(), 0));
+    labelDots.at(2)->setPos(tl + QPointF(0, b.height()));
+    labelDots.at(3)->setPos(tl + QPointF(b.width(), b.height()));
+}
+
+void CyberiadaSMEditorTransitionItem::slotMoveLabelHandle(QGraphicsItem *signalOwner, qreal, qreal, QPointF p)
+{
+    if (SettingsManager::instance().getInspectorMode() || !actionItem) return;
+    int idx = labelDots.indexOf(dynamic_cast<DotSignal*>(signalOwner));
+    if (idx < 0) return;
+
+    // directional width resize: a left handle moves the left edge (right anchored),
+    // a right handle moves the right edge (left anchored); the height is text-driven
+    labelHandleDragging = true;
+    const qreal MIN_W = 20.0;
+    qreal left = actionItem->pos().x();
+    qreal top = actionItem->pos().y();
+    qreal right = left + actionItem->boundingRect().width();
+    bool leftSide = (idx == 0 || idx == 2);
+    qreal newLeft = left, newWidth;
+    if (leftSide) {
+        newLeft = qMin(p.x(), right - MIN_W);
+        newWidth = right - newLeft;
+    } else {
+        newWidth = qMax(MIN_W, p.x() - left);
+    }
+    actionItem->setTextWidth(newWidth);      // reflow (height grows down)
+    actionItem->setPos(newLeft, top);
+    setLabelDotsPosition();
+    update();
+}
+
+void CyberiadaSMEditorTransitionItem::slotReleaseLabelHandle(QGraphicsItem *, QPointF)
+{
+    labelHandleDragging = false;
+    if (!actionItem || SettingsManager::instance().getInspectorMode()) return;
+    // commit the box as a rect: centre relative to the source centre, current width,
+    // text-driven height (mirrors TransitionAction::persistLabelPosition)
+    qreal w = (actionItem->textWidth() > 0) ? actionItem->textWidth() : actionItem->boundingRect().width();
+    QPointF centre = actionItem->pos() + actionItem->boundingRect().center() - sourceCenter();
+    model->updateLabel(model->elementToIndex(element),
+                       Cyberiada::Rect(centre.x(), centre.y(), w, actionItem->boundingRect().height()));
 }
 
 
@@ -1292,7 +1374,13 @@ void TransitionAction::paint(QPainter *painter, const QStyleOptionGraphicsItem *
         QColor color = painter->background().color();
         color.setAlpha(230);
         painter->setBrush(color);
-        painter->setPen(Qt::NoPen);
+        // a thin border while the transition is selected, so the resizable box reads
+        QGraphicsItem* p = parentItem();
+        if (p && p->isSelected()) {
+            painter->setPen(QPen(SettingsManager::instance().getSelectionColor(), 1, Qt::DashLine));
+        } else {
+            painter->setPen(Qt::NoPen);
+        }
         painter->drawRect(boundingRect());
     }
     QGraphicsTextItem::paint(painter, o, w);
