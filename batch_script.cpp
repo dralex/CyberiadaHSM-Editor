@@ -82,12 +82,20 @@ static bool parseActionText(const QString& text, bool transition, Cyberiada::Act
 		else if (c == QChar(']')) depth--;
 		else if (c == QChar('/') && depth == 0) { slash = i; break; }
 	}
-	if (slash < 0) {
+	if (slash < 0 && !transition) {
 		*error = "action text requires the 'trigger [guard]/ behaviour' notation";
 		return false;
 	}
-	QString head = text.left(slash).trimmed();
-	*behaviour = text.mid(slash + 1).trimmed();
+	// a transition may carry just a trigger and/or a [guard] with no behaviour,
+	// e.g. a bare event or a choice's `[else]` - then there is no slash
+	QString head;
+	if (slash < 0) {
+		head = text.trimmed();
+		behaviour->clear();
+	} else {
+		head = text.left(slash).trimmed();
+		*behaviour = text.mid(slash + 1).trimmed();
+	}
 	*trigger = head;
 	guard->clear();
 	int bracket = head.indexOf(QChar('['));
@@ -170,10 +178,11 @@ static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QStri
 		Cyberiada::Element* target = model->idToElement(tokens.at(3));
 		if (!source) { *error = "unknown source id '" + tokens.at(2) + "'"; return false; }
 		if (!target) { *error = "unknown target id '" + tokens.at(3) + "'"; return false; }
-		// the trailing field: a bare trigger, or the full action notation
+		// the trailing field is the action notation: a bare trigger, a `[guard]`
+		// (e.g. a choice's `[else]`), or the full `trigger [guard] / behaviour`
 		QString text = restOfLine(tokens, 4);
-		Cyberiada::Action action(text.toStdString());
-		if (text.contains(QChar('/'))) {
+		Cyberiada::Action action;
+		if (!text.isEmpty()) {
 			Cyberiada::ActionType type;
 			QString trigger, guard, behaviour;
 			if (!parseActionText(text, true, &type, &trigger, &guard, &behaviour, error)) return false;
