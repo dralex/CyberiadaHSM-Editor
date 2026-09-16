@@ -45,6 +45,7 @@ private slots:
 	void test_rect_edit();
 	void test_point_edit();
 	void test_transition_edit();
+	void test_label_rect();
 	void test_size_limit();
 	void test_label_point_disabled();
 	void test_inspector_mode();
@@ -208,6 +209,26 @@ void TestProperties::test_transition_edit()
 	setDouble(points.at(3)->subProperties().at(1), 100);
 	QCOMPARE(t->get_source_point().x, -150.0f);
 	QCOMPARE(t->get_geometry_polyline().at(1).y, 100.0f);
+}
+
+void TestProperties::test_label_rect()
+{
+	// a transition carrying a label rect shows an editable Label Rect row
+	QModelIndex idx = model->elementToIndex(model->idToElement("edge-0"));
+	model->updateLabel(idx, Cyberiada::Rect(10, 20, 120, 40));
+	const Cyberiada::Transition* t = static_cast<const Cyberiada::Transition*>(model->idToElement("edge-0"));
+	QVERIFY(t->has_geometry_label_rect());
+
+	select("edge-0");
+	QList<QtProperty*> rects = rows<QtRectFPropertyManager>();
+	QCOMPARE(rects.size(), 1);                    // the label rect (endpoints are points)
+	QList<QtProperty*> sub = rects.first()->subProperties();
+	QCOMPARE(sub.size(), 4);                      // x, y, width, height
+	QCOMPARE(t->get_label_rect().width, 120.0f);
+	setDouble(sub.at(2), 200);                    // edit the width
+	QCOMPARE(t->get_label_rect().width, 200.0f);
+
+	model->updateLabel(idx, Cyberiada::Point());  // reset to auto-placement
 }
 
 void TestProperties::test_size_limit()

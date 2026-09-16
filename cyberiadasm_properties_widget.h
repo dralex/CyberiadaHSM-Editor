@@ -84,6 +84,7 @@ private:
 		propGroupElement,
 		propGroupGeometry,
 		propGroupLabelPoint,
+		propGroupLabelRect,
 		propGroupMeta,
 		propGroupPoint,
 		propGroupPolyline,

@@ -50,6 +50,7 @@ CyberiadaSMPropertiesWidget::CyberiadaSMPropertiesWidget(QWidget *parent):
 		{propGroupElement,         propEditorGroup,             tr("Element", "Property name")},
 		{propGroupGeometry,        propEditorGroup,             tr("Geometry", "Property name")},
 		{propGroupLabelPoint,      propEditorPointGroup,        tr("Label Point", "Property name")},
+		{propGroupLabelRect,       propEditorRectGroup,         tr("Label Rect", "Property name")},
 		{propGroupMeta,            propEditorGroup,             tr("Metainformation", "Property name")},
 		{propGroupPoint,           propEditorPointGroup,        tr("Point", "Property name")},
 		{propGroupPolyline,        propEditorGroup,             tr("Polyline", "Property name")},
@@ -489,6 +490,12 @@ void CyberiadaSMPropertiesWidget::slotPropertyChanged(QtProperty* p)
                         model->updateGeometry(i, pl);
                     }
                 }
+                if (trans->has_geometry_label_rect()) {
+                    if (cp.name == propGroupLabelRect) {
+                        QRectF lr = rectManager->value(p);
+                        model->updateLabel(i, Cyberiada::Rect(lr.x(), lr.y(), lr.width(), lr.height()));
+                    }
+                }
 
 //                 QtProperty* color_prop = constructProperty(propColor);
 //                 stringManager->setValue(color_prop, QString(trans->get_color().c_str()));
@@ -761,11 +768,16 @@ void CyberiadaSMPropertiesWidget::newElement(Cyberiada::Element* new_element)
 				}
 				if (trans->has_geometry_label_point()) {
 					QtProperty* lpoint_group_prop = constructProperty(propGroupLabelPoint);
-					// the library has no setter for the label point
 					disableRow(lpoint_group_prop);
 					geom_group_prop->addSubProperty(lpoint_group_prop);
 					pointManager->setValue(lpoint_group_prop, QPointF(trans->get_label_point().x,
 																	  trans->get_label_point().y));
+				}
+				if (trans->has_geometry_label_rect()) {
+					QtProperty* lrect_group_prop = constructProperty(propGroupLabelRect);
+					geom_group_prop->addSubProperty(lrect_group_prop);
+					const Cyberiada::Rect& lr = trans->get_label_rect();
+					rectManager->setValue(lrect_group_prop, QRectF(lr.x, lr.y, lr.width, lr.height));
 				}
 				if (trans->has_polyline()) {
 					QtProperty* poly_group_prop = constructProperty(propGroupPolyline);
@@ -1048,6 +1060,15 @@ void CyberiadaSMPropertiesWidget::updateElement()
                     }
                     pointManager->setValue(lpoint_group_prop, QPointF(trans->get_label_point().x,
                                                                       trans->get_label_point().y));
+                }
+                if (trans->has_geometry_label_rect()) {
+                    QtProperty* lrect_group_prop = findQtProperty(geom_group_prop, findPropertyStruct(propGroupLabelRect).propName);
+                    if (lrect_group_prop == nullptr) {
+                        lrect_group_prop = constructProperty(propGroupLabelRect);
+                        geom_group_prop->addSubProperty(lrect_group_prop);
+                    }
+                    const Cyberiada::Rect& lr = trans->get_label_rect();
+                    rectManager->setValue(lrect_group_prop, QRectF(lr.x, lr.y, lr.width, lr.height));
                 }
                 if (trans->has_polyline()) {
                     QtProperty* poly_group_prop = findQtProperty(geom_group_prop, findPropertyStruct(propGroupPolyline).propName);
