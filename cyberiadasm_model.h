@@ -119,6 +119,8 @@ public:
                                                         const Cyberiada::Point& preferred) const;
 	bool                                updateCommentBody(const QModelIndex& index, const QString& body);
     bool                                updateMetainformation(const QModelIndex& index, const QString& parameter, const QString& new_value);
+    // drop a free-form metainformation parameter (the fixed ones cannot be removed)
+    bool                                removeMetainformation(const QModelIndex& index, const QString& parameter);
 
     // a default name unique among the sibling states of the parent
     Cyberiada::Name                     uniqueStateName(const Cyberiada::ElementCollection* parent,

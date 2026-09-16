@@ -22,6 +22,9 @@
  * ----------------------------------------------------------------------------- */
 
 #include <QDebug>
+#include <QMenu>
+#include <QAction>
+#include <QContextMenuEvent>
 
 #include "myassert.h"
 #include "cyberiadasm_properties_widget.h"
@@ -210,6 +213,7 @@ void CyberiadaSMPropertiesWidget::slotModelAboutToBeReset()
 
 void CyberiadaSMPropertiesWidget::clearProperties()
 {
+	metaStringKeys.clear();
 	groupManager->clear();
 	stringManager->clear();
 	enumManager->clear();
@@ -217,6 +221,76 @@ void CyberiadaSMPropertiesWidget::clearProperties()
 	rectManager->clear();
 	dateManager->clear();
 	boolManager->clear();
+}
+
+void CyberiadaSMPropertiesWidget::rebuildProperties()
+{
+	Cyberiada::Element* current = element;
+	clearProperties();
+	if (current) newElement(current);
+}
+
+// the standard free-form metainformation parameters: canonical key and its label
+static const QVector<QPair<QString, QString>>& knownMetaParameters()
+{
+	static const QVector<QPair<QString, QString>> params = {
+		{ "author",           METAINFORMATION_AUTHOR },
+		{ "contact",          METAINFORMATION_CONTACT },
+		{ "createdAt",        METAINFORMATION_DATE },
+		{ "description",      METAINFORMATION_DESCRIPTION },
+		{ "markupLanguage",   METAINFORMATION_MARKUP_LANGUAGE },
+		{ "platform",         METAINFORMATION_PLATFORM_NAME },
+		{ "platformLanguage", METAINFORMATION_PLATFORM_LANGUAGE },
+		{ "platformVersion",  METAINFORMATION_PLATFORM_VERSION },
+		{ "target",           METAINFORMATION_TARGET_SYSTEM },
+		{ "version",          METAINFORMATION_VERSION },
+	};
+	return params;
+}
+
+void CyberiadaSMPropertiesWidget::contextMenuEvent(QContextMenuEvent* event)
+{
+	// only the document metainformation offers the add/remove parameter menu
+	if (!model || model->readOnly() || !element ||
+	    element->get_type() != Cyberiada::elementRoot) {
+		QtTreePropertyBrowser::contextMenuEvent(event);
+		return;
+	}
+	const Cyberiada::DocumentMetainformation& meta = model->rootDocument()->meta();
+
+	QMenu menu(this);
+	QMenu* addMenu = menu.addMenu(tr("Add parameter"));
+	for (const QPair<QString, QString>& p : knownMetaParameters()) {
+		const Cyberiada::String key = p.first.toStdString();
+		// offer only the parameters the document does not carry yet
+		if (!meta.get_string(key).empty()) continue;
+		bool present = false;
+		for (const std::pair<Cyberiada::String, Cyberiada::String>& s : meta.strings) {
+			if (s.first == key) { present = true; break; }
+		}
+		if (present) continue;
+		QAction* a = addMenu->addAction(p.second);
+		const QString canonical = p.first;
+		connect(a, &QAction::triggered, this, [this, canonical]() {
+			model->updateMetainformation(model->documentIndex(), canonical, QString());
+			rebuildProperties();
+		});
+	}
+	addMenu->setEnabled(!addMenu->isEmpty());
+
+	QMenu* removeMenu = menu.addMenu(tr("Remove parameter"));
+	for (const std::pair<Cyberiada::String, Cyberiada::String>& s : meta.strings) {
+		if (s.first == CYBERIADA_META_GEOMETRY) continue;
+		QAction* a = removeMenu->addAction(s.first.c_str());
+		const QString canonical = QString(s.first.c_str());
+		connect(a, &QAction::triggered, this, [this, canonical]() {
+			model->removeMetainformation(model->documentIndex(), canonical);
+			rebuildProperties();
+		});
+	}
+	removeMenu->setEnabled(!removeMenu->isEmpty());
+
+	menu.exec(event->globalPos());
 }
 
 void CyberiadaSMPropertiesWidget::slotElementSelected(const QModelIndex& index)
@@ -282,6 +356,13 @@ void CyberiadaSMPropertiesWidget::slotPropertyChanged(QtProperty* p)
     if (type == Cyberiada::elementRoot) {
         const Cyberiada::LocalDocument* doc = model->rootDocument();
         MY_ASSERT(doc);
+
+        // a free-form metainformation row carries its parameter key
+        if (metaStringKeys.contains(p)) {
+            model->updateMetainformation(model->documentIndex(),
+                                         metaStringKeys.value(p), stringManager->value(p));
+            return;
+        }
 
         if (cp.name == propFormat) {
             // TODO
@@ -607,6 +688,8 @@ void CyberiadaSMPropertiesWidget::newElement(Cyberiada::Element* new_element)
 			QtProperty* platform_string_prop = constructProperty(propMetaString, i->first.c_str());
 			stringManager->setValue(platform_string_prop, i->second.c_str());
 			meta_group_prop->addSubProperty(platform_string_prop);
+			// remember the key so an edit routes to the right parameter
+			metaStringKeys.insert(platform_string_prop, QString(i->first.c_str()));
 		}
 
 		QtProperty* transition_order_prop = constructProperty(propMetaTransitionOrder);

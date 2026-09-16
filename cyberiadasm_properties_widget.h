@@ -52,13 +52,21 @@ public slots:
 	void                     slotPropertyChanged(QtProperty* property);
 	void                     slotInspectorModeChanged(bool on);
 	void                     slotCurrentItemChanged(QtBrowserItem* item);
-	
+
+protected:
+	// the document metainformation: add a standard parameter or remove a free-form one
+	void                     contextMenuEvent(QContextMenuEvent* event) override;
+
 private:
-	
+	// clear and rebuild the property tree for the current element (row set changed)
+	void                     rebuildProperties();
+
 	CyberiadaSMModel*        model;
 	CyberiadaSMEditorScene*  scene = nullptr;
 	Cyberiada::Element*      element;
     bool                     updating;
+    // the free-form metainformation rows, mapped to their canonical parameter key
+    QMap<QtProperty*, QString> metaStringKeys;
 
 
 	enum CyberiadaPropertyName {

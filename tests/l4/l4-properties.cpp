@@ -50,6 +50,7 @@ private slots:
 	void test_inspector_mode();
 	void test_model_refresh();
 	void test_name_edit();
+	void test_meta_parameters();
 
 private:
 	void select(const char* id);
@@ -309,6 +310,34 @@ void TestProperties::test_name_edit()
 
 	m->setValue(name, "node 0-0-1");
 	QCOMPARE(QString(element->get_name().c_str()), QString("node 0-0-1"));
+}
+
+void TestProperties::test_meta_parameters()
+{
+	const Cyberiada::LocalDocument* doc = model->rootDocument();
+	QModelIndex docIndex = model->documentIndex();
+
+	// a free-form parameter is added, then editable through its row
+	QVERIFY(model->updateMetainformation(docIndex, "author", "Jane"));
+	QCOMPARE(QString(doc->meta().get_string("author").c_str()), QString("Jane"));
+
+	view->slotElementSelected(docIndex);
+	QList<QtProperty*> strings = rows<QtStringPropertyManager>();
+	QtProperty* author = nullptr;
+	for (QList<QtProperty*>::const_iterator i = strings.begin(); i != strings.end(); i++) {
+		if ((*i)->propertyName() == "author") author = *i;
+	}
+	QVERIFY(author);
+	QtStringPropertyManager* m = dynamic_cast<QtStringPropertyManager*>(author->propertyManager());
+	QVERIFY(m);
+	m->setValue(author, "Doe");
+	QCOMPARE(QString(doc->meta().get_string("author").c_str()), QString("Doe"));
+
+	// a free-form parameter is removable; a fixed one is not
+	QVERIFY(model->removeMetainformation(docIndex, "author"));
+	QVERIFY(doc->meta().get_string("author").empty());
+	QVERIFY(!model->removeMetainformation(docIndex, CYBERIADA_META_STANDARD_VERSION));
+	QCOMPARE(QString(doc->meta().standard_version.c_str()), QString("1.0"));
 }
 
 QTEST_MAIN(TestProperties)

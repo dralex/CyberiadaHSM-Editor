@@ -1151,6 +1151,29 @@ bool CyberiadaSMModel::updateMetainformation(const QModelIndex& index, const QSt
 	return true;
 }
 
+bool CyberiadaSMModel::removeMetainformation(const QModelIndex& index, const QString& parameter)
+{
+	if (readOnly()) return false;
+	UndoScope scope(this, tr("metainformation"));
+	if (!root || index != documentIndex()) {
+		return false;
+	}
+	// only the free-form parameters are removable
+	Cyberiada::String name = parameter.toStdString();
+	if (name == CYBERIADA_META_STANDARD_VERSION || name == CYBERIADA_META_TRANSITION_ORDER ||
+		name == CYBERIADA_META_EVENT_PROPAGATION || name == CYBERIADA_META_GEOMETRY ||
+		name == CYBERIADA_META_NAME) {
+		return false;
+	}
+	root->meta().remove_string(name);
+	GestureLog::instance().logAction("remove-meta " + parameter);
+	root->update_metainfo_element();
+	QModelIndex comment_index = elementToIndex(root->get_meta_element());
+	emit dataChanged(comment_index, comment_index);
+	emit dataChanged(index, index);
+	return true;
+}
+
 // the library keeps the transitions after the other children, so a new
 // element lands before the first transition of the collection
 static int newElementRow(Cyberiada::ElementCollection* parent)
