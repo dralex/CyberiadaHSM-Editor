@@ -699,8 +699,12 @@ void CyberiadaSMPropertiesWidget::newElement(Cyberiada::Element* new_element)
 			
 		} else {
 			QtProperty* element_name_prop = constructProperty(propName);
-			stringManager->setValue(element_name_prop, QString(element->get_name().c_str()));    
+			stringManager->setValue(element_name_prop, QString(element->get_name().c_str()));
 			element_group_prop->addSubProperty(element_name_prop);
+			// the document meta comment (CGML_META) is read-only
+			bool isMeta = model && model->rootDocument() &&
+			              element == model->rootDocument()->get_meta_element();
+			if (isMeta) disableRow(element_name_prop);
 			
 			if (type == Cyberiada::elementSimpleState || type == Cyberiada::elementCompositeState) {
 				const Cyberiada::State* state = static_cast<const Cyberiada::State*>(element);
@@ -740,8 +744,9 @@ void CyberiadaSMPropertiesWidget::newElement(Cyberiada::Element* new_element)
 				addProperty(comment_group_prop);
 
 				QtProperty* body_prop = constructProperty(propBody);
-				stringManager->setValue(body_prop, QString(comment->get_body().c_str()));    
+				stringManager->setValue(body_prop, QString(comment->get_body().c_str()));
 				comment_group_prop->addSubProperty(body_prop);
+				if (isMeta) disableRow(body_prop);
 
 				QtProperty* markup_prop = constructProperty(propMarkup);
 				stringManager->setValue(markup_prop, QString(comment->get_markup().c_str()));    

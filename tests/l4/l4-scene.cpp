@@ -106,6 +106,7 @@ private slots:
 	void test_title_drag_through();
 	void test_vertex_name();
 	void test_label_rect();
+	void test_meta_locked();
 	// runs last: it reloads and modifies the shared document
 	void test_directional_grow();
 
@@ -760,6 +761,23 @@ void TestScene::test_label_rect()
 	scene->migrateLabelsToRect();
 	QVERIFY(e2->has_geometry_label_rect());
 	QVERIFY(!e2->has_geometry_label_point());
+}
+
+void TestScene::test_meta_locked()
+{
+	// the CGML_META document-meta comment cannot be renamed or its body edited
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	const Cyberiada::Comment* meta = model->rootDocument()->get_meta_element();
+	QVERIFY(meta);
+	QModelIndex mi = model->elementToIndex(meta);
+	QVERIFY(mi.isValid());
+	QString name0 = QString(meta->get_name().c_str());
+	QString body0 = QString(meta->get_body().c_str());
+
+	QVERIFY(!model->updateTitle(mi, "Renamed"));
+	QVERIFY(!model->updateCommentBody(mi, "hacked body"));
+	QCOMPARE(QString(meta->get_name().c_str()), name0);
+	QCOMPARE(QString(meta->get_body().c_str()), body0);
 }
 
 void TestScene::test_directional_grow()

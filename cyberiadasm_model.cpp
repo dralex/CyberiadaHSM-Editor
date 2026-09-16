@@ -430,6 +430,8 @@ bool CyberiadaSMModel::updateTitle(const QModelIndex& index, const QString& new_
 	UndoScope scope(this, tr("rename"));
 	Cyberiada::Element* element = indexToElement(index);
 	if (!element) return false;
+	// the document meta comment (CGML_META) is not editable
+	if (root && element == root->get_meta_element()) return false;
 	Cyberiada::Name new_name(new_value.toStdString());
 	// the states of one level are told apart by name; the vertices have none
 	if (isState(element) && (new_value.trimmed().isEmpty() || siblingStateNamed(element, new_name))) {
@@ -1096,6 +1098,8 @@ bool CyberiadaSMModel::updateCommentBody(const QModelIndex& index, const QString
 	if (!element) return false;
 	if (element->get_type() != Cyberiada::elementComment &&
 		element->get_type() != Cyberiada::elementFormalComment) return false;
+	// the document meta comment (CGML_META) is not editable
+	if (root && element == root->get_meta_element()) return false;
 	static_cast<Cyberiada::Comment*>(element)->set_body(body.toStdString());
 	GestureLog::instance().logAction("update-comment " + qid(element) + " " + logEsc(body));
 	emit dataChanged(index, index);
