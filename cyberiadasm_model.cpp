@@ -2062,6 +2062,29 @@ Cyberiada::Element* CyberiadaSMModel::pasteElement(Cyberiada::ElementCollection*
         t->set_id(freshTransitionId(root, s, tg));
     }
 
+    // an internal transition (both endpoints inside the copied subtree) is stored
+    // at the state-machine level, not in the subtree, so collectSubtree never sees
+    // it; clone each such transition onto the copy so the paste keeps its own wiring
+    if (Cyberiada::StateMachine* sm = root->get_parent_sm(copied)) {
+        std::vector<Cyberiada::Transition*> internal;
+        const Cyberiada::ElementList& sm_children = sm->get_children();
+        for (Cyberiada::ElementList::const_iterator i = sm_children.begin(); i != sm_children.end(); i++) {
+            if ((*i)->get_type() != Cyberiada::elementTransition) continue;
+            Cyberiada::Transition* t = static_cast<Cyberiada::Transition*>(*i);
+            if (idmap.count(t->source_element_id()) && idmap.count(t->target_element_id())) {
+                internal.push_back(t);   // snapshot before adding the copies
+            }
+        }
+        for (size_t i = 0; i < internal.size(); i++) {
+            Cyberiada::Transition* t = static_cast<Cyberiada::Transition*>(internal[i]->copy(sm));
+            Cyberiada::ID s = idmap[internal[i]->source_element_id()];
+            Cyberiada::ID tg = idmap[internal[i]->target_element_id()];
+            t->update(s, tg);
+            t->set_id(freshTransitionId(root, s, tg));
+            sm->add_element(t);
+        }
+    }
+
     // a unique name for the pasted element among its new siblings
     if (isState(copied)) {
         copied->set_name(uniqueStateName(parent, copied->get_name()));

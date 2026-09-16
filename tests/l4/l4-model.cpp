@@ -52,6 +52,7 @@ private slots:
 	void test_reparent_free_slot();
 	void test_paste_free_slot();
 	void test_paste_grows_packed_parent();
+	void test_paste_internal_transition();
 
 private:
 	static bool rectsOverlap(const Cyberiada::Rect& a, const Cyberiada::Rect& b);
@@ -502,6 +503,51 @@ void TestModel::test_paste_grows_packed_parent()
 	QVERIFY(p->get_geometry_rect().width > before);   // grew to hold the copy
 	Cyberiada::Rect cr = static_cast<const Cyberiada::ElementCollection*>(copy)->get_geometry_rect();
 	QVERIFY(!rectsOverlap(cr, a->get_geometry_rect()));
+}
+
+static int countTransitions(Cyberiada::ElementCollection* sm)
+{
+	int n = 0;
+	const Cyberiada::ElementList& kids = sm->get_children();
+	for (Cyberiada::ElementList::const_iterator i = kids.begin(); i != kids.end(); i++) {
+		if ((*i)->get_type() == Cyberiada::elementTransition) n++;
+	}
+	return n;
+}
+
+void TestModel::test_paste_internal_transition()
+{
+	// pasting a composite that owns an internal transition (the parent to its own
+	// descendant) reproduces that transition on the copy, wired to the copied ids
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	Cyberiada::StateMachine* sm = static_cast<Cyberiada::StateMachine*>(model->idToElement("G"));
+	QVERIFY(sm);
+	Cyberiada::State* p = model->newState(sm, "PI", Cyberiada::Action(), Cyberiada::Rect(0, 0, 300, 200));
+	Cyberiada::State* c = model->newState(p, "CI", Cyberiada::Action(), Cyberiada::Rect(0, 0, 120, 80));
+	QVERIFY(p && c);
+	Cyberiada::Transition* t = model->newTransition(sm, Cyberiada::transitionExternal, p, c, Cyberiada::Action());
+	QVERIFY(t);
+
+	int before = countTransitions(sm);
+	Cyberiada::Element* copy = model->pasteElement(sm, p);
+	QVERIFY(copy);
+	QCOMPARE(countTransitions(sm), before + 1);   // the copy carries its own internal transition
+
+	// the reproduced transition connects the copied subtree, not the original p/c
+	Cyberiada::ElementCollection* copyCol = static_cast<Cyberiada::ElementCollection*>(copy);
+	Cyberiada::ID copyId = copy->get_id();
+	bool found = false;
+	const Cyberiada::ElementList& kids = sm->get_children();
+	for (Cyberiada::ElementList::const_iterator i = kids.begin(); i != kids.end(); i++) {
+		if ((*i)->get_type() != Cyberiada::elementTransition) continue;
+		Cyberiada::Transition* tr = static_cast<Cyberiada::Transition*>(*i);
+		if (tr->source_element_id() != copyId) continue;
+		Cyberiada::Element* tgt = model->idToElement(tr->target_element_id().c_str());
+		QVERIFY(tgt && tgt->get_parent() == copyCol);   // the copied child, inside the copy
+		QVERIFY(tr->target_element_id() != c->get_id());
+		found = true;
+	}
+	QVERIFY(found);
 }
 
 QTEST_MAIN(TestModel)
