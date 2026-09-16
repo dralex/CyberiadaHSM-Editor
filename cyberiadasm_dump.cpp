@@ -138,13 +138,17 @@ static void dumpTextElement(CyberiadaSMEditorScene* scene, Cyberiada::Element* e
 			EditableTextItem* text = texts[i];
 			QFont font = text->font();
 			QRectF r = text->boundingRect();
-			QString line = QString("{id: '%1', role: %2, font: '%3' %4%5, pos: (%6; %7), size: (%8; %9), text: '%10'}")
+			// pos is local to the element; abs is the scene position of the text
+			// item, so a checker can probe the ink without re-deriving the layout
+			QPointF sp = text->scenePos();
+			QString line = QString("{id: '%1', role: %2, font: '%3' %4%5, pos: (%6; %7), abs: (%8; %9), size: (%10; %11), text: '%12'}")
 				.arg(QString::fromStdString(id))
 				.arg(fontRoleName(text->getFontRole()))
 				.arg(font.family())
 				.arg(SettingsManager::instance().getFontSize(text->getFontRole()))
 				.arg(font.bold() ? " bold" : "")
 				.arg(roundedNumber(text->pos().x()), roundedNumber(text->pos().y()))
+				.arg(roundedNumber(sp.x()), roundedNumber(sp.y()))
 				.arg(roundedNumber(r.width()), roundedNumber(r.height()))
 				.arg(escapeText(text->toPlainText()));
 			os << std::string(size_t(depth) * 2, ' ')

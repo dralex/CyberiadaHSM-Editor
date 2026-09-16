@@ -1,9 +1,9 @@
 == text
-    Composite State: {id: 'n0', role: title, font: 'Cyberiada Mono' 12 bold, pos: (-42; 0), size: (85; 27), text: 'Parent 0'}
-      Simple State: {id: 'n0::n0', role: title, font: 'Cyberiada Mono' 12 bold, pos: (-47; -13), size: (95; 27), text: 'State 0-0'}
-      Composite State: {id: 'n0::n1', role: title, font: 'Cyberiada Mono' 12 bold, pos: (-67; 0), size: (133; 27), text: 'Subparent 0-1'}
-        Simple State: {id: 'n0::n1::n0', role: title, font: 'Cyberiada Mono' 12 bold, pos: (-57; -13), size: (114; 27), text: 'State 0-1-0'}
-        Simple State: {id: 'n0::n1::n1', role: title, font: 'Cyberiada Mono' 12 bold, pos: (-57; -13), size: (114; 27), text: 'State 0-1-1'}
-    Composite State: {id: 'n1', role: title, font: 'Cyberiada Mono' 12 bold, pos: (-42; 0), size: (85; 27), text: 'Parent 1'}
-      Simple State: {id: 'n1::n0', role: title, font: 'Cyberiada Mono' 12 bold, pos: (-47; -13), size: (95; 27), text: 'State 1-0'}
-      Simple State: {id: 'n1::n1', role: title, font: 'Cyberiada Mono' 12 bold, pos: (-47; -13), size: (95; 27), text: 'State 1-1'}
+    Composite State: {id: 'n0', role: title, font: 'Cyberiada Mono' 12 bold, pos: (-42; 0), abs: (-42; 0), size: (85; 27), text: 'Parent 0'}
+      Simple State: {id: 'n0::n0', role: title, font: 'Cyberiada Mono' 12 bold, pos: (-47; -13), abs: (-47; 0), size: (95; 27), text: 'State 0-0'}
+      Composite State: {id: 'n0::n1', role: title, font: 'Cyberiada Mono' 12 bold, pos: (-67; 0), abs: (-67; 14), size: (133; 27), text: 'Subparent 0-1'}
+        Simple State: {id: 'n0::n1::n0', role: title, font: 'Cyberiada Mono' 12 bold, pos: (-57; -13), abs: (-57; 14), size: (114; 27), text: 'State 0-1-0'}
+        Simple State: {id: 'n0::n1::n1', role: title, font: 'Cyberiada Mono' 12 bold, pos: (-57; -13), abs: (-57; 14), size: (114; 27), text: 'State 0-1-1'}
+    Composite State: {id: 'n1', role: title, font: 'Cyberiada Mono' 12 bold, pos: (-42; 0), abs: (-42; 0), size: (85; 27), text: 'Parent 1'}
+      Simple State: {id: 'n1::n0', role: title, font: 'Cyberiada Mono' 12 bold, pos: (-47; -13), abs: (-47; 0), size: (95; 27), text: 'State 1-0'}
+      Simple State: {id: 'n1::n1', role: title, font: 'Cyberiada Mono' 12 bold, pos: (-47; -13), abs: (-47; 0), size: (95; 27), text: 'State 1-1'}

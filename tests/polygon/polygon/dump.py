@@ -420,7 +420,8 @@ TEXT_ROLE = {"title": "title", "action": "action", "transition": "label",
 
 TEXT_LINE = re.compile(
     r"^ *(.+?): \{id: '(.*?)', role: (.+?), font: '(.*?)' (\d+)( bold)?, "
-    r"pos: \(([^;]+); ([^)]+)\), size: \(([^;]+); ([^)]+)\), text: '(.*)'\}$")
+    r"pos: \(([^;]+); ([^)]+)\), abs: \(([^;]+); ([^)]+)\), "
+    r"size: \(([^;]+); ([^)]+)\), text: '(.*)'\}$")
 
 
 @dataclass
@@ -432,6 +433,7 @@ class TextItem:
     points: int
     bold: bool
     pos: tuple         # local to the element origin, as the scene item
+    abs: tuple         # the text item's absolute scene position
     size: tuple
     text: str          # the escaped one-line form (\n for a newline)
 
@@ -451,10 +453,11 @@ def parse_text(text):
         m = TEXT_LINE.match(line)
         if not m:
             raise DumpError("malformed text line: %s" % line)
-        kind, id_, role, family, points, bold, px, py, w, h, body = m.groups()
+        kind, id_, role, family, points, bold, px, py, ax, ay, w, h, body = m.groups()
         items.append(TextItem(kind=kind.strip(), id=id_, role=role, family=family,
                               points=int(points), bold=bool(bold),
-                              pos=(float(px), float(py)), size=(float(w), float(h)), text=body))
+                              pos=(float(px), float(py)), abs=(float(ax), float(ay)),
+                              size=(float(w), float(h)), text=body))
     return items
 
 
@@ -623,12 +626,9 @@ class Dump:
         return {"source": source, "target": target, "vertices": vertices, "segments": segments}
 
     def abs_box(self, text_item):
-        """The absolute rect of a text item: its element's scene origin + pos."""
-        item = self.scene_items().get(text_item.id)
-        if item is None:
-            return None
-        ox, oy = item.origin
-        return (ox + text_item.pos[0], oy + text_item.pos[1], text_item.size[0], text_item.size[1])
+        """The absolute rect of a text item: the scene position it reports (the
+        dump already accounts for the intermediate region offsets) plus its size."""
+        return (text_item.abs[0], text_item.abs[1], text_item.size[0], text_item.size[1])
 
 
 def parse_dump(text):
