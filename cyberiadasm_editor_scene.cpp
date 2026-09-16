@@ -307,6 +307,14 @@ void CyberiadaSMEditorScene::slotRowsInserted(const QModelIndex& parent, int fir
             addElementItem(element, parent_item);
         }
     }
+    // a state that just gained its first child became composite: re-lay-out its
+    // title (centred -> top header) - the region was created above by graphicsParentFor
+    if (Cyberiada::Element* parentEl = model->indexToElement(parent)) {
+        if (CyberiadaSMEditorAbstractItem* st =
+                dynamic_cast<CyberiadaSMEditorStateItem*>(elementIdToItemMap.value(parentEl->get_id()))) {
+            st->syncFromModel();
+        }
+    }
     noteModified(parent);
     update();
 }
