@@ -58,14 +58,16 @@ void CyberiadaSMGraphicsView::setCurrentTool(ToolType tool) {
     setDragMode(QGraphicsView::NoDrag);
     panning = false;
 
-    unsetCursor();
+    // a QGraphicsView shows the viewport()'s cursor and overwrites the view's on
+    // hover, so the tool cursor must be set on the viewport to be visible
+    viewport()->unsetCursor();
 
     switch (currentTool) {
     case ToolType::Zoom:
-        setCursor(QPixmap(":/Icons/images/zoom-in-32.png"));
+        viewport()->setCursor(QPixmap(":/Icons/images/zoom-in-32.png"));
         break;
     case ToolType::Pan:
-        setCursor(Qt::OpenHandCursor);
+        viewport()->setCursor(Qt::OpenHandCursor);
         break;
     case ToolType::Transition:
     case ToolType::NewSM:
@@ -78,10 +80,10 @@ void CyberiadaSMGraphicsView::setCurrentTool(ToolType tool) {
     case ToolType::NewDeepHistory:
     case ToolType::NewComment:
     case ToolType::NewFormalComment:
-        setCursor(Qt::CrossCursor);
+        viewport()->setCursor(Qt::CrossCursor);
         break;
     default:
-        setCursor(Qt::ArrowCursor);
+        viewport()->setCursor(Qt::ArrowCursor);
         break;
     }
 }
@@ -126,7 +128,8 @@ void CyberiadaSMGraphicsView::applyViewState(const QString& state)
 }
 
 void CyberiadaSMGraphicsView::wheelEvent(QWheelEvent *event) {
-    if (event->modifiers() & Qt::ControlModifier){
+    // the zoom tool (or Ctrl) turns the wheel into zoom; every other tool scrolls
+    if (currentTool == ToolType::Zoom || (event->modifiers() & Qt::ControlModifier)) {
         zoomBy(event->angleDelta().y() > 0 ? 1.1 : 1.0 / 1.1);
     }
     else {
@@ -154,7 +157,7 @@ void CyberiadaSMGraphicsView::mousePressEvent(QMouseEvent *event)
     if (currentTool == ToolType::Pan && event->button() == Qt::LeftButton) {
         lastPanPos = event->pos();
         panning = true;
-        setCursor(Qt::ClosedHandCursor);
+        viewport()->setCursor(Qt::ClosedHandCursor);
         event->accept();
         return;
     }
@@ -184,7 +187,7 @@ void CyberiadaSMGraphicsView::mouseReleaseEvent(QMouseEvent *event)
 {
     if (currentTool == ToolType::Pan && panning && event->button() == Qt::LeftButton) {
         panning = false;
-        setCursor(Qt::OpenHandCursor);
+        viewport()->setCursor(Qt::OpenHandCursor);
         event->accept();
         return;
     }

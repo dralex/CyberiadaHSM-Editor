@@ -57,6 +57,8 @@ static double DEFAULT_SCENE_WIDTH = 1000;
 static double DEFAULT_SCENE_HEIGHT = 1000;
 static double DEFAULT_SCENE_DELTA = 0.2;
 static double DEFAULT_SCENE_BORDER_MARGIN = 50;
+// padding around the content so the view always has a scroll range to pan/wheel into
+static double DEFAULT_SCENE_PAN_MARGIN = 2000;
 
 // report a creation error: a modal box in the GUI, a stderr line in batch mode
 // (a modal exec() would hang the headless batch run)
@@ -496,9 +498,13 @@ void CyberiadaSMEditorScene::loadScene(bool fit)
         }
     }
     clearSelection();
-    setSceneRect(diagramRect());
+    // pad the scene rect so the view keeps a scroll range at any zoom (pan/wheel);
+    // the fit still frames the content, not the padding
+    QRectF content = diagramRect();
+    double m = DEFAULT_SCENE_PAN_MARGIN;
+    setSceneRect(content.adjusted(-m, -m, m, m));
     if (fit && !views().isEmpty()) {
-        views().first()->fitInView(sceneRect(), Qt::KeepAspectRatio);
+        views().first()->fitInView(content, Qt::KeepAspectRatio);
     }
     update();
 }
