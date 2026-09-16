@@ -78,7 +78,11 @@ kinds share the runner, the oracles and the register and differ in the prompt.
 | D drawing | empty document | draw one named diagram (a drawing story) cleanly from scratch; the intro presents the editor's rules so the drawing stays well-formed; no fuzzer burst | none; the stress profile runs each round |
 
 Mission A exercises the creation paths and grows the corpus: every accepted
-reproduction is stored as a new starting document. Mission B exercises the
+reproduction is stored as a new starting document. The corpus also carries real
+diagrams adopted from the sibling repositories (a vacuum robot, ROS turtle
+missions, arduino-course microwave/semaphore/dog/hoover — see `corpus/SOURCES.md`),
+each re-saved to the native format and verified law-clean and save-reopen stable.
+Mission B exercises the
 editing paths in sequences nobody planned. Each theme carries a `start` rule
 (`corpus`, `small` or `empty`) so a story can begin from an empty document,
 and an optional `forms` restriction. The stories: nesting under change,

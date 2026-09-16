@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns">
+  <data key="gFormat">Cyberiada-GraphML-1.0</data>
+  <key id="gFormat" for="graphml" attr.name="format" attr.type="string"/>
+  <key id="dName" for="graph" attr.name="name" attr.type="string"/>
+  <key id="dName" for="node" attr.name="name" attr.type="string"/>
+  <key id="dStateMachine" for="graph" attr.name="stateMachine" attr.type="string"/>
+  <key id="dRegion" for="graph" attr.name="region" attr.type="string"/>
+  <key id="dSubmachineState" for="node" attr.name="submachineState" attr.type="string"/>
+  <key id="dGeometry" for="graph" attr.name="geometry"/>
+  <key id="dGeometry" for="node" attr.name="geometry"/>
+  <key id="dGeometry" for="edge" attr.name="geometry"/>
+  <key id="dSourcePoint" for="edge" attr.name="sourcePoint"/>
+  <key id="dTargetPoint" for="edge" attr.name="targetPoint"/>
+  <key id="dLabelGeometry" for="edge" attr.name="labelGeometry"/>
+  <key id="dNote" for="node" attr.name="note" attr.type="string"/>
+  <key id="dVertex" for="node" attr.name="vertex" attr.type="string"/>
+  <key id="dData" for="node" attr.name="data" attr.type="string"/>
+  <key id="dData" for="edge" attr.name="data" attr.type="string"/>
+  <key id="dPivot" for="edge" attr.name="pivot" attr.type="string"/>
+  <key id="dChunk" for="edge" attr.name="chunk" attr.type="string"/>
+  <key id="dCollapsed" for="node" attr.name="collapsed" attr.type="string"/>
+  <key id="dMarkup" for="node" attr.name="markup" attr.type="string"/>
+  <key id="dColor" for="node" attr.name="color" attr.type="string"/>
+  <key id="dColor" for="edge" attr.name="color" attr.type="string"/>
+  <key id="dFormalName" for="graph" attr.name="formalName" attr.type="string"/>
+  <key id="dFormalName" for="node" attr.name="formalName" attr.type="string"/>
+  <graph id="G" edgedefault="directed">
+    <data key="dStateMachine"/>
+    <data key="dName">Робот-пылесос</data>
+    <node id="nMeta">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_META</data>
+      <data key="dData">standardVersion/ 1.0
+
+platform/ BerlogaAcademyHoover
+
+geometry/ full
+
+name/ Стандартный пылесос
+
+author/ Матросов В.М.
+
+contact/ matrosov@mail.ru
+
+description/ Пример описания схемы, который может быть многострочным,
+потому что так удобнее
+
+target/ Hoover
+
+cyberiadaEditorView/ 1.32231 -62 0</data>
+    </node>
+    <node id="init">
+      <data key="dVertex">initial</data>
+      <data key="dGeometry">
+        <point x="230.625000" y="120.125000"/>
+      </data>
+    </node>
+    <node id="n0">
+      <data key="dName">Уборка мусора</data>
+      <data key="dGeometry">
+        <rect x="571.612500" y="111.925000" width="412.269000" height="330.481000"/>
+      </data>
+      <graph id="n0:" edgedefault="directed">
+        <node id="n0::n1">
+          <data key="dName">Сближение</data>
+          <data key="dData">entry/
+МодульДвижения.ДвигатьсяКЦели()
+</data>
+          <data key="dGeometry">
+            <rect x="34.118750" y="40.256250" width="344.875000" height="86.906250"/>
+          </data>
+        </node>
+        <node id="n0::n2">
+          <data key="dName">Уборка</data>
+          <data key="dData">entry/
+Пылесос.УбратьЦель()
+</data>
+          <data key="dGeometry">
+            <rect x="35.631250" y="214.981250" width="342.606250" height="65.700000"/>
+          </data>
+        </node>
+      </graph>
+    </node>
+    <node id="n3">
+      <data key="dName">Скан</data>
+      <data key="dData">entry/
+Сенсор.ПоискЦелиПоДистанции(мин)
+
+exit/
+Сенсор.ОстановкаПоиска()
+</data>
+      <data key="dGeometry">
+        <rect x="52.500000" y="159.375000" width="346.250000" height="129.375000"/>
+      </data>
+    </node>
+    <edge id="init-n3" source="init" target="n3">
+      <data key="dTargetPoint">
+        <point x="178.125000" y="0.000000"/>
+      </data>
+    </edge>
+    <edge id="n0-n3" source="n0" target="n3">
+      <data key="dData">АнализаторЦели.ЦельУстранена/</data>
+      <data key="dGeometry">
+        <point x="-306.803100" y="264.703100"/>
+      </data>
+      <data key="dSourcePoint">
+        <point x="0.000000" y="264.703100"/>
+      </data>
+      <data key="dTargetPoint">
+        <point x="212.309400" y="129.375000"/>
+      </data>
+      <data key="dLabelGeometry">
+        <rect x="-291.615625" y="247.890625" width="277.500000" height="27.000000"/>
+      </data>
+    </edge>
+    <edge id="n0-n3-2" source="n0" target="n3">
+      <data key="dData">АнализаторЦели.ЦельПотеряна/</data>
+      <data key="dGeometry">
+        <point x="-407.434400" y="303.810200"/>
+      </data>
+      <data key="dSourcePoint">
+        <point x="0.000000" y="303.810200"/>
+      </data>
+      <data key="dTargetPoint">
+        <point x="111.678100" y="129.375000"/>
+      </data>
+      <data key="dLabelGeometry">
+        <rect x="-347.478125" y="290.821875" width="267.875000" height="27.000000"/>
+      </data>
+    </edge>
+    <edge id="n3-n0::n1" source="n3" target="n0::n1">
+      <data key="dData">Сенсор.ЦельПолучена/</data>
+      <data key="dSourcePoint">
+        <point x="345.937500" y="44.830300"/>
+      </data>
+      <data key="dTargetPoint">
+        <point x="1.384400" y="38.590300"/>
+      </data>
+      <data key="dLabelGeometry">
+        <rect x="354.556250" y="13.193750" width="190.875000" height="27.000000"/>
+      </data>
+    </edge>
+    <edge id="n0::n1-n0::n2" source="n0::n1" target="n0::n2">
+      <data key="dData">Пылесос.ЦельВошлаВЗонуДействия/</data>
+      <data key="dSourcePoint">
+        <point x="280.311800" y="86.906300"/>
+      </data>
+      <data key="dTargetPoint">
+        <point x="278.799300" y="0.000000"/>
+      </data>
+      <data key="dLabelGeometry">
+        <rect x="146.400000" y="132.571875" width="296.750000" height="27.000000"/>
+      </data>
+    </edge>
+    <edge id="n0::n2-n0::n1" source="n0::n2" target="n0::n1">
+      <data key="dData">Пылесос.ЦельВышлаИзЗоныДействия/</data>
+      <data key="dSourcePoint">
+        <point x="73.154600" y="0.000000"/>
+      </data>
+      <data key="dTargetPoint">
+        <point x="74.667100" y="86.906300"/>
+      </data>
+      <data key="dLabelGeometry">
+        <rect x="-97.240625" y="-71.925000" width="306.375000" height="27.000000"/>
+      </data>
+    </edge>
+  </graph>
+</graphml>

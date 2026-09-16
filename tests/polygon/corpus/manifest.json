@@ -13,7 +13,15 @@
     "sources",
     "meta",
     "empty-actions",
-    "multiline-actions"
+    "multiline-actions",
+    "vacuum-robot",
+    "turtle-square",
+    "maze-solver",
+    "microwave",
+    "semaphore",
+    "semaphore-hierarchy",
+    "dog",
+    "simple-hoover"
   ],
   "small": "small.graphml"
 }

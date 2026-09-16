@@ -62,6 +62,48 @@
       "subject": "the abstract hierarchy test machine covering transition topologies up to four levels of nesting",
       "hint": "Top initial `/ foo=0` -> composite S. Nest S > S1 > S11 on one branch and S > S2 > S21 > S211 on another (four levels deep). Every state has empty `entry/` and `exit/`. Some states carry internal reactions with guards, e.g. `I [foo] / foo=0`, `I [!foo] / foo=1`, and a self `D [foo]`. Events A..H connect states across the levels (local, self and cross-hierarchy). S --TERMINATE--> a final state. Build it level by level, parents before children. (Depth-4 nesting.)",
       "budget": [28, 45]
+    },
+    {
+      "name": "toaster-oven-history",
+      "source": "PSiCC2 fig 5.12",
+      "subject": "a toaster oven that shuts the heater off and lights a lamp when the door opens, then on closing resumes the exact substate it was in",
+      "hint": "Top initial -> composite DoorClosed (`exit / save history`) with inner initial -> Off; DoorClosed contains Off and a composite Heating (`entry / heater_on`, `exit / heater_off`) holding Toasting and Baking, and a DEEP HISTORY pseudostate (H*). DoorClosed --TOAST--> Toasting, --BAKE--> Baking, --OFF--> Off. DoorClosed --DOOR_OPEN--> DoorOpen (`entry / lamp_on`, `exit / lamp_off`); DoorOpen --DOOR_CLOSE--> the deep history pseudostate, so closing restores the last active substate. Place the deep-history vertex inside DoorClosed and route DOOR_CLOSE to it.",
+      "budget": [18, 30]
+    },
+    {
+      "name": "ultimate-hook",
+      "source": "PSiCC2 fig 5.1",
+      "subject": "the Ultimate Hook pattern: a generic superstate supplies default behaviour that a nested specific substate overrides",
+      "hint": "Top initial -> composite Generic (`entry/`, `exit/`, internal reactions `A / defaultA()` and `B / defaultB()`) with inner initial -> Specific (`entry/`, `exit/`, an internal `A / specificA()` that overrides the parent's A). Generic --C--> Generic (a self-transition, the reset idiom). Generic --D--> a final state (terminating the machine).",
+      "budget": [12, 20]
+    },
+    {
+      "name": "deferred-event",
+      "source": "PSiCC2 fig 5.6",
+      "subject": "a transaction server that postpones a new request while busy and recalls it when it returns to idle",
+      "hint": "Top initial -> Idle (`entry / recall()`). Composite Busy (inner initial -> Receiving) holds Receiving and Authorizing and carries an internal reaction `NEW_REQUEST / defer()`. Idle --NEW_REQUEST--> Receiving; Receiving --RECEIVED--> Authorizing; Authorizing --AUTHORIZED--> Idle.",
+      "budget": [12, 20]
+    },
+    {
+      "name": "reuse-one-shot-timer",
+      "source": "PSiCC2 fig 7.8",
+      "subject": "three states showing how to safely reuse a one-shot timer when a button press races the timer expiry",
+      "hint": "Three flat states A, B, C. A has `entry / arm(timer1)`, `exit / g1 = disarm(timer1)` and an internal `TIMER1 [else] / ...`. B has an internal `TIMER1 [!g1] / g1 = true`. C has `entry / arm(timer1)`, `exit / disarm(timer1)`. A --BUTTON_PRESS--> B; B --TIMER1 [g1]--> C.",
+      "budget": [12, 20]
+    },
+    {
+      "name": "tunnel",
+      "source": "PSiCC2 fig 1.7",
+      "subject": "a game 'tunnel' that runs a demo, active play and game-over, with a two-level screen-saver, ending when the player quits",
+      "hint": "Top initial -> Demo (drilling two levels down). Composite Active (internal `MINE_DISABLED / ...`) contains Demo (`entry / arm 20s timer`, `exit / disarm`), Playing, GameOver, and a composite ScreenSaver (inner initial -> OnePixel) holding OnePixel and NPixels. Demo --PLAYER_TRIGGER--> Playing, --SCREEN_TIMEOUT--> ScreenSaver; Playing --GAME_OVER--> GameOver; ScreenSaver --PLAYER_TRIGGER--> Playing; ScreenSaver internal SCREEN_TIMEOUT toggles OnePixel<->NPixels. Active --PLAYER_QUIT--> a final state.",
+      "budget": [18, 30]
+    },
+    {
+      "name": "pelican-crossing",
+      "source": "PSiCC2 fig 12.8",
+      "subject": "a pedestrian crossing that alternates car green/yellow with pedestrian walk/flashing, plus an operator flashing offline mode",
+      "hint": "Top initial -> composite Operational (`entry / cars RED, peds DONT_WALK`) with two nested composites: CarsEnabled (`exit / cars RED`) holding a composite CarsGreen (`entry / cars GREEN, arm timeout`) with substates CarsGreenNoPed and CarsGreenPedWait, plus CarsGreenInt and CarsYellow; and PedsEnabled (`exit / peds DONT_WALK`) holding PedsWalk and PedsFlash. Also a composite Offline holding OffFlash and OffPause. Transitions: CarsGreenNoPed --PEDS_WAITING--> CarsGreenPedWait and --TIMEOUT--> CarsGreenInt; CarsGreenInt --PEDS_WAITING--> CarsYellow; CarsGreenPedWait --TIMEOUT--> CarsYellow; CarsYellow --TIMEOUT--> PedsEnabled; PedsWalk --TIMEOUT--> PedsFlash; PedsFlash has two guarded internal TIMEOUT reactions and --TIMEOUT [ctr==0]--> CarsEnabled; Operational --OFF--> Offline; Offline --ON--> Operational; OffFlash --TIMEOUT--> OffPause and back. Build it level by level.",
+      "budget": [30, 50]
     }
   ]
 }

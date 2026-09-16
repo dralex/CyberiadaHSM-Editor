@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns">
+  <data key="gFormat">Cyberiada-GraphML-1.0</data>
+  <key id="gFormat" for="graphml" attr.name="format" attr.type="string"/>
+  <key id="dName" for="graph" attr.name="name" attr.type="string"/>
+  <key id="dName" for="node" attr.name="name" attr.type="string"/>
+  <key id="dStateMachine" for="graph" attr.name="stateMachine" attr.type="string"/>
+  <key id="dRegion" for="graph" attr.name="region" attr.type="string"/>
+  <key id="dSubmachineState" for="node" attr.name="submachineState" attr.type="string"/>
+  <key id="dGeometry" for="graph" attr.name="geometry"/>
+  <key id="dGeometry" for="node" attr.name="geometry"/>
+  <key id="dGeometry" for="edge" attr.name="geometry"/>
+  <key id="dSourcePoint" for="edge" attr.name="sourcePoint"/>
+  <key id="dTargetPoint" for="edge" attr.name="targetPoint"/>
+  <key id="dLabelGeometry" for="edge" attr.name="labelGeometry"/>
+  <key id="dNote" for="node" attr.name="note" attr.type="string"/>
+  <key id="dVertex" for="node" attr.name="vertex" attr.type="string"/>
+  <key id="dData" for="node" attr.name="data" attr.type="string"/>
+  <key id="dData" for="edge" attr.name="data" attr.type="string"/>
+  <key id="dPivot" for="edge" attr.name="pivot" attr.type="string"/>
+  <key id="dChunk" for="edge" attr.name="chunk" attr.type="string"/>
+  <key id="dCollapsed" for="node" attr.name="collapsed" attr.type="string"/>
+  <key id="dMarkup" for="node" attr.name="markup" attr.type="string"/>
+  <key id="dColor" for="node" attr.name="color" attr.type="string"/>
+  <key id="dColor" for="edge" attr.name="color" attr.type="string"/>
+  <key id="dFormalName" for="graph" attr.name="formalName" attr.type="string"/>
+  <key id="dFormalName" for="node" attr.name="formalName" attr.type="string"/>
+  <graph id="G0" edgedefault="directed">
+    <data key="dStateMachine"/>
+    <data key="dName">Микроволновка с грилем</data>
+    <data key="dGeometry">
+      <rect x="-456.747200" y="-151.058500" width="1085.907000" height="491.542000"/>
+    </data>
+    <node id="nMeta">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_META</data>
+      <data key="dData">standardVersion/ 1.0
+
+geometry/ full
+
+cyberiadaEditorView/ 1.70272 0 0
+
+transitionOrder/ actionFirst
+
+eventPropagation/ block</data>
+    </node>
+    <node id="n0">
+      <data key="dName">Нагрев</data>
+      <data key="dData">entry/
+heater_on();
+
+exit/
+heater_off();
+</data>
+      <data key="dGeometry">
+        <rect x="52.808700" y="52.798800" width="579.364000" height="396.160000"/>
+      </data>
+      <graph id="n0:" edgedefault="directed">
+        <node id="n2">
+          <data key="dName">Поджаривание</data>
+          <data key="dData">entry/
+arm_time_event(me-&gt;toast_color);
+
+exit/
+disarm_time_event();
+</data>
+          <data key="dGeometry">
+            <rect x="45.068108" y="71.539001" width="429.131012" height="83.753845"/>
+          </data>
+        </node>
+        <node id="n0::n0">
+          <data key="dVertex">initial</data>
+          <data key="dGeometry">
+            <point x="545.905884" y="115.195732"/>
+          </data>
+        </node>
+        <node id="n0::n1">
+          <data key="dName">Выпекание</data>
+          <data key="dData">entry/
+set_temperature(me-&gt;teperature);
+
+exit/
+set_temperature(0);
+</data>
+          <data key="dGeometry">
+            <rect x="44.608097" y="235.503609" width="429.131012" height="83.753845"/>
+          </data>
+        </node>
+      </graph>
+    </node>
+    <node id="n1">
+      <data key="dName">Дверца открыта</data>
+      <data key="dData">entry/
+internal_lamp_on();
+
+exit/
+internal_lamp_off();
+</data>
+      <data key="dGeometry">
+        <rect x="780.477417" y="172.307627" width="259.637695" height="129.846237"/>
+      </data>
+    </node>
+    <node id="n3">
+      <data key="dVertex">initial</data>
+      <data key="dGeometry">
+        <point x="715.180679" y="76.787415"/>
+      </data>
+    </node>
+    <edge id="n0-n1" source="n0" target="n1">
+      <data key="dData">ОТКРЫТЬ_ДВЕРЦУ/</data>
+      <data key="dGeometry">
+        <point x="859.075800" y="70.493700"/>
+      </data>
+      <data key="dSourcePoint">
+        <point x="579.363900" y="70.493700"/>
+      </data>
+      <data key="dTargetPoint">
+        <point x="131.407100" y="0.000000"/>
+      </data>
+      <data key="dLabelGeometry">
+        <rect x="649.782776" y="58.219238" width="142.750000" height="27.000000"/>
+      </data>
+    </edge>
+    <edge id="n3-n0" source="n3" target="n0">
+      <data key="dTargetPoint">
+        <point x="579.363900" y="23.643200"/>
+      </data>
+    </edge>
+    <edge id="n0::n0-n2" source="n0::n0" target="n2">
+    </edge>
+    <edge id="n1-n0" source="n1" target="n0">
+      <data key="dData">ЗАКРЫТЬ_ДВЕРЦУ/</data>
+      <data key="dGeometry">
+        <point x="132.712900" y="227.870400"/>
+      </data>
+      <data key="dSourcePoint">
+        <point x="132.712900" y="129.846200"/>
+      </data>
+      <data key="dTargetPoint">
+        <point x="579.363900" y="346.683800"/>
+      </data>
+    </edge>
+    <edge id="n0-n0::n1" source="n0" target="n0::n1">
+      <data key="dData">ВЫПЕКАТЬ/</data>
+      <data key="dGeometry">
+        <point x="203.786500" y="207.645100"/>
+      </data>
+      <data key="dSourcePoint">
+        <point x="0.000000" y="209.218700"/>
+      </data>
+      <data key="dTargetPoint">
+        <point x="158.249100" y="0.000000"/>
+      </data>
+      <data key="dLabelGeometry">
+        <rect x="71.606781" y="194.653993" width="85.000000" height="27.000000"/>
+      </data>
+    </edge>
+    <edge id="n0-n2" source="n0" target="n2">
+      <data key="dData">ПОДЖАРИВАТЬ/</data>
+      <data key="dGeometry">
+        <point x="307.741300" y="199.111500"/>
+      </data>
+      <data key="dSourcePoint">
+        <point x="579.363900" y="199.111500"/>
+      </data>
+      <data key="dTargetPoint">
+        <point x="263.534200" y="83.753800"/>
+      </data>
+      <data key="dLabelGeometry">
+        <rect x="395.529999" y="186.743611" width="113.875000" height="27.000000"/>
+      </data>
+    </edge>
+  </graph>
+</graphml>
