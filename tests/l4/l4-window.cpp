@@ -40,6 +40,8 @@ private slots:
 	void test_creation_tools_arm();
 	void test_view_roundtrip();
 	void test_pan_tool();
+	void test_tool_cursors();
+	void test_save_enablement();
 	void test_recent_files();
 	void test_menu_refactor();
 	void test_edit_action_gating();
@@ -170,6 +172,35 @@ void TestWindow::test_pan_tool()
 	// dragging up-left scrolls the content, so both scrollbar values increase
 	QVERIFY(window->sceneView->horizontalScrollBar()->value() > h0);
 	QVERIFY(window->sceneView->verticalScrollBar()->value() > v0);
+}
+
+void TestWindow::test_tool_cursors()
+{
+	// the tool cursor lives on the viewport (a QGraphicsView shows that one)
+	window->sceneView->setCurrentTool(ToolType::Pan);
+	QCOMPARE(window->sceneView->viewport()->cursor().shape(), Qt::OpenHandCursor);
+	window->sceneView->setCurrentTool(ToolType::NewState);
+	QCOMPARE(window->sceneView->viewport()->cursor().shape(), Qt::CrossCursor);
+	window->sceneView->setCurrentTool(ToolType::Select);
+	QCOMPARE(window->sceneView->viewport()->cursor().shape(), Qt::ArrowCursor);
+}
+
+void TestWindow::test_save_enablement()
+{
+	SettingsManager::instance().setInspectorMode(false);
+	QVERIFY(window->openDocument("diagrams/geometry.graphml"));
+	// a freshly loaded document is clean: Save off, Save As / Export on
+	QVERIFY(!window->actionSave->isEnabled());
+	QVERIFY(window->actionSaveAs->isEnabled());
+	QVERIFY(window->actionExport->isEnabled());
+	// an edit makes it modified -> Save on
+	QVERIFY(model->updateTitle(model->elementToIndex(model->idToElement("node-0-1")), "Edited"));
+	QVERIFY(window->actionSave->isEnabled());
+	// saving cleans it -> Save off again
+	QTemporaryDir dir;
+	QVERIFY(dir.isValid());
+	model->saveAsDocument(dir.filePath("save.graphml"), Cyberiada::formatCyberiada10);
+	QVERIFY(!window->actionSave->isEnabled());
 }
 
 void TestWindow::test_recent_files()

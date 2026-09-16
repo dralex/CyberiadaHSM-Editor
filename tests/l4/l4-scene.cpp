@@ -109,6 +109,8 @@ private slots:
 	void test_meta_locked();
 	void test_comment_relayout();
 	void test_history();
+	void test_promote_title();
+	void test_empty_action_deletes();
 	// runs last: it reloads and modifies the shared document
 	void test_directional_grow();
 
@@ -2280,6 +2282,61 @@ void TestScene::test_history()
 	// both are drawn by the shared point-vertex item
 	QVERIFY(dynamic_cast<CyberiadaSMEditorVertexItem*>(scene->getMap().value(sh->get_id())));
 	QVERIFY(dynamic_cast<CyberiadaSMEditorVertexItem*>(scene->getMap().value(dh->get_id())));
+}
+
+void TestScene::test_promote_title()
+{
+	// adding a child promotes a simple state to composite; its title must move
+	// from the centre to the top header
+	Cyberiada::ElementCollection* sm =
+		dynamic_cast<Cyberiada::ElementCollection*>(model->indexToElement(model->firstSMIndex()));
+	QVERIFY(sm);
+	Cyberiada::State* st = model->newState(sm, "PromoteMe", Cyberiada::Action(),
+										   Cyberiada::Rect(1900, 0, 200, 150));
+	QVERIFY(st && st->get_type() == Cyberiada::elementSimpleState);
+	CyberiadaSMEditorStateItem* item =
+		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value(st->get_id()));
+	QVERIFY(item);
+	StateTitle* title = stateTitle(item);
+	QVERIFY(title);
+	double centeredY = title->pos().y();
+
+	model->newInitial(st, Cyberiada::Point(0, 0));            // gains a child
+	QCOMPARE(st->get_type(), Cyberiada::elementCompositeState);
+	StateTitle* after = stateTitle(item);                    // the same item, re-laid-out
+	QVERIFY(after);
+	QVERIFY(after->pos().y() < centeredY - 1.0);             // moved up to the header
+}
+
+void TestScene::test_empty_action_deletes()
+{
+	// clearing an action's text removes the action instead of leaving a ghost
+	Cyberiada::ElementCollection* sm =
+		dynamic_cast<Cyberiada::ElementCollection*>(model->indexToElement(model->firstSMIndex()));
+	QVERIFY(sm);
+	Cyberiada::State* fresh = model->newState(sm, "EmptyActionHost", Cyberiada::Action(),
+											  Cyberiada::Rect(2200, 0, 160, 110));
+	QVERIFY(fresh);
+	QModelIndex index = model->elementToIndex(fresh);
+	QVERIFY(model->newAction(index, Cyberiada::actionEntry, QString(), QString(), "gone()"));
+	QCOMPARE(int(fresh->get_actions().size()), 1);
+
+	CyberiadaSMEditorStateItem* item =
+		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value(fresh->get_id()));
+	QVERIFY(item);
+	StateAction* action = nullptr;
+	for (QGraphicsItem* child : item->childItems())
+		if ((action = dynamic_cast<StateAction*>(child))) break;
+	QVERIFY(action);
+
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+	action->setTextInteractionFlags(Qt::TextEditorInteraction);
+	action->setFocus();
+	action->setPlainText("");            // clear the behaviour
+	action->clearFocus();                // commit -> empty -> delete
+	QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+	QCOMPARE(int(fresh->get_actions().size()), 0);
 }
 
 QTEST_MAIN(TestScene)

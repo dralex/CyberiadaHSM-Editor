@@ -53,6 +53,8 @@ private slots:
 	void test_paste_free_slot();
 	void test_paste_grows_packed_parent();
 	void test_paste_internal_transition();
+	void test_snap_to_grid();
+	void test_undo_reset();
 
 private:
 	static bool rectsOverlap(const Cyberiada::Rect& a, const Cyberiada::Rect& b);
@@ -548,6 +550,40 @@ void TestModel::test_paste_internal_transition()
 		found = true;
 	}
 	QVERIFY(found);
+}
+
+void TestModel::test_snap_to_grid()
+{
+	SettingsManager& sm = SettingsManager::instance();
+	bool oldSnap = sm.getSnapMode();
+	double oldGrid = sm.getGridSpacing();
+	sm.setGridSpacing(25);
+
+	sm.setSnapMode(false);
+	QCOMPARE(snapToGrid(QPointF(12, 63)), QPointF(12, 63));   // off: unchanged
+	sm.setSnapMode(true);
+	QCOMPARE(snapToGrid(QPointF(12, 63)), QPointF(0, 75));    // 12->0, 63->75
+	QCOMPARE(snapToGrid(QPointF(-12, -63)), QPointF(0, -75)); // rounds toward the nearest line
+
+	sm.setSnapMode(oldSnap);
+	sm.setGridSpacing(oldGrid);
+}
+
+void TestModel::test_undo_reset()
+{
+	// a scope left open by a lost release must not swallow the next edit
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	QUndoStack* stack = model->undoStack();
+	QModelIndex idx = model->elementToIndex(model->idToElement("node-0-1"));
+	int base = stack->count();
+
+	model->beginUndoStep("leaked");                 // a press whose release was lost
+	QVERIFY(model->updateTitle(idx, "X"));          // nests, no step pushed yet
+	QCOMPARE(stack->count(), base);
+	model->resetUndoGesture();                      // the next gesture drops the leak
+
+	QVERIFY(model->updateTitle(idx, "Y"));          // its own scope -> its own step
+	QCOMPARE(stack->count(), base + 1);
 }
 
 QTEST_MAIN(TestModel)
