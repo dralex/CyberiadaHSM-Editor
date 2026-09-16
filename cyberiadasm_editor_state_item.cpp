@@ -470,7 +470,23 @@ void CyberiadaSMEditorStateItem::onActionChanged(StateAction* signalOwner)
             break;
         }
     }
-    model->updateAction(model->elementToIndex(element), i, QString(), QString(), signalOwner->getBehavior());
+    if (i >= actions.size()) return;   // the owner is gone
+
+    QString behavior = signalOwner->getBehavior();
+    // an action emptied by the edit is deleted rather than kept as a ghost: an
+    // entry/exit with a blank behavior, or an internal transition with nothing left
+    const Cyberiada::State* state = dynamic_cast<const Cyberiada::State*>(element);
+    if (state && i < (int)state->get_actions().size()) {
+        const Cyberiada::Action& a = state->get_actions().at(i);
+        bool empty = behavior.trimmed().isEmpty() &&
+                     (a.get_type() != Cyberiada::actionTransition ||
+                      (!a.has_trigger() && !a.has_guard()));
+        if (empty) {
+            model->deleteAction(model->elementToIndex(element), i);
+            return;
+        }
+    }
+    model->updateAction(model->elementToIndex(element), i, QString(), QString(), behavior);
 }
 
 void CyberiadaSMEditorStateItem::slotInspectorModeChanged(bool on)
