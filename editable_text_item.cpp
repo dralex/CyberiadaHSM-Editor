@@ -162,7 +162,8 @@ void EditableTextItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *
 void EditableTextItem::setTextAlignment(Qt::Alignment alignment) {
     QTextOption textOption;
     textOption.setAlignment(alignment);
-    textOption.setWrapMode(QTextOption::WrapAnywhere);
+    // wrap at word boundaries (spaces), not mid-word; a long unbroken token overflows
+    textOption.setWrapMode(QTextOption::WordWrap);
     document()->setDefaultTextOption(textOption);
 }
 
