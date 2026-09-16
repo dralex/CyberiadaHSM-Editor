@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.3 (2026-09-15)
+**Document version:** 0.4 (2026-09-16)
 
 **Related authorities:**
 
@@ -132,8 +132,9 @@ over those rows; nothing more than the existing dump is needed.
 - `EDIT-SEM-1` MUST [U]: at most one initial pseudostate per region (per level);
   a second is refused. *PNST 984*
 - `EDIT-SEM-2` MUST [U]: transition endpoints follow the rules — a source is a state,
-  an initial pseudostate or a choice; a target is a state, a final state, a choice or a
-  terminate. *PNST 984*
+  an initial pseudostate or a choice; a target is a state, a final state, a choice, a
+  terminate or a history pseudostate (shallow or deep). A history pseudostate may also be
+  the source of at most one optional default transition; it is not required. *PNST 984*
 - `EDIT-SEM-3` SHOULD [U]: a choice pseudostate's outgoing transitions are
   guarded. Only one guard is allowed to have `else` guard. *PNST 984*
 
@@ -168,9 +169,12 @@ geometry as-is (see Modes and §4.10).
 - `EDIT-NODE-9` MUST [U]: a comment name is shown in the top of the element if set. *PNST
   984*
 - `EDIT-NODE-10` MUST [U]: a node with a colour is drawn in it — the outline of a state, a
-  composite, a state machine, a choice, a comment or a terminate; the fill of an initial;
-  the outer-circle outline and the inner-circle fill of a final. The selection highlight
-  overrides it while selected. *design*
+  composite, a state machine, a choice, a comment or a terminate; the fill of an initial or
+  a history pseudostate; the outer-circle outline and the inner-circle fill of a final. A
+  history pseudostate is drawn as a small circle like an initial, carrying an `H` (shallow)
+  or `H*` (deep) glyph. The selection highlight overrides it while selected. *design*
+- `EDIT-NODE-11` MUST [A]: an auto-sized comment's box follows its body text; changing the body
+  re-lays-out the box so its live geometry matches a save/reopen (keeps `EDIT-IO-1`). *design*
 
 ### 4.4 Transitions/comment links geometry and layout — EDGES
 
@@ -178,8 +182,8 @@ geometry as-is (see Modes and §4.10).
   elements border. An endpoint without a stored point lies on the border of its node
   toward the other end (a vertex at its centre), within tolerance. *design*
 - `EDIT-EDGE-2` MUST [U]: an endpoint of a point-based circle elements (initial
-  pseudostate or final state) lies on the border of the drawn element, not the
-  center. *design*
+  pseudostate, final state or history pseudostate) lies on the border of the drawn
+  element, not the center. *design*
 - `EDIT-EDGE-3` MUST [U]: an endpoint of the rest point-based elements (terminator) lies
   on the center. *design*
 - `EDIT-EDGE-4` MUST [U]: an endpoint of a choice element lies on vertexes of the
@@ -195,10 +199,12 @@ geometry as-is (see Modes and §4.10).
   only that point; the endpoints stay. *design*
 - `EDIT-EDGE-10` SHOULD [U]: transition (lines and polylines) should not cross state
   borders if possible *design*
-- `EDIT-EDGE-11` MUST [U]: a transition's label geometry is described by a rect while
- editing. *design*
+- `EDIT-EDGE-11` MUST [U]: a transition's label geometry is a rect — the live and persisted
+  geometry of the label, migrated from a legacy label point when only a point is stored. *design*
 - `EDIT-EDGE-12` SHOULD [U]: a transition's label sits near its path by default.
-- `EDIT-EDGE-13` MAY [A]: the label position and size can be changed. *design*
+- `EDIT-EDGE-13` SHOULD [A]: the label position and size can be changed — dragged to move,
+  resized by the corner handles under the selection tool, edited in the properties view, and
+  driven by the `label <x y w h>` verb. *design*
 - `EDIT-EDGE-14` MUST [U]: a transition with a colour draws its line and arrow in it; the
   selection highlight overrides it while selected. *design*
 
@@ -206,13 +212,13 @@ geometry as-is (see Modes and §4.10).
 
 - `EDIT-TEXT-1` MUST [U]: a state's or a state machine's title lies inside its owner; when
   editing a taller header grows the element and the other roles reflow, none moving
-  sideways.  *design*
+  sideways. A simple state becoming composite reflows its title the same way. *design*
 - `EDIT-TEXT-2` MUST [U]: an action keeps its `entry/ `, `exit/ ` or trigger
   prefix. If the behaviour text fits within the element width it is drawn in a single line,
-  otherwise the behaviour text is drawn from the next line. *design*
+  otherwise it wraps to the next line at a word boundary. *design*
 - `EDIT-TEXT-3` MUST [A]: a title, an action text, or an edge label is edited in place. *design*
-- `EDIT-TEXT-4` SHOULD [A]: if an edge label text no longer fits the label rect, the
-  text is drawn wrapped. *design*
+- `EDIT-TEXT-4` MUST [A]: if an edge label text no longer fits the label rect, it wraps at
+  a word boundary. *design*
 
 ### 4.6 Tools and interaction — TOOL
 
@@ -230,8 +236,14 @@ geometry as-is (see Modes and §4.10).
 - `EDIT-TOOL-6` MUST [A]: while the selection tool is used a drag moves the element;
   dragging a child past the parent border grows the parent (the interactive side of
   `EDIT-NODE-2`).  *design*
-- `EDIT-TOOL-7` MUST [I]: the view tools (pan, zoom) change only the viewport; the
-  document model and the scene geometry in the dump are unchanged. *design*
+- `EDIT-TOOL-7` MUST [I]: the view tools (pan, zoom — first-class tools with the `pan`/`zoom`
+  verbs) change only the viewport; the document model and the scene geometry in the dump are
+  unchanged. Zoom-to-content frames a rect-less state machine, and the viewport is restored after
+  a layout pass. *design*
+- `EDIT-TOOL-8` MUST [A]: with snap-to-grid on (the toolbar toggle), a placed, moved or resized
+  geometry snaps to the grid spacing; with it off the geometry is unrounded. *design*
+- `EDIT-TOOL-9` MUST [A]: holding `Alt` suspends snap-to-grid while it is held. *design*
+- `EDIT-TOOL-10` MUST [A]: holding `Ctrl` locks a move to a single axis (the dominant one). *design*
 
 ### 4.7 History — HIST
 
@@ -241,8 +253,8 @@ geometry as-is (see Modes and §4.10).
 - `EDIT-HIST-3` MUST [I]: undo-all returns to the initial document; redo-all to
   the final. Undo is bounded by the first version of the document opened. Redo line is
   dropped as soon as the document was changed right after the undo operation. *design*
-- `EDIT-HIST-4` MUST [I]: a canvas gesture (press … release) is one undo step.
-  *design*
+- `EDIT-HIST-4` MUST [I]: a canvas gesture (press … release) is one undo step; a
+  transition-drawing gesture commits one undo step per completed transition. *design*
 
 ### 4.8 Persistence — IO
 
@@ -256,7 +268,12 @@ geometry as-is (see Modes and §4.10).
   through save and reopen. *PNST 1044.*
 - `EDIT-IO-5` MUST [A]: an element's colour is editable — from the property menu and the
   `set-color` verb — for every node and edge (state, composite, state machine, choice,
-  initial, final, terminate, comment, transition); the change is one undo step. *design*
+  initial, final, terminate, shallow history, deep history, comment, transition); the change
+  is one undo step. *design*
+- `EDIT-IO-6` MUST [A]: an exported image is the diagram's own size — the visible items'
+  bounding rect padded by 1px, with no scene margin — and the `export frame` is reported. *design*
+- `EDIT-IO-7` MUST [A]: Save is enabled only for an open, modified document that is not in
+  inspection mode; Save-As and Export are enabled whenever a document is open. *design*
 
 ### 4.9 Metainformation — META
 
@@ -268,6 +285,9 @@ geometry as-is (see Modes and §4.10).
   through the comment-body path. *design*
 - `EDIT-META-3` MUST [I]: editing the metainformation changes no diagram element and no
   geometry, and the metainformation round-trips through save and reopen. *PNST 1044*
+- `EDIT-META-4` MUST [A]: a free-form metainformation parameter can be added and removed
+  through the properties view; the reserved parameters (standard version, transition order,
+  event propagation, geometry mode, name) cannot be removed; each change is one undo step. *design*
 
 ### 4.10 Inspection mode — INSPECT
 
