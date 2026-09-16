@@ -89,6 +89,8 @@ enum class ToolType {
     NewFinal,
     NewChoice,
     NewTerminate,
+    NewShallowHistory,
+    NewDeepHistory,
     NewComment,
     NewFormalComment,
 };

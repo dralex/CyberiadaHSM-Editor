@@ -114,7 +114,8 @@ static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QStri
 
 	if (cmd == "new-state" || cmd == "new-comment" || cmd == "new-formal-comment" ||
 		cmd == "new-initial" || cmd == "new-final" ||
-		cmd == "new-choice" || cmd == "new-terminate") {
+		cmd == "new-choice" || cmd == "new-terminate" ||
+		cmd == "new-shallow-history" || cmd == "new-deep-history") {
 		if (tokens.size() < 2) { *error = cmd + " requires a parent id"; return false; }
 		Cyberiada::Element* parent = model->idToElement(tokens.at(1));
 		Cyberiada::ElementCollection* collection = dynamic_cast<Cyberiada::ElementCollection*>(parent);
@@ -152,6 +153,12 @@ static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QStri
 			}
 			if (cmd == "new-terminate") {
 				return model->newTerminate(collection, p) != NULL;
+			}
+			if (cmd == "new-shallow-history") {
+				return model->newShallowHistory(collection, p) != NULL;
+			}
+			if (cmd == "new-deep-history") {
+				return model->newDeepHistory(collection, p) != NULL;
 			}
 			return model->newFinal(collection, p) != NULL;
 		}
@@ -623,6 +630,8 @@ static bool runGesture(CyberiadaSMEditorScene* scene, const QStringList& tokens,
 			{"new-sm", ToolType::NewSM}, {"new-state", ToolType::NewState},
 			{"new-initial", ToolType::NewInitial}, {"new-final", ToolType::NewFinal},
 			{"new-choice", ToolType::NewChoice}, {"new-terminate", ToolType::NewTerminate},
+			{"new-shallow-history", ToolType::NewShallowHistory},
+			{"new-deep-history", ToolType::NewDeepHistory},
 			{"new-comment", ToolType::NewComment}, {"new-formal-comment", ToolType::NewFormalComment},
 		};
 		QMap<QString, ToolType>::const_iterator it = tools.find(tokens.at(1));

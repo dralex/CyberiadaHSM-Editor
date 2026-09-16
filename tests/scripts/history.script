@@ -1,0 +1,6 @@
+# shallow and deep history pseudostates inside a composite state
+new-state G0 30 30 200 150 Region
+new-state n0 40 90 120 40 Sub
+new-shallow-history n0 40 40
+new-deep-history n0 120 40
+new-transition G0 n0::n0 n0::n1

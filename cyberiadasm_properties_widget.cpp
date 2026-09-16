@@ -191,6 +191,8 @@ void CyberiadaSMPropertiesWidget::setModel(CyberiadaSMModel* model)
 		{Cyberiada::elementFinal,          tr("Final", "Element type")},
 		{Cyberiada::elementChoice,         tr("Choice", "Element type")},
 		{Cyberiada::elementTerminate,      tr("Terminate", "Element type")},
+		{Cyberiada::elementShallowHistory, tr("Shallow History", "Element type")},
+		{Cyberiada::elementDeepHistory,    tr("Deep History", "Element type")},
 		{Cyberiada::elementTransition,     tr("Transition", "Element type")}
 	};
 	
@@ -620,7 +622,8 @@ void CyberiadaSMPropertiesWidget::slotPropertyChanged(QtProperty* p)
 //                     geom_group_prop->addSubProperty(color_prop);
 
                 } else if (type == Cyberiada::elementInitial || type == Cyberiada::elementFinal ||
-                           type == Cyberiada::elementTerminate) {
+                           type == Cyberiada::elementTerminate ||
+                           type == Cyberiada::elementShallowHistory || type == Cyberiada::elementDeepHistory) {
                     if (cp.name == propGroupPoint) {
                         QPointF newPoint = pointManager->value(p);
                         model->updateGeometry(i, Cyberiada::Point(newPoint.x(), newPoint.y()));
@@ -923,7 +926,8 @@ void CyberiadaSMPropertiesWidget::newElement(Cyberiada::Element* new_element)
 					geom_group_prop->addSubProperty(color_prop);
 					
 				} else if (type == Cyberiada::elementInitial || type == Cyberiada::elementFinal ||
-						   type == Cyberiada::elementTerminate) {
+						   type == Cyberiada::elementTerminate ||
+						   type == Cyberiada::elementShallowHistory || type == Cyberiada::elementDeepHistory) {
 					const Cyberiada::Vertex* v = static_cast<const Cyberiada::Vertex*>(element);
 					QtProperty* point_group_prop = constructProperty(propGroupPoint);
 					geom_group_prop->addSubProperty(point_group_prop);
@@ -1268,7 +1272,8 @@ void CyberiadaSMPropertiesWidget::updateElement()
                     stringManager->setValue(color_prop, QString(col.c_str()));
 
                 } else if (type == Cyberiada::elementInitial || type == Cyberiada::elementFinal ||
-                           type == Cyberiada::elementTerminate) {
+                           type == Cyberiada::elementTerminate ||
+                           type == Cyberiada::elementShallowHistory || type == Cyberiada::elementDeepHistory) {
                     const Cyberiada::Vertex* v = static_cast<const Cyberiada::Vertex*>(element);
                     QtProperty* point_group_prop = findQtProperty(geom_group_prop, findPropertyStruct(propGroupPoint).propName);
                     if (point_group_prop == nullptr) {
@@ -1495,13 +1500,17 @@ Cyberiada::ConstElementList CyberiadaSMPropertiesWidget::getAllElements(ElementL
 		return sm->find_elements_by_types({Cyberiada::elementSimpleState,
 										   Cyberiada::elementCompositeState,
 										   Cyberiada::elementInitial,
-										   Cyberiada::elementChoice});
+										   Cyberiada::elementChoice,
+										   Cyberiada::elementShallowHistory,
+										   Cyberiada::elementDeepHistory});
 	case listTarget:
 		return sm->find_elements_by_types({Cyberiada::elementSimpleState,
 										   Cyberiada::elementCompositeState,
 										   Cyberiada::elementFinal,
 										   Cyberiada::elementChoice,
-										   Cyberiada::elementTerminate});
+										   Cyberiada::elementTerminate,
+										   Cyberiada::elementShallowHistory,
+										   Cyberiada::elementDeepHistory});
 	default:
 		// the standard allows every element but the document and the state machine
 		return sm->find_elements_by_types({Cyberiada::elementSimpleState,
@@ -1512,6 +1521,8 @@ Cyberiada::ConstElementList CyberiadaSMPropertiesWidget::getAllElements(ElementL
 										   Cyberiada::elementFinal,
 										   Cyberiada::elementChoice,
 										   Cyberiada::elementTerminate,
+										   Cyberiada::elementShallowHistory,
+										   Cyberiada::elementDeepHistory,
 										   Cyberiada::elementTransition});
 	}
 }

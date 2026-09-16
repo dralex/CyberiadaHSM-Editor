@@ -135,6 +135,8 @@ public:
     Cyberiada::ChoicePseudostate*       newChoice(Cyberiada::ElementCollection* parent, const Cyberiada::Rect& r = Cyberiada::Rect(),
                                                   const Cyberiada::Color& color = Cyberiada::Color());
     Cyberiada::TerminatePseudostate*    newTerminate(Cyberiada::ElementCollection* parent, const Cyberiada::Point& p = Cyberiada::Point());
+    Cyberiada::HistoryPseudostate*      newShallowHistory(Cyberiada::ElementCollection* parent, const Cyberiada::Point& p = Cyberiada::Point());
+    Cyberiada::HistoryPseudostate*      newDeepHistory(Cyberiada::ElementCollection* parent, const Cyberiada::Point& p = Cyberiada::Point());
     Cyberiada::Transition*              newTransition(Cyberiada::StateMachine* sm, Cyberiada::TransitionType ttype,
                                                       Cyberiada::Element* source, Cyberiada::Element* target,
                                                       const Cyberiada::Action& action, const Cyberiada::Polyline& pl = Cyberiada::Polyline(),

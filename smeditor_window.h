@@ -102,6 +102,8 @@ public slots:
     void                    slotNewInitial();
     void                    slotNewFinal();
     void                    slotNewTerminate();
+    void                    slotNewShallowHistory();
+    void                    slotNewDeepHistory();
     void                    slotNewComment();
     void                    slotNewFormalComment();
     void                    slotNewChoise();

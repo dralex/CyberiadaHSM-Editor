@@ -387,6 +387,8 @@ void CyberiadaSMEditorWindow::initializeTools()
     toolActMap[ToolType::NewFinal]         = actionNewFinal;
     toolActMap[ToolType::NewChoice]        = actionNewChoise;
     toolActMap[ToolType::NewTerminate]     = actionNewTerminate;
+    toolActMap[ToolType::NewShallowHistory]= actionNewShallowHistory;
+    toolActMap[ToolType::NewDeepHistory]   = actionNewDeepHistory;
     toolActMap[ToolType::NewComment]       = actionNewComment;
     toolActMap[ToolType::NewFormalComment] = actionNewFormalComment;
 
@@ -485,6 +487,7 @@ void CyberiadaSMEditorWindow::slotToolSelected(QAction *action)
         {ToolType::NewSM, "new-sm"}, {ToolType::NewState, "new-state"},
         {ToolType::NewInitial, "new-initial"}, {ToolType::NewFinal, "new-final"},
         {ToolType::NewChoice, "new-choice"}, {ToolType::NewTerminate, "new-terminate"},
+        {ToolType::NewShallowHistory, "new-shallow-history"}, {ToolType::NewDeepHistory, "new-deep-history"},
         {ToolType::NewComment, "new-comment"}, {ToolType::NewFormalComment, "new-formal-comment"},
     };
     QMap<ToolType, QString>::const_iterator v = verbs.find(currentTool);
@@ -590,6 +593,8 @@ void CyberiadaSMEditorWindow::slotNewState() {}
 void CyberiadaSMEditorWindow::slotNewInitial() {}
 void CyberiadaSMEditorWindow::slotNewFinal() {}
 void CyberiadaSMEditorWindow::slotNewTerminate() {}
+void CyberiadaSMEditorWindow::slotNewShallowHistory() {}
+void CyberiadaSMEditorWindow::slotNewDeepHistory() {}
 void CyberiadaSMEditorWindow::slotNewComment() {}
 void CyberiadaSMEditorWindow::slotNewFormalComment() {}
 void CyberiadaSMEditorWindow::slotNewChoise() {}

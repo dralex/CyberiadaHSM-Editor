@@ -108,6 +108,7 @@ private slots:
 	void test_label_rect();
 	void test_meta_locked();
 	void test_comment_relayout();
+	void test_history();
 	// runs last: it reloads and modifies the shared document
 	void test_directional_grow();
 
@@ -2252,6 +2253,33 @@ void TestScene::test_action_multiline()
 	QString t = entryText();
 	QVERIFY2(t.startsWith("entry/\n"), "a long action should break after entry/");
 	QVERIFY2(!t.mid(QString("entry/\n").length()).contains('\n'), "the behaviour keeps its own line");
+}
+
+void TestScene::test_history()
+{
+	// a history pseudostate is a point vertex; creating one inside a simple state
+	// promotes that state to a composite state (it gains a child)
+	Cyberiada::ElementCollection* sm =
+		dynamic_cast<Cyberiada::ElementCollection*>(model->indexToElement(model->firstSMIndex()));
+	QVERIFY(sm);
+	Cyberiada::State* st = model->newState(sm, "History host", Cyberiada::Action(),
+										   Cyberiada::Rect(1200, 0, 200, 150));
+	QVERIFY(st);
+	QCOMPARE(st->get_type(), Cyberiada::elementSimpleState);
+
+	Cyberiada::Element* sh = model->newShallowHistory(st, Cyberiada::Point(0, 0));
+	QVERIFY(sh);
+	QCOMPARE(sh->get_type(), Cyberiada::elementShallowHistory);
+	// the host is now composite
+	QCOMPARE(st->get_type(), Cyberiada::elementCompositeState);
+
+	Cyberiada::Element* dh = model->newDeepHistory(st, Cyberiada::Point(40, 0));
+	QVERIFY(dh);
+	QCOMPARE(dh->get_type(), Cyberiada::elementDeepHistory);
+
+	// both are drawn by the shared point-vertex item
+	QVERIFY(dynamic_cast<CyberiadaSMEditorVertexItem*>(scene->getMap().value(sh->get_id())));
+	QVERIFY(dynamic_cast<CyberiadaSMEditorVertexItem*>(scene->getMap().value(dh->get_id())));
 }
 
 QTEST_MAIN(TestScene)

@@ -52,6 +52,8 @@ static const char* elementTypeName(Cyberiada::ElementType t)
 	case Cyberiada::elementFinal:          return "Final";
 	case Cyberiada::elementChoice:         return "Choice";
 	case Cyberiada::elementTerminate:      return "Terminate";
+	case Cyberiada::elementShallowHistory: return "Shallow History";
+	case Cyberiada::elementDeepHistory:    return "Deep History";
 	case Cyberiada::elementTransition:     return "Transition";
 	default:                               return "Unknown";
 	}

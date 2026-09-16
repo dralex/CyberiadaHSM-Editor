@@ -95,6 +95,8 @@ CyberiadaSMModel::CyberiadaSMModel(QObject *parent):
 	icons[Cyberiada::elementFinal] = QIcon(":/Icons/images/final-state.png");
 	icons[Cyberiada::elementChoice] = QIcon(":/Icons/images/choice.png");
 	icons[Cyberiada::elementTerminate] = QIcon(":/Icons/images/terminate.png");
+	icons[Cyberiada::elementShallowHistory] = QIcon(":/Icons/images/shallow-history.png");
+	icons[Cyberiada::elementDeepHistory] = QIcon(":/Icons/images/deep-history.png");
 	icons[Cyberiada::elementTransition] = QIcon(":/Icons/images/trans.png");;
 
 	cyberiadaStateMimeType = CYBERIADA_MIME_TYPE_STATE;
@@ -1344,6 +1346,48 @@ Cyberiada::TerminatePseudostate *CyberiadaSMModel::newTerminate(Cyberiada::Eleme
 
     if (element) {
         QString verb = "new-terminate " + qid(parent);
+        if (p.valid) verb += " " + logPt(p);
+        GestureLog::instance().logAction(verb);
+    }
+    return element;
+}
+
+Cyberiada::HistoryPseudostate *CyberiadaSMModel::newShallowHistory(Cyberiada::ElementCollection *parent, const Cyberiada::Point &p)
+{
+	if (readOnly()) return NULL;
+	UndoScope scope(this, tr("new element"));
+    if (root == NULL) {
+        return nullptr;
+    }
+
+    int row = newElementRow(parent);
+    beginInsertRows(elementToIndex(parent), row, row);
+    Cyberiada::HistoryPseudostate* element = root->new_shallow_history(parent, p);
+    endInsertRows();
+
+    if (element) {
+        QString verb = "new-shallow-history " + qid(parent);
+        if (p.valid) verb += " " + logPt(p);
+        GestureLog::instance().logAction(verb);
+    }
+    return element;
+}
+
+Cyberiada::HistoryPseudostate *CyberiadaSMModel::newDeepHistory(Cyberiada::ElementCollection *parent, const Cyberiada::Point &p)
+{
+	if (readOnly()) return NULL;
+	UndoScope scope(this, tr("new element"));
+    if (root == NULL) {
+        return nullptr;
+    }
+
+    int row = newElementRow(parent);
+    beginInsertRows(elementToIndex(parent), row, row);
+    Cyberiada::HistoryPseudostate* element = root->new_deep_history(parent, p);
+    endInsertRows();
+
+    if (element) {
+        QString verb = "new-deep-history " + qid(parent);
         if (p.valid) verb += " " + logPt(p);
         GestureLog::instance().logAction(verb);
     }

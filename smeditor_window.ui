@@ -111,6 +111,8 @@
      <addaction name="actionNewFormalComment"/>
      <addaction name="actionNewTransition"/>
      <addaction name="actionNewChoise"/>
+     <addaction name="actionNewShallowHistory"/>
+     <addaction name="actionNewDeepHistory"/>
      <addaction name="actionNewStateMachine"/>
     </widget>
     <addaction name="actionCut"/>
@@ -202,6 +204,8 @@
    <addaction name="actionNewFinal"/>
    <addaction name="actionNewChoise"/>
    <addaction name="actionNewTerminate"/>
+   <addaction name="actionNewShallowHistory"/>
+   <addaction name="actionNewDeepHistory"/>
    <addaction name="actionNewComment"/>
    <addaction name="actionNewFormalComment"/>
    <addaction name="actionNewTransition"/>
@@ -528,6 +532,24 @@
     <string>New Choise</string>
    </property>
   </action>
+  <action name="actionNewShallowHistory">
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/shallow-history.png</normaloff>:/Icons/images/shallow-history.png</iconset>
+   </property>
+   <property name="text">
+    <string>New Shallow History</string>
+   </property>
+  </action>
+  <action name="actionNewDeepHistory">
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/deep-history.png</normaloff>:/Icons/images/deep-history.png</iconset>
+   </property>
+   <property name="text">
+    <string>New Deep History</string>
+   </property>
+  </action>
   <action name="actionNewStateMachine">
    <property name="icon">
     <iconset resource="smeditor.qrc">
@@ -848,6 +870,38 @@
    <signal>triggered()</signal>
    <receiver>SMEditorWindow</receiver>
    <slot>slotNewChoise()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>511</x>
+     <y>383</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionNewShallowHistory</sender>
+   <signal>triggered()</signal>
+   <receiver>SMEditorWindow</receiver>
+   <slot>slotNewShallowHistory()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>511</x>
+     <y>383</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionNewDeepHistory</sender>
+   <signal>triggered()</signal>
+   <receiver>SMEditorWindow</receiver>
+   <slot>slotNewDeepHistory()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>-1</x>

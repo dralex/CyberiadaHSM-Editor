@@ -109,6 +109,10 @@ void TestWindow::test_creation_tools_arm()
 	QCOMPARE(int(window->getScene()->getCurrentTool()), int(ToolType::NewSM));
 	window->actionNewChoise->trigger();
 	QCOMPARE(int(window->getScene()->getCurrentTool()), int(ToolType::NewChoice));
+	window->actionNewShallowHistory->trigger();
+	QCOMPARE(int(window->getScene()->getCurrentTool()), int(ToolType::NewShallowHistory));
+	window->actionNewDeepHistory->trigger();
+	QCOMPARE(int(window->getScene()->getCurrentTool()), int(ToolType::NewDeepHistory));
 	window->actionNewTransition->trigger();
 	QCOMPARE(int(window->getScene()->getCurrentTool()), int(ToolType::Transition));
 	window->actionSelectTool->trigger();

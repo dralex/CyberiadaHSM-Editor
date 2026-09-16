@@ -163,6 +163,17 @@ void CyberiadaSMEditorVertexItem::paint(QPainter* painter, const QStyleOptionGra
         painter->drawEllipse(fullCircle());
         painter->setBrush(QBrush(color));
         painter->drawEllipse(partialCircle());
+    } else if (type == Cyberiada::elementShallowHistory ||
+               type == Cyberiada::elementDeepHistory) {
+        // a circle marked with H (shallow) or H* (deep)
+        QRectF r = fullCircle();
+        painter->setBrush(painter->background());
+        painter->drawEllipse(r);
+        QFont font = painter->font();
+        font.setBold(true);
+        painter->setFont(font);
+        QString glyph = (type == Cyberiada::elementDeepHistory) ? "H*" : "H";
+        painter->drawText(r, Qt::AlignCenter, glyph);
     } else {
         MY_ASSERT(type == Cyberiada::elementTerminate);
 

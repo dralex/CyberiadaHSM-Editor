@@ -397,6 +397,8 @@ QGraphicsItem* CyberiadaSMEditorScene::addElementItem(Cyberiada::Element* child,
     case Cyberiada::elementInitial:
     case Cyberiada::elementFinal:
     case Cyberiada::elementTerminate:
+    case Cyberiada::elementShallowHistory:
+    case Cyberiada::elementDeepHistory:
         item = new CyberiadaSMEditorVertexItem(model, child, new_parent);
         break;
     case Cyberiada::elementChoice:
@@ -583,6 +585,7 @@ static bool isCreationTool(ToolType t)
     return isRectTool(t) ||
         t == ToolType::NewInitial || t == ToolType::NewFinal ||
         t == ToolType::NewChoice || t == ToolType::NewTerminate ||
+        t == ToolType::NewShallowHistory || t == ToolType::NewDeepHistory ||
         t == ToolType::NewComment || t == ToolType::NewFormalComment;
 }
 
@@ -595,6 +598,8 @@ static Cyberiada::ElementType toolElementType(ToolType t)
     case ToolType::NewFinal:        return Cyberiada::elementFinal;
     case ToolType::NewChoice:       return Cyberiada::elementChoice;
     case ToolType::NewTerminate:    return Cyberiada::elementTerminate;
+    case ToolType::NewShallowHistory: return Cyberiada::elementShallowHistory;
+    case ToolType::NewDeepHistory:  return Cyberiada::elementDeepHistory;
     case ToolType::NewComment:      return Cyberiada::elementComment;
     case ToolType::NewFormalComment:return Cyberiada::elementFormalComment;
     default:                        return Cyberiada::elementRoot;
@@ -847,6 +852,12 @@ void CyberiadaSMEditorScene::addSMItem(Cyberiada::ElementType type)
         case Cyberiada::elementTerminate:
             element = model->newTerminate(parentColl, Cyberiada::Point(center.x(), center.y()));
             break;
+        case Cyberiada::elementShallowHistory:
+            element = model->newShallowHistory(parentColl, Cyberiada::Point(center.x(), center.y()));
+            break;
+        case Cyberiada::elementDeepHistory:
+            element = model->newDeepHistory(parentColl, Cyberiada::Point(center.x(), center.y()));
+            break;
         case Cyberiada::elementChoice:
             element = model->newChoice(parentColl, Cyberiada::Rect(center.x(), center.y(),
                                                                    CHOICE_DEFAULT_SIZE, CHOICE_DEFAULT_SIZE));
@@ -988,6 +999,12 @@ void CyberiadaSMEditorScene::createByTool(ToolType tool, const QRectF& sceneRect
             break;
         case Cyberiada::elementTerminate:
             element = model->newTerminate(parentColl, Cyberiada::Point(c.x(), c.y()));
+            break;
+        case Cyberiada::elementShallowHistory:
+            element = model->newShallowHistory(parentColl, Cyberiada::Point(c.x(), c.y()));
+            break;
+        case Cyberiada::elementDeepHistory:
+            element = model->newDeepHistory(parentColl, Cyberiada::Point(c.x(), c.y()));
             break;
         default:
             return;
