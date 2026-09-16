@@ -80,6 +80,8 @@ private:
     QRubberBand* zoomBand = nullptr;
     QPoint       zoomOrigin;
     bool         zoomDragging = false;
+    QPoint       lastPanPos;
+    bool         panning = false;
 };
 
 #endif

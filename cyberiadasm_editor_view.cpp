@@ -53,9 +53,10 @@ CyberiadaSMGraphicsView::CyberiadaSMGraphicsView(QWidget *parent):
 void CyberiadaSMGraphicsView::setCurrentTool(ToolType tool) {
     currentTool = tool;
 
-    if (tool != ToolType::Pan) {
-        setDragMode(QGraphicsView::NoDrag);
-    }
+    // the view owns the pan gesture (see mousePressEvent), so no drag mode is
+    // needed; ScrollHandDrag was fragile - a handle under the cursor ate the press
+    setDragMode(QGraphicsView::NoDrag);
+    panning = false;
 
     unsetCursor();
 
@@ -64,7 +65,7 @@ void CyberiadaSMGraphicsView::setCurrentTool(ToolType tool) {
         setCursor(QPixmap(":/Icons/images/zoom-in-32.png"));
         break;
     case ToolType::Pan:
-        setDragMode(QGraphicsView::ScrollHandDrag);
+        setCursor(Qt::OpenHandCursor);
         break;
     case ToolType::Transition:
     case ToolType::NewSM:
@@ -147,6 +148,14 @@ void CyberiadaSMGraphicsView::mousePressEvent(QMouseEvent *event)
         event->accept();
         return;
     }
+    // the view owns panning too (unlike ScrollHandDrag it never yields to an item)
+    if (currentTool == ToolType::Pan && event->button() == Qt::LeftButton) {
+        lastPanPos = event->pos();
+        panning = true;
+        setCursor(Qt::ClosedHandCursor);
+        event->accept();
+        return;
+    }
     QGraphicsView::mousePressEvent(event);
 }
 
@@ -158,11 +167,25 @@ void CyberiadaSMGraphicsView::mouseMoveEvent(QMouseEvent *event)
         event->accept();
         return;
     }
+    if (currentTool == ToolType::Pan && panning) {
+        QPoint d = event->pos() - lastPanPos;
+        horizontalScrollBar()->setValue(horizontalScrollBar()->value() - d.x());
+        verticalScrollBar()->setValue(verticalScrollBar()->value() - d.y());
+        lastPanPos = event->pos();
+        event->accept();
+        return;
+    }
     QGraphicsView::mouseMoveEvent(event);
 }
 
 void CyberiadaSMGraphicsView::mouseReleaseEvent(QMouseEvent *event)
 {
+    if (currentTool == ToolType::Pan && panning && event->button() == Qt::LeftButton) {
+        panning = false;
+        setCursor(Qt::OpenHandCursor);
+        event->accept();
+        return;
+    }
     if (currentTool == ToolType::Zoom && zoomBand && zoomBand->isVisible() &&
         event->button() == Qt::LeftButton) {
         QRect band = zoomBand->geometry();

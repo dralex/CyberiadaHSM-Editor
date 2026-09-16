@@ -22,9 +22,11 @@
  * ----------------------------------------------------------------------------- */
 
 #include <QtTest>
+#include <QScrollBar>
 #include "smeditor_window.h"
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_editor_view.h"
+#include "cyberiadasm_editor_scene.h"
 
 class TestWindow: public QObject {
 	Q_OBJECT
@@ -35,6 +37,7 @@ private slots:
 	void test_modified_state();
 	void test_creation_tools_arm();
 	void test_view_roundtrip();
+	void test_pan_tool();
 	void test_menu_refactor();
 	void test_edit_action_gating();
 
@@ -129,6 +132,37 @@ void TestWindow::test_view_roundtrip()
 	// the restore is deferred to after the layout settles: spin the loop for it
 	QTest::qWait(20);
 	QVERIFY(qAbs(window->sceneView->currentScale() - 1.5) < 0.01);   // applied to the view
+}
+
+void TestWindow::test_pan_tool()
+{
+	// the pan tool scrolls the viewport, even over a selected item's handles
+	QVERIFY(window->openDocument("diagrams/geometry.graphml"));
+	QTest::qWait(20);
+	// zoom in so the scene overflows the viewport (the scrollbars gain a range)
+	window->sceneView->setScale(3.0);
+	QApplication::processEvents();
+	// select an item so its handles are on the canvas under the drag start
+	window->getScene()->clearSelection();
+	if (QGraphicsItem* g = window->getScene()->getMap().value("node-0")) g->setSelected(true);
+
+	int h0 = window->sceneView->horizontalScrollBar()->value();
+	int v0 = window->sceneView->verticalScrollBar()->value();
+	window->getScene()->setCurrentTool(ToolType::Pan);
+	window->sceneView->setCurrentTool(ToolType::Pan);
+
+	QWidget* vp = window->sceneView->viewport();
+	QPoint c(vp->width() / 2, vp->height() / 2);
+	auto post = [&](QEvent::Type t, QPoint p, Qt::MouseButton b, Qt::MouseButtons bs) {
+		QMouseEvent me(t, p, vp->mapToGlobal(p), b, bs, Qt::NoModifier);
+		QApplication::sendEvent(vp, &me);
+	};
+	post(QEvent::MouseButtonPress, c, Qt::LeftButton, Qt::LeftButton);
+	post(QEvent::MouseMove, c - QPoint(60, 40), Qt::NoButton, Qt::LeftButton);
+	post(QEvent::MouseButtonRelease, c - QPoint(60, 40), Qt::LeftButton, Qt::NoButton);
+	// dragging up-left scrolls the content, so both scrollbar values increase
+	QVERIFY(window->sceneView->horizontalScrollBar()->value() > h0);
+	QVERIFY(window->sceneView->verticalScrollBar()->value() > v0);
 }
 
 void TestWindow::test_menu_refactor()
