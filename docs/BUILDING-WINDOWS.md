@@ -37,8 +37,7 @@ cmake --build libcyberiadaml\build --config Release --target install
 
 Point `CMAKE_PREFIX_PATH` at both the Qt and the Cyberiada prefixes so
 `find_package` locates Qt5, the Cyberiada packages and QtPropertyBrowser (the
-CMake script only defaults to `/usr/lib/cmake` on Unix, so nothing Linux-only is
-assumed here):
+CMake script assumes no fixed location, so nothing Linux-only is assumed here):
 
 ```bat
 cmake -S CyberiadaHSM-Editor -B CyberiadaHSM-Editor\build ^

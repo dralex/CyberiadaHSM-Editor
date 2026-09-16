@@ -25,16 +25,8 @@ if(Git_FOUND)
 endif()
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/version.h.in ${CMAKE_CURRENT_BINARY_DIR}/version.h @ONLY)
 
-# default the dependency package dirs to the Debian/Ubuntu location, but let a
-# user override (Windows, or a local prefix) via -D<pkg>_DIR or CMAKE_PREFIX_PATH
-if(UNIX AND NOT cyberiadamlpp_DIR)
-  set(cyberiadamlpp_DIR /usr/lib/cmake)
-endif()
+# the dependencies are found in the system prefix or in CMAKE_PREFIX_PATH
 find_package(cyberiadamlpp REQUIRED)
-
-if(UNIX AND NOT cyberiadaml_DIR)
-  set(cyberiadaml_DIR /usr/lib/cmake)
-endif()
 find_package(cyberiadaml REQUIRED)
 
 find_package(QtPropertyBrowser REQUIRED)
