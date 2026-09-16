@@ -112,6 +112,14 @@ void CyberiadaSMEditorWindow::updateEditActions()
     actionCopy->setEnabled(copyable && !inspector);
     actionDeleteElement->setEnabled(hasElement && !inspector);
     actionPaste->setEnabled(clipboardElement != nullptr && !inspector);
+
+    // the file actions follow the document and its modified state (the creation
+    // tools stay enabled: the model creates a document lazily on the first edit)
+    bool docOpen  = (model->rootDocument() != nullptr);
+    bool modified = docOpen && !model->undoStack()->isClean();
+    actionSave->setEnabled(docOpen && modified && !inspector);
+    actionSaveAs->setEnabled(docOpen);
+    actionExport->setEnabled(docOpen);
 }
 
 // the actions die before the model's stack, whose destructor still signals
@@ -140,6 +148,7 @@ void CyberiadaSMEditorWindow::slotCleanChanged(bool clean)
     // the marker only makes sense once a document title (with the [*] slot)
     // is set; before that the window has no placeholder
     if (!openFileName.isEmpty()) setWindowModified(!clean);
+    updateEditActions();   // Save follows the modified state
 }
 
 // the title carries the modified marker; the inspected document is read-only
@@ -184,6 +193,7 @@ void CyberiadaSMEditorWindow::slotModelReset()
 {
     SMView->setRootIndex(model->rootIndex());
     expandAndWidenTree();
+    updateEditActions();   // a loaded/reset document refreshes the file actions
 }
 
 void CyberiadaSMEditorWindow::expandAndWidenTree()
@@ -434,7 +444,8 @@ void CyberiadaSMEditorWindow::initializeTools()
     editGroup = new QActionGroup(this);
     editGroup->setExclusive(false);
     editGroup->addAction(actionNew);
-    editGroup->addAction(actionSave);
+    // save is governed solely by updateEditActions (document open + modified +
+    // inspector); leaving it in editGroup would fight that per-action state
     // cut/copy/paste/delete are governed by updateEditActions (selection + inspector),
     // not the bulk editGroup, so they can react to the current selection
     editGroup->addAction(actionUndo);
