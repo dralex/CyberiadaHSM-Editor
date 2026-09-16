@@ -999,8 +999,10 @@ void CyberiadaSMEditorTransitionItem::mouseDoubleClickEvent(QGraphicsSceneMouseE
     if (SettingsManager::instance().getInspectorMode()) { return; }
 
     // a double click edits the transition label; a vertex is added by dragging
-    // a segment instead
+    // a segment instead. place the label where the line was clicked (item-local
+    // space == scene space here), so the edit opens under the cursor
     actionItem->setVisible(true);
+    actionItem->setPos(event->pos() - actionItem->boundingRect().center());
     actionItem->startEditing();
     QGraphicsItem::mouseDoubleClickEvent(event);
 }
