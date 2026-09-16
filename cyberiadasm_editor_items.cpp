@@ -237,8 +237,9 @@ void CyberiadaSMEditorAbstractItem::mousePressEvent(QGraphicsSceneMouseEvent *ev
     // the press decides the gesture: no prior hover or selection is needed
     cornerFlags = borderZone(event->pos());
     // remember where the cursor grabbed the item, to place it in scene space
-    // during a body drag
+    // during a body drag, and the start position for a Ctrl axis-locked move
     grabOffset = scenePos() - event->scenePos();
+    dragStartScenePos = scenePos();
 
     if (event->button() & Qt::LeftButton) {
         isLeftMouseButtonPressed = true;

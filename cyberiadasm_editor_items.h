@@ -115,6 +115,8 @@ public:
     // place the item at the cursor in SCENE space each move - immune to the
     // container moving under it when it grows directionally
     QPointF grabOffset;
+    // the item's scene position at the drag start, for a Ctrl axis-locked move
+    QPointF dragStartScenePos;
 
     // apply a centre-based geometry (e.g. from the property editor) the way the
     // border drag does: clamp to the minimum that contains the children, and

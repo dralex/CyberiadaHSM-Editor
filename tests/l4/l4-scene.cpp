@@ -50,6 +50,7 @@ private slots:
 	void test_title_sync();
 	void test_action_edit();
 	void test_body_drag();
+	void test_ctrl_axis_move();
 	void test_double_click_action();
 	void test_action_layout();
 	void test_border_resize();
@@ -2282,6 +2283,36 @@ void TestScene::test_history()
 	// both are drawn by the shared point-vertex item
 	QVERIFY(dynamic_cast<CyberiadaSMEditorVertexItem*>(scene->getMap().value(sh->get_id())));
 	QVERIFY(dynamic_cast<CyberiadaSMEditorVertexItem*>(scene->getMap().value(dh->get_id())));
+}
+
+void TestScene::test_ctrl_axis_move()
+{
+	// Ctrl locks a body move to the dominant axis (strict horizontal/vertical)
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+	scene->setCurrentTool(ToolType::Select);
+	CyberiadaSMEditorStateItem* state =
+		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0-1"));
+	QVERIFY(state);
+	const Cyberiada::State* element =
+		static_cast<const Cyberiada::State*>(model->idToElement("node-0-1"));
+	Cyberiada::Rect before = element->get_geometry_rect();
+	QPointF centre = state->sceneBoundingRect().bottomRight() - QPointF(20, 20);
+
+	scene->clearSelection();
+	mouse(QEvent::GraphicsSceneMousePress, centre, Qt::LeftButton);
+	// x delta dominates and Ctrl is held -> only x moves, y is locked
+	mouse(QEvent::GraphicsSceneMouseMove, centre + QPointF(40, 15), Qt::LeftButton, Qt::ControlModifier);
+	mouse(QEvent::GraphicsSceneMouseRelease, centre + QPointF(40, 15), Qt::NoButton, Qt::ControlModifier);
+	QCOMPARE(element->get_geometry_rect().x, before.x + 40);
+	QCOMPARE(element->get_geometry_rect().y, before.y);
+
+	// restore
+	QPointF c2 = state->sceneBoundingRect().bottomRight() - QPointF(20, 20);
+	mouse(QEvent::GraphicsSceneMousePress, c2, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, c2 + QPointF(-40, 0), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, c2 + QPointF(-40, 0), Qt::NoButton);
+	QCOMPARE(element->get_geometry_rect().x, before.x);
 }
 
 void TestScene::test_promote_title()

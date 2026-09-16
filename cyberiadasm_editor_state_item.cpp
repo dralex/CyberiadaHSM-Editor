@@ -573,6 +573,12 @@ void CyberiadaSMEditorStateItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
         // directionally under the drag) and commit its model BEFORE the parent
         // grow, so the parent's re-base holds this state at the cursor too
         QPointF target = snapToGrid(event->scenePos() + grabOffset);
+        // Ctrl locks the move to the dominant axis (strict horizontal/vertical)
+        if (event->modifiers() & Qt::ControlModifier) {
+            QPointF d = event->scenePos() + grabOffset - dragStartScenePos;
+            if (qAbs(d.x()) >= qAbs(d.y())) target.setY(dragStartScenePos.y());
+            else                            target.setX(dragStartScenePos.x());
+        }
         setPos(parentItem() ? parentItem()->mapFromScene(target) : target);
         Cyberiada::Rect r(pos().x(), pos().y(), boundingRect().width(), boundingRect().height());
         model->updateGeometry(model->elementToIndex(element), r);
