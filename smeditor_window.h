@@ -31,6 +31,7 @@
 
 class QToolBar;
 class QComboBox;
+class QMenu;
 
 class CyberiadaSMEditorWindow: public QMainWindow, public Ui_SMEditorWindow {
 Q_OBJECT
@@ -58,6 +59,9 @@ private:
     void                    updateTitle();
     // on load: expand the tree fully and widen the right panel to fit its content
     void                    expandAndWidenTree();
+    // the File > Open Recent submenu, rebuilt from the stored recent-files list
+    void                    rebuildRecentMenu();
+    void                    openRecentFile(const QString& path);
 
 private slots:
     void                    slotModelReset();
@@ -117,6 +121,7 @@ private:
     QString openFileName;
     // the saved viewport waiting to be applied after the layout settles
     QString pendingViewState;
+    QMenu* recentMenu = nullptr;
 
     // a detached deep clone of the last copied/cut element (nullptr when empty),
     // and the id of its original parent collection (the paste target level)

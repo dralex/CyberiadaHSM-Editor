@@ -23,7 +23,9 @@
 
 #include <QtTest>
 #include <QScrollBar>
+#include <QMenu>
 #include "smeditor_window.h"
+#include "settings_manager.h"
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_editor_view.h"
 #include "cyberiadasm_editor_scene.h"
@@ -38,6 +40,7 @@ private slots:
 	void test_creation_tools_arm();
 	void test_view_roundtrip();
 	void test_pan_tool();
+	void test_recent_files();
 	void test_menu_refactor();
 	void test_edit_action_gating();
 
@@ -163,6 +166,30 @@ void TestWindow::test_pan_tool()
 	// dragging up-left scrolls the content, so both scrollbar values increase
 	QVERIFY(window->sceneView->horizontalScrollBar()->value() > h0);
 	QVERIFY(window->sceneView->verticalScrollBar()->value() > v0);
+}
+
+void TestWindow::test_recent_files()
+{
+	// opening a document records it at the front of the recent list, and the
+	// File > Open Recent submenu is rebuilt to match
+	SettingsManager::instance().clearRecentFiles();
+	QVERIFY(window->openDocument("diagrams/geometry.graphml"));
+	QStringList recent = SettingsManager::instance().getRecentFiles();
+	QVERIFY(!recent.isEmpty());
+	QVERIFY(recent.first().endsWith("geometry.graphml"));
+	// re-opening the same file keeps a single, front-most entry (dedup)
+	QVERIFY(window->openDocument("diagrams/geometry.graphml"));
+	QCOMPARE(SettingsManager::instance().getRecentFiles().count(recent.first()), 1);
+	// the submenu carries a per-file action plus the "Clear list" entry
+	QMenu* rm = nullptr;
+	for (QMenu* m : window->findChildren<QMenu*>())
+		if (m->title() == QString("Open Recent")) rm = m;
+	QVERIFY(rm);
+	QVERIFY(rm->actions().size() >= 2);
+	// clearing empties the list and disables the submenu
+	SettingsManager::instance().clearRecentFiles();
+	QVERIFY(SettingsManager::instance().getRecentFiles().isEmpty());
+	QVERIFY(!rm->isEnabled());
 }
 
 void TestWindow::test_menu_refactor()

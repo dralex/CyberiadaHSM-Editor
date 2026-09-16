@@ -47,6 +47,7 @@ void SettingsManager::load() {
     }
 
     lastDirectory = s.value("files/lastDirectory", QDir::currentPath()).toString();
+    recentFiles = s.value("files/recentFiles").toStringList();
     // the Qt default leaves too little room for the file view
     dialogSize = s.value("files/dialogSize", QSize(1000, 680)).toSize();
     optionsExpanded = s.value("files/optionsExpanded", true).toBool();
@@ -176,6 +177,25 @@ void SettingsManager::setLastDirectory(const QString& value)
         lastDirectory = value;
         QSettings().setValue("files/lastDirectory", value);
     }
+}
+
+void SettingsManager::addRecentFile(const QString& path)
+{
+    if (path.isEmpty()) return;
+    recentFiles.removeAll(path);      // move an existing entry to the front
+    recentFiles.prepend(path);
+    const int maxRecent = 10;
+    while (recentFiles.size() > maxRecent) recentFiles.removeLast();
+    QSettings().setValue("files/recentFiles", recentFiles);
+    emit recentFilesChanged();
+}
+
+void SettingsManager::clearRecentFiles()
+{
+    if (recentFiles.isEmpty()) return;
+    recentFiles.clear();
+    QSettings().setValue("files/recentFiles", recentFiles);
+    emit recentFilesChanged();
 }
 
 void SettingsManager::setDialogSize(const QSize& value)

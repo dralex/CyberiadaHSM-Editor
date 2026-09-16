@@ -6,6 +6,7 @@
 #include <QColor>
 #include <QSize>
 #include <QString>
+#include <QStringList>
 
 #include "cyberiada_constants.h"
 
@@ -64,6 +65,10 @@ public:
 
     QString getLastDirectory() const { return lastDirectory; }
     void setLastDirectory(const QString& value);
+    // the most recently opened files, newest first (for the Open Recent menu)
+    QStringList getRecentFiles() const { return recentFiles; }
+    void addRecentFile(const QString& path);
+    void clearRecentFiles();
     QSize getDialogSize() const { return dialogSize; }
     void setDialogSize(const QSize& value);
     // whether the extra options are shown in the file dialogs (collapsible)
@@ -82,6 +87,7 @@ public:
 
 signals:
     void settingsChanged();
+    void recentFilesChanged();
 
     void gridSettingsChanged();
     void showTransitionTextChanged(bool);
@@ -121,6 +127,7 @@ private:
 
     // files
     QString lastDirectory;
+    QStringList recentFiles;
     QSize dialogSize;
     bool optionsExpanded;
     int exportDpi;

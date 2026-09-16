@@ -28,6 +28,7 @@
 #include <QMessageBox>
 #include <QToolBar>
 #include <QComboBox>
+#include <QMenu>
 #include <QSignalBlocker>
 #include <QTimer>
 #include <QShowEvent>
@@ -279,12 +280,41 @@ bool CyberiadaSMEditorWindow::openDocument(const QString& fileName, QString* err
     QFileInfo fileInfo(fileName);
     openFileName = fileInfo.fileName();
     updateTitle();
+    SettingsManager::instance().addRecentFile(fileInfo.absoluteFilePath());
     // a new document begins a new session so the start snapshot matches it
     if (GestureLog::instance().isActive()) {
         GestureLog::instance().endSession();
         GestureLog::instance().startSession(model);
     }
     return true;
+}
+
+void CyberiadaSMEditorWindow::rebuildRecentMenu()
+{
+    if (!recentMenu) return;
+    recentMenu->clear();
+    const QStringList recent = SettingsManager::instance().getRecentFiles();
+    recentMenu->setEnabled(!recent.isEmpty());
+    for (const QString& path : recent) {
+        QAction* a = recentMenu->addAction(QFileInfo(path).fileName());
+        a->setToolTip(path);
+        connect(a, &QAction::triggered, this, [this, path]() { openRecentFile(path); });
+    }
+    if (!recent.isEmpty()) {
+        recentMenu->addSeparator();
+        connect(recentMenu->addAction(tr("Clear list")), &QAction::triggered,
+                this, []() { SettingsManager::instance().clearRecentFiles(); });
+    }
+}
+
+void CyberiadaSMEditorWindow::openRecentFile(const QString& path)
+{
+    if (!confirmDiscard()) return;
+    QString error;
+    if (!openDocument(path, &error)) {
+        QMessageBox::warning(this, tr("Open State Machine"),
+                             tr("Cannot open the document:\n") + error);
+    }
 }
 
 void CyberiadaSMEditorWindow::slotFileSave()
@@ -407,6 +437,13 @@ void CyberiadaSMEditorWindow::initializeTools()
     // not the bulk editGroup, so they can react to the current selection
     editGroup->addAction(actionUndo);
     editGroup->addAction(actionRedo);
+
+    // the File > Open Recent submenu, kept in step with the stored list
+    recentMenu = new QMenu(tr("Open Recent"), this);
+    menuFile->insertMenu(actionSave, recentMenu);
+    connect(&SettingsManager::instance(), &SettingsManager::recentFilesChanged,
+            this, &CyberiadaSMEditorWindow::rebuildRecentMenu);
+    rebuildRecentMenu();
 
     connect(&SettingsManager::instance(), &SettingsManager::inspectorModeChanged,
             this, &CyberiadaSMEditorWindow::slotInspectorModeChanged);
