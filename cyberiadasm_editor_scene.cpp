@@ -256,7 +256,12 @@ QRectF CyberiadaSMEditorScene::recentlyModifiedSMRect() const
     if (id.empty()) return QRectF();
     QGraphicsItem* item = elementIdToItemMap.value(id);
     if (!item) return QRectF();
-    return item->sceneBoundingRect();
+    // a geometry-less SM item reports a degenerate rect and the model reconstruction
+    // skips name-only children; union the drawn children so zoom-to-SM frames content
+    QRectF r = item->sceneBoundingRect();
+    QRectF kids = item->childrenBoundingRect();
+    if (!kids.isNull()) r |= item->mapRectToScene(kids);
+    return r;
 }
 
 void CyberiadaSMEditorScene::releaseInputFor(QGraphicsItem* item)
