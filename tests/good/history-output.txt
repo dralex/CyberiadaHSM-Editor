@@ -5,10 +5,10 @@ geometry/ full
 
 transitionOrder/ actionFirst
 
-eventPropagation/ block'}, Composite State: {id: 'n0', name: 'Region', geometry: (30; 30; 200; 220), elements: {Simple State: {id: 'n0::n0', name: 'Sub', geometry: (40; 90; 120; 40)}, Shallow History: {id: 'n0::n1', geometry: (40; 40)}, Deep History: {id: 'n0::n2', geometry: (120; 40)}}}, Transition: {id: 'n0::n0-n0::n1', type: ext, source: 'n0::n0', target: 'n0::n1'}}}}, bounding rect: (40; 30; 220; 220)}, file: 'diagrams/empty.graphml', format: cyberiada, format_str: 'Cyberiada-GraphML-1.0'}
+eventPropagation/ block'}, Composite State: {id: 'n0', name: 'Region', geometry: (30; 30; 260; 220), elements: {Simple State: {id: 'n0::n0', name: 'Sub', geometry: (40; 90; 120; 40)}, Shallow History: {id: 'n0::n1', geometry: (40; 40)}, Deep History: {id: 'n0::n2', geometry: (120; 40)}}}, Transition: {id: 'n0::n0-n0::n1', type: ext, source: 'n0::n0', target: 'n0::n1'}}}}, bounding rect: (30; 30; 260; 220)}, file: 'diagrams/empty.graphml', format: cyberiada, format_str: 'Cyberiada-GraphML-1.0'}
 == scene
-  State Machine: {id: 'G0', pos: (0.00; 0.00), rect: (-70.00; -80.00; 220.00; 220.00)}
-    Composite State: {id: 'n0', pos: (30.00; 30.00), rect: (-100.00; -110.00; 200.00; 220.00)}
+  State Machine: {id: 'G0', pos: (0.00; 0.00), rect: (-100.00; -80.00; 260.00; 220.00)}
+    Composite State: {id: 'n0', pos: (30.00; 30.00), rect: (-130.00; -110.00; 260.00; 220.00)}
       Simple State: {id: 'n0::n0', pos: (40.00; 90.00), rect: (-60.00; -20.00; 120.00; 40.00)}
       Shallow History: {id: 'n0::n1', pos: (40.00; 40.00), rect: (-10.00; -10.00; 20.00; 20.00)}
       Deep History: {id: 'n0::n2', pos: (120.00; 40.00), rect: (-10.00; -10.00; 20.00; 20.00)}

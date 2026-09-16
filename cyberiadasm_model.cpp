@@ -1289,6 +1289,8 @@ Cyberiada::InitialPseudostate *CyberiadaSMModel::newInitial(Cyberiada::ElementCo
     beginInsertRows(elementToIndex(parent), row, row);
     Cyberiada::InitialPseudostate* element = root->new_initial(parent, p);
     endInsertRows();
+    // a vertex placed past the parent border grows the parent to contain it (EDIT-NODE-1/2)
+    if (element) growToFitChildren(element, false);
 
     if (element) {
         QString verb = "new-initial " + qid(parent);
@@ -1310,6 +1312,7 @@ Cyberiada::FinalState *CyberiadaSMModel::newFinal(Cyberiada::ElementCollection *
     beginInsertRows(elementToIndex(parent), row, row);
     Cyberiada::FinalState* element = root->new_final(parent, p);
     endInsertRows();
+    if (element) growToFitChildren(element, false);
 
     if (element) {
         QString verb = "new-final " + qid(parent);
@@ -1332,6 +1335,7 @@ Cyberiada::ChoicePseudostate *CyberiadaSMModel::newChoice(Cyberiada::ElementColl
     beginInsertRows(elementToIndex(parent), row, row);
     Cyberiada::ChoicePseudostate* element = root->new_choice(parent, r, color);
     endInsertRows();
+    if (element) growToFitChildren(element, false);
 
     if (element) {
         QString verb = "new-choice " + qid(parent);
@@ -1353,6 +1357,7 @@ Cyberiada::TerminatePseudostate *CyberiadaSMModel::newTerminate(Cyberiada::Eleme
     beginInsertRows(elementToIndex(parent), row, row);
     Cyberiada::TerminatePseudostate* element = root->new_terminate(parent, p);
     endInsertRows();
+    if (element) growToFitChildren(element, false);
 
     if (element) {
         QString verb = "new-terminate " + qid(parent);
@@ -1374,6 +1379,7 @@ Cyberiada::HistoryPseudostate *CyberiadaSMModel::newShallowHistory(Cyberiada::El
     beginInsertRows(elementToIndex(parent), row, row);
     Cyberiada::HistoryPseudostate* element = root->new_shallow_history(parent, p);
     endInsertRows();
+    if (element) growToFitChildren(element, false);
 
     if (element) {
         QString verb = "new-shallow-history " + qid(parent);
@@ -1395,6 +1401,7 @@ Cyberiada::HistoryPseudostate *CyberiadaSMModel::newDeepHistory(Cyberiada::Eleme
     beginInsertRows(elementToIndex(parent), row, row);
     Cyberiada::HistoryPseudostate* element = root->new_deep_history(parent, p);
     endInsertRows();
+    if (element) growToFitChildren(element, false);
 
     if (element) {
         QString verb = "new-deep-history " + qid(parent);
