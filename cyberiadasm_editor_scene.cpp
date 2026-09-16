@@ -641,8 +641,12 @@ static QString pressTargetNote(QGraphicsScene* scene, const QPointF& scenePos)
 
 void CyberiadaSMEditorScene::mousePressEvent(QGraphicsSceneMouseEvent* event)
 {
-    model->beginUndoStep(QString());
+    // one undo step per left-button gesture; a right-click (context menu) must not
+    // open a scope whose release the modal menu eats, and any scope left open by a
+    // lost release is dropped so this gesture is captured on its own
     if (event->button() == Qt::LeftButton) {
+        model->resetUndoGesture();
+        model->beginUndoStep(QString());
         // the model edits the gesture triggers are recorded as the gesture, not
         // twice as semantic verbs
         GestureLog::instance().enterGesture();
@@ -689,6 +693,9 @@ void CyberiadaSMEditorScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* event)
 {
     if (transitionDrawLine && event->button() == Qt::LeftButton) {
         finishTransitionDraw(event->scenePos());   // creates the transition and reverts to Select
+        // the finish path skips the base release handler; release any leaked grab
+        // (a DotSignal grabbed the mouse on press) so later presses route correctly
+        if (QGraphicsItem* g = mouseGrabberItem()) g->ungrabMouse();
     } else if (creating && event->button() == Qt::LeftButton) {
         handleCreationRelease(event);   // creates the element and reverts to Select
     } else {
@@ -703,7 +710,7 @@ void CyberiadaSMEditorScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* event)
         loggingPressed = false;
         GestureLog::instance().leaveGesture();
     }
-    model->endUndoStep();
+    if (event->button() == Qt::LeftButton) model->endUndoStep();
 }
 
 bool CyberiadaSMEditorScene::handleCreationPress(QGraphicsSceneMouseEvent* event)

@@ -202,6 +202,16 @@ void CyberiadaSMModel::endUndoStep()
 	undo->push(new DocumentStep(this, undoText.isEmpty() ? tr("edit") : undoText, undoBefore, after));
 }
 
+void CyberiadaSMModel::resetUndoGesture()
+{
+	// a lost release (a modal menu ate it, or a leaked grab) can leave a scope open;
+	// force it closed so the next top-level gesture is captured as its own step
+	undoDepth = 0;
+	undoText.clear();
+	undoBefore.clear();
+	undoBeforeOk = true;
+}
+
 void CyberiadaSMModel::restoreSnapshot(const std::string& snapshot)
 {
 	beginResetModel();

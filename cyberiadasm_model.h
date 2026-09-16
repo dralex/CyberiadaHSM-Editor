@@ -203,6 +203,8 @@ public:
 	QUndoStack*                         undoStack() { return undo; }
 	void                                beginUndoStep(const QString& text);
 	void                                endUndoStep();
+	// drop a scope left open by a lost mouse release, so the next gesture is its own step
+	void                                resetUndoGesture();
 	void                                restoreSnapshot(const std::string& snapshot);
 	const Cyberiada::Element*           indexToElement(const QModelIndex& index) const;
 	Cyberiada::Element*                 indexToElement(const QModelIndex& index);
