@@ -797,10 +797,10 @@ void CyberiadaSMEditorScene::addSMItem(Cyberiada::ElementType type)
                                                                                  smSize.width(), smSize.height()));
             if (!element) return;
             currentSM = static_cast<Cyberiada::StateMachine*>(element);
-            CyberiadaSMEditorSMItem* sm = new CyberiadaSMEditorSMItem(model, element, NULL);
-            elementIdToItemMap.insert(element->get_id(), sm);
-            addItem(sm);
-            sm->setSelected(true);
+            // the row insert already built and mapped the SM item; just select it
+            if (QGraphicsItem* sm = elementIdToItemMap.value(element->get_id())) {
+                sm->setSelected(true);
+            }
         } catch (const Cyberiada::ParametersException& e) {
             showError(tr("Create new state machine"),
                                   tr("Parameters error:\n") + QString(e.str().c_str()));
@@ -829,11 +829,9 @@ void CyberiadaSMEditorScene::addSMItem(Cyberiada::ElementType type)
             Cyberiada::Element* element = model->newStateMachine("New State Machine");
             if (!element) return;
             currentSM = static_cast<Cyberiada::StateMachine*>(element);
-            CyberiadaSMEditorSMItem* sm = new CyberiadaSMEditorSMItem(model, element, nullptr);
-            parentCItem = sm;
+            // the row insert already built and mapped the SM item; reuse it
+            parentCItem = dynamic_cast<CyberiadaSMEditorAbstractItem*>(elementIdToItemMap.value(element->get_id()));
             parentColl = static_cast<Cyberiada::ElementCollection*>(element);
-            elementIdToItemMap.insert(element->get_id(), sm);
-            addItem(sm);
         } else {
             for (auto item : items()) {
                 if (auto smItem = dynamic_cast<CyberiadaSMEditorSMItem*>(item)) {
@@ -969,10 +967,11 @@ void CyberiadaSMEditorScene::createByTool(ToolType tool, const QRectF& sceneRect
             Cyberiada::Rect(r.center().x(), r.center().y(), r.width(), r.height()));
         if (!element) return;
         currentSM = static_cast<Cyberiada::StateMachine*>(element);
-        CyberiadaSMEditorSMItem* smi = new CyberiadaSMEditorSMItem(model, element, NULL);
-        elementIdToItemMap.insert(element->get_id(), smi);
-        addItem(smi);
-        smi->setSelected(true);
+        // the row insert already built and mapped the SM item (slotRowsInserted);
+        // just select it - building another here would leave a stale duplicate
+        if (QGraphicsItem* smi = elementIdToItemMap.value(element->get_id())) {
+            smi->setSelected(true);
+        }
         return;
     }
 

@@ -51,6 +51,7 @@ private slots:
 	void test_action_edit();
 	void test_body_drag();
 	void test_ctrl_axis_move();
+	void test_new_sm_single_item();
 	void test_double_click_action();
 	void test_action_layout();
 	void test_border_resize();
@@ -2283,6 +2284,16 @@ void TestScene::test_history()
 	// both are drawn by the shared point-vertex item
 	QVERIFY(dynamic_cast<CyberiadaSMEditorVertexItem*>(scene->getMap().value(sh->get_id())));
 	QVERIFY(dynamic_cast<CyberiadaSMEditorVertexItem*>(scene->getMap().value(dh->get_id())));
+}
+
+void TestScene::test_new_sm_single_item()
+{
+	// creating a state machine must build exactly one SM graphics item; a stale
+	// second item (counted over all scene items, not the id map) would keep the
+	// old title after a rename
+	int before = countItems(CyberiadaSMEditorAbstractItem::SMItem);
+	scene->addSMItem(Cyberiada::elementSM);
+	QCOMPARE(countItems(CyberiadaSMEditorAbstractItem::SMItem), before + 1);
 }
 
 void TestScene::test_ctrl_axis_move()
