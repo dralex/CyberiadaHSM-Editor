@@ -1,4 +1,5 @@
 #include <QDir>
+#include <QGuiApplication>
 
 #include "settings_manager.h"
 
@@ -29,6 +30,8 @@ QPointF snapToGrid(const QPointF& p)
     SettingsManager& sm = SettingsManager::instance();
     double g = sm.getGridSpacing();
     if (!sm.getSnapMode() || g <= 0.0) return p;
+    // holding Alt suspends snapping while the key is pressed
+    if (QGuiApplication::keyboardModifiers() & Qt::AltModifier) return p;
     return QPointF(qRound(p.x() / g) * g, qRound(p.y() / g) * g);
 }
 
