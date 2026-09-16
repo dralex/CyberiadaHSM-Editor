@@ -37,10 +37,13 @@ KIND_INITIAL = "Initial"
 KIND_FINAL = "Final"
 KIND_CHOICE = "Choice"
 KIND_TERMINATE = "Terminate"
+KIND_SHALLOW_HISTORY = "Shallow History"
+KIND_DEEP_HISTORY = "Deep History"
 KIND_TRANSITION = "Transition"
 
 STATE_KINDS = (KIND_SIMPLE, KIND_COMPOSITE)
-VERTEX_KINDS = (KIND_INITIAL, KIND_FINAL, KIND_CHOICE, KIND_TERMINATE)
+VERTEX_KINDS = (KIND_INITIAL, KIND_FINAL, KIND_CHOICE, KIND_TERMINATE,
+                KIND_SHALLOW_HISTORY, KIND_DEEP_HISTORY)
 COMMENT_KINDS = (KIND_COMMENT, KIND_FORMAL)
 NODE_KINDS = STATE_KINDS + VERTEX_KINDS + COMMENT_KINDS
 META_COMMENT = "CGML_META"
@@ -50,6 +53,7 @@ SHORT_KINDS = {
     "simple": KIND_SIMPLE, "composite": KIND_COMPOSITE,
     "initial": KIND_INITIAL, "final": KIND_FINAL, "choice": KIND_CHOICE,
     "terminate": KIND_TERMINATE, "comment": KIND_COMMENT,
+    "shallow-history": KIND_SHALLOW_HISTORY, "deep-history": KIND_DEEP_HISTORY,
     "formal-comment": KIND_FORMAL, "transition": KIND_TRANSITION,
     "sm": KIND_SM,
 }
@@ -58,6 +62,8 @@ WORDS = {
     KIND_SIMPLE: "simple state", KIND_COMPOSITE: "composite state",
     KIND_INITIAL: "initial pseudostate", KIND_FINAL: "final state",
     KIND_CHOICE: "choice pseudostate", KIND_TERMINATE: "terminate pseudostate",
+    KIND_SHALLOW_HISTORY: "shallow history pseudostate",
+    KIND_DEEP_HISTORY: "deep history pseudostate",
     KIND_COMMENT: "comment", KIND_FORMAL: "formal comment",
 }
 

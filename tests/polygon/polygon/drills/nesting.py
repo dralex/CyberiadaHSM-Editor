@@ -114,7 +114,8 @@ class PseudostateDrill(Drill):
         if step % 3 == 0:
             return ["new-state %s 60 60 260 180 %s" % (machine.id, self.fresh("S"))], "state", ""
         target = self.rng.choice(states).id if states else machine.id
-        verb = self.rng.choice(["new-final", "new-initial", "new-terminate"])
+        verb = self.rng.choice(["new-final", "new-initial", "new-terminate",
+                                "new-shallow-history", "new-deep-history"])
         px, py = self._host_point(dump, target, dy=self.rng.choice([-40, 0, 40]))
         return (["tool %s" % verb, "click %d %d" % (px, py)], "state", "")
 

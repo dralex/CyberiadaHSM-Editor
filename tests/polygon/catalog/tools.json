@@ -8,6 +8,8 @@
     {"name": "new-final", "family": "place", "element": "final", "default": null},
     {"name": "new-choice", "family": "place", "element": "choice", "default": null},
     {"name": "new-terminate", "family": "place", "element": "terminate", "default": null},
+    {"name": "new-shallow-history", "family": "place", "element": "shallow-history", "default": null},
+    {"name": "new-deep-history", "family": "place", "element": "deep-history", "default": null},
     {"name": "new-comment", "family": "place", "element": "comment", "default": null},
     {"name": "new-formal-comment", "family": "place", "element": "formal-comment", "default": null},
     {"name": "pan", "family": "view", "element": "", "default": null},

@@ -31,8 +31,9 @@ from dataclasses import dataclass
 from . import dump as D
 
 # the scene rect the export renders is the visible items rect inflated by this
-# margin (DEFAULT_SCENE_BORDER_MARGIN of the editor)
-SCENE_MARGIN = 50
+# margin - the editor now exports at the diagram size with only a 1px pad (no
+# scene border margin), see EDIT-IO-6
+SCENE_MARGIN = 1
 # the rounded corners of a state are left out of the border path
 CORNER_SKIP = 14
 # a channel below this value is ink on the white background

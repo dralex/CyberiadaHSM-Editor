@@ -43,7 +43,7 @@ def load(name):
 class CatalogTest(unittest.TestCase):
     def test_catalog(self):
         cat = CAT.Catalog()
-        self.assertEqual(len(cat.by_form(CAT.FORM_MODEL)), 25)
+        self.assertEqual(len(cat.by_form(CAT.FORM_MODEL)), 27)
         self.assertEqual(len(cat.by_form(CAT.FORM_GESTURE)), 16)
         self.assertEqual(len(cat.by_form(CAT.FORM_GESTURE_FORM)), 15)
         self.assertIn("| `new-state <parent> [x y w h] <name>` |", cat.table(CAT.FORM_MODEL))
@@ -51,8 +51,8 @@ class CatalogTest(unittest.TestCase):
 
     def test_tool_model(self):
         ts = CAT.tools()
-        self.assertEqual(len(ts), 12)
-        self.assertEqual(len(CAT.creation_tools()), 8)
+        self.assertEqual(len(ts), 14)
+        self.assertEqual(len(CAT.creation_tools()), 10)
         self.assertEqual({t.name for t in ts if t.family == CAT.FAMILY_RECT}, {"new-sm", "new-state"})
 
     def test_creation_and_manipulation_generate(self):

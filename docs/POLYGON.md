@@ -98,10 +98,10 @@ diagram from an empty document. The diagrams are **drawing stories** in
 states, nesting, pseudostates and key transitions to draw, a `budget`, and a
 `source`. They are taken from the example statecharts of *Practical UML
 Statecharts in C/C++* (`docs/PSiCC2.pdf`), filtered to the elements the editor
-supports (simple/composite states, `initial`/`final`/`choice`/`terminate`
-pseudostates, event/guard/action transitions, entry/exit/internal behaviours,
-comments — no history, orthogonal regions, fork/join or submachines). Pick one
-with `--story <name>`, or let the seed choose.
+supports (simple/composite states, `initial`/`final`/`choice`/`terminate` and
+shallow/deep `history` pseudostates, event/guard/action transitions,
+entry/exit/internal behaviours, comments — no orthogonal regions, fork/join or
+submachines). Pick one with `--story <name>`, or let the seed choose.
 
 Unlike exploration, a drawing session does not inject fuzzer bursts: it is a
 clean build of a known machine. Its intro **presents the editor's rules**

@@ -146,8 +146,11 @@ def one_initial_per_parent(dump):                        # EDIT-SEM-1
             yield Violation("SEM-1", "%d initial pseudostates under %s" % (n, parent))
 
 
-_SOURCE_KINDS = D.STATE_KINDS + (D.KIND_INITIAL, D.KIND_CHOICE)
-_TARGET_KINDS = D.STATE_KINDS + (D.KIND_FINAL, D.KIND_CHOICE, D.KIND_TERMINATE)
+# a history pseudostate is a valid target, and the source of an optional default
+# transition (PNST 984, not required) - so it is legal on either end
+_HISTORY_KINDS = (D.KIND_SHALLOW_HISTORY, D.KIND_DEEP_HISTORY)
+_SOURCE_KINDS = D.STATE_KINDS + (D.KIND_INITIAL, D.KIND_CHOICE) + _HISTORY_KINDS
+_TARGET_KINDS = D.STATE_KINDS + (D.KIND_FINAL, D.KIND_CHOICE, D.KIND_TERMINATE) + _HISTORY_KINDS
 
 
 def endpoint_kinds(dump):                                # EDIT-SEM-2

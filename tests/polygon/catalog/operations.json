@@ -78,6 +78,28 @@
       "form": "model"
     },
     {
+      "verb": "new-shallow-history",
+      "args": "<parent> [x y]",
+      "effect": "create a shallow history pseudostate",
+      "targets": [
+        "sm",
+        "composite",
+        "simple"
+      ],
+      "form": "model"
+    },
+    {
+      "verb": "new-deep-history",
+      "args": "<parent> [x y]",
+      "effect": "create a deep history pseudostate",
+      "targets": [
+        "sm",
+        "composite",
+        "simple"
+      ],
+      "form": "model"
+    },
+    {
       "verb": "new-transition",
       "args": "<sm> <src> <tgt> [trigger]",
       "effect": "create an external/local transition",
@@ -234,8 +256,8 @@
     },
     {
       "verb": "label",
-      "args": "<id> [x y]",
-      "effect": "pin the transition label point (no coordinates reset it to auto-placement)",
+      "args": "<id> [x y [w h]]",
+      "effect": "pin the transition label rect (x y w h) or point (x y); no coordinates reset it to auto-placement",
       "targets": [
         "transition"
       ],
@@ -316,7 +338,7 @@
     },
     {
       "verb": "tool",
-      "args": "select|pan|zoom|transition|new-sm|new-state|new-initial|new-final|new-choice|new-terminate|new-comment|new-formal-comment",
+      "args": "select|pan|zoom|transition|new-sm|new-state|new-initial|new-final|new-choice|new-terminate|new-shallow-history|new-deep-history|new-comment|new-formal-comment",
       "effect": "select the scene tool; the creation tools draw a rect (new-sm, new-state) or place on click, then revert to select",
       "targets": [],
       "form": "gesture"

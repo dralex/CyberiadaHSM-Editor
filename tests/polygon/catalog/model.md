@@ -7,11 +7,14 @@ The model is a CyberiadaML hierarchical state machine (UML statecharts):
   and comments of their own. A state may hold an initial pseudostate that
   marks the child to enter first.
 - The pseudostates: initial (one per level, the entry point),
-  choice (a branching point with guarded outgoing transitions), terminate.
+  choice (a branching point with guarded outgoing transitions), terminate,
+  and shallow/deep history (restore the last active substate of a composite).
   The final state is similar to pseudostates by drawing and using in diagrams.
 - A transition goes from a source (a state, the initial pseudostate or a
-  choice) to a target (a state, a final state, a choice or a terminate
-  pseudostate) of the same state machine. It carries at most one action.
+  choice) to a target (a state, a final state, a choice, a terminate or a
+  history pseudostate) of the same state machine. A history pseudostate may
+  also be the source of one optional default transition. It carries at most
+  one action.
   The format does not distinguish local and external transitions: every
   transition is local once saved, whatever the editor marks in memory.
 - The texts are edited on the canvas the way a user does: a double click on a
