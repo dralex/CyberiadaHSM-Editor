@@ -726,6 +726,8 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
     DotSignal* movedDot = dynamic_cast<DotSignal*>(signalOwner);
     Qt::KeyboardModifiers mods = movedDot ? movedDot->modifiers() : Qt::NoModifier;
 
+    // snap the dragged line point to the grid (no-op when snap mode is off)
+    p = snapToGrid(p);
     prevPosition = p;
 
     for(int i = 0; i < listDots.size(); i++){
@@ -881,6 +883,11 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
             Cyberiada::Point pt = pol.at(i - 1);
             pt.x += dx;
             pt.y += dy;
+            // snap the interior point to the grid in scene space (the polyline is
+            // stored relative to the source centre); Ctrl can still lock an axis
+            QPointF snapped = snapToGrid(QPointF(pt.x, pt.y) + sourceCenter()) - sourceCenter();
+            pt.x = snapped.x();
+            pt.y = snapped.y();
             if (mods & Qt::ControlModifier) {
                 // like the endpoints: snap the point onto the axis of its
                 // previous neighbour so the incoming segment stays orthogonal

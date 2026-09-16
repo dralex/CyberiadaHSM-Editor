@@ -7,6 +7,7 @@
 #include <QSize>
 #include <QString>
 #include <QStringList>
+#include <QPointF>
 
 #include "cyberiada_constants.h"
 
@@ -137,5 +138,8 @@ private:
     int selectionBorderWidth;
     bool selectionInvertText;
 };
+
+// round a scene point to the grid when snap mode is on; unchanged otherwise
+QPointF snapToGrid(const QPointF& p);
 
 #endif // SETTINGS_MANAGER_H

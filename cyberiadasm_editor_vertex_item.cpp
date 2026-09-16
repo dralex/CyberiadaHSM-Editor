@@ -200,11 +200,17 @@ void CyberiadaSMEditorVertexItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event
 
     if (isLeftMouseButtonPressed) {
         setFlag(ItemIsMovable);
+    }
+
+    QGraphicsItem::mouseMoveEvent(event);   // applies the move
+
+    if (isLeftMouseButtonPressed) {
+        // snap the moved point to the grid in scene space (no-op when snap is off)
+        QPointF sp = snapToGrid(scenePos());
+        setPos(parentItem() ? parentItem()->mapFromScene(sp) : sp);
         model->updateGeometry(model->elementToIndex(element),
                               Cyberiada::Point(pos().x(), pos().y()));
     }
-
-    QGraphicsItem::mouseMoveEvent(event);
 
     // a pseudostate dragged to the parent edge extends the parent, like a state
     if (parentItem()) {

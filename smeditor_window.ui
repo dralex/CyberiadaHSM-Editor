@@ -177,6 +177,7 @@
    <addaction name="actionDeleteElement"/>
    <addaction name="separator"/>
    <addaction name="actionGridVisibility"/>
+   <addaction name="actionSnapMode"/>
    <addaction name="actionServiceObjects"/>
    <addaction name="actionInspectorMode"/>
    <addaction name="actionLogSession"/>

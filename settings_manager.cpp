@@ -24,6 +24,14 @@ SettingsManager& SettingsManager::instance() {
     return instance;
 }
 
+QPointF snapToGrid(const QPointF& p)
+{
+    SettingsManager& sm = SettingsManager::instance();
+    double g = sm.getGridSpacing();
+    if (!sm.getSnapMode() || g <= 0.0) return p;
+    return QPointF(qRound(p.x() / g) * g, qRound(p.y() / g) * g);
+}
+
 SettingsManager::SettingsManager() {
     load();
 }
