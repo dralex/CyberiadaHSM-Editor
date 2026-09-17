@@ -100,6 +100,7 @@ build_repo() {
 
     orig_branch=""
     if [ "$PULL" -eq 1 ]; then
+        echo "Pulling $1..."
         [ -z "$(git -C "$dir" status --porcelain --untracked-files=no)" ] \
             || die "$repo has uncommitted changes; commit them or use --no-pull"
         orig_branch=$(git -C "$dir" rev-parse --abbrev-ref HEAD)
@@ -108,6 +109,7 @@ build_repo() {
         git -C "$dir" pull --quiet --ff-only origin "$repo_branch"
     fi
 
+    echo "Building $1..."
     bdir="$dir/build-pkg"
     cmake -S "$dir" -B "$bdir" \
         -DCMAKE_BUILD_TYPE=Release \
@@ -119,6 +121,7 @@ build_repo() {
     cmake --build "$bdir" -j "$JOBS"
 
     if [ "$TEST" -eq 1 ]; then
+        echo "Testing $1..."
         # the freshly built lib must resolve before the one already in the prefix
         test_ld="$bdir:$PREFIX/lib${QT5:+:$QT5}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
         if [ "$repo" = "CyberiadaHSM-Editor" ]; then
@@ -131,9 +134,11 @@ build_repo() {
         fi
     fi
 
+    echo "Installing $1..."
     cmake --install "$bdir" >/dev/null
 
     if [ "$pack" = "deb" ]; then
+        echo "Packing $1..."
         ( cd "$bdir" && cpack -G DEB >/dev/null )
         cp "$bdir"/*.deb "$OUT"/
     fi
