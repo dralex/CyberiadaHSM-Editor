@@ -18,13 +18,15 @@ FROM ubuntu:${UBUNTU_VERSION}
 ENV DEBIAN_FRONTEND=noninteractive
 
 # build environment: compiler/cmake, packaging (dpkg-shlibdeps needs file+fakeroot),
-# libxml2 + Qt5 (Widgets/Svg/Test), fontconfig for the editor's text-metric tests,
-# valgrind for the memcheck tests, and locales to generate ru_RU.UTF-8
+# libxml2 + Qt5 (Widgets/Svg/Test), python3-dev + pybind11 for the python binding,
+# fontconfig for the editor's text-metric tests, valgrind for the memcheck tests,
+# and locales to generate ru_RU.UTF-8
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential cmake git pkg-config \
         dpkg-dev fakeroot file \
         libxml2-dev \
         qtbase5-dev qttools5-dev qttools5-dev-tools libqt5svg5-dev \
+        python3 python3-dev pybind11-dev \
         fontconfig valgrind \
         locales ca-certificates \
     && sed -i '/ru_RU.UTF-8/s/^# //' /etc/locale.gen \

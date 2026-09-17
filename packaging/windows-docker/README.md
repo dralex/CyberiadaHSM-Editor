@@ -72,6 +72,14 @@ or `docker run --privileged`). The editor GUI tests stay on the native-Linux pat
 (`../build-toolchain.sh`) — their offscreen/fontconfig setup does not translate to
 Wine.
 
+## Python binding
+
+The MXE cross-build does **not** produce the python binding: MXE has no Windows
+CPython, and a MinGW extension linked against official (MSVC-built) CPython is ABI
+fragile. Build the Windows python package with the native MSVC/vcpkg path
+(`../build-toolchain.bat`, which pulls `pybind11` via vcpkg) instead; on Linux it is
+built natively by `../build-toolchain.sh`.
+
 ## MinGW vs MSVC
 
 This backend and the MSVC/vcpkg backend (`../build-toolchain.bat`, no `--docker`)

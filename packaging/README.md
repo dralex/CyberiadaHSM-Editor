@@ -14,10 +14,16 @@ the directory above the editor repo:
       QtPropertyBrowser/
       CyberiadaHSM-Editor/   <- this repo (scripts live in packaging/)
 
-Build order: `libhtreegeom → libcyberiadaml → libcyberiadamlpp → QtPropertyBrowser
-→ CyberiadaHSM-Editor`. Each library is installed into a shared prefix so the next
-one finds it; each is pulled on its release branch (`main`, `master` for
-QtPropertyBrowser), built, tested, and packaged.
+Build order: `libhtreegeom → libcyberiadaml → libcyberiadamlpp →
+libcyberiadamlpp-py → QtPropertyBrowser → CyberiadaHSM-Editor`. Each library is
+installed into a shared prefix so the next one finds it; each is pulled on its
+release branch (`main`, `master` for QtPropertyBrowser), built, tested, and
+packaged.
+
+The **python binding** (`libcyberiadamlpp-py`) is built and packaged as its **own**
+package — `python3-libcyberiadamlpp` (`.deb`) or a `.zip` — and is **never** bundled
+into the editor distribution. It needs the python 3 dev headers and `pybind11`; skip
+it with `--no-python`.
 
 The paths are resolved from the **script's own location**, so it can be run from
 anywhere — the working directory does not matter:
@@ -37,6 +43,7 @@ through an rpath), so it needs no separate QtPropertyBrowser package.
       --branch NAME  branch to build (default: main)
       --no-pull      build the current checkout, do not switch/pull
       --no-test      skip ctest
+      --no-python    skip the python binding package
       --jobs N       parallel build jobs
 
 The editor tests run under both the `C` and `ru_RU.UTF-8` locales. Building `main`
@@ -63,10 +70,12 @@ Requires Visual Studio, CMake, Git, vcpkg (`VCPKG_ROOT`), and a Qt 5 install.
     packaging\build-toolchain.bat --qtdir C:\Qt\5.15.2\msvc2019_64 [options]
       --prefix DIR   shared install prefix (default: C:\cyberiada)
       --out DIR      collect all packages here (default: <sources>\dist)
-      --branch NAME / --no-pull / --no-test / --vcpkg DIR
+      --branch NAME / --no-pull / --no-test / --no-python / --vcpkg DIR
 
-`libxml2` is provided by vcpkg (`vcpkg install libxml2`). `homog2d.hpp` is copied
-from `homog2d/` if the checkout has it as a symlink (Windows cannot use it).
+`libxml2` is provided by vcpkg (`vcpkg install libxml2`); the python binding pulls
+`pybind11` the same way. `homog2d.hpp` is copied from `homog2d/` if the checkout has
+it as a symlink (Windows cannot use it). The python binding is a separate `.zip`, not
+part of the editor zip.
 
 ## Windows without Windows — `build-windows-docker.sh` (Docker + MinGW)
 

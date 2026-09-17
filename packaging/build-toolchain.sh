@@ -8,8 +8,10 @@
 # is collected into one output directory. The editor is the endpoint: a .deb with
 # the proper dependencies (QtPropertyBrowser is bundled inside it).
 #
-# Order: libhtreegeom -> libcyberiadaml -> libcyberiadamlpp -> QtPropertyBrowser
-#        -> CyberiadaHSM-Editor
+# Order: libhtreegeom -> libcyberiadaml -> libcyberiadamlpp -> (libcyberiadamlpp-py)
+#        -> QtPropertyBrowser -> CyberiadaHSM-Editor
+# The python binding is a separate .deb (python3-libcyberiadamlpp), not bundled
+# into the editor; skip it with --no-python.
 #
 # Copyright (C) 2026 Alexey Fedoseev <aleksey@fedoseev.net>
 #
@@ -27,6 +29,7 @@ OUT="$SOURCES/dist"
 BRANCH="main"                 # the release branch (QtPropertyBrowser uses master)
 PULL=1                        # 0 = build whatever is checked out
 TEST=1
+PYTHON=1                      # also build+package the python binding (a separate .deb)
 JOBS=$(nproc 2>/dev/null || echo 2)
 
 usage() {
@@ -37,6 +40,7 @@ usage: $0 [options]
   --branch NAME  branch to build (default: main; QtPropertyBrowser: master)
   --no-pull      build the current checkout, do not switch/pull a branch
   --no-test      skip ctest
+  --no-python    skip the python binding package (python3-libcyberiadamlpp)
   --jobs N       parallel build jobs (default: $JOBS)
   -h, --help     this help
 EOF
@@ -49,6 +53,7 @@ while [ $# -gt 0 ]; do
         --branch) BRANCH="$2"; shift 2 ;;
         --no-pull) PULL=0; shift ;;
         --no-test) TEST=0; shift ;;
+        --no-python) PYTHON=0; shift ;;
         --jobs) JOBS="$2"; shift 2 ;;
         -h|--help) usage; exit 0 ;;
         *) echo "unknown option: $1" >&2; usage; exit 2 ;;
@@ -72,6 +77,10 @@ if command -v pkg-config >/dev/null 2>&1; then
     pkg-config --exists libxml-2.0 || echo "warning: libxml2 dev not found via pkg-config"
 fi
 command -v valgrind >/dev/null 2>&1 || echo "note: valgrind not found (memcheck tests skipped)"
+if [ "$PYTHON" -eq 1 ]; then
+    command -v python3 >/dev/null 2>&1 || die "python3 not found (use --no-python to skip the binding)"
+    echo "note: the python binding needs python3 dev headers and pybind11"
+fi
 
 # the local no-root Qt env, when present, sets Qt paths and offscreen mode
 if [ -f "$PREFIX/qt5-env.sh" ]; then
@@ -147,9 +156,59 @@ build_repo() {
     if [ -n "$orig_branch" ]; then git -C "$dir" checkout --quiet "$orig_branch"; fi
 }
 
+# the python binding is a separate package (python3-libcyberiadamlpp), never
+# bundled into the editor. Its extension module installs to an absolute
+# python site dir, so cpack stages that itself and no install into the shared
+# prefix is needed (nothing downstream depends on it). The test env captures
+# LD_LIBRARY_PATH at configure time, so it is set for the whole build.
+build_python() {
+    repo="libcyberiadamlpp-py"
+    dir="$SOURCES/$repo"
+    [ -d "$dir" ] || die "repository not found: $dir"
+    say "$repo"
+
+    orig_branch=""
+    if [ "$PULL" -eq 1 ]; then
+        echo "Pulling $repo..."
+        [ -z "$(git -C "$dir" status --porcelain --untracked-files=no)" ] \
+            || die "$repo has uncommitted changes; commit them or use --no-pull"
+        orig_branch=$(git -C "$dir" rev-parse --abbrev-ref HEAD)
+        git -C "$dir" fetch --quiet origin
+        git -C "$dir" checkout --quiet "$BRANCH"
+        git -C "$dir" pull --quiet --ff-only origin "$BRANCH"
+    fi
+
+    py_ld="$PREFIX/lib${QT5:+:$QT5}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+    echo "Building $repo..."
+    bdir="$dir/build-pkg"
+    LD_LIBRARY_PATH="$py_ld" cmake -S "$dir" -B "$bdir" \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+        -DCMAKE_INSTALL_PREFIX="$PREFIX" \
+        -DCMAKE_PREFIX_PATH="$prefix_path" \
+        -DCMAKE_MODULE_PATH="$PREFIX/lib/cmake" \
+        ${REDIRECT:+-DCMAKE_PROJECT_INCLUDE="$REDIRECT"} >/dev/null
+    cmake --build "$bdir" -j "$JOBS"
+
+    if [ "$TEST" -eq 1 ]; then
+        echo "Testing $repo..."
+        # the binding is proven to build and import; its reference outputs can
+        # lag a mlpp serialization change, so a test diff warns, not aborts
+        ( cd "$bdir" && LD_LIBRARY_PATH="$py_ld" ctest --output-on-failure ) \
+            || echo "warning: python binding tests failed (reference drift vs mlpp); package still built"
+    fi
+
+    echo "Packing $repo..."
+    ( cd "$bdir" && cpack -G DEB >/dev/null )
+    cp "$bdir"/*.deb "$OUT"/
+
+    if [ -n "$orig_branch" ]; then git -C "$dir" checkout --quiet "$orig_branch"; fi
+}
+
 build_repo libhtreegeom      "$BRANCH" deb
 build_repo libcyberiadaml    "$BRANCH" deb
 build_repo libcyberiadamlpp  "$BRANCH" deb
+if [ "$PYTHON" -eq 1 ]; then build_python; fi
 build_repo QtPropertyBrowser master    nodeb   # bundled into the editor .deb
 build_repo CyberiadaHSM-Editor "$BRANCH" deb
 

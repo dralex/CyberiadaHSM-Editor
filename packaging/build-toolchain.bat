@@ -9,8 +9,10 @@ rem Every package is collected into one output directory. The editor is the
 rem endpoint: a self-contained .zip with Qt (via windeployqt) and every toolchain
 rem DLL bundled next to the executable.
 rem
-rem Order: libhtreegeom -> libcyberiadaml -> libcyberiadamlpp -> QtPropertyBrowser
-rem        -> CyberiadaHSM-Editor   (QtPropertyBrowser is bundled into the editor)
+rem Order: libhtreegeom -> libcyberiadaml -> libcyberiadamlpp -> (libcyberiadamlpp-py)
+rem        -> QtPropertyBrowser -> CyberiadaHSM-Editor
+rem The python binding is a separate .zip (not bundled into the editor); QtPropertyBrowser
+rem is bundled into the editor. Skip the binding with --no-python.
 rem
 rem Prerequisites: Visual Studio (MSVC), CMake, Git, vcpkg (VCPKG_ROOT set), and a
 rem Qt 5 installation (Widgets, Svg) whose bin dir holds windeployqt.
@@ -30,6 +32,7 @@ set "BRANCH=main"
 set "PULL=1"
 set "TEST=1"
 set "DOCKER=0"
+set "PYTHON=1"
 set "TRIPLET=x64-windows"
 if "%QTDIR%"=="" set "QTDIR="
 if "%VCPKG_ROOT%"=="" set "VCPKG_ROOT="
@@ -43,6 +46,7 @@ if /I "%~1"=="--qtdir"  ( set "QTDIR=%~2" & shift & shift & goto parse )
 if /I "%~1"=="--vcpkg"  ( set "VCPKG_ROOT=%~2" & shift & shift & goto parse )
 if /I "%~1"=="--no-pull" ( set "PULL=0" & shift & goto parse )
 if /I "%~1"=="--no-test" ( set "TEST=0" & shift & goto parse )
+if /I "%~1"=="--no-python" ( set "PYTHON=0" & shift & goto parse )
 if /I "%~1"=="--docker" ( set "DOCKER=1" & shift & goto parse )
 if /I "%~1"=="-h" goto help
 if /I "%~1"=="--help" goto help
@@ -50,7 +54,7 @@ echo unknown option: %~1 & goto help
 
 :help
 echo usage: %~nx0 [--prefix DIR] [--out DIR] [--branch NAME] [--qtdir DIR]
-echo              [--vcpkg DIR] [--no-pull] [--no-test] [--docker]
+echo              [--vcpkg DIR] [--no-pull] [--no-test] [--no-python] [--docker]
 echo.
 echo   default backend: native MSVC + vcpkg (needs Visual Studio, vcpkg, Qt)
 echo   --docker       : containerized MinGW-w64 cross build (needs Docker; no
@@ -89,6 +93,10 @@ set "TOOLCHAIN=%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake"
 
 echo == installing libxml2 via vcpkg
 call "%VCPKG_ROOT%\vcpkg.exe" install "libxml2:%TRIPLET%" || ( echo error: vcpkg install libxml2 failed & exit /b 1 )
+if "%PYTHON%"=="1" (
+  echo == installing pybind11 via vcpkg
+  call "%VCPKG_ROOT%\vcpkg.exe" install "pybind11:%TRIPLET%" || ( echo error: vcpkg install pybind11 failed & exit /b 1 )
+)
 
 rem homog2d.hpp must be a real file on Windows (the repo ships a symlink)
 if not exist "%SOURCES%\libhtreegeom\homog2d.hpp" (
@@ -106,6 +114,8 @@ rem --- build each repo -------------------------------------------------------
 call :build_repo libhtreegeom      %BRANCH% zip   || exit /b 1
 call :build_repo libcyberiadaml    %BRANCH% zip   || exit /b 1
 call :build_repo libcyberiadamlpp  %BRANCH% zip   || exit /b 1
+rem the python binding is a separate package (python3-libcyberiadamlpp), not in the editor
+if "%PYTHON%"=="1" ( call :build_repo libcyberiadamlpp-py %BRANCH% zip || exit /b 1 )
 call :build_repo QtPropertyBrowser master   nozip || exit /b 1
 call :build_repo CyberiadaHSM-Editor %BRANCH% editor || exit /b 1
 
@@ -190,6 +200,8 @@ for %%D in (cyberiadaml cyberiadamlpp htgeom QtPropertyBrowser) do (
   if exist "%PREFIX%\lib\%%D.dll" copy /Y "%PREFIX%\lib\%%D.dll" "%STAGE%\" >nul
 )
 copy /Y "%VCPKG_INST%\bin\*.dll" "%STAGE%\" >nul
+rem the editor does not embed python: drop the python runtime pulled in by pybind11
+del /Q "%STAGE%\python*.dll" >nul 2>&1
 
 rem zip the folder (fonts and icons are compiled into Qt resources)
 powershell -NoProfile -Command "Compress-Archive -Force -Path '%STAGE%' -DestinationPath '%OUT%\cyberiada-editor-1.0.0-win64.zip'" || exit /b 1
