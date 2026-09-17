@@ -41,7 +41,11 @@ Git Bash or WSL to run the driver):
 Build the universal image once (long — MXE compiles the cross toolchain, ~1-2 h,
 then cached; reusable for any MinGW/Qt project):
 
-    docker build -t mxe-mingw-qt5 packaging/windows-docker
+    docker buildx build --load -t mxe-mingw-qt5 packaging/windows-docker
+
+(The driver uses buildx automatically. Plain `docker build` also works; on newer
+Docker it just prints a legacy-builder deprecation warning — harmless, or prefix
+`DOCKER_BUILDKIT=1`.)
 
 Run the project cross-build in it (sources mounted read-write at `/src`, packages
 written to the mounted `/out`):

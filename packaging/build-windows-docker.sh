@@ -89,7 +89,12 @@ pull_repo CyberiadaHSM-Editor "$BRANCH"
 # --- build the universal toolchain image (once) ------------------------------
 if [ "$REBUILD" -eq 1 ] || ! docker image inspect "$IMAGE:$TAG" >/dev/null 2>&1; then
     say "building the cross-toolchain image $IMAGE:$TAG (one-time, long)"
-    docker build -t "$IMAGE:$TAG" "$DOCKERDIR"
+    # prefer BuildKit/buildx; the legacy builder is deprecated (still works)
+    if docker buildx version >/dev/null 2>&1; then
+        docker buildx build --load -t "$IMAGE:$TAG" "$DOCKERDIR"
+    else
+        DOCKER_BUILDKIT=1 docker build -t "$IMAGE:$TAG" "$DOCKERDIR"
+    fi
 else
     say "reusing existing image $IMAGE:$TAG (use --rebuild-image to force)"
 fi
