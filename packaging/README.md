@@ -57,3 +57,14 @@ Requires Visual Studio, CMake, Git, vcpkg (`VCPKG_ROOT`), and a Qt 5 install.
 
 `libxml2` is provided by vcpkg (`vcpkg install libxml2`). `homog2d.hpp` is copied
 from `homog2d/` if the checkout has it as a symlink (Windows cannot use it).
+
+## Windows without Windows — `build-windows-docker.sh` (Docker + MinGW)
+
+Cross-compile the Windows `.zip` packages on any Linux host (or Windows with
+Docker), no Windows license or MSVC/vcpkg required. A universal MinGW-w64 + Qt5
+image (MXE) is built once, then the toolchain is cross-built inside it.
+
+    ./packaging/build-windows-docker.sh            # image (once) + packages -> dist/
+
+On Windows the same backend is reachable as `build-toolchain.bat --docker`. See
+[`windows-docker/README.md`](windows-docker/README.md) for details.

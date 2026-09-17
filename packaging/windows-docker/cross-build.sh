@@ -1,0 +1,131 @@
+#!/bin/sh
+# -----------------------------------------------------------------------------
+# Cross-compile the Cyberiada toolchain to native Windows inside the universal
+# MXE image (see Dockerfile). This is the PROJECT build recipe: it is mounted
+# into the generic toolchain container and run there; it is not part of the image.
+#
+# The sources are mounted at /src (the directory that holds the sibling repos),
+# the packages are written to /out. The host has already pulled the release
+# branch (see build-windows-docker.sh); this script does no git.
+#
+# Order: libhtreegeom -> libcyberiadaml -> libcyberiadamlpp -> QtPropertyBrowser
+#        -> CyberiadaHSM-Editor. Each is installed into the MXE prefix so the next
+# finds it; each library is packaged as a .zip; the editor becomes a self-contained
+# .zip with every runtime DLL bundled next to the exe.
+#
+# Copyright (C) 2026 Alexey Fedoseev <aleksey@fedoseev.net>  (GNU LGPL v3+)
+# -----------------------------------------------------------------------------
+set -eu
+
+SRC="${SRC:-/src}"
+OUT="${OUT:-/out}"
+TEST="${TEST:-1}"
+JOBS="$(nproc 2>/dev/null || echo 2)"
+
+: "${MXE_TARGET:=x86_64-w64-mingw32.shared}"
+: "${MXE_PREFIX:=/opt/mxe/usr/${MXE_TARGET}}"
+MXE_CMAKE="/opt/mxe/usr/bin/${MXE_TARGET}-cmake"
+QT_PLUGINS="${MXE_PREFIX}/qt5/plugins"
+
+say() { printf '\n== %s\n' "$*"; }
+die() { printf 'error: %s\n' "$*" >&2; exit 1; }
+
+[ -x "$MXE_CMAKE" ] || die "MXE cmake wrapper not found: $MXE_CMAKE"
+mkdir -p "$OUT"
+
+# run cross-built test exes under Wine. Registering the binfmt makes a bare .exe
+# run under Wine transparently (covers test harnesses that spawn the exe), and
+# CMAKE_CROSSCOMPILING_EMULATOR covers plain add_test targets. binfmt needs a
+# writable /proc/sys/fs/binfmt_misc (a host that has it, or --privileged).
+if [ "$TEST" = "1" ]; then
+    if [ -w /proc/sys/fs/binfmt_misc/register ]; then
+        update-binfmts --enable wine >/dev/null 2>&1 \
+          || printf ':winexe:M::MZ::/usr/bin/wine64:' > /proc/sys/fs/binfmt_misc/register 2>/dev/null \
+          || true
+    else
+        echo "note: /proc/sys/fs/binfmt_misc not writable; some suites may need --privileged"
+    fi
+    export WINEDEBUG=-all
+    export WINEPREFIX=/tmp/wine
+fi
+
+# build one repo: name  (zip|nozip|editor)
+build_repo() {
+    repo="$1"; pack="$2"
+    dir="$SRC/$repo"
+    [ -d "$dir" ] || die "repository not mounted: $dir"
+    say "$repo"
+
+    bdir="$dir/build-mingw"
+    "$MXE_CMAKE" -S "$dir" -B "$bdir" \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+        -DCMAKE_INSTALL_PREFIX="$MXE_PREFIX" \
+        -DCMAKE_MODULE_PATH="$MXE_PREFIX/lib/cmake;$MXE_PREFIX" \
+        -DCMAKE_CROSSCOMPILING_EMULATOR=wine64 >/dev/null
+    cmake --build "$bdir" -j "$JOBS"
+
+    # the editor GUI tests are Linux-shaped (fontconfig/offscreen) and are run on
+    # the native-Linux side instead; the library suites run under Wine here
+    if [ "$TEST" = "1" ] && [ "$repo" != "CyberiadaHSM-Editor" ]; then
+        ( cd "$bdir" && ctest --output-on-failure )
+    fi
+
+    cmake --install "$bdir" >/dev/null
+
+    if [ "$pack" = "zip" ]; then
+        ( cd "$bdir" && cpack -G ZIP >/dev/null )
+        cp "$bdir"/*.zip "$OUT"/
+    fi
+    if [ "$pack" = "editor" ]; then pack_editor "$bdir"; fi
+}
+
+# collect the editor and every runtime DLL into one self-contained zip
+pack_editor() {
+    bdir="$1"
+    stage="$bdir/dist-stage/CyberiadaEditor"
+    rm -rf "$bdir/dist-stage"
+    mkdir -p "$stage/platforms"
+
+    cp "$bdir/CyberiadaEditor.exe" "$stage/"
+
+    # every DLL is either in the MXE prefix bin (Qt, libxml2, MinGW runtime, and
+    # our cyberiadaml/mlpp/QtPropertyBrowser) or lib (htgeom); copy from both
+    for name in \
+        libgcc_s_seh-1 libstdc++-6 libwinpthread-1 \
+        Qt5Core Qt5Gui Qt5Widgets Qt5Svg \
+        htgeom cyberiadaml cyberiadamlpp QtPropertyBrowser \
+        libxml2-2 zlib1 liblzma-5 libiconv-2 libpcre2-8-0 libpcre2-posix-3
+    do
+        for d in "$MXE_PREFIX/bin" "$MXE_PREFIX/lib"; do
+            [ -f "$d/$name.dll" ] && cp "$d/$name.dll" "$stage/" && break
+        done
+    done
+    # the Qt platform plugin is mandatory; image formats and styles are nice to have
+    cp "$QT_PLUGINS/platforms/qwindows.dll" "$stage/platforms/" 2>/dev/null || \
+        echo "warning: qwindows.dll not found under $QT_PLUGINS/platforms"
+    for grp in imageformats styles; do
+        if [ -d "$QT_PLUGINS/$grp" ]; then
+            mkdir -p "$stage/$grp"
+            cp "$QT_PLUGINS/$grp"/*.dll "$stage/$grp/" 2>/dev/null || true
+        fi
+    done
+
+    ( cd "$bdir/dist-stage" && zip -qr "$OUT/cyberiada-editor-1.0.0-win64-mingw.zip" CyberiadaEditor )
+
+    # optional smoke test: the exe loads under Wine (offscreen, no display)
+    if [ "$TEST" = "1" ]; then
+        ( cd "$stage" && QT_QPA_PLATFORM=offscreen wine64 ./CyberiadaEditor.exe --help >/dev/null 2>&1 ) \
+            && echo "smoke: editor exe runs under Wine" \
+            || echo "warning: editor exe smoke test under Wine did not pass (check manually)"
+    fi
+}
+
+build_repo libhtreegeom      zip
+build_repo libcyberiadaml    zip
+build_repo libcyberiadamlpp  zip
+build_repo QtPropertyBrowser nozip
+build_repo CyberiadaHSM-Editor editor
+
+say "packages collected in $OUT"
+ls -1 "$OUT"

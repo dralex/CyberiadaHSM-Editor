@@ -29,6 +29,7 @@ set "OUT=%SOURCES%\dist"
 set "BRANCH=main"
 set "PULL=1"
 set "TEST=1"
+set "DOCKER=0"
 set "TRIPLET=x64-windows"
 if "%QTDIR%"=="" set "QTDIR="
 if "%VCPKG_ROOT%"=="" set "VCPKG_ROOT="
@@ -42,16 +43,36 @@ if /I "%~1"=="--qtdir"  ( set "QTDIR=%~2" & shift & shift & goto parse )
 if /I "%~1"=="--vcpkg"  ( set "VCPKG_ROOT=%~2" & shift & shift & goto parse )
 if /I "%~1"=="--no-pull" ( set "PULL=0" & shift & goto parse )
 if /I "%~1"=="--no-test" ( set "TEST=0" & shift & goto parse )
+if /I "%~1"=="--docker" ( set "DOCKER=1" & shift & goto parse )
 if /I "%~1"=="-h" goto help
 if /I "%~1"=="--help" goto help
 echo unknown option: %~1 & goto help
 
 :help
 echo usage: %~nx0 [--prefix DIR] [--out DIR] [--branch NAME] [--qtdir DIR]
-echo              [--vcpkg DIR] [--no-pull] [--no-test]
+echo              [--vcpkg DIR] [--no-pull] [--no-test] [--docker]
+echo.
+echo   default backend: native MSVC + vcpkg (needs Visual Studio, vcpkg, Qt)
+echo   --docker       : containerized MinGW-w64 cross build (needs Docker; no
+echo                    Visual Studio / vcpkg / Qt install required)
 exit /b 2
 
 :parsed
+rem --- containerized MinGW cross build (delegate to the Docker driver) --------
+if "%DOCKER%"=="1" (
+  where docker >nul 2>&1 || ( echo error: docker not found ^(needed for --docker^) & exit /b 1 )
+  set "SH="
+  where bash >nul 2>&1 && set "SH=bash"
+  if not defined SH ( where wsl >nul 2>&1 && set "SH=wsl bash" )
+  if not defined SH ( echo error: need Git Bash or WSL to run the Docker driver & exit /b 1 )
+  set "DOPTS="
+  if "%PULL%"=="0" set "DOPTS=!DOPTS! --no-pull"
+  if "%TEST%"=="0" set "DOPTS=!DOPTS! --no-test"
+  echo == delegating to the Docker cross-build backend
+  !SH! "%HERE%build-windows-docker.sh" --out "%OUT%" --branch "%BRANCH%" !DOPTS!
+  exit /b !errorlevel!
+)
+
 rem --- dependency check ------------------------------------------------------
 echo == checking build dependencies
 where cmake >nul 2>&1 || ( echo error: cmake not found & exit /b 1 )
