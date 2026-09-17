@@ -43,6 +43,16 @@ The editor tests run under both the `C` and `ru_RU.UTF-8` locales. Building `mai
 produces the release packages; use `--no-pull` (or `--branch devel`) to package the
 current development state.
 
+### Multiple Ubuntu releases via Docker — `build-linux-docker.sh`
+
+A `.deb` links against the Qt5/libxml2 of the release it was built on. To ship
+packages for several releases (20.04, 22.04, 24.04, 26.04), build each in a clean
+container of that release; the outputs land in `dist/ubuntu-<ver>/`.
+
+    ./packaging/build-linux-docker.sh            # all four releases -> dist/ubuntu-*/
+
+See [`linux-docker/README.md`](linux-docker/README.md) for details.
+
 ## Windows — `build-toolchain.bat` (MSVC + vcpkg)
 
 Produces one `.zip` per library and one **self-contained** editor `.zip` that
