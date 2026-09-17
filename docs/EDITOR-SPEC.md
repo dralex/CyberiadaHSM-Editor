@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.4 (2026-09-16)
+**Document version:** 0.5 (2026-09-17)
 
 **Related authorities:**
 
@@ -144,6 +144,18 @@ The `[U]` laws below are editing-mode invariants: the editor's recovery maintain
 each operation (grow-to-fit, push-siblings). Inspection mode suspends them and shows the stored
 geometry as-is (see Modes and §4.10).
 
+Three geometries are distinct and must not be conflated (PNST 1044 §7.2 defines the first two;
+the third is a derived display value the format does not store):
+
+- **element geometry** — an element's own rect (top-left + size) or centre point (`EDIT-NODE-3`)
+  + known radius; rect sizes are advisory and the editor may size them to the content (PNST 1044).
+- **state-machine geometry** — a state machine's own `dGeometry` rect: its drawn border and the
+  frame that lays out its content (`EDIT-NODE-1`, `EDIT-NODE-4`). It is the machine's own rect,
+  **not** a box that must enclose everything drawn.
+- **document bounding rect** — the union of *everything drawn* across the state machines. It is
+  derived, the format stores nothing for it, and it may extend beyond the state-machine rects
+  (`EDIT-NODE-12`, `EDIT-NODE-13`).
+
 - `EDIT-NODE-1` MUST [U]: a parent's rect contains every child's rect with a
   margin. The parent's rect should consider the actual region rect available for children
   (the whole rect minus a header, other blocks, etc.) *design*
@@ -161,7 +173,7 @@ geometry as-is (see Modes and §4.10).
 - `EDIT-NODE-7` MUST [U]: If an element is separated from parent it should be placed on
   the top level of hierarchy not overlapping the parent and the rest of the elements, but
   close to the parent. *design*
-- `EDIT-NODE-8` MUST [U]: a state's blocks are stacked vertically top-top-bottom (if
+- `EDIT-NODE-8` MUST [U]: a state's blocks are stacked vertically top-to-bottom (if
   available): the name block, the entry action block, the internal transition blocks, the
   content block with a region for composite states, the exit action block. If a simple
   state has no actions the header block is not drawn and the state name is drawn in the
@@ -175,6 +187,19 @@ geometry as-is (see Modes and §4.10).
   or `H*` (deep) glyph. The selection highlight overrides it while selected. *design*
 - `EDIT-NODE-11` MUST [A]: an auto-sized comment's box follows its body text; changing the body
   re-lays-out the box so its live geometry matches a save/reopen (keeps `EDIT-IO-1`). *design*
+- `EDIT-NODE-12` MUST [U]: the document bounding rect is the union of everything drawn — the
+  state-machine rects and every element geometry that reaches past a border: a point pseudostate's
+  drawn circle/rhombus, a terminator marker, an entry/exit point, a transition `dLabelGeometry`
+  rect, a comment link. It may exceed the state-machine rects. It is derived, not part of the
+  serialization (PNST 1044), so the editor recomputes it on load; a stored or cached bounding
+  that disagrees with the recomputed one is corrected, never a reason to refuse the document. A
+  document with valid element geometry always loads (see `EDIT-ROBUST-2`). *PNST 1044*
+- `EDIT-NODE-13` MAY [U]: an element's geometry may reach beyond the state-machine border — a point
+  pseudostate (initial/final/choice/history) near the border whose drawn shape overhangs it, an
+  `exitPoint`/entry point on the border (PNST 1044), a transition label. The standard imposes
+  no containment at the state-machine level, so this is not a violation: `EDIT-NODE-1` containment
+  is checked only for the rect children of a rect state, never against the state-machine frame.
+  *PNST 984/1044*
 
 ### 4.4 Transitions/comment links geometry and layout — EDGES
 
