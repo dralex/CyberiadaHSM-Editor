@@ -16,4 +16,4 @@ set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "The Qt editor for Cyberiada state machine 
 # the Cyberiada libraries carry no dpkg shlibs, so name them explicitly; the Qt
 # and system libraries are resolved from the binary by dpkg-shlibdeps
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
-set(CPACK_DEBIAN_RUNTIME_PACKAGE_DEPENDS "libcyberiadaml (>= 1.0.6), libcyberiadamlpp (>= 1.0.6)")
+set(CPACK_DEBIAN_RUNTIME_PACKAGE_DEPENDS "libcyberiadaml (>= 1.0.6), libcyberiadamlpp (>= 1.0.6), libhtreegeom (>= 1.0.6)")
