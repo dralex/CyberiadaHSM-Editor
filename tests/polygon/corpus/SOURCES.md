@@ -15,3 +15,9 @@ Cyberiada-GraphML, and verified law-clean and save-reopen stable before adoption
 | `dog.graphml` | `hsm-arduino-course/diagrams/2/dog.graphml` |
 | `simple-hoover.graphml` | `hsm-arduino-course/diagrams/3/simple-hoover.graphml` |
 | `submachine.graphml` | `CyberiadaHSM-Editor/tests/good/submachine-output.graphml` (editor l2-submachine test; the only diagram using the new submachine + entry/exit elements — PSiCC2 has no formal submachine states) |
+| `orchestrate-robot.graphml` | generated (`tools/combine.py orchestrate-robot`) — an orchestrator whose submachine states run vacuum-robot + maze-solver + turtle-square, embedded |
+| `orchestrate-traffic.graphml` | generated (`tools/combine.py orchestrate-traffic`) — semaphore + semaphore-hierarchy, embedded |
+| `orchestrate-home.graphml` | generated (`tools/combine.py orchestrate-home`) — microwave + simple-hoover, embedded |
+| `orchestrate-grand.graphml` | generated (`tools/combine.py orchestrate-grand`) — vacuum-robot + maze-solver + turtle-square + dog, embedded (stress) |
+| `orchestrate-robot-ext.graphml` | generated (`tools/combine.py orchestrate-robot-ext`) — the robot orchestrator referencing the machines by file name (external) |
+| `orchestrate-home-ext.graphml` | generated (`tools/combine.py orchestrate-home-ext`) — the home orchestrator with external file references |

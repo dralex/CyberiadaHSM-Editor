@@ -1,0 +1,884 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns">
+  <data key="gFormat">Cyberiada-GraphML-1.0</data>
+  <key id="gFormat" for="graphml" attr.name="format" attr.type="string" />
+  <key id="dName" for="graph" attr.name="name" attr.type="string" />
+  <key id="dName" for="node" attr.name="name" attr.type="string" />
+  <key id="dStateMachine" for="graph" attr.name="stateMachine" attr.type="string" />
+  <key id="dRegion" for="graph" attr.name="region" attr.type="string" />
+  <key id="dSubmachineState" for="node" attr.name="submachineState" attr.type="string" />
+  <key id="dGeometry" for="graph" attr.name="geometry" />
+  <key id="dGeometry" for="node" attr.name="geometry" />
+  <key id="dGeometry" for="edge" attr.name="geometry" />
+  <key id="dSourcePoint" for="edge" attr.name="sourcePoint" />
+  <key id="dTargetPoint" for="edge" attr.name="targetPoint" />
+  <key id="dLabelGeometry" for="edge" attr.name="labelGeometry" />
+  <key id="dNote" for="node" attr.name="note" attr.type="string" />
+  <key id="dVertex" for="node" attr.name="vertex" attr.type="string" />
+  <key id="dData" for="node" attr.name="data" attr.type="string" />
+  <key id="dData" for="edge" attr.name="data" attr.type="string" />
+  <key id="dPivot" for="edge" attr.name="pivot" attr.type="string" />
+  <key id="dChunk" for="edge" attr.name="chunk" attr.type="string" />
+  <key id="dCollapsed" for="node" attr.name="collapsed" attr.type="string" />
+  <key id="dMarkup" for="node" attr.name="markup" attr.type="string" />
+  <key id="dColor" for="node" attr.name="color" attr.type="string" />
+  <key id="dColor" for="edge" attr.name="color" attr.type="string" />
+  <key id="dFormalName" for="graph" attr.name="formalName" attr.type="string" />
+  <key id="dFormalName" for="node" attr.name="formalName" attr.type="string" />
+  <graph id="M0" edgedefault="directed">
+    <data key="dStateMachine" />
+    <data key="dName">orchestrate-grand</data>
+    <data key="dGeometry">
+      <rect x="0" y="0" width="1540" height="360" />
+    </data>
+    <node id="nMeta">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_META</data>
+      <data key="dData">standardVersion/ 1.0
+
+geometry/ full
+
+transitionOrder/ actionFirst
+
+eventPropagation/ block</data>
+    </node>
+    <node id="oinit">
+      <data key="dVertex">initial</data>
+      <data key="dGeometry">
+        <point x="40" y="180" />
+      </data>
+    </node>
+    <node id="os0">
+      <data key="dSubmachineState">R0_G</data>
+      <data key="dName">Run vacuum-robot</data>
+      <data key="dGeometry">
+        <rect x="120" y="100" width="220" height="160" />
+      </data>
+      <graph id="os0:" edgedefault="directed">
+        <node id="os0::en">
+          <data key="dVertex">entryPoint</data>
+          <data key="dName">in</data>
+          <data key="dGeometry">
+            <point x="0" y="80" />
+          </data>
+        </node>
+        <node id="os0::ex">
+          <data key="dVertex">exitPoint</data>
+          <data key="dName">out</data>
+          <data key="dGeometry">
+            <point x="220" y="80" />
+          </data>
+        </node>
+      </graph>
+    </node>
+    <edge id="e0" source="oinit" target="os0::en" />
+    <node id="os1">
+      <data key="dSubmachineState">R1_G</data>
+      <data key="dName">Run maze-solver</data>
+      <data key="dGeometry">
+        <rect x="440" y="100" width="220" height="160" />
+      </data>
+      <graph id="os1:" edgedefault="directed">
+        <node id="os1::en">
+          <data key="dVertex">entryPoint</data>
+          <data key="dName">in</data>
+          <data key="dGeometry">
+            <point x="0" y="80" />
+          </data>
+        </node>
+        <node id="os1::ex">
+          <data key="dVertex">exitPoint</data>
+          <data key="dName">out</data>
+          <data key="dGeometry">
+            <point x="220" y="80" />
+          </data>
+        </node>
+      </graph>
+    </node>
+    <edge id="e1" source="os0::ex" target="os1::en">
+      <data key="dData">DONE/</data>
+    </edge>
+    <node id="os2">
+      <data key="dSubmachineState">R2_G</data>
+      <data key="dName">Run turtle-square</data>
+      <data key="dGeometry">
+        <rect x="760" y="100" width="220" height="160" />
+      </data>
+      <graph id="os2:" edgedefault="directed">
+        <node id="os2::en">
+          <data key="dVertex">entryPoint</data>
+          <data key="dName">in</data>
+          <data key="dGeometry">
+            <point x="0" y="80" />
+          </data>
+        </node>
+        <node id="os2::ex">
+          <data key="dVertex">exitPoint</data>
+          <data key="dName">out</data>
+          <data key="dGeometry">
+            <point x="220" y="80" />
+          </data>
+        </node>
+      </graph>
+    </node>
+    <edge id="e2" source="os1::ex" target="os2::en">
+      <data key="dData">DONE/</data>
+    </edge>
+    <node id="os3">
+      <data key="dSubmachineState">R3_G0</data>
+      <data key="dName">Run dog</data>
+      <data key="dGeometry">
+        <rect x="1080" y="100" width="220" height="160" />
+      </data>
+      <graph id="os3:" edgedefault="directed">
+        <node id="os3::en">
+          <data key="dVertex">entryPoint</data>
+          <data key="dName">in</data>
+          <data key="dGeometry">
+            <point x="0" y="80" />
+          </data>
+        </node>
+        <node id="os3::ex">
+          <data key="dVertex">exitPoint</data>
+          <data key="dName">out</data>
+          <data key="dGeometry">
+            <point x="220" y="80" />
+          </data>
+        </node>
+      </graph>
+    </node>
+    <edge id="e3" source="os2::ex" target="os3::en">
+      <data key="dData">DONE/</data>
+    </edge>
+    <node id="ofin">
+      <data key="dVertex">final</data>
+      <data key="dGeometry">
+        <point x="1400" y="180" />
+      </data>
+    </node>
+    <edge id="e4" source="os3::ex" target="ofin">
+      <data key="dData">DONE/</data>
+    </edge>
+  </graph>
+  <graph id="R0_G" edgedefault="directed">
+    <data key="dStateMachine" />
+    <data key="dName">Робот-пылесос</data>
+    <node id="R0_init">
+      <data key="dVertex">initial</data>
+      <data key="dGeometry">
+        <point x="200.000000" y="600.000000" />
+      </data>
+    </node>
+    <node id="R0_n0">
+      <data key="dName">Уборка мусора</data>
+      <data key="dGeometry">
+        <rect x="800.000000" y="500.000000" width="360.000000" height="760.000000" />
+      </data>
+      <graph id="R0_n0:" edgedefault="directed">
+        <node id="R0_n0::n1">
+          <data key="dName">Сближение</data>
+          <data key="dData">entry/
+МодульДвижения.ДвигатьсяКЦели()
+</data>
+          <data key="dGeometry">
+            <rect x="50.000000" y="100.000000" width="300.000000" height="200.000000" />
+          </data>
+        </node>
+        <node id="R0_n0::n2">
+          <data key="dName">Уборка</data>
+          <data key="dData">entry/
+Пылесос.УбратьЦель()
+</data>
+          <data key="dGeometry">
+            <rect x="50.000000" y="550.000000" width="300.000000" height="200.000000" />
+          </data>
+        </node>
+      </graph>
+    </node>
+    <node id="R0_n3">
+      <data key="dName">Скан</data>
+      <data key="dData">entry/
+Сенсор.ПоискЦелиПоДистанции(мин)
+exit/
+Сенсор.ОстановкаПоиска()
+</data>
+      <data key="dGeometry">
+        <rect x="0.000000" y="800.000000" width="300.000000" height="200.000000" />
+      </data>
+    </node>
+    <edge id="R0_init-n3" source="R0_init" target="R0_n3">
+    </edge>
+    <edge id="R0_n0-n3" source="R0_n0" target="R0_n3">
+      <data key="dData">АнализаторЦели.ЦельУстранена/</data>
+      <data key="dLabelGeometry">
+        <point x="-300.000000" y="700.000000" />
+      </data>
+    </edge>
+    <edge id="R0_n0-n3-2" source="R0_n0" target="R0_n3">
+      <data key="dData">АнализаторЦели.ЦельПотеряна/</data>
+      <data key="dLabelGeometry">
+        <point x="-400.000000" y="600.000000" />
+      </data>
+    </edge>
+    <edge id="R0_n3-n0::n1" source="R0_n3" target="R0_n0::n1">
+      <data key="dData">Сенсор.ЦельПолучена/</data>
+      <data key="dLabelGeometry">
+        <point x="600.000000" y="0.000000" />
+      </data>
+    </edge>
+    <edge id="R0_n0::n1-n0::n2" source="R0_n0::n1" target="R0_n0::n2">
+      <data key="dData">Пылесос.ЦельВошлаВЗонуДействия/</data>
+      <data key="dLabelGeometry">
+        <point x="50.000000" y="400.000000" />
+      </data>
+    </edge>
+    <edge id="R0_n0::n2-n0::n1" source="R0_n0::n2" target="R0_n0::n1">
+      <data key="dData">Пылесос.ЦельВышлаИзЗоныДействия/</data>
+      <data key="dLabelGeometry">
+        <point x="350.000000" y="-200.000000" />
+      </data>
+    </edge>
+  </graph>
+  <graph id="R1_G" edgedefault="directed">
+    <data key="dStateMachine" />
+    <data key="dName">right_hand_maze_solver</data>
+    <node id="R1_n0">
+      <data key="dVertex">initial</data>
+      <data key="dName" />
+      <data key="dGeometry">
+        <point x="638.291894" y="1929.965589" />
+      </data>
+    </node>
+    <node id="R1_n1">
+      <data key="dNote">informal</data>
+      <data key="dData">Global Parameters
+
+Version: 1.0.0
+Author: Alexey Fedoseev
+Author e-mail: aleksey@fedoseev.net
+License: LGPL 3.0</data>
+      <data key="dGeometry">
+        <rect x="259.475087" y="1707.318208" width="288.632388" height="100.000000" />
+      </data>
+    </node>
+    <node id="R1_n2">
+      <data key="dName">right_hand_maze_solver</data>
+      <data key="dData">entry/</data>
+      <data key="dGeometry">
+        <rect x="736.311700" y="1660.000000" width="1659.319000" height="1040.399000" />
+      </data>
+      <graph id="R1_n2:" edgedefault="directed">
+        <node id="R1_n2::n0">
+          <data key="dName">solver</data>
+          <data key="dData">entry/</data>
+          <data key="dGeometry">
+            <rect x="137.658300" y="64.127800" width="1493.357000" height="955.608000" />
+          </data>
+          <graph id="R1_n2::n0:" edgedefault="directed">
+            <node id="R1_n2::n0::n0">
+              <data key="dName">go_farward_0</data>
+              <data key="dData">entry/
+Wheels.forward(0.3)
+
+exit/
+Wheels.stop()
+</data>
+              <data key="dGeometry">
+                <rect x="87.815587" y="133.636248" width="213.222130" height="144.403115" />
+              </data>
+            </node>
+            <node id="R1_n2::n0::n1">
+              <data key="dName">right_turn</data>
+              <data key="dData">entry/</data>
+              <data key="dGeometry">
+                <rect x="768.482700" y="39.430100" width="684.880000" height="456.374000" />
+              </data>
+              <graph id="R1_n2::n0::n1:" edgedefault="directed">
+                <node id="R1_n2::n0::n1::n0">
+                  <data key="dName">go_forward_1</data>
+                  <data key="dData">entry/
+Wheels.forward(0.3)
+Timer.start(4.0)
+
+exit/
+Debug.println('right_turn exit')
+</data>
+                  <data key="dGeometry">
+                    <rect x="384.404613" y="273.905247" width="179.740045" height="136.083115" />
+                  </data>
+                </node>
+                <node id="R1_n2::n0::n1::n1">
+                  <data key="dName">turn_right_1</data>
+                  <data key="dData">entry/
+Debug.println('right_turn entry')
+Wheels.turn_right(math.pi/4)
+Timer.start(5.0)
+
+exit/
+Wheels.stop()
+</data>
+                  <data key="dGeometry">
+                    <rect x="47.441918" y="68.366889" width="228.380045" height="158.463559" />
+                  </data>
+                </node>
+                <node id="R1_n2::n0::n1::n2">
+                  <data key="dName">stop_11</data>
+                  <data key="dData">entry/</data>
+                  <data key="dGeometry">
+                    <rect x="430.566095" y="68.366889" width="87.417082" height="55.632745" />
+                  </data>
+                </node>
+              </graph>
+            </node>
+            <node id="R1_n2::n0::n2">
+              <data key="dName">left_turn</data>
+              <data key="dData">entry/</data>
+              <data key="dGeometry">
+                <rect x="145.418800" y="431.435000" width="539.067000" height="484.538000" />
+              </data>
+              <graph id="R1_n2::n0::n2:" edgedefault="directed">
+                <node id="R1_n2::n0::n2::n0">
+                  <data key="dName">turn_left_2</data>
+                  <data key="dData">entry/
+Debug.println('left_turn entry')
+Wheels.turn_left(math.pi/4)
+Timer.start(5.0)
+
+exit/
+Wheels.stop()
+</data>
+                  <data key="dGeometry">
+                    <rect x="21.850895" y="299.187630" width="228.380045" height="168.403115" />
+                  </data>
+                </node>
+                <node id="R1_n2::n0::n2::n1">
+                  <data key="dName">stop_21</data>
+                  <data key="dData">entry/
+
+exit/
+Debug.println('left_turn exit')
+</data>
+                  <data key="dGeometry">
+                    <rect x="334.157979" y="113.773110" width="179.740045" height="125.277037" />
+                  </data>
+                </node>
+              </graph>
+            </node>
+            <node id="R1_n2::n0::n3">
+              <data key="dName">stop_01</data>
+              <data key="dData">entry/
+Debug.println('right open space')
+</data>
+              <data key="dGeometry">
+                <rect x="468.473908" y="152.182218" width="201.945793" height="79.152034" />
+              </data>
+            </node>
+            <node id="R1_n2::n0::n4">
+              <data key="dName">stop_02</data>
+              <data key="dData">entry/
+Debug.println('collision')
+</data>
+              <data key="dGeometry">
+                <rect x="102.387269" y="322.282946" width="164.110415" height="79.152034" />
+              </data>
+            </node>
+          </graph>
+        </node>
+      </graph>
+    </node>
+    <node id="R1_n3">
+      <data key="dNote">informal</data>
+      <data key="dData">ROS2 HSM Modules
+
+Debug
+Navigation
+Wheels
+Timer</data>
+      <data key="dGeometry">
+        <rect x="259.475087" y="1819.598764" width="288.632388" height="112.456329" />
+      </data>
+    </node>
+    <edge id="R1_e0" source="R1_n0" target="R1_n2::n0::n0">
+      <data key="dSourcePoint">
+        <point x="0.000000" y="0.000000" />
+      </data>
+      <data key="dTargetPoint">
+        <point x="0.000000" y="72.201600" />
+      </data>
+    </edge>
+    <edge id="R1_n2::n0::e0" source="R1_n2::n0::n0" target="R1_n2::n0::n4">
+      <data key="dData">COLLISION_WARNING/</data>
+      <data key="dSourcePoint">
+        <point x="120.561500" y="144.403100" />
+      </data>
+      <data key="dTargetPoint">
+        <point x="118.473300" y="0.000000" />
+      </data>
+      <data key="dLabelGeometry">
+        <point x="28.051700" y="97.298700" />
+      </data>
+    </edge>
+    <edge id="R1_n2::n0::e1" source="R1_n2::n0::n1::n0" target="R1_n2::n0::n0">
+      <data key="dData">TIMER_ELAPSED/</data>
+      <data key="dSourcePoint">
+        <point x="0.000000" y="78.104400" />
+      </data>
+      <data key="dTargetPoint">
+        <point x="213.222100" y="92.846400" />
+      </data>
+      <data key="dLabelGeometry">
+        <point x="-421.404000" y="18.770600" />
+      </data>
+    </edge>
+    <edge id="R1_n2::n0::n1::e0" source="R1_n2::n0::n1::n1" target="R1_n2::n0::n1::n2">
+      <data key="dData">TIMER_ELAPSED/</data>
+      <data key="dSourcePoint">
+        <point x="228.380000" y="60.452700" />
+      </data>
+      <data key="dTargetPoint">
+        <point x="0.000000" y="35.004400" />
+      </data>
+      <data key="dLabelGeometry">
+        <point x="144.027800" y="86.744400" />
+      </data>
+    </edge>
+    <edge id="R1_n2::n0::n2::e0" source="R1_n2::n0::n2::n0" target="R1_n2::n0::n2::n1">
+      <data key="dData">TIMER_ELAPSED/</data>
+      <data key="dSourcePoint">
+        <point x="228.380000" y="21.581400" />
+      </data>
+      <data key="dTargetPoint">
+        <point x="65.090000" y="125.277000" />
+      </data>
+      <data key="dLabelGeometry">
+        <point x="230.130300" y="18.616900" />
+      </data>
+    </edge>
+    <edge id="R1_n2::n0::e2" source="R1_n2::n0::n2::n1" target="R1_n2::n0::n0">
+      <data key="dData">STOP_COMPLETED/</data>
+      <data key="dSourcePoint">
+        <point x="31.436700" y="0.000000" />
+      </data>
+      <data key="dTargetPoint">
+        <point x="173.965400" y="144.403100" />
+      </data>
+      <data key="dLabelGeometry">
+        <point x="-50.876600" y="-83.760300" />
+      </data>
+    </edge>
+    <edge id="R1_n2::n0::e3" source="R1_n2::n0::n3" target="R1_n2::n0::n1::n1">
+      <data key="dData">STOP_COMPLETED/</data>
+      <data key="dSourcePoint">
+        <point x="201.945800" y="38.252000" />
+      </data>
+      <data key="dTargetPoint">
+        <point x="0.000000" y="80.729100" />
+      </data>
+      <data key="dLabelGeometry">
+        <point x="119.052400" y="58.452300" />
+      </data>
+    </edge>
+    <edge id="R1_n2::n0::n1::e1" source="R1_n2::n0::n1::n2" target="R1_n2::n0::n1::n0">
+      <data key="dData">STOP_COMPLETED/</data>
+      <data key="dSourcePoint">
+        <point x="43.708500" y="55.632700" />
+      </data>
+      <data key="dTargetPoint">
+        <point x="89.870000" y="0.000000" />
+      </data>
+      <data key="dLabelGeometry">
+        <point x="-40.983700" y="92.603100" />
+      </data>
+    </edge>
+    <edge id="R1_n2::n0::e4" source="R1_n2::n0::n0" target="R1_n2::n0::n3">
+      <data key="dData">RIGHT_OPEN_SPACE/</data>
+      <data key="dSourcePoint">
+        <point x="213.222100" y="68.199000" />
+      </data>
+      <data key="dTargetPoint">
+        <point x="0.000000" y="43.366900" />
+      </data>
+      <data key="dLabelGeometry">
+        <point x="130.979000" y="88.907900" />
+      </data>
+    </edge>
+    <edge id="R1_n2::n0::e5" source="R1_n2::n0::n4" target="R1_n2::n0::n2::n0">
+      <data key="dData">STOP_COMPLETED/</data>
+      <data key="dSourcePoint">
+        <point x="90.531700" y="79.152000" />
+      </data>
+      <data key="dTargetPoint">
+        <point x="96.155500" y="0.000000" />
+      </data>
+      <data key="dLabelGeometry">
+        <point x="31.938400" y="194.011200" />
+      </data>
+    </edge>
+    <edge id="R1_n2::n0::e6" source="R1_n2::n0::n0" target="R1_n2::n0::n4">
+      <data key="dData">COLLISION_DETECTED/</data>
+      <data key="dSourcePoint">
+        <point x="73.931600" y="144.403100" />
+      </data>
+      <data key="dTargetPoint">
+        <point x="39.334700" y="0.000000" />
+      </data>
+      <data key="dLabelGeometry">
+        <point x="-0.372700" y="81.435700" />
+      </data>
+    </edge>
+  </graph>
+  <graph id="R2_G" edgedefault="directed">
+    <data key="dStateMachine" />
+    <data key="dName">turtle_square</data>
+    <node id="R2_n0">
+      <data key="dVertex">initial</data>
+      <data key="dName" />
+      <data key="dGeometry">
+        <point x="638.291894" y="3296.796389" />
+      </data>
+    </node>
+    <node id="R2_n1">
+      <data key="dNote">informal</data>
+      <data key="dData">Global Parameters
+
+Version: 1.0.0
+Author: Alexey Fedoseev
+Author e-mail: aleksey@fedoseev.net
+License: LGPL 3.0</data>
+      <data key="dGeometry">
+        <rect x="259.475087" y="3100.399008" width="288.632388" height="100.000000" />
+      </data>
+    </node>
+    <node id="R2_n2">
+      <data key="dName">turtle_square</data>
+      <data key="dData">entry/</data>
+      <data key="dGeometry">
+        <rect x="743.236500" y="3100.399000" width="677.422000" height="476.800000" />
+      </data>
+      <graph id="R2_n2:" edgedefault="directed">
+        <node id="R2_n2::n0">
+          <data key="dName">four_corners</data>
+          <data key="dData">entry/</data>
+          <data key="dGeometry">
+            <rect x="25.579000" y="62.580700" width="627.794000" height="385.879000" />
+          </data>
+          <graph id="R2_n2::n0:" edgedefault="directed">
+            <node id="R2_n2::n0::n0">
+              <data key="dName">top-left</data>
+              <data key="dData">entry/
+Navigation.move_to_point(2, 7)
+Debug.println('go to top-left')
+</data>
+              <data key="dGeometry">
+                <rect x="26.617457" y="87.865083" width="213.222130" height="91.903115" />
+              </data>
+            </node>
+            <node id="R2_n2::n0::n1">
+              <data key="dName">top-right</data>
+              <data key="dData">entry/
+Navigation.move_to_point(7, 7)
+Debug.println('go to top-right')
+</data>
+              <data key="dGeometry">
+                <rect x="377.230037" y="87.865083" width="228.380045" height="91.903115" />
+              </data>
+            </node>
+            <node id="R2_n2::n0::n2">
+              <data key="dName">bottom-right</data>
+              <data key="dData">entry/
+Navigation.move_to_point(7, 2)
+Debug.println('go to bottom-right')
+</data>
+              <data key="dGeometry">
+                <rect x="377.230037" y="253.568715" width="228.380045" height="91.903115" />
+              </data>
+            </node>
+            <node id="R2_n2::n0::n3">
+              <data key="dName">bottom-left</data>
+              <data key="dData">entry/
+Navigation.move_to_point(2, 2)
+Debug.println('go to bottom-left')
+</data>
+              <data key="dGeometry">
+                <rect x="26.617457" y="253.568715" width="213.222130" height="91.903115" />
+              </data>
+            </node>
+          </graph>
+        </node>
+      </graph>
+    </node>
+    <node id="R2_n3">
+      <data key="dNote">informal</data>
+      <data key="dData">ROS2 HSM Modules
+
+Debug
+Navigation</data>
+      <data key="dGeometry">
+        <rect x="259.475087" y="3212.679564" width="288.632388" height="112.456329" />
+      </data>
+    </node>
+    <edge id="R2_e0" source="R2_n0" target="R2_n2::n0::n0">
+      <data key="dSourcePoint">
+        <point x="0.000000" y="0.000000" />
+      </data>
+      <data key="dTargetPoint">
+        <point x="0.000000" y="45.951600" />
+      </data>
+    </edge>
+    <edge id="R2_n2::n0::e0" source="R2_n2::n0::n0" target="R2_n2::n0::n1">
+      <data key="dData">MOVE_COMPLETED/</data>
+      <data key="dSourcePoint">
+        <point x="213.222100" y="45.951600" />
+      </data>
+      <data key="dTargetPoint">
+        <point x="0.000000" y="45.951600" />
+      </data>
+      <data key="dLabelGeometry">
+        <point x="115.561300" y="53.696600" />
+      </data>
+    </edge>
+    <edge id="R2_n2::n0::e1" source="R2_n2::n0::n1" target="R2_n2::n0::n2">
+      <data key="dData">MOVE_COMPLETED/</data>
+      <data key="dSourcePoint">
+        <point x="114.190000" y="91.903100" />
+      </data>
+      <data key="dTargetPoint">
+        <point x="114.190000" y="0.000000" />
+      </data>
+      <data key="dLabelGeometry">
+        <point x="-14.271900" y="73.902600" />
+      </data>
+    </edge>
+    <edge id="R2_n2::n0::e2" source="R2_n2::n0::n2" target="R2_n2::n0::n3">
+      <data key="dData">MOVE_COMPLETED/</data>
+      <data key="dSourcePoint">
+        <point x="0.000000" y="45.951600" />
+      </data>
+      <data key="dTargetPoint">
+        <point x="213.222100" y="45.951600" />
+      </data>
+      <data key="dLabelGeometry">
+        <point x="-12.186300" y="54.467200" />
+      </data>
+    </edge>
+    <edge id="R2_n2::n0::e3" source="R2_n2::n0::n3" target="R2_n2::n0::n0">
+      <data key="dData">MOVE_COMPLETED/</data>
+      <data key="dSourcePoint">
+        <point x="106.611100" y="0.000000" />
+      </data>
+      <data key="dTargetPoint">
+        <point x="106.611100" y="91.903100" />
+      </data>
+      <data key="dLabelGeometry">
+        <point x="115.649200" y="5.031800" />
+      </data>
+    </edge>
+  </graph>
+  <graph id="R3_G0" edgedefault="directed">
+    <data key="dStateMachine" />
+    <data key="dName">Собака гуляет</data>
+    <node id="R3_n0">
+      <data key="dName">Ждет</data>
+      <data key="dGeometry">
+        <rect x="-520.983459" y="4040.246394" width="200.000000" height="100.000000" />
+      </data>
+    </node>
+    <node id="R3_n1">
+      <data key="dVertex">initial</data>
+      <data key="dGeometry">
+        <point x="-420.656464" y="3977.199000" />
+      </data>
+    </node>
+    <node id="R3_n2">
+      <data key="dName">Гуляет</data>
+      <data key="dGeometry">
+        <rect x="-288.000000" y="4156.375794" width="1090.000000" height="374.871000" />
+      </data>
+      <graph id="R3_n2:" edgedefault="directed">
+        <node id="R3_n3">
+          <data key="dName">Играет</data>
+          <data key="dGeometry">
+            <rect x="428.414900" y="63.525100" width="621.000000" height="268.500000" />
+          </data>
+          <graph id="R3_n3:" edgedefault="directed">
+            <node id="R3_n3::n0">
+              <data key="dName">Ждет мяча</data>
+              <data key="dGeometry">
+                <rect x="194.000000" y="58.500000" width="200.000000" height="57.500000" />
+              </data>
+            </node>
+            <node id="R3_n3::n1">
+              <data key="dName">Бежит</data>
+              <data key="dGeometry">
+                <rect x="31.000000" y="168.500000" width="200.000000" height="57.500000" />
+              </data>
+            </node>
+            <node id="R3_n3::n2">
+              <data key="dName">Несет мяч</data>
+              <data key="dGeometry">
+                <rect x="395.000000" y="166.500000" width="200.000000" height="57.500000" />
+              </data>
+            </node>
+            <node id="R3_n3::n3">
+              <data key="dVertex">initial</data>
+              <data key="dGeometry">
+                <point x="151.000000" y="40.000000" />
+              </data>
+            </node>
+          </graph>
+        </node>
+        <node id="R3_n5">
+          <data key="dName">Ходит</data>
+          <data key="dGeometry">
+            <rect x="45.000000" y="89.870605" width="200.000000" height="56.000000" />
+          </data>
+        </node>
+        <node id="R3_n2::n0">
+          <data key="dVertex">initial</data>
+          <data key="dGeometry">
+            <point x="146.227325" y="48.063919" />
+          </data>
+        </node>
+        <node id="R3_n2::n1">
+          <data key="dName">Нюхает дерево</data>
+          <data key="dGeometry">
+            <rect x="42.000000" y="260.870605" width="200.000000" height="56.000000" />
+          </data>
+        </node>
+      </graph>
+    </node>
+    <node id="R3_n4">
+      <data key="dVertex">final</data>
+      <data key="dName">Закончила</data>
+      <data key="dGeometry">
+        <point x="269.000000" y="4634.246394" />
+      </data>
+    </node>
+    <edge id="R3_n1-n0" source="R3_n1" target="R3_n0">
+      <data key="dTargetPoint">
+        <point x="101.004000" y="0.000000" />
+      </data>
+    </edge>
+    <edge id="R3_n2-n4" source="R3_n2" target="R3_n4">
+      <data key="dData">ВЕРНУЛАСЬ/</data>
+      <data key="dSourcePoint">
+        <point x="558.088400" y="374.676500" />
+      </data>
+      <data key="dTargetPoint">
+        <point x="1.088400" y="-9.940600" />
+      </data>
+      <data key="dLabelGeometry">
+        <rect x="513.829971" y="408.964996" width="94.625000" height="27.000000" />
+      </data>
+    </edge>
+    <edge id="R3_n0-n2" source="R3_n0" target="R3_n2">
+      <data key="dData">ВЫШЛА ИЗ ДОМА/</data>
+      <data key="dGeometry">
+        <point x="781.210400" y="59.000000" />
+      </data>
+      <data key="dSourcePoint">
+        <point x="200.000000" y="59.000000" />
+      </data>
+      <data key="dTargetPoint">
+        <point x="548.226900" y="0.000000" />
+      </data>
+      <data key="dLabelGeometry">
+        <rect x="305.437500" y="46.500000" width="133.125000" height="27.000000" />
+      </data>
+    </edge>
+    <edge id="R3_n2::n0-n5" source="R3_n2::n0" target="R3_n5">
+    </edge>
+    <edge id="R3_n5-n2::n1" source="R3_n5" target="R3_n2::n1">
+      <data key="dData">НАШЛА ДЕРЕВО/</data>
+      <data key="dSourcePoint">
+        <point x="48.982300" y="56.000000" />
+      </data>
+      <data key="dTargetPoint">
+        <point x="51.168400" y="0.000000" />
+      </data>
+      <data key="dLabelGeometry">
+        <rect x="-6.174652" y="83.000000" width="123.500000" height="27.000000" />
+      </data>
+    </edge>
+    <edge id="R3_n2::n1-n5" source="R3_n2::n1" target="R3_n5">
+      <data key="dData">ПОНЮХАЛА/</data>
+      <data key="dSourcePoint">
+        <point x="169.362600" y="0.000000" />
+      </data>
+      <data key="dTargetPoint">
+        <point x="166.933000" y="56.000000" />
+      </data>
+      <data key="dLabelGeometry">
+        <rect x="125.147797" y="-50.000000" width="85.000000" height="27.000000" />
+      </data>
+    </edge>
+    <edge id="R3_n5-n3" source="R3_n5" target="R3_n3">
+      <data key="dData">У ХОЗЯИНА В РУКАХ МЯЧ/</data>
+      <data key="dSourcePoint">
+        <point x="197.793200" y="4.000000" />
+      </data>
+      <data key="dTargetPoint">
+        <point x="0.000000" y="27.988700" />
+      </data>
+      <data key="dLabelGeometry">
+        <rect x="229.842823" y="-35.138853" width="113.798485" height="65.000000" />
+      </data>
+    </edge>
+    <edge id="R3_n3-n5" source="R3_n3" target="R3_n5">
+      <data key="dData">ХОЗЯИН ОТВЛЕКСЯ/</data>
+      <data key="dSourcePoint">
+        <point x="0.000000" y="77.467100" />
+      </data>
+      <data key="dTargetPoint">
+        <point x="198.357400" y="51.163200" />
+      </data>
+      <data key="dLabelGeometry">
+        <rect x="-133.500000" y="60.441298" width="80.000000" height="46.000000" />
+      </data>
+    </edge>
+    <edge id="R3_n3::n1-n3::n2" source="R3_n3::n1" target="R3_n3::n2">
+      <data key="dData">СХВАТИЛА МЯЧ/</data>
+      <data key="dTargetPoint">
+        <point x="0.000000" y="30.317500" />
+      </data>
+      <data key="dLabelGeometry">
+        <rect x="238.633370" y="5.887658" width="95.906785" height="46.000000" />
+      </data>
+    </edge>
+    <edge id="R3_n3::n2-n3::n0" source="R3_n3::n2" target="R3_n3::n0">
+      <data key="dData">ВЕРНУЛА МЯЧ ХОЗЯИНУ/</data>
+      <data key="dGeometry">
+        <point x="102.000000" y="-74.500000" />
+      </data>
+      <data key="dSourcePoint">
+        <point x="102.000000" y="0.000000" />
+      </data>
+      <data key="dTargetPoint">
+        <point x="200.000000" y="34.500000" />
+      </data>
+      <data key="dLabelGeometry">
+        <rect x="36.176119" y="-94.894068" width="132.899372" height="46.000000" />
+      </data>
+    </edge>
+    <edge id="R3_n3::n0-n3::n1" source="R3_n3::n0" target="R3_n3::n1">
+      <data key="dData">ХОЗЯИН БРОСИЛ МЯЧ/</data>
+      <data key="dGeometry">
+        <point x="-89.000000" y="31.500000" />
+      </data>
+      <data key="dSourcePoint">
+        <point x="0.000000" y="31.500000" />
+      </data>
+      <data key="dTargetPoint">
+        <point x="74.000000" y="0.000000" />
+      </data>
+      <data key="dLabelGeometry">
+        <rect x="-153.390644" y="14.345502" width="116.588081" height="46.000000" />
+      </data>
+    </edge>
+    <edge id="R3_n3::n3-n3::n0" source="R3_n3::n3" target="R3_n3::n0">
+      <data key="dTargetPoint">
+        <point x="0.000000" y="14.383100" />
+      </data>
+    </edge>
+  </graph>
+</graphml>

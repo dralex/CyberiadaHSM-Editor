@@ -82,7 +82,11 @@ reproduction is stored as a new starting document. The corpus also carries real
 diagrams adopted from the sibling repositories (a vacuum robot, ROS turtle
 missions, arduino-course microwave/semaphore/dog/hoover — see `corpus/SOURCES.md`),
 each re-saved to the native format and verified law-clean and save-reopen stable.
-Mission B exercises the
+The `orchestrate-*` diagrams are **compositions**: `tools/combine.py` wraps several
+of these machines in an orchestrator whose states are submachine states, wired
+through entry/exit connection points — the durable exercise of the submachine
+feature (embedded, the machines inlined and referenced by id; and external,
+referenced by file name). Mission B exercises the
 editing paths in sequences nobody planned. Each theme carries a `start` rule
 (`corpus`, `small` or `empty`) so a story can begin from an empty document,
 and an optional `forms` restriction. The stories: nesting under change,

@@ -22,7 +22,13 @@
   "semaphore-hierarchy",
   "dog",
   "simple-hoover",
-  "submachine"
+  "submachine",
+  "orchestrate-robot",
+  "orchestrate-traffic",
+  "orchestrate-home",
+  "orchestrate-grand",
+  "orchestrate-robot-ext",
+  "orchestrate-home-ext"
  ],
  "small": "small.graphml"
 }

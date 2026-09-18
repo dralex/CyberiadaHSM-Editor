@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns">
+  <data key="gFormat">Cyberiada-GraphML-1.0</data>
+  <key id="gFormat" for="graphml" attr.name="format" attr.type="string" />
+  <key id="dName" for="graph" attr.name="name" attr.type="string" />
+  <key id="dName" for="node" attr.name="name" attr.type="string" />
+  <key id="dStateMachine" for="graph" attr.name="stateMachine" attr.type="string" />
+  <key id="dRegion" for="graph" attr.name="region" attr.type="string" />
+  <key id="dSubmachineState" for="node" attr.name="submachineState" attr.type="string" />
+  <key id="dGeometry" for="graph" attr.name="geometry" />
+  <key id="dGeometry" for="node" attr.name="geometry" />
+  <key id="dGeometry" for="edge" attr.name="geometry" />
+  <key id="dSourcePoint" for="edge" attr.name="sourcePoint" />
+  <key id="dTargetPoint" for="edge" attr.name="targetPoint" />
+  <key id="dLabelGeometry" for="edge" attr.name="labelGeometry" />
+  <key id="dNote" for="node" attr.name="note" attr.type="string" />
+  <key id="dVertex" for="node" attr.name="vertex" attr.type="string" />
+  <key id="dData" for="node" attr.name="data" attr.type="string" />
+  <key id="dData" for="edge" attr.name="data" attr.type="string" />
+  <key id="dPivot" for="edge" attr.name="pivot" attr.type="string" />
+  <key id="dChunk" for="edge" attr.name="chunk" attr.type="string" />
+  <key id="dCollapsed" for="node" attr.name="collapsed" attr.type="string" />
+  <key id="dMarkup" for="node" attr.name="markup" attr.type="string" />
+  <key id="dColor" for="node" attr.name="color" attr.type="string" />
+  <key id="dColor" for="edge" attr.name="color" attr.type="string" />
+  <key id="dFormalName" for="graph" attr.name="formalName" attr.type="string" />
+  <key id="dFormalName" for="node" attr.name="formalName" attr.type="string" />
+  <graph id="M0" edgedefault="directed">
+    <data key="dStateMachine" />
+    <data key="dName">orchestrate-home-ext</data>
+    <data key="dGeometry">
+      <rect x="0" y="0" width="900" height="360" />
+    </data>
+    <node id="nMeta">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_META</data>
+      <data key="dData">standardVersion/ 1.0
+
+geometry/ full
+
+transitionOrder/ actionFirst
+
+eventPropagation/ block</data>
+    </node>
+    <node id="oinit">
+      <data key="dVertex">initial</data>
+      <data key="dGeometry">
+        <point x="40" y="180" />
+      </data>
+    </node>
+    <node id="os0">
+      <data key="dSubmachineState">microwave.graphml</data>
+      <data key="dName">Run microwave</data>
+      <data key="dGeometry">
+        <rect x="120" y="100" width="220" height="160" />
+      </data>
+      <graph id="os0:" edgedefault="directed">
+        <node id="os0::en">
+          <data key="dVertex">entryPoint</data>
+          <data key="dName">in</data>
+          <data key="dGeometry">
+            <point x="0" y="80" />
+          </data>
+        </node>
+        <node id="os0::ex">
+          <data key="dVertex">exitPoint</data>
+          <data key="dName">out</data>
+          <data key="dGeometry">
+            <point x="220" y="80" />
+          </data>
+        </node>
+      </graph>
+    </node>
+    <edge id="e0" source="oinit" target="os0::en" />
+    <node id="os1">
+      <data key="dSubmachineState">simple-hoover.graphml</data>
+      <data key="dName">Run simple-hoover</data>
+      <data key="dGeometry">
+        <rect x="440" y="100" width="220" height="160" />
+      </data>
+      <graph id="os1:" edgedefault="directed">
+        <node id="os1::en">
+          <data key="dVertex">entryPoint</data>
+          <data key="dName">in</data>
+          <data key="dGeometry">
+            <point x="0" y="80" />
+          </data>
+        </node>
+        <node id="os1::ex">
+          <data key="dVertex">exitPoint</data>
+          <data key="dName">out</data>
+          <data key="dGeometry">
+            <point x="220" y="80" />
+          </data>
+        </node>
+      </graph>
+    </node>
+    <edge id="e1" source="os0::ex" target="os1::en">
+      <data key="dData">DONE/</data>
+    </edge>
+    <node id="ofin">
+      <data key="dVertex">final</data>
+      <data key="dGeometry">
+        <point x="760" y="180" />
+      </data>
+    </node>
+    <edge id="e2" source="os1::ex" target="ofin">
+      <data key="dData">DONE/</data>
+    </edge>
+  </graph>
+</graphml>

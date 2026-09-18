@@ -1,0 +1,360 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns">
+  <data key="gFormat">Cyberiada-GraphML-1.0</data>
+  <key id="gFormat" for="graphml" attr.name="format" attr.type="string" />
+  <key id="dName" for="graph" attr.name="name" attr.type="string" />
+  <key id="dName" for="node" attr.name="name" attr.type="string" />
+  <key id="dStateMachine" for="graph" attr.name="stateMachine" attr.type="string" />
+  <key id="dRegion" for="graph" attr.name="region" attr.type="string" />
+  <key id="dSubmachineState" for="node" attr.name="submachineState" attr.type="string" />
+  <key id="dGeometry" for="graph" attr.name="geometry" />
+  <key id="dGeometry" for="node" attr.name="geometry" />
+  <key id="dGeometry" for="edge" attr.name="geometry" />
+  <key id="dSourcePoint" for="edge" attr.name="sourcePoint" />
+  <key id="dTargetPoint" for="edge" attr.name="targetPoint" />
+  <key id="dLabelGeometry" for="edge" attr.name="labelGeometry" />
+  <key id="dNote" for="node" attr.name="note" attr.type="string" />
+  <key id="dVertex" for="node" attr.name="vertex" attr.type="string" />
+  <key id="dData" for="node" attr.name="data" attr.type="string" />
+  <key id="dData" for="edge" attr.name="data" attr.type="string" />
+  <key id="dPivot" for="edge" attr.name="pivot" attr.type="string" />
+  <key id="dChunk" for="edge" attr.name="chunk" attr.type="string" />
+  <key id="dCollapsed" for="node" attr.name="collapsed" attr.type="string" />
+  <key id="dMarkup" for="node" attr.name="markup" attr.type="string" />
+  <key id="dColor" for="node" attr.name="color" attr.type="string" />
+  <key id="dColor" for="edge" attr.name="color" attr.type="string" />
+  <key id="dFormalName" for="graph" attr.name="formalName" attr.type="string" />
+  <key id="dFormalName" for="node" attr.name="formalName" attr.type="string" />
+  <graph id="M0" edgedefault="directed">
+    <data key="dStateMachine" />
+    <data key="dName">orchestrate-home</data>
+    <data key="dGeometry">
+      <rect x="0" y="0" width="900" height="360" />
+    </data>
+    <node id="nMeta">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_META</data>
+      <data key="dData">standardVersion/ 1.0
+
+geometry/ full
+
+transitionOrder/ actionFirst
+
+eventPropagation/ block</data>
+    </node>
+    <node id="oinit">
+      <data key="dVertex">initial</data>
+      <data key="dGeometry">
+        <point x="40" y="180" />
+      </data>
+    </node>
+    <node id="os0">
+      <data key="dSubmachineState">R0_G0</data>
+      <data key="dName">Run microwave</data>
+      <data key="dGeometry">
+        <rect x="120" y="100" width="220" height="160" />
+      </data>
+      <graph id="os0:" edgedefault="directed">
+        <node id="os0::en">
+          <data key="dVertex">entryPoint</data>
+          <data key="dName">in</data>
+          <data key="dGeometry">
+            <point x="0" y="80" />
+          </data>
+        </node>
+        <node id="os0::ex">
+          <data key="dVertex">exitPoint</data>
+          <data key="dName">out</data>
+          <data key="dGeometry">
+            <point x="220" y="80" />
+          </data>
+        </node>
+      </graph>
+    </node>
+    <edge id="e0" source="oinit" target="os0::en" />
+    <node id="os1">
+      <data key="dSubmachineState">R1_G</data>
+      <data key="dName">Run simple-hoover</data>
+      <data key="dGeometry">
+        <rect x="440" y="100" width="220" height="160" />
+      </data>
+      <graph id="os1:" edgedefault="directed">
+        <node id="os1::en">
+          <data key="dVertex">entryPoint</data>
+          <data key="dName">in</data>
+          <data key="dGeometry">
+            <point x="0" y="80" />
+          </data>
+        </node>
+        <node id="os1::ex">
+          <data key="dVertex">exitPoint</data>
+          <data key="dName">out</data>
+          <data key="dGeometry">
+            <point x="220" y="80" />
+          </data>
+        </node>
+      </graph>
+    </node>
+    <edge id="e1" source="os0::ex" target="os1::en">
+      <data key="dData">DONE/</data>
+    </edge>
+    <node id="ofin">
+      <data key="dVertex">final</data>
+      <data key="dGeometry">
+        <point x="760" y="180" />
+      </data>
+    </node>
+    <edge id="e2" source="os1::ex" target="ofin">
+      <data key="dData">DONE/</data>
+    </edge>
+  </graph>
+  <graph id="R0_G0" edgedefault="directed">
+    <data key="dStateMachine" />
+    <data key="dName">Микроволновка с грилем</data>
+    <node id="R0_n0">
+      <data key="dName">Нагрев</data>
+      <data key="dData">entry/
+heater_on();
+
+exit/
+heater_off();
+</data>
+      <data key="dGeometry">
+        <rect x="52.808700" y="500.000000" width="579.364000" height="396.160000" />
+      </data>
+      <graph id="R0_n0:" edgedefault="directed">
+        <node id="R0_n2">
+          <data key="dName">Поджаривание</data>
+          <data key="dData">entry/
+arm_time_event(me-&gt;toast_color);
+
+exit/
+disarm_time_event();
+</data>
+          <data key="dGeometry">
+            <rect x="45.068108" y="71.539001" width="429.131012" height="83.753845" />
+          </data>
+        </node>
+        <node id="R0_n0::n0">
+          <data key="dVertex">initial</data>
+          <data key="dGeometry">
+            <point x="545.905884" y="115.195732" />
+          </data>
+        </node>
+        <node id="R0_n0::n1">
+          <data key="dName">Выпекание</data>
+          <data key="dData">entry/
+set_temperature(me-&gt;teperature);
+
+exit/
+set_temperature(0);
+</data>
+          <data key="dGeometry">
+            <rect x="44.608097" y="235.503609" width="429.131012" height="83.753845" />
+          </data>
+        </node>
+      </graph>
+    </node>
+    <node id="R0_n1">
+      <data key="dName">Дверца открыта</data>
+      <data key="dData">entry/
+internal_lamp_on();
+
+exit/
+internal_lamp_off();
+</data>
+      <data key="dGeometry">
+        <rect x="780.477417" y="619.508827" width="259.637695" height="129.846237" />
+      </data>
+    </node>
+    <node id="R0_n3">
+      <data key="dVertex">initial</data>
+      <data key="dGeometry">
+        <point x="715.180679" y="523.988615" />
+      </data>
+    </node>
+    <edge id="R0_n0-n1" source="R0_n0" target="R0_n1">
+      <data key="dData">ОТКРЫТЬ_ДВЕРЦУ/</data>
+      <data key="dGeometry">
+        <point x="859.075800" y="70.493700" />
+      </data>
+      <data key="dSourcePoint">
+        <point x="579.363900" y="70.493700" />
+      </data>
+      <data key="dTargetPoint">
+        <point x="131.407100" y="0.000000" />
+      </data>
+      <data key="dLabelGeometry">
+        <rect x="649.782776" y="58.219238" width="142.750000" height="27.000000" />
+      </data>
+    </edge>
+    <edge id="R0_n3-n0" source="R0_n3" target="R0_n0">
+      <data key="dTargetPoint">
+        <point x="579.363900" y="23.643200" />
+      </data>
+    </edge>
+    <edge id="R0_n0::n0-n2" source="R0_n0::n0" target="R0_n2">
+    </edge>
+    <edge id="R0_n1-n0" source="R0_n1" target="R0_n0">
+      <data key="dData">ЗАКРЫТЬ_ДВЕРЦУ/</data>
+      <data key="dGeometry">
+        <point x="132.712900" y="227.870400" />
+      </data>
+      <data key="dSourcePoint">
+        <point x="132.712900" y="129.846200" />
+      </data>
+      <data key="dTargetPoint">
+        <point x="579.363900" y="346.683800" />
+      </data>
+    </edge>
+    <edge id="R0_n0-n0::n1" source="R0_n0" target="R0_n0::n1">
+      <data key="dData">ВЫПЕКАТЬ/</data>
+      <data key="dGeometry">
+        <point x="203.786500" y="207.645100" />
+      </data>
+      <data key="dSourcePoint">
+        <point x="0.000000" y="209.218700" />
+      </data>
+      <data key="dTargetPoint">
+        <point x="158.249100" y="0.000000" />
+      </data>
+      <data key="dLabelGeometry">
+        <rect x="71.606781" y="194.653993" width="85.000000" height="27.000000" />
+      </data>
+    </edge>
+    <edge id="R0_n0-n2" source="R0_n0" target="R0_n2">
+      <data key="dData">ПОДЖАРИВАТЬ/</data>
+      <data key="dGeometry">
+        <point x="307.741300" y="199.111500" />
+      </data>
+      <data key="dSourcePoint">
+        <point x="579.363900" y="199.111500" />
+      </data>
+      <data key="dTargetPoint">
+        <point x="263.534200" y="83.753800" />
+      </data>
+      <data key="dLabelGeometry">
+        <rect x="395.529999" y="186.743611" width="113.875000" height="27.000000" />
+      </data>
+    </edge>
+  </graph>
+  <graph id="R1_G" edgedefault="directed">
+    <data key="dStateMachine" />
+    <data key="dName">Робот-пылесос</data>
+    <node id="R1_init">
+      <data key="dVertex">initial</data>
+      <data key="dGeometry">
+        <point x="230.625000" y="1304.360000" />
+      </data>
+    </node>
+    <node id="R1_n0">
+      <data key="dName">Уборка мусора</data>
+      <data key="dGeometry">
+        <rect x="571.612500" y="1296.160000" width="412.269000" height="330.481000" />
+      </data>
+      <graph id="R1_n0:" edgedefault="directed">
+        <node id="R1_n0::n1">
+          <data key="dName">Сближение</data>
+          <data key="dData">entry/
+МодульДвижения.ДвигатьсяКЦели()
+</data>
+          <data key="dGeometry">
+            <rect x="34.118750" y="40.256250" width="344.875000" height="86.906250" />
+          </data>
+        </node>
+        <node id="R1_n0::n2">
+          <data key="dName">Уборка</data>
+          <data key="dData">entry/
+Пылесос.УбратьЦель()
+</data>
+          <data key="dGeometry">
+            <rect x="35.631250" y="214.981250" width="342.606250" height="65.700000" />
+          </data>
+        </node>
+      </graph>
+    </node>
+    <node id="R1_n3">
+      <data key="dName">Скан</data>
+      <data key="dData">entry/
+Сенсор.ПоискЦелиПоДистанции(мин)
+
+exit/
+Сенсор.ОстановкаПоиска()
+</data>
+      <data key="dGeometry">
+        <rect x="52.500000" y="1343.610000" width="346.250000" height="129.375000" />
+      </data>
+    </node>
+    <edge id="R1_init-n3" source="R1_init" target="R1_n3">
+      <data key="dTargetPoint">
+        <point x="178.125000" y="0.000000" />
+      </data>
+    </edge>
+    <edge id="R1_n0-n3" source="R1_n0" target="R1_n3">
+      <data key="dData">АнализаторЦели.ЦельУстранена/</data>
+      <data key="dGeometry">
+        <point x="-306.803100" y="264.703100" />
+      </data>
+      <data key="dSourcePoint">
+        <point x="0.000000" y="264.703100" />
+      </data>
+      <data key="dTargetPoint">
+        <point x="212.309400" y="129.375000" />
+      </data>
+      <data key="dLabelGeometry">
+        <rect x="-291.615625" y="247.890625" width="277.500000" height="27.000000" />
+      </data>
+    </edge>
+    <edge id="R1_n0-n3-2" source="R1_n0" target="R1_n3">
+      <data key="dData">АнализаторЦели.ЦельПотеряна/</data>
+      <data key="dGeometry">
+        <point x="-407.434400" y="303.810200" />
+      </data>
+      <data key="dSourcePoint">
+        <point x="0.000000" y="303.810200" />
+      </data>
+      <data key="dTargetPoint">
+        <point x="111.678100" y="129.375000" />
+      </data>
+      <data key="dLabelGeometry">
+        <rect x="-347.478125" y="290.821875" width="267.875000" height="27.000000" />
+      </data>
+    </edge>
+    <edge id="R1_n3-n0::n1" source="R1_n3" target="R1_n0::n1">
+      <data key="dData">Сенсор.ЦельПолучена/</data>
+      <data key="dSourcePoint">
+        <point x="345.937500" y="44.830300" />
+      </data>
+      <data key="dTargetPoint">
+        <point x="1.384400" y="38.590300" />
+      </data>
+      <data key="dLabelGeometry">
+        <rect x="354.556250" y="13.193750" width="190.875000" height="27.000000" />
+      </data>
+    </edge>
+    <edge id="R1_n0::n1-n0::n2" source="R1_n0::n1" target="R1_n0::n2">
+      <data key="dData">Пылесос.ЦельВошлаВЗонуДействия/</data>
+      <data key="dSourcePoint">
+        <point x="280.311800" y="86.906300" />
+      </data>
+      <data key="dTargetPoint">
+        <point x="278.799300" y="0.000000" />
+      </data>
+      <data key="dLabelGeometry">
+        <rect x="146.400000" y="132.571875" width="296.750000" height="27.000000" />
+      </data>
+    </edge>
+    <edge id="R1_n0::n2-n0::n1" source="R1_n0::n2" target="R1_n0::n1">
+      <data key="dData">Пылесос.ЦельВышлаИзЗоныДействия/</data>
+      <data key="dSourcePoint">
+        <point x="73.154600" y="0.000000" />
+      </data>
+      <data key="dTargetPoint">
+        <point x="74.667100" y="86.906300" />
+      </data>
+      <data key="dLabelGeometry">
+        <rect x="-97.240625" y="-71.925000" width="306.375000" height="27.000000" />
+      </data>
+    </edge>
+  </graph>
+</graphml>
