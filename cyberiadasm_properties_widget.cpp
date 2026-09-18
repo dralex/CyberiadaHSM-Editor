@@ -1535,6 +1535,7 @@ Cyberiada::ConstElementList CyberiadaSMPropertiesWidget::getAllElements(ElementL
 	case listSource:
 		list = sm->find_elements_by_types({Cyberiada::elementSimpleState,
 										   Cyberiada::elementCompositeState,
+										   Cyberiada::elementSubmachineState,
 										   Cyberiada::elementInitial,
 										   Cyberiada::elementChoice,
 										   Cyberiada::elementShallowHistory,
@@ -1543,6 +1544,7 @@ Cyberiada::ConstElementList CyberiadaSMPropertiesWidget::getAllElements(ElementL
 	case listTarget:
 		list = sm->find_elements_by_types({Cyberiada::elementSimpleState,
 										   Cyberiada::elementCompositeState,
+										   Cyberiada::elementSubmachineState,
 										   Cyberiada::elementFinal,
 										   Cyberiada::elementChoice,
 										   Cyberiada::elementTerminate,
@@ -1553,6 +1555,7 @@ Cyberiada::ConstElementList CyberiadaSMPropertiesWidget::getAllElements(ElementL
 		// the standard allows every element but the document and the state machine
 		list = sm->find_elements_by_types({Cyberiada::elementSimpleState,
 										   Cyberiada::elementCompositeState,
+										   Cyberiada::elementSubmachineState,
 										   Cyberiada::elementComment,
 										   Cyberiada::elementFormalComment,
 										   Cyberiada::elementInitial,
@@ -1626,8 +1629,9 @@ int CyberiadaSMPropertiesWidget::getElementNumber(ElementListKind kind, const Cy
 		MY_ASSERT(e);
 		if (e == elem) return index;
 	}
-	MY_ASSERT(false);
-	return -1;	
+	// the element is not a valid choice for this list (e.g. an ill-formed
+	// endpoint): show no selection rather than crash the property panel
+	return -1;
 }
 
 const Cyberiada::Element *CyberiadaSMPropertiesWidget::getElementByNumber(ElementListKind kind, int index) const
