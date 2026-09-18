@@ -104,6 +104,7 @@ private:
 		propMetaTransitionOrder,
 		propName,
 		propSource,
+		propSubmachineRef,
 		propSubjectTarget,
 		propSubjectType,
 		propTarget,

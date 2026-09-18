@@ -70,6 +70,7 @@ CyberiadaSMPropertiesWidget::CyberiadaSMPropertiesWidget(QWidget *parent):
 		{propMetaStandardVersion,  propEditorString,            tr(METAINFORMATION_STANDARD_VERSION, "Property name")},
 		{propMetaTransitionOrder,  propEditorTransitionOrder,   tr(METAINFORMATION_TRANSITION_ORDER, "Property name")},
 		{propName,                 propEditorString,            tr("Name", "Property name")},
+		{propSubmachineRef,        propEditorString,            tr("Submachine", "Property name")},
 		{propSource,               propEditorSourceElementLink, tr("Source", "Property name")},
 		{propSubjectTarget,        propEditorSubjectElementLink, tr("Subject Target", "Property name")},
 		{propSubjectType,          propEditorSubjectType,       tr("Subject Type", "Property name")},
@@ -509,6 +510,9 @@ void CyberiadaSMPropertiesWidget::slotPropertyChanged(QtProperty* p)
                 if (cp.name == propName) {
                     model->updateTitle(i, stringManager->value(p));
                 }
+                if (cp.name == propSubmachineRef) {
+                    model->updateSubmachineReference(i, stringManager->value(p));
+                }
 
             if (type == Cyberiada::elementSimpleState || type == Cyberiada::elementCompositeState) {
                 const Cyberiada::State* state = static_cast<const Cyberiada::State*>(element);
@@ -806,7 +810,14 @@ void CyberiadaSMPropertiesWidget::newElement(Cyberiada::Element* new_element)
 			bool isMeta = model && model->rootDocument() &&
 			              element == model->rootDocument()->get_meta_element();
 			if (isMeta) disableRow(element_name_prop);
-			
+
+			if (type == Cyberiada::elementSubmachineState) {
+				const Cyberiada::SubmachineState* sub = static_cast<const Cyberiada::SubmachineState*>(element);
+				QtProperty* ref_prop = constructProperty(propSubmachineRef);
+				stringManager->setValue(ref_prop, QString(sub->get_submachine_reference().c_str()));
+				element_group_prop->addSubProperty(ref_prop);
+			}
+
 			if (type == Cyberiada::elementSimpleState || type == Cyberiada::elementCompositeState) {
 				const Cyberiada::State* state = static_cast<const Cyberiada::State*>(element);
 				if (state->has_actions()) {

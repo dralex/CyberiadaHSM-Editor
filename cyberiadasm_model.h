@@ -68,6 +68,7 @@ public:
 	bool                                setData(const QModelIndex& index, const QVariant& value, int role = Qt::EditRole);
 	bool                                updateID(const QModelIndex& index, const QString& new_value);
 	bool                                updateTitle(const QModelIndex& index, const QString& new_value);
+	bool                                updateSubmachineReference(const QModelIndex& index, const QString& new_value);
 	bool                                updateAction(const QModelIndex& index,
 													 int action_index = -1,
                                                      const QString& new_trigger = QString(),

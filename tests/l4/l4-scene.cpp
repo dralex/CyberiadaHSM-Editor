@@ -2312,6 +2312,10 @@ void TestScene::test_submachine()
 	QVERIFY(dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value(sub->get_id())));
 	QVERIFY(dynamic_cast<CyberiadaSMEditorVertexItem*>(scene->getMap().value(en->get_id())));
 	QVERIFY(dynamic_cast<CyberiadaSMEditorVertexItem*>(scene->getMap().value(ex->get_id())));
+
+	// the reference is editable through the model
+	QVERIFY(model->updateSubmachineReference(model->elementToIndex(sub), "Changed"));
+	QCOMPARE(QString::fromStdString(sub->get_submachine_reference()), QString("Changed"));
 }
 
 void TestScene::test_new_sm_single_item()

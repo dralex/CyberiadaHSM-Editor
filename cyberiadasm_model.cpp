@@ -458,6 +458,19 @@ bool CyberiadaSMModel::updateTitle(const QModelIndex& index, const QString& new_
 	return true;
 }
 
+bool CyberiadaSMModel::updateSubmachineReference(const QModelIndex& index, const QString& new_value)
+{
+	if (readOnly()) return false;
+	UndoScope scope(this, tr("submachine reference"));
+	Cyberiada::Element* element = indexToElement(index);
+	if (!element || element->get_type() != Cyberiada::elementSubmachineState) return false;
+	if (new_value.trimmed().isEmpty()) return false;
+	static_cast<Cyberiada::SubmachineState*>(element)->set_submachine_reference(new_value.toStdString());
+	GestureLog::instance().logAction("set-submachine-reference " + qid(element) + " " + logEsc(new_value));
+	emit dataChanged(index, index);
+	return true;
+}
+
 bool CyberiadaSMModel::setColor(const QModelIndex& index, const QString& color)
 {
 	if (readOnly()) return false;
