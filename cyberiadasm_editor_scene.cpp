@@ -406,8 +406,15 @@ QGraphicsItem* CyberiadaSMEditorScene::addElementItem(Cyberiada::Element* child,
         addItemsRecursively(state->getRegion(), static_cast<Cyberiada::ElementCollection*>(child));
         return state;
     }
+    case Cyberiada::elementSubmachineState: {
+        // a submachine has no region; its entry/exit connectors parent to the state item
+        CyberiadaSMEditorStateItem* state = new CyberiadaSMEditorStateItem(this, model, child, new_parent);
+        elementIdToItemMap.insert(child->get_id(), state);
+        addSceneItem(state);
+        addItemsRecursively(state, static_cast<Cyberiada::ElementCollection*>(child));
+        return state;
+    }
     case Cyberiada::elementSimpleState:
-    case Cyberiada::elementSubmachineState:
         item = new CyberiadaSMEditorStateItem(this, model, child, new_parent);
         break;
     case Cyberiada::elementInitial:
