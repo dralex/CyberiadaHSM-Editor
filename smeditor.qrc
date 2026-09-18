@@ -26,6 +26,9 @@
         <file>images/choice.png</file>
         <file>images/shallow-history.png</file>
         <file>images/deep-history.png</file>
+        <file>images/state-submachine.png</file>
+        <file>images/entry-point.png</file>
+        <file>images/exit-point.png</file>
         <file>images/hand.png</file>
         <file>images/cursor.png</file>
         <file>images/zoom-out-32.png</file>

@@ -1,0 +1,7 @@
+# a submachine state with entry/exit connection points and standalone entry/exit points
+new-submachine-state G0 60 60 200 100 M2
+new-entry-point n0 60 60
+new-exit-point n0 260 60
+new-entry-point G0 30 30
+new-exit-point G0 350 30
+new-transition G0 n1 n0::n0

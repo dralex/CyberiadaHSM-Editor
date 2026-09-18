@@ -113,6 +113,9 @@
      <addaction name="actionNewChoise"/>
      <addaction name="actionNewShallowHistory"/>
      <addaction name="actionNewDeepHistory"/>
+     <addaction name="actionNewSubmachineState"/>
+     <addaction name="actionNewEntryPoint"/>
+     <addaction name="actionNewExitPoint"/>
      <addaction name="actionNewStateMachine"/>
     </widget>
     <addaction name="actionCut"/>
@@ -207,6 +210,9 @@
    <addaction name="actionNewTerminate"/>
    <addaction name="actionNewShallowHistory"/>
    <addaction name="actionNewDeepHistory"/>
+   <addaction name="actionNewSubmachineState"/>
+   <addaction name="actionNewEntryPoint"/>
+   <addaction name="actionNewExitPoint"/>
    <addaction name="actionNewComment"/>
    <addaction name="actionNewFormalComment"/>
    <addaction name="actionNewTransition"/>
@@ -549,6 +555,33 @@
    </property>
    <property name="text">
     <string>New Deep History</string>
+   </property>
+  </action>
+  <action name="actionNewSubmachineState">
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/state-submachine.png</normaloff>:/Icons/images/state-submachine.png</iconset>
+   </property>
+   <property name="text">
+    <string>New Submachine State</string>
+   </property>
+  </action>
+  <action name="actionNewEntryPoint">
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/entry-point.png</normaloff>:/Icons/images/entry-point.png</iconset>
+   </property>
+   <property name="text">
+    <string>New Entry Point</string>
+   </property>
+  </action>
+  <action name="actionNewExitPoint">
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/exit-point.png</normaloff>:/Icons/images/exit-point.png</iconset>
+   </property>
+   <property name="text">
+    <string>New Exit Point</string>
    </property>
   </action>
   <action name="actionNewStateMachine">
@@ -903,6 +936,54 @@
    <signal>triggered()</signal>
    <receiver>SMEditorWindow</receiver>
    <slot>slotNewDeepHistory()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>511</x>
+     <y>383</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionNewSubmachineState</sender>
+   <signal>triggered()</signal>
+   <receiver>SMEditorWindow</receiver>
+   <slot>slotNewSubmachineState()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>511</x>
+     <y>383</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionNewEntryPoint</sender>
+   <signal>triggered()</signal>
+   <receiver>SMEditorWindow</receiver>
+   <slot>slotNewEntryPoint()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>511</x>
+     <y>383</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionNewExitPoint</sender>
+   <signal>triggered()</signal>
+   <receiver>SMEditorWindow</receiver>
+   <slot>slotNewExitPoint()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>-1</x>

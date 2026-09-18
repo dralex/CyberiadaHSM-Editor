@@ -97,6 +97,9 @@ CyberiadaSMModel::CyberiadaSMModel(QObject *parent):
 	icons[Cyberiada::elementTerminate] = QIcon(":/Icons/images/terminate.png");
 	icons[Cyberiada::elementShallowHistory] = QIcon(":/Icons/images/shallow-history.png");
 	icons[Cyberiada::elementDeepHistory] = QIcon(":/Icons/images/deep-history.png");
+	icons[Cyberiada::elementSubmachineState] = QIcon(":/Icons/images/state-submachine.png");
+	icons[Cyberiada::elementEntryPoint] = QIcon(":/Icons/images/entry-point.png");
+	icons[Cyberiada::elementExitPoint] = QIcon(":/Icons/images/exit-point.png");
 	icons[Cyberiada::elementTransition] = QIcon(":/Icons/images/trans.png");;
 
 	cyberiadaStateMimeType = CYBERIADA_MIME_TYPE_STATE;
@@ -1405,6 +1408,78 @@ Cyberiada::HistoryPseudostate *CyberiadaSMModel::newDeepHistory(Cyberiada::Eleme
 
     if (element) {
         QString verb = "new-deep-history " + qid(parent);
+        if (p.valid) verb += " " + logPt(p);
+        GestureLog::instance().logAction(verb);
+    }
+    return element;
+}
+
+Cyberiada::SubmachineState *CyberiadaSMModel::newSubmachineState(Cyberiada::ElementCollection *parent, const Cyberiada::ID &reference, const Cyberiada::Rect &r)
+{
+	if (readOnly()) return NULL;
+	UndoScope scope(this, tr("new element"));
+    if (root == NULL) {
+        return nullptr;
+    }
+
+    // the reference is set later in the properties; default to another machine
+    Cyberiada::ID ref = reference;
+    if (ref.empty()) {
+        Cyberiada::ElementList sms = root->find_elements_by_type(Cyberiada::elementSM);
+        if (!sms.empty()) ref = sms.front()->get_id();
+        if (ref.empty()) ref = "submachine";
+    }
+
+    int row = newElementRow(parent);
+    beginInsertRows(elementToIndex(parent), row, row);
+    Cyberiada::SubmachineState* element = root->new_submachine_state(parent, ref, Cyberiada::Name(), r);
+    endInsertRows();
+    if (element) growToFitChildren(element, false);
+
+    if (element) {
+        GestureLog::instance().logAction("new-submachine-state " + qid(parent));
+    }
+    return element;
+}
+
+Cyberiada::ConnectionPoint *CyberiadaSMModel::newEntryPoint(Cyberiada::ElementCollection *parent, const Cyberiada::Point &p)
+{
+	if (readOnly()) return NULL;
+	UndoScope scope(this, tr("new element"));
+    if (root == NULL) {
+        return nullptr;
+    }
+
+    int row = newElementRow(parent);
+    beginInsertRows(elementToIndex(parent), row, row);
+    Cyberiada::ConnectionPoint* element = root->new_entry(parent, p);
+    endInsertRows();
+    if (element) growToFitChildren(element, false);
+
+    if (element) {
+        QString verb = "new-entry-point " + qid(parent);
+        if (p.valid) verb += " " + logPt(p);
+        GestureLog::instance().logAction(verb);
+    }
+    return element;
+}
+
+Cyberiada::ConnectionPoint *CyberiadaSMModel::newExitPoint(Cyberiada::ElementCollection *parent, const Cyberiada::Point &p)
+{
+	if (readOnly()) return NULL;
+	UndoScope scope(this, tr("new element"));
+    if (root == NULL) {
+        return nullptr;
+    }
+
+    int row = newElementRow(parent);
+    beginInsertRows(elementToIndex(parent), row, row);
+    Cyberiada::ConnectionPoint* element = root->new_exit(parent, p);
+    endInsertRows();
+    if (element) growToFitChildren(element, false);
+
+    if (element) {
+        QString verb = "new-exit-point " + qid(parent);
         if (p.valid) verb += " " + logPt(p);
         GestureLog::instance().logAction(verb);
     }

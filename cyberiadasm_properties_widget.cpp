@@ -194,6 +194,9 @@ void CyberiadaSMPropertiesWidget::setModel(CyberiadaSMModel* model)
 		{Cyberiada::elementTerminate,      tr("Terminate", "Element type")},
 		{Cyberiada::elementShallowHistory, tr("Shallow History", "Element type")},
 		{Cyberiada::elementDeepHistory,    tr("Deep History", "Element type")},
+		{Cyberiada::elementSubmachineState, tr("Submachine State", "Element type")},
+		{Cyberiada::elementEntryPoint,     tr("Entry Point", "Element type")},
+		{Cyberiada::elementExitPoint,      tr("Exit Point", "Element type")},
 		{Cyberiada::elementTransition,     tr("Transition", "Element type")}
 	};
 	
@@ -630,7 +633,7 @@ void CyberiadaSMPropertiesWidget::slotPropertyChanged(QtProperty* p)
 
                 } else if (type == Cyberiada::elementInitial || type == Cyberiada::elementFinal ||
                            type == Cyberiada::elementTerminate ||
-                           type == Cyberiada::elementShallowHistory || type == Cyberiada::elementDeepHistory) {
+                           type == Cyberiada::elementShallowHistory || type == Cyberiada::elementDeepHistory || type == Cyberiada::elementEntryPoint || type == Cyberiada::elementExitPoint) {
                     if (cp.name == propGroupPoint) {
                         QPointF newPoint = pointManager->value(p);
                         model->updateGeometry(i, Cyberiada::Point(newPoint.x(), newPoint.y()));
@@ -939,7 +942,7 @@ void CyberiadaSMPropertiesWidget::newElement(Cyberiada::Element* new_element)
 					
 				} else if (type == Cyberiada::elementInitial || type == Cyberiada::elementFinal ||
 						   type == Cyberiada::elementTerminate ||
-						   type == Cyberiada::elementShallowHistory || type == Cyberiada::elementDeepHistory) {
+						   type == Cyberiada::elementShallowHistory || type == Cyberiada::elementDeepHistory || type == Cyberiada::elementEntryPoint || type == Cyberiada::elementExitPoint) {
 					const Cyberiada::Vertex* v = static_cast<const Cyberiada::Vertex*>(element);
 					QtProperty* point_group_prop = constructProperty(propGroupPoint);
 					geom_group_prop->addSubProperty(point_group_prop);
@@ -1294,7 +1297,7 @@ void CyberiadaSMPropertiesWidget::updateElement()
 
                 } else if (type == Cyberiada::elementInitial || type == Cyberiada::elementFinal ||
                            type == Cyberiada::elementTerminate ||
-                           type == Cyberiada::elementShallowHistory || type == Cyberiada::elementDeepHistory) {
+                           type == Cyberiada::elementShallowHistory || type == Cyberiada::elementDeepHistory || type == Cyberiada::elementEntryPoint || type == Cyberiada::elementExitPoint) {
                     const Cyberiada::Vertex* v = static_cast<const Cyberiada::Vertex*>(element);
                     QtProperty* point_group_prop = findQtProperty(geom_group_prop, findPropertyStruct(propGroupPoint).propName);
                     if (point_group_prop == nullptr) {
@@ -1516,25 +1519,28 @@ Cyberiada::ConstElementList CyberiadaSMPropertiesWidget::getAllElements(ElementL
 	MY_ASSERT(doc);
 	const Cyberiada::StateMachine* sm = doc->get_parent_sm(element);
 	MY_ASSERT(sm);
+	Cyberiada::ConstElementList list;
 	switch (kind) {
 	case listSource:
-		return sm->find_elements_by_types({Cyberiada::elementSimpleState,
+		list = sm->find_elements_by_types({Cyberiada::elementSimpleState,
 										   Cyberiada::elementCompositeState,
 										   Cyberiada::elementInitial,
 										   Cyberiada::elementChoice,
 										   Cyberiada::elementShallowHistory,
 										   Cyberiada::elementDeepHistory});
+		break;
 	case listTarget:
-		return sm->find_elements_by_types({Cyberiada::elementSimpleState,
+		list = sm->find_elements_by_types({Cyberiada::elementSimpleState,
 										   Cyberiada::elementCompositeState,
 										   Cyberiada::elementFinal,
 										   Cyberiada::elementChoice,
 										   Cyberiada::elementTerminate,
 										   Cyberiada::elementShallowHistory,
 										   Cyberiada::elementDeepHistory});
+		break;
 	default:
 		// the standard allows every element but the document and the state machine
-		return sm->find_elements_by_types({Cyberiada::elementSimpleState,
+		list = sm->find_elements_by_types({Cyberiada::elementSimpleState,
 										   Cyberiada::elementCompositeState,
 										   Cyberiada::elementComment,
 										   Cyberiada::elementFormalComment,
@@ -1545,7 +1551,29 @@ Cyberiada::ConstElementList CyberiadaSMPropertiesWidget::getAllElements(ElementL
 										   Cyberiada::elementShallowHistory,
 										   Cyberiada::elementDeepHistory,
 										   Cyberiada::elementTransition});
+		break;
 	}
+
+	// entry/exit endpoint direction is the mirror of the container (UML / PNST 984):
+	// on a submachine connector an entry is a target and an exit a source; standalone
+	// in a machine the rule is reversed.
+	Cyberiada::ConstElementList points = sm->find_elements_by_types({Cyberiada::elementEntryPoint,
+																	 Cyberiada::elementExitPoint});
+	for (Cyberiada::ConstElementList::const_iterator i = points.begin(); i != points.end(); ++i) {
+		const Cyberiada::Element* e = *i;
+		const Cyberiada::Element* par = e->get_parent();
+		bool connector = par && par->get_type() == Cyberiada::elementSubmachineState;
+		bool isEntry = e->get_type() == Cyberiada::elementEntryPoint;
+		bool asSource = (isEntry != connector);
+		if (kind == listSource) {
+			if (asSource) list.push_back(e);
+		} else if (kind == listTarget) {
+			if (!asSource) list.push_back(e);
+		} else {
+			list.push_back(e);
+		}
+	}
+	return list;
 }
 
 QStringList CyberiadaSMPropertiesWidget::generateElementNames(ElementListKind kind) const

@@ -123,7 +123,9 @@ static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QStri
 	if (cmd == "new-state" || cmd == "new-comment" || cmd == "new-formal-comment" ||
 		cmd == "new-initial" || cmd == "new-final" ||
 		cmd == "new-choice" || cmd == "new-terminate" ||
-		cmd == "new-shallow-history" || cmd == "new-deep-history") {
+		cmd == "new-shallow-history" || cmd == "new-deep-history" ||
+		cmd == "new-submachine-state" ||
+		cmd == "new-entry-point" || cmd == "new-exit-point") {
 		if (tokens.size() < 2) { *error = cmd + " requires a parent id"; return false; }
 		Cyberiada::Element* parent = model->idToElement(tokens.at(1));
 		Cyberiada::ElementCollection* collection = dynamic_cast<Cyberiada::ElementCollection*>(parent);
@@ -151,6 +153,15 @@ static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QStri
 				r = Cyberiada::Rect(v[0], v[1], v[2], v[3]);
 			}
 			return model->newChoice(collection, r) != NULL;
+		} else if (cmd == "new-submachine-state") {
+			Cyberiada::Rect r;
+			int ref_from = 2;
+			if (toNumbers(tokens, 2, 4, v)) {
+				r = Cyberiada::Rect(v[0], v[1], v[2], v[3]);
+				ref_from = 6;
+			}
+			QString ref = restOfLine(tokens, ref_from);
+			return model->newSubmachineState(collection, ref.toStdString(), r) != NULL;
 		} else {
 			Cyberiada::Point p;
 			if (toNumbers(tokens, 2, 2, v)) {
@@ -167,6 +178,12 @@ static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QStri
 			}
 			if (cmd == "new-deep-history") {
 				return model->newDeepHistory(collection, p) != NULL;
+			}
+			if (cmd == "new-entry-point") {
+				return model->newEntryPoint(collection, p) != NULL;
+			}
+			if (cmd == "new-exit-point") {
+				return model->newExitPoint(collection, p) != NULL;
 			}
 			return model->newFinal(collection, p) != NULL;
 		}
@@ -641,6 +658,9 @@ static bool runGesture(CyberiadaSMEditorScene* scene, const QStringList& tokens,
 			{"new-choice", ToolType::NewChoice}, {"new-terminate", ToolType::NewTerminate},
 			{"new-shallow-history", ToolType::NewShallowHistory},
 			{"new-deep-history", ToolType::NewDeepHistory},
+			{"new-submachine-state", ToolType::NewSubmachineState},
+			{"new-entry-point", ToolType::NewEntryPoint},
+			{"new-exit-point", ToolType::NewExitPoint},
 			{"new-comment", ToolType::NewComment}, {"new-formal-comment", ToolType::NewFormalComment},
 		};
 		QMap<QString, ToolType>::const_iterator it = tools.find(tokens.at(1));

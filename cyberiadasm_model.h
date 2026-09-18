@@ -137,6 +137,9 @@ public:
     Cyberiada::TerminatePseudostate*    newTerminate(Cyberiada::ElementCollection* parent, const Cyberiada::Point& p = Cyberiada::Point());
     Cyberiada::HistoryPseudostate*      newShallowHistory(Cyberiada::ElementCollection* parent, const Cyberiada::Point& p = Cyberiada::Point());
     Cyberiada::HistoryPseudostate*      newDeepHistory(Cyberiada::ElementCollection* parent, const Cyberiada::Point& p = Cyberiada::Point());
+    Cyberiada::SubmachineState*         newSubmachineState(Cyberiada::ElementCollection* parent, const Cyberiada::ID& reference, const Cyberiada::Rect& r = Cyberiada::Rect());
+    Cyberiada::ConnectionPoint*         newEntryPoint(Cyberiada::ElementCollection* parent, const Cyberiada::Point& p = Cyberiada::Point());
+    Cyberiada::ConnectionPoint*         newExitPoint(Cyberiada::ElementCollection* parent, const Cyberiada::Point& p = Cyberiada::Point());
     Cyberiada::Transition*              newTransition(Cyberiada::StateMachine* sm, Cyberiada::TransitionType ttype,
                                                       Cyberiada::Element* source, Cyberiada::Element* target,
                                                       const Cyberiada::Action& action, const Cyberiada::Polyline& pl = Cyberiada::Polyline(),

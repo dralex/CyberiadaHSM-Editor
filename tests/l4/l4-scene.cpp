@@ -111,6 +111,7 @@ private slots:
 	void test_meta_locked();
 	void test_comment_relayout();
 	void test_history();
+	void test_submachine();
 	void test_promote_title();
 	void test_empty_action_deletes();
 	// runs last: it reloads and modifies the shared document
@@ -2284,6 +2285,33 @@ void TestScene::test_history()
 	// both are drawn by the shared point-vertex item
 	QVERIFY(dynamic_cast<CyberiadaSMEditorVertexItem*>(scene->getMap().value(sh->get_id())));
 	QVERIFY(dynamic_cast<CyberiadaSMEditorVertexItem*>(scene->getMap().value(dh->get_id())));
+}
+
+void TestScene::test_submachine()
+{
+	// a submachine state references another machine and holds entry/exit points
+	Cyberiada::ElementCollection* sm =
+		dynamic_cast<Cyberiada::ElementCollection*>(model->indexToElement(model->firstSMIndex()));
+	QVERIFY(sm);
+	Cyberiada::SubmachineState* sub = model->newSubmachineState(sm, "OtherSM",
+															   Cyberiada::Rect(1500, 0, 200, 120));
+	QVERIFY(sub);
+	QCOMPARE(sub->get_type(), Cyberiada::elementSubmachineState);
+	QVERIFY(sub->is_submachine_state());
+	QCOMPARE(QString::fromStdString(sub->get_submachine_reference()), QString("OtherSM"));
+
+	Cyberiada::Element* en = model->newEntryPoint(sub, Cyberiada::Point(0, 0));
+	Cyberiada::Element* ex = model->newExitPoint(sub, Cyberiada::Point(200, 0));
+	QVERIFY(en && ex);
+	QCOMPARE(en->get_type(), Cyberiada::elementEntryPoint);
+	QCOMPARE(ex->get_type(), Cyberiada::elementExitPoint);
+	// the submachine keeps its type after gaining children
+	QCOMPARE(sub->get_type(), Cyberiada::elementSubmachineState);
+
+	// the box is a state item; the points are point-vertex items
+	QVERIFY(dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value(sub->get_id())));
+	QVERIFY(dynamic_cast<CyberiadaSMEditorVertexItem*>(scene->getMap().value(en->get_id())));
+	QVERIFY(dynamic_cast<CyberiadaSMEditorVertexItem*>(scene->getMap().value(ex->get_id())));
 }
 
 void TestScene::test_new_sm_single_item()

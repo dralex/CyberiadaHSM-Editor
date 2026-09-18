@@ -407,6 +407,7 @@ QGraphicsItem* CyberiadaSMEditorScene::addElementItem(Cyberiada::Element* child,
         return state;
     }
     case Cyberiada::elementSimpleState:
+    case Cyberiada::elementSubmachineState:
         item = new CyberiadaSMEditorStateItem(this, model, child, new_parent);
         break;
     case Cyberiada::elementInitial:
@@ -414,6 +415,8 @@ QGraphicsItem* CyberiadaSMEditorScene::addElementItem(Cyberiada::Element* child,
     case Cyberiada::elementTerminate:
     case Cyberiada::elementShallowHistory:
     case Cyberiada::elementDeepHistory:
+    case Cyberiada::elementEntryPoint:
+    case Cyberiada::elementExitPoint:
         item = new CyberiadaSMEditorVertexItem(model, child, new_parent);
         break;
     case Cyberiada::elementChoice:
@@ -596,7 +599,8 @@ static QString logMods(Qt::KeyboardModifiers mods)
 // the element creation tools: rect-drawing (SM, state) and click-placement
 static bool isRectTool(ToolType t)
 {
-    return t == ToolType::NewSM || t == ToolType::NewState;
+    return t == ToolType::NewSM || t == ToolType::NewState ||
+        t == ToolType::NewSubmachineState;
 }
 
 static bool isCreationTool(ToolType t)
@@ -605,6 +609,7 @@ static bool isCreationTool(ToolType t)
         t == ToolType::NewInitial || t == ToolType::NewFinal ||
         t == ToolType::NewChoice || t == ToolType::NewTerminate ||
         t == ToolType::NewShallowHistory || t == ToolType::NewDeepHistory ||
+        t == ToolType::NewEntryPoint || t == ToolType::NewExitPoint ||
         t == ToolType::NewComment || t == ToolType::NewFormalComment;
 }
 
@@ -619,6 +624,9 @@ static Cyberiada::ElementType toolElementType(ToolType t)
     case ToolType::NewTerminate:    return Cyberiada::elementTerminate;
     case ToolType::NewShallowHistory: return Cyberiada::elementShallowHistory;
     case ToolType::NewDeepHistory:  return Cyberiada::elementDeepHistory;
+    case ToolType::NewSubmachineState: return Cyberiada::elementSubmachineState;
+    case ToolType::NewEntryPoint:   return Cyberiada::elementEntryPoint;
+    case ToolType::NewExitPoint:    return Cyberiada::elementExitPoint;
     case ToolType::NewComment:      return Cyberiada::elementComment;
     case ToolType::NewFormalComment:return Cyberiada::elementFormalComment;
     default:                        return Cyberiada::elementRoot;
@@ -882,6 +890,16 @@ void CyberiadaSMEditorScene::addSMItem(Cyberiada::ElementType type)
         case Cyberiada::elementDeepHistory:
             element = model->newDeepHistory(parentColl, Cyberiada::Point(center.x(), center.y()));
             break;
+        case Cyberiada::elementSubmachineState:
+            element = model->newSubmachineState(parentColl, Cyberiada::ID(),
+                                                Cyberiada::Rect(center.x(), center.y(), 200, 100));
+            break;
+        case Cyberiada::elementEntryPoint:
+            element = model->newEntryPoint(parentColl, Cyberiada::Point(center.x(), center.y()));
+            break;
+        case Cyberiada::elementExitPoint:
+            element = model->newExitPoint(parentColl, Cyberiada::Point(center.x(), center.y()));
+            break;
         case Cyberiada::elementChoice:
             element = model->newChoice(parentColl, Cyberiada::Rect(center.x(), center.y(),
                                                                    CHOICE_DEFAULT_SIZE, CHOICE_DEFAULT_SIZE));
@@ -1030,6 +1048,15 @@ void CyberiadaSMEditorScene::createByTool(ToolType tool, const QRectF& sceneRect
             break;
         case Cyberiada::elementDeepHistory:
             element = model->newDeepHistory(parentColl, Cyberiada::Point(c.x(), c.y()));
+            break;
+        case Cyberiada::elementSubmachineState:
+            element = model->newSubmachineState(parentColl, Cyberiada::ID(), Cyberiada::Rect(c.x(), c.y(), w, h));
+            break;
+        case Cyberiada::elementEntryPoint:
+            element = model->newEntryPoint(parentColl, Cyberiada::Point(c.x(), c.y()));
+            break;
+        case Cyberiada::elementExitPoint:
+            element = model->newExitPoint(parentColl, Cyberiada::Point(c.x(), c.y()));
             break;
         default:
             return;

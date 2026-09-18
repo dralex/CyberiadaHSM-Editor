@@ -91,6 +91,9 @@ enum class ToolType {
     NewTerminate,
     NewShallowHistory,
     NewDeepHistory,
+    NewSubmachineState,
+    NewEntryPoint,
+    NewExitPoint,
     NewComment,
     NewFormalComment,
 };

@@ -78,6 +78,9 @@ void CyberiadaSMGraphicsView::setCurrentTool(ToolType tool) {
     case ToolType::NewTerminate:
     case ToolType::NewShallowHistory:
     case ToolType::NewDeepHistory:
+    case ToolType::NewSubmachineState:
+    case ToolType::NewEntryPoint:
+    case ToolType::NewExitPoint:
     case ToolType::NewComment:
     case ToolType::NewFormalComment:
         viewport()->setCursor(Qt::CrossCursor);

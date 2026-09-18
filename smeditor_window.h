@@ -104,6 +104,9 @@ public slots:
     void                    slotNewTerminate();
     void                    slotNewShallowHistory();
     void                    slotNewDeepHistory();
+    void                    slotNewSubmachineState();
+    void                    slotNewEntryPoint();
+    void                    slotNewExitPoint();
     void                    slotNewComment();
     void                    slotNewFormalComment();
     void                    slotNewChoise();

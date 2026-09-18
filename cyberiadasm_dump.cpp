@@ -54,6 +54,9 @@ static const char* elementTypeName(Cyberiada::ElementType t)
 	case Cyberiada::elementTerminate:      return "Terminate";
 	case Cyberiada::elementShallowHistory: return "Shallow History";
 	case Cyberiada::elementDeepHistory:    return "Deep History";
+	case Cyberiada::elementSubmachineState: return "Submachine State";
+	case Cyberiada::elementEntryPoint:     return "Entry Point";
+	case Cyberiada::elementExitPoint:      return "Exit Point";
 	case Cyberiada::elementTransition:     return "Transition";
 	default:                               return "Unknown";
 	}

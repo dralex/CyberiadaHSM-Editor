@@ -174,6 +174,25 @@ void CyberiadaSMEditorVertexItem::paint(QPainter* painter, const QStyleOptionGra
         painter->setFont(font);
         QString glyph = (type == Cyberiada::elementDeepHistory) ? "H*" : "H";
         painter->drawText(r, Qt::AlignCenter, glyph);
+    } else if (type == Cyberiada::elementEntryPoint ||
+               type == Cyberiada::elementExitPoint) {
+        // a circle with a triangle pointing in (entry) or out (exit)
+        QRectF r = fullCircle();
+        painter->setBrush(painter->background());
+        painter->drawEllipse(r);
+        qreal w = r.width() * 0.28;
+        qreal h = r.height() * 0.28;
+        QPointF c = r.center();
+        QPolygonF tri;
+        if (type == Cyberiada::elementEntryPoint) {
+            tri << QPointF(c.x() - w, c.y() - h) << QPointF(c.x() - w, c.y() + h)
+                << QPointF(c.x() + w, c.y());
+        } else {
+            tri << QPointF(c.x() + w, c.y() - h) << QPointF(c.x() + w, c.y() + h)
+                << QPointF(c.x() - w, c.y());
+        }
+        painter->setBrush(QBrush(color));
+        painter->drawPolygon(tri);
     } else {
         MY_ASSERT(type == Cyberiada::elementTerminate);
 
