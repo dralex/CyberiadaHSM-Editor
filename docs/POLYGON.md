@@ -105,9 +105,10 @@ Statecharts in C/C++* (`docs/PSiCC2.pdf`), filtered to the elements the editor
 supports (simple/composite states, `initial`/`final`/`choice`/`terminate` and
 shallow/deep `history` pseudostates, event/guard/action transitions,
 entry/exit/internal behaviours, comments — no orthogonal regions or fork/join).
-The stories keep to a single machine, so submachine states and their
-entry/exit connection points are exercised by the fuzzer and the submachine
-drill instead. Pick one with `--story <name>`, or let the seed choose.
+One story (`job-runner-submachine`, after PNST 1044 appendix В) draws a submachine
+state referencing an external machine with its entry/exit connection points, so
+those are covered by the drawing missions as well as the fuzzer and the
+submachine drill. Pick one with `--story <name>`, or let the seed choose.
 
 Unlike exploration, a drawing session does not inject fuzzer bursts: it is a
 clean build of a known machine. Its intro **presents the editor's rules**

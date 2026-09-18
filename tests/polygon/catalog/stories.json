@@ -104,6 +104,13 @@
       "subject": "a pedestrian crossing that alternates car green/yellow with pedestrian walk/flashing, plus an operator flashing offline mode",
       "hint": "Top initial -> composite Operational (`entry / cars RED, peds DONT_WALK`) with two nested composites: CarsEnabled (`exit / cars RED`) holding a composite CarsGreen (`entry / cars GREEN, arm timeout`) with substates CarsGreenNoPed and CarsGreenPedWait, plus CarsGreenInt and CarsYellow; and PedsEnabled (`exit / peds DONT_WALK`) holding PedsWalk and PedsFlash. Also a composite Offline holding OffFlash and OffPause. Transitions: CarsGreenNoPed --PEDS_WAITING--> CarsGreenPedWait and --TIMEOUT--> CarsGreenInt; CarsGreenInt --PEDS_WAITING--> CarsYellow; CarsGreenPedWait --TIMEOUT--> CarsYellow; CarsYellow --TIMEOUT--> PedsEnabled; PedsWalk --TIMEOUT--> PedsFlash; PedsFlash has two guarded internal TIMEOUT reactions and --TIMEOUT [ctr==0]--> CarsEnabled; Operational --OFF--> Offline; Offline --ON--> Operational; OffFlash --TIMEOUT--> OffPause and back. Build it level by level.",
       "budget": [30, 50]
+    },
+    {
+      "name": "job-runner-submachine",
+      "source": "PNST 1044 appendix В",
+      "subject": "a caller that delegates work to a reusable Worker submachine through its entry and exit points",
+      "hint": "Under G0: an initial pseudostate, a submachine state Nested that references the external machine Worker (set the reference to Worker when you create the submachine state), and a flat state Done. Give the submachine Nested exactly two children - an entry point and an exit point (its connection points); do not put any plain state, pseudostate or comment inside the submachine. Route the transitions by connector direction: initial -> the submachine's entry point (a connector entry point is a transition target); the submachine's exit point -> Done (a connector exit point is a transition source); Done --RESTART--> the submachine's entry point.",
+      "budget": [10, 18]
     }
   ]
 }

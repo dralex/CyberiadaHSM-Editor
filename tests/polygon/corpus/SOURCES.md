@@ -14,3 +14,4 @@ Cyberiada-GraphML, and verified law-clean and save-reopen stable before adoption
 | `semaphore-hierarchy.graphml` | `hsm-arduino-course/diagrams/2/semaphore-hierarchy.graphml` |
 | `dog.graphml` | `hsm-arduino-course/diagrams/2/dog.graphml` |
 | `simple-hoover.graphml` | `hsm-arduino-course/diagrams/3/simple-hoover.graphml` |
+| `submachine.graphml` | `CyberiadaHSM-Editor/tests/good/submachine-output.graphml` (editor l2-submachine test; the only diagram using the new submachine + entry/exit elements — PSiCC2 has no formal submachine states) |
