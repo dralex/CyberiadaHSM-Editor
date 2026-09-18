@@ -1078,6 +1078,12 @@ bool CyberiadaSMModel::growToFitChildren(Cyberiada::Element* moved, bool directi
 	return grew;
 }
 
+// EDIT-SEM-4: a submachine state may hold only entry/exit connection points
+static bool submachineParent(const Cyberiada::ElementCollection* parent)
+{
+	return parent && parent->get_type() == Cyberiada::elementSubmachineState;
+}
+
 bool CyberiadaSMModel::updateParent(const QModelIndex &index, const Cyberiada::ID &new_parent_id)
 {
 	if (readOnly()) return false;
@@ -1086,6 +1092,10 @@ bool CyberiadaSMModel::updateParent(const QModelIndex &index, const Cyberiada::I
     if (!element) return false;
     Cyberiada::ElementCollection* new_parent = dynamic_cast<Cyberiada::ElementCollection*>(idToElement(new_parent_id.c_str()));
     if (!new_parent) return false;
+    // a submachine state holds only entry/exit connection points (EDIT-SEM-4)
+    if (submachineParent(new_parent)
+        && element->get_type() != Cyberiada::elementEntryPoint
+        && element->get_type() != Cyberiada::elementExitPoint) return false;
     // reparenting into the element itself or one of its descendants would free
     // the target subtree mid-move (use-after-free in move()): refuse it
     for (const Cyberiada::Element* a = new_parent; a; a = a->get_parent()) {
@@ -1259,6 +1269,7 @@ Cyberiada::State *CyberiadaSMModel::newState(Cyberiada::ElementCollection *paren
                                              const Cyberiada::Color &color)
 {
 	if (readOnly()) return NULL;
+	if (submachineParent(parent)) return NULL;
 	UndoScope scope(this, tr("new state"));
     if (root == NULL) {
         return nullptr;
@@ -1296,6 +1307,7 @@ Cyberiada::State *CyberiadaSMModel::newState(Cyberiada::ElementCollection *paren
 Cyberiada::InitialPseudostate *CyberiadaSMModel::newInitial(Cyberiada::ElementCollection *parent, const Cyberiada::Point &p)
 {
 	if (readOnly()) return NULL;
+	if (submachineParent(parent)) return NULL;
 	UndoScope scope(this, tr("new element"));
     if (root == NULL) {
         return nullptr;
@@ -1319,6 +1331,7 @@ Cyberiada::InitialPseudostate *CyberiadaSMModel::newInitial(Cyberiada::ElementCo
 Cyberiada::FinalState *CyberiadaSMModel::newFinal(Cyberiada::ElementCollection *parent, const Cyberiada::Point &p)
 {
 	if (readOnly()) return NULL;
+	if (submachineParent(parent)) return NULL;
 	UndoScope scope(this, tr("new element"));
     if (root == NULL) {
         return nullptr;
@@ -1342,6 +1355,7 @@ Cyberiada::ChoicePseudostate *CyberiadaSMModel::newChoice(Cyberiada::ElementColl
                                                           const Cyberiada::Color &color)
 {
 	if (readOnly()) return NULL;
+	if (submachineParent(parent)) return NULL;
 	UndoScope scope(this, tr("new element"));
     if (root == NULL) {
         return nullptr;
@@ -1364,6 +1378,7 @@ Cyberiada::ChoicePseudostate *CyberiadaSMModel::newChoice(Cyberiada::ElementColl
 Cyberiada::TerminatePseudostate *CyberiadaSMModel::newTerminate(Cyberiada::ElementCollection *parent, const Cyberiada::Point &p)
 {
 	if (readOnly()) return NULL;
+	if (submachineParent(parent)) return NULL;
 	UndoScope scope(this, tr("new element"));
     if (root == NULL) {
         return nullptr;
@@ -1386,6 +1401,7 @@ Cyberiada::TerminatePseudostate *CyberiadaSMModel::newTerminate(Cyberiada::Eleme
 Cyberiada::HistoryPseudostate *CyberiadaSMModel::newShallowHistory(Cyberiada::ElementCollection *parent, const Cyberiada::Point &p)
 {
 	if (readOnly()) return NULL;
+	if (submachineParent(parent)) return NULL;
 	UndoScope scope(this, tr("new element"));
     if (root == NULL) {
         return nullptr;
@@ -1408,6 +1424,7 @@ Cyberiada::HistoryPseudostate *CyberiadaSMModel::newShallowHistory(Cyberiada::El
 Cyberiada::HistoryPseudostate *CyberiadaSMModel::newDeepHistory(Cyberiada::ElementCollection *parent, const Cyberiada::Point &p)
 {
 	if (readOnly()) return NULL;
+	if (submachineParent(parent)) return NULL;
 	UndoScope scope(this, tr("new element"));
     if (root == NULL) {
         return nullptr;
@@ -1430,6 +1447,7 @@ Cyberiada::HistoryPseudostate *CyberiadaSMModel::newDeepHistory(Cyberiada::Eleme
 Cyberiada::SubmachineState *CyberiadaSMModel::newSubmachineState(Cyberiada::ElementCollection *parent, const Cyberiada::ID &reference, const Cyberiada::Rect &r)
 {
 	if (readOnly()) return NULL;
+	if (submachineParent(parent)) return NULL;
 	UndoScope scope(this, tr("new element"));
     if (root == NULL) {
         return nullptr;
@@ -1534,6 +1552,7 @@ Cyberiada::Comment *CyberiadaSMModel::newComment(Cyberiada::ElementCollection *p
                                                  const Cyberiada::Rect &rect, const Cyberiada::Color &color, const Cyberiada::String &markup)
 {
 	if (readOnly()) return NULL;
+	if (submachineParent(parent)) return NULL;
 	UndoScope scope(this, tr("new comment"));
     if (root == NULL) {
         return nullptr;
@@ -1556,6 +1575,7 @@ Cyberiada::Comment *CyberiadaSMModel::newFormalComment(Cyberiada::ElementCollect
                                                        const Cyberiada::String &markup)
 {
 	if (readOnly()) return NULL;
+	if (submachineParent(parent)) return NULL;
 	UndoScope scope(this, tr("new comment"));
     if (root == NULL) {
         return nullptr;
@@ -2173,6 +2193,10 @@ Cyberiada::Element* CyberiadaSMModel::pasteElement(Cyberiada::ElementCollection*
 {
     if (readOnly() || !parent || !src || !root) return NULL;
     if (src->get_type() == Cyberiada::elementSM) return NULL;   // never paste a State Machine
+    // a submachine state holds only entry/exit connection points (EDIT-SEM-4)
+    if (submachineParent(parent)
+        && src->get_type() != Cyberiada::elementEntryPoint
+        && src->get_type() != Cyberiada::elementExitPoint) return NULL;
 
     const double PASTE_OFFSET = 20.0;
     UndoScope scope(this, tr("paste"));
