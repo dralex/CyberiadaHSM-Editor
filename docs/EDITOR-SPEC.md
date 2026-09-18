@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.5 (2026-09-17)
+**Document version:** 0.6 (2026-09-18)
 
 **Related authorities:**
 
@@ -137,6 +137,16 @@ over those rows; nothing more than the existing dump is needed.
   the source of at most one optional default transition; it is not required. *PNST 984*
 - `EDIT-SEM-3` SHOULD [U]: a choice pseudostate's outgoing transitions are
   guarded. Only one guard is allowed to have `else` guard. *PNST 984*
+- `EDIT-SEM-4` MUST [U]: a submachine state references a state machine by id (internal) or
+  URI (external); the only children it may hold are entry/exit points, which act as its
+  connection-point references, bound by name to the referenced machine's entry/exit. *PNST 1044 8.1*
+- `EDIT-SEM-5` MUST [U]: entry/exit endpoint direction is the mirror of the container — on a
+  submachine-state connector an entry point is a transition target only and an exit point a source
+  only; a standalone entry/exit point in a state machine is reversed (entry = source only, exit =
+  target only). *PNST 984*
+- `EDIT-SEM-6` MUST [U]: a shallow history pseudostate restores the last active substate of its
+  enclosing region; a deep history restores the full nested active configuration; the single
+  optional default transition is taken when the region was never entered. *PNST 984*
 
 ### 4.3 State machines/states/pseudostates/comments geometry and layout — NODES
 
@@ -181,10 +191,15 @@ the third is a derived display value the format does not store):
 - `EDIT-NODE-9` MUST [U]: a comment name is shown in the top of the element if set. *PNST
   984*
 - `EDIT-NODE-10` MUST [U]: a node with a colour is drawn in it — the outline of a state, a
-  composite, a state machine, a choice, a comment or a terminate; the fill of an initial or
-  a history pseudostate; the outer-circle outline and the inner-circle fill of a final. A
-  history pseudostate is drawn as a small circle like an initial, carrying an `H` (shallow)
-  or `H*` (deep) glyph. The selection highlight overrides it while selected. *design*
+  composite, a submachine state, a state machine, a choice, a comment or a terminate; the fill of
+  an initial, a history, or an entry/exit pseudostate; the outer-circle outline and the inner-circle
+  fill of a final. A history pseudostate is drawn as a small circle like an initial, carrying an `H`
+  (shallow) or `H*` (deep) glyph; an entry/exit point is a small circle carrying a triangle pointing
+  in (entry) or out (exit); a submachine state is drawn like a state carrying a submachine marker.
+  The selection highlight overrides it while selected. *design*
+- `EDIT-NODE-14` MUST [U]: an entry/exit point that is a submachine state's connector lies on that
+  state's border and stays on it when moved; a standalone entry/exit point in a state machine may lie
+  on the border or anywhere inside it. *PNST 1044 8.1/8.3*
 - `EDIT-NODE-11` MUST [A]: an auto-sized comment's box follows its body text; changing the body
   re-lays-out the box so its live geometry matches a save/reopen (keeps `EDIT-IO-1`). *design*
 - `EDIT-NODE-12` MUST [U]: the document bounding rect is the union of everything drawn — the
@@ -207,8 +222,8 @@ the third is a derived display value the format does not store):
   elements border. An endpoint without a stored point lies on the border of its node
   toward the other end (a vertex at its centre), within tolerance. *design*
 - `EDIT-EDGE-2` MUST [U]: an endpoint of a point-based circle elements (initial
-  pseudostate, final state or history pseudostate) lies on the border of the drawn
-  element, not the center. *design*
+  pseudostate, final state, history pseudostate, or entry/exit point) lies on the border of the
+  drawn element, not the center. *design*
 - `EDIT-EDGE-3` MUST [U]: an endpoint of the rest point-based elements (terminator) lies
   on the center. *design*
 - `EDIT-EDGE-4` MUST [U]: an endpoint of a choice element lies on vertexes of the
@@ -269,6 +284,9 @@ the third is a derived display value the format does not store):
   geometry snaps to the grid spacing; with it off the geometry is unrounded. *design*
 - `EDIT-TOOL-9` MUST [A]: holding `Alt` suspends snap-to-grid while it is held. *design*
 - `EDIT-TOOL-10` MUST [A]: holding `Ctrl` locks a move to a single axis (the dominant one). *design*
+- `EDIT-TOOL-11` MUST [A]: the submachine-state, entry-point and exit-point creation tools each
+  create one element of their kind under the press point; a new submachine state takes a default
+  reference set afterward in the property panel. *design*
 
 ### 4.7 History — HIST
 
@@ -292,9 +310,11 @@ the third is a derived display value the format does not store):
 - `EDIT-IO-4` MUST [I]: an element's colour is a persisted attribute and round-trips
   through save and reopen. *PNST 1044.*
 - `EDIT-IO-5` MUST [A]: an element's colour is editable — from the property menu and the
-  `set-color` verb — for every node and edge (state, composite, state machine, choice,
-  initial, final, terminate, shallow history, deep history, comment, transition); the change
-  is one undo step. *design*
+  `set-color` verb — for every node and edge (state, composite, submachine state, state machine,
+  choice, initial, final, terminate, shallow history, deep history, entry point, exit point,
+  comment, transition); the change is one undo step. *design*
+- `EDIT-IO-7` MUST [I]: a submachine state's reference and its nested entry/exit points, and a
+  standalone entry/exit point, round-trip through save and reopen. *PNST 1044 8.1/8.3*
 - `EDIT-IO-6` MUST [A]: an exported image is the diagram's own size — the visible items'
   bounding rect padded by 1px, with no scene margin — and the `export frame` is reported. *design*
 - `EDIT-IO-7` MUST [A]: Save is enabled only for an open, modified document that is not in
