@@ -10,12 +10,14 @@ The model is a CyberiadaML hierarchical state machine (UML statecharts):
   choice (a branching point with guarded outgoing transitions), terminate,
   and shallow/deep history (restore the last active substate of a composite).
   The final state is similar to pseudostates by drawing and using in diagrams.
-- A submachine state references another state machine and stands in for it. Its
-  only children are the entry and exit connection points that map onto that
-  machine's boundary. Entry and exit points also stand alone in a machine.
-  Their endpoint role mirrors the container: a connector entry (inside a
-  submachine) is a transition target and a connector exit a source; a standalone
-  entry is a source and a standalone exit a target.
+- A submachine state references another state machine, by that machine's name or
+  id, and stands in for it. Its only children are the entry and exit connection
+  points that map onto that machine's boundary. Entry and exit points also stand
+  alone in a machine. Their endpoint role mirrors the container: a connector
+  entry (inside a submachine) is a transition target and a connector exit a
+  source; a standalone entry is a source and a standalone exit a target. Several
+  submachine states, each referencing a machine, compose those machines into an
+  orchestrator - a pipeline wired connector to connector.
 - A transition goes from a source (a state, the initial pseudostate or a
   choice) to a target (a state, a final state, a choice, a terminate or a
   history pseudostate) of the same state machine. A history pseudostate may

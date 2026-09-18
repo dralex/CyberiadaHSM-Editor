@@ -111,6 +111,13 @@
       "subject": "a caller that delegates work to a reusable Worker submachine through its entry and exit points",
       "hint": "Under G0: an initial pseudostate, a submachine state Nested that references the external machine Worker (set the reference to Worker when you create the submachine state), and a flat state Done. Give the submachine Nested exactly two children - an entry point and an exit point (its connection points); do not put any plain state, pseudostate or comment inside the submachine. Route the transitions by connector direction: initial -> the submachine's entry point (a connector entry point is a transition target); the submachine's exit point -> Done (a connector exit point is a transition source); Done --RESTART--> the submachine's entry point.",
       "budget": [10, 18]
+    },
+    {
+      "name": "orchestrator-pipeline",
+      "source": "PNST 1044 8.1 (submachine composition)",
+      "subject": "an orchestrator that runs three worker machines in sequence through their entry and exit points",
+      "hint": "Under G0, compose three reusable machines with submachine states. Create an initial pseudostate; three submachine states in a row - Scan (reference the machine 'scanner'), Move (reference 'mover'), Clean (reference 'cleaner') - setting each reference to its machine name when you create the submachine state; and a final state. Give each submachine exactly two children - an entry point and an exit point (its connection points, inside the submachine); put nothing else inside a submachine. Wire the pipeline by connector direction (a connector entry point is a transition target, a connector exit point a source): initial -> Scan's entry point; Scan's exit point -> Move's entry point; Move's exit point -> Clean's entry point; Clean's exit point -> the final state.",
+      "budget": [14, 26]
     }
   ]
 }
