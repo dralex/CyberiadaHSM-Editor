@@ -1517,15 +1517,6 @@ Cyberiada::ConnectionPoint *CyberiadaSMModel::newExitPoint(Cyberiada::ElementCol
     return element;
 }
 
-// the state machine an element belongs to (walk up to the enclosing SM)
-static const Cyberiada::Element* machineOf(const Cyberiada::Element* e)
-{
-	for (; e; e = e->get_parent())
-		if (e->get_type() == Cyberiada::elementSM)
-			return e;
-	return NULL;
-}
-
 Cyberiada::Transition *CyberiadaSMModel::newTransition(Cyberiada::StateMachine *sm, Cyberiada::TransitionType ttype,
                                                        Cyberiada::Element *source, Cyberiada::Element *target,
                                                        const Cyberiada::Action &action, const Cyberiada::Polyline &pl,
@@ -1534,9 +1525,12 @@ Cyberiada::Transition *CyberiadaSMModel::newTransition(Cyberiada::StateMachine *
                                                        const Cyberiada::Color &color)
 {
 	if (readOnly()) return NULL;
-	// a transition stays within one state machine (EDIT-STRUCT-4); a cross-machine
-	// edge is invalid and later crashes the property panel's element lookup
-	if (machineOf(source) != sm || machineOf(target) != sm) return NULL;
+	// a transition belongs to the machine of its source; a target in another machine
+	// is invalid (EDIT-STRUCT-4). Derive the SM from the source so a stale caller-supplied
+	// sm (the scene's currentSM) cannot mis-parent it or wrongly reject it.
+	Cyberiada::StateMachine* real_sm = (root && source) ? root->get_parent_sm(source) : NULL;
+	if (!real_sm || (target && root->get_parent_sm(target) != real_sm)) return NULL;
+	sm = real_sm;
 	UndoScope scope(this, tr("new transition"));
     if (root == NULL) {
         return nullptr;
