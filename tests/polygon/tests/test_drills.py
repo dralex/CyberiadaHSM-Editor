@@ -36,6 +36,7 @@ ALL_DRILLS = [nesting.NestingDrill, nesting.PseudostateDrill,
               features.TransitionPointDrill, features.RebindDrill,
               features.ChoiceDrill, features.ActionDrill,
               features.ResizeDrill, features.CopyPasteDrill,
+              features.SubmachineDrill,
               compound.CompoundDrill]
 
 

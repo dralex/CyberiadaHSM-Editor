@@ -104,8 +104,10 @@ states, nesting, pseudostates and key transitions to draw, a `budget`, and a
 Statecharts in C/C++* (`docs/PSiCC2.pdf`), filtered to the elements the editor
 supports (simple/composite states, `initial`/`final`/`choice`/`terminate` and
 shallow/deep `history` pseudostates, event/guard/action transitions,
-entry/exit/internal behaviours, comments — no orthogonal regions, fork/join or
-submachines). Pick one with `--story <name>`, or let the seed choose.
+entry/exit/internal behaviours, comments — no orthogonal regions or fork/join).
+The stories keep to a single machine, so submachine states and their
+entry/exit connection points are exercised by the fuzzer and the submachine
+drill instead. Pick one with `--story <name>`, or let the seed choose.
 
 Unlike exploration, a drawing session does not inject fuzzer bursts: it is a
 clean build of a known machine. Its intro **presents the editor's rules**
@@ -134,7 +136,9 @@ states, and the unique-initial gesture that reproduces the two-initial hang); **
 endpoint across states; the transition connects the new pair, asserted by endpoints not the
 renamed id); **choice** (a choice and escalating guarded branches); **action** (escalate a
 state's action list; add-then-delete restores it); **resize** (border resize and grow-to-fit
-when a child is dragged past the border); **copy-paste** (build a subtree and duplicate it).
+when a child is dragged past the border); **copy-paste** (build a subtree and duplicate it);
+**submachine** (a submachine state, its entry/exit connectors and standalone entry/exit
+points, then a transition whose direction follows the connector/standalone role).
 
 Deterministic drills are the primary, guaranteed-coverage form, run with `drill --which
 <name|all>` and no LLM. An agent drill is an optional realism variant. A reversibility step

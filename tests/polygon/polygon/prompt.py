@@ -154,6 +154,10 @@ editor will maintain them for you:
   - a state's name is non-empty and unique among its siblings [STRUCT-2]; every
     element has one parent, no cycles [STRUCT-3]; a composite state has children,
     a leaf is simple or a pseudostate [STRUCT-6]
+  - a submachine state references another machine and holds only entry/exit
+    connection points [SEM-4]; a connector entry is a transition target and a
+    connector exit a source, a standalone entry/exit in the machine reversed
+    [SEM-5]
   - a transition ends on the border of a rectangular state, on the drawn circle
     of an initial/final, or on a rhombus vertex of a choice [EDGE-1..4]; the line
     ends in an arrow [EDGE-5]; a self-loop stays a loop [EDGE-8]

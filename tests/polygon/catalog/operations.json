@@ -12,6 +12,17 @@
       "form": "model"
     },
     {
+      "verb": "new-submachine-state",
+      "args": "<parent> [x y w h] <reference>",
+      "effect": "create a submachine state referencing another machine (rect and reference optional)",
+      "targets": [
+        "sm",
+        "composite",
+        "simple"
+      ],
+      "form": "model"
+    },
+    {
       "verb": "new-initial",
       "args": "<parent> [x y]",
       "effect": "create an initial pseudostate",
@@ -96,6 +107,26 @@
         "sm",
         "composite",
         "simple"
+      ],
+      "form": "model"
+    },
+    {
+      "verb": "new-entry-point",
+      "args": "<parent> [x y]",
+      "effect": "create an entry connection point (a submachine child is a target, a standalone machine child is a source)",
+      "targets": [
+        "sm",
+        "submachine-state"
+      ],
+      "form": "model"
+    },
+    {
+      "verb": "new-exit-point",
+      "args": "<parent> [x y]",
+      "effect": "create an exit connection point (a submachine child is a source, a standalone machine child is a target)",
+      "targets": [
+        "sm",
+        "submachine-state"
       ],
       "form": "model"
     },
@@ -338,8 +369,8 @@
     },
     {
       "verb": "tool",
-      "args": "select|pan|zoom|transition|new-sm|new-state|new-initial|new-final|new-choice|new-terminate|new-shallow-history|new-deep-history|new-comment|new-formal-comment",
-      "effect": "select the scene tool; the creation tools draw a rect (new-sm, new-state) or place on click, then revert to select",
+      "args": "select|pan|zoom|transition|new-sm|new-state|new-submachine-state|new-initial|new-final|new-choice|new-terminate|new-shallow-history|new-deep-history|new-entry-point|new-exit-point|new-comment|new-formal-comment",
+      "effect": "select the scene tool; the creation tools draw a rect (new-sm, new-state, new-submachine-state) or place on click, then revert to select",
       "targets": [],
       "form": "gesture"
     },

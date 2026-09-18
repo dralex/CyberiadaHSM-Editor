@@ -111,6 +111,34 @@ class LawTest(unittest.TestCase):
         d = wrap([node(D.KIND_COMMENT, "c0"), node(D.KIND_SIMPLE, "n0", "A"), t])
         self.assertIn("SEM-2", reqs(d))     # a comment cannot be a source
 
+    def test_submachine_holds_a_plain_state(self):
+        sub = node(D.KIND_SUBMACHINE_STATE, "n0",
+                   children=[node(D.KIND_SIMPLE, "n0::n0", "X")])
+        d = wrap([sub])
+        self.assertIn("SEM-4", reqs(d))     # only entry/exit points are allowed
+
+    def test_submachine_entry_exit_pass(self):
+        sub = node(D.KIND_SUBMACHINE_STATE, "n0",
+                   children=[node(D.KIND_ENTRY_POINT, "n0::n0"),
+                             node(D.KIND_EXIT_POINT, "n0::n1")])
+        self.assertNotIn("SEM-4", reqs(wrap([sub])))
+
+    def test_connector_entry_used_as_source(self):
+        # an entry connector is a target only; using it as a source breaks SEM-5
+        sub = node(D.KIND_SUBMACHINE_STATE, "n0",
+                   children=[node(D.KIND_ENTRY_POINT, "n0::n0")])
+        t = D.Element(kind=D.KIND_TRANSITION, id="t0", source="n0::n0", target="s0")
+        d = wrap([sub, node(D.KIND_SIMPLE, "s0", "A"), t])
+        self.assertIn("SEM-5", reqs(d))
+
+    def test_standalone_entry_used_as_source_passes(self):
+        # a standalone entry point (in the machine) is a source
+        entry = node(D.KIND_ENTRY_POINT, "e0")
+        t = D.Element(kind=D.KIND_TRANSITION, id="t0", source="e0", target="s0")
+        d = wrap([entry, node(D.KIND_SIMPLE, "s0", "A"), t])
+        self.assertNotIn("SEM-5", reqs(d))
+        self.assertNotIn("SEM-2", reqs(d))
+
     def test_cross_machine_transition(self):
         sm1 = node(D.KIND_SM, "G1", children=[node(D.KIND_SIMPLE, "m0", "X")])
         d = wrap([node(D.KIND_SIMPLE, "n0", "A")])

@@ -150,11 +150,11 @@ class Fuzzer:
         if container is None:
             return None
         x, y = self.inside_point(container)
-        if tool.family == CAT.FAMILY_RECT:            # new-state
+        if tool.family == CAT.FAMILY_RECT:            # new-state, new-submachine-state
             w, h = self.pick((80, 120, 160)), self.pick((60, 80, 100))
             if self.rng.random() < 0.3:
-                return (["tool new-state", "click %d %d" % (x, y)], tool.element)
-            return (["tool new-state", "press %d %d" % (x, y),
+                return (["tool %s" % tool.name, "click %d %d" % (x, y)], tool.element)
+            return (["tool %s" % tool.name, "press %d %d" % (x, y),
                      "drag %d %d" % (x + w, y + h), "release %d %d" % (x + w, y + h)], tool.element)
         return (["tool %s" % tool.name, "click %d %d" % (x, y)], tool.element)   # place tool
 

@@ -147,22 +147,58 @@ def one_initial_per_parent(dump):                        # EDIT-SEM-1
 
 
 # a history pseudostate is a valid target, and the source of an optional default
-# transition (PNST 984, not required) - so it is legal on either end
+# transition (PNST 984, not required) - so it is legal on either end; a submachine
+# state is a state, so it is already a valid source and target through STATE_KINDS
 _HISTORY_KINDS = (D.KIND_SHALLOW_HISTORY, D.KIND_DEEP_HISTORY)
 _SOURCE_KINDS = D.STATE_KINDS + (D.KIND_INITIAL, D.KIND_CHOICE) + _HISTORY_KINDS
 _TARGET_KINDS = D.STATE_KINDS + (D.KIND_FINAL, D.KIND_CHOICE, D.KIND_TERMINATE) + _HISTORY_KINDS
 
 
-def endpoint_kinds(dump):                                # EDIT-SEM-2
+def _connection_role(e):
+    """The single legal endpoint role of an entry/exit point (EDIT-SEM-5). A
+    connector - a child of a submachine state - mirrors its container: an entry
+    is a target, an exit is a source. A standalone point in a state machine is
+    reversed. (PNST 984)"""
+    connector = e.parent is not None and e.parent.kind == D.KIND_SUBMACHINE_STATE
+    is_entry = e.kind == D.KIND_ENTRY_POINT
+    return "source" if (is_entry != connector) else "target"
+
+
+def endpoint_kinds(dump):                                # EDIT-SEM-2 / SEM-5
     doc = dump.document
     if doc is None:
         return
     for t in doc.transitions():
         s, g = doc.find(t.source), doc.find(t.target)
-        if s is not None and s.kind not in _SOURCE_KINDS:
-            yield Violation("SEM-2", "transition %s starts on a %s" % (t.id, s.kind.lower()))
-        if g is not None and g.kind not in _TARGET_KINDS:
-            yield Violation("SEM-2", "transition %s ends on a %s" % (t.id, g.kind.lower()))
+        if s is not None:
+            if s.kind in D.CONNECTION_POINT_KINDS:
+                if _connection_role(s) != "source":
+                    yield Violation("SEM-5", "transition %s starts on %s, a target-only %s"
+                                    % (t.id, s.id, D.WORDS.get(s.kind, s.kind.lower())))
+            elif s.kind not in _SOURCE_KINDS:
+                yield Violation("SEM-2", "transition %s starts on a %s" % (t.id, s.kind.lower()))
+        if g is not None:
+            if g.kind in D.CONNECTION_POINT_KINDS:
+                if _connection_role(g) != "target":
+                    yield Violation("SEM-5", "transition %s ends on %s, a source-only %s"
+                                    % (t.id, g.id, D.WORDS.get(g.kind, g.kind.lower())))
+            elif g.kind not in _TARGET_KINDS:
+                yield Violation("SEM-2", "transition %s ends on a %s" % (t.id, g.kind.lower()))
+
+
+def submachine_children(dump):                           # EDIT-SEM-4
+    # a submachine state references another machine; its only own children are
+    # the entry/exit connection points
+    doc = dump.document
+    if doc is None:
+        return
+    for e in doc.walk():
+        if e.kind != D.KIND_SUBMACHINE_STATE:
+            continue
+        for c in e.children:
+            if c.kind not in D.CONNECTION_POINT_KINDS:
+                yield Violation("SEM-4", "submachine state %s holds a %s"
+                                % (e.id, D.WORDS.get(c.kind, c.kind.lower())))
 
 
 def meta_hidden(dump):                                   # EDIT-META-1
@@ -186,7 +222,10 @@ def containment(dump):                                   # EDIT-NODE-1
         parent = item.parent
         if parent is None or parent.kind not in D.STATE_KINDS:
             continue
-        if item.kind == D.KIND_TRANSITION or _degenerate(parent.rect) or _degenerate(item.rect):
+        # a submachine connector sits on its container's border (NODE-14/EDGE-2),
+        # so it is not a containment box violation; a transition path may bow out
+        if (item.kind == D.KIND_TRANSITION or item.kind in D.CONNECTION_POINT_KINDS
+                or _degenerate(parent.rect) or _degenerate(item.rect)):
             continue
         if not _inside(item.abs_rect, parent.abs_rect):
             yield Violation("NODE-1", "%s is drawn outside its parent %s" % (item.id, parent.id))
@@ -209,8 +248,8 @@ def no_overlap(dump):                                    # EDIT-NODE-6
 # hard laws run always-on and register as defects; gated laws are implemented
 # and tested but not yet registered (pending an EDITOR-SPEC decision)
 HARD = [unique_ids, no_cycle, endpoints_same_machine, composite_by_children,
-        no_dangling, one_initial_per_parent, endpoint_kinds, meta_hidden,
-        containment, no_overlap]
+        no_dangling, one_initial_per_parent, endpoint_kinds, submachine_children,
+        meta_hidden, containment, no_overlap]
 GATED = []
 
 

@@ -234,3 +234,42 @@ class CopyPasteDrill(Drill):
         # subtree and the selection, so the generic save/reopen and crash
         # oracles carry the copy-paste check; the drill escalates the subtree)
         return (["click %d %d" % (round(cx), round(cy)), "copy", "paste"], "state", "")
+
+
+class SubmachineDrill(Drill):
+    """A submachine state referencing an external machine, its entry/exit
+    connectors, standalone entry/exit points in the machine, and a valid
+    transition between them. The submachine keeps its kind and the endpoint
+    roles hold (EDIT-SEM-4/5): a standalone entry is a source, a connector entry
+    a target. Built with the batch verbs so the reference is an external machine
+    (the tool gesture cannot set it), reading each id back from the dump."""
+
+    name = "submachine"
+
+    def emit(self, dump):
+        doc = dump.document
+        m = self.machine(doc)
+        if m is None:
+            return None
+        subs = [e for e in doc.walk() if e.kind == D.KIND_SUBMACHINE_STATE]
+        if not subs:
+            return (["new-submachine-state %s 60 60 260 140 M2" % m.id],
+                    "submachine-state", "")
+        sub = subs[0]
+        entries = [c for c in sub.children if c.kind == D.KIND_ENTRY_POINT]
+        exits = [c for c in sub.children if c.kind == D.KIND_EXIT_POINT]
+        if not entries:
+            return (["new-entry-point %s 60 70" % sub.id], "entry-point",
+                    "kind %s submachine-state" % sub.id)
+        if not exits:
+            return (["new-exit-point %s 260 70" % sub.id], "exit-point", "")
+        st_entries = [e for e in m.children if e.kind == D.KIND_ENTRY_POINT]
+        st_exits = [e for e in m.children if e.kind == D.KIND_EXIT_POINT]
+        if not st_entries:
+            return (["new-entry-point %s 30 250" % m.id], "entry-point", "")
+        if not st_exits:
+            return (["new-exit-point %s 400 250" % m.id], "exit-point", "")
+        # a valid transition: the standalone entry (a source) to the connector
+        # entry (a target) - the SEM-5 direction the endpoint law checks
+        return (["new-transition %s %s %s" % (m.id, st_entries[0].id, entries[0].id)],
+                "transition", "transition %s %s" % (st_entries[0].id, entries[0].id))

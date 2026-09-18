@@ -39,11 +39,15 @@ KIND_CHOICE = "Choice"
 KIND_TERMINATE = "Terminate"
 KIND_SHALLOW_HISTORY = "Shallow History"
 KIND_DEEP_HISTORY = "Deep History"
+KIND_SUBMACHINE_STATE = "Submachine State"
+KIND_ENTRY_POINT = "Entry Point"
+KIND_EXIT_POINT = "Exit Point"
 KIND_TRANSITION = "Transition"
 
-STATE_KINDS = (KIND_SIMPLE, KIND_COMPOSITE)
+STATE_KINDS = (KIND_SIMPLE, KIND_COMPOSITE, KIND_SUBMACHINE_STATE)
+CONNECTION_POINT_KINDS = (KIND_ENTRY_POINT, KIND_EXIT_POINT)
 VERTEX_KINDS = (KIND_INITIAL, KIND_FINAL, KIND_CHOICE, KIND_TERMINATE,
-                KIND_SHALLOW_HISTORY, KIND_DEEP_HISTORY)
+                KIND_SHALLOW_HISTORY, KIND_DEEP_HISTORY) + CONNECTION_POINT_KINDS
 COMMENT_KINDS = (KIND_COMMENT, KIND_FORMAL)
 NODE_KINDS = STATE_KINDS + VERTEX_KINDS + COMMENT_KINDS
 META_COMMENT = "CGML_META"
@@ -54,6 +58,8 @@ SHORT_KINDS = {
     "initial": KIND_INITIAL, "final": KIND_FINAL, "choice": KIND_CHOICE,
     "terminate": KIND_TERMINATE, "comment": KIND_COMMENT,
     "shallow-history": KIND_SHALLOW_HISTORY, "deep-history": KIND_DEEP_HISTORY,
+    "submachine-state": KIND_SUBMACHINE_STATE,
+    "entry-point": KIND_ENTRY_POINT, "exit-point": KIND_EXIT_POINT,
     "formal-comment": KIND_FORMAL, "transition": KIND_TRANSITION,
     "sm": KIND_SM,
 }
@@ -64,6 +70,8 @@ WORDS = {
     KIND_CHOICE: "choice pseudostate", KIND_TERMINATE: "terminate pseudostate",
     KIND_SHALLOW_HISTORY: "shallow history pseudostate",
     KIND_DEEP_HISTORY: "deep history pseudostate",
+    KIND_SUBMACHINE_STATE: "submachine state",
+    KIND_ENTRY_POINT: "entry point", KIND_EXIT_POINT: "exit point",
     KIND_COMMENT: "comment", KIND_FORMAL: "formal comment",
 }
 
