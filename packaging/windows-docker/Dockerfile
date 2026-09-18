@@ -22,8 +22,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         gettext git gperf intltool libc6-dev-i386 libgdk-pixbuf2.0-dev \
         libltdl-dev libgl-dev libssl-dev libtool-bin libxml-parser-perl \
         lzip make openssl p7zip-full patch perl python3 python3-mako \
-        python3-pkg-resources python-is-python3 ruby sed unzip wget xz-utils \
-        ca-certificates \
+        python3-yaml python3-pkg-resources python-is-python3 ruby sed unzip \
+        wget xz-utils ca-certificates \
         wine64 zip \
     && rm -rf /var/lib/apt/lists/*
 
