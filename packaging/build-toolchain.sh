@@ -40,6 +40,7 @@ MODE="all"                    # all | libs | apps  (see --libs-only / --apps-onl
 LIB_PREFIX=""                 # apps mode: extra prefix holding the once-built libraries
 DISTRO_TAG=""                 # per-release version suffix for the app packages (e.g. ubuntu2404)
 XML_LIBS=0                    # apps mode: also rebuild the libxml2-linked libs here
+CLEAN=0                       # remove each repo's build dir before building it
 
 usage() {
     cat <<EOF
@@ -56,6 +57,7 @@ usage: $0 [options]
   --distro-tag T version suffix for the app packages, e.g. ubuntu2404 -> 1.0.6~ubuntu2404
   --xml-libs     apps mode: also rebuild cyberiadaml/cyberiadamlpp here (a release
                  whose libxml2 soname differs from the once-built set, e.g. 26.04)
+  --clean        remove each repo's build dir before building (from scratch)
   --jobs N       parallel build jobs (default: $JOBS)
   -h, --help     this help
 EOF
@@ -74,6 +76,7 @@ while [ $# -gt 0 ]; do
         --lib-prefix) LIB_PREFIX="$2"; shift 2 ;;
         --distro-tag) DISTRO_TAG="$2"; shift 2 ;;
         --xml-libs) XML_LIBS=1; shift ;;
+        --clean) CLEAN=1; shift ;;
         --jobs) JOBS="$2"; shift 2 ;;
         -h|--help) usage; exit 0 ;;
         *) echo "unknown option: $1" >&2; usage; exit 2 ;;
@@ -122,7 +125,9 @@ rm -f "$OUT"/*.deb 2>/dev/null || true
 
 prefix_path="$PREFIX"
 if [ -n "$QT5CMAKE" ]; then prefix_path="$PREFIX;$QT5CMAKE"; fi
-module_path="$PREFIX;$PREFIX/lib/cmake"
+# /usr/lib/cmake carries FindHTGeom.cmake from an apt-installed libhtreegeom-dev
+# (the apps tier installs the libs from their .deb), so find_package(HTGeom) resolves
+module_path="$PREFIX;$PREFIX/lib/cmake;/usr/lib/cmake"
 
 # apps mode: also search the prefix that holds the once-built libraries, so
 # find_package(cyberiadaml/…) resolves them without rebuilding the libs
@@ -151,6 +156,7 @@ build_repo() {
 
     echo "Building $1..."
     bdir="$dir/build-pkg"
+    [ "$CLEAN" -eq 1 ] && rm -rf "$bdir"
     # only QtPropertyBrowser declares cmake_minimum_required < 3.5; passing the
     # shim to the others (all >= 3.10) only makes cmake warn about an unused var
     policy_arg=""
@@ -228,6 +234,7 @@ build_python() {
     py_ld="$PREFIX/lib${LIB_PREFIX:+:$LIB_PREFIX/lib}${QT5:+:$QT5}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
     echo "Building $repo..."
     bdir="$dir/build-pkg"
+    [ "$CLEAN" -eq 1 ] && rm -rf "$bdir"
     LD_LIBRARY_PATH="$py_ld" cmake -S "$dir" -B "$bdir" \
         -DCMAKE_BUILD_TYPE=Release \
         ${DISTRO_TAG:+-DDISTRO_TAG=$DISTRO_TAG} \

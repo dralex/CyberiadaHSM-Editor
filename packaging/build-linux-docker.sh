@@ -126,10 +126,10 @@ docker run --rm \
 # is always reused from the once-built set; the libxml2-linked libs (cyberiadaml,
 # cyberiadamlpp) are reused too where the once-built soname (libxml2.so.2) exists
 # (20.04/22.04/24.04) and rebuilt in-place where it does not (26.04 has libxml2.so.16),
-# via --xml-libs. The apps are version-tagged (1.0.6~ubuntu<ver>). The container is
-# root and uses apt to install the lib .debs so their runtime deps are pulled from
-# the repo; the produced app .debs are chowned back to the invoking user. Stop at the
-# first failure — a missing image, or any cmake/compile/test error (set -e).
+# via --xml-libs. The apps are version-tagged (1.0.6~ubuntu<ver>). apt (as root) installs
+# the lib .debs so their runtime deps are pulled from the repo; the build itself then
+# runs as the invoking user (setpriv), so the build dirs in the mounted source and the
+# produced .debs stay user-owned. Stop at the first failure (set -e).
 uid=$(id -u); gid=$(id -g)
 for ver in $RELEASES; do
     tag="$IMAGE:$ver"
@@ -146,14 +146,14 @@ for ver in $RELEASES; do
         -v "$libout":/libdebs:ro \
         -v "$relout":/out \
         "$tag" \
-        sh -c "set -e; $clean; \
+        sh -c "set -e; \
 apt-get update >/dev/null 2>&1 || true; \
 apt-get install -y --no-install-recommends /libdebs/libhtreegeom*.deb; \
 if apt-get install -y --no-install-recommends libxml2 >/dev/null 2>&1 && ldconfig -p | grep -q 'libxml2\\.so\\.2'; then \
   apt-get install -y --no-install-recommends /libdebs/libcyberiadaml*.deb; xmlflag=; \
 else xmlflag=--xml-libs; fi; \
-if /src/CyberiadaHSM-Editor/packaging/build-toolchain.sh $common_opts --apps-only \$xmlflag --prefix /tmp/prefix --out /out --distro-tag $distro; then st=0; else st=\$?; fi; \
-chown -R $uid:$gid /out; exit \$st"
+exec setpriv --reuid=$uid --regid=$gid --clear-groups \
+  /src/CyberiadaHSM-Editor/packaging/build-toolchain.sh $common_opts --clean --apps-only \$xmlflag --prefix /tmp/prefix --out /out --distro-tag $distro"
 done
 
 say "done — shared libraries in $libout, per-release apps in $OUT/ubuntu-*"
