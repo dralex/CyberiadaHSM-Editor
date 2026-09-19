@@ -24,7 +24,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         lzip make openssl p7zip-full patch perl python3 python3-mako \
         python3-yaml python3-pkg-resources python-is-python3 ruby sed unzip \
         wget xz-utils ca-certificates \
-        wine64 zip \
+        wine wine64 zip \
     && rm -rf /var/lib/apt/lists/*
 
 # pin MXE to a vetted snapshot for a reproducible toolchain (override with

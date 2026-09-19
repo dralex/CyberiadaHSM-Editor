@@ -49,6 +49,16 @@ CMAKE_BIN="$(dirname "$CMAKE")"
 CTEST="$CMAKE_BIN/ctest"
 CPACK="$CMAKE_BIN/cpack"
 
+# Resolve a Wine runner to a full path. The wine64 apt package ships the loader
+# under /usr/lib and does not reliably put a `wine64` on PATH, but the ctest -P
+# drivers invoke the emulator via execute_process (which searches PATH), so a bare
+# name fails. Prefer a PATH wrapper, else the loader binary; the absolute path
+# works regardless of PATH.
+WINE="$(command -v wine64 || command -v wine || true)"
+[ -n "$WINE" ] || WINE="$(find /usr/lib -type f -name wine64 2>/dev/null | head -n1)"
+[ "$TEST" != "1" ] || [ -n "$WINE" ] \
+    || die "no wine runner found in the image; install it or run packaging/windows-docker/add-wine-to-image.sh"
+
 mkdir -p "$OUT"
 
 # run cross-built test exes under Wine. Registering the binfmt makes a bare .exe
@@ -58,7 +68,7 @@ mkdir -p "$OUT"
 if [ "$TEST" = "1" ]; then
     if [ -w /proc/sys/fs/binfmt_misc/register ]; then
         update-binfmts --enable wine >/dev/null 2>&1 \
-          || printf ':winexe:M::MZ::/usr/bin/wine64:' > /proc/sys/fs/binfmt_misc/register 2>/dev/null \
+          || printf ':winexe:M::MZ::%s:' "$WINE" > /proc/sys/fs/binfmt_misc/register 2>/dev/null \
           || true
     else
         echo "note: /proc/sys/fs/binfmt_misc not writable; some suites may need --privileged"
@@ -80,7 +90,7 @@ build_repo() {
         -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
         -DCMAKE_INSTALL_PREFIX="$MXE_PREFIX" \
         -DCMAKE_MODULE_PATH="$MXE_PREFIX/lib/cmake;$MXE_PREFIX" \
-        -DCMAKE_CROSSCOMPILING_EMULATOR=wine64 >/dev/null
+        ${WINE:+-DCMAKE_CROSSCOMPILING_EMULATOR=$WINE} >/dev/null
     "$CMAKE" --build "$bdir" -j "$JOBS"
 
     # the editor GUI tests are Linux-shaped (fontconfig/offscreen) and are run on
@@ -134,7 +144,7 @@ pack_editor() {
 
     # optional smoke test: the exe loads under Wine (offscreen, no display)
     if [ "$TEST" = "1" ]; then
-        ( cd "$stage" && QT_QPA_PLATFORM=offscreen wine64 ./CyberiadaEditor.exe --help >/dev/null 2>&1 ) \
+        ( cd "$stage" && QT_QPA_PLATFORM=offscreen "$WINE" ./CyberiadaEditor.exe --help >/dev/null 2>&1 ) \
             && echo "smoke: editor exe runs under Wine" \
             || echo "warning: editor exe smoke test under Wine did not pass (check manually)"
     fi
