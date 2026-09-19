@@ -129,7 +129,7 @@ build_repo() {
         ${policy_arg:+$policy_arg} \
         -DCMAKE_INSTALL_PREFIX="$PREFIX" \
         -DCMAKE_PREFIX_PATH="$prefix_path" \
-        -DCMAKE_MODULE_PATH="$PREFIX/lib/cmake" \
+        -DCMAKE_MODULE_PATH="$PREFIX;$PREFIX/lib/cmake" \
         ${REDIRECT:+-DCMAKE_PROJECT_INCLUDE="$REDIRECT"} >/dev/null
     cmake --build "$bdir" -j "$JOBS"
 
@@ -189,7 +189,7 @@ build_python() {
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX="$PREFIX" \
         -DCMAKE_PREFIX_PATH="$prefix_path" \
-        -DCMAKE_MODULE_PATH="$PREFIX/lib/cmake" \
+        -DCMAKE_MODULE_PATH="$PREFIX;$PREFIX/lib/cmake" \
         ${REDIRECT:+-DCMAKE_PROJECT_INCLUDE="$REDIRECT"} >/dev/null
     cmake --build "$bdir" -j "$JOBS"
 
