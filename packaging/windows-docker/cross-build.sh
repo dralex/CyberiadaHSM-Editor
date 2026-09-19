@@ -31,6 +31,24 @@ say() { printf '\n== %s\n' "$*"; }
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 
 [ -x "$MXE_CMAKE" ] || die "MXE cmake wrapper not found: $MXE_CMAKE"
+
+# The MXE <target>-cmake wrapper only configures (it appends a toolchain file, so
+# it cannot drive --build/--install/cpack). Those need a plain native cmake, which
+# some MXE snapshots install under the build-triplet bin (e.g.
+# /opt/mxe/usr/x86_64-pc-linux-gnu/bin) that is not on PATH. Locate one; prefer a
+# cmake on PATH, else MXE's own. ctest/cpack sit next to it.
+CMAKE="$(command -v cmake 2>/dev/null || true)"
+if [ -z "$CMAKE" ]; then
+    for c in /opt/mxe/usr/bin/cmake /opt/mxe/usr/*/bin/cmake; do
+        [ -x "$c" ] && { CMAKE="$c"; break; }
+    done
+fi
+[ -n "$CMAKE" ] && [ -x "$CMAKE" ] \
+    || die "no native cmake found; install cmake in the image or run packaging/windows-docker/add-cmake-to-image.sh"
+CMAKE_BIN="$(dirname "$CMAKE")"
+CTEST="$CMAKE_BIN/ctest"
+CPACK="$CMAKE_BIN/cpack"
+
 mkdir -p "$OUT"
 
 # run cross-built test exes under Wine. Registering the binfmt makes a bare .exe
@@ -63,18 +81,18 @@ build_repo() {
         -DCMAKE_INSTALL_PREFIX="$MXE_PREFIX" \
         -DCMAKE_MODULE_PATH="$MXE_PREFIX/lib/cmake;$MXE_PREFIX" \
         -DCMAKE_CROSSCOMPILING_EMULATOR=wine64 >/dev/null
-    cmake --build "$bdir" -j "$JOBS"
+    "$CMAKE" --build "$bdir" -j "$JOBS"
 
     # the editor GUI tests are Linux-shaped (fontconfig/offscreen) and are run on
     # the native-Linux side instead; the library suites run under Wine here
     if [ "$TEST" = "1" ] && [ "$repo" != "CyberiadaHSM-Editor" ]; then
-        ( cd "$bdir" && ctest --output-on-failure )
+        ( cd "$bdir" && "$CTEST" --output-on-failure )
     fi
 
-    cmake --install "$bdir" >/dev/null
+    "$CMAKE" --install "$bdir" >/dev/null
 
     if [ "$pack" = "zip" ]; then
-        ( cd "$bdir" && cpack -G ZIP >/dev/null )
+        ( cd "$bdir" && "$CPACK" -G ZIP >/dev/null )
         cp "$bdir"/*.zip "$OUT"/
     fi
     if [ "$pack" = "editor" ]; then pack_editor "$bdir"; fi
