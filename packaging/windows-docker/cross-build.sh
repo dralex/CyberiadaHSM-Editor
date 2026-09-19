@@ -88,6 +88,9 @@ build_repo() {
     say "$repo"
 
     bdir="$dir/build-mingw"
+    # build from scratch every run: a stale build-mingw (kept in the mounted
+    # source tree) would relink cached objects instead of recompiling the sources
+    rm -rf "$bdir"
     "$MXE_CMAKE" -S "$dir" -B "$bdir" \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
