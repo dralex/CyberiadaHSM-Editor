@@ -27,8 +27,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         wine64 zip \
     && rm -rf /var/lib/apt/lists/*
 
-# pin MXE for a reproducible toolchain (override with --build-arg MXE_REF=<commit>)
-ARG MXE_REF=master
+# pin MXE to a vetted snapshot for a reproducible toolchain (override with
+# --build-arg MXE_REF=<ref>). MXE master is a moving target: recent commits
+# relocated the cross tools under a build-triplet bin dir (breaking the generated
+# cmake toolchain's compiler path) and pulled a mesa needing extra host deps. The
+# build-YYYY-MM-DD tags are MXE's own tested states (Qt 5.15, gcc 11 — ample for a
+# Qt5/C++17 cross build).
+ARG MXE_REF=build-2022-04-09
 ARG MXE_TARGET=x86_64-w64-mingw32.shared
 
 # clone and build only the generic toolchain we need; drop the downloaded
