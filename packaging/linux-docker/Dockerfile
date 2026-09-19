@@ -33,6 +33,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && locale-gen \
     && rm -rf /var/lib/apt/lists/*
 
+# libhtreegeom/libcyberiadamlpp need CMake >= 3.21; Ubuntu 20.04 ships 3.16. Where
+# the apt CMake is too old, install a newer one (Kitware's PyPI wheel) into
+# /usr/local/bin, which precedes /usr/bin on PATH. Newer releases keep their apt CMake.
+RUN cmake_ver=$(cmake --version | sed -n '1s/.* //p') \
+    && if ! dpkg --compare-versions "$cmake_ver" ge 3.21; then \
+           apt-get update \
+           && apt-get install -y --no-install-recommends python3-pip \
+           && pip3 install --no-cache-dir "cmake>=3.21" \
+           && rm -rf /var/lib/apt/lists/*; \
+       fi
+
 # the editor's Qt GUI tests run headless (the offscreen plugin ships with qtbase)
 ENV QT_QPA_PLATFORM=offscreen
 
