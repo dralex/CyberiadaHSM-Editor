@@ -18,7 +18,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # MXE build prerequisites on Ubuntu (see https://mxe.cc/#requirements),
 # plus wine64 (run the cross-built tests) and zip (assemble the packages)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        autoconf automake autopoint bash bison bzip2 flex g++ g++-multilib \
+        autoconf automake autopoint bash bison bzip2 cmake flex g++ g++-multilib \
         gettext git gperf intltool libc6-dev-i386 libgdk-pixbuf2.0-dev \
         libltdl-dev libgl-dev libssl-dev libtool-bin libxml-parser-perl \
         lzip make openssl p7zip-full patch perl python3 python3-mako \
