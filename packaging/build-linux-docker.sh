@@ -99,8 +99,10 @@ pull_repo CyberiadaHSM-Editor "$BRANCH"
 common_opts="--no-pull --jobs $JOBS"
 if [ "$TEST" -eq 0 ]; then common_opts="$common_opts --no-test"; fi
 
-# stale build-pkg from another release's gcc/cmake must not be reused
-clean="for r in libhtreegeom libcyberiadaml libcyberiadamlpp libcyberiadamlpp-py QtPropertyBrowser CyberiadaHSM-Editor; do rm -rf \"/src/\$r/build-pkg\"; done"
+# build out-of-source under a container-local dir (discarded with the --rm
+# container): the mounted sources are only read, never written, so runs never
+# collide on a build dir or leave build artefacts in the source tree
+build_root="/tmp/cyb-build"
 
 # the distribution-independent libraries (htgeom, cyberiadaml, cyberiadamlpp) are
 # built ONCE, in the oldest requested release, so their forward-compatible .so and
@@ -120,7 +122,7 @@ docker run --rm \
     -v "$SOURCES":/src \
     -v "$libout":/out \
     "$libimage" \
-    sh -c "$clean; exec /src/CyberiadaHSM-Editor/packaging/build-toolchain.sh $common_opts --libs-only --prefix /tmp/libprefix --out /out"
+    sh -c "exec /src/CyberiadaHSM-Editor/packaging/build-toolchain.sh $common_opts --build-root $build_root --libs-only --prefix /tmp/libprefix --out /out"
 
 # the per-release apps (python binding, editor) are rebuilt in each release. htgeom
 # is always reused from the once-built set; the libxml2-linked libs (cyberiadaml,
@@ -153,7 +155,7 @@ if apt-get install -y --no-install-recommends libxml2 >/dev/null 2>&1 && ldconfi
   apt-get install -y --no-install-recommends /libdebs/libcyberiadaml*.deb; xmlflag=; \
 else xmlflag=--xml-libs; fi; \
 exec setpriv --reuid=$uid --regid=$gid --clear-groups \
-  /src/CyberiadaHSM-Editor/packaging/build-toolchain.sh $common_opts --clean --apps-only \$xmlflag --prefix /tmp/prefix --out /out --distro-tag $distro"
+  /src/CyberiadaHSM-Editor/packaging/build-toolchain.sh $common_opts --build-root $build_root --apps-only \$xmlflag --prefix /tmp/prefix --out /out --distro-tag $distro"
 done
 
 say "done — shared libraries in $libout, per-release apps in $OUT/ubuntu-*"

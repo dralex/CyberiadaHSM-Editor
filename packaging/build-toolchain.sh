@@ -41,6 +41,7 @@ LIB_PREFIX=""                 # apps mode: extra prefix holding the once-built l
 DISTRO_TAG=""                 # per-release version suffix for the app packages (e.g. ubuntu2404)
 XML_LIBS=0                    # apps mode: also rebuild the libxml2-linked libs here
 CLEAN=0                       # remove each repo's build dir before building it
+BUILD_ROOT=""                 # if set, build out-of-source under here (not in the sources)
 
 usage() {
     cat <<EOF
@@ -58,6 +59,7 @@ usage: $0 [options]
   --xml-libs     apps mode: also rebuild cyberiadaml/cyberiadamlpp here (a release
                  whose libxml2 soname differs from the once-built set, e.g. 26.04)
   --clean        remove each repo's build dir before building (from scratch)
+  --build-root D build out-of-source under D/<repo> instead of in <repo>/build-pkg
   --jobs N       parallel build jobs (default: $JOBS)
   -h, --help     this help
 EOF
@@ -77,6 +79,7 @@ while [ $# -gt 0 ]; do
         --distro-tag) DISTRO_TAG="$2"; shift 2 ;;
         --xml-libs) XML_LIBS=1; shift ;;
         --clean) CLEAN=1; shift ;;
+        --build-root) BUILD_ROOT="$2"; shift 2 ;;
         --jobs) JOBS="$2"; shift 2 ;;
         -h|--help) usage; exit 0 ;;
         *) echo "unknown option: $1" >&2; usage; exit 2 ;;
@@ -155,7 +158,7 @@ build_repo() {
     fi
 
     echo "Building $1..."
-    bdir="$dir/build-pkg"
+    if [ -n "$BUILD_ROOT" ]; then bdir="$BUILD_ROOT/$repo"; else bdir="$dir/build-pkg"; fi
     [ "$CLEAN" -eq 1 ] && rm -rf "$bdir"
     # only QtPropertyBrowser declares cmake_minimum_required < 3.5; passing the
     # shim to the others (all >= 3.10) only makes cmake warn about an unused var
@@ -233,7 +236,7 @@ build_python() {
     # the lib prefix, so it must be on the loader path for the import test
     py_ld="$PREFIX/lib${LIB_PREFIX:+:$LIB_PREFIX/lib}${QT5:+:$QT5}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
     echo "Building $repo..."
-    bdir="$dir/build-pkg"
+    if [ -n "$BUILD_ROOT" ]; then bdir="$BUILD_ROOT/$repo"; else bdir="$dir/build-pkg"; fi
     [ "$CLEAN" -eq 1 ] && rm -rf "$bdir"
     LD_LIBRARY_PATH="$py_ld" cmake -S "$dir" -B "$bdir" \
         -DCMAKE_BUILD_TYPE=Release \
