@@ -164,9 +164,14 @@ build_repo() {
     # shim to the others (all >= 3.10) only makes cmake warn about an unused var
     policy_arg=""
     if [ "$repo" = "QtPropertyBrowser" ]; then policy_arg="-DCMAKE_POLICY_VERSION_MINIMUM=3.5"; fi
-    # only the editor honours DISTRO_TAG; passing it elsewhere would warn as unused
+    # the editor and the libxml2-linked libs honour DISTRO_TAG (they are the
+    # distribution-dependent packages, tagged when rebuilt per release); passing it
+    # to the others (htgeom, QtPropertyBrowser) would only warn as unused
     distro_arg=""
-    if [ "$repo" = "CyberiadaHSM-Editor" ] && [ -n "$DISTRO_TAG" ]; then distro_arg="-DDISTRO_TAG=$DISTRO_TAG"; fi
+    case "$repo" in
+        CyberiadaHSM-Editor|libcyberiadaml|libcyberiadamlpp)
+            [ -n "$DISTRO_TAG" ] && distro_arg="-DDISTRO_TAG=$DISTRO_TAG" ;;
+    esac
     cmake -S "$dir" -B "$bdir" \
         -DCMAKE_BUILD_TYPE=Release \
         ${policy_arg:+$policy_arg} \
