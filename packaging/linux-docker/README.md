@@ -12,7 +12,8 @@ Covered by default: **20.04, 22.04, 24.04, 26.04**.
 | file | role |
 |------|------|
 | `Dockerfile` | the deb build environment for one release, parameterized by `ARG UBUNTU_VERSION`. One recipe → one image per release. |
-| `../build-linux-docker.sh` | the host driver: pulls the release branch, builds an image per release, runs `../build-toolchain.sh` inside each. |
+| `../build-linux-images.sh` | the **image** step (rare): builds the per-release images. |
+| `../build-linux-docker.sh` | the **packages** step (frequent): pulls the release branch and runs `../build-toolchain.sh` inside each existing image. |
 
 There is no per-release build logic — the toolchain uses the same apt packages on
 every release and has no `-Werror`, so only the base-image tag differs.
@@ -25,11 +26,16 @@ every release and has no `-Werror`, so only the base-image tag differs.
 
 ## Use
 
+Build the per-release images once, then build packages as often as needed:
+
+    ./packaging/build-linux-images.sh                       # once: all four images
+    ./packaging/build-linux-images.sh --releases "22.04 24.04"
+    ./packaging/build-linux-images.sh --rebuild             # force fresh images
+
     ./packaging/build-linux-docker.sh                       # all four releases
     ./packaging/build-linux-docker.sh --releases "22.04 24.04"
     ./packaging/build-linux-docker.sh --no-pull             # the current checkout
     ./packaging/build-linux-docker.sh --branch devel
-    ./packaging/build-linux-docker.sh --rebuild-image       # force fresh images
 
 Releases build **independently**: if one fails (e.g. Qt5 is dropped on a newer
 Ubuntu) the others still finish and the failure is reported at the end.

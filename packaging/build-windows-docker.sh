@@ -4,10 +4,12 @@
 # Docker) without any Windows license or proprietary tooling.
 #
 # It (a) pulls the release branch of every repo on the HOST (host git + SSH, so
-# the kruzhok SSH host-aliases work and no keys enter the container); (b) builds
-# the universal MinGW-w64 + Qt5 cross-toolchain image once (cached afterwards);
-# (c) runs the project cross-build inside it, mounting the sources and the output
-# dir. The Windows .zip packages land in the host output directory.
+# the kruzhok SSH host-aliases work and no keys enter the container); (b) runs the
+# project cross-build inside the toolchain image, mounting the sources and the
+# output dir. The Windows .zip packages land in the host output directory.
+#
+# The toolchain image is built separately (once) by build-windows-image.sh — it
+# is stable, while the packages are rebuilt regularly.
 #
 # Order (in the container): libhtreegeom -> libcyberiadaml -> libcyberiadamlpp
 #        -> QtPropertyBrowser -> CyberiadaHSM-Editor
@@ -28,7 +30,6 @@ OUT="$SOURCES/dist"
 BRANCH="main"                 # the release branch (QtPropertyBrowser uses master)
 PULL=1
 TEST=1
-REBUILD=0
 IMAGE="mxe-mingw-qt5"
 TAG="latest"
 
@@ -39,9 +40,10 @@ usage: $0 [options]
   --branch NAME     branch to build (default: main; QtPropertyBrowser: master)
   --no-pull         build the current checkout, do not switch/pull a branch
   --no-test         skip the library tests (they run under Wine in the container)
-  --rebuild-image   rebuild the toolchain image even if it exists
-  --tag TAG         image tag to build/use (default: $TAG)
+  --tag TAG         toolchain image tag to use (default: $TAG)
   -h, --help        this help
+
+The toolchain image must exist first — build it once with build-windows-image.sh.
 EOF
 }
 
@@ -51,7 +53,6 @@ while [ $# -gt 0 ]; do
         --branch) BRANCH="$2"; shift 2 ;;
         --no-pull) PULL=0; shift ;;
         --no-test) TEST=0; shift ;;
-        --rebuild-image) REBUILD=1; shift ;;
         --tag) TAG="$2"; shift 2 ;;
         -h|--help) usage; exit 0 ;;
         *) echo "unknown option: $1" >&2; usage; exit 2 ;;
@@ -62,8 +63,9 @@ say() { printf '\n\033[1;34m== %s\033[0m\n' "$*"; }
 die() { printf '\033[1;31merror: %s\033[0m\n' "$*" >&2; exit 1; }
 
 command -v docker >/dev/null 2>&1 || die "docker not found (install Docker to cross-build)"
-[ -f "$DOCKERDIR/Dockerfile" ] || die "missing $DOCKERDIR/Dockerfile"
 [ -f "$DOCKERDIR/cross-build.sh" ] || die "missing $DOCKERDIR/cross-build.sh"
+docker image inspect "$IMAGE:$TAG" >/dev/null 2>&1 \
+    || die "toolchain image $IMAGE:$TAG not found; build it first: ./packaging/build-windows-image.sh"
 
 # --- pull the release branch on the host (host git + SSH) --------------------
 pull_repo() {
@@ -85,19 +87,6 @@ pull_repo libcyberiadaml      "$BRANCH"
 pull_repo libcyberiadamlpp    "$BRANCH"
 pull_repo QtPropertyBrowser   master
 pull_repo CyberiadaHSM-Editor "$BRANCH"
-
-# --- build the universal toolchain image (once) ------------------------------
-if [ "$REBUILD" -eq 1 ] || ! docker image inspect "$IMAGE:$TAG" >/dev/null 2>&1; then
-    say "building the cross-toolchain image $IMAGE:$TAG (one-time, long)"
-    # prefer BuildKit/buildx; the legacy builder is deprecated (still works)
-    if docker buildx version >/dev/null 2>&1; then
-        docker buildx build --load -t "$IMAGE:$TAG" "$DOCKERDIR"
-    else
-        DOCKER_BUILDKIT=1 docker build -t "$IMAGE:$TAG" "$DOCKERDIR"
-    fi
-else
-    say "reusing existing image $IMAGE:$TAG (use --rebuild-image to force)"
-fi
 
 # --- run the project cross-build inside the container ------------------------
 mkdir -p "$OUT"

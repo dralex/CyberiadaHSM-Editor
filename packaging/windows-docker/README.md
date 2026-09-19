@@ -11,10 +11,11 @@ path produces, built with MinGW-w64 instead.
 |------|------|
 | `Dockerfile` | a **universal** MinGW-w64 + Qt5 cross-toolchain image (MXE). Project-agnostic: no project, no build script baked in. Reusable for any MinGW/Qt project. |
 | `cross-build.sh` | the **project** build recipe, mounted into the container at run time and executed there. Cross-builds and packages the Cyberiada repos. |
-| `../build-windows-docker.sh` | the **host** driver: pulls the release branch, builds the image once, runs the container. |
+| `../build-windows-image.sh` | the **image** step (rare): builds the MXE toolchain image. |
+| `../build-windows-docker.sh` | the **packages** step (frequent): pulls the release branch and runs the container against the existing image. |
 
-Separating the two means the image is built once (the long MXE compile) and stays
-cached, while the project build logic can change freely without rebuilding it.
+Separating image and packages means the image is built once (the long MXE compile)
+and stays cached, while the packages are rebuilt regularly against it.
 
 ## Prerequisites
 
@@ -24,15 +25,17 @@ cached, while the project build logic can change freely without rebuilding it.
 
 ## Use
 
-One command does everything (build the image if missing, then the packages):
+Build the image once, then build packages as often as needed:
+
+    ./packaging/build-windows-image.sh                  # once (long): the toolchain image
+    ./packaging/build-windows-image.sh --rebuild        # force a fresh image
 
     ./packaging/build-windows-docker.sh                 # build main into dist/
     ./packaging/build-windows-docker.sh --no-pull       # the current checkout
     ./packaging/build-windows-docker.sh --branch devel
-    ./packaging/build-windows-docker.sh --rebuild-image # force a fresh image
 
-On Windows, the same backend is reachable through the native entry point (needs
-Git Bash or WSL to run the driver):
+On Windows, the same package step is reachable through the native entry point
+(needs Git Bash or WSL; build the image first):
 
     packaging\build-toolchain.bat --docker
 

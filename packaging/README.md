@@ -56,7 +56,10 @@ A `.deb` links against the Qt5/libxml2 of the release it was built on. To ship
 packages for several releases (20.04, 22.04, 24.04, 26.04), build each in a clean
 container of that release; the outputs land in `dist/ubuntu-<ver>/`.
 
-    ./packaging/build-linux-docker.sh            # all four releases -> dist/ubuntu-*/
+Two steps — the per-release images are stable, the packages are rebuilt regularly:
+
+    ./packaging/build-linux-images.sh            # once: the per-release images
+    ./packaging/build-linux-docker.sh            # each build: -> dist/ubuntu-*/
 
 See [`linux-docker/README.md`](linux-docker/README.md) for details.
 
@@ -83,7 +86,11 @@ Cross-compile the Windows `.zip` packages on any Linux host (or Windows with
 Docker), no Windows license or MSVC/vcpkg required. A universal MinGW-w64 + Qt5
 image (MXE) is built once, then the toolchain is cross-built inside it.
 
-    ./packaging/build-windows-docker.sh            # image (once) + packages -> dist/
+Two steps — the image is stable, the packages are rebuilt regularly:
 
-On Windows the same backend is reachable as `build-toolchain.bat --docker`. See
-[`windows-docker/README.md`](windows-docker/README.md) for details.
+    ./packaging/build-windows-image.sh             # once: the MXE toolchain image
+    ./packaging/build-windows-docker.sh            # each build: packages -> dist/
+
+On Windows the same package step is reachable as `build-toolchain.bat --docker`
+(build the image first). See [`windows-docker/README.md`](windows-docker/README.md)
+for details.

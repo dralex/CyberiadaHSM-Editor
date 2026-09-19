@@ -58,7 +58,8 @@ echo              [--vcpkg DIR] [--no-pull] [--no-test] [--no-python] [--docker]
 echo.
 echo   default backend: native MSVC + vcpkg (needs Visual Studio, vcpkg, Qt)
 echo   --docker       : containerized MinGW-w64 cross build (needs Docker; no
-echo                    Visual Studio / vcpkg / Qt install required)
+echo                    Visual Studio / vcpkg / Qt install required; build the
+echo                    toolchain image once first with build-windows-image.sh)
 exit /b 2
 
 :parsed
