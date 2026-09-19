@@ -125,9 +125,10 @@ docker run --rm \
 # the per-release apps (python binding, editor) are rebuilt in each release, linked
 # and tested against the once-built libraries installed from their .deb set (so the
 # tests exercise the real packages and prove the libs install/resolve on that
-# release), and version-tagged (1.0.6~ubuntu<ver>). The container is root to install
-# the .debs; the produced app .debs are chowned back to the invoking user. Stop at
-# the first failure — a missing image, or any cmake/compile/test error (set -e).
+# release), and version-tagged (1.0.6~ubuntu<ver>). The container is root and uses
+# apt to install the lib .debs so their runtime deps (libxml2) are pulled from the
+# repo; the produced app .debs are chowned back to the invoking user. Stop at the
+# first failure — a missing image, or any cmake/compile/test error (set -e).
 uid=$(id -u); gid=$(id -g)
 for ver in $RELEASES; do
     tag="$IMAGE:$ver"
@@ -144,7 +145,8 @@ for ver in $RELEASES; do
         -v "$libout":/libdebs:ro \
         -v "$relout":/out \
         "$tag" \
-        sh -c "set -e; $clean; dpkg -i /libdebs/*.deb; \
+        sh -c "set -e; $clean; \
+apt-get update >/dev/null 2>&1 || true; apt-get install -y --no-install-recommends /libdebs/*.deb; \
 if /src/CyberiadaHSM-Editor/packaging/build-toolchain.sh $common_opts --apps-only --prefix /tmp/prefix --out /out --distro-tag $distro; then st=0; else st=\$?; fi; \
 chown -R $uid:$gid /out; exit \$st"
 done
