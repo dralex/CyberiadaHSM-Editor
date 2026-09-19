@@ -88,6 +88,7 @@ pull_repo() {
 pull_repo libhtreegeom        "$BRANCH"
 pull_repo libcyberiadaml      "$BRANCH"
 pull_repo libcyberiadamlpp    "$BRANCH"
+pull_repo libcyberiadamlpp-py "$BRANCH"
 pull_repo QtPropertyBrowser   master
 pull_repo CyberiadaHSM-Editor "$BRANCH"
 
@@ -95,7 +96,7 @@ toolchain_opts="--no-pull --prefix /tmp/prefix --out /out --jobs $JOBS"
 if [ "$TEST" -eq 0 ]; then toolchain_opts="$toolchain_opts --no-test"; fi
 
 # stale build-pkg from another release's gcc/cmake must not be reused
-clean="for r in libhtreegeom libcyberiadaml libcyberiadamlpp QtPropertyBrowser CyberiadaHSM-Editor; do rm -rf \"/src/\$r/build-pkg\"; done"
+clean="for r in libhtreegeom libcyberiadaml libcyberiadamlpp libcyberiadamlpp-py QtPropertyBrowser CyberiadaHSM-Editor; do rm -rf \"/src/\$r/build-pkg\"; done"
 
 failed=""
 for ver in $RELEASES; do
