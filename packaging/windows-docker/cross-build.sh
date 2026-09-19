@@ -130,22 +130,41 @@ pack_editor() {
     # not in the prefix and are provided by Windows, so they are skipped.
     objdump="$(command -v "${MXE_TARGET}-objdump" || echo "/opt/mxe/usr/bin/${MXE_TARGET}-objdump")"
     [ -x "$objdump" ] || die "cross objdump not found ($objdump); cannot resolve the editor DLLs"
-    todo="$stage/.dll-todo"; seen="$stage/.dll-seen"; : > "$todo"; : > "$seen"
     imports() { "$objdump" -p "$1" 2>/dev/null | awk '/DLL Name:/ {print $NF}'; }
+    # locate a DLL in the MXE prefix: the Qt DLLs live under qt5/bin, ours and the
+    # rest under bin/lib; a whole-prefix find covers any other layout. Empty output
+    # means it is a Windows system DLL (not in the prefix), which we do not bundle.
+    find_dll() {
+        for d in "$MXE_PREFIX/bin" "$MXE_PREFIX/lib" "$MXE_PREFIX/qt5/bin" "$MXE_PREFIX/qt5/lib"; do
+            [ -f "$d/$1" ] && { printf '%s\n' "$d/$1"; return 0; }
+        done
+        find "$MXE_PREFIX" -name "$1" -type f 2>/dev/null | head -n1
+    }
+    todo="$stage/.dll-todo"; seen="$stage/.dll-seen"; : > "$todo"; : > "$seen"
     imports "$stage/CyberiadaEditor.exe" >> "$todo"
     while [ -s "$todo" ]; do
         dll=$(sed -n '1p' "$todo"); sed -i '1d' "$todo"
         grep -qxi "$dll" "$seen" && continue
         echo "$dll" >> "$seen"
-        for d in "$MXE_PREFIX/bin" "$MXE_PREFIX/lib"; do
-            if [ -f "$d/$dll" ]; then
-                cp "$d/$dll" "$stage/"
-                imports "$d/$dll" >> "$todo"
-                break
-            fi
-        done
+        p=$(find_dll "$dll")
+        if [ -n "$p" ]; then
+            cp "$p" "$stage/"
+            imports "$p" >> "$todo"
+        fi
     done
     rm -f "$todo" "$seen"
+
+    # check the bundle is complete before zipping: every prefix-resident DLL the
+    # editor (and the bundled DLLs) import must be present, else the zip cannot run
+    missing=""
+    for f in "$stage/CyberiadaEditor.exe" "$stage"/*.dll; do
+        [ -f "$f" ] || continue
+        for dep in $(imports "$f"); do
+            [ -f "$stage/$dep" ] && continue
+            [ -n "$(find_dll "$dep")" ] && case " $missing " in *" $dep "*) ;; *) missing="$missing $dep" ;; esac
+        done
+    done
+    [ -z "$missing" ] || die "editor bundle is missing required DLLs:$missing"
     # the Qt platform plugin is mandatory (a missing one yields a non-runnable
     # editor) so its absence aborts; image formats and styles are nice to have
     cp "$QT_PLUGINS/platforms/qwindows.dll" "$stage/platforms/" 2>/dev/null \
