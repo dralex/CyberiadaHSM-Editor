@@ -101,9 +101,10 @@ pack_editor() {
             [ -f "$d/$name.dll" ] && cp "$d/$name.dll" "$stage/" && break
         done
     done
-    # the Qt platform plugin is mandatory; image formats and styles are nice to have
-    cp "$QT_PLUGINS/platforms/qwindows.dll" "$stage/platforms/" 2>/dev/null || \
-        echo "warning: qwindows.dll not found under $QT_PLUGINS/platforms"
+    # the Qt platform plugin is mandatory (a missing one yields a non-runnable
+    # editor) so its absence aborts; image formats and styles are nice to have
+    cp "$QT_PLUGINS/platforms/qwindows.dll" "$stage/platforms/" 2>/dev/null \
+        || die "qwindows.dll not found under $QT_PLUGINS/platforms"
     for grp in imageformats styles; do
         if [ -d "$QT_PLUGINS/$grp" ]; then
             mkdir -p "$stage/$grp"

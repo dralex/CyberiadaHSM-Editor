@@ -7,9 +7,8 @@
 # It (a) pulls the release branch of every repo on the HOST (host git + SSH, so
 # the kruzhok SSH host-aliases work and no keys enter the container); (b) runs the
 # existing build-toolchain.sh inside each per-release image, collecting that
-# release's .deb set into a per-release output directory. Releases are built
-# independently: one whose image is missing or whose build fails does not stop
-# the others.
+# release's .deb set into a per-release output directory. The build stops at the
+# first failure: a missing image, or any cmake/compile/test error in a release.
 #
 # The per-release images are built separately (once) by build-linux-images.sh —
 # they are stable, while the packages are rebuilt regularly.
@@ -98,37 +97,22 @@ if [ "$TEST" -eq 0 ]; then toolchain_opts="$toolchain_opts --no-test"; fi
 # stale build-pkg from another release's gcc/cmake must not be reused
 clean="for r in libhtreegeom libcyberiadaml libcyberiadamlpp libcyberiadamlpp-py QtPropertyBrowser CyberiadaHSM-Editor; do rm -rf \"/src/\$r/build-pkg\"; done"
 
-failed=""
+# stop at the first failure (a missing image, or any error inside a release's
+# build: cmake, compilation, tests) — set -e aborts on the docker run's exit code
 for ver in $RELEASES; do
     tag="$IMAGE:$ver"
-    if ! docker image inspect "$tag" >/dev/null 2>&1; then
-        echo "warning: image $tag not found; build it with ./packaging/build-linux-images.sh --releases \"$ver\"" >&2
-        failed="$failed $ver"
-        continue
-    fi
+    docker image inspect "$tag" >/dev/null 2>&1 \
+        || die "image $tag not found; build it with ./packaging/build-linux-images.sh --releases \"$ver\""
 
     relout="$OUT/ubuntu-$ver"
     mkdir -p "$relout"
     say "building the .deb set for ubuntu $ver -> $relout"
-    if docker run --rm \
+    docker run --rm \
         --user "$(id -u):$(id -g)" -e HOME=/tmp \
         -v "$SOURCES":/src \
         -v "$relout":/out \
         "$tag" \
         sh -c "$clean; exec /src/CyberiadaHSM-Editor/packaging/build-toolchain.sh $toolchain_opts"
-    then
-        :
-    else
-        echo "warning: package build failed for ubuntu $ver" >&2
-        failed="$failed $ver"
-    fi
 done
 
-say "done"
-for ver in $RELEASES; do
-    case " $failed " in
-        *" $ver "*) echo "  ubuntu $ver : FAILED" ;;
-        *)          echo "  ubuntu $ver : $OUT/ubuntu-$ver" ;;
-    esac
-done
-[ -z "$failed" ] || die "one or more releases failed:$failed"
+say "done — packages collected under $OUT/ubuntu-*"

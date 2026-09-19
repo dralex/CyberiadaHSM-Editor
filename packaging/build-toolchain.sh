@@ -138,10 +138,15 @@ build_repo() {
         # the freshly built lib must resolve before the one already in the prefix
         test_ld="$bdir:$PREFIX/lib${QT5:+:$QT5}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
         if [ "$repo" = "CyberiadaHSM-Editor" ]; then
-            # the editor must produce the same output under both locales
+            # the editor must produce the same output under both locales; the
+            # ru_RU pass runs only where the locale exists, but a real test
+            # failure there still aborts the build
             ( cd "$bdir" && LD_LIBRARY_PATH="$test_ld" LC_ALL=C ctest --output-on-failure )
-            ( cd "$bdir" && LD_LIBRARY_PATH="$test_ld" LC_ALL=ru_RU.UTF-8 ctest --output-on-failure ) \
-                || echo "warning: ru_RU.UTF-8 locale not available, skipped"
+            if locale -a 2>/dev/null | grep -qiE "ru_RU\.utf-?8"; then
+                ( cd "$bdir" && LD_LIBRARY_PATH="$test_ld" LC_ALL=ru_RU.UTF-8 ctest --output-on-failure )
+            else
+                echo "note: ru_RU.UTF-8 locale not available, skipping the locale test"
+            fi
         else
             ( cd "$bdir" && LD_LIBRARY_PATH="$test_ld" ctest --output-on-failure )
         fi
@@ -195,10 +200,7 @@ build_python() {
 
     if [ "$TEST" -eq 1 ]; then
         echo "Testing $repo..."
-        # the binding is proven to build and import; its reference outputs can
-        # lag a mlpp serialization change, so a test diff warns, not aborts
-        ( cd "$bdir" && LD_LIBRARY_PATH="$py_ld" ctest --output-on-failure ) \
-            || echo "warning: python binding tests failed (reference drift vs mlpp); package still built"
+        ( cd "$bdir" && LD_LIBRARY_PATH="$py_ld" ctest --output-on-failure )
     fi
 
     echo "Packing $repo..."
