@@ -75,6 +75,9 @@ if [ "$TEST" = "1" ]; then
     fi
     export WINEDEBUG=-all
     export WINEPREFIX=/tmp/wine
+    # let Wine find the cross-built test exes' DLLs: the MinGW runtime and the
+    # installed dep DLLs live in the prefix bin, htgeom.dll in the prefix lib
+    export WINEPATH="$MXE_PREFIX/bin;$MXE_PREFIX/lib"
 fi
 
 # build one repo: name  (zip|nozip|editor)
