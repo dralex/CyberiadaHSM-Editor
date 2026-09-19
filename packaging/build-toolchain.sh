@@ -120,9 +120,13 @@ build_repo() {
 
     echo "Building $1..."
     bdir="$dir/build-pkg"
+    # only QtPropertyBrowser declares cmake_minimum_required < 3.5; passing the
+    # shim to the others (all >= 3.10) only makes cmake warn about an unused var
+    policy_arg=""
+    if [ "$repo" = "QtPropertyBrowser" ]; then policy_arg="-DCMAKE_POLICY_VERSION_MINIMUM=3.5"; fi
     cmake -S "$dir" -B "$bdir" \
         -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+        ${policy_arg:+$policy_arg} \
         -DCMAKE_INSTALL_PREFIX="$PREFIX" \
         -DCMAKE_PREFIX_PATH="$prefix_path" \
         -DCMAKE_MODULE_PATH="$PREFIX/lib/cmake" \
@@ -183,7 +187,6 @@ build_python() {
     bdir="$dir/build-pkg"
     LD_LIBRARY_PATH="$py_ld" cmake -S "$dir" -B "$bdir" \
         -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
         -DCMAKE_INSTALL_PREFIX="$PREFIX" \
         -DCMAKE_PREFIX_PATH="$prefix_path" \
         -DCMAKE_MODULE_PATH="$PREFIX/lib/cmake" \
