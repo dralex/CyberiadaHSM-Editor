@@ -166,8 +166,9 @@ build_repo() {
 
     if [ "$TEST" -eq 1 ]; then
         echo "Testing $1..."
-        # the freshly built lib must resolve before the one already in the prefix
-        test_ld="$bdir:$PREFIX/lib${QT5:+:$QT5}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+        # the freshly built lib must resolve before the one already in the prefix;
+        # in apps mode the once-built libraries live in the lib prefix, so add it
+        test_ld="$bdir:$PREFIX/lib${LIB_PREFIX:+:$LIB_PREFIX/lib}${QT5:+:$QT5}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
         if [ "$repo" = "CyberiadaHSM-Editor" ]; then
             # the editor must produce the same output under both locales; the
             # ru_RU pass runs only where the locale exists, but a real test
@@ -218,7 +219,9 @@ build_python() {
         git -C "$dir" pull --quiet --ff-only origin "$BRANCH"
     fi
 
-    py_ld="$PREFIX/lib${QT5:+:$QT5}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+    # the extension module links the cyberiada libs; in apps mode they live in
+    # the lib prefix, so it must be on the loader path for the import test
+    py_ld="$PREFIX/lib${LIB_PREFIX:+:$LIB_PREFIX/lib}${QT5:+:$QT5}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
     echo "Building $repo..."
     bdir="$dir/build-pkg"
     LD_LIBRARY_PATH="$py_ld" cmake -S "$dir" -B "$bdir" \

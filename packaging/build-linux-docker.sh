@@ -11,10 +11,11 @@
 #
 # Tier 1 (once, oldest release): the distribution-independent libraries
 #   libhtreegeom, libcyberiadaml, libcyberiadamlpp -> one .deb set in <out>/libs that
-#   ships for every release, installed into a host prefix reused by tier 2.
-# Tier 2 (per release): the distribution-dependent apps python3-libcyberiadamlpp and
-#   cyberiada-editor, linked against the once-built libraries and version-tagged
-#   (1.0.6~ubuntu<ver>), collected into <out>/ubuntu-<ver>.
+#   ships for every release.
+# Tier 2 (per release): each container installs that lib .deb set (so the build and
+#   tests run against the real packages), then builds the distribution-dependent apps
+#   python3-libcyberiadamlpp and cyberiada-editor, version-tagged (1.0.6~ubuntu<ver>),
+#   collected into <out>/ubuntu-<ver>.
 # See build-toolchain.sh --libs-only / --apps-only for the mechanism.
 #
 # The per-release images are built separately (once) by build-linux-images.sh —
@@ -103,30 +104,31 @@ clean="for r in libhtreegeom libcyberiadaml libcyberiadamlpp libcyberiadamlpp-py
 
 # the distribution-independent libraries (htgeom, cyberiadaml, cyberiadamlpp) are
 # built ONCE, in the oldest requested release, so their forward-compatible .so and
-# their (shlibdeps-free) .deb metadata are valid on every newer release. The shared
-# install prefix is kept on the host and fed read-only to each per-release app build.
+# their (shlibdeps-free) .deb metadata are valid on every newer release. The .deb
+# set itself is the handoff: each per-release app container installs it (below).
 oldest=$(printf '%s\n' $RELEASES | sort -V | head -1)
 libimage="$IMAGE:$oldest"
-libprefix="$OUT/_libprefix"
 libout="$OUT/libs"
 
 docker image inspect "$libimage" >/dev/null 2>&1 \
     || die "image $libimage not found; build it with ./packaging/build-linux-images.sh --releases \"$oldest\""
 
-rm -rf "$libprefix"
-mkdir -p "$libprefix" "$libout"
+mkdir -p "$libout"
 say "building the distribution-independent libraries once (ubuntu $oldest) -> $libout"
 docker run --rm \
     --user "$(id -u):$(id -g)" -e HOME=/tmp \
     -v "$SOURCES":/src \
-    -v "$libprefix":/libprefix \
     -v "$libout":/out \
     "$libimage" \
-    sh -c "$clean; exec /src/CyberiadaHSM-Editor/packaging/build-toolchain.sh $common_opts --libs-only --prefix /libprefix --out /out"
+    sh -c "$clean; exec /src/CyberiadaHSM-Editor/packaging/build-toolchain.sh $common_opts --libs-only --prefix /tmp/libprefix --out /out"
 
 # the per-release apps (python binding, editor) are rebuilt in each release, linked
-# against the once-built libraries and version-tagged (1.0.6~ubuntu<ver>). Stop at
+# and tested against the once-built libraries installed from their .deb set (so the
+# tests exercise the real packages and prove the libs install/resolve on that
+# release), and version-tagged (1.0.6~ubuntu<ver>). The container is root to install
+# the .debs; the produced app .debs are chowned back to the invoking user. Stop at
 # the first failure — a missing image, or any cmake/compile/test error (set -e).
+uid=$(id -u); gid=$(id -g)
 for ver in $RELEASES; do
     tag="$IMAGE:$ver"
     docker image inspect "$tag" >/dev/null 2>&1 \
@@ -137,12 +139,14 @@ for ver in $RELEASES; do
     distro="ubuntu$(printf '%s' "$ver" | tr -d '.')"
     say "building the per-release apps for ubuntu $ver -> $relout"
     docker run --rm \
-        --user "$(id -u):$(id -g)" -e HOME=/tmp \
+        -e HOME=/tmp \
         -v "$SOURCES":/src \
-        -v "$libprefix":/libprefix:ro \
+        -v "$libout":/libdebs:ro \
         -v "$relout":/out \
         "$tag" \
-        sh -c "$clean; exec /src/CyberiadaHSM-Editor/packaging/build-toolchain.sh $common_opts --apps-only --lib-prefix /libprefix --prefix /tmp/prefix --out /out --distro-tag $distro"
+        sh -c "set -e; $clean; dpkg -i /libdebs/*.deb; \
+if /src/CyberiadaHSM-Editor/packaging/build-toolchain.sh $common_opts --apps-only --prefix /tmp/prefix --out /out --distro-tag $distro; then st=0; else st=\$?; fi; \
+chown -R $uid:$gid /out; exit \$st"
 done
 
 say "done — shared libraries in $libout, per-release apps in $OUT/ubuntu-*"
