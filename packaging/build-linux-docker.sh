@@ -122,12 +122,13 @@ docker run --rm \
     "$libimage" \
     sh -c "$clean; exec /src/CyberiadaHSM-Editor/packaging/build-toolchain.sh $common_opts --libs-only --prefix /tmp/libprefix --out /out"
 
-# the per-release apps (python binding, editor) are rebuilt in each release, linked
-# and tested against the once-built libraries installed from their .deb set (so the
-# tests exercise the real packages and prove the libs install/resolve on that
-# release), and version-tagged (1.0.6~ubuntu<ver>). The container is root and uses
-# apt to install the lib .debs so their runtime deps (libxml2) are pulled from the
-# repo; the produced app .debs are chowned back to the invoking user. Stop at the
+# the per-release apps (python binding, editor) are rebuilt in each release. htgeom
+# is always reused from the once-built set; the libxml2-linked libs (cyberiadaml,
+# cyberiadamlpp) are reused too where the once-built soname (libxml2.so.2) exists
+# (20.04/22.04/24.04) and rebuilt in-place where it does not (26.04 has libxml2.so.16),
+# via --xml-libs. The apps are version-tagged (1.0.6~ubuntu<ver>). The container is
+# root and uses apt to install the lib .debs so their runtime deps are pulled from
+# the repo; the produced app .debs are chowned back to the invoking user. Stop at the
 # first failure — a missing image, or any cmake/compile/test error (set -e).
 uid=$(id -u); gid=$(id -g)
 for ver in $RELEASES; do
@@ -146,8 +147,12 @@ for ver in $RELEASES; do
         -v "$relout":/out \
         "$tag" \
         sh -c "set -e; $clean; \
-apt-get update >/dev/null 2>&1 || true; apt-get install -y --no-install-recommends /libdebs/*.deb; \
-if /src/CyberiadaHSM-Editor/packaging/build-toolchain.sh $common_opts --apps-only --prefix /tmp/prefix --out /out --distro-tag $distro; then st=0; else st=\$?; fi; \
+apt-get update >/dev/null 2>&1 || true; \
+apt-get install -y --no-install-recommends /libdebs/libhtreegeom*.deb; \
+if apt-get install -y --no-install-recommends libxml2 >/dev/null 2>&1 && ldconfig -p | grep -q 'libxml2\\.so\\.2'; then \
+  apt-get install -y --no-install-recommends /libdebs/libcyberiadaml*.deb; xmlflag=; \
+else xmlflag=--xml-libs; fi; \
+if /src/CyberiadaHSM-Editor/packaging/build-toolchain.sh $common_opts --apps-only \$xmlflag --prefix /tmp/prefix --out /out --distro-tag $distro; then st=0; else st=\$?; fi; \
 chown -R $uid:$gid /out; exit \$st"
 done
 

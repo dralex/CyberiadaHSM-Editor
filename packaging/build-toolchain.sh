@@ -39,6 +39,7 @@ JOBS=$(nproc 2>/dev/null || echo 2)
 MODE="all"                    # all | libs | apps  (see --libs-only / --apps-only)
 LIB_PREFIX=""                 # apps mode: extra prefix holding the once-built libraries
 DISTRO_TAG=""                 # per-release version suffix for the app packages (e.g. ubuntu2404)
+XML_LIBS=0                    # apps mode: also rebuild the libxml2-linked libs here
 
 usage() {
     cat <<EOF
@@ -53,6 +54,8 @@ usage: $0 [options]
   --apps-only    build only the per-release apps (python binding, editor); needs --lib-prefix
   --lib-prefix D extra install prefix holding the once-built libraries (apps mode)
   --distro-tag T version suffix for the app packages, e.g. ubuntu2404 -> 1.0.6~ubuntu2404
+  --xml-libs     apps mode: also rebuild cyberiadaml/cyberiadamlpp here (a release
+                 whose libxml2 soname differs from the once-built set, e.g. 26.04)
   --jobs N       parallel build jobs (default: $JOBS)
   -h, --help     this help
 EOF
@@ -70,6 +73,7 @@ while [ $# -gt 0 ]; do
         --apps-only) MODE=apps; shift ;;
         --lib-prefix) LIB_PREFIX="$2"; shift 2 ;;
         --distro-tag) DISTRO_TAG="$2"; shift 2 ;;
+        --xml-libs) XML_LIBS=1; shift ;;
         --jobs) JOBS="$2"; shift 2 ;;
         -h|--help) usage; exit 0 ;;
         *) echo "unknown option: $1" >&2; usage; exit 2 ;;
@@ -256,6 +260,12 @@ fi
 # the per-release apps: rebuilt in each release's container against its Python
 # and Qt5, and version-tagged via --distro-tag (see --apps-only)
 if [ "$MODE" != libs ]; then
+    # a release whose libxml2 soname differs from the once-built set (e.g. 26.04,
+    # libxml2.so.16) cannot reuse the libxml2-linked libs: rebuild them here
+    if [ "$XML_LIBS" -eq 1 ]; then
+        build_repo libcyberiadaml    "$BRANCH" deb
+        build_repo libcyberiadamlpp  "$BRANCH" deb
+    fi
     if [ "$PYTHON" -eq 1 ]; then build_python; fi
     build_repo QtPropertyBrowser master    nodeb   # bundled into the editor .deb
     build_repo CyberiadaHSM-Editor "$BRANCH" deb
