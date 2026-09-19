@@ -130,6 +130,9 @@ if(UNIX AND NOT APPLE)
 endif()
 
 set(CPACK_PACKAGE_NAME "cyberiada-editor")
+# optional per-release suffix (e.g. ubuntu2404) for the package version, so the
+# distro-dependent editor .deb is distinguishable across Ubuntu releases
+set(DISTRO_TAG "" CACHE STRING "distribution suffix appended to the package version")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/CyberiadaEditorPackOptions.cmake.in"
                "${CMAKE_CURRENT_BINARY_DIR}/CyberiadaEditorPackOptions.cmake" @ONLY)
 set(CPACK_PROJECT_CONFIG_FILE "${CMAKE_CURRENT_BINARY_DIR}/CyberiadaEditorPackOptions.cmake")

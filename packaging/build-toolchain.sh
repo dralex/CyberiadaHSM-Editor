@@ -13,6 +13,11 @@
 # The python binding is a separate .deb (python3-libcyberiadamlpp), not bundled
 # into the editor; skip it with --no-python.
 #
+# Two tiers (see build-linux-docker.sh): the libraries are distribution-independent
+# and built once with --libs-only; the python binding and editor are per-release and
+# built with --apps-only --lib-prefix <once-built libs> --distro-tag ubuntu<ver>.
+# With no mode flag the script builds everything, as before.
+#
 # Copyright (C) 2026 Alexey Fedoseev <aleksey@fedoseev.net>
 #
 # This program is free software; you can redistribute it and/or modify it under
@@ -31,6 +36,9 @@ PULL=1                        # 0 = build whatever is checked out
 TEST=1
 PYTHON=1                      # also build+package the python binding (a separate .deb)
 JOBS=$(nproc 2>/dev/null || echo 2)
+MODE="all"                    # all | libs | apps  (see --libs-only / --apps-only)
+LIB_PREFIX=""                 # apps mode: extra prefix holding the once-built libraries
+DISTRO_TAG=""                 # per-release version suffix for the app packages (e.g. ubuntu2404)
 
 usage() {
     cat <<EOF
@@ -41,6 +49,10 @@ usage: $0 [options]
   --no-pull      build the current checkout, do not switch/pull a branch
   --no-test      skip ctest
   --no-python    skip the python binding package (python3-libcyberiadamlpp)
+  --libs-only    build only the distro-independent libraries (htgeom, cyberiadaml, cyberiadamlpp)
+  --apps-only    build only the per-release apps (python binding, editor); needs --lib-prefix
+  --lib-prefix D extra install prefix holding the once-built libraries (apps mode)
+  --distro-tag T version suffix for the app packages, e.g. ubuntu2404 -> 1.0.6~ubuntu2404
   --jobs N       parallel build jobs (default: $JOBS)
   -h, --help     this help
 EOF
@@ -54,11 +66,18 @@ while [ $# -gt 0 ]; do
         --no-pull) PULL=0; shift ;;
         --no-test) TEST=0; shift ;;
         --no-python) PYTHON=0; shift ;;
+        --libs-only) MODE=libs; shift ;;
+        --apps-only) MODE=apps; shift ;;
+        --lib-prefix) LIB_PREFIX="$2"; shift 2 ;;
+        --distro-tag) DISTRO_TAG="$2"; shift 2 ;;
         --jobs) JOBS="$2"; shift 2 ;;
         -h|--help) usage; exit 0 ;;
         *) echo "unknown option: $1" >&2; usage; exit 2 ;;
     esac
 done
+
+# the library tier needs no python at all
+if [ "$MODE" = libs ]; then PYTHON=0; fi
 
 say() { printf '\n\033[1;34m== %s\033[0m\n' "$*"; }
 die() { printf '\033[1;31merror: %s\033[0m\n' "$*" >&2; exit 1; }
@@ -99,6 +118,14 @@ rm -f "$OUT"/*.deb 2>/dev/null || true
 
 prefix_path="$PREFIX"
 if [ -n "$QT5CMAKE" ]; then prefix_path="$PREFIX;$QT5CMAKE"; fi
+module_path="$PREFIX;$PREFIX/lib/cmake"
+
+# apps mode: also search the prefix that holds the once-built libraries, so
+# find_package(cyberiadaml/…) resolves them without rebuilding the libs
+if [ -n "$LIB_PREFIX" ]; then
+    prefix_path="$prefix_path;$LIB_PREFIX"
+    module_path="$module_path;$LIB_PREFIX;$LIB_PREFIX/lib/cmake"
+fi
 
 # build one repo: name, default-branch, "deb"|"nodeb"
 build_repo() {
@@ -124,12 +151,16 @@ build_repo() {
     # shim to the others (all >= 3.10) only makes cmake warn about an unused var
     policy_arg=""
     if [ "$repo" = "QtPropertyBrowser" ]; then policy_arg="-DCMAKE_POLICY_VERSION_MINIMUM=3.5"; fi
+    # only the editor honours DISTRO_TAG; passing it elsewhere would warn as unused
+    distro_arg=""
+    if [ "$repo" = "CyberiadaHSM-Editor" ] && [ -n "$DISTRO_TAG" ]; then distro_arg="-DDISTRO_TAG=$DISTRO_TAG"; fi
     cmake -S "$dir" -B "$bdir" \
         -DCMAKE_BUILD_TYPE=Release \
         ${policy_arg:+$policy_arg} \
+        ${distro_arg:+$distro_arg} \
         -DCMAKE_INSTALL_PREFIX="$PREFIX" \
         -DCMAKE_PREFIX_PATH="$prefix_path" \
-        -DCMAKE_MODULE_PATH="$PREFIX;$PREFIX/lib/cmake" \
+        -DCMAKE_MODULE_PATH="$module_path" \
         ${REDIRECT:+-DCMAKE_PROJECT_INCLUDE="$REDIRECT"} >/dev/null
     cmake --build "$bdir" -j "$JOBS"
 
@@ -192,9 +223,10 @@ build_python() {
     bdir="$dir/build-pkg"
     LD_LIBRARY_PATH="$py_ld" cmake -S "$dir" -B "$bdir" \
         -DCMAKE_BUILD_TYPE=Release \
+        ${DISTRO_TAG:+-DDISTRO_TAG=$DISTRO_TAG} \
         -DCMAKE_INSTALL_PREFIX="$PREFIX" \
         -DCMAKE_PREFIX_PATH="$prefix_path" \
-        -DCMAKE_MODULE_PATH="$PREFIX;$PREFIX/lib/cmake" \
+        -DCMAKE_MODULE_PATH="$module_path" \
         ${REDIRECT:+-DCMAKE_PROJECT_INCLUDE="$REDIRECT"} >/dev/null
     cmake --build "$bdir" -j "$JOBS"
 
@@ -210,12 +242,21 @@ build_python() {
     if [ -n "$orig_branch" ]; then git -C "$dir" checkout --quiet "$orig_branch"; fi
 }
 
-build_repo libhtreegeom      "$BRANCH" deb
-build_repo libcyberiadaml    "$BRANCH" deb
-build_repo libcyberiadamlpp  "$BRANCH" deb
-if [ "$PYTHON" -eq 1 ]; then build_python; fi
-build_repo QtPropertyBrowser master    nodeb   # bundled into the editor .deb
-build_repo CyberiadaHSM-Editor "$BRANCH" deb
+# the distro-independent libraries: built once (see --libs-only); their .deb
+# metadata is release-independent, so one set ships for every Ubuntu release
+if [ "$MODE" != apps ]; then
+    build_repo libhtreegeom      "$BRANCH" deb
+    build_repo libcyberiadaml    "$BRANCH" deb
+    build_repo libcyberiadamlpp  "$BRANCH" deb
+fi
+
+# the per-release apps: rebuilt in each release's container against its Python
+# and Qt5, and version-tagged via --distro-tag (see --apps-only)
+if [ "$MODE" != libs ]; then
+    if [ "$PYTHON" -eq 1 ]; then build_python; fi
+    build_repo QtPropertyBrowser master    nodeb   # bundled into the editor .deb
+    build_repo CyberiadaHSM-Editor "$BRANCH" deb
+fi
 
 say "packages collected in $OUT"
-ls -1 "$OUT"/*.deb
+ls -1 "$OUT"/*.deb 2>/dev/null || echo "(no .deb produced)"

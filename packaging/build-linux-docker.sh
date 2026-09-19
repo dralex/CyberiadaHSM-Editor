@@ -5,16 +5,20 @@
 # release's Qt5/libxml2 and its Depends resolve there.
 #
 # It (a) pulls the release branch of every repo on the HOST (host git + SSH, so
-# the kruzhok SSH host-aliases work and no keys enter the container); (b) runs the
-# existing build-toolchain.sh inside each per-release image, collecting that
-# release's .deb set into a per-release output directory. The build stops at the
-# first failure: a missing image, or any cmake/compile/test error in a release.
+# the kruzhok SSH host-aliases work and no keys enter the container); (b) builds in
+# two tiers. The build stops at the first failure: a missing image, or any
+# cmake/compile/test error.
+#
+# Tier 1 (once, oldest release): the distribution-independent libraries
+#   libhtreegeom, libcyberiadaml, libcyberiadamlpp -> one .deb set in <out>/libs that
+#   ships for every release, installed into a host prefix reused by tier 2.
+# Tier 2 (per release): the distribution-dependent apps python3-libcyberiadamlpp and
+#   cyberiada-editor, linked against the once-built libraries and version-tagged
+#   (1.0.6~ubuntu<ver>), collected into <out>/ubuntu-<ver>.
+# See build-toolchain.sh --libs-only / --apps-only for the mechanism.
 #
 # The per-release images are built separately (once) by build-linux-images.sh —
 # they are stable, while the packages are rebuilt regularly.
-#
-# Order (in each container): libhtreegeom -> libcyberiadaml -> libcyberiadamlpp
-#        -> QtPropertyBrowser -> CyberiadaHSM-Editor
 #
 # Copyright (C) 2026 Alexey Fedoseev <aleksey@fedoseev.net>
 #
@@ -91,14 +95,38 @@ pull_repo libcyberiadamlpp-py "$BRANCH"
 pull_repo QtPropertyBrowser   master
 pull_repo CyberiadaHSM-Editor "$BRANCH"
 
-toolchain_opts="--no-pull --prefix /tmp/prefix --out /out --jobs $JOBS"
-if [ "$TEST" -eq 0 ]; then toolchain_opts="$toolchain_opts --no-test"; fi
+common_opts="--no-pull --jobs $JOBS"
+if [ "$TEST" -eq 0 ]; then common_opts="$common_opts --no-test"; fi
 
 # stale build-pkg from another release's gcc/cmake must not be reused
 clean="for r in libhtreegeom libcyberiadaml libcyberiadamlpp libcyberiadamlpp-py QtPropertyBrowser CyberiadaHSM-Editor; do rm -rf \"/src/\$r/build-pkg\"; done"
 
-# stop at the first failure (a missing image, or any error inside a release's
-# build: cmake, compilation, tests) — set -e aborts on the docker run's exit code
+# the distribution-independent libraries (htgeom, cyberiadaml, cyberiadamlpp) are
+# built ONCE, in the oldest requested release, so their forward-compatible .so and
+# their (shlibdeps-free) .deb metadata are valid on every newer release. The shared
+# install prefix is kept on the host and fed read-only to each per-release app build.
+oldest=$(printf '%s\n' $RELEASES | sort -V | head -1)
+libimage="$IMAGE:$oldest"
+libprefix="$OUT/_libprefix"
+libout="$OUT/libs"
+
+docker image inspect "$libimage" >/dev/null 2>&1 \
+    || die "image $libimage not found; build it with ./packaging/build-linux-images.sh --releases \"$oldest\""
+
+rm -rf "$libprefix"
+mkdir -p "$libprefix" "$libout"
+say "building the distribution-independent libraries once (ubuntu $oldest) -> $libout"
+docker run --rm \
+    --user "$(id -u):$(id -g)" -e HOME=/tmp \
+    -v "$SOURCES":/src \
+    -v "$libprefix":/libprefix \
+    -v "$libout":/out \
+    "$libimage" \
+    sh -c "$clean; exec /src/CyberiadaHSM-Editor/packaging/build-toolchain.sh $common_opts --libs-only --prefix /libprefix --out /out"
+
+# the per-release apps (python binding, editor) are rebuilt in each release, linked
+# against the once-built libraries and version-tagged (1.0.6~ubuntu<ver>). Stop at
+# the first failure — a missing image, or any cmake/compile/test error (set -e).
 for ver in $RELEASES; do
     tag="$IMAGE:$ver"
     docker image inspect "$tag" >/dev/null 2>&1 \
@@ -106,13 +134,15 @@ for ver in $RELEASES; do
 
     relout="$OUT/ubuntu-$ver"
     mkdir -p "$relout"
-    say "building the .deb set for ubuntu $ver -> $relout"
+    distro="ubuntu$(printf '%s' "$ver" | tr -d '.')"
+    say "building the per-release apps for ubuntu $ver -> $relout"
     docker run --rm \
         --user "$(id -u):$(id -g)" -e HOME=/tmp \
         -v "$SOURCES":/src \
+        -v "$libprefix":/libprefix:ro \
         -v "$relout":/out \
         "$tag" \
-        sh -c "$clean; exec /src/CyberiadaHSM-Editor/packaging/build-toolchain.sh $toolchain_opts"
+        sh -c "$clean; exec /src/CyberiadaHSM-Editor/packaging/build-toolchain.sh $common_opts --apps-only --lib-prefix /libprefix --prefix /tmp/prefix --out /out --distro-tag $distro"
 done
 
-say "done — packages collected under $OUT/ubuntu-*"
+say "done — shared libraries in $libout, per-release apps in $OUT/ubuntu-*"

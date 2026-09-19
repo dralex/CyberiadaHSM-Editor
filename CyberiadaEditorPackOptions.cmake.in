@@ -17,3 +17,10 @@ set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "The Qt editor for Cyberiada state machine 
 # and system libraries are resolved from the binary by dpkg-shlibdeps
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
 set(CPACK_DEBIAN_RUNTIME_PACKAGE_DEPENDS "libcyberiadaml (>= 1.0.6), libcyberiadamlpp (>= 1.0.6), libhtreegeom (>= 1.0.6)")
+
+# a per-release build tags the version (e.g. 1.0.6~ubuntu2404) so the editor .deb,
+# which links this release's Qt5, is identifiable and never collides across releases
+set(DISTRO_TAG "@DISTRO_TAG@")
+if(NOT DISTRO_TAG STREQUAL "")
+  set(CPACK_DEBIAN_PACKAGE_VERSION "${CPACK_PACKAGE_VERSION}~${DISTRO_TAG}")
+endif()
