@@ -123,18 +123,29 @@ pack_editor() {
 
     cp "$bdir/CyberiadaEditor.exe" "$stage/"
 
-    # every DLL is either in the MXE prefix bin (Qt, libxml2, MinGW runtime, and
-    # our cyberiadaml/mlpp/QtPropertyBrowser) or lib (htgeom); copy from both
-    for name in \
-        libgcc_s_seh-1 libstdc++-6 libwinpthread-1 \
-        Qt5Core Qt5Gui Qt5Widgets Qt5Svg \
-        htgeom cyberiadaml cyberiadamlpp QtPropertyBrowser \
-        libxml2-2 zlib1 liblzma-5 libiconv-2 libpcre2-8-0 libpcre2-posix-3
-    do
+    # Bundle every DLL the editor needs, resolved recursively from its PE imports
+    # (objdump). This copies our libs (libcyberiadaml/libcyberiadamlpp/libhtgeom —
+    # note the MinGW lib* names), Qt, libxml2 and the MinGW runtime, plus their
+    # transitive deps, from the MXE prefix. System DLLs (KERNEL32, msvcrt, ...) are
+    # not in the prefix and are provided by Windows, so they are skipped.
+    objdump="$(command -v "${MXE_TARGET}-objdump" || echo "/opt/mxe/usr/bin/${MXE_TARGET}-objdump")"
+    [ -x "$objdump" ] || die "cross objdump not found ($objdump); cannot resolve the editor DLLs"
+    todo="$stage/.dll-todo"; seen="$stage/.dll-seen"; : > "$todo"; : > "$seen"
+    imports() { "$objdump" -p "$1" 2>/dev/null | awk '/DLL Name:/ {print $NF}'; }
+    imports "$stage/CyberiadaEditor.exe" >> "$todo"
+    while [ -s "$todo" ]; do
+        dll=$(sed -n '1p' "$todo"); sed -i '1d' "$todo"
+        grep -qxi "$dll" "$seen" && continue
+        echo "$dll" >> "$seen"
         for d in "$MXE_PREFIX/bin" "$MXE_PREFIX/lib"; do
-            [ -f "$d/$name.dll" ] && cp "$d/$name.dll" "$stage/" && break
+            if [ -f "$d/$dll" ]; then
+                cp "$d/$dll" "$stage/"
+                imports "$d/$dll" >> "$todo"
+                break
+            fi
         done
     done
+    rm -f "$todo" "$seen"
     # the Qt platform plugin is mandatory (a missing one yields a non-runnable
     # editor) so its absence aborts; image formats and styles are nice to have
     cp "$QT_PLUGINS/platforms/qwindows.dll" "$stage/platforms/" 2>/dev/null \
