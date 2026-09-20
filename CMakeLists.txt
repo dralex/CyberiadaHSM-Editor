@@ -111,6 +111,16 @@ add_executable(CyberiadaEditor
 )
 target_link_libraries(CyberiadaEditor CyberiadaEditorCore)
 
+if(WIN32)
+  # build as a GUI-subsystem app so no console window opens behind the editor;
+  # MinGW passes -mwindows while main() still runs via mainCRTStartup, and batch
+  # mode still returns its exit code (the tests launch it with start /wait)
+  set_target_properties(CyberiadaEditor PROPERTIES WIN32_EXECUTABLE ON)
+  if(TARGET Qt5::WinMain)
+    target_link_libraries(CyberiadaEditor Qt5::WinMain)
+  endif()
+endif()
+
 # installation and Debian packaging (mirrors the Cyberiada libraries)
 include(GNUInstallDirs)
 install(TARGETS CyberiadaEditor
