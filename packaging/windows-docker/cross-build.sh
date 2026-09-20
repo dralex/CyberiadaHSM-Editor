@@ -178,6 +178,18 @@ pack_editor() {
 
     ( cd "$bdir/dist-stage" && zip -qr "$OUT/cyberiada-editor-1.0.0-win64-mingw.zip" CyberiadaEditor )
 
+    # a second archive to run the editor's L0 batch tests on native Windows without
+    # cmake: the same bundle + the offscreen platform plugin (batch mode uses it) +
+    # the test diagrams + run-batch-tests.bat
+    teststage="$bdir/dist-stage/CyberiadaEditor-tests"
+    rm -rf "$teststage"; mkdir -p "$teststage/diagrams"
+    cp -a "$stage/." "$teststage/"
+    cp "$QT_PLUGINS/platforms/qoffscreen.dll" "$teststage/platforms/" 2>/dev/null \
+        || die "qoffscreen.dll not found under $QT_PLUGINS/platforms (batch tests need the offscreen platform)"
+    cp "$SRC/CyberiadaHSM-Editor/tests/diagrams/"*.graphml "$teststage/diagrams/"
+    cp "$SRC/CyberiadaHSM-Editor/tests/windows/run-batch-tests.bat" "$teststage/"
+    ( cd "$bdir/dist-stage" && zip -qr "$OUT/cyberiada-editor-tests-1.0.0-win64-mingw.zip" CyberiadaEditor-tests )
+
     # optional smoke test: the exe loads under Wine (offscreen, no display)
     if [ "$TEST" = "1" ]; then
         ( cd "$stage" && QT_QPA_PLATFORM=offscreen "$WINE" ./CyberiadaEditor.exe --help >/dev/null 2>&1 ) \
