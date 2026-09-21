@@ -1795,6 +1795,8 @@ static int countStates(const Cyberiada::ElementCollection* c)
 	for (Cyberiada::ConstElementList::const_iterator i = kids.begin(); i != kids.end(); i++) {
 		if ((*i)->get_type() == Cyberiada::elementSimpleState ||
 			(*i)->get_type() == Cyberiada::elementCompositeState) n++;
+		if (const Cyberiada::ElementCollection* ec =
+				dynamic_cast<const Cyberiada::ElementCollection*>(*i)) n += countStates(ec);
 	}
 	return n;
 }
@@ -1813,6 +1815,14 @@ void TestScene::test_creation_tools()
 	QVERIFY(smItem);
 	QPointF centre = smItem->sceneBoundingRect().center();
 	int smsBefore = int(model->rootDocument()->get_state_machines().size());
+	// adopting the border must keep the content in place, inside the new border
+	Cyberiada::Element* child = nullptr;
+	const Cyberiada::ElementList& kids = sm->get_children();
+	for (Cyberiada::ElementList::const_iterator i = kids.begin(); i != kids.end(); i++) {
+		if (scene->getMap().value((*i)->get_id())) { child = *i; break; }
+	}
+	QVERIFY(child);
+	QRectF childBefore = scene->getMap().value(child->get_id())->sceneBoundingRect();
 	scene->setCurrentTool(ToolType::NewSM);
 	mouse(QEvent::GraphicsSceneMousePress,   centre + QPointF(-60, -60), Qt::LeftButton);
 	mouse(QEvent::GraphicsSceneMouseMove,    centre + QPointF(260, 200), Qt::LeftButton);
@@ -1820,21 +1830,29 @@ void TestScene::test_creation_tools()
 	QVERIFY(sm->has_geometry());
 	QCOMPARE(int(model->rootDocument()->get_state_machines().size()), smsBefore);
 	QCOMPARE(int(scene->getCurrentTool()), int(ToolType::Select));   // one-shot
+	QRectF childAfter = scene->getMap().value(child->get_id())->sceneBoundingRect();
+	QVERIFY(qAbs(childAfter.center().x() - childBefore.center().x()) < 1.0);
+	QVERIFY(qAbs(childAfter.center().y() - childBefore.center().y()) < 1.0);
+	QVERIFY(scene->getMap().value(sm->get_id())->sceneBoundingRect().contains(childAfter.center()));
 
-	// the state tool draws a state inside the machine
+	// the state tool draws a state inside the machine (counted anywhere in the tree;
+	// the machine's content fills it, so a drawn state nests). Draw low so it lands
+	// in empty space, clear of the existing nested states and initial.
 	int statesBefore = countStates(sm);
 	QRectF smRect = scene->getMap().value(sm->get_id())->sceneBoundingRect();
+	QPointF low = QPointF(smRect.center().x(), smRect.bottom() - smRect.height() * 0.1);
 	scene->setCurrentTool(ToolType::NewState);
-	mouse(QEvent::GraphicsSceneMousePress,   smRect.center() + QPointF(-100, -50), Qt::LeftButton);
-	mouse(QEvent::GraphicsSceneMouseMove,    smRect.center() + QPointF(100, 50), Qt::LeftButton);
-	mouse(QEvent::GraphicsSceneMouseRelease, smRect.center() + QPointF(100, 50), Qt::NoButton);
+	mouse(QEvent::GraphicsSceneMousePress,   low + QPointF(-60, -25), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove,    low + QPointF(60, 25), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, low + QPointF(60, 25), Qt::NoButton);
 	QCOMPARE(countStates(sm), statesBefore + 1);
 	QCOMPARE(int(scene->getCurrentTool()), int(ToolType::Select));
 
-	// a click-placement tool drops an element at the point
+	// a click-placement tool drops an element; drop it low-right, in empty space that
+	// holds no initial, so a valid single initial is added (not a second one)
 	int initialsBefore = int(sm->find_elements_by_type(Cyberiada::elementInitial).size());
 	scene->setCurrentTool(ToolType::NewInitial);
-	QPointF p = scene->getMap().value(sm->get_id())->sceneBoundingRect().center();
+	QPointF p(smRect.right() - smRect.width() * 0.12, smRect.bottom() - smRect.height() * 0.1);
 	mouse(QEvent::GraphicsSceneMousePress,   p, Qt::LeftButton);
 	mouse(QEvent::GraphicsSceneMouseRelease, p, Qt::NoButton);
 	QCOMPARE(int(sm->find_elements_by_type(Cyberiada::elementInitial).size()), initialsBefore + 1);

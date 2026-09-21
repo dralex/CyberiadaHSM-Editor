@@ -983,6 +983,10 @@ void CyberiadaSMEditorScene::createByTool(ToolType tool, const QRectF& sceneRect
                 total = total.united(QRectF(content.x - content.width / 2, content.y - content.height / 2,
                                             content.width, content.height));
             }
+            // the border-less SM kept its children in absolute (origin-relative)
+            // coordinates; once it gains a Qt border they become centre-relative, so
+            // shift them by -centre to keep them in place inside the new border
+            model->rebaseChildren(borderless, -total.center().x(), -total.center().y());
             model->updateGeometry(model->elementToIndex(borderless),
                                   Cyberiada::Rect(total.center().x(), total.center().y(),
                                                   total.width(), total.height()));
