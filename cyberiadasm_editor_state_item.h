@@ -231,6 +231,11 @@ public:
 
     QString getText();
     QString getBehavior();
+    // an internal transition is edited whole ("EVENT [guard] / behaviour"); its
+    // trigger and guard come back parsed, unlike the entry/exit keyword header
+    QString getTrigger();
+    QString getGuard();
+    bool isTransition() const { return transition; }
     int protectedLength() const override { return typeText.length(); }
 
 signals:
@@ -246,6 +251,7 @@ protected:
 
 private:
     QString typeText;
+    bool transition = false;
 };
 
 #endif // CYBERIADASMEDITORSTATEITEM_H

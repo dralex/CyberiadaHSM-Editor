@@ -105,6 +105,7 @@ private slots:
 	void test_sm_not_pasteable();
 	void test_action_multiline();
 	void test_internal_transition();
+	void test_transition_edit();
 	void test_name_only_state();
 	void test_title_drag_through();
 	void test_vertex_name();
@@ -2307,6 +2308,54 @@ void TestScene::test_internal_transition()
 	QVERIFY(model->newAction(idx, Cyberiada::actionTransition, "TICK", QString(), QString()));
 	QCOMPARE(actionText(), QString("TICK"));
 	QVERIFY(!model->newAction(idx, Cyberiada::actionTransition, QString(), QString(), "count()"));
+}
+
+void TestScene::test_transition_edit()
+{
+	// an internal transition is edited inline as the whole "EVENT [guard] / behaviour"
+	// label (no protected keyword); the commit re-parses it back into the model
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	CyberiadaSMEditorStateItem* state =
+		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0-1"));
+	QVERIFY(state);
+	QModelIndex idx = model->elementToIndex(model->idToElement("node-0-1"));
+	QVERIFY(model->newAction(idx, Cyberiada::actionTransition, "TICK", "x > 0", "count()"));
+
+	auto firstAction = [&]() -> StateAction* {
+		for (QGraphicsItem* c : state->childItems())
+			if (StateAction* a = dynamic_cast<StateAction*>(c)) return a;
+		return nullptr;
+	};
+	const Cyberiada::State* st =
+		static_cast<const Cyberiada::State*>(model->idToElement("node-0-1"));
+
+	StateAction* action = firstAction();
+	QVERIFY(action && action->isTransition());
+	QCOMPARE(action->toPlainText(), QString("TICK [x > 0] / count()"));
+
+	// retype the whole label and commit on the focus out
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+	action->setTextInteractionFlags(Qt::TextEditorInteraction);
+	action->setFocus();
+	action->setPlainText("RESET [y < 5] / clear()");
+	action->clearFocus();
+	QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+	QCOMPARE(int(st->get_actions().size()), 1);
+	QCOMPARE(QString(st->get_actions()[0].get_trigger().c_str()), QString("RESET"));
+	QCOMPARE(QString(st->get_actions()[0].get_guard().c_str()), QString("y < 5"));
+	QCOMPARE(QString(st->get_actions()[0].get_behavior().c_str()), QString("clear()"));
+
+	// clearing the event leaves no valid internal transition: it is dropped
+	action = firstAction();
+	QVERIFY(action);
+	action->setTextInteractionFlags(Qt::TextEditorInteraction);
+	action->setFocus();
+	action->setPlainText("");
+	action->clearFocus();
+	QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+	QCOMPARE(int(st->get_actions().size()), 0);
 }
 
 void TestScene::test_history()

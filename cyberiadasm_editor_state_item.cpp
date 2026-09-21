@@ -37,6 +37,7 @@
 #include "cyberiadasm_editor_sm_item.h"
 #include "cyberiadasm_editor_scene.h"
 #include "dialogs/stateactiondialog.h"
+#include "cyberiadasm_editor_transition_item.h"
 #include "settings_manager.h"
 
 // state action includes
@@ -485,21 +486,26 @@ void CyberiadaSMEditorStateItem::onActionChanged(StateAction* signalOwner)
     }
     if (i >= actions.size()) return;   // the owner is gone
 
-    QString behavior = signalOwner->getBehavior();
-    // an action emptied by the edit is deleted rather than kept as a ghost: an
-    // entry/exit with a blank behavior, or an internal transition with nothing left
-    const Cyberiada::State* state = dynamic_cast<const Cyberiada::State*>(element);
-    if (state && i < (int)state->get_actions().size()) {
-        const Cyberiada::Action& a = state->get_actions().at(i);
-        bool empty = behavior.trimmed().isEmpty() &&
-                     (a.get_type() != Cyberiada::actionTransition ||
-                      (!a.has_trigger() && !a.has_guard()));
-        if (empty) {
-            model->deleteAction(model->elementToIndex(element), i);
+    QModelIndex idx = model->elementToIndex(element);
+    if (signalOwner->isTransition()) {
+        // the whole "EVENT [guard] / behaviour" label was edited; an empty event
+        // leaves no valid internal transition, so it is dropped rather than kept
+        QString trigger = signalOwner->getTrigger();
+        if (trigger.trimmed().isEmpty()) {
+            model->deleteAction(idx, i);
             return;
         }
+        model->updateAction(idx, i, trigger, signalOwner->getGuard(), signalOwner->getBehavior());
+        return;
     }
-    model->updateAction(model->elementToIndex(element), i, QString(), QString(), behavior);
+
+    // an entry/exit emptied of its behaviour is deleted rather than kept as a ghost
+    QString behavior = signalOwner->getBehavior();
+    if (behavior.trimmed().isEmpty()) {
+        model->deleteAction(idx, i);
+        return;
+    }
+    model->updateAction(idx, i, QString(), QString(), behavior);
 }
 
 void CyberiadaSMEditorStateItem::slotInspectorModeChanged(bool on)
@@ -936,12 +942,14 @@ StateAction::StateAction(const Cyberiada::Action* action, QGraphicsItem *parent)
     QString behaviour = QString(action->get_behavior().c_str());
     Cyberiada::ActionType type = action->get_type();
     if (type == Cyberiada::ActionType::actionTransition) {
-        // an internal transition reads like an edge label: EVENT [guard] / behaviour
-        typeText = QString(action->get_trigger().c_str());
+        // an internal transition reads like an edge label: EVENT [guard] / behaviour;
+        // the whole label is editable, so nothing is protected (typeText stays empty)
+        transition = true;
+        QString text = QString(action->get_trigger().c_str());
         QString guard = QString(action->get_guard().c_str());
-        if (!guard.isEmpty()) typeText += " [" + guard + "]";
-        if (!behaviour.isEmpty()) typeText += " / ";
-        setPlainText(typeText + behaviour);
+        if (!guard.isEmpty()) text += " [" + guard + "]";
+        if (!behaviour.isEmpty()) text += " / " + behaviour;
+        setPlainText(text);
         return;
     }
     // TODO "exit", "entry" and "/" are constants from cyberiadamlpp
@@ -966,8 +974,26 @@ StateAction::StateAction(const Cyberiada::Action* action, QGraphicsItem *parent)
 
 QString StateAction::getBehavior()
 {
-    QString fullText = toPlainText();
-    return fullText.mid(typeText.length());
+    if (transition) {
+        QString trigger, guard, behaviour;
+        TransitionAction::parseLabel(toPlainText(), trigger, guard, behaviour);
+        return behaviour;
+    }
+    return toPlainText().mid(typeText.length());
+}
+
+QString StateAction::getTrigger()
+{
+    QString trigger, guard, behaviour;
+    TransitionAction::parseLabel(toPlainText(), trigger, guard, behaviour);
+    return trigger;
+}
+
+QString StateAction::getGuard()
+{
+    QString trigger, guard, behaviour;
+    TransitionAction::parseLabel(toPlainText(), trigger, guard, behaviour);
+    return guard;
 }
 
 void StateAction::keyPressEvent(QKeyEvent *event)
