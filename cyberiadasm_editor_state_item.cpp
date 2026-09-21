@@ -399,6 +399,19 @@ void CyberiadaSMEditorStateItem::addAction(Cyberiada::ActionType type)
     }
 }
 
+void CyberiadaSMEditorStateItem::addInternalTransition()
+{
+    // batch mode has no user to dismiss a modal dialog (see addAction)
+    if (qApp && qApp->property("batchMode").toBool()) return;
+
+    StateActionDialog dialog(StateActionDialog::Mode::Transition);
+
+    if (dialog.exec() == QDialog::Accepted) {
+        model->newAction(model->elementToIndex(element), Cyberiada::actionTransition,
+                         dialog.getTrigger(), dialog.getGuard(), dialog.getBehaviour());
+    }
+}
+
 void CyberiadaSMEditorStateItem::updateSizeToFitChildren(CyberiadaSMEditorAbstractItem* child)
 {
     if (!child || !element->has_geometry()) return;
@@ -656,7 +669,7 @@ void CyberiadaSMEditorStateItem::contextMenuEvent(QGraphicsSceneContextMenuEvent
     QMenu menu;
 
     QAction *deleteAction = menu.addAction(tr("Delete"));
-    QAction *addTransitionAction = menu.addAction(tr("Add transition"));
+    QAction *addTransitionAction = menu.addAction(tr("Add internal transition"));
     QAction *addEntryAction = menu.addAction(tr("Add entry"));
     QAction *addExitAction = menu.addAction(tr("Add exit"));
     QAction *addDoAction = menu.addAction(tr("Add do"));
@@ -674,7 +687,7 @@ void CyberiadaSMEditorStateItem::contextMenuEvent(QGraphicsSceneContextMenuEvent
     if (selectedAction == deleteAction) {
         model->deleteElement(model->elementToIndex(element));
     } else if (selectedAction == addTransitionAction) {
-
+        addInternalTransition();
     } else if (selectedAction == addEntryAction) {
         addAction(Cyberiada::ActionType::actionEntry);
     } else if (selectedAction == addExitAction) {
@@ -922,8 +935,17 @@ StateAction::StateAction(const Cyberiada::Action* action, QGraphicsItem *parent)
 
     QString behaviour = QString(action->get_behavior().c_str());
     Cyberiada::ActionType type = action->get_type();
-    switch(type) {
+    if (type == Cyberiada::ActionType::actionTransition) {
+        // an internal transition reads like an edge label: EVENT [guard] / behaviour
+        typeText = QString(action->get_trigger().c_str());
+        QString guard = QString(action->get_guard().c_str());
+        if (!guard.isEmpty()) typeText += " [" + guard + "]";
+        if (!behaviour.isEmpty()) typeText += " / ";
+        setPlainText(typeText + behaviour);
+        return;
+    }
     // TODO "exit", "entry" and "/" are constants from cyberiadamlpp
+    switch(type) {
     case Cyberiada::ActionType::actionEntry:
         typeText = QString("entry");
         break;

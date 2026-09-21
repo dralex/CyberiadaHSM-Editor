@@ -1,0 +1,4 @@
+== text
+    Simple State: {id: 'node-0', role: title, font: 'Cyberiada Mono' 12 bold, pos: (-150; -100), abs: (100; 100), size: (300; 27), text: 'counter'}
+    Simple State: {id: 'node-0', role: action, font: 'Cyberiada Mono' 12, pos: (-135; -73), abs: (115; 127), size: (270; 46), text: 'entry/\ninit()'}
+    Simple State: {id: 'node-0', role: action, font: 'Cyberiada Mono' 12, pos: (-135; -27), abs: (115; 173), size: (270; 27), text: 'TICK [x > 0] / count()'}

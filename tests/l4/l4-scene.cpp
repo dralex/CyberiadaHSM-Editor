@@ -104,6 +104,7 @@ private slots:
 	void test_paste_transition();
 	void test_sm_not_pasteable();
 	void test_action_multiline();
+	void test_internal_transition();
 	void test_name_only_state();
 	void test_title_drag_through();
 	void test_vertex_name();
@@ -2251,8 +2252,8 @@ void TestScene::test_sm_not_pasteable()
 
 void TestScene::test_action_multiline()
 {
-	// a state action's behaviour drops to its own line when the single line would
-	// not fit the state width, and stays on one line when it fits (#6)
+	// a state action's behaviour always drops to its own line under the keyword,
+	// whatever its length, so the entry/ header reads the same (#6)
 	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
 	scene->loadScene();
 	CyberiadaSMEditorStateItem* state =
@@ -2266,16 +2267,46 @@ void TestScene::test_action_multiline()
 				if (a->toPlainText().startsWith("entry")) return a->toPlainText();
 		return QString();
 	};
+	const QString header("entry/\n");
 
 	QVERIFY(model->newAction(idx, Cyberiada::actionEntry, QString(), QString(), "f()"));
-	QVERIFY2(!entryText().contains('\n'), "a short action should stay on one line");
+	QString shortText = entryText();
+	QVERIFY2(shortText.startsWith(header), "a short action breaks after entry/");
+	QVERIFY2(!shortText.mid(header.length()).contains('\n'), "the behaviour keeps one line");
 	QVERIFY(model->deleteAction(idx, 0));
 
 	QVERIFY(model->newAction(idx, Cyberiada::actionEntry, QString(), QString(),
 							 "a_very_long_behaviour_that_cannot_fit()"));
 	QString t = entryText();
-	QVERIFY2(t.startsWith("entry/\n"), "a long action should break after entry/");
-	QVERIFY2(!t.mid(QString("entry/\n").length()).contains('\n'), "the behaviour keeps its own line");
+	QVERIFY2(t.startsWith(header), "a long action also breaks after entry/");
+	QVERIFY2(!t.mid(header.length()).contains('\n'), "the behaviour keeps its own line");
+}
+
+void TestScene::test_internal_transition()
+{
+	// an internal transition reads as an edge label: EVENT [guard] / behaviour
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	CyberiadaSMEditorStateItem* state =
+		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0-1"));
+	QVERIFY(state);
+	QModelIndex idx = model->elementToIndex(model->idToElement("node-0-1"));
+
+	auto actionText = [&]() -> QString {
+		for (QGraphicsItem* c : state->childItems())
+			if (StateAction* a = dynamic_cast<StateAction*>(c))
+				if (a->toPlainText().startsWith("TICK")) return a->toPlainText();
+		return QString();
+	};
+
+	QVERIFY(model->newAction(idx, Cyberiada::actionTransition, "TICK", "x > 0", "count()"));
+	QCOMPARE(actionText(), QString("TICK [x > 0] / count()"));
+
+	// the event alone renders without the separator; an empty trigger is refused
+	QVERIFY(model->deleteAction(idx, 0));
+	QVERIFY(model->newAction(idx, Cyberiada::actionTransition, "TICK", QString(), QString()));
+	QCOMPARE(actionText(), QString("TICK"));
+	QVERIFY(!model->newAction(idx, Cyberiada::actionTransition, QString(), QString(), "count()"));
 }
 
 void TestScene::test_history()

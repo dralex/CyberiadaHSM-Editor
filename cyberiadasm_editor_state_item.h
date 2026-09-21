@@ -105,6 +105,7 @@ public:
 private:
     void initializeActions();
     void addAction(Cyberiada::ActionType type);
+    void addInternalTransition();
     // a state can self-loop, so it draws with the self-loop-then-retarget seed
     void startTransition() override;
     void updateSizeToFitChildren(CyberiadaSMEditorAbstractItem* child) override;

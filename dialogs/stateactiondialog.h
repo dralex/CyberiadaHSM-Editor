@@ -32,17 +32,29 @@ class StateActionDialog : public QDialog {
     Q_OBJECT
 
 public:
-    StateActionDialog(const QString& keyword, QWidget* parent = nullptr);
+    enum class Mode { EntryExit, Transition };
 
-    // parse the entered text; on success the behaviour is available
+    // entry/exit: a single behaviour under the "<keyword>/" header
+    StateActionDialog(const QString& keyword, QWidget* parent = nullptr);
+    // internal transition: the full "EVENT [guard] / behaviour" notation
+    StateActionDialog(Mode mode, QWidget* parent = nullptr);
+
+    // parse the entered text; on success the parts below are available
     bool parseInput();
+    QString getTrigger() const;
+    QString getGuard() const;
     QString getBehaviour() const;
 
 private slots:
     void slotAccept();
 
 private:
+    void setupUi(const QString& title, const QString& label, const QString& prefill);
+
+    Mode mode;
     QString keyword;
+    QString trigger;
+    QString guard;
     QString behaviour;
     QPlainTextEdit* actionEdit;
 };

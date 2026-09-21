@@ -171,6 +171,7 @@ add_text_dump_test(comment-transition)
 add_text_dump_test(empty-actions)
 add_text_dump_test(geometry)
 add_text_dump_test(hierarchy)
+add_text_dump_test(internal-transition)
 add_text_dump_test(label-geometry)
 add_text_dump_test(multiline-actions)
 

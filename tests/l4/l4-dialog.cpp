@@ -47,6 +47,7 @@ private slots:
 	void test_save_refused_format();
 	void test_export_image();
 	void test_action_dialog();
+	void test_transition_dialog();
 	void test_about_dialog();
 };
 
@@ -216,6 +217,32 @@ void TestDialog::test_action_dialog()
 
 	// a damaged keyword is refused
 	edit->setPlainText("entrance/ foo();");
+	QVERIFY(!dialog.parseInput());
+}
+
+void TestDialog::test_transition_dialog()
+{
+	// the internal-transition mode splits "EVENT [guard] / behaviour" into parts
+	StateActionDialog dialog(StateActionDialog::Mode::Transition);
+	QPlainTextEdit* edit = dialog.findChild<QPlainTextEdit*>();
+	QVERIFY(edit);
+	QCOMPARE(edit->toPlainText(), QString(""));   // no keyword pre-fill
+
+	edit->setPlainText("TICK [x > 0] / count()");
+	QVERIFY(dialog.parseInput());
+	QCOMPARE(dialog.getTrigger(), QString("TICK"));
+	QCOMPARE(dialog.getGuard(), QString("x > 0"));
+	QCOMPARE(dialog.getBehaviour(), QString("count()"));
+
+	// the guard and the behaviour are optional, the event is not
+	edit->setPlainText("TICK");
+	QVERIFY(dialog.parseInput());
+	QCOMPARE(dialog.getTrigger(), QString("TICK"));
+	QVERIFY(dialog.getGuard().isEmpty());
+	QVERIFY(dialog.getBehaviour().isEmpty());
+
+	// no event: refused
+	edit->setPlainText("[x > 0] / count()");
 	QVERIFY(!dialog.parseInput());
 }
 

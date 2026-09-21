@@ -32,20 +32,33 @@
 
 #include "stateactiondialog.h"
 #include "fontmanager.h"
+#include "cyberiadasm_editor_transition_item.h"
 
 StateActionDialog::StateActionDialog(const QString& keyword, QWidget* parent):
-    QDialog(parent), keyword(keyword)
+    QDialog(parent), mode(Mode::EntryExit), keyword(keyword)
 {
-    setWindowTitle(tr("New action"));
+    // the keyword is part of the text: the behaviour continues on the same
+    // line or, as in the document format, on the next one
+    setupUi(tr("New action"), tr("Action:"), keyword + "/");
+}
+
+StateActionDialog::StateActionDialog(Mode mode, QWidget* parent):
+    QDialog(parent), mode(mode)
+{
+    setupUi(tr("New internal transition"),
+            tr("Internal transition (EVENT [guard] / behaviour):"), QString());
+}
+
+void StateActionDialog::setupUi(const QString& title, const QString& label, const QString& prefill)
+{
+    setWindowTitle(title);
     auto* layout = new QVBoxLayout(this);
 
-    layout->addWidget(new QLabel(tr("Action:"), this));
+    layout->addWidget(new QLabel(label, this));
 
     actionEdit = new QPlainTextEdit(this);
     actionEdit->setFont(FontManager::instance().font(fontRoleStateAction));
-    // the keyword is part of the text: the behaviour continues on the same
-    // line or, as in the document format, on the next one
-    actionEdit->setPlainText(keyword + "/");
+    actionEdit->setPlainText(prefill);
     QTextCursor cursor = actionEdit->textCursor();
     cursor.movePosition(QTextCursor::End);
     actionEdit->setTextCursor(cursor);
@@ -63,11 +76,26 @@ StateActionDialog::StateActionDialog(const QString& keyword, QWidget* parent):
 bool StateActionDialog::parseInput()
 {
     QString text = actionEdit->toPlainText();
+    if (mode == Mode::Transition) {
+        // reuse the edge-label parser; an internal transition needs an event
+        TransitionAction::parseLabel(text, trigger, guard, behaviour);
+        return !trigger.isEmpty();
+    }
     if (!text.startsWith(keyword + "/")) return false;
     // the same-line space or the document-style newline after the keyword is
     // the separator, not the behaviour; the model normalizes the interior
     behaviour = text.mid(keyword.length() + 1).trimmed();
     return true;
+}
+
+QString StateActionDialog::getTrigger() const
+{
+    return trigger;
+}
+
+QString StateActionDialog::getGuard() const
+{
+    return guard;
 }
 
 QString StateActionDialog::getBehaviour() const
@@ -78,8 +106,13 @@ QString StateActionDialog::getBehaviour() const
 void StateActionDialog::slotAccept()
 {
     if (!parseInput()) {
-        QMessageBox::warning(this, tr("New action"),
-                             tr("The action must start with '%1/'").arg(keyword));
+        if (mode == Mode::Transition) {
+            QMessageBox::warning(this, tr("New internal transition"),
+                                 tr("An internal transition needs an event."));
+        } else {
+            QMessageBox::warning(this, tr("New action"),
+                                 tr("The action must start with '%1/'").arg(keyword));
+        }
         return;
     }
     accept();

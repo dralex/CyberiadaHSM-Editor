@@ -1342,31 +1342,36 @@ TransitionAction::TransitionAction(const QString &text, QGraphicsItem *parent) :
     setTextMargin(0);
 }
 
+void TransitionAction::parseLabel(const QString& text, QString& trigger, QString& guard, QString& behaviour)
+{
+    QRegularExpressionMatch m;
+    m = QRegularExpression(R"(^\s*([^\[/\]]+))").match(text);   // event before [ or /
+    trigger = m.hasMatch() ? m.captured(1).trimmed() : QString();
+    m = QRegularExpression(R"(\[\s*(.*?)\s*\])").match(text);   // all between [ and ]
+    guard = m.hasMatch() ? m.captured(1).trimmed() : QString();
+    m = QRegularExpression(R"(\/\s*(.+)$)").match(text);        // all after /
+    behaviour = m.hasMatch() ? m.captured(1).trimmed() : QString();
+}
+
 QString TransitionAction::getTrigger() const
 {
-    QRegularExpression re(R"(^\s*([^\[/\]]+))");
-    QRegularExpressionMatch match = re.match(toPlainText());
-    if (match.hasMatch())
-        return match.captured(1).trimmed();
-    return QString();
+    QString trigger, guard, behaviour;
+    parseLabel(toPlainText(), trigger, guard, behaviour);
+    return trigger;
 }
 
 QString TransitionAction::getGuard() const
 {
-    QRegularExpression re(R"(\[\s*(.*?)\s*\])");  // all between [ and ]
-    QRegularExpressionMatch match = re.match(toPlainText());
-    if (match.hasMatch())
-        return match.captured(1).trimmed();
-    return QString();
+    QString trigger, guard, behaviour;
+    parseLabel(toPlainText(), trigger, guard, behaviour);
+    return guard;
 }
 
 QString TransitionAction::getBehaviour() const
 {
-    QRegularExpression re(R"(\/\s*(.+)$)");  // all after /
-    QRegularExpressionMatch match = re.match(toPlainText());
-    if (match.hasMatch())
-        return match.captured(1).trimmed();
-    return QString();
+    QString trigger, guard, behaviour;
+    parseLabel(toPlainText(), trigger, guard, behaviour);
+    return behaviour;
 }
 
 void TransitionAction::paint(QPainter *painter, const QStyleOptionGraphicsItem *o, QWidget *w) {

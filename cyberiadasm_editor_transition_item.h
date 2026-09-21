@@ -198,6 +198,9 @@ class TransitionAction : public EditableTextItem
 public:
     explicit TransitionAction(const QString &text, QGraphicsItem *parent = nullptr);
 
+    // split "EVENT [guard] / behaviour" into its parts (any may be empty)
+    static void parseLabel(const QString& text, QString& trigger, QString& guard, QString& behaviour);
+
     QString getTrigger() const;
     QString getGuard() const;
     QString getBehaviour() const;
