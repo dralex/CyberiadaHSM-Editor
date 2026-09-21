@@ -1,4 +1,4 @@
 == text
     Simple State: {id: 'parent', role: title, font: 'Cyberiada Mono' 12 bold, pos: (-200; -150), abs: (0; 0), size: (400; 27), text: 'state'}
     Simple State: {id: 'parent', role: action, font: 'Cyberiada Mono' 12, pos: (-185; -123), abs: (15; 27), size: (370; 65), text: 'entry/\nfirst_step();\nsecond_step();'}
-    Simple State: {id: 'parent', role: action, font: 'Cyberiada Mono' 12, pos: (-185; 123), abs: (15; 273), size: (370; 27), text: 'exit / leave();'}
+    Simple State: {id: 'parent', role: action, font: 'Cyberiada Mono' 12, pos: (-185; 104), abs: (15; 254), size: (370; 46), text: 'exit/\nleave();'}

@@ -1,14 +1,14 @@
 == text
     Composite State: {id: 'parent', role: title, font: 'Cyberiada Mono' 12 bold, pos: (-400; -400), abs: (0; 0), size: (800; 27), text: 'parent'}
-    Composite State: {id: 'parent', role: action, font: 'Cyberiada Mono' 12, pos: (-385; -373), abs: (15; 27), size: (770; 27), text: 'entry / TEXT_ENTRY'}
-    Composite State: {id: 'parent', role: action, font: 'Cyberiada Mono' 12, pos: (-385; 373), abs: (15; 773), size: (770; 27), text: 'exit / '}
+    Composite State: {id: 'parent', role: action, font: 'Cyberiada Mono' 12, pos: (-385; -373), abs: (15; 27), size: (770; 46), text: 'entry/\nTEXT_ENTRY'}
+    Composite State: {id: 'parent', role: action, font: 'Cyberiada Mono' 12, pos: (-385; 354), abs: (15; 754), size: (770; 46), text: 'exit/\n'}
       Simple State: {id: 'node-1', role: title, font: 'Cyberiada Mono' 12 bold, pos: (-75; -75), abs: (325; 339), size: (150; 27), text: 'node 1'}
-      Simple State: {id: 'node-1', role: action, font: 'Cyberiada Mono' 12, pos: (-60; -48), abs: (340; 366), size: (120; 27), text: 'entry / '}
+      Simple State: {id: 'node-1', role: action, font: 'Cyberiada Mono' 12, pos: (-60; -48), abs: (340; 366), size: (120; 46), text: 'entry/\n'}
       Simple State: {id: 'node-2', role: title, font: 'Cyberiada Mono' 12 bold, pos: (-75; -75), abs: (525; 139), size: (150; 27), text: 'node 2'}
       Simple State: {id: 'node-2', role: action, font: 'Cyberiada Mono' 12, pos: (-60; -48), abs: (540; 166), size: (120; 27), text: ''}
       Simple State: {id: 'node-3', role: title, font: 'Cyberiada Mono' 12 bold, pos: (-75; -75), abs: (525; 539), size: (150; 27), text: 'node 3'}
-      Simple State: {id: 'node-3', role: action, font: 'Cyberiada Mono' 12, pos: (-60; -48), abs: (540; 566), size: (120; 27), text: 'entry / '}
-      Simple State: {id: 'node-3', role: action, font: 'Cyberiada Mono' 12, pos: (-60; 48), abs: (540; 662), size: (120; 27), text: 'exit / '}
+      Simple State: {id: 'node-3', role: action, font: 'Cyberiada Mono' 12, pos: (-60; -48), abs: (540; 566), size: (120; 46), text: 'entry/\n'}
+      Simple State: {id: 'node-3', role: action, font: 'Cyberiada Mono' 12, pos: (-60; 29), abs: (540; 643), size: (120; 46), text: 'exit/\n'}
       Simple State: {id: 'node-4', role: title, font: 'Cyberiada Mono' 12 bold, pos: (-75; -75), abs: (125; 539), size: (150; 27), text: 'node 4'}
       Simple State: {id: 'node-4', role: action, font: 'Cyberiada Mono' 12, pos: (-60; -48), abs: (140; 566), size: (120; 27), text: ''}
     Transition: {id: 'edge-0', role: transition, font: 'Cyberiada Mono' 12, pos: (259; 263), abs: (259; 263), size: (8; 27), text: ''}
