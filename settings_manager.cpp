@@ -63,6 +63,7 @@ void SettingsManager::load() {
     dialogSize = s.value("files/dialogSize", QSize(1000, 680)).toSize();
     optionsExpanded = s.value("files/optionsExpanded", true).toBool();
     exportDpi = s.value("export/dpi", 96).toInt();
+    exportFontFamily = s.value("export/fontFamily", QString()).toString();
 
     selectionColor = QColor(s.value("display/selectionColor", QColor(Qt::darkGray).name()).toString());
     selectionBorderWidth = s.value("display/selectionBorderWidth", 2).toInt();
@@ -231,6 +232,21 @@ void SettingsManager::setExportDpi(int value)
         exportDpi = value;
         QSettings().setValue("export/dpi", value);
     }
+}
+
+void SettingsManager::setExportFontFamily(const QString& value)
+{
+    if (exportFontFamily != value) {
+        exportFontFamily = value;
+        QSettings().setValue("export/fontFamily", value);
+    }
+}
+
+void SettingsManager::overrideFontFamily(const QString& value)
+{
+    // no persistence: set the in-memory family and let the text items re-apply
+    fontFamily = value;
+    emit fontSettingsChanged();
 }
 
 void SettingsManager::setSelectionColor(QColor value)

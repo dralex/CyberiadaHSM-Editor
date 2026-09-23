@@ -24,6 +24,7 @@
 #include <QtTest>
 #include <QCheckBox>
 #include <QComboBox>
+#include <QFontComboBox>
 #include <QGridLayout>
 #include "cyberiadasm_model.h"
 #include "dialogs/open_file_dialog.h"
@@ -193,6 +194,13 @@ void TestDialog::test_export_image()
 	dlg.selectNameFilter("PDF (*.pdf)");
 	dlg.updateSuffix();
 	QCOMPARE(dlg.defaultSuffix(), QString("pdf"));
+
+	// the export font is chosen from the monospace families and reported (#4)
+	QFontComboBox* fontCombo = dlg.findChild<QFontComboBox*>("fontComboBox");
+	QVERIFY(fontCombo);
+	QCOMPARE(fontCombo->fontFilters(), QFontComboBox::FontFilters(QFontComboBox::MonospacedFonts));
+	QVERIFY(!dlg.fontFamily().isEmpty());
+	QCOMPARE(dlg.fontFamily(), fontCombo->currentFont().family());
 }
 
 QTEST_MAIN(TestDialog)

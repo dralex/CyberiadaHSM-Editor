@@ -62,6 +62,8 @@ int main(int argc, char *argv[])
 	parser.addOption(exportOption);
 	QCommandLineOption dpiOption("dpi", "Raster export resolution (96 = 1:1, default 96).", "n", "96");
 	parser.addOption(dpiOption);
+	QCommandLineOption fontOption("font", "Font family the exported image text is drawn with.", "family");
+	parser.addOption(fontOption);
 	QCommandLineOption noTextOption("no-text", "Hide the text elements in batch mode (font-independent output).");
 	parser.addOption(noTextOption);
 	QCommandLineOption textOption("text", "Show the text elements in batch mode, overriding --no-text.");
@@ -154,7 +156,7 @@ int main(int argc, char *argv[])
 								parser.isSet(reconstructSMOption),
 								parser.isSet(strictOption), save_format,
 								parser.isSet(dumpTextOption), parser.isSet(dumpStackOption),
-								parser.value(dpiOption).toInt());
+								parser.value(dpiOption).toInt(), parser.value(fontOption));
 		}
 		return runGuiMode(app);
 	} catch(const QString& error) {

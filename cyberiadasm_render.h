@@ -31,9 +31,11 @@ class CyberiadaSMEditorScene;
 // render the scene into an image file (the selection is cleared first); the
 // raster formats are chosen by the file suffix, svg and pdf are vector. dpi
 // scales the raster output (96 = one scene unit per pixel, today's 1:1) and is
-// stamped into the image; it does not affect the vector formats.
+// stamped into the image; it does not affect the vector formats. fontFamily, when
+// not empty, is the font the text is drawn with for this export (the on-screen
+// setting is untouched); empty keeps the editor's current font.
 bool renderScene(CyberiadaSMEditorScene* scene, const QString& path, QString* error,
-                 int dpi = 96);
+                 int dpi = 96, const QString& fontFamily = QString());
 
 // compare two images: a pixel differs when any channel delta exceeds epsilon,
 // the images match when the differing fraction is not above max_diff_fraction;

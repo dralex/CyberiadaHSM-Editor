@@ -48,6 +48,7 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName, boo
 				 const QString& exportImage = QString(), bool reconstruct = false,
 				 bool reconstruct_sm = false, bool strict = false,
 				 Cyberiada::DocumentFormat saveFormat = Cyberiada::formatCyberiada10,
-				 bool dumpTextMetrics = false, bool dumpUndoStack = false, int exportDpi = 96);
+				 bool dumpTextMetrics = false, bool dumpUndoStack = false, int exportDpi = 96,
+				 const QString& exportFont = QString());
 
 #endif

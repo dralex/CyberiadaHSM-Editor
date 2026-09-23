@@ -62,22 +62,29 @@ namespace {
 		SettingsManager& sm;
 		bool grid;
 		bool service;
-		ExportGuard():
+		QString font;
+		bool fontOverridden;
+		ExportGuard(const QString& fontFamily):
 			sm(SettingsManager::instance()),
-			grid(sm.getShowGrid()), service(sm.getShowServiceObjects())
+			grid(sm.getShowGrid()), service(sm.getShowServiceObjects()),
+			font(sm.getFontFamily()), fontOverridden(!fontFamily.isEmpty())
 		{
 			sm.overrideShowGrid(false);
 			sm.overrideShowServiceObjects(false);
+			// the chosen export font, applied to every text item for the render
+			if (fontOverridden) sm.overrideFontFamily(fontFamily);
 		}
 		~ExportGuard()
 		{
 			sm.overrideShowGrid(grid);
 			sm.overrideShowServiceObjects(service);
+			if (fontOverridden) sm.overrideFontFamily(font);
 		}
 	};
 }
 
-bool renderScene(CyberiadaSMEditorScene* scene, const QString& path, QString* error, int dpi)
+bool renderScene(CyberiadaSMEditorScene* scene, const QString& path, QString* error, int dpi,
+				 const QString& fontFamily)
 {
 	if (scene->items().isEmpty()) {
 		if (error) *error = "the scene is empty, nothing to export";
@@ -85,7 +92,7 @@ bool renderScene(CyberiadaSMEditorScene* scene, const QString& path, QString* er
 	}
 	// exported images must not show the editing selection or the aids
 	scene->clearSelection();
-	ExportGuard guard;
+	ExportGuard guard(fontFamily);
 	// the image is the diagram's own size: the union of the visible items (the SM
 	// border, or the document bounding geometry across several machines) with no
 	// margin - only a 1px pad so the outermost 2px border stroke is not clipped

@@ -27,6 +27,7 @@
 #include "file_dialog.h"
 
 class QSpinBox;
+class QFontComboBox;
 
 // the scene image export: the suffix follows the selected image format
 class ExportImageDialog : public CyberiadaFileDialog
@@ -40,6 +41,8 @@ public:
     void updateSuffix();
     // the chosen raster resolution (96 = one scene unit per pixel)
     int dpi() const;
+    // the chosen monospace font family the image text is drawn with
+    QString fontFamily() const;
 
     void accept() override;
 
@@ -48,6 +51,7 @@ private slots:
 
 private:
     QSpinBox* dpiSpin;
+    QFontComboBox* fontCombo;
 };
 
 #endif // EXPORT_IMAGE_DIALOG_H

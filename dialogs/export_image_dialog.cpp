@@ -25,15 +25,17 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QSpinBox>
+#include <QFontComboBox>
 #include "export_image_dialog.h"
 #include "settings_manager.h"
+#include "fontmanager.h"
 
 
 ExportImageDialog::ExportImageDialog(QWidget* parent)
     : CyberiadaFileDialog(parent, tr("Export the scene as an image"),
                           tr("PNG (*.png);;JPEG (*.jpg *.jpeg);;BMP (*.bmp);;TIFF (*.tiff);;"
                              "SVG (*.svg);;PDF (*.pdf)")),
-      dpiSpin(nullptr)
+      dpiSpin(nullptr), fontCombo(nullptr)
 {
     setFileMode(QFileDialog::AnyFile);
     setAcceptMode(QFileDialog::AcceptSave);
@@ -52,6 +54,17 @@ ExportImageDialog::ExportImageDialog(QWidget* parent)
     dpiSpin->setValue(SettingsManager::instance().getExportDpi());
     row->addWidget(dpiSpin);
     row->addStretch();
+
+    // the image text font: only the monospace families, defaulting to the last
+    // chosen one or the bundled font of the standard
+    row->addWidget(new QLabel(tr("Font:"), options));
+    fontCombo = new QFontComboBox(options);
+    fontCombo->setObjectName("fontComboBox");
+    fontCombo->setFontFilters(QFontComboBox::MonospacedFonts);
+    QString family = SettingsManager::instance().getExportFontFamily();
+    if (family.isEmpty()) family = FontManager::instance().bundledFamily();
+    fontCombo->setCurrentFont(QFont(family));
+    row->addWidget(fontCombo);
     setOptionsWidget(options);
 
     connect(this, &QFileDialog::filterSelected, this, &ExportImageDialog::slotFilterSelected);
@@ -62,11 +75,17 @@ int ExportImageDialog::dpi() const
     return dpiSpin ? dpiSpin->value() : 96;
 }
 
+QString ExportImageDialog::fontFamily() const
+{
+    return fontCombo ? fontCombo->currentFont().family() : QString();
+}
+
 void ExportImageDialog::accept()
 {
     // the filter may be selected without the user interaction
     updateSuffix();
     if (dpiSpin) SettingsManager::instance().setExportDpi(dpiSpin->value());
+    if (fontCombo) SettingsManager::instance().setExportFontFamily(fontFamily());
     CyberiadaFileDialog::accept();
 }
 

@@ -51,6 +51,7 @@ private slots:
 	void test_action_edit();
 	void test_body_drag();
 	void test_snap_corner();
+	void test_export_font();
 	void test_ctrl_axis_move();
 	void test_new_sm_single_item();
 	void test_double_click_action();
@@ -514,6 +515,30 @@ void TestScene::test_snap_corner()
 
 	QCOMPARE(rx, 0);
 	QCOMPARE(ry, 0);
+}
+
+void TestScene::test_export_font()
+{
+	// the font override (which the image export uses for a chosen font) re-applies
+	// to the text items, so the render draws in that family (#4)
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	QModelIndex idx = model->elementToIndex(model->idToElement("node-0-1"));
+	QVERIFY(model->newAction(idx, Cyberiada::actionEntry, QString(), QString(), "x()"));
+	CyberiadaSMEditorStateItem* state =
+		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0-1"));
+	QVERIFY(state);
+	StateAction* a = nullptr;
+	for (QGraphicsItem* c : state->childItems())
+		if (StateAction* s = dynamic_cast<StateAction*>(c)) { a = s; break; }
+	QVERIFY(a);
+
+	SettingsManager& sm = SettingsManager::instance();
+	QString was = sm.getFontFamily();
+	sm.overrideFontFamily("Cyberiada Test Mono");
+	QCOMPARE(a->font().family(), QString("Cyberiada Test Mono"));
+	sm.overrideFontFamily(was);          // restore (the on-screen font is untouched)
+	QVERIFY(a->font().family() != QString("Cyberiada Test Mono"));
 }
 
 void TestScene::test_action_layout()

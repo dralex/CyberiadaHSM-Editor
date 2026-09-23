@@ -50,7 +50,7 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName, boo
 				 const QString& script, const QString& save, const QString& exportImage,
 				 bool reconstruct, bool reconstruct_sm, bool strict,
 				 Cyberiada::DocumentFormat saveFormat, bool dumpTextMetrics, bool dumpUndoStack,
-				 int exportDpi)
+				 int exportDpi, const QString& exportFont)
 {
 	CyberiadaSMEditorWindow win;
 	win.show();
@@ -96,7 +96,7 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName, boo
 
 	if (!exportImage.isEmpty()) {
 		QString render_error;
-		if (!renderScene(win.getScene(), exportImage, &render_error, exportDpi)) {
+		if (!renderScene(win.getScene(), exportImage, &render_error, exportDpi, exportFont)) {
 			fprintf(stderr, "cannot export %s\n%s\n", qPrintable(exportImage), qPrintable(render_error));
 			return batchInternalError;
 		}

@@ -41,6 +41,9 @@ public:
     void overrideShowServiceObjects(bool value) { showServiceObjects = value; }
     // a runtime override, like the service objects one: no signal, not persisted
     void overrideShowGrid(bool value) { showGrid = value; }
+    // a runtime override of the element font, not persisted; it emits so the
+    // text items re-apply their font (used to render an export in a chosen font)
+    void overrideFontFamily(const QString& value);
 
     // runtime-only, never persisted: the batch mode hides all text elements
     // to keep the test output independent of the font metrics
@@ -78,6 +81,9 @@ public:
     // the last resolution chosen in the image export dialog (96 = 1:1)
     int getExportDpi() const { return exportDpi; }
     void setExportDpi(int value);
+    // the last font family chosen in the image export dialog (empty = bundled)
+    QString getExportFontFamily() const { return exportFontFamily; }
+    void setExportFontFamily(const QString& value);
 
     QColor getSelectionColor() const { return selectionColor; }
     void setSelectionColor(QColor value);
@@ -132,6 +138,7 @@ private:
     QSize dialogSize;
     bool optionsExpanded;
     int exportDpi;
+    QString exportFontFamily;
 
     // selection
     QColor selectionColor;
