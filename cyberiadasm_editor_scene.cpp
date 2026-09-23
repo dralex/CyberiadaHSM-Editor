@@ -978,7 +978,9 @@ void CyberiadaSMEditorScene::createByTool(ToolType tool, const QRectF& sceneRect
         }
         if (borderless && !anyBordered) {
             QRectF total = r;
-            Cyberiada::Rect content = borderless->get_bound_rect(*model->rootDocument());
+            // the adopted border wraps the content but not an outside comment
+            Cyberiada::Rect content =
+                borderless->Cyberiada::ElementCollection::get_bound_rect(*model->rootDocument(), true);
             if (content.valid) {
                 total = total.united(QRectF(content.x - content.width / 2, content.y - content.height / 2,
                                             content.width, content.height));
@@ -1096,6 +1098,10 @@ void CyberiadaSMEditorScene::createByTool(ToolType tool, const QRectF& sceneRect
 void CyberiadaSMEditorScene::extendStateMachineForChild(CyberiadaSMEditorAbstractItem* smItem,
                                                         QGraphicsItem* child)
 {
+    // a comment does not extend the border: it may be created outside it
+    if (CyberiadaSMEditorAbstractItem* ci = dynamic_cast<CyberiadaSMEditorAbstractItem*>(child)) {
+        if (Cyberiada::element_is_comment(ci->getElement())) return;
+    }
     Cyberiada::ElementCollection* sm =
         static_cast<Cyberiada::ElementCollection*>(smItem->getElement());
     Cyberiada::Rect border = sm->get_geometry_rect();

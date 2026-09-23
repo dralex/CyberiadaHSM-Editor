@@ -452,6 +452,8 @@ QRectF CyberiadaSMEditorAbstractItem::contentBox() const
         const_cast<CyberiadaSMEditorScene*>(sc)->getMap();
     Cyberiada::ElementList kids = coll->get_children();
     for (Cyberiada::ElementList::const_iterator i = kids.begin(); i != kids.end(); i++) {
+        // a comment does not hold the border open: it may lie outside it
+        if (Cyberiada::element_is_comment(*i)) continue;
         QGraphicsItem* ci = map.value((*i)->get_id());
         if (ci) box = box.united(ci->sceneBoundingRect());
     }

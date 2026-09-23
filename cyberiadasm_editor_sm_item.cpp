@@ -185,6 +185,8 @@ void CyberiadaSMEditorSMItem::updateSizeToFitChildren(CyberiadaSMEditorAbstractI
     // the border grows to make room for a child moved toward or past its edge,
     // only on the crossed side, and the other children re-base so they stay put
     if (!child || !element->has_geometry()) return;
+    // a comment is not contained by the border: it may sit outside it
+    if (Cyberiada::element_is_comment(child->getElement())) return;
     Cyberiada::Rect border =
         static_cast<Cyberiada::ElementCollection*>(element)->get_geometry_rect();
 

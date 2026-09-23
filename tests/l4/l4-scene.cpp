@@ -66,6 +66,7 @@ private slots:
 	void test_new_state();
 	void test_new_transition();
 	void test_new_comment();
+	void test_comment_outside_border();
 	void test_new_choice();
 	void test_reparent();
 	void test_delete();
@@ -515,6 +516,35 @@ void TestScene::test_snap_corner()
 
 	QCOMPARE(rx, 0);
 	QCOMPARE(ry, 0);
+}
+
+void TestScene::test_comment_outside_border()
+{
+	// a comment may sit outside the SM border: a drag toward/past the edge does
+	// not grow the border, matching the model-side extent and the libraries
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	// give the machine an explicit border, so containment applies
+	QVERIFY(model->updateGeometry(model->firstSMIndex(), Cyberiada::Rect(0, 0, 1000, 450)));
+	Cyberiada::ElementCollection* sm =
+		dynamic_cast<Cyberiada::ElementCollection*>(model->indexToElement(model->firstSMIndex()));
+	QVERIFY(sm && sm->has_geometry());
+	Cyberiada::Rect before = sm->get_geometry_rect();
+
+	// a comment placed far outside the border to the right
+	Cyberiada::Comment* c = model->newComment(sm, "outside",
+											  Cyberiada::Rect(before.width, 0, 120, 60));
+	QVERIFY(c);
+	CyberiadaSMEditorAbstractItem* cItem =
+		dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene->getMap().value(c->get_id()));
+	CyberiadaSMEditorAbstractItem* smItem =
+		dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene->getMap().value(sm->get_id()));
+	QVERIFY(cItem && smItem);
+	smItem->updateSizeToFitChildren(cItem);   // a comment does not grow the border
+
+	Cyberiada::Rect after = sm->get_geometry_rect();
+	QCOMPARE(after.width, before.width);
+	QCOMPARE(after.height, before.height);
 }
 
 void TestScene::test_export_font()
