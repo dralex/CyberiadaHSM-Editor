@@ -95,6 +95,7 @@ private slots:
 	void test_label_move();
 	void test_label_drag_tracks();
 	void test_single_drag_retargets();
+	void test_loop_default_polyline();
 	void test_vertex_border_attach();
 	void test_vertex_grows_parent();
 	void test_command_sm_has_item();
@@ -2060,6 +2061,42 @@ void TestScene::test_single_drag_retargets()
 	QVERIFY2(ext, "single drag did not bind the target on release");
 	QCOMPARE(int(ext->get_transition_type()), int(Cyberiada::transitionExternal));
 	QVERIFY2(!findTransition(model, "node-0-1", "node-0-1"), "a stray self-loop was left");
+}
+
+void TestScene::test_loop_default_polyline()
+{
+	// a self-loop placed on its own state gets a border-to-border orthogonal
+	// polyline (not the centre arc); the source side follows the drag direction
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	QGraphicsItem* fromItem = scene->getMap().value("node-0-1");
+	QVERIFY(fromItem);
+	QRectF stateRect = fromItem->sceneBoundingRect();
+	QPointF centre = stateRect.center();
+
+	scene->setCurrentTool(ToolType::Transition);
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+	// press on the state, drag upward, release on the SAME state: a self-loop
+	mouse(QEvent::GraphicsSceneMousePress, centre, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, centre + QPointF(0, -30), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, centre + QPointF(0, -50), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, centre + QPointF(0, -50), Qt::NoButton);
+
+	const Cyberiada::Transition* loop = findTransition(model, "node-0-1", "node-0-1");
+	QVERIFY2(loop, "the self-loop was not created");
+	QVERIFY2(loop->has_polyline(), "a placed loop must carry a default polyline, not the arc");
+
+	CyberiadaSMEditorTransitionItem* item =
+		dynamic_cast<CyberiadaSMEditorTransitionItem*>(scene->getMap().value(loop->get_id()));
+	QVERIFY(item);
+	// both ends sit on the border, not collapsed to the centre
+	QVERIFY(!item->sourcePoint().isNull());
+	QVERIFY(!item->targetPoint().isNull());
+	// the route bulges past the state (a border-to-border loop, not a dot)
+	QVERIFY(!stateRect.contains(item->boundingRect()));
+	// an upward drag puts the source end on the top border
+	QVERIFY(item->sourcePoint().y() < 0);
 }
 
 void TestScene::test_vertex_border_attach()

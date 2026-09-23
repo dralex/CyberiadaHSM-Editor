@@ -1237,6 +1237,15 @@ void CyberiadaSMEditorScene::finishTransitionDraw(const QPointF& scenePos)
             if (element) {
                 QGraphicsItem* item = elementIdToItemMap.value(element->get_id());
                 if (item) item->setSelected(true);
+                // a source-to-source draw is a self-loop: give it the default
+                // border-to-border polyline instead of the centre arc
+                if (src == target) {
+                    if (CyberiadaSMEditorTransitionItem* trans =
+                            dynamic_cast<CyberiadaSMEditorTransitionItem*>(item)) {
+                        QPointF dir = scenePos - src->sceneBoundingRect().center();
+                        trans->seedDefaultLoop(dir, dir);
+                    }
+                }
             }
         } catch (const Cyberiada::Exception&) {
             // not a valid source/target pair

@@ -92,6 +92,10 @@ public:
         return transition->target_element_id();
     }
 
+    // seed a placed self-loop with a default orthogonal border-to-border
+    // polyline; the two sides follow the initial and final drag direction
+    void seedDefaultLoop(const QPointF& startDir, const QPointF& endDir);
+
     QPainterPath path() const;
     void updatePath();
 
@@ -133,6 +137,9 @@ protected:
 
 private:
     bool isArcLoop() const;
+    // the border side a drag direction points at
+    enum LoopSide { LoopTop, LoopBottom, LoopLeft, LoopRight };
+    static LoopSide sideFromDir(const QPointF& dir);
     // the path segment (0-based) that a local point falls on, or -1
     int segmentAt(const QPointF& localPos) const;
     // erase the polyline vertex behind interior dot dotIndex (endpoints ignored)
@@ -157,6 +164,11 @@ private:
     QPointF textPosition;
 
     QPointF prevPosition;
+
+    // the initial drag direction of a self-loop being placed (captured once,
+    // used to pick the source-side of the default polyline on release)
+    QPointF loopStartDir;
+    bool loopStartCaptured = false;
 
     QList<DotSignal *> listDots;
     // the four label-box corner handles (green boxes), shown when the transition

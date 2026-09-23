@@ -276,6 +276,89 @@ bool CyberiadaSMEditorTransitionItem::isArcLoop() const
     return source() == target() && !transition->has_polyline();
 }
 
+CyberiadaSMEditorTransitionItem::LoopSide
+CyberiadaSMEditorTransitionItem::sideFromDir(const QPointF& dir)
+{
+    if (qAbs(dir.x()) >= qAbs(dir.y())) return dir.x() >= 0 ? LoopRight : LoopLeft;
+    return dir.y() >= 0 ? LoopBottom : LoopTop;
+}
+
+// a placed self-loop drops the default arc for a border-to-border orthogonal
+// polyline: it leaves the source side straight out, runs parallel to the state
+// and returns straight into the target side. The two sides follow the initial
+// (startDir) and final (endDir) drag direction; equal sides make a bump, distinct
+// ones a corner, opposite ones wrap around an adjacent side.
+void CyberiadaSMEditorTransitionItem::seedDefaultLoop(const QPointF& startDir, const QPointF& endDir)
+{
+    if (!source() || source() != target()) return;
+    if (transition->has_polyline()) return;   // only a fresh (arc) loop
+
+    const qreal LOOP_DEPTH = 40.0;    // how far the loop extends past the border
+    const qreal LOOP_LATERAL = 30.0;  // endpoint offset along a shared side
+
+    QRectF r = source()->sceneBoundingRect();
+    qreal hw = r.width() / 2.0;
+    qreal hh = r.height() / 2.0;
+
+    LoopSide s1 = startDir.isNull() ? LoopTop   : sideFromDir(startDir);
+    LoopSide s2 = endDir.isNull()   ? LoopRight : sideFromDir(endDir);
+
+    // the border point at lateral offset off along a side, and the vertex the
+    // depth-length stub reaches straight out from it (coords are centre-relative)
+    auto border = [&](LoopSide s, qreal off) -> QPointF {
+        switch (s) {
+        case LoopTop:    return QPointF(off, -hh);
+        case LoopBottom: return QPointF(off,  hh);
+        case LoopLeft:   return QPointF(-hw, off);
+        default:         return QPointF( hw, off);   // LoopRight
+        }
+    };
+    auto outward = [&](LoopSide s, const QPointF& e) -> QPointF {
+        switch (s) {
+        case LoopTop:    return e + QPointF(0, -LOOP_DEPTH);
+        case LoopBottom: return e + QPointF(0,  LOOP_DEPTH);
+        case LoopLeft:   return e + QPointF(-LOOP_DEPTH, 0);
+        default:         return e + QPointF( LOOP_DEPTH, 0);
+        }
+    };
+    auto vertical = [](LoopSide s) { return s == LoopTop || s == LoopBottom; };
+
+    QPointF e1, e2;
+    Cyberiada::Polyline pl;
+    if (s1 == s2) {
+        // a rectangular bump on one side: two laterally-offset endpoints
+        e1 = border(s1, -LOOP_LATERAL);
+        e2 = border(s2,  LOOP_LATERAL);
+        QPointF v1 = outward(s1, e1), v2 = outward(s2, e2);
+        pl.push_back(Cyberiada::Point(v1.x(), v1.y()));
+        pl.push_back(Cyberiada::Point(v2.x(), v2.y()));
+    } else {
+        // distinct sides: endpoints at the side midpoints
+        e1 = border(s1, 0);
+        e2 = border(s2, 0);
+        QPointF v1 = outward(s1, e1), vn = outward(s2, e2);
+        pl.push_back(Cyberiada::Point(v1.x(), v1.y()));
+        if (vertical(s1) == vertical(s2)) {
+            // opposite sides: wrap around an adjacent side with two corners
+            qreal wrap = vertical(s1) ? (hw + LOOP_DEPTH) : (hh + LOOP_DEPTH);
+            QPointF c1 = vertical(s1) ? QPointF(wrap, v1.y()) : QPointF(v1.x(), wrap);
+            QPointF c2 = vertical(s1) ? QPointF(wrap, vn.y()) : QPointF(vn.x(), wrap);
+            pl.push_back(Cyberiada::Point(c1.x(), c1.y()));
+            pl.push_back(Cyberiada::Point(c2.x(), c2.y()));
+        } else {
+            // adjacent sides: one corner sharing each side's out-level
+            QPointF corner = vertical(s1) ? QPointF(vn.x(), v1.y()) : QPointF(v1.x(), vn.y());
+            pl.push_back(Cyberiada::Point(corner.x(), corner.y()));
+        }
+        pl.push_back(Cyberiada::Point(vn.x(), vn.y()));
+    }
+
+    QModelIndex index = model->elementToIndex(element);
+    model->updateGeometry(index, Cyberiada::Point(e1.x(), e1.y()),
+                                 Cyberiada::Point(e2.x(), e2.y()));
+    model->updateGeometry(index, pl);   // sets has_polyline last
+}
+
 QPainterPath CyberiadaSMEditorTransitionItem::path() const
 {
     MY_ASSERT(model);
@@ -738,6 +821,13 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
     p = snapToGrid(p);
     prevPosition = p;
 
+    // the first move of a self-loop being placed fixes its initial drag
+    // direction, which later picks the source-side of the default polyline
+    if (source() == target() && !transition->has_polyline() && !loopStartCaptured) {
+        loopStartDir = p - sourceCenter();
+        loopStartCaptured = true;
+    }
+
     for(int i = 0; i < listDots.size(); i++){
         if(listDots.at(i) == signalOwner){
             // first point
@@ -949,7 +1039,10 @@ void CyberiadaSMEditorTransitionItem::slotMouseReleaseDot(QGraphicsItem *signalO
     if (idx == listDots.size() - 1) {
         // a small drag that ends over an ancestor of the source (the parent SM
         // it sits in) is a self-loop being placed, not a retarget to the parent
-        if (cItem == target() || isAncestorOf(cItem, source())) { return; }
+        if (cItem == target() || isAncestorOf(cItem, source())) {
+            seedDefaultLoop(loopStartDir, p - sourceCenter());
+            return;
+        }
         QPointF newPoint = findIntersectionWithItem(cItem, p, sourceCenter(), &hasIntersections) -
                            cItem->sceneBoundingRect().center();
         if (!hasIntersections) { return; }
@@ -957,7 +1050,10 @@ void CyberiadaSMEditorTransitionItem::slotMouseReleaseDot(QGraphicsItem *signalO
         setTarget(cItem);
         setTargetPoint(newPoint);
     } else {
-        if (cItem == source() || isAncestorOf(cItem, target())) { return; }
+        if (cItem == source() || isAncestorOf(cItem, target())) {
+            seedDefaultLoop(loopStartDir, p - sourceCenter());
+            return;
+        }
         QPointF newPoint = findIntersectionWithItem(cItem, p, targetCenter(), &hasIntersections) -
                            cItem->sceneBoundingRect().center();
         if (!hasIntersections) { return; }
