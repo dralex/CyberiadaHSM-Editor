@@ -50,6 +50,7 @@ private slots:
 	void test_title_sync();
 	void test_action_edit();
 	void test_body_drag();
+	void test_snap_corner();
 	void test_ctrl_axis_move();
 	void test_new_sm_single_item();
 	void test_double_click_action();
@@ -477,6 +478,42 @@ void TestScene::test_double_click_action()
 	QVERIFY(model->deleteAction(index, 1));
 	QVERIFY(model->deleteAction(index, 0));
 	QCOMPARE(state->missingActionType(), int(Cyberiada::actionEntry));
+}
+
+void TestScene::test_snap_corner()
+{
+	// grid snapping aligns a rectangle's top-left CORNER to the crossings; a
+	// centre-origin item whose half-size is not a grid multiple would miss (#3).
+	// spacing 20 exposes it on the native 150x150 state (75 is not a multiple)
+	SettingsManager& sm = SettingsManager::instance();
+	bool snapWas = sm.getSnapMode();
+	double gridWas = sm.getGridSpacing();
+	sm.setGridSpacing(20);
+	sm.setSnapMode(true);
+
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+	scene->setCurrentTool(ToolType::Select);
+	CyberiadaSMEditorStateItem* state =
+		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0-1"));
+	QVERIFY(state);
+	scene->clearSelection();
+	// a small body drag that keeps the state well inside its parent (no re-base)
+	QPointF grab = state->sceneBoundingRect().bottomRight() - QPointF(20, 20);
+	mouse(QEvent::GraphicsSceneMousePress, grab, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, grab + QPointF(-7, -6), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, grab + QPointF(-7, -6), Qt::NoButton);
+
+	QPointF tl = state->sceneBoundingRect().topLeft();
+	int rx = ((qRound(tl.x()) % 20) + 20) % 20;
+	int ry = ((qRound(tl.y()) % 20) + 20) % 20;
+
+	// restore before asserting: a failed QCOMPARE must not leak the snap setting
+	sm.setSnapMode(snapWas);
+	sm.setGridSpacing(gridWas);
+
+	QCOMPARE(rx, 0);
+	QCOMPARE(ry, 0);
 }
 
 void TestScene::test_action_layout()

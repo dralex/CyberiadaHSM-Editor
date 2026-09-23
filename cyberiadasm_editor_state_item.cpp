@@ -592,10 +592,15 @@ void CyberiadaSMEditorStateItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
         // whose parent-anchored delta would drift when the container grows
         // directionally under the drag) and commit its model BEFORE the parent
         // grow, so the parent's re-base holds this state at the cursor too
-        QPointF target = snapToGrid(event->scenePos() + grabOffset);
+        // snap the top-left CORNER to the grid, not the centre-origin position:
+        // geometry is centre-based, so snapping the centre would leave the corner
+        // off the crossings unless the size were a multiple of 2x the spacing
+        QPointF rawCentre = event->scenePos() + grabOffset;
+        QPointF half(boundingRect().width() / 2.0, boundingRect().height() / 2.0);
+        QPointF target = snapToGrid(rawCentre - half) + half;
         // Ctrl locks the move to the dominant axis (strict horizontal/vertical)
         if (event->modifiers() & Qt::ControlModifier) {
-            QPointF d = event->scenePos() + grabOffset - dragStartScenePos;
+            QPointF d = rawCentre - dragStartScenePos;
             if (qAbs(d.x()) >= qAbs(d.y())) target.setY(dragStartScenePos.y());
             else                            target.setX(dragStartScenePos.x());
         }
