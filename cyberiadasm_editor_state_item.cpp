@@ -472,6 +472,7 @@ void CyberiadaSMEditorStateItem::onActionDeleted(StateAction* signalOwner)
             break;
         }
     }
+    if (i >= actions.size()) return;   // the owner is gone (matches onActionChanged)
 
     model->deleteAction(model->elementToIndex(element), i);
 }
@@ -1056,6 +1057,17 @@ void StateAction::mousePressEvent(QGraphicsSceneMouseEvent* event) {
     EditableTextItem::mousePressEvent(event);
 }
 
+void StateAction::beginTextEditing()
+{
+    // keep the caret out of the protected "entry/"/"exit/" prefix
+    QTextCursor cursor = textCursor();
+    if (cursor.position() < typeText.length()) {
+        cursor.setPosition(typeText.length());
+        setTextCursor(cursor);
+    }
+    startEditing();   // the interaction flags, focus and isEdit, in one place
+}
+
 void StateAction::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) {
     if (dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select ||
         SettingsManager::instance().getInspectorMode()) {
@@ -1063,19 +1075,11 @@ void StateAction::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) {
         return;
     }
 
-    QTextCursor cursor = textCursor();
-    if (cursor.position() < typeText.length()) {
-        cursor.setPosition(typeText.length());
-        setTextCursor(cursor);
-    } else {
+    // a click past the prefix places the caret at that word first
+    if (textCursor().position() >= typeText.length()) {
         QGraphicsTextItem::mouseDoubleClickEvent(event);
     }
-
-    isEdit = true;
-    setTextInteractionFlags(Qt::TextEditorInteraction);
-    setFocus();
-
-    // setTextCursor(cursor);
+    beginTextEditing();
     event->accept();
 }
 
@@ -1092,9 +1096,11 @@ void StateAction::contextMenuEvent(QGraphicsSceneContextMenuEvent *event) {
     if (selectedAction == deleteAction) {
         emit actionDeleted(this);
     } else if (selectedAction == editAction) {
-        // Switch to text editing mode
-        setTextInteractionFlags(Qt::TextEditorInteraction);
-        setFocus();
+        // enter editing exactly as a double-click does, only under the Select tool
+        CyberiadaSMEditorScene* sc = dynamic_cast<CyberiadaSMEditorScene*>(scene());
+        if (sc && sc->getCurrentTool() == ToolType::Select) {
+            beginTextEditing();
+        }
     }
 
     event->accept();

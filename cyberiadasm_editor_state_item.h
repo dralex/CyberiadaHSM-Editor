@@ -250,6 +250,10 @@ protected:
     void focusOutEvent(QFocusEvent *event) override;
 
 private:
+    // enter text editing consistently (caret past the keyword prefix, then the
+    // base startEditing): shared by the double-click and the "Edit text" menu
+    void beginTextEditing();
+
     QString typeText;
     bool transition = false;
 };
