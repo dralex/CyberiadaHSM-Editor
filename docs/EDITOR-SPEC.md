@@ -316,7 +316,8 @@ the third is a derived display value the format does not store):
 - `EDIT-IO-7` MUST [I]: a submachine state's reference and its nested entry/exit points, and a
   standalone entry/exit point, round-trip through save and reopen. *PNST 1044 8.1/8.3*
 - `EDIT-IO-6` MUST [A]: an exported image is the diagram's own size — the visible items'
-  bounding rect padded by 1px, with no scene margin — and the `export frame` is reported. *design*
+  bounding rect padded by 1px, with no scene margin — and the `export frame` is reported on stderr
+  in batch mode only (silent in the interactive editor). *design*
 - `EDIT-IO-7` MUST [A]: Save is enabled only for an open, modified document that is not in
   inspection mode; Save-As and Export are enabled whenever a document is open. *design*
 

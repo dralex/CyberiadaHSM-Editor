@@ -21,6 +21,7 @@
  *
  * ----------------------------------------------------------------------------- */
 
+#include <QCoreApplication>
 #include <QFileInfo>
 #include <QImage>
 #include <QMargins>
@@ -89,9 +90,12 @@ bool renderScene(CyberiadaSMEditorScene* scene, const QString& path, QString* er
 	// border, or the document bounding geometry across several machines) with no
 	// margin - only a 1px pad so the outermost 2px border stroke is not clipped
 	QRectF scene_rect = scene->visibleItemsBoundingRect().adjusted(-1, -1, 1, 1);
-	// the frame of the picture in scene units, for the tools reading the export
-	fprintf(stderr, "export frame %g %g %g %g\n", scene_rect.x(), scene_rect.y(),
-			scene_rect.width(), scene_rect.height());
+	// the frame of the picture in scene units, for the tools reading the export;
+	// batch mode only, so it never clutters the interactive console
+	if (qApp && qApp->property("batchMode").toBool()) {
+		fprintf(stderr, "export frame %g %g %g %g\n", scene_rect.x(), scene_rect.y(),
+				scene_rect.width(), scene_rect.height());
+	}
 	QRect target(QPoint(0, 0), scene_rect.toRect().size());
 	QString suffix = QFileInfo(path).suffix().toLower();
 
