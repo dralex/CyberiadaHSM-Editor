@@ -163,6 +163,15 @@ editor will maintain them for you:
     ends in an arrow [EDGE-5]; a self-loop stays a loop [EDGE-8]
   - a set colour is drawn on the node or on the transition line and arrow
     [NODE-10, EDGE-14]
+  - every entry/exit point has a name [SEM-7]; a submachine state references
+    another machine of the document (or an external file), never its own, and
+    its connector points are named after that machine's points [SEM-8]
+  - a state has at most one `entry/` and one `exit/` block [STRUCT-10]; an
+    event is not named entry, exit, do, propagate, block, defer or else
+    (ANY and UNKNOWN are allowed) [TEXT-5]; `defer` is the whole behaviour of
+    an internal reaction (`EVENT / defer`, nothing after it) and never labels
+    a transition; `propagate`/`block` go with an event name [TEXT-6]; the
+    machines of a document have distinct names [META-5]
 """
 
 

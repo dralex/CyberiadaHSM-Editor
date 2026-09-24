@@ -107,6 +107,28 @@ def _embed(graph, top):
     return max(ys) - min(ys)
 
 
+def _add_points(graph, prefix, top, height):
+    """The embedded machine gets a top-level entry point `in` and exit point
+    `out`: the orchestrator's connectors bind to them by name (PNST 1044 8.1)."""
+    for suffix, kind, x in (("in", "entryPoint", -60.0), ("out", "exitPoint", -60.0)):
+        node = ET.SubElement(graph, q("node"), {"id": prefix + suffix})
+        _data(node, "dVertex", kind)
+        _data(node, "dName", suffix)
+        y = top if suffix == "in" else top + height
+        _point(node, x, y)
+
+
+def _distinct_name(graph, mname, others):
+    """A document holds no two machines with one name (PNST 1044 6.1.2)."""
+    name = None
+    for d in graph.findall(q("data")):
+        if d.get("key") == "dName":
+            name = d
+    taken = {dd.text for g in others for dd in g.findall(q("data")) if dd.get("key") == "dName"}
+    if name is not None and name.text in taken:
+        name.text = "%s (%s)" % (name.text, mname)
+
+
 # --- orchestrator construction -------------------------------------------
 
 def _data(parent, key, text=None):
@@ -196,7 +218,10 @@ def combine(name, machine_names, style):
         g = ET.parse(corpus_path(mname)).getroot().find(q("graph"))
         _drop_meta(g)
         _prefix_ids(g, "R%d_" % i)
-        offy += _embed(g, offy) + 400.0
+        height = _embed(g, offy)
+        _add_points(g, "R%d_" % i, offy, height)
+        _distinct_name(g, mname, [m for m in machines])
+        offy += height + 400.0
         refs.append((g.get("id"), mname))
         machines.append(g)
 

@@ -81,7 +81,8 @@ class RunResult:
 
 
 def run(env, document, script=None, dump=False, stack=False, export=None,
-        save=None, timeout=30.0, workdir=None, extra=(), text=False, dump_text=False):
+        save=None, timeout=30.0, workdir=None, extra=(), text=False, dump_text=False,
+        strict=False):
     """Run the editor in batch mode on the document; the outputs go to the
     workdir. A script is a path to a script file. text shows the canvas texts
     (the polygon's full-functional mode); dump_text adds the == text section."""
@@ -95,6 +96,8 @@ def run(env, document, script=None, dump=False, stack=False, export=None,
         command.append("--dump-stack")
     if dump_text:
         command.append("--dump-text")
+    if strict:
+        command.append("--strict")
     if export is not None:
         command += ["--export", str(export)]
         files["export"] = str(export)

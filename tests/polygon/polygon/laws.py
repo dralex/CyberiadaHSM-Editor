@@ -243,13 +243,121 @@ def no_overlap(dump):                                    # EDIT-NODE-6
                     yield Violation("NODE-6", "siblings %s and %s overlap" % (a.id, b.id))
 
 
+RESERVED_EVENT_NAMES = ("entry", "exit", "do", "propagate", "block", "defer", "else")
+
+
+def _machines(dump):
+    doc = dump.document
+    if doc is None:
+        return []
+    return doc.machines()
+
+
+def points_named(dump):                                  # EDIT-SEM-7
+    # an entry/exit point carries a non-empty name (PNST 1044 8.3.1)
+    doc = dump.document
+    if doc is None:
+        return
+    for e in doc.walk():
+        if e.kind in D.CONNECTION_POINT_KINDS and not e.name.strip():
+            yield Violation("SEM-7", "%s %s has no name" % (D.WORDS[e.kind], e.id))
+
+
+def submachine_reference(dump):                          # EDIT-SEM-8
+    # a submachine state never references its own machine; an internal reference
+    # names a machine of the document, anything else is an external URI
+    machines = _machines(dump)
+    ids = {m.id for m in machines}
+    for m in machines:
+        for e in m.walk():
+            if e.kind != D.KIND_SUBMACHINE_STATE:
+                continue
+            if e.submachine == m.id:
+                yield Violation("SEM-8", "submachine state %s references its own machine %s"
+                                % (e.id, m.id))
+            elif e.submachine in ids:
+                names = {p.name for p in _machines_by_id(machines, e.submachine).children
+                         if p.kind in D.CONNECTION_POINT_KINDS}
+                for c in e.children:
+                    if c.kind in D.CONNECTION_POINT_KINDS and c.name and c.name not in names:
+                        yield Violation("SEM-8", "point %s of %s is named %r, not a point of %s"
+                                        % (c.id, e.id, c.name, e.submachine))
+
+
+def _machines_by_id(machines, id_):
+    for m in machines:
+        if m.id == id_:
+            return m
+    return None
+
+
+def single_behaviour_blocks(dump):                       # EDIT-STRUCT-10
+    doc = dump.document
+    if doc is None:
+        return
+    for e in doc.walk():
+        if not e.actions:
+            continue
+        for kind in (D.ACTION_ENTRY, D.ACTION_EXIT):
+            if sum(1 for a in e.actions if a.type == kind) > 1:
+                yield Violation("STRUCT-10", "state %s carries two %s/ blocks" % (e.id, kind))
+
+
+def event_names(dump):                                   # EDIT-TEXT-5
+    doc = dump.document
+    if doc is None:
+        return
+    for e in doc.walk():
+        actions = list(e.actions)
+        if e.kind == D.KIND_TRANSITION and e.action is not None:
+            actions.append(e.action)
+        for a in actions:
+            if a.type == D.ACTION_TRANSITION and a.trigger.strip() in RESERVED_EVENT_NAMES:
+                yield Violation("TEXT-5", "%s names the event %r, a reserved word"
+                                % (e.id, a.trigger.strip()))
+
+
+def event_handling(dump):                                # EDIT-TEXT-6
+    doc = dump.document
+    if doc is None:
+        return
+    for e in doc.walk():
+        if e.kind == D.KIND_TRANSITION:
+            a = e.action
+            if a is not None and a.propagation == "defer":
+                yield Violation("TEXT-6", "transition %s defers its event" % e.id)
+            if a is not None and a.propagation in ("propagate", "block") and not a.trigger.strip():
+                yield Violation("TEXT-6", "transition %s carries %s without an event"
+                                % (e.id, a.propagation))
+            continue
+        for a in e.actions:
+            if a.propagation == "defer" and a.behavior.strip():
+                yield Violation("TEXT-6", "%s carries behaviour after defer" % e.id)
+            if a.propagation in ("propagate", "block") and not a.trigger.strip():
+                yield Violation("TEXT-6", "%s carries %s without an event" % (e.id, a.propagation))
+
+
+def machine_names(dump):                                 # EDIT-META-5
+    seen = {}
+    for m in _machines(dump):
+        name = m.name.strip()
+        if not name:
+            yield Violation("META-5", "state machine %s has no name" % m.id)
+        elif name in seen:
+            yield Violation("META-5", "state machines %s and %s share the name %r"
+                            % (seen[name], m.id, name))
+        else:
+            seen[name] = m.id
+
+
 # --- the registry ---------------------------------------------------------
 
 # hard laws run always-on and register as defects; gated laws are implemented
 # and tested but not yet registered (pending an EDITOR-SPEC decision)
 HARD = [unique_ids, no_cycle, endpoints_same_machine, composite_by_children,
         no_dangling, one_initial_per_parent, endpoint_kinds, submachine_children,
-        meta_hidden, containment, no_overlap]
+        meta_hidden, containment, no_overlap, points_named, submachine_reference,
+        single_behaviour_blocks, event_names, event_handling, machine_names]
 GATED = []
 
 

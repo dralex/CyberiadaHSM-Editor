@@ -168,3 +168,62 @@ class LawTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class StandardTextLawTest(unittest.TestCase):
+    """The laws added for the final PNST 1044 text (spec 0.7)."""
+
+    def test_points_named(self):
+        d = wrap([node(D.KIND_ENTRY_POINT, "p0"), node(D.KIND_EXIT_POINT, "p1", "out")])
+        self.assertEqual(reqs(d).count("SEM-7"), 1)
+
+    def test_submachine_reference(self):
+        sub = node(D.KIND_SUBMACHINE_STATE, "s0", "Sub",
+                   children=[node(D.KIND_ENTRY_POINT, "s0::en", "in")])
+        sub.submachine = "G0"
+        self.assertIn("SEM-8", reqs(wrap([sub])))
+        sub.submachine = "file:other.graphml"
+        self.assertNotIn("SEM-8", reqs(wrap([sub])))
+
+    def test_submachine_point_names(self):
+        worker = node(D.KIND_SM, "M2", "Worker",
+                      children=[node(D.KIND_ENTRY_POINT, "m2en", "start")])
+        sub = node(D.KIND_SUBMACHINE_STATE, "s0", "Sub",
+                   children=[node(D.KIND_ENTRY_POINT, "s0::en", "in")])
+        sub.submachine = "M2"
+        d = wrap([sub])
+        d.document.root.children.append(worker)
+        worker.parent = d.document.root
+        self.assertIn("SEM-8", reqs(d))
+        sub.children[0].name = "start"
+        self.assertNotIn("SEM-8", reqs(d))
+
+    def test_single_behaviour_blocks(self):
+        s = node(D.KIND_SIMPLE, "n0", "A")
+        s.actions = [D.Action(D.ACTION_ENTRY, behavior="a()"), D.Action(D.ACTION_ENTRY, behavior="b()")]
+        self.assertIn("STRUCT-10", reqs(wrap([s])))
+
+    def test_reserved_event_names(self):
+        s = node(D.KIND_SIMPLE, "n0", "A")
+        s.actions = [D.Action(D.ACTION_TRANSITION, trigger="else", behavior="x()")]
+        self.assertIn("TEXT-5", reqs(wrap([s])))
+        s.actions = [D.Action(D.ACTION_TRANSITION, trigger="ANY", behavior="x()")]
+        self.assertNotIn("TEXT-5", reqs(wrap([s])))
+
+    def test_event_handling(self):
+        s = node(D.KIND_SIMPLE, "n0", "A")
+        s.actions = [D.Action(D.ACTION_TRANSITION, trigger="TICK", propagation="defer", behavior="x()")]
+        self.assertIn("TEXT-6", reqs(wrap([s])))
+        s.actions = [D.Action(D.ACTION_TRANSITION, trigger="TICK", propagation="defer")]
+        self.assertNotIn("TEXT-6", reqs(wrap([s])))
+        t = node(D.KIND_TRANSITION, "t0")
+        t.action = D.Action(D.ACTION_TRANSITION, trigger="", propagation="block")
+        self.assertIn("TEXT-6", reqs(wrap([t])))
+
+    def test_machine_names(self):
+        d = wrap([node(D.KIND_SIMPLE, "n0", "A")])
+        second = node(D.KIND_SM, "G1", "SM")
+        d.document.root.children.append(second)
+        second.parent = d.document.root
+        self.assertIn("META-5", reqs(d))
+

@@ -220,7 +220,24 @@ class Round:
             reopen = runner.run(self.env, saved, dump=True, timeout=self.config.timeout,
                                 workdir=self.workdir, text=self.text)
             findings += self._compare("save-reopen", main.stdout, reopen, "reopen")
+            if getattr(self.config, "strict", True):
+                findings += self.strict_reload(saved)
         return findings
+
+    def strict_reload(self, saved):
+        """The saved document reloads under the library's strict mode: the
+        standard's requirements the format cannot express structurally
+        (PNST 1044 6.8, 8.1, 8.3) are checked by libcyberiadaml itself."""
+        strict = runner.run(self.env, saved, dump=True, timeout=self.config.timeout,
+                            workdir=self.workdir, text=self.text, strict=True)
+        crash = crash_finding(strict, "strict")
+        if crash:
+            return [crash]
+        if strict.exit != runner.EXIT_OK:
+            reason = " ".join(strict.messages()) or "exit %d" % strict.exit
+            return [Finding(KIND_ORACLE, "strict:" + reason.split("\n")[0][:80],
+                            "the saved document fails the strict load: " + reason)]
+        return []
 
     def undo_redo(self, script_text, main, dump):
         findings = []

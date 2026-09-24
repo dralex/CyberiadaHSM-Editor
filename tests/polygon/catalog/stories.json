@@ -5,119 +5,170 @@
       "source": "PSiCC2 fig 2.8",
       "subject": "a computer keyboard that sends lower- or upper-case scan codes depending on Caps Lock",
       "hint": "Two flat states under G0: Default and CapsLocked. Initial -> Default. Default --CAPS_LOCK--> CapsLocked and CapsLocked --CAPS_LOCK--> Default. An internal (self) reaction in each state: in Default `ANY_KEY / send_lower_case_scan_code()`, in CapsLocked `ANY_KEY / send_upper_case_scan_code()`. Add a comment note explaining the internal transitions.",
-      "budget": [10, 18]
+      "budget": [
+        10,
+        18
+      ]
     },
     {
       "name": "dining-philosopher",
       "source": "PSiCC2 fig 9.3A",
       "subject": "one philosopher cycling through thinking, hungry and eating",
       "hint": "Three flat states under G0: Thinking, Hungry, Eating. Initial -> Thinking. Thinking --TIMEOUT--> Hungry --EAT--> Eating --TIMEOUT--> Thinking. Hungry has `entry / HUNGRY()`; Eating has `exit / DONE()`.",
-      "budget": [10, 18]
+      "budget": [
+        10,
+        18
+      ]
     },
     {
       "name": "cheap-keyboard",
       "source": "PSiCC2 fig 2.4",
       "subject": "a keyboard with a key-count life-span counter that dies when the count reaches zero",
       "hint": "Two flat states Default and CapsLocked. Initial -> Default with `/ key_count = 1000`. CAPS_LOCK toggles the two states both ways. On `ANY_KEY / --key_count` route to a choice pseudostate; the choice `[key_count==0]` -> a final state, `[else]` -> back to the source state. Use a choice from each of the two states. Add comment notes for the choice pseudostate and the guard conditions.",
-      "budget": [14, 24]
+      "budget": [
+        14,
+        24
+      ]
     },
     {
       "name": "toaster-oven",
       "source": "PSiCC2 fig 2.7",
       "subject": "a toaster oven that toasts or bakes while heating and forces the heater off with the lamp on when the door opens",
       "hint": "Top initial -> composite Heating (`entry / heater_on()`, `exit / heater_off()`). Inside Heating: inner initial -> Toasting; states Toasting (`entry / arm_time_event`, `exit / disarm_time_event`) and Baking (`entry / set_temperature`, `exit / set_temperature(0)`), with Toasting --DO_BAKING--> Baking and Baking --DO_TOASTING--> Toasting. A sibling of Heating: DoorOpen (`entry / lamp_on`, `exit / lamp_off`). Heating --DOOR_OPEN--> DoorOpen --DOOR_CLOSE--> Heating.",
-      "budget": [16, 28]
+      "budget": [
+        16,
+        28
+      ]
     },
     {
       "name": "time-bomb",
       "source": "PSiCC2 fig 3.2",
       "subject": "a defusable countdown time bomb that ticks down and either explodes or is disarmed",
       "hint": "Two flat states Setting and Timing. Initial -> Setting `/ timeout = INIT_TIMEOUT`. Setting internal reactions `UP [timeout<60] / ++timeout` and `DOWN [timeout>1] / --timeout`. Setting --ARM--> Timing. Timing on `TICK [fine==0] / --timeout` routes to a choice; the choice `[timeout==0] / boom()` -> a final state, `[else]` -> Timing. Timing --ARM [code==defuse]--> Setting.",
-      "budget": [16, 28]
+      "budget": [
+        16,
+        28
+      ]
     },
     {
       "name": "missile",
       "source": "PSiCC2 fig 1.5",
       "subject": "a game missile that is armed, fires, flies across the screen and explodes",
       "hint": "Three flat states Armed, Flying, Exploding. Initial -> Armed. Armed --MISSILE_FIRE--> Flying. Flying has a self-loop `TIME_TICK [in-bounds] / advance` and `TIME_TICK [else]` --> Armed, and Flying --HIT_WALL--> Exploding. Exploding has `entry / ctr=0`, a self-loop `TIME_TICK [ctr<16]`, and `TIME_TICK [else]` --> Armed.",
-      "budget": [16, 28]
+      "budget": [
+        16,
+        28
+      ]
     },
     {
       "name": "reminder",
       "source": "PSiCC2 fig 5.3",
       "subject": "the Reminder pattern: a polling state posts a DATA_READY reminder to itself so processing runs only when data is available",
       "hint": "Top initial -> composite Polling with a self-loop `TIMEOUT / pollSensor(); post DATA_READY`. Polling contains a composite Processing (inner initial -> Idle) holding Idle and Busy: Idle --DATA_READY--> Busy, Busy --TIMEOUT--> Idle, plus an internal `TIMEOUT / ignore` in Busy. Add a comment note 'Polling posts a reminder to itself'. (Depth-2 nesting.)",
-      "budget": [16, 28]
+      "budget": [
+        16,
+        28
+      ]
     },
     {
       "name": "calculator",
       "source": "PSiCC2 fig 2.18",
       "subject": "the classic four-function pocket calculator",
       "hint": "Top initial -> composite On (`entry/`, `exit/`); On --OFF--> a final state; On has a self-transition on C. Inside On: composite Ready (initial -> Begin, plus Result); composite Operand1 (Zero1, Int1, Frac1); composite Operand2 (Zero2, Int2, Frac2); and flat OpEntered, Error, Negated1, Negated2. Digit/POINT/OPER/EQUALS/CE/CANCEL events drive the transitions; two choice pseudostates route the `[else]`/`[error]` cases; Negated1/2 have `entry / negate()`. This is large - build it incrementally across the rounds, parents before children. (Depth-3 nesting.)",
-      "budget": [30, 50]
+      "budget": [
+        30,
+        50
+      ]
     },
     {
       "name": "qhsm-topologies",
       "source": "PSiCC2 fig 2.11",
       "subject": "the abstract hierarchy test machine covering transition topologies up to four levels of nesting",
       "hint": "Top initial `/ foo=0` -> composite S. Nest S > S1 > S11 on one branch and S > S2 > S21 > S211 on another (four levels deep). Every state has empty `entry/` and `exit/`. Some states carry internal reactions with guards, e.g. `I [foo] / foo=0`, `I [!foo] / foo=1`, and a self `D [foo]`. Events A..H connect states across the levels (local, self and cross-hierarchy). S --TERMINATE--> a final state. Build it level by level, parents before children. (Depth-4 nesting.)",
-      "budget": [28, 45]
+      "budget": [
+        28,
+        45
+      ]
     },
     {
       "name": "toaster-oven-history",
       "source": "PSiCC2 fig 5.12",
       "subject": "a toaster oven that shuts the heater off and lights a lamp when the door opens, then on closing resumes the exact substate it was in",
       "hint": "Top initial -> composite DoorClosed (`exit / save history`) with inner initial -> Off; DoorClosed contains Off and a composite Heating (`entry / heater_on`, `exit / heater_off`) holding Toasting and Baking, and a DEEP HISTORY pseudostate (H*). DoorClosed --TOAST--> Toasting, --BAKE--> Baking, --OFF--> Off. DoorClosed --DOOR_OPEN--> DoorOpen (`entry / lamp_on`, `exit / lamp_off`); DoorOpen --DOOR_CLOSE--> the deep history pseudostate, so closing restores the last active substate. Place the deep-history vertex inside DoorClosed and route DOOR_CLOSE to it.",
-      "budget": [18, 30]
+      "budget": [
+        18,
+        30
+      ]
     },
     {
       "name": "ultimate-hook",
       "source": "PSiCC2 fig 5.1",
       "subject": "the Ultimate Hook pattern: a generic superstate supplies default behaviour that a nested specific substate overrides",
       "hint": "Top initial -> composite Generic (`entry/`, `exit/`, internal reactions `A / defaultA()` and `B / defaultB()`) with inner initial -> Specific (`entry/`, `exit/`, an internal `A / specificA()` that overrides the parent's A). Generic --C--> Generic (a self-transition, the reset idiom). Generic --D--> a final state (terminating the machine).",
-      "budget": [12, 20]
+      "budget": [
+        12,
+        20
+      ]
     },
     {
       "name": "deferred-event",
       "source": "PSiCC2 fig 5.6",
       "subject": "a transaction server that postpones a new request while busy and recalls it when it returns to idle",
-      "hint": "Top initial -> Idle (`entry / recall()`). Composite Busy (inner initial -> Receiving) holds Receiving and Authorizing and carries an internal reaction `NEW_REQUEST / defer()`. Idle --NEW_REQUEST--> Receiving; Receiving --RECEIVED--> Authorizing; Authorizing --AUTHORIZED--> Idle.",
-      "budget": [12, 20]
+      "hint": "Top initial -> Idle (`entry / recall()`). Composite Busy (inner initial -> Receiving) holds Receiving and Authorizing and carries an internal reaction `NEW_REQUEST / defer` (the whole behaviour is the word defer, nothing after it; defer never labels a transition). Idle --NEW_REQUEST--> Receiving; Receiving --RECEIVED--> Authorizing; Authorizing --AUTHORIZED--> Idle.",
+      "budget": [
+        12,
+        20
+      ]
     },
     {
       "name": "reuse-one-shot-timer",
       "source": "PSiCC2 fig 7.8",
       "subject": "three states showing how to safely reuse a one-shot timer when a button press races the timer expiry",
       "hint": "Three flat states A, B, C. A has `entry / arm(timer1)`, `exit / g1 = disarm(timer1)` and an internal `TIMER1 [else] / ...`. B has an internal `TIMER1 [!g1] / g1 = true`. C has `entry / arm(timer1)`, `exit / disarm(timer1)`. A --BUTTON_PRESS--> B; B --TIMER1 [g1]--> C.",
-      "budget": [12, 20]
+      "budget": [
+        12,
+        20
+      ]
     },
     {
       "name": "tunnel",
       "source": "PSiCC2 fig 1.7",
       "subject": "a game 'tunnel' that runs a demo, active play and game-over, with a two-level screen-saver, ending when the player quits",
       "hint": "Top initial -> Demo (drilling two levels down). Composite Active (internal `MINE_DISABLED / ...`) contains Demo (`entry / arm 20s timer`, `exit / disarm`), Playing, GameOver, and a composite ScreenSaver (inner initial -> OnePixel) holding OnePixel and NPixels. Demo --PLAYER_TRIGGER--> Playing, --SCREEN_TIMEOUT--> ScreenSaver; Playing --GAME_OVER--> GameOver; ScreenSaver --PLAYER_TRIGGER--> Playing; ScreenSaver internal SCREEN_TIMEOUT toggles OnePixel<->NPixels. Active --PLAYER_QUIT--> a final state.",
-      "budget": [18, 30]
+      "budget": [
+        18,
+        30
+      ]
     },
     {
       "name": "pelican-crossing",
       "source": "PSiCC2 fig 12.8",
       "subject": "a pedestrian crossing that alternates car green/yellow with pedestrian walk/flashing, plus an operator flashing offline mode",
       "hint": "Top initial -> composite Operational (`entry / cars RED, peds DONT_WALK`) with two nested composites: CarsEnabled (`exit / cars RED`) holding a composite CarsGreen (`entry / cars GREEN, arm timeout`) with substates CarsGreenNoPed and CarsGreenPedWait, plus CarsGreenInt and CarsYellow; and PedsEnabled (`exit / peds DONT_WALK`) holding PedsWalk and PedsFlash. Also a composite Offline holding OffFlash and OffPause. Transitions: CarsGreenNoPed --PEDS_WAITING--> CarsGreenPedWait and --TIMEOUT--> CarsGreenInt; CarsGreenInt --PEDS_WAITING--> CarsYellow; CarsGreenPedWait --TIMEOUT--> CarsYellow; CarsYellow --TIMEOUT--> PedsEnabled; PedsWalk --TIMEOUT--> PedsFlash; PedsFlash has two guarded internal TIMEOUT reactions and --TIMEOUT [ctr==0]--> CarsEnabled; Operational --OFF--> Offline; Offline --ON--> Operational; OffFlash --TIMEOUT--> OffPause and back. Build it level by level.",
-      "budget": [30, 50]
+      "budget": [
+        30,
+        50
+      ]
     },
     {
       "name": "job-runner-submachine",
       "source": "PNST 1044 appendix В",
       "subject": "a caller that delegates work to a reusable Worker submachine through its entry and exit points",
       "hint": "Under G0: an initial pseudostate, a submachine state Nested that references the external machine Worker (set the reference to Worker when you create the submachine state), and a flat state Done. Give the submachine Nested exactly two children - an entry point and an exit point (its connection points); do not put any plain state, pseudostate or comment inside the submachine. Route the transitions by connector direction: initial -> the submachine's entry point (a connector entry point is a transition target); the submachine's exit point -> Done (a connector exit point is a transition source); Done --RESTART--> the submachine's entry point.",
-      "budget": [10, 18]
+      "budget": [
+        10,
+        18
+      ]
     },
     {
       "name": "orchestrator-pipeline",
       "source": "PNST 1044 8.1 (submachine composition)",
       "subject": "an orchestrator that runs three worker machines in sequence through their entry and exit points",
-      "hint": "Under G0, compose three reusable machines with submachine states. Create an initial pseudostate; three submachine states in a row - Scan (reference the machine 'scanner'), Move (reference 'mover'), Clean (reference 'cleaner') - setting each reference to its machine name when you create the submachine state; and a final state. Give each submachine exactly two children - an entry point and an exit point (its connection points, inside the submachine); put nothing else inside a submachine. Wire the pipeline by connector direction (a connector entry point is a transition target, a connector exit point a source): initial -> Scan's entry point; Scan's exit point -> Move's entry point; Move's exit point -> Clean's entry point; Clean's exit point -> the final state.",
-      "budget": [14, 26]
+      "hint": "Under G0, compose three reusable machines with submachine states. Create an initial pseudostate; three submachine states in a row - Scan (reference the machine 'scanner'), Move (reference 'mover'), Clean (reference 'cleaner') - setting each reference to its machine name when you create the submachine state; and a final state. Give each submachine exactly two children - a named entry point and a named exit point (its connection points, inside the submachine; name them after the points of the referenced machine, e.g. `in` and `out`); put nothing else inside a submachine. Wire the pipeline by connector direction (a connector entry point is a transition target, a connector exit point a source): initial -> Scan's entry point; Scan's exit point -> Move's entry point; Move's exit point -> Clean's entry point; Clean's exit point -> the final state.",
+      "budget": [
+        14,
+        26
+      ]
     }
   ]
 }

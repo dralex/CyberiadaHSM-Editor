@@ -204,6 +204,7 @@ class Action:
     trigger: str = ""
     guard: str = ""
     behavior: str = ""
+    propagation: str = ""     # propagate | block | defer | ""
 
     def notation(self, escape=False):
         """The CyberiadaML text of the action; escape=True writes an embedded
@@ -226,7 +227,7 @@ class Action:
         else:
             type_ = ACTION_TRANSITION
         return cls(type_, _get(entries, "trigger", ""), _get(entries, "guard", ""),
-                   _get(entries, "behavior", ""))
+                   _get(entries, "behavior", ""), _get(entries, "propagation", ""))
 
 
 @dataclass
@@ -239,6 +240,7 @@ class Element:
     geometry: tuple = None
     region: tuple = None
     subjects: list = field(default_factory=list)
+    submachine: str = ""      # the referenced state machine of a submachine state
     children: list = field(default_factory=list)
     parent: object = field(default=None, repr=False)
     # transition fields
@@ -296,6 +298,8 @@ def _build(kind, entries, parent=None):
             e.ttype = value
         elif key == "source":
             e.source = value
+        elif key == "submachine" and isinstance(value, str):
+            e.submachine = value
         elif key == "target":
             e.target = value
         elif key == "action" and isinstance(value, list):

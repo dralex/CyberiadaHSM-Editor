@@ -82,3 +82,19 @@ class CombineTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+    def test_embedded_machines_carry_named_points_and_distinct_names(self):
+        root = ET.fromstring(combine.combine(
+            "x", ["semaphore", "semaphore-hierarchy"], "embedded"))
+        graphs = root.findall(NS + "graph")
+        for g in graphs[1:]:
+            vtx = [d.text for n in g.findall(NS + "node")
+                   for d in n.findall(NS + "data") if d.get("key") == "dVertex"]
+            self.assertIn("entryPoint", vtx)
+            self.assertIn("exitPoint", vtx)
+            self.assertEqual(sorted(_texts(g, "dName") and
+                                    [t for t in _texts(g, "dName") if t in ("in", "out")]),
+                             ["in", "out"])
+        names = [d.text for g in graphs for d in g.findall(NS + "data") if d.get("key") == "dName"]
+        self.assertEqual(len(names), len(set(names)))
+

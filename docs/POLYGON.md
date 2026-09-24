@@ -368,7 +368,12 @@ with the reference to the standard for each (the transition type: PNST
 1044-2025 6.3.2 says the format cannot distinguish local and external
 transitions); `[oracles] ignore` in the configuration adds tags locally.
 A problem that turns out to be such a property gets the register status
-`format` and no regression case.
+`format` and no regression case. The save/reopen rerun ends with a **strict
+reload**: the saved file is loaded once more with `--strict`, which turns on
+the strict mode of libcyberiadaml, so the requirements of PNST 1044 that only
+the library checks (the behaviour text grammar of 6.8, the submachine references
+and point names of 8.1 and 8.3) become `oracle` findings with a `strict:`
+signature; `[oracles] strict = false` switches it off.
 
 ```
   script  --dump                 -> dump A
