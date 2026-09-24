@@ -89,6 +89,9 @@ endfunction()
 # the metainformation graph of meta.graphml misses the first dStateMachine key
 add_l0_strict_test(hierarchy 0)
 add_l0_strict_test(meta 2)
+# the final PNST 1044 text: an unnamed entry point (8.3.1), defer on a transition (6.8.1)
+add_l0_strict_test(unnamed-point 2)
+add_l0_strict_test(defer-on-transition 2)
 
 # the reconstruction mode repairs malformed geometry instead
 add_test(NAME l0-point-comment-reconstruct

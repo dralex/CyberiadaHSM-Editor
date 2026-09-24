@@ -38,6 +38,30 @@
 #include "myassert.h"
 #include "cyberiada_constants.h"
 
+// the state machine an element belongs to (the element itself when it is one)
+static const Cyberiada::Element* containingMachine(const Cyberiada::Element* e)
+{
+	while (e && e->get_type() != Cyberiada::elementSM) e = e->get_parent();
+	return e;
+}
+
+// a point name unused among the parent's children: in, in2, in3, ...
+// (an entry/exit point carries a non-empty name, PNST 1044 8.3.1, EDIT-SEM-7)
+static Cyberiada::Name pointName(const Cyberiada::ElementCollection* parent, const std::string& base)
+{
+	for (int n = 1; ; n++) {
+		std::string candidate = n == 1 ? base : base + std::to_string(n);
+		bool taken = false;
+		if (parent) {
+			Cyberiada::ConstElementList children = parent->get_children();
+			for (Cyberiada::ConstElementList::const_iterator i = children.begin(); i != children.end(); i++) {
+				if ((*i)->get_name() == candidate) { taken = true; break; }
+			}
+		}
+		if (!taken) return candidate;
+	}
+}
+
 // the session log helpers: a model mutation is written as its batch verb (see
 // batch_script.cpp) so a recorded session replays as a test. logAction is a
 // no-op while a mouse gesture is in flight (the gesture records the same edit)
@@ -465,6 +489,9 @@ bool CyberiadaSMModel::updateSubmachineReference(const QModelIndex& index, const
 	Cyberiada::Element* element = indexToElement(index);
 	if (!element || element->get_type() != Cyberiada::elementSubmachineState) return false;
 	if (new_value.trimmed().isEmpty()) return false;
+	// a submachine state never references its own machine (PNST 1044 8.1.1)
+	const Cyberiada::Element* own = containingMachine(element);
+	if (own && own->get_id() == new_value.trimmed().toStdString()) return false;
 	static_cast<Cyberiada::SubmachineState*>(element)->set_submachine_reference(new_value.toStdString());
 	GestureLog::instance().logAction("set-submachine-reference " + qid(element) + " " + logEsc(new_value));
 	emit dataChanged(index, index);
@@ -589,6 +616,10 @@ bool CyberiadaSMModel::newAction(const QModelIndex& index, Cyberiada::ActionType
 			if (trigger.length() == 0) return false;
 			actions.push_back(Cyberiada::Action(trigger.toStdString(), guard.toStdString(), new_behaviour));
 		} else {
+			// at most one entry and one exit block per state (PNST 1044 6.8.1, EDIT-STRUCT-10)
+			for (std::vector<Cyberiada::Action>::const_iterator a = actions.begin(); a != actions.end(); a++) {
+				if (a->get_type() == type) return false;
+			}
 			actions.push_back(Cyberiada::Action(type, new_behaviour));
 		}
 	} else if (element->get_type() == Cyberiada::elementTransition) {
@@ -1453,11 +1484,16 @@ Cyberiada::SubmachineState *CyberiadaSMModel::newSubmachineState(Cyberiada::Elem
         return nullptr;
     }
 
-    // the reference is set later in the properties; default to another machine
+    // the reference is set later in the properties; default to another
+    // machine of the document, never to the machine that holds the state
+    // (PNST 1044 8.1.1, EDIT-SEM-8)
     Cyberiada::ID ref = reference;
     if (ref.empty()) {
+        const Cyberiada::Element* own = containingMachine(parent);
         Cyberiada::ElementList sms = root->find_elements_by_type(Cyberiada::elementSM);
-        if (!sms.empty()) ref = sms.front()->get_id();
+        for (Cyberiada::ElementList::const_iterator i = sms.begin(); i != sms.end(); i++) {
+            if (*i != own) { ref = (*i)->get_id(); break; }
+        }
         if (ref.empty()) ref = "submachine";
     }
 
@@ -1483,7 +1519,7 @@ Cyberiada::ConnectionPoint *CyberiadaSMModel::newEntryPoint(Cyberiada::ElementCo
 
     int row = newElementRow(parent);
     beginInsertRows(elementToIndex(parent), row, row);
-    Cyberiada::ConnectionPoint* element = root->new_entry(parent, p);
+    Cyberiada::ConnectionPoint* element = root->new_entry(parent, pointName(parent, "in"), p);
     endInsertRows();
     if (element) growToFitChildren(element, false);
 
@@ -1505,7 +1541,7 @@ Cyberiada::ConnectionPoint *CyberiadaSMModel::newExitPoint(Cyberiada::ElementCol
 
     int row = newElementRow(parent);
     beginInsertRows(elementToIndex(parent), row, row);
-    Cyberiada::ConnectionPoint* element = root->new_exit(parent, p);
+    Cyberiada::ConnectionPoint* element = root->new_exit(parent, pointName(parent, "out"), p);
     endInsertRows();
     if (element) growToFitChildren(element, false);
 

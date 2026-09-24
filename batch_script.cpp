@@ -106,9 +106,23 @@ static bool parseActionText(const QString& text, bool transition, Cyberiada::Act
 	}
 	if (*trigger == "entry" || *trigger == "exit") {
 		if (!guard->isEmpty()) { *error = "guards are not allowed for entry/exit activities"; return false; }
+		if (transition) { *error = "an entry/exit block belongs to a state, not to a transition"; return false; }
 		*type = *trigger == "entry" ? Cyberiada::actionEntry : Cyberiada::actionExit;
 		trigger->clear();
 		return true;
+	}
+	// the reserved words of PNST 1044 6.8.1 are not event names (EDIT-TEXT-5);
+	// the editor's model has no do block, so 'do' is refused too
+	if (*trigger == "do" || *trigger == "propagate" || *trigger == "block" ||
+		*trigger == "defer" || *trigger == "else") {
+		*error = "'" + *trigger + "' is a reserved word, not an event name";
+		return false;
+	}
+	// defer is the whole behaviour of an internal reaction of a state and never
+	// labels a transition (PNST 1044 6.8.1, EDIT-TEXT-6)
+	if (*behaviour == "defer" || behaviour->startsWith("defer ") || behaviour->startsWith("defer\n")) {
+		if (transition) { *error = "defer belongs to an internal transition of a state"; return false; }
+		if (*behaviour != "defer") { *error = "nothing may follow defer"; return false; }
 	}
 	*type = Cyberiada::actionTransition;
 	if (trigger->isEmpty() && !transition) { *error = "the action trigger is required"; return false; }
