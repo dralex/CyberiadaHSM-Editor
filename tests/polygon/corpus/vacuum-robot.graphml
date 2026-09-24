@@ -84,6 +84,7 @@ target/ Hoover</data>
       <data key="dName">Скан</data>
       <data key="dData">entry/
 Сенсор.ПоискЦелиПоДистанции(мин)
+
 exit/
 Сенсор.ОстановкаПоиска()
 </data>

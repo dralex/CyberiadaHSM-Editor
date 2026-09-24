@@ -28,7 +28,11 @@
   "orchestrate-home",
   "orchestrate-grand",
   "orchestrate-robot-ext",
-  "orchestrate-home-ext"
+  "orchestrate-home-ext",
+  "worker-submachine",
+  "labels",
+  "propagation",
+  "comment-links"
  ],
  "small": "small.graphml"
 }

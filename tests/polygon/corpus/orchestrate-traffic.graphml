@@ -312,10 +312,24 @@ exit/
         <rect x="241.944637" y="111.815552" width="133.125000" height="27.000000" />
       </data>
     </edge>
+    <node id="R0_in">
+      <data key="dVertex">entryPoint</data>
+      <data key="dName">in</data>
+      <data key="dGeometry">
+        <point x="-60.0" y="500.0" />
+      </data>
+    </node>
+    <node id="R0_out">
+      <data key="dVertex">exitPoint</data>
+      <data key="dName">out</data>
+      <data key="dGeometry">
+        <point x="-60.0" y="1006.186189" />
+      </data>
+    </node>
   </graph>
   <graph id="R1_G0" edgedefault="directed">
     <data key="dStateMachine" />
-    <data key="dName">Светофор</data>
+    <data key="dName">Светофор (semaphore-hierarchy)</data>
     <node id="R1_n2">
       <data key="dVertex">initial</data>
       <data key="dGeometry">
@@ -506,5 +520,19 @@ exit/
     </edge>
     <edge id="R1_n7::n0-n4" source="R1_n7::n0" target="R1_n4">
     </edge>
+    <node id="R1_in">
+      <data key="dVertex">entryPoint</data>
+      <data key="dName">in</data>
+      <data key="dGeometry">
+        <point x="-60.0" y="1406.186189" />
+      </data>
+    </node>
+    <node id="R1_out">
+      <data key="dVertex">exitPoint</data>
+      <data key="dName">out</data>
+      <data key="dGeometry">
+        <point x="-60.0" y="2035.145389" />
+      </data>
+    </node>
   </graph>
 </graphml>

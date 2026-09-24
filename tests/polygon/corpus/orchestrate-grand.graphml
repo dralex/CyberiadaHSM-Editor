@@ -238,6 +238,20 @@ exit/
         <point x="350.000000" y="-200.000000" />
       </data>
     </edge>
+    <node id="R0_in">
+      <data key="dVertex">entryPoint</data>
+      <data key="dName">in</data>
+      <data key="dGeometry">
+        <point x="-60.0" y="500.0" />
+      </data>
+    </node>
+    <node id="R0_out">
+      <data key="dVertex">exitPoint</data>
+      <data key="dName">out</data>
+      <data key="dGeometry">
+        <point x="-60.0" y="1260.0" />
+      </data>
+    </node>
   </graph>
   <graph id="R1_G" edgedefault="directed">
     <data key="dStateMachine" />
@@ -526,6 +540,20 @@ Timer</data>
         <point x="-0.372700" y="81.435700" />
       </data>
     </edge>
+    <node id="R1_in">
+      <data key="dVertex">entryPoint</data>
+      <data key="dName">in</data>
+      <data key="dGeometry">
+        <point x="-60.0" y="1660.0" />
+      </data>
+    </node>
+    <node id="R1_out">
+      <data key="dVertex">exitPoint</data>
+      <data key="dName">out</data>
+      <data key="dGeometry">
+        <point x="-60.0" y="2700.399" />
+      </data>
+    </node>
   </graph>
   <graph id="R2_G" edgedefault="directed">
     <data key="dStateMachine" />
@@ -673,6 +701,20 @@ Navigation</data>
         <point x="115.649200" y="5.031800" />
       </data>
     </edge>
+    <node id="R2_in">
+      <data key="dVertex">entryPoint</data>
+      <data key="dName">in</data>
+      <data key="dGeometry">
+        <point x="-60.0" y="3100.399" />
+      </data>
+    </node>
+    <node id="R2_out">
+      <data key="dVertex">exitPoint</data>
+      <data key="dName">out</data>
+      <data key="dGeometry">
+        <point x="-60.0" y="3577.199" />
+      </data>
+    </node>
   </graph>
   <graph id="R3_G0" edgedefault="directed">
     <data key="dStateMachine" />
@@ -880,5 +922,19 @@ Navigation</data>
         <point x="0.000000" y="14.383100" />
       </data>
     </edge>
+    <node id="R3_in">
+      <data key="dVertex">entryPoint</data>
+      <data key="dName">in</data>
+      <data key="dGeometry">
+        <point x="-60.0" y="3977.1989999999996" />
+      </data>
+    </node>
+    <node id="R3_out">
+      <data key="dVertex">exitPoint</data>
+      <data key="dName">out</data>
+      <data key="dGeometry">
+        <point x="-60.0" y="4634.246394" />
+      </data>
+    </node>
   </graph>
 </graphml>
