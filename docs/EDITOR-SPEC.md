@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.6 (2026-09-18)
+**Document version:** 0.7 (2026-09-24)
 
 **Related authorities:**
 
@@ -147,6 +147,13 @@ over those rows; nothing more than the existing dump is needed.
 - `EDIT-SEM-6` MUST [U]: a shallow history pseudostate restores the last active substate of its
   enclosing region; a deep history restores the full nested active configuration; the single
   optional default transition is taken when the region was never entered. *PNST 984*
+- `EDIT-STRUCT-10` MUST [U]: a state carries at most one `entry/` and at most one `exit/`
+  behaviour block (and at most one `do/` where the model supports it). *PNST 1044 6.8.1*
+- `EDIT-SEM-7` MUST [U]: an entry point and an exit point carry a non-empty name; a new point
+  gets a unique default name. *PNST 1044 8.3.1*
+- `EDIT-SEM-8` MUST [U]: a submachine state never references the state machine that contains it;
+  an internal reference names a state machine of the document, otherwise the reference is an
+  external URI. *PNST 1044 8.1.1*
 
 ### 4.3 State machines/states/pseudostates/comments geometry and layout — NODES
 
@@ -259,6 +266,12 @@ the third is a derived display value the format does not store):
 - `EDIT-TEXT-3` MUST [A]: a title, an action text, or an edge label is edited in place. *design*
 - `EDIT-TEXT-4` MUST [A]: if an edge label text no longer fits the label rect, it wraps at
   a word boundary. *design*
+- `EDIT-TEXT-5` MUST [U]: an event name is not one of the reserved words `entry`, `exit`, `do`,
+  `propagate`, `block`, `defer`, `else`; the reserved event names `ANY` and `UNKNOWN` are
+  permitted. *PNST 1044 6.8.1*
+- `EDIT-TEXT-6` MUST [U]: `defer` is the whole behaviour of an internal transition of a state and
+  never labels a transition; `propagate` and `block` accompany a non-empty event name. *PNST 1044
+  6.8.1, 6.8.2*
 
 ### 4.6 Tools and interaction — TOOL
 
@@ -334,6 +347,8 @@ the third is a derived display value the format does not store):
 - `EDIT-META-4` MUST [A]: a free-form metainformation parameter can be added and removed
   through the properties view; the reserved parameters (standard version, transition order,
   event propagation, geometry mode, name) cannot be removed; each change is one undo step. *design*
+- `EDIT-META-5` MUST [U]: the state machines of a document carry distinct non-empty names. *PNST
+  1044 6.1.2*
 
 ### 4.10 Inspection mode — INSPECT
 
