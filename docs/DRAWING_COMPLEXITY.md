@@ -243,12 +243,24 @@ a polygon run already emitted `coverage.json` (verb×kind, verb pairs) and `tool
 (tool|pattern), `O`/`H` can be read from them directly. Proposed tool:
 `tests/polygon/tools/drawing_complexity.py`, taking a `session.script` (+ its per-step dumps).
 
-## 7. Calibration plan
-Run over the recorded sessions in `tests/polygon/sessions/*/session.json` (163 dirs, real agent and
-fuzzer scripts) and the sample scripts in `tests/scripts/*.script`. Tune the weights so: a linear
-reconstruction sits at `P ≈ small`; sessions using clipboard/restructuring/undo rise clearly; the
-drill/tour sessions top the range; and `D` correlates with — but is not equal to — `C`. Record
-calibrated weights and band thresholds as version 0.2.
+## 7. Calibration
+Computed with `tests/polygon/tools/drawing_complexity.py` over the sample scripts
+(`tests/scripts/*.script`) and the 161 recorded sessions (`tests/polygon/sessions/*/script`).
+
+**First pass — the process surplus `P` (verb-stream terms `O`/`H`/`E`/`R`/`U`/`G` + an undo/redo
+oscillation proxy for `η`).** The labelled sample scripts confirm each component fires on its own
+operation type (`reparent.script` → `R`, `copy-paste.script` → `U`, `add-transition` / `transition-
+notation` → `E = 3.0 / 6.0`, `gestures-undo` → `η = 0.20`). Over the 161 sessions `P` spans 0–97
+(median ≈ 11) with bands **minimal 10 / plain 80 / rich 45 / intricate 34** — the focused missions sit
+in *plain*, while the drills, tours and explorations reach *rich*/*intricate* (top: a restructuring
+drill at `P = 97`, `R = 17`, `E = 51`). The emphasis holds: transition-heavy drawings lead on `E`, and
+undo/redo-heavy ones are damped by `η`. The provisional weights are kept — they order the corpus
+sensibly.
+
+**Still pending for a full `D` (version 0.2):** the inherited `C_final`; the `C(g)`-weighting of
+`R`/`U` and the exact `Δ`/`η` trajectory (both need the per-step replay dumps, §6); and precise
+attribution of raw `press`/`drag`/`release` edge-shaping to `E` (the verb-stream pass folds it into
+`G`). These raise `E`/`R`/`U` for the richest sessions but do not change the ordering already seen.
 
 ## 8. Forward use (non-normative)
 The polygon strategy (third document) will reward raising **both** `C` and `D`, using the `P`
