@@ -5,7 +5,7 @@ CyberiadaML diagram — its element kinds and counts, the **non-linear** effect 
 behaviour carried by states and transitions (triggers, guards, action code), element naming, multiple
 machines and submachine references, and the hard combinations of these (branching, boundary-crossing).
 Its purpose is to make "a more complex, more interesting diagram" measurable.
-**Document version:** 0.2 (2026-09-25) — DRAFT; weights provisional pending corpus calibration (§7).
+**Document version:** 0.3 (2026-09-25) — DRAFT; weights recalibrated over the 89-diagram corpus (§7).
 **Related authorities:** `EDITOR-SPEC.md` (element vocabulary), PNST 1044-2025 §6/§8 (element
 definitions).
 
@@ -67,15 +67,15 @@ Every element has an intrinsic score `int(e) = kind(e) + name(e) + act(e)`:
 - `act(e)` — the state action/behaviour score (§4.5); 0 for non-states.
 
 ### 4.2 Structural complexity with nesting amplification (the non-linearity)
-`struct` is computed bottom-up; a container amplifies its children by **β = 1.3**:
+`struct` is computed bottom-up; a container amplifies its children by **β = 1.5**:
 ```
   struct(leaf)      = int(leaf)
   struct(container) = int(container) + β · Σ_children struct(child)
 ```
 So an element at nesting depth `d` contributes `int(e)·β^d` — **super-linear in depth**: the same
-sub-tree one level deeper is worth 1.3× more, two levels 1.69×, three 2.2×. Nesting therefore
-multiplies, not merely adds. (β applies to composite states, submachine states and the state machine —
-the collection kinds.)
+sub-tree one level deeper is worth 1.5× more, two levels 2.25×, three 3.4×. Nesting therefore
+multiplies, not merely adds. Depth is counted from the state machine (its direct children are depth 0):
+β amplifies descent into a composite or submachine state, not the machine's own top level.
 
 ### 4.3 Kind weights (provisional)
 | kind | w | kind | w | kind | w |
@@ -109,10 +109,10 @@ The internal-transition **base (1.0) exceeds** the entry/exit base (0.4): an int
 (event + guard + behaviour staying in the state) is genuinely harder than a plain entry/exit action.
 
 ### 4.6 Transition complexity — `trans(t)`
-`trans(t) = 1.0` (base) plus:
+`trans(t) = 0.5` (base) plus:
 | signal | + | signal | + |
 |---|---|---|---|
-| has trigger (event) | 0.4 | self-loop (`src==tgt`) | 0.5 |
+| has trigger (event) | 0.3 | self-loop (`src==tgt`) | 0.5 |
 | guard `guard(g)` | see §4.5 | local (in-region) type | 1.0 |
 | behaviour `beh(b)` | see §4.5 | endpoint is a pseudostate (per end, max 2) | 1.0 |
 
@@ -129,30 +129,38 @@ The disproportionately hard parts:
   coupling).
 
 ### 4.8 Variety — `V`
-`V = 1.0 · (distinct element kinds present, excluding transition and the meta comment)`. Rewards a
-diagram that exercises *many* kinds over one that repeats a single kind — the "interesting" signal.
+`V = 1.0 · (distinct element kinds present, excluding transition, the meta comment, and the state
+machine itself)`. Rewards a diagram that exercises *many* kinds over one that repeats a single kind —
+the "interesting" signal. Excluding the machine keeps an empty diagram (machine + meta only) at `V = 0`.
 
 ### 4.9 Breakdown and bands
 `C` is reported with its category breakdown (structure incl. nesting amplification, naming, state
-actions, transitions, combinations, references, variety). Provisional bands (recalibrated in §7):
+actions, transitions, combinations, references, variety). Bands (calibrated over the corpus, §7):
 
 | C | band | shape |
 |---|---|---|
-| 0–4 | trivial | empty / one state |
-| 4–15 | simple | a flat few-state machine |
-| 15–40 | moderate | nesting, a choice, some guarded actions |
-| 40–90 | complex | history / submachine / multi-machine, rich behaviour |
-| >90 | extreme | deep multi-machine orchestration |
+| 0–5 | trivial | empty / one state |
+| 5–25 | simple | a flat few-state machine |
+| 25–65 | moderate | a real machine — several states, shallow nesting, a choice, some actions |
+| 65–150 | complex | a rich or deep single machine, or a small multi-machine composition |
+| >150 | extreme | deep multi-machine orchestration |
 
-## 5. Worked examples (illustrative, uncalibrated)
-- `empty.graphml` (meta only) → `C ≈ 0` — trivial.
-- `semaphore` (3–4 named states, a cycle of triggered transitions, one initial) → modest structure +
-  transitions + variety → **simple**.
-- `vacuum-robot` (nested composites, a choice, entry actions) → nesting amplification + choice fan-out
-  + action text → **moderate**.
-- a Berloga program (guarded internal transitions, choice branches) → behaviour-heavy → **moderate–
-  complex**, driven by §4.5/§4.7 more than raw count.
-- `orchestrate-grand` (four machines, submachine refs, depth) → `M` + amplified `struct` → **extreme**.
+## 5. Worked examples (measured over the corpus, §6 tool)
+`C` = struct + trans + combo + M + V.
+
+| diagram | C | band | struct | trans | combo | M | V | shape |
+|---|---|---|---|---|---|---|---|---|
+| `empty.graphml` | 2.9 | trivial | 2.9 | 0 | 0 | 0 | 0 | machine + meta only |
+| `vacuum-robot` | 33.3 | moderate | 17.3 | 11.5 | 1.5 | 0 | 3 | one nesting level + a choice |
+| `semaphore` | 40.1 | moderate | 17.6 | 20.5 | 0 | 0 | 2 | flat, densely connected (11 edges) |
+| `dog` | 59.9 | moderate | 31.2 | 24.7 | 0 | 0 | 4 | 8 states, depth 2 |
+| `maze-solver` | 138.2 | complex | 105.3 | 20.5 | 8.4 | 0 | 4 | 12 states, depth 3 — deepest single machine |
+| `orchestrate-home` | 164.5 | extreme | 79.1 | 34.8 | 9.9 | 33.7 | 7 | three machines, submachine refs |
+| `orchestrate-grand` | 488.6 | extreme | 268.9 | 85.1 | 18.9 | 107.7 | 8 | four machines, deep, referenced |
+
+The recalibration (§4.2 β=1.5, §4.6 lighter transitions) makes nesting lead: a deep single machine
+(`maze-solver`, struct 105) outscores a flat one many times over, while flat connectivity
+(`semaphore`) sits in **moderate**, no longer "complex".
 
 ## 6. Computation
 Implemented (later) as `tests/polygon/polygon/complexity.py` over the `dump.py` tree

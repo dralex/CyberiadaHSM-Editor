@@ -28,7 +28,7 @@ geometry. Usage:
 import sys, os, glob, re, argparse
 import CyberiadaML as C
 
-BETA = 1.3      # nesting amplification per level (COMPLEXITY.md 4.2)
+BETA = 1.5      # nesting amplification per level (COMPLEXITY.md 4.2)
 TAU  = 0.3      # referenced-machine inheritance (4.7)
 
 KIND_W = {
@@ -98,8 +98,8 @@ def resolve(sm, eid):
 
 def trans_cx(sm, t):
     a = t.get_action()
-    s = 1.0
-    if a.has_trigger():   s += 0.4
+    s = 0.5
+    if a.has_trigger():   s += 0.3
     if a.has_guard():     s += guard_cx(a.get_guard())
     if a.has_behavior():  s += beh_cx(a.get_behavior())
     src, tgt = t.get_source_element_id(), t.get_target_element_id()
@@ -150,10 +150,11 @@ def distinct_kinds(machines):
             ks.add(e.get_type())
     ks.discard(C.elementTransition)
     ks.discard(C.elementFormalComment)
+    ks.discard(C.elementSM)   # the machine itself is not a "feature" kind
     return ks
 
 def band(c):
-    for lo, name in ((90, "extreme"), (40, "complex"), (15, "moderate"), (4, "simple")):
+    for lo, name in ((150, "extreme"), (65, "complex"), (25, "moderate"), (5, "simple")):
         if c >= lo:
             return name
     return "trivial"
