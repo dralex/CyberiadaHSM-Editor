@@ -556,6 +556,17 @@ static bool sourceHasOutgoing(const Cyberiada::LocalDocument* root, const Cyberi
 	return false;
 }
 
+// an event name follows the CyberiadaML action grammar: word characters, spaces
+// and dots and an optional (parameters); a trigger outside it (a stray ':' and the
+// like) saves an action that fails a strict reload (EDIT-TEXT-5)
+static bool validEventName(const QString& trigger)
+{
+	if (trigger.isEmpty()) return true;
+	static const QRegularExpression re(
+		QRegularExpression::anchoredPattern("\\w((\\w| |\\.)*\\w)?(\\(\\w+\\))?"));
+	return re.match(trigger).hasMatch();
+}
+
 bool CyberiadaSMModel::updateAction(const QModelIndex& index,
 									int action_index, const QString& new_trigger, const QString& new_guard,
 									const QString& new_behaviour)
@@ -576,6 +587,7 @@ bool CyberiadaSMModel::updateAction(const QModelIndex& index,
 			a.update(behaviour);
         } else {
 			if (new_trigger.length() == 0) return false;
+			if (!validEventName(new_trigger)) return false;
 			a.update(new_trigger.toStdString(), new_guard.toStdString(), behaviour);
 		}
     } else if (element->get_type() == Cyberiada::elementTransition) {
@@ -592,6 +604,7 @@ bool CyberiadaSMModel::updateAction(const QModelIndex& index,
 		} else {
 			// a transition action may have no trigger (initial, completion)
 			if (new_trigger.isEmpty() && new_guard.isEmpty() && new_behaviour.trimmed().isEmpty()) return false;
+			if (!validEventName(new_trigger)) return false;
 			trans->get_action().update(new_trigger.toStdString(), new_guard.toStdString(),
 									   normalizedBehaviour(new_behaviour).toStdString());
 		}
@@ -631,6 +644,7 @@ bool CyberiadaSMModel::newAction(const QModelIndex& index, Cyberiada::ActionType
 		std::string new_behaviour = normalizedBehaviour(behaviour).toStdString();
 		if (type == Cyberiada::actionTransition) { 
 			if (trigger.length() == 0) return false;
+			if (!validEventName(trigger)) return false;
 			actions.push_back(Cyberiada::Action(trigger.toStdString(), guard.toStdString(), new_behaviour));
 		} else {
 			// at most one entry and one exit block per state (PNST 1044 6.8.1, EDIT-STRUCT-10)
@@ -641,6 +655,7 @@ bool CyberiadaSMModel::newAction(const QModelIndex& index, Cyberiada::ActionType
 		}
 	} else if (element->get_type() == Cyberiada::elementTransition) {
 		if (trigger.isEmpty() && guard.isEmpty() && behaviour.trimmed().isEmpty()) return false;
+		if (!validEventName(trigger)) return false;
 		Cyberiada::Transition* trans = static_cast<Cyberiada::Transition*>(element);
 		if (trans->has_action()) {
 			// should edit available action
@@ -1578,6 +1593,9 @@ Cyberiada::Transition *CyberiadaSMModel::newTransition(Cyberiada::StateMachine *
                                                        const Cyberiada::Color &color)
 {
 	if (readOnly()) return NULL;
+	// the transition's event name must follow the action grammar, or the saved edge
+	// action fails a strict reload (EDIT-TEXT-5)
+	if (!validEventName(QString::fromStdString(action.get_trigger()))) return NULL;
 	// a transition belongs to the machine of its source; a target in another machine
 	// is invalid (EDIT-STRUCT-4). Derive the SM from the source so a stale caller-supplied
 	// sm (the scene's currentSM) cannot mis-parent it or wrongly reject it.
