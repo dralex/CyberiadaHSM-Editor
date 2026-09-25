@@ -329,6 +329,13 @@ void CyberiadaSMEditorAbstractItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *
     }
 
     if (event->button() & Qt::LeftButton) {
+        // flush the final moved position: the top/left move handle commits pos()
+        // one event early (updatePosGeometry), so a release with no trailing move
+        // would drop the last step; updateGeometry no-ops when unchanged (P-75)
+        if (element && element->has_rect_geometry())
+            model->updateGeometry(model->elementToIndex(element),
+                Cyberiada::Rect(pos().x(), pos().y(),
+                                boundingRect().width(), boundingRect().height()));
         isLeftMouseButtonPressed = false;
         setFlag(ItemIsMovable, false);
     }
