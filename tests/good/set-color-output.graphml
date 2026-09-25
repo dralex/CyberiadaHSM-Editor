@@ -83,6 +83,7 @@ eventPropagation/ block</data>
     </node>
     <edge id="n0-n1" source="n0" target="n1">
       <data key="dData">EV/</data>
+      <data key="dColor">#0000ff</data>
     </edge>
   </graph>
 </graphml>
