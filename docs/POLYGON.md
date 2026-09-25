@@ -11,7 +11,9 @@ reproductions for bugfixing.
 The behaviour it judges is the one written down in `docs/EDITOR-SPEC.md` — the
 root specification of the editor's required behaviour. Its requirements become
 the polygon's standing laws, the way the good-file tests take their references
-from reviewed dumps.
+from reviewed dumps. Two complexity metrics — the diagram metric of
+`docs/COMPLEXITY.md` and the drawing-process metric of `docs/DRAWING_COMPLEXITY.md`
+— measure how hard a diagram and its edit history are, and steer the climb mission.
 
 The tool lives in `tests/polygon/`, is written in Python 3 with the standard
 library and one HTTP client, and runs the editor binary exactly as the ctest
@@ -76,6 +78,7 @@ kinds share the runner, the oracles and the register and differ in the prompt.
 | B combination | a corpus diagram (dump given) | combine a drawn subset of operations under a theme so that each step changes what the next one relies on | none beyond the tiers |
 | C exploration | empty document | design and keep improving a real diagram of a given domain; between rounds a fuzzer burst injects random micro-operations on the current diagram | none; the stress profile (crash, save/reopen, undo-all, export) runs each round |
 | D drawing | empty document | draw one named diagram (a drawing story) cleanly from scratch; the intro presents the editor's rules so the drawing stays well-formed; no fuzzer burst | none; the stress profile runs each round |
+| E climb | empty document (or a corpus diagram to extend) | build toward a target complexity band within an operation budget, adding structure and transition craft where the `C`/`D` profile is thin, then stop at saturation | none; the stress profile runs each round |
 
 Mission A exercises the creation paths and grows the corpus: every accepted
 reproduction is stored as a new starting document. The corpus also carries real
@@ -246,6 +249,49 @@ render-content ink check is off for random operations, and no result is predicte
 agent. A universal law is not a prediction but a property of the result, so the standing
 `[U]` laws (when added) belong to this profile as well.
 
+### The complexity climb
+
+The climb mission directs the agent to build a **more complex** diagram — deeper, more connected,
+more varied — through a **richer drawing process**, and to stop when it is complex enough rather than
+pad it. Two measures drive it, both reference-free and both computed each round: the **diagram
+complexity** `C` of the current document (`docs/COMPLEXITY.md`, `tools/complexity.py`) — its weighted
+element count with nesting amplified, its branching, its graph connectivity, its submachine coupling
+and kind variety — and the **drawing complexity** `D` of the session so far
+(`docs/DRAWING_COMPLEXITY.md`, `tools/drawing_complexity.py`) — the breadth and manner of the
+operations, the restructuring and reuse, and above all the transition-drawing craft. `C` scores what
+was built; `D` scores how.
+
+A climb carries a **budget**: an operation allowance `B` for the whole session (as a drawing story
+carries its `budget`), a **target complexity band** the composer sets (moderate, complex or extreme;
+fixed for a mission, or escalating across a campaign as the drills do), and a **saturation** rule —
+the climb stops at the knee of the `C` curve, where the marginal complexity per operation falls off
+and further elements are only noise. The budget is what keeps "more complex" from becoming "more
+elements": the count cannot run away because the allowance is finite; because `C` is non-linear (a
+nested loop or a submachine is worth far more than another flat sibling, so the efficient spend is
+dense structure, and the mission scores **density** — `C` per operation — not size); and because the
+diagram must stay a coherent machine of its domain (the reference-free oracles and the theme reject
+dense noise).
+
+Each round the feedback the agent already receives (exit code, diagnostics, dump) is joined by its
+standing: the current `C` and `D` with their bands, the target, the budget left, and — turned into
+plain instruction — the **thinnest dimensions** of the two profiles. A flat diagram is told to nest a
+composite; one with no feedback edge to add a cycle; one with no branch to add a guarded choice; a
+single machine to factor a part into a submachine; a diagram that never restructured to reparent a
+subtree or wrap states in a new composite; one that never reused to copy-paste a substructure; and a
+diagram whose transitions are plain auto-attached edges to route one with a polyline, a self-loop, a
+cross-boundary edge and a label — the emphasised craft. The agent answers with its usual plan, script
+and expectations; the fuzzer burst still fires between rounds for breadth while the agent supplies the
+dense design.
+
+A climb session is scored on reaching its target band **efficiently and coherently**: the score
+rewards a high `C` reached at high density and drawn with a high `D`, and is zero when a round breaks
+an oracle or a standing law. Run on several backends, the highest-scoring coherent drawing is kept —
+the same target drawn different ways, the richest retained — as a new corpus document, exactly as an
+accepted reproduction or drawing is. And the real return is the defects: a deep, restructured,
+transition-heavy machine reaches editor code the fixed missions never touch, and every crash or oracle
+failure it finds is registered with its reproduction. `productivity.json` gains the complexity a
+backend reached — peak `C`, peak `D`, density — beside its commands and defects.
+
 ### Prompts
 
 The preamble is generated from the operation catalog and is the same for
@@ -324,6 +370,73 @@ undo-depth 4
 The description of a corpus diagram for mission A is written once into
 `catalog/briefs/` (a human description, or generated from the dump and
 reviewed); the file itself never reaches the agent.
+
+Mission E body and the first round of a climb (seed: theme "a drink
+vending machine", target `complex`, budget 40 operations):
+
+```
+Mission: climb to a more complex diagram, densely and coherently.
+Start from an empty document with one state machine G0.
+Theme: a drink vending machine. Target: complex (C >= 65).
+Budget: 40 operations for the whole session; this round is your base.
+Prefer depth and feedback over width: a nested region, a loop back to the
+start, guarded branches and triggered transitions are each worth far more
+than another flat sibling. Create parents before children; keep it valid.
+```
+
+A first-round answer lays a coherent, cyclic base — an initial, a nested
+`Selecting`, and a loop `Idle -> Selecting -> Paying -> Dispensing -> Idle`:
+
+```
+== script
+new-initial G0
+new-state G0
+rename n1 Idle
+new-state G0
+rename n2 Selecting
+new-state n2
+rename n2::n0 ChooseDrink
+new-state n2
+rename n2::n1 ConfirmChoice
+new-state G0
+rename n3 Paying
+new-action n3 entry start_timer
+new-state G0
+rename n4 Dispensing
+new-transition n0 n1
+new-transition n1 n2
+new-action n1-n2 transition coin
+new-transition n2::n0 n2::n1
+new-transition n2 n3
+new-transition n3 n4
+new-transition n4 n1
+new-transition n3 n1
+== expectations
+kind n2 composite
+state ChooseDrink parent n2
+count state 6
+transition n4 n1
+undo-depth 0
+```
+
+The metric tools then compute the standing the next round carries — the
+score, the target gap and the thinnest dimensions turned into instruction:
+
+```
+C = 31.4 (moderate)  struct 19.2 · trans 7.5 · combo 0.0 · conn 1.0 · M 0.0 · V 3.0
+P = 14.8 (rich)      E 10.5 · R 0.0 · U 0.0
+target complex not reached · 24 of 40 operations spent, 16 left
+Thinnest — spend the rest here:
+  combo 0: add a guarded choice (sold-out vs dispense)
+  M 0: factor the payment protocol into a submachine
+  R 0: wrap two states in a new composite, or reparent a subtree
+  U 0: copy-paste a substructure you already built
+  E: route a polyline, a self-loop (retry on Paying), a cross-boundary edge
+```
+
+The agent reached C 31 for 24 operations — density ≈ 1.3 C/op — and the
+nudges point at the highest C-per-operation moves (a branch, a submachine,
+β-amplified nesting), so the next round climbs by getting denser, not wider.
 
 ## Round protocol
 
@@ -506,7 +619,9 @@ the verbs, and mission B draws them alike.
 
 The composer draws a mission from a seed: the start document, three to six
 operations, a theme, a budget, and the untried cells it reads from the
-coverage store. `coverage.json` counts, across sessions, every executed
+coverage store. For a climb mission it also sets the target complexity band and
+the operation allowance `B`, and the run records the `C` and `D` a session
+reached (from the two metric tools) beside `coverage.json` and `toolcover.json`. `coverage.json` counts, across sessions, every executed
 `(verb, kind)` cell and every consecutive verb pair, and marks the cells
 that fired an oracle. The draw is biased toward empty cells, so the coverage grows the way
 pairwise testing does, and the fired cells are revisited with other
