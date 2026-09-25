@@ -62,6 +62,32 @@ static Cyberiada::Name pointName(const Cyberiada::ElementCollection* parent, con
 	}
 }
 
+// SEM-8: a submachine state's connection point is named after a point of the
+// referenced machine (libcyberiadaml 8.1). For a new point of `pointType` on
+// `parent`: keep the default name (PointDefault) when parent is not a submachine
+// state or its reference is external/unresolved; mirror a still-free point of the
+// referenced machine (PointMirror, name in *out); or refuse (PointRefuse) when the
+// referenced machine has no free matching point
+enum { PointDefault, PointMirror, PointRefuse };
+static int submachinePointName(Cyberiada::LocalDocument* root, const Cyberiada::ElementCollection* parent,
+							   Cyberiada::ElementType pointType, QString* out)
+{
+	if (!root || !parent || parent->get_type() != Cyberiada::elementSubmachineState) return PointDefault;
+	Cyberiada::ID ref = static_cast<const Cyberiada::SubmachineState*>(parent)->get_submachine_reference();
+	const Cyberiada::Element* target = ref.empty() ? NULL : root->find_element_by_id(ref);
+	if (!target || target->get_type() != Cyberiada::elementSM) return PointDefault;   // external: unchecked
+	Cyberiada::ConstElementList kids = parent->get_children();
+	Cyberiada::ConstElementList pts = static_cast<const Cyberiada::ElementCollection*>(target)->get_children();
+	for (Cyberiada::ConstElementList::const_iterator p = pts.begin(); p != pts.end(); p++) {
+		if ((*p)->get_type() != pointType || (*p)->get_name().empty()) continue;
+		bool used = false;
+		for (Cyberiada::ConstElementList::const_iterator k = kids.begin(); k != kids.end(); k++)
+			if ((*k)->get_name() == (*p)->get_name()) { used = true; break; }
+		if (!used) { *out = QString::fromStdString((*p)->get_name()); return PointMirror; }
+	}
+	return PointRefuse;
+}
+
 // the session log helpers: a model mutation is written as its batch verb (see
 // batch_script.cpp) so a recorded session replays as a test. logAction is a
 // no-op while a mouse gesture is in flight (the gesture records the same edit)
@@ -1544,14 +1570,19 @@ Cyberiada::SubmachineState *CyberiadaSMModel::newSubmachineState(Cyberiada::Elem
 Cyberiada::ConnectionPoint *CyberiadaSMModel::newEntryPoint(Cyberiada::ElementCollection *parent, const Cyberiada::Point &p)
 {
 	if (readOnly()) return NULL;
-	UndoScope scope(this, tr("new element"));
     if (root == NULL) {
         return nullptr;
     }
-
+	// SEM-8: on a submachine state, name the point after a free point of the
+	// referenced machine, or refuse when it has none
+	QString mirror;
+	int st = submachinePointName(root, parent, Cyberiada::elementEntryPoint, &mirror);
+	if (st == PointRefuse) return NULL;
+	Cyberiada::Name name = (st == PointMirror) ? mirror.toStdString() : pointName(parent, "in");
+	UndoScope scope(this, tr("new element"));
     int row = newElementRow(parent);
     beginInsertRows(elementToIndex(parent), row, row);
-    Cyberiada::ConnectionPoint* element = root->new_entry(parent, pointName(parent, "in"), p);
+    Cyberiada::ConnectionPoint* element = root->new_entry(parent, name, p);
     endInsertRows();
     if (element) growToFitChildren(element, false);
 
@@ -1566,14 +1597,19 @@ Cyberiada::ConnectionPoint *CyberiadaSMModel::newEntryPoint(Cyberiada::ElementCo
 Cyberiada::ConnectionPoint *CyberiadaSMModel::newExitPoint(Cyberiada::ElementCollection *parent, const Cyberiada::Point &p)
 {
 	if (readOnly()) return NULL;
-	UndoScope scope(this, tr("new element"));
     if (root == NULL) {
         return nullptr;
     }
-
+	// SEM-8: on a submachine state, name the point after a free point of the
+	// referenced machine, or refuse when it has none
+	QString mirror;
+	int st = submachinePointName(root, parent, Cyberiada::elementExitPoint, &mirror);
+	if (st == PointRefuse) return NULL;
+	Cyberiada::Name name = (st == PointMirror) ? mirror.toStdString() : pointName(parent, "out");
+	UndoScope scope(this, tr("new element"));
     int row = newElementRow(parent);
     beginInsertRows(elementToIndex(parent), row, row);
-    Cyberiada::ConnectionPoint* element = root->new_exit(parent, pointName(parent, "out"), p);
+    Cyberiada::ConnectionPoint* element = root->new_exit(parent, name, p);
     endInsertRows();
     if (element) growToFitChildren(element, false);
 
