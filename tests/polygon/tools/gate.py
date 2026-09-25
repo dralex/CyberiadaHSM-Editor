@@ -70,7 +70,8 @@ def gate(env, path, workdir):
     else:
         diff = D.compare(main.stdout, reopen.stdout, set())
         if diff:
-            failures.append("save/reopen: %s" % diff[0])
+            failures.append("save/reopen: %s %s: expected %s, got %s" %
+                            (diff.where, diff.field, diff.expected, diff.got))
     strict = R.run(env, saved, dump=True, timeout=TIMEOUT, workdir=workdir, strict=True)
     if strict.exit != R.EXIT_OK:
         failures.append("strict: %s" % (" ".join(strict.messages()) or "exit %s" % strict.exit))

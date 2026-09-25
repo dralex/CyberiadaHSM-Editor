@@ -328,7 +328,7 @@ def text_ink_check(round_, script_text, dump):
     findings = []
     for t in dump.texts:
         box = dump.abs_box(t)
-        if box is None or box[2] <= 0 or box[3] <= 0:
+        if box is None or box[2] <= 0 or box[3] <= 0 or not t.plain().strip():
             continue
         if not box_has_ink(image, frame, box):
             findings.append(oracles.Finding(
