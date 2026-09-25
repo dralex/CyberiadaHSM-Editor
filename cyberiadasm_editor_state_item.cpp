@@ -954,7 +954,10 @@ StateAction::StateAction(const Cyberiada::Action* action, QGraphicsItem *parent)
         QString text = QString(action->get_trigger().c_str());
         QString guard = QString(action->get_guard().c_str());
         if (!guard.isEmpty()) text += " [" + guard + "]";
-        if (!behaviour.isEmpty()) text += " / " + behaviour;
+        // a deferred event reads as EVENT / defer (EDIT-TEXT-6)
+        if (action->get_propagation() == Cyberiada::eventPropagationDefer)
+            text += " / defer";
+        else if (!behaviour.isEmpty()) text += " / " + behaviour;
         setPlainText(text);
         return;
     }

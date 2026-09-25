@@ -122,6 +122,8 @@ namespace {
 		QString head = QString::fromStdString(a.get_trigger());
 		QString guard = QString::fromStdString(a.get_guard());
 		if (!guard.isEmpty()) head += " [" + guard + "]";
+		// the defer flag renders as its behaviour (EVENT / defer), EDIT-TEXT-6
+		if (a.get_propagation() == Cyberiada::eventPropagationDefer) return head + "/ defer";
 		return head + "/ " + behaviour;
 	}
 }
@@ -545,6 +547,15 @@ static QString normalizedBehaviour(const QString& behaviour)
 	return s.trimmed();
 }
 
+// EDIT-TEXT-6: 'EVENT / defer' is an internal reaction with the defer flag, not a
+// behaviour literally named 'defer'; store it as the flag (as libcyberiadaml does
+// on load) so the action round-trips, clearing the behaviour text
+static Cyberiada::EventPropagation deferPropagation(std::string& behaviour)
+{
+	if (behaviour == "defer") { behaviour.clear(); return Cyberiada::eventPropagationDefer; }
+	return Cyberiada::eventPropagationNone;
+}
+
 // another outgoing transition of the choice already carries the 'else' guard
 // (the default branch of a choice is unique)
 static bool choiceHasElse(const Cyberiada::LocalDocument* root, const Cyberiada::Element* choice,
@@ -614,7 +625,8 @@ bool CyberiadaSMModel::updateAction(const QModelIndex& index,
         } else {
 			if (new_trigger.length() == 0) return false;
 			if (!validEventName(new_trigger)) return false;
-			a.update(new_trigger.toStdString(), new_guard.toStdString(), behaviour);
+			Cyberiada::EventPropagation prop = deferPropagation(behaviour);
+			a.update(new_trigger.toStdString(), new_guard.toStdString(), behaviour, prop);
 		}
     } else if (element->get_type() == Cyberiada::elementTransition) {
 		Cyberiada::Transition* trans = static_cast<Cyberiada::Transition*>(element);
@@ -671,7 +683,8 @@ bool CyberiadaSMModel::newAction(const QModelIndex& index, Cyberiada::ActionType
 		if (type == Cyberiada::actionTransition) { 
 			if (trigger.length() == 0) return false;
 			if (!validEventName(trigger)) return false;
-			actions.push_back(Cyberiada::Action(trigger.toStdString(), guard.toStdString(), new_behaviour));
+			Cyberiada::EventPropagation prop = deferPropagation(new_behaviour);
+			actions.push_back(Cyberiada::Action(trigger.toStdString(), guard.toStdString(), new_behaviour, prop));
 		} else {
 			// at most one entry and one exit block per state (PNST 1044 6.8.1, EDIT-STRUCT-10)
 			for (std::vector<Cyberiada::Action>::const_iterator a = actions.begin(); a != actions.end(); a++) {
