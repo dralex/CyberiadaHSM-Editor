@@ -454,6 +454,67 @@ def cmd_brief(args):
     return 0
 
 
+def cmd_reconstruct(args):
+    """Reconstruct each diagram's geometry and judge the result: structural
+    equivalence (only the geometry may change), render soundness (registered),
+    and the closeness to the original arrangement (docs/RECONSTRUCT_CLOSENESS.md)."""
+    env = _env()
+    cfg = C.load(args.config)
+    register = _register(env)
+    if args.diagram:
+        doc = env.polygon / "corpus" / (args.diagram + ".graphml")
+        docs = [doc if doc.exists() else _diagram(env, args.diagram)]
+    else:
+        docs = [p for p in sorted((env.polygon / "corpus").glob("*.graphml"))
+                if p.stem not in ("empty", "small")]
+    outroot = env.polygon / "reconstruct"
+    try:
+        from tools import reconstruct_closeness as RC
+    except Exception:
+        RC = None
+    rows = []
+    for doc in docs:
+        name = doc.stem
+        dest = outroot / name
+        dest.mkdir(parents=True, exist_ok=True)
+        recon = dest / "recon.graphml"
+        with tempfile.TemporaryDirectory(prefix="polygon-") as tmp:
+            tmp = Path(tmp)
+            scriptf = runner.write_script(tmp / "r.script", "reconstruct\n")
+            # renders (original and reconstructed, png and svg) for human review
+            runner.run(env, doc, export=dest / "orig.png", timeout=cfg.timeout, workdir=tmp)
+            runner.run(env, doc, export=dest / "orig.svg", timeout=cfg.timeout, workdir=tmp)
+            runner.run(env, doc, script=scriptf, save=recon, export=dest / "recon.png",
+                       timeout=cfg.timeout, workdir=tmp)
+            runner.run(env, doc, script=scriptf, export=dest / "recon.svg", timeout=cfg.timeout, workdir=tmp)
+            # the structure must be untouched: only the geometry may change
+            d0 = D.parse_dump(runner.run(env, doc, dump=True, timeout=cfg.timeout, workdir=tmp).stdout)
+            d1 = D.parse_dump(runner.run(env, doc, script=scriptf, dump=True, timeout=cfg.timeout, workdir=tmp).stdout)
+            struct_ok = bool(d0.document and d1.document) and not D.structural_diff(d0.document, d1.document)
+            # render soundness on the reconstructed layout, registered as problems
+            _, result = R.register_script(register, env, cfg, doc, "reconstruct\n",
+                                          title="reconstruct " + name, producer="reconstruct", root=env.root)
+            defects = [f for f in result.findings if f.kind in R.DEFECT_KINDS]
+        K = None
+        if RC is not None and recon.exists():
+            try:
+                K = RC.closeness(str(doc), str(recon))["K"]
+            except Exception:
+                K = None
+        rows.append(dict(name=name, struct_ok=struct_ok, defects=len(defects),
+                         closeness=K))
+        print("%-22s struct=%-4s defects=%d closeness=%s" %
+              (name, "ok" if struct_ok else "DIFF", len(defects),
+               "%.3f" % K if K is not None else "-"))
+    ks = [r["closeness"] for r in rows if r["closeness"] is not None]
+    print("\n%d diagrams · structural %d/%d · soundness defects %d · closeness rate %s" %
+          (len(rows), sum(1 for r in rows if r["struct_ok"]), len(rows),
+           sum(r["defects"] for r in rows),
+           "%.3f" % (sum(ks) / len(ks)) if ks else "n/a"))
+    (outroot / "summary.json").write_text(json.dumps(rows, indent=2) + "\n")
+    return 0
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="polygon")
     parser.add_argument("--config", help="the polygon.toml to use")
@@ -518,6 +579,9 @@ def main(argv=None):
     p = sub.add_parser("brief", help="print the reproduction brief of a diagram")
     p.add_argument("diagram")
     p.set_defaults(func=cmd_brief)
+    p = sub.add_parser("reconstruct", help="reconstruct each diagram and judge structure, soundness, closeness")
+    p.add_argument("--diagram", help="a single diagram (default: the whole corpus)")
+    p.set_defaults(func=cmd_reconstruct)
     p = sub.add_parser("report", help="the per-backend productivity ledger")
     p.set_defaults(func=cmd_report)
     args = parser.parse_args(argv)

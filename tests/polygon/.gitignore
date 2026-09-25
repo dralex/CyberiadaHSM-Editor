@@ -1,5 +1,6 @@
 sessions/
 problems/
+reconstruct/
 coverage.json
 productivity.json
 __pycache__/
