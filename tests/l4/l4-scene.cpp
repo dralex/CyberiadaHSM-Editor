@@ -2014,8 +2014,9 @@ static int transitionsFrom(CyberiadaSMModel* model, const Cyberiada::ID& src)
 
 void TestScene::test_transition_from_initial()
 {
-	// a transition can be drawn from an initial pseudostate by a body drag under
-	// the transition tool (previously only states could begin one)
+	// the transition tool can begin a transition from an initial pseudostate by a
+	// body drag (previously only states could begin one); an initial is the source
+	// of at most one transition (EDIT-SEM-2), so a drawn second is refused
 	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
 	scene->loadScene();
 	QGraphicsItem* initItem = scene->getMap().value("node-0-0-0");   // an initial vertex
@@ -2024,17 +2025,34 @@ void TestScene::test_transition_from_initial()
 	QPointF from = initItem->sceneBoundingRect().center();
 	QPointF to = stateItem->sceneBoundingRect().center();
 
-	int before = transitionsFrom(model, "node-0-0-0");
-	scene->setCurrentTool(ToolType::Transition);
 	QEvent activate(QEvent::WindowActivate);
+	// the initial already carries its single default transition; a drawn second is refused
+	QCOMPARE(transitionsFrom(model, "node-0-0-0"), 1);
+	scene->setCurrentTool(ToolType::Transition);
 	QApplication::sendEvent(scene, &activate);
 	mouse(QEvent::GraphicsSceneMousePress, from, Qt::LeftButton);
 	mouse(QEvent::GraphicsSceneMouseMove, (from + to) / 2, Qt::LeftButton);
 	mouse(QEvent::GraphicsSceneMouseMove, to, Qt::LeftButton);
 	mouse(QEvent::GraphicsSceneMouseRelease, to, Qt::NoButton);
+	QCOMPARE(transitionsFrom(model, "node-0-0-0"), 1);   // unchanged: the second is refused
+	QCOMPARE(int(scene->getCurrentTool()), int(ToolType::Select));
 
-	QCOMPARE(transitionsFrom(model, "node-0-0-0"), before + 1);
-	// the one-shot tool returned to select
+	// free the initial of its default transition, then the tool draws one from it
+	deleteTransition("node-0-0-0", "node-0-0-1");
+	scene->loadScene();
+	initItem = scene->getMap().value("node-0-0-0");
+	stateItem = scene->getMap().value("node-0-0-1");
+	QVERIFY(initItem && stateItem);
+	from = initItem->sceneBoundingRect().center();
+	to = stateItem->sceneBoundingRect().center();
+	QCOMPARE(transitionsFrom(model, "node-0-0-0"), 0);
+	scene->setCurrentTool(ToolType::Transition);
+	QApplication::sendEvent(scene, &activate);
+	mouse(QEvent::GraphicsSceneMousePress, from, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, (from + to) / 2, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, to, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, to, Qt::NoButton);
+	QCOMPARE(transitionsFrom(model, "node-0-0-0"), 1);   // now the tool begins one
 	QCOMPARE(int(scene->getCurrentTool()), int(ToolType::Select));
 }
 

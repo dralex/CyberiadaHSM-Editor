@@ -539,6 +539,23 @@ static bool choiceHasElse(const Cyberiada::LocalDocument* root, const Cyberiada:
 	return false;
 }
 
+// an initial or entry-point pseudostate already has an outgoing transition
+// (its single default transition, EDIT-SEM-2)
+static bool sourceHasOutgoing(const Cyberiada::LocalDocument* root, const Cyberiada::Element* source,
+							  const Cyberiada::Element* exclude)
+{
+	if (!root || !source) return false;
+	Cyberiada::ConstStateMachineList sms = root->get_state_machines();
+	for (Cyberiada::ConstStateMachineList::const_iterator s = sms.begin(); s != sms.end(); s++) {
+		std::vector<const Cyberiada::Transition*> trans = (*s)->get_transitions();
+		for (std::vector<const Cyberiada::Transition*>::const_iterator t = trans.begin(); t != trans.end(); t++) {
+			if (static_cast<const Cyberiada::Element*>(*t) == exclude) continue;
+			if ((*t)->source_element_id() == source->get_id()) return true;
+		}
+	}
+	return false;
+}
+
 bool CyberiadaSMModel::updateAction(const QModelIndex& index,
 									int action_index, const QString& new_trigger, const QString& new_guard,
 									const QString& new_behaviour)
@@ -1567,6 +1584,11 @@ Cyberiada::Transition *CyberiadaSMModel::newTransition(Cyberiada::StateMachine *
 	Cyberiada::StateMachine* real_sm = (root && source) ? root->get_parent_sm(source) : NULL;
 	if (!real_sm || (target && root->get_parent_sm(target) != real_sm)) return NULL;
 	sm = real_sm;
+	// EDIT-SEM-2: an initial or entry-point pseudostate is the source of at most one
+	// transition; a second makes the document unencodable and crashes the save
+	if (source && (source->get_type() == Cyberiada::elementInitial ||
+	               source->get_type() == Cyberiada::elementEntryPoint) &&
+	    sourceHasOutgoing(root, source, NULL)) return NULL;
 	UndoScope scope(this, tr("new transition"));
     if (root == NULL) {
         return nullptr;
