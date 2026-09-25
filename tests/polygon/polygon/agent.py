@@ -85,5 +85,9 @@ class Agent:
         failures = []
         if result.dump is not None and record.expectations:
             failures = X.evaluate(record.expectations, result.dump)
-        self.messages.append({"role": "user", "content": P.feedback(
-            record.number, record.accepted, record.script_error, record.findings, failures, result.dump)})
+        content = P.feedback(record.number, record.accepted, record.script_error,
+                             record.findings, failures, result.dump)
+        standing = getattr(record, "standing", "")
+        if standing:
+            content += "\n\n" + standing
+        self.messages.append({"role": "user", "content": content})

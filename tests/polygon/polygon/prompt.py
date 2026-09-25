@@ -140,6 +140,31 @@ def mission_explore(domain, budget):
     ])
 
 
+def mission_climb(domain, budget):
+    return "\n".join([
+        "Mission: build %s as a hierarchical state machine and climb its complexity." % domain,
+        "",
+        "The empty document already has one state machine, id G0. Draw a real, working",
+        "%s under it, then keep making it genuinely more complex: nest states in" % domain,
+        "composite states, add feedback loops back to earlier states, add choice",
+        "pseudostates with guarded branches, factor a part into a submachine state, give",
+        "transitions triggers, guards and actions, and route some edges as self-loops,",
+        "poly-lines or across a parent boundary. Prefer depth and connection over width:",
+        "a nested loop or a submachine is worth far more than another flat sibling.",
+        "",
+        "After each round you are told the current complexity (C for the diagram, a",
+        "process score for the drawing) and where the diagram is thinnest; spend the next",
+        "round there. Keep it a coherent %s, not a pile of states: children inside" % domain,
+        "their parents with a margin, siblings apart, no overlaps. Stop adding when a round",
+        "no longer makes it meaningfully more complex.",
+        "",
+        "Budget: %d to %d commands over the session, a few per round. Between your rounds" % tuple(budget),
+        "the polygon injects random micro-operations, so the ids and geometry may shift;",
+        "read the dump each round and use the ids it shows. Give expectations only for",
+        "what you deliberately changed this round.",
+    ])
+
+
 # the drawing rules the editor enforces, in the agent's terms - kept in step with
 # docs/EDITOR-SPEC.md section 4 (the id in brackets is the requirement it renders)
 DRAWING_RULES = """The editor keeps a diagram well-formed; draw so these hold, and the

@@ -36,6 +36,7 @@ COMBINE = "combine"
 EXPLORE = "explore"
 TOUR = "tour"
 DRAW = "draw"
+CLIMB = "climb"
 
 DOMAINS = ("a traffic light", "a vending machine", "a lift controller",
           "a microwave oven", "a robot patrol mission", "a game character AI",
@@ -100,6 +101,9 @@ def compose(kind, env, catalog, coverage, seed, name=None, theme_name=None, stor
     if kind == EXPLORE:
         return Mission(kind, seed, "explore", starts["empty"], domain=rng.choice(DOMAINS),
                        budget=(12, 30))
+    if kind == CLIMB:
+        return Mission(kind, seed, "climb", starts["empty"], domain=rng.choice(DOMAINS),
+                       budget=(30, 70))
     if kind == TOUR:
         return Mission(kind, seed, "tour", starts["empty"], budget=(20, 40))
     if kind == DRAW:

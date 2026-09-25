@@ -41,6 +41,7 @@ from . import session as S
 from . import agent as A
 from . import brief as B
 from . import composer as M
+from . import climb as CL
 from . import prompt as P
 from . import runner
 from . import tour as TOUR
@@ -261,6 +262,8 @@ def _first_message(env, cfg, mission):
         return P.mission_reproduce(B.brief(mission.name, dump.document))
     if mission.kind == M.EXPLORE:
         return P.mission_explore(mission.domain, mission.budget)
+    if mission.kind == M.CLIMB:
+        return P.mission_climb(mission.domain, mission.budget)
     if mission.kind == M.TOUR:
         return P.mission_tour(_tour_tools(), mission.budget)
     if mission.kind == M.DRAW:
@@ -298,12 +301,15 @@ def _run_session(env, cfg, catalog, coverage, backend, mission, folder, args):
                         producer_name="agent:%s:%s" % (backend.name, backend.model), seed=mission.seed,
                         minimize=not args.no_minimize)
     session.mission = mission
-    if mission.kind == M.EXPLORE:
+    if mission.kind in (M.EXPLORE, M.CLIMB):
         # random micro-op bursts after each accepted agent round; no ink check
         session.stress = True
         burst_fuzzer = F.Fuzzer(catalog, coverage, mission.seed, gestures=True)
         burst_fuzzer.gestures_only = True
         session.burst = (burst_fuzzer, getattr(args, "burst", 5) or 5)
+    if mission.kind == M.CLIMB:
+        # measure C/D each round and steer the agent to raise them densely
+        session.climb = True
     if mission.kind == M.DRAW:
         # a clean draw of a known diagram: reference-free oracles, no burst
         session.stress = True
@@ -324,11 +330,14 @@ def _session_stats(session):
     defects = {f[1] for r in session.rounds for f in r.findings if f[0] in ("crash", "oracle", "render")}
     cands = sum(1 for r in session.rounds for f in r.findings if f[0] in ("semantic", "review"))
     rep = session.reproduction
-    return {"rounds": len(session.rounds), "accepted": accepted, "errors": errors,
-            "calls": getattr(session, "calls", 0), "tokens": getattr(session, "tokens", 0),
-            "commands": len(session.script), "elapsed": round(getattr(session, "elapsed", 0.0), 1),
-            "defects": len(defects), "candidates": cands,
-            "reproduction": "-" if rep is None else ("match" if rep["matches"] else "differ %d" % len(rep["differences"]))}
+    stats = {"rounds": len(session.rounds), "accepted": accepted, "errors": errors,
+             "calls": getattr(session, "calls", 0), "tokens": getattr(session, "tokens", 0),
+             "commands": len(session.script), "elapsed": round(getattr(session, "elapsed", 0.0), 1),
+             "defects": len(defects), "candidates": cands,
+             "reproduction": "-" if rep is None else ("match" if rep["matches"] else "differ %d" % len(rep["differences"]))}
+    if getattr(session, "climb", False):
+        stats.update(CL.session_metrics(session.rounds, len(session.script)))
+    return stats
 
 
 def cmd_run(args):
@@ -353,7 +362,11 @@ def cmd_run(args):
         stats["backend"] = "%s:%s" % (backend.name, backend.model)
         rows.append(stats)
         ledger.add(backend.name, stats)
-        print("%s [%s]: %s, %d calls" % (folder, backend.name, session.summary(), stats["calls"]))
+        extra = ""
+        if "peak_c" in stats:
+            extra = ", peak C=%.1f (%s) D=%.1f density=%.2f" % (
+                stats["peak_c"], stats["band"], stats["peak_d"], stats["density"])
+        print("%s [%s]: %s, %d calls%s" % (folder, backend.name, session.summary(), stats["calls"], extra))
     ledger.save()
     if compare:
         base.mkdir(parents=True, exist_ok=True)
@@ -490,7 +503,7 @@ def main(argv=None):
     p = sub.add_parser("run", help="an agent session (one backend, or a comma list to compare)")
     p.add_argument("--backend")
     p.add_argument("--backends", help="a comma list: run the same mission on each and compare")
-    p.add_argument("--mission", choices=[M.REPRODUCE, M.COMBINE, M.EXPLORE, M.TOUR, M.DRAW], default=M.COMBINE)
+    p.add_argument("--mission", choices=[M.REPRODUCE, M.COMBINE, M.EXPLORE, M.TOUR, M.DRAW, M.CLIMB], default=M.COMBINE)
     p.add_argument("--diagram")
     p.add_argument("--theme", help="the combination theme (its start rule and hint)")
     p.add_argument("--story", help="the diagram to draw (draw mission; catalog/stories.json)")
