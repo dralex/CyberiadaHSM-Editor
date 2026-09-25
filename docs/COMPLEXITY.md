@@ -5,7 +5,8 @@ CyberiadaML diagram — its element kinds and counts, the **non-linear** effect 
 behaviour carried by states and transitions (triggers, guards, action code), element naming, multiple
 machines and submachine references, and the hard combinations of these (branching, boundary-crossing).
 Its purpose is to make "a more complex, more interesting diagram" measurable.
-**Document version:** 0.3 (2026-09-25) — DRAFT; weights recalibrated over the 89-diagram corpus (§7).
+**Document version:** 0.4 (2026-09-25) — DRAFT; recalibrated over the 89-diagram corpus (§7), plus a
+graph-connectivity term (§4.9).
 **Related authorities:** `EDITOR-SPEC.md` (element vocabulary), PNST 1044-2025 §6/§8 (element
 definitions).
 
@@ -34,6 +35,7 @@ triggers / guards / behaviours — scored by guard presence, **number of action 
 **Naming:** whether an element carries a name, and the name's length.
 **Combinations:** choice/branch fan-out (super-linear), boundary-crossing transitions, and the
 complexity a submachine inherits from the machine it references.
+**Connectivity:** the cyclic connectivity of the machine's transition graph — its feedback loops.
 
 **Not measured:** geometry (position, size, polyline shape), colour, and comment *body* prose.
 **Concurrency is out of scope:** `fork`/`join` are reserved in the standard (PNST 1044 Table 3) and
@@ -57,8 +59,9 @@ true concurrency and there is nothing to score there.
 
 ## 4. The metric
 `C(D) = Σ_machines C_machine + M + V`, where per machine
-`C_machine(SM) = struct(SM) + Σ_transitions trans(t) + combo(SM)`.
-`M` is the document-level machine/reference coupling (§4.7); `V` the variety bonus (§4.8).
+`C_machine(SM) = struct(SM) + Σ_transitions trans(t) + combo(SM) + conn(SM)`.
+`M` is the document-level machine/reference coupling (§4.7); `V` the variety bonus (§4.8); `conn` the
+graph connectivity (§4.9).
 
 ### 4.1 Element intrinsic score
 Every element has an intrinsic score `int(e) = kind(e) + name(e) + act(e)`:
@@ -133,9 +136,20 @@ The disproportionately hard parts:
 machine itself)`. Rewards a diagram that exercises *many* kinds over one that repeats a single kind —
 the "interesting" signal. Excluding the machine keeps an empty diagram (machine + meta only) at `V = 0`.
 
-### 4.9 Breakdown and bands
+### 4.9 Graph connectivity — `conn(SM)`
+The state machine *is* a directed graph (vertices = states + pseudostates, edges = transitions), so its
+**cyclic connectivity** is scored directly: `conn(SM) = w_conn · μ`, `w_conn = 1.0`, where `μ` is the
+graph's **independent-cycle count** (circuit rank) `μ = E − N + P` (`E` transitions, `N` vertices, `P`
+connected components). `μ = 0` for an acyclic/tree machine and grows by one per feedback loop — so a
+feed-forward machine scores nothing here while a densely looped one (a traffic light cycling through
+its phases) is credited for every independent loop. This is orthogonal to the raw transition count in
+§4.6: two machines with the same edges but a chain vs a cycle-rich graph differ in `μ`. (Isolated
+vertices do not affect `μ`; it is summed over the document's machines.)
+
+### 4.10 Breakdown and bands
 `C` is reported with its category breakdown (structure incl. nesting amplification, naming, state
-actions, transitions, combinations, references, variety). Bands (calibrated over the corpus, §7):
+actions, transitions, combinations, connectivity, references, variety). Bands (calibrated over the
+corpus, §7):
 
 | C | band | shape |
 |---|---|---|
@@ -146,21 +160,23 @@ actions, transitions, combinations, references, variety). Bands (calibrated over
 | >150 | extreme | deep multi-machine orchestration |
 
 ## 5. Worked examples (measured over the corpus, §6 tool)
-`C` = struct + trans + combo + M + V.
+`C` = struct + trans + combo + conn + M + V (`cy` = independent cycles).
 
-| diagram | C | band | struct | trans | combo | M | V | shape |
-|---|---|---|---|---|---|---|---|---|
-| `empty.graphml` | 2.9 | trivial | 2.9 | 0 | 0 | 0 | 0 | machine + meta only |
-| `vacuum-robot` | 33.3 | moderate | 17.3 | 11.5 | 1.5 | 0 | 3 | one nesting level + a choice |
-| `semaphore` | 40.1 | moderate | 17.6 | 20.5 | 0 | 0 | 2 | flat, densely connected (11 edges) |
-| `dog` | 59.9 | moderate | 31.2 | 24.7 | 0 | 0 | 4 | 8 states, depth 2 |
-| `maze-solver` | 138.2 | complex | 105.3 | 20.5 | 8.4 | 0 | 4 | 12 states, depth 3 — deepest single machine |
-| `orchestrate-home` | 164.5 | extreme | 79.1 | 34.8 | 9.9 | 33.7 | 7 | three machines, submachine refs |
-| `orchestrate-grand` | 488.6 | extreme | 268.9 | 85.1 | 18.9 | 107.7 | 8 | four machines, deep, referenced |
+| diagram | C | band | struct | trans | combo | conn | M | V | cy | shape |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `empty.graphml` | 2.9 | trivial | 2.9 | 0 | 0 | 0 | 0 | 0 | 0 | machine + meta only |
+| `vacuum-robot` | 35.3 | moderate | 17.3 | 11.5 | 1.5 | 2.0 | 0 | 3 | 2 | one nesting level + a choice |
+| `semaphore` | 46.1 | moderate | 17.6 | 20.5 | 0 | 6.0 | 0 | 2 | 6 | flat but densely looped (11 edges) |
+| `dog` | 62.9 | moderate | 31.2 | 24.7 | 0 | 3.0 | 0 | 4 | 3 | 8 states, depth 2 |
+| `maze-solver` | 141.2 | complex | 105.3 | 20.5 | 8.4 | 3.0 | 0 | 4 | 3 | 12 states, depth 3 — deepest single machine |
+| `orchestrate-home` | 167.5 | extreme | 79.1 | 34.8 | 9.9 | 3.0 | 33.7 | 7 | 3 | three machines, submachine refs |
+| `orchestrate-grand` | 497.6 | extreme | 268.9 | 85.1 | 18.9 | 9.0 | 107.7 | 8 | 9 | four machines, deep, referenced |
 
-The recalibration (§4.2 β=1.5, §4.6 lighter transitions) makes nesting lead: a deep single machine
-(`maze-solver`, struct 105) outscores a flat one many times over, while flat connectivity
-(`semaphore`) sits in **moderate**, no longer "complex".
+Nesting leads (§4.2 β=1.5, §4.6 lighter transitions): a deep single machine (`maze-solver`, struct
+105) outscores a flat one many times over, while flat `semaphore` stays **moderate**. The new
+connectivity term (§4.9) then separates a feed-forward machine (`cy = 0`, `conn = 0`) from a
+feedback-rich one — `semaphore`'s six independent loops add 6, an acyclic `hierarchy`/`choice` add
+nothing.
 
 ## 6. Computation
 Implemented (later) as `tests/polygon/polygon/complexity.py` over the `dump.py` tree

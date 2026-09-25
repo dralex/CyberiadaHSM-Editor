@@ -30,6 +30,7 @@ import CyberiadaML as C
 
 BETA = 1.5      # nesting amplification per level (COMPLEXITY.md 4.2)
 TAU  = 0.3      # referenced-machine inheritance (4.7)
+WY   = 1.0      # graph connectivity per independent cycle (4.8)
 
 KIND_W = {
     C.elementSimpleState: 1.0, C.elementCompositeState: 2.0,
@@ -136,6 +137,26 @@ def combo(sm, trs):
 def transitions(sm):
     return list(sm.find_elements_by_type(C.elementTransition))
 
+def cycles(sm):
+    """Independent cycles (circuit rank) of the machine's control graph:
+    mu = E - N + P, over vertices (states + pseudostates) and transition edges.
+    0 for an acyclic/tree machine, +1 per feedback loop (COMPLEXITY.md 4.8)."""
+    verts = [e.get_id() for e in sm.find_elements_by_types(list(STATES) + list(PSEUDO))]
+    up = {v: v for v in verts}
+    def find(x):
+        while up[x] != x:
+            up[x] = up[up[x]]
+            x = up[x]
+        return x
+    trs = transitions(sm)
+    for t in trs:
+        s, d = t.get_source_element_id(), t.get_target_element_id()
+        if s in up and d in up:
+            up[find(s)] = find(d)
+    N, E = len(verts), len(trs)
+    P = len({find(v) for v in verts}) if verts else 0
+    return max(0, E - N + P)
+
 def depth(e):
     if e.get_type() not in COLLECTIONS or not e.has_children():
         return 0
@@ -182,16 +203,18 @@ def compute(path):
             else:
                 M += 2.0 + (TAU * cbase[ref] if ref in cbase else 0.0)
     V = 1.0 * len(distinct_kinds(machines))
+    mu = sum(cycles(sm) for sm in machines)   # independent cycles across machines
+    Y = WY * mu
     st = sum(v[0] for v in base.values())
     tr = sum(v[1] for v in base.values())
     cb = sum(v[2] for v in base.values())
-    total = st + tr + cb + M + V
+    total = st + tr + cb + M + V + Y
     states = sum(len(sm.find_elements_by_types(list(STATES))) for sm in machines)
     trans_n = sum(len(transitions(sm)) for sm in machines)
     dep = max((depth(sm) for sm in machines), default=0)
-    return dict(C=total, band=band(total), struct=st, trans=tr, combo=cb, M=M, V=V,
+    return dict(C=total, band=band(total), struct=st, trans=tr, combo=cb, M=M, V=V, Y=Y,
                 machines=len(machines), states=states, transitions=trans_n,
-                depth=dep, submachines=submachines)
+                depth=dep, submachines=submachines, cycles=mu)
 
 
 def gather(args):
@@ -221,21 +244,21 @@ def main():
             sys.stderr.write("skip %s: %s\n" % (f, e))
     if a.table:
         rows.sort(key=lambda r: r["C"])
-        print("%8s %-9s %5s %5s %5s %5s %5s  %3s %3s %3s %3s  %s" %
-              ("C", "band", "struc", "trans", "combo", "M", "V",
-               "sm", "st", "tr", "dp", "diagram"))
+        print("%8s %-9s %5s %5s %5s %5s %5s %5s  %3s %3s %3s %3s %3s  %s" %
+              ("C", "band", "struc", "trans", "combo", "conn", "M", "V",
+               "sm", "st", "tr", "cy", "dp", "diagram"))
         for r in rows:
-            print("%8.1f %-9s %5.1f %5.1f %5.1f %5.1f %5.1f  %3d %3d %3d %3d  %s" %
-                  (r["C"], r["band"], r["struct"], r["trans"], r["combo"], r["M"], r["V"],
-                   r["machines"], r["states"], r["transitions"], r["depth"],
+            print("%8.1f %-9s %5.1f %5.1f %5.1f %5.1f %5.1f %5.1f  %3d %3d %3d %3d %3d  %s" %
+                  (r["C"], r["band"], r["struct"], r["trans"], r["combo"], r["Y"], r["M"], r["V"],
+                   r["machines"], r["states"], r["transitions"], r["cycles"], r["depth"],
                    os.path.relpath(r["file"])))
     else:
         for r in rows:
-            print("%s\n  C=%.1f (%s)  struct=%.1f trans=%.1f combo=%.1f M=%.1f V=%.1f"
-                  "  | machines=%d states=%d transitions=%d depth=%d submachines=%d" %
-                  (r["file"], r["C"], r["band"], r["struct"], r["trans"], r["combo"],
+            print("%s\n  C=%.1f (%s)  struct=%.1f trans=%.1f combo=%.1f conn=%.1f M=%.1f V=%.1f"
+                  "  | machines=%d states=%d transitions=%d cycles=%d depth=%d submachines=%d" %
+                  (r["file"], r["C"], r["band"], r["struct"], r["trans"], r["combo"], r["Y"],
                    r["M"], r["V"], r["machines"], r["states"], r["transitions"],
-                   r["depth"], r["submachines"]))
+                   r["cycles"], r["depth"], r["submachines"]))
 
 if __name__ == "__main__":
     main()
