@@ -1,8 +1,9 @@
 # Drawing Process Complexity Metric
 
 **Overview:** a reference-free number `D(S)` measuring the complexity of the drawing *process* that
-produced a diagram — the tools used and how, the restructuring, clipboard reuse, correction and
-gesture craft recorded in a session — and **inheriting** the finished diagram's complexity `C`.
+produced a diagram — the tools used and how, the restructuring, clipboard reuse, correction, and above
+all the **drawing of transitions**, recorded in a session — and **inheriting** the finished diagram's
+complexity `C`.
 Its purpose is to make "a richer, more interesting drawing process" measurable, so the polygon can be
 steered toward diagrams that are both complex *and* built in interesting ways.
 **Document version:** 0.1 (2026-09-25) — DRAFT; weights provisional pending session calibration (§7).
@@ -15,8 +16,8 @@ verb and tool-usage vocabulary).
 together with the diagram it produced. It is:
 - **Inherited from `C`** — a complex diagram implies a complex drawing, so `D` is built on top of `C`.
 - **Reference-free** — computed from the script and the final diagram alone.
-- **Decomposable** — a category breakdown (breadth, how-used, restructuring, reuse, gestures,
-  trajectory), all under a directedness factor `η` that discounts parasite oscillation.
+- **Decomposable** — a category breakdown (breadth, how-used, restructuring, reuse, transition-drawing,
+  gestures, trajectory), all under a directedness factor `η` that discounts parasite oscillation.
 - **The process analogue of `C`** — same philosophy: *variety* and *higher-order, structure-changing*
   operations count more than raw volume.
 - **Process-dependent** — `D` scores the *drawing*, not only the diagram. The **same** finished diagram
@@ -32,14 +33,16 @@ explores with undo/redo is **high**. The interesting drawings are varied and non
 ## 2. What is measured — and what is not
 From the session's verbs (`operations.json` marks each verb `form: model` or `form: gesture`):
 - **Tools** — the twelve creation tools (`new-state/-comment/-formal-comment/-initial/-final/-choice/
-  -terminate/-shallow-history/-deep-history/-submachine-state/-entry-point/-exit-point`) plus the
-  transition draw and `new-sm`, and **how** each is used (§3.3).
+  -terminate/-shallow-history/-deep-history/-submachine-state/-entry-point/-exit-point`) plus `new-sm`,
+  and **how** each is used (§3.2).
+- **Transition drawing (emphasised)** — drawing edges with the transition tool and shaping them:
+  polyline routing, endpoint re-attachment, self-loops, cross-boundary edges, labels (§3.7).
 - **Refinement** — `rename`, `set-color`, `label`, `new/update/delete-action`, `new/delete-subject`,
   `update-comment/-id/-meta`, `polyline`.
 - **Restructuring** — `reparent`, `move`, `delete`, splitting via `new-sm`.
 - **Clipboard reuse** — `copy`, `cut`, `paste`.
 - **Correction / exploration** — `undo`, `redo`.
-- **Gesture craft** — endpoint/vertex/border manipulation and the `press`/`drag`/`release`,
+- **Gesture craft** — border resize, body drag, multi-select, and the `press`/`drag`/`release`,
   `double-click`, `edit`/`edit-text`, `select-all` granularity.
 Plus the final diagram's `C` (inherited).
 
@@ -47,18 +50,24 @@ Plus the final diagram's `C` (inherited).
 (the diagram metric already scores the finished text). `D` cares about the *shape* of the process.
 
 ## 3. The metric
-`D(S) = C_final + P`, where `P = w_O·O + w_H·H + w_R·R + w_U·U + w_G·G + w_Δ·Δ`, and the *farmable*
-part of `P` is scaled by the trajectory **directedness** `η` (§3.5).
+`D(S) = C_final + P`, where `P = w_O·O + w_H·H + w_R·R + w_U·U + w_E·E + w_G·G + w_Δ·Δ`, and the
+*farmable* part of `P` is scaled by the trajectory **directedness** `η` (§3.5).
 ```
   D = C_final                              inherited outcome (COMPLEXITY.md)
     + O  operation breadth (variety of verbs/tools)
     + H  how-used (the usage pattern richness of each tool)
     + R  restructuring (reparent / move / delete / split)
     + U  reuse (copy / cut / paste of substructures)
-    + G  gesture craft (endpoint/vertex/border manipulation, gesture granularity)
+    + E  TRANSITION-DRAWING craft (routing, endpoints, self-loops, crossings, labels)  ◀ emphasised
+    + G  gesture craft (resize, multi-select, drag, gesture granularity)
     + Δ  complexity trajectory — productive refactoring dips
     ─── all damped by η = net progress / total motion (parasite oscillations → η→0)
 ```
+Drawing a **transition** is the hardest thing to draw well — and the operation that exercises the
+editor's most intricate code (endpoint border-attachment, polyline routing, self-loop geometry,
+cross-boundary edges, label placement). So it is pulled out of the generic gesture craft into its own
+**emphasised** component `E` (§3.7), weighted above the rest: the drawings that route transitions
+richly are the ones that most stress the editor and make the best tests.
 `C_final` ties the drawing to what it produced; `P` scores the process beyond it. Provisional weights.
 
 **Subgraph-argument principle.** Operations that act on a *subgraph* — restructuring (`R`) and
@@ -121,7 +130,7 @@ close, neither dominating, exactly as they should.
 Parasite actions — the ones an agent would spam to game the score — are exactly the ones that make the
 complexity **oscillate**: an `add` then `delete`, a `move` and back, a `paste` then `undo`, or an
 `undo`/`redo` cycle climbs `C` and immediately throws it away. So parasites are caught not by ad-hoc
-per-verb rules but by the shape of the `C` trajectory (§3.7):
+per-verb rules but by the shape of the `C` trajectory (§3.8):
 - **total motion** `TV = Σ_i |ΔC_i|` — every up and down;
 - **net progress** `NP = C_final`;
 - **oscillation (waste)** `W = TV − NP ≥ 0` — motion that produced nothing lasting;
@@ -132,18 +141,41 @@ The *farmable* credit — the volume term of `O`, the base of `U`, and any per-o
 `η`, so paste-spam, add/delete churn and undo/redo loops (high `W`, `η → 0`) cannot inflate `D`. This
 subsumes what a separate "undo/redo" term would do: correction is neither rewarded nor forbidden — a
 revert that returns to an earlier state is oscillation (damped), a revert that redirects to a better
-result shows up as net progress and a productive dip (§3.7). A **productive dip** ends *higher* than it
+result shows up as net progress and a productive dip (§3.8). A **productive dip** ends *higher* than it
 started, so its motion is mostly `NP` and it barely dents `η`; only motion returning to an
 already-visited level is waste. `η` is the single principled parasite defense; the subgraph-`C`
 weighting of `R`/`U` (§3.3–3.4) is complementary (it makes *trivial* arguments cheap in the first
 place).
 
-### 3.6 G — gesture craft
-`G = 1.0·(distinct fine manipulations: move-endpoint, add/move/remove-point, resize-state, box-drag
-transition, multi-select) + 2.0·(gesture verbs / (gesture verbs + model verbs))`. Rewards low-level
-drawing craft — shaping polylines, dragging endpoints, resizing borders — over pure semantic creation.
+### 3.6 G — gesture craft (non-transition)
+`G = 1.0·(distinct fine manipulations: resize-state, drag-state, multi-select) + 2.0·(gesture verbs /
+(gesture verbs + model verbs))`. Rewards low-level drawing craft — resizing borders, dragging bodies,
+box-selecting — over pure semantic creation. (Transition-shaping gestures live in `E`, §3.7.)
 
-### 3.7 Δ — the complexity trajectory (progress toward the maximum, and when to stop)
+### 3.7 E — transition-drawing craft (emphasised)
+Drawing and shaping a **transition** is the process's most demanding craft and the operation that most
+stresses the editor's drawing code. Each hand-drawn transition and every way it is shaped is credited;
+weights lead the other components:
+- **`+1.5` per transition drawn by hand** (the `transition` tool / `draw-transition` / a `new-transition`
+  with a drag) — picking a source and dragging to a target, with endpoint border-attachment, is far
+  more involved than clicking a state into place.
+- **`+1.0` per self-loop** drawn (`source == target`) — the border-to-border loop routing.
+- **`+1.0` per boundary-crossing** transition drawn (endpoints under different containers) — routing
+  across the hierarchy.
+- **`+0.5` per endpoint re-attachment** (`move-endpoint`) — re-anchoring an end to a border (the
+  forward-ray attachment code).
+- **`+0.5` per polyline vertex edit** (`add-point` / `move-point` / `remove-point`), with diminishing
+  returns per edge — hand-routing a clean orthogonal path.
+- **`+0.5` per transition to/from a pseudostate or choice** — varied, branching endpoints.
+- **`+0.3` per label placed or dragged** (`label`).
+
+So a drawing that routes transitions richly — polylines, moved endpoints, self-loops, cross-boundary
+edges, placed labels — scores well above one that drops auto-attached straight edges, and it exercises
+exactly the endpoint / polyline / self-loop code this project has been hardening. `E` is subject to the
+same `η` damping (a draw-then-delete-edge thrash is oscillation) and its per-edge shaping decays so a
+single edge cannot be farmed by nudging its points forever.
+
+### 3.8 Δ — the complexity trajectory (progress toward the maximum, and when to stop)
 Track the diagram complexity after every operation: `C_0 = 0 → C_1 → … → C_n = C_final` (from the
 per-step replay dumps, §6). It is measured two ways.
 - **Progress toward the maximum.** `C_final` is the peak the process reached, and the session is
@@ -163,7 +195,7 @@ per-step replay dumps, §6). It is measured two ways.
   exposes this marginal-gain curve; the actual stop is a budget or target the polygon strategy sets
   against it (§8) — the key open lever for the strategy document (§9).
 
-### 3.8 Bands (provisional, calibrated in §7)
+### 3.9 Bands (provisional, calibrated in §7)
 | D − C | process band | shape |
 |---|---|---|
 | 0–3 | minimal | a straight linear build, one tool kind |
@@ -192,12 +224,17 @@ The first three build the **same** diagram (identical `C`); `D` orders the drawi
   → identical `C`, huge `W`, `η → 0`; the farmed credit collapses and `D ≈ C`: no reward for thrash.
 - A **tour/drill session** systematically exercising every tool in several patterns (single, several,
   in-container, combined, extreme, then-undo) → large `O`, `H`; band **intricate** even at modest `C`.
+- A **transition-rich drawing** — the same states, but every edge hand-drawn and shaped: polylines
+  routed, endpoints dragged onto borders, a self-loop, cross-boundary edges, labels placed → large
+  `E`; band **intricate**, and it stresses exactly the edge-drawing code.
 
 ## 6. Computation
 Parse the `session.script` (one verb per line; classify by `catalog/operations.json` `form` and the
 `toolcover` action map), compute `C` on the final diagram with `tests/polygon/tools/complexity.py`, and
-aggregate the process components. `O`/`H`/`G` come from the verb stream alone; the trajectory
-(`Δ`, and `TV`/`NP`/`η`) and `R`/`U`'s argument complexity **`C(g)`** need the per-step replay dumps —
+aggregate the process components. `O`/`H`/`G`/`E` come from the verb stream (`E` also reads the final
+diagram to classify each drawn edge — self-loop, boundary-crossing, pseudostate endpoint); the
+trajectory (`Δ`, and `TV`/`NP`/`η`) and `R`/`U`'s argument complexity **`C(g)`** need the per-step
+replay dumps —
 the complexity of each reparented / moved / deleted / copied / pasted subgraph at the moment of the
 operation — obtained by **replaying** the script through the editor batch and dumping between
 operations (the runner already does step dumps), then running `complexity.py` on the affected subtree
@@ -233,8 +270,11 @@ highest-`D`** attempt — the one that stresses the most editor code — as the 
 4. The restructuring weights — `reparent` `1.0 + 0.8·C(g)`, `wrap` `1.0 + 0.5·C(g)`, `move` `0.5·C(g)`,
    `delete` `0.3·C(g)`: is the reparent boost (and its base-vs-`C(g)` split) right?
 5. Volume vs variety weighting in `O` (drafted: variety-led, volume capped).
-6. Weight values for O/H/R/U/G/Δ — all provisional (§7).
-7. **The trajectory and termination.** Reward productive refactoring dips (drafted) — and, since `C`
+6. **Transition-drawing emphasis (`E`).** The per-edge weights (`1.5` draw / `1.0` self-loop / `1.0`
+   crossing / `0.5` endpoint / `0.5` polyline point / `0.3` label) and how far `E` should lead the
+   other components — is drawing transitions the single most-weighted craft, as drafted?
+7. Weight values for O/H/R/U/E/G/Δ — all provisional (§7).
+8. **The trajectory and termination.** Reward productive refactoring dips (drafted) — and, since `C`
    is unbounded, where should the *stop* decision live: does the drawing metric merely expose the
    marginal-gain curve (drafted) and leave the "knee"/budget to the strategy document, or should `D`
    itself carry a saturation term that penalises low-marginal-gain tails so an over-long spam session
