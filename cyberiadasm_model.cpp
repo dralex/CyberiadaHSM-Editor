@@ -300,6 +300,31 @@ private:
 	CyberiadaSMModel* model;
 };
 
+bool CyberiadaSMModel::reconstructGeometry()
+{
+	if (readOnly() || !root) return false;
+	// rebuild the state machine border only when it was explicitly present, so a
+	// frameless machine stays frameless (read before the geometry is cleaned)
+	bool reconstruct_sm = false;
+	Cyberiada::StateMachineList sms = root->get_state_machines();
+	if (!sms.empty()) {
+		reconstruct_sm = true;
+		for (Cyberiada::StateMachineList::const_iterator sm = sms.begin(); sm != sms.end(); sm++)
+			if (!(*sm)->has_geometry()) { reconstruct_sm = false; break; }
+	}
+	UndoScope scope(this, tr("geometry reconstruction"));
+	beginResetModel();
+	try {
+		root->reconstruct_geometry(reconstruct_sm);
+	} catch (const Cyberiada::Exception&) {
+		endResetModel();
+		return false;
+	}
+	endResetModel();
+	GestureLog::instance().logAction("reconstruct");
+	return true;
+}
+
 // the written document declares its geometry (7.1): the editor writes the
 // exact sizes or none at all; the yEd formats carry no metainformation
 void CyberiadaSMModel::declareGeometry(Cyberiada::DocumentFormat f, bool skip_geometry)

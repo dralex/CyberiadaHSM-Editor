@@ -42,6 +42,8 @@ public:
     // void                                createDocument();
 	bool                                loadDocument(const QString& path, bool reconstruct = false,
 	                                                 bool reconstruct_sm = false, bool strict = false);
+	// strip the whole geometry and rebuild it from scratch as one atomic undo step
+	bool                                reconstructGeometry();
 	const QString&                      loadError() const { return lastLoadError; }
 	void                                saveDocument(bool round = false);
 	void                                saveAsDocument(const QString& path, Cyberiada::DocumentFormat f,

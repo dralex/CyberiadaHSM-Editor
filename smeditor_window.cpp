@@ -84,6 +84,7 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     connect(actionCut, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotCut);
     connect(actionCopy, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotCopy);
     connect(actionPaste, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotPaste);
+    connect(actionReconstructGeometry, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotReconstructGeometry);
     connect(stack, &QUndoStack::canUndoChanged, actionUndo, &QAction::setEnabled);
     connect(stack, &QUndoStack::canRedoChanged, actionRedo, &QAction::setEnabled);
     connect(stack, &QUndoStack::undoTextChanged, this, &CyberiadaSMEditorWindow::slotUndoTextChanged);
@@ -117,6 +118,7 @@ void CyberiadaSMEditorWindow::updateEditActions()
     // tools stay enabled: the model creates a document lazily on the first edit)
     bool docOpen  = (model->rootDocument() != nullptr);
     bool modified = docOpen && !model->undoStack()->isClean();
+    actionReconstructGeometry->setEnabled(docOpen && !inspector);
     actionSave->setEnabled(docOpen && modified && !inspector);
     actionSaveAs->setEnabled(docOpen);
     actionExport->setEnabled(docOpen);
@@ -638,6 +640,18 @@ void CyberiadaSMEditorWindow::slotDeleteElement()
         dotToDelete->deleteDot();
         return;
     }
+}
+
+void CyberiadaSMEditorWindow::slotReconstructGeometry()
+{
+    if (!model->rootDocument()) return;
+    QMessageBox::StandardButton answer = QMessageBox::question(
+        this, tr("Geometry reconstruction"),
+        tr("Rebuild the whole diagram geometry from scratch? "
+           "The current layout is replaced; use Undo to restore it."),
+        QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+    if (answer != QMessageBox::Yes) return;
+    model->reconstructGeometry();
 }
 
 void CyberiadaSMEditorWindow::slotCopy()

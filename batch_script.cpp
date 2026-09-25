@@ -243,6 +243,9 @@ static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QStri
 	} else if (cmd == "redo") {
 		model->undoStack()->redo();
 		return true;
+	} else if (cmd == "reconstruct") {
+		if (!model->reconstructGeometry()) { *error = "geometry reconstruction failed"; return false; }
+		return true;
 	} else if (cmd == "update-meta") {
 		if (tokens.size() < 3) { *error = "update-meta requires <parameter> <value>"; return false; }
 		QString param = tokens.at(1);

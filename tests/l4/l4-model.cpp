@@ -55,6 +55,7 @@ private slots:
 	void test_paste_internal_transition();
 	void test_snap_to_grid();
 	void test_undo_reset();
+	void test_reconstruct_geometry();
 
 private:
 	static bool rectsOverlap(const Cyberiada::Rect& a, const Cyberiada::Rect& b);
@@ -404,6 +405,28 @@ void TestModel::test_undo_redo()
 	QVERIFY(!stack->isClean());
 	stack->undo();
 	QVERIFY(stack->isClean());
+}
+
+void TestModel::test_reconstruct_geometry()
+{
+	// reconstruction strips and rebuilds the whole geometry as one atomic undo
+	// step; the structure (ids, kinds, nesting) is untouched
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	QUndoStack* stack = model->undoStack();
+	QCOMPARE(stack->count(), 0);
+
+	QString before = documentDump();
+	QVERIFY(model->reconstructGeometry());
+	QString after = documentDump();
+	QVERIFY(after != before);                 // the geometry was rebuilt
+	QCOMPARE(stack->count(), 1);              // exactly one undo step
+	QVERIFY(indexOf("node-0-0-0").isValid()); // the elements survive, resolvable by id
+	QVERIFY(indexOf("node-0-0-1").isValid());
+
+	stack->undo();
+	QCOMPARE(documentDump(), before);         // atomic restore of the old layout
+	stack->redo();
+	QCOMPARE(documentDump(), after);
 }
 
 void TestModel::test_move_subjects()

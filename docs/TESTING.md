@@ -267,6 +267,16 @@ geometry - is seen in the editor. A complete document is covered too
 (`geometry`): the library grows an authored composite state whose child
 touches its border, and the good file records that.
 
+Distinct from the open-time flag, the `reconstruct` action rebuilds the
+geometry of the document already open. The `--reconstruct` flag is preserving
+(it fills only the absent or malformed geometry); the action strips the whole
+geometry and rebuilds it from scratch. It is on the Edit menu and the toolbar
+next to Delete (with an approval dialog), the batch verb `reconstruct`, and the
+model method `reconstructGeometry`. It is one atomic undo step, leaves the
+structure untouched, and rebuilds the state machine border only when the
+machine carried one. `test_reconstruct_geometry` (L4) proves the atomicity and
+the structure preservation.
+
 `--inspect` opens the document read-only, as the GUI does through the open
 dialog: every model mutation is refused, so an edit script fails with exit
 code 4, and the region rectangles are taken from `dRegion` instead of the

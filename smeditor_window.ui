@@ -122,6 +122,7 @@
     <addaction name="actionCopy"/>
     <addaction name="actionPaste"/>
     <addaction name="actionDeleteElement"/>
+    <addaction name="actionReconstructGeometry"/>
     <addaction name="separator"/>
     <addaction name="actionUndo"/>
     <addaction name="actionRedo"/>
@@ -178,6 +179,7 @@
    <addaction name="actionCopy"/>
    <addaction name="actionPaste"/>
    <addaction name="actionDeleteElement"/>
+   <addaction name="actionReconstructGeometry"/>
    <addaction name="separator"/>
    <addaction name="actionGridVisibility"/>
    <addaction name="actionSnapMode"/>
@@ -388,6 +390,18 @@
    </property>
    <property name="shortcut">
     <string>Del</string>
+   </property>
+  </action>
+  <action name="actionReconstructGeometry">
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/reconstruction.png</normaloff>:/Icons/images/reconstruction.png</iconset>
+   </property>
+   <property name="text">
+    <string>Geometry Reconstruction</string>
+   </property>
+   <property name="toolTip">
+    <string>Rebuild the whole diagram geometry from scratch</string>
    </property>
   </action>
   <action name="actionCut">
