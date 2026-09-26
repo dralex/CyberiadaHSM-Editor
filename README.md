@@ -7,6 +7,15 @@ The visual editor program for Cyberiada HSM graphs based on the Qt Framework.
 The code is distributed under the GNU Public License (version 3), the documentation -- under
 the GNU Free Documentation License (version 1.3).
 
+## The Editor
+
+The editor is able to create HSM diagrams and edit Cyberiada GraphML files.
+It suports multiple HSM formats and has many drawing tools - HSM diagram
+elements (states, pseudostate, transitions, etc.), view management (zoom,
+pan), copy/paste, undo/redo, etc.
+
+![The Cyberiada HSM Editor](images/gui-sample.jpg)
+
 ## Requirements
 
 * [libcyberidaml++](https://github.com/kruzhok-team/libcyberiadamlpp/) and its required parts: [libcyberiadaml](https://github.com/kruzhok-team/libcyberiadaml), [libhtreegeom](https://github.com/kruzhok-team/libhtreegeom) and libxml2 
