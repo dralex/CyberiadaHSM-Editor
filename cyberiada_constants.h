@@ -31,6 +31,8 @@
 #define VERTEX_POINT_RADIUS 10
 #define CHOICE_DEFAULT_SIZE 40
 #define COMMENT_ANGLE_CORNER 10
+// the inset of the comment text from each side of the box
+#define COMMENT_TEXT_MARGIN  8
 // the smallest width and height of a resized element
 #define ELEMENT_MIN_SIZE     10
 // the clearance kept between a placed child and its siblings (paste/reparent)

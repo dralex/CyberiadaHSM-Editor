@@ -267,30 +267,33 @@ void CyberiadaSMEditorAbstractItem::mouseMoveEvent(QGraphicsSceneMouseEvent *eve
     QPointF pt = event->pos();
     QPointF scenePt = event->scenePos();
 
+    // a leaf box (comment) resizes on every edge - the opposite edge is held; a
+    // container keeps the directional model, where the top/left edge is a move
+    bool leaf = !dynamic_cast<Cyberiada::ElementCollection*>(element) &&
+                element->has_rect_geometry();
+
     switch (cornerFlags) {
     case Top:
-        updatePosGeometry();
+        if (leaf) resizeTop(scenePt); else updatePosGeometry();
         break;
     case Bottom:
         resizeBottom(scenePt);
         break;
     case Left:
-        updatePosGeometry();
+        if (leaf) resizeLeft(scenePt); else updatePosGeometry();
         break;
     case Right:
         resizeRight(scenePt);
         break;
     case TopLeft:
-        updatePosGeometry();
+        if (leaf) { resizeTop(scenePt); resizeLeft(scenePt); } else updatePosGeometry();
         break;
-    // case TopRight:
-    //     resizeTop(pt);
-    //     resizeRight(pt);
-    //     break;
-    // case BottomLeft:
-    //     resizeBottom(pt);
-    //     resizeLeft(pt);
-    //     break;
+    case TopRight:
+        if (leaf) { resizeTop(scenePt); resizeRight(scenePt); }
+        break;
+    case BottomLeft:
+        if (leaf) { resizeBottom(scenePt); resizeLeft(scenePt); }
+        break;
     case BottomRight:
         resizeBottom(scenePt);
         resizeRight(scenePt);
@@ -447,6 +450,23 @@ void CyberiadaSMEditorAbstractItem::resizeBottom(const QPointF &scenePt)
     applyBorderRect(border);
 }
 
+void CyberiadaSMEditorAbstractItem::resizeLeft(const QPointF &scenePt)
+{
+    // keep the right edge, move the left edge to the cursor
+    QRectF border = sceneBoundingRect();
+    if (scenePt.x() >= border.right()) return;
+    border.setLeft(scenePt.x());
+    applyBorderRect(border);
+}
+
+void CyberiadaSMEditorAbstractItem::resizeTop(const QPointF &scenePt)
+{
+    QRectF border = sceneBoundingRect();
+    if (scenePt.y() >= border.bottom()) return;
+    border.setTop(scenePt.y());
+    applyBorderRect(border);
+}
+
 // the child elements' bounding box in scene coordinates (invalid if none)
 QRectF CyberiadaSMEditorAbstractItem::contentBox() const
 {
@@ -473,7 +493,29 @@ qreal CyberiadaSMEditorAbstractItem::minSpanHeight() const { return ELEMENT_MIN_
 void CyberiadaSMEditorAbstractItem::applyBorderRect(QRectF borderScene)
 {
     Cyberiada::ElementCollection* coll = dynamic_cast<Cyberiada::ElementCollection*>(element);
-    if (!coll) return;
+    if (!coll) {
+        // a leaf box (comment): no children to contain, apply the new rect with the
+        // size floor and re-base the centre by the scene delta
+        const Cyberiada::Comment* cmt = dynamic_cast<const Cyberiada::Comment*>(element);
+        if (!cmt || !element->has_rect_geometry()) return;
+        if (borderScene.width() < minSpanWidth()) {
+            qreal c = borderScene.center().x();
+            borderScene.setLeft(c - minSpanWidth() / 2.0);
+            borderScene.setRight(c + minSpanWidth() / 2.0);
+        }
+        if (borderScene.height() < minSpanHeight()) {
+            qreal c = borderScene.center().y();
+            borderScene.setTop(c - minSpanHeight() / 2.0);
+            borderScene.setBottom(c + minSpanHeight() / 2.0);
+        }
+        prepareGeometryChange();
+        Cyberiada::Rect old = cmt->get_geometry_rect();
+        QPointF delta = borderScene.center() - scenePos();
+        model->updateGeometry(model->elementToIndex(element),
+            Cyberiada::Rect(old.x + delta.x(), old.y + delta.y(),
+                            borderScene.width(), borderScene.height()));
+        return;
+    }
     // clamp each edge so the content stays inside the inset region (children may
     // not enter the title / action bands)
     QRectF content = contentBox();

@@ -57,6 +57,7 @@ private slots:
 	void test_double_click_action();
 	void test_action_layout();
 	void test_border_resize();
+	void test_comment_border_resize();
 	void test_container_resize_clamp();
 	void test_box_transition();
 	void test_auto_attach();
@@ -635,6 +636,61 @@ void TestScene::test_border_resize()
 	QCOMPARE(element->get_geometry_rect().width, before.width + 27);
 	QCOMPARE(element->get_geometry_rect().height, after.height);
 	QVERIFY(model->deleteAction(index, 0));
+}
+
+void TestScene::test_comment_border_resize()
+{
+	// a comment is a leaf (not a collection): every border drag resizes it, the
+	// opposite edge held - the same result as the property editor
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+
+	Cyberiada::ElementCollection* sm =
+		dynamic_cast<Cyberiada::ElementCollection*>(model->indexToElement(model->firstSMIndex()));
+	QVERIFY(sm);
+	// a comment in clear space, so a border press reaches it
+	Cyberiada::Comment* c = model->newComment(sm, "note", Cyberiada::Rect(700, 600, 120, 60));
+	QVERIFY(c);
+	CyberiadaSMEditorAbstractItem* item =
+		dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene->getMap().value(c->get_id()));
+	QVERIFY(item);
+	scene->clearSelection();
+
+	// the bottom edge follows the pointer (started 3 px inside), the top is held
+	Cyberiada::Rect before = c->get_geometry_rect();
+	QRectF box = item->sceneBoundingRect();
+	QPointF at(box.center().x(), box.bottom() - 3);
+	mouse(QEvent::GraphicsSceneMousePress, at, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, at + QPointF(0, 40), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, at + QPointF(0, 40), Qt::NoButton);
+	QCOMPARE(c->get_geometry_rect().height, before.height + 37);
+	QCOMPARE(c->get_geometry_rect().width, before.width);
+	QCOMPARE(c->get_geometry_rect().y, before.y + 37.0 / 2);   // top held
+	QCOMPARE(c->get_geometry_rect().x, before.x);
+
+	// the top edge resizes too, the bottom held
+	before = c->get_geometry_rect();
+	box = item->sceneBoundingRect();
+	at = QPointF(box.center().x(), box.top() + 3);
+	mouse(QEvent::GraphicsSceneMousePress, at, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, at - QPointF(0, 40), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, at - QPointF(0, 40), Qt::NoButton);
+	QCOMPARE(c->get_geometry_rect().height, before.height + 37);
+	QCOMPARE(c->get_geometry_rect().y, before.y - 37.0 / 2);   // bottom held
+
+	// the left edge resizes, the right held
+	before = c->get_geometry_rect();
+	box = item->sceneBoundingRect();
+	at = QPointF(box.left() + 3, box.center().y());
+	mouse(QEvent::GraphicsSceneMousePress, at, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, at - QPointF(40, 0), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, at - QPointF(40, 0), Qt::NoButton);
+	QCOMPARE(c->get_geometry_rect().width, before.width + 37);
+	QCOMPARE(c->get_geometry_rect().x, before.x - 37.0 / 2);   // right held
+
+	QVERIFY(model->deleteElement(model->elementToIndex(c)));
 }
 
 void TestScene::test_container_resize_clamp()

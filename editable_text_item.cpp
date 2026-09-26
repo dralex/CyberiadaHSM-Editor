@@ -170,8 +170,9 @@ void EditableTextItem::setTextAlignment(Qt::Alignment alignment) {
 void EditableTextItem::setFontRole(FontRole role)
 {
     fontRole = role;
-    // only the text inside a state box is wrapped at the width of the box
-    isTextWidthEnabled = (role == fontRoleStateTitle || role == fontRoleStateAction);
+    // text inside a sized box (a state or a comment) wraps at the box width
+    isTextWidthEnabled = (role == fontRoleStateTitle || role == fontRoleStateAction ||
+                          role == fontRoleComment || role == fontRoleFormalComment);
     applyFont();
 }
 

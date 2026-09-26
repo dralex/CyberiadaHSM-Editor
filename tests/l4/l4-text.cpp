@@ -171,10 +171,22 @@ void TestText::test_title_size_change()
 
 void TestText::test_title_rewrap()
 {
-	// the header is bold: the boldness used to stop the width update
-	EditableTextItem* title = textItems(fontRoleStateTitle).first();
-	CyberiadaSMEditorAbstractItem* state =
-		dynamic_cast<CyberiadaSMEditorAbstractItem*>(title->parentItem());
+	// the header is bold: the boldness used to stop the width update. A comment
+	// title shares this role but keeps a text inset, so pick a state title
+	EditableTextItem* title = nullptr;
+	CyberiadaSMEditorAbstractItem* state = nullptr;
+	const QList<EditableTextItem*> titles = textItems(fontRoleStateTitle);
+	for (QList<EditableTextItem*>::const_iterator i = titles.begin(); i != titles.end(); i++) {
+		CyberiadaSMEditorAbstractItem* box =
+			dynamic_cast<CyberiadaSMEditorAbstractItem*>((*i)->parentItem());
+		if (box && (box->type() == CyberiadaSMEditorAbstractItem::StateItem ||
+					box->type() == CyberiadaSMEditorAbstractItem::CompositeStateItem)) {
+			title = *i;
+			state = box;
+			break;
+		}
+	}
+	QVERIFY(title);
 	QVERIFY(state);
 	QVERIFY(state->hasGeometry());
 

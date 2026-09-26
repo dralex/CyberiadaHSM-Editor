@@ -54,6 +54,8 @@ CyberiadaSMEditorCommentItem::CyberiadaSMEditorCommentItem(QObject *parent_objec
     title = new EditableTextItem(comment->get_name().c_str(), this);
     title->setFontRole(fontRoleStateTitle);
     title->setTextAlignment(Qt::AlignLeft);
+    // the text keeps an inset on both sides of the box (see setTextPosition)
+    title->setTextMargin(2 * COMMENT_TEXT_MARGIN);
     title->setVisible(SettingsManager::instance().getShowText() && comment->has_name() &&
                       !comment->get_name().empty());
     connect(title, &EditableTextItem::editingFinished, this, &CyberiadaSMEditorCommentItem::onTitleChanged);
@@ -66,6 +68,7 @@ CyberiadaSMEditorCommentItem::CyberiadaSMEditorCommentItem(QObject *parent_objec
     body->setFontRole(element->get_type() == Cyberiada::elementFormalComment ?
                       fontRoleFormalComment : fontRoleComment);
     body->setTextAlignment(Qt::AlignLeft);
+    body->setTextMargin(2 * COMMENT_TEXT_MARGIN);
 
     commentBrush = QBrush(QColor(0xff, 0xcc, 0));
 
@@ -162,9 +165,11 @@ void CyberiadaSMEditorCommentItem::onTitleChanged()
 void CyberiadaSMEditorCommentItem::setTextPosition()
 {
     // the text is left-aligned and stacked from the top: the name (bold, when
-    // set) then the body below it
+    // set) then the body below it; the wrap width follows the box after a resize
+    title->updateTextWidth();
+    body->updateTextWidth();
     QRectF r = boundingRect();
-    const qreal margin = 8;
+    const qreal margin = COMMENT_TEXT_MARGIN;
     qreal top = r.top();
     if (title->isVisible()) {
         title->setPos(r.left() + margin, top);
