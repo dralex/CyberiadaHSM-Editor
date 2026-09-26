@@ -267,42 +267,31 @@ void CyberiadaSMEditorAbstractItem::mouseMoveEvent(QGraphicsSceneMouseEvent *eve
     QPointF pt = event->pos();
     QPointF scenePt = event->scenePos();
 
-    // a leaf box (comment) resizes on every edge - the opposite edge is held; a
-    // container keeps the directional model, where the top/left edge is a move
-    bool leaf = !dynamic_cast<Cyberiada::ElementCollection*>(element) &&
-                element->has_rect_geometry();
-
+    // every box (a state, a comment, a state machine) resizes directionally: the
+    // right/bottom borders and the corner between them grow that side, the top/left
+    // borders move the element. A comment resizes through the leaf branch of
+    // applyBorderRect and moves through updatePosGeometry, like a state
     switch (cornerFlags) {
     case Top:
-        if (leaf) resizeTop(scenePt); else updatePosGeometry();
+        updatePosGeometry();
         break;
     case Bottom:
         resizeBottom(scenePt);
         break;
     case Left:
-        if (leaf) resizeLeft(scenePt); else updatePosGeometry();
+        updatePosGeometry();
         break;
     case Right:
         resizeRight(scenePt);
         break;
     case TopLeft:
-        if (leaf) { resizeTop(scenePt); resizeLeft(scenePt); } else updatePosGeometry();
-        break;
-    case TopRight:
-        if (leaf) { resizeTop(scenePt); resizeRight(scenePt); }
-        break;
-    case BottomLeft:
-        if (leaf) { resizeBottom(scenePt); resizeLeft(scenePt); }
+        updatePosGeometry();
         break;
     case BottomRight:
         resizeBottom(scenePt);
         resizeRight(scenePt);
         break;
     default:
-        // if (isLeftMouseButtonPressed) {
-        //     setCursor(Qt::ClosedHandCursor);
-        //     setFlag(ItemIsMovable);
-        // }
         break;
     }
 
@@ -447,23 +436,6 @@ void CyberiadaSMEditorAbstractItem::resizeBottom(const QPointF &scenePt)
     QRectF border = sceneBoundingRect();
     if (scenePt.y() <= border.top()) return;
     border.setBottom(scenePt.y());
-    applyBorderRect(border);
-}
-
-void CyberiadaSMEditorAbstractItem::resizeLeft(const QPointF &scenePt)
-{
-    // keep the right edge, move the left edge to the cursor
-    QRectF border = sceneBoundingRect();
-    if (scenePt.x() >= border.right()) return;
-    border.setLeft(scenePt.x());
-    applyBorderRect(border);
-}
-
-void CyberiadaSMEditorAbstractItem::resizeTop(const QPointF &scenePt)
-{
-    QRectF border = sceneBoundingRect();
-    if (scenePt.y() >= border.bottom()) return;
-    border.setTop(scenePt.y());
     applyBorderRect(border);
 }
 

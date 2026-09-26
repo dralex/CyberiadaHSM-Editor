@@ -467,7 +467,7 @@
     {
       "verb": "resize-comment",
       "args": "",
-      "effect": "a comment resized from a non-right border: press 3 px inside the border, drag, release",
+      "effect": "a comment resized from its bottom border: press 3 px inside the border, drag, release",
       "targets": [
         "comment",
         "formal-comment"

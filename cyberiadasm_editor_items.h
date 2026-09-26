@@ -159,10 +159,8 @@ protected:
     CyberiadaSMEditorAbstractItem* prevItemUnderCursor;
     bool isHighlighted;
 
-    void resizeLeft( const QPointF &pt);
     void resizeRight( const QPointF &pt);
     void resizeBottom(const QPointF &pt);
-    void resizeTop(const QPointF &pt);
 
     void updatePosGeometry();
     // the smallest the element may be resized to (a box has a floor)

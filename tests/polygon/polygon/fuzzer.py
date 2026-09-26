@@ -275,17 +275,12 @@ class Fuzzer:
             if item is None:
                 return None
             x, y, w, h = item.abs_rect
-            # a non-right border - the left/top/bottom edges the drag-resize repaired
-            edge = self.pick(("left", "bottom", "top"))
+            # the bottom border - a comment resizes from the right/bottom, the
+            # top/left borders move it (EDIT-NODE-5)
+            ry = y + h - BORDER_INSET
             d = self.pick(DELTAS)
-            if edge == "left":
-                px, py, qx, qy = x + BORDER_INSET, y + h / 2, x + BORDER_INSET + d, y + h / 2
-            elif edge == "bottom":
-                px, py, qx, qy = x + w / 2, y + h - BORDER_INSET, x + w / 2, y + h - BORDER_INSET + d
-            else:
-                px, py, qx, qy = x + w / 2, y + BORDER_INSET, x + w / 2, y + BORDER_INSET + d
-            return ["press %d %d" % (px, py), "drag %d %d" % (qx, qy),
-                    "release %d %d" % (qx, qy)], SHORT[item.kind]
+            return ["press %d %d" % (x + w / 2, ry), "drag %d %d" % (x + w / 2, ry + d),
+                    "release %d %d" % (x + w / 2, ry + d)], SHORT[item.kind]
         item = self.pick(self.sized_states(dump))
         if item is None:
             return None
