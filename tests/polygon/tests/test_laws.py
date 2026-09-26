@@ -106,6 +106,14 @@ class LawTest(unittest.TestCase):
         d = wrap([node(D.KIND_INITIAL, "i0"), node(D.KIND_INITIAL, "i1")])
         self.assertIn("SEM-1", reqs(d))
 
+    def test_two_shallow_histories_one_level(self):
+        d = wrap([node(D.KIND_SHALLOW_HISTORY, "h0"), node(D.KIND_SHALLOW_HISTORY, "h1")])
+        self.assertIn("SEM-6", reqs(d))
+
+    def test_shallow_and_deep_history_coexist(self):
+        d = wrap([node(D.KIND_SHALLOW_HISTORY, "h0"), node(D.KIND_DEEP_HISTORY, "h1")])
+        self.assertNotIn("SEM-6", reqs(d))
+
     def test_bad_endpoint_kind(self):
         t = D.Element(kind=D.KIND_TRANSITION, id="t0", source="c0", target="n0")
         d = wrap([node(D.KIND_COMMENT, "c0"), node(D.KIND_SIMPLE, "n0", "A"), t])

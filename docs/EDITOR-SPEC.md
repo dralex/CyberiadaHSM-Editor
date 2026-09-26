@@ -146,7 +146,8 @@ over those rows; nothing more than the existing dump is needed.
   target only). *PNST 984*
 - `EDIT-SEM-6` MUST [U]: a shallow history pseudostate restores the last active substate of its
   enclosing region; a deep history restores the full nested active configuration; the single
-  optional default transition is taken when the region was never entered. *PNST 984*
+  optional default transition is taken when the region was never entered. A region holds at most
+  one shallow and at most one deep history (one of each); a second of a kind is refused. *PNST 984*
 - `EDIT-STRUCT-10` MUST [U]: a state carries at most one `entry/` and at most one `exit/`
   behaviour block (and at most one `do/` where the model supports it). *PNST 1044 6.8.1*
 - `EDIT-SEM-7` MUST [U]: an entry point and an exit point carry a non-empty name; a new point

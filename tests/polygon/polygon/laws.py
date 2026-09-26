@@ -146,6 +146,21 @@ def one_initial_per_parent(dump):                        # EDIT-SEM-1
             yield Violation("SEM-1", "%d initial pseudostates under %s" % (n, parent))
 
 
+def one_history_per_kind(dump):                         # EDIT-SEM-6
+    doc = dump.document
+    if doc is None:
+        return
+    from collections import Counter
+    counts = Counter()
+    for e in doc.walk():
+        if e.kind in _HISTORY_KINDS:
+            counts[(e.parent.id if e.parent else "?", e.kind)] += 1
+    for (parent, kind), n in counts.items():
+        if n > 1:
+            yield Violation("SEM-6", "%d %s history pseudostates under %s"
+                            % (n, "shallow" if kind == D.KIND_SHALLOW_HISTORY else "deep", parent))
+
+
 # a history pseudostate is a valid target, and the source of an optional default
 # transition (PNST 984, not required) - so it is legal on either end; a submachine
 # state is a state, so it is already a valid source and target through STATE_KINDS
@@ -355,7 +370,7 @@ def machine_names(dump):                                 # EDIT-META-5
 # hard laws run always-on and register as defects; gated laws are implemented
 # and tested but not yet registered (pending an EDITOR-SPEC decision)
 HARD = [unique_ids, no_cycle, endpoints_same_machine, composite_by_children,
-        no_dangling, one_initial_per_parent, endpoint_kinds, submachine_children,
+        no_dangling, one_initial_per_parent, one_history_per_kind, endpoint_kinds, submachine_children,
         meta_hidden, containment, no_overlap, points_named, submachine_reference,
         single_behaviour_blocks, event_names, event_handling, machine_names]
 GATED = []
