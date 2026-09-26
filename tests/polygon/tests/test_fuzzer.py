@@ -45,7 +45,7 @@ class CatalogTest(unittest.TestCase):
         cat = CAT.Catalog()
         self.assertEqual(len(cat.by_form(CAT.FORM_MODEL)), 30)
         self.assertEqual(len(cat.by_form(CAT.FORM_GESTURE)), 16)
-        self.assertEqual(len(cat.by_form(CAT.FORM_GESTURE_FORM)), 15)
+        self.assertEqual(len(cat.by_form(CAT.FORM_GESTURE_FORM)), 16)
         self.assertIn("| `new-state <parent> [x y w h] <name>` |", cat.table(CAT.FORM_MODEL))
         self.assertIn(("reparent", "simple"), cat.cells())
 

@@ -32,6 +32,7 @@ from . import dump as D
 BODY_INSET = 20          # the free body area of a state, from its bottom right
 BORDER_INSET = 3         # the resize zone, inside the border
 MIN_GESTURE_SIZE = 60    # a state smaller than this is not dragged or resized
+COMMENT_MIN_RESIZE = 40  # a comment smaller than this is not resized by a border
 RECT_SIZES = (80, 120, 160, 200, 300)
 DELTAS = (-80, -40, -15, 15, 40, 80)
 TRIGGERS = ("EV", "TICK", "DONE", "CALL", "STOP")
@@ -90,6 +91,16 @@ class Fuzzer:
         out = []
         for item in dump.scene_items().values():
             if item.kind in D.STATE_KINDS and item.rect[2] >= MIN_GESTURE_SIZE and item.rect[3] >= MIN_GESTURE_SIZE:
+                out.append(item)
+        return out
+
+    @staticmethod
+    def resizable_comments(dump):
+        # the meta comment is hidden from the scene, so it never appears here
+        out = []
+        for item in dump.scene_items().values():
+            if (item.kind in D.COMMENT_KINDS and
+                    item.rect[2] >= COMMENT_MIN_RESIZE and item.rect[3] >= COMMENT_MIN_RESIZE):
                 out.append(item)
         return out
 
@@ -259,6 +270,22 @@ class Fuzzer:
     # --- the gesture forms -------------------------------------------------
 
     def gen_gesture(self, verb, dump):
+        if verb == "resize-comment":
+            item = self.pick(self.resizable_comments(dump))
+            if item is None:
+                return None
+            x, y, w, h = item.abs_rect
+            # a non-right border - the left/top/bottom edges the drag-resize repaired
+            edge = self.pick(("left", "bottom", "top"))
+            d = self.pick(DELTAS)
+            if edge == "left":
+                px, py, qx, qy = x + BORDER_INSET, y + h / 2, x + BORDER_INSET + d, y + h / 2
+            elif edge == "bottom":
+                px, py, qx, qy = x + w / 2, y + h - BORDER_INSET, x + w / 2, y + h - BORDER_INSET + d
+            else:
+                px, py, qx, qy = x + w / 2, y + BORDER_INSET, x + w / 2, y + BORDER_INSET + d
+            return ["press %d %d" % (px, py), "drag %d %d" % (qx, qy),
+                    "release %d %d" % (qx, qy)], SHORT[item.kind]
         item = self.pick(self.sized_states(dump))
         if item is None:
             return None
@@ -296,7 +323,7 @@ class Fuzzer:
 
     # --- the lean tool-driven draw -----------------------------------------
 
-    MANIPULATIONS = ("drag-state", "resize-state", "click-delete", "double-click-action",
+    MANIPULATIONS = ("drag-state", "resize-state", "resize-comment", "click-delete", "double-click-action",
                      "edit-title", "edit-action", "edit-label", "edit-body",
                      "add-point", "move-point", "remove-point", "move-endpoint",
                      "copy-paste", "cut-paste", "undo", "redo")
@@ -330,8 +357,12 @@ class Fuzzer:
 
     def kind_of(self, name):
         tool = next((t for t in CAT.creation_tools() if t.name == name), None)
-        return tool.element if tool else ("transition" if "point" in name or name == "draw-transition"
-                                          or name == "edit-label" else "state")
+        if tool:
+            return tool.element
+        if name == "resize-comment":
+            return "comment"
+        return ("transition" if "point" in name or name == "draw-transition"
+                or name == "edit-label" else "state")
 
     def next(self, dump, exclude=()):
         """(lines, verb, kind) for the next round: a tool or a manipulation,

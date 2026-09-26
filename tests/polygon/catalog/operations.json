@@ -465,6 +465,16 @@
       "form": "gesture-form"
     },
     {
+      "verb": "resize-comment",
+      "args": "",
+      "effect": "a comment resized from a non-right border: press 3 px inside the border, drag, release",
+      "targets": [
+        "comment",
+        "formal-comment"
+      ],
+      "form": "gesture-form"
+    },
+    {
       "verb": "draw-loop",
       "args": "",
       "effect": "a loop drawn with the transition tool: tool transition, press inside the state, drag, release, tool select",
