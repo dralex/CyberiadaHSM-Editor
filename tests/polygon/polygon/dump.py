@@ -555,10 +555,30 @@ class Difference:
         return "%s:%s" % (self.where.lower().replace(" ", "-"), self.field)
 
 
+_NUMBER = re.compile(r"-?\d+\.?\d*(?:[eE][-+]?\d+)?")
+
+
+def values_equal(a, b):
+    """Two dump field values are equal when they match, or differ only in the
+    floating-point noise of a coordinate round-trip: the same non-numeric shape
+    and every number within a small relative tolerance (~5 significant figures)."""
+    if a == b:
+        return True
+    if _NUMBER.sub("#", a) != _NUMBER.sub("#", b):
+        return False
+    na = [float(x) for x in _NUMBER.findall(a)]
+    nb = [float(x) for x in _NUMBER.findall(b)]
+    if len(na) != len(nb):
+        return False
+    return all(abs(x - y) <= 1e-3 + 1e-4 * max(abs(x), abs(y)) for x, y in zip(na, nb))
+
+
 def compare(a_text, b_text, ignore=()):
     """The first difference of two dumps by the document structure and
     geometry, then by the scene section; None when they agree. ignore holds
-    the tags (kind:field) of the fields the format does not preserve."""
+    the tags (kind:field) of the fields the format does not preserve.
+    Coordinates are compared within the floating-point tolerance of a round
+    trip, not byte for byte."""
     da, db = parse_dump(a_text), parse_dump(b_text)
     if da.document is None or db.document is None:
         return Difference("document", "missing", "a document", "no document")
@@ -572,7 +592,7 @@ def compare(a_text, b_text, ignore=()):
             return Difference(ra[0], "identity", record_text(ra), record_text(rb))
         skipped = False
         for (ka, va), (kb, vb) in zip(ra[2], rb[2]):
-            if va != vb:
+            if not values_equal(va, vb):
                 d = Difference(ra[0], ka, record_text(ra), record_text(rb))
                 if d.tag in ignore:
                     skipped = True
@@ -588,7 +608,7 @@ def compare(a_text, b_text, ignore=()):
     sa = sections(a_text).get("scene", "").splitlines()
     sb = sections(b_text).get("scene", "").splitlines()
     for x, y in zip(sa, sb):
-        if x != y:
+        if not values_equal(x, y):
             kind = x.strip().split(":")[0] if x.strip() else "item"
             return Difference("scene " + kind, "item", x.strip(), y.strip())
     if len(sa) != len(sb):
