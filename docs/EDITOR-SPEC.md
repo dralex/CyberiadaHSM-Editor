@@ -267,9 +267,9 @@ the third is a derived display value the format does not store):
 - `EDIT-TEXT-1` MUST [U]: a state's or a state machine's title lies inside its owner; when
   editing a taller header grows the element and the other roles reflow, none moving
   sideways. A simple state becoming composite reflows its title the same way. *design*
-- `EDIT-TEXT-2` MUST [U]: an action keeps its `entry/ `, `exit/ ` or trigger
-  prefix. If the behaviour text fits within the element width it is drawn in a single line,
-  otherwise it wraps to the next line at a word boundary. *design*
+- `EDIT-TEXT-2` MUST [U]: an action keeps its `entry/`, `exit/` or `event [guard]/`
+  prefix. A single-line behaviour is drawn inline after the prefix and soft-wraps at the element
+  width if too long; a behaviour spanning several lines starts on its own line under the prefix. *design*
 - `EDIT-TEXT-3` MUST [A]: a title, an action text, or an edge label is edited in place. *design*
 - `EDIT-TEXT-4` MUST [A]: if an edge label text no longer fits the label rect, it wraps at
   a word boundary. *design*

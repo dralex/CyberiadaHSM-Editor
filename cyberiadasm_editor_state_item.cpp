@@ -949,6 +949,9 @@ StateAction::StateAction(const Cyberiada::Action* action, QGraphicsItem *parent)
 
     QString behaviour = QString(action->get_behavior().c_str());
     Cyberiada::ActionType type = action->get_type();
+    // a single-line behaviour follows the header inline; a multi-line one starts
+    // on its own line under it (EDIT-TEXT-2)
+    bool ownLine = behaviour.contains('\n');
     if (type == Cyberiada::ActionType::actionTransition) {
         // an internal transition reads like an edge label: EVENT [guard] / behaviour;
         // the whole label is editable, so nothing is protected (typeText stays empty)
@@ -959,7 +962,7 @@ StateAction::StateAction(const Cyberiada::Action* action, QGraphicsItem *parent)
         // a deferred event reads as EVENT / defer (EDIT-TEXT-6)
         if (action->get_propagation() == Cyberiada::eventPropagationDefer)
             text += " / defer";
-        else if (!behaviour.isEmpty()) text += " / " + behaviour;
+        else if (!behaviour.isEmpty()) text += (ownLine ? " /\n" : " / ") + behaviour;
         setPlainText(text);
         return;
     }
@@ -975,9 +978,9 @@ StateAction::StateAction(const Cyberiada::Action* action, QGraphicsItem *parent)
         typeText = QString("");
     }
     if (!typeText.isEmpty()) {
-        // the behaviour always starts on its own line under the keyword, so the
-        // "entry/" (or "exit/") header reads the same whatever the behaviour length
-        typeText += QString("/\n");
+        // a single-line behaviour follows the keyword inline (entry/ f()); a
+        // multi-line one drops to its own line under it (EDIT-TEXT-2)
+        typeText += ownLine ? QString("/\n") : QString("/ ");
     }
 
     setPlainText(typeText + behaviour);

@@ -2512,8 +2512,8 @@ void TestScene::test_sm_not_pasteable()
 
 void TestScene::test_action_multiline()
 {
-	// a state action's behaviour always drops to its own line under the keyword,
-	// whatever its length, so the entry/ header reads the same (#6)
+	// a single-line behaviour follows the keyword inline; a multi-line one drops
+	// to its own line under it (EDIT-TEXT-2)
 	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
 	scene->loadScene();
 	CyberiadaSMEditorStateItem* state =
@@ -2527,19 +2527,16 @@ void TestScene::test_action_multiline()
 				if (a->toPlainText().startsWith("entry")) return a->toPlainText();
 		return QString();
 	};
-	const QString header("entry/\n");
 
+	// a single-line behaviour is inline after entry/ , however long (it soft-wraps)
 	QVERIFY(model->newAction(idx, Cyberiada::actionEntry, QString(), QString(), "f()"));
-	QString shortText = entryText();
-	QVERIFY2(shortText.startsWith(header), "a short action breaks after entry/");
-	QVERIFY2(!shortText.mid(header.length()).contains('\n'), "the behaviour keeps one line");
+	QCOMPARE(entryText(), QString("entry/ f()"));
 	QVERIFY(model->deleteAction(idx, 0));
 
-	QVERIFY(model->newAction(idx, Cyberiada::actionEntry, QString(), QString(),
-							 "a_very_long_behaviour_that_cannot_fit()"));
-	QString t = entryText();
-	QVERIFY2(t.startsWith(header), "a long action also breaks after entry/");
-	QVERIFY2(!t.mid(header.length()).contains('\n'), "the behaviour keeps its own line");
+	// a multi-line behaviour starts on its own line under entry/
+	QVERIFY(model->newAction(idx, Cyberiada::actionEntry, QString(), QString(), "a();\nb();"));
+	QCOMPARE(entryText(), QString("entry/\na();\nb();"));
+	QVERIFY(model->deleteAction(idx, 0));
 }
 
 void TestScene::test_internal_transition()
