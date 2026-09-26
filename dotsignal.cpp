@@ -125,6 +125,18 @@ void DotSignal::mousePressEvent(QGraphicsSceneMouseEvent *event)
     }
 }
 
+void DotSignal::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
+{
+    // a double click on a deleteable dot removes it, like the Delete key; the
+    // owner's guard keeps the endpoints
+    if (deleteable && event->button() == Qt::LeftButton) {
+        deleteDot();
+        event->accept();
+        return;
+    }
+    QGraphicsRectItem::mouseDoubleClickEvent(event);
+}
+
 void DotSignal::keyPressEvent(QKeyEvent *event)
 {
     if (deleteable && (event->key() == Qt::Key_Delete || event->key() == Qt::Key_Backspace)) {

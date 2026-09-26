@@ -107,7 +107,7 @@ it checks in a comment):
 | STRUCT | `l1-*` / `l4 test_item_hierarchy`, `test_load_scene`; names `test_name_edit`, `test_default_name_unique`, `test_name_only_state`; delete `l2 delete` + `test_delete`; subjects `l2 subjects`, `transition-subjects`, `test_move_subjects` |
 | SEM    | `test_choice_edge_rule`, `test_choice_tip_attach`; endpoint kinds via the transition cases |
 | NODE   | grow `test_move_grows_parent`, `test_nested_state_grows_parent`, `test_grow_cascades_to_ancestors`, `test_grow_skips_rectless_sm`; resize `test_border_resize`, `test_directional_grow`, `test_container_resize_clamp`, `test_comment_border_resize`; place `test_new_element_place`; comment name `test_comment_name`; blocks `test_action_layout`; frame `reconstruct-sm-*` |
-| EDGE   | attach `test_auto_attach`, `test_ctrl_snap_endpoint`, `test_choice_tip_attach`; points `l2 edge-points`, `test_point_edit`, `test_loop_polyline`; rebind `test_retarget_id`, `test_box_transition`; label `test_label_move`, `test_label_drag_tracks`, `label-geometry-*` |
+| EDGE   | attach `test_auto_attach`, `test_ctrl_snap_endpoint`, `test_choice_tip_attach`; points `l2 edge-points`, `test_point_edit`, `test_loop_polyline`, `test_double_click_removes_vertex`; rebind `test_retarget_id`, `test_box_transition`; label `test_label_move`, `test_label_drag_tracks`, `label-geometry-*` |
 | TEXT   | `test_action_edit`, `test_action_multiline`, `test_double_click_action`, `test_double_click_label`, `l2 text-edit`, `transition-notation`, the `text` metrics layer |
 | TOOL   | `test_creation_tools`, `test_creation_tools_arm`, `test_new_{state,choice,comment,sm}_place`, paste `test_paste_state`, `test_paste_transition`, `l2 copy-paste`, drag `test_body_drag` |
 | HIST   | `undo`/`redo-all` layer, `undo-all`, `test_gesture_recording`, `gestures-undo` |
@@ -361,10 +361,10 @@ takes the path of the GUI: the item handlers, the tools, the border zones.
 
 A transition polyline is edited by gesture: click the transition to select it and
 show its point dots, then drag a segment to add a point, drag a point dot to move
-it, click a point dot and press `key delete` to remove it (the delete key on a
-focused point dot mirrors the context menu), or drag an endpoint dot to move or
-reattach it. The `key` verb reaches whatever holds the scene focus, a text editor
-or a point dot.
+it, double-click a point dot or click it and press `key delete` to remove it (the
+delete key on a focused point dot mirrors the context menu), or drag an endpoint dot
+to move or reattach it. The `key` verb reaches whatever holds the scene focus, a text
+editor or a point dot.
 
 A gesture is one undo step opened by the press and closed by the release, as
 in the GUI, so `press`, `drag`, `release`, `click`, `double-click` and `tool`

@@ -67,6 +67,8 @@ signals:
 protected:
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
     void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
+    // a double click on a point dot removes it, like the Delete key
+    void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) override;
     // Delete on a focused point dot removes it (like the context menu)
     void keyPressEvent(QKeyEvent *event) override;
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;

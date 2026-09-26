@@ -249,7 +249,8 @@ the third is a derived display value the format does not store):
 - `EDIT-EDGE-8` MUST [U]: a self-loop stays a loop unless an endpoint is dragged
   onto a non-ancestor node. *design*
 - `EDIT-EDGE-9` MUST [A]: adding, moving or removing a polyline point changes
-  only that point; the endpoints stay. *design*
+  only that point; the endpoints stay. A point is removed by double-clicking its
+  dot or pressing Delete on it. *design*
 - `EDIT-EDGE-10` SHOULD [U]: transition (lines and polylines) should not cross state
   borders if possible *design*
 - `EDIT-EDGE-11` MUST [U]: a transition's label geometry is a rect — the live and persisted

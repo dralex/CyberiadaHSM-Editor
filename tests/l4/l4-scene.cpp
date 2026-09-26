@@ -80,6 +80,7 @@ private slots:
 	void test_double_click_label();
 	void test_segment_drag_vertex();
 	void test_remove_vertex();
+	void test_double_click_removes_vertex();
 	void test_default_name_unique();
 	void test_reparent_simple();
 	void test_retarget_id();
@@ -1631,6 +1632,45 @@ void TestScene::test_remove_vertex()
 	// an endpoint dot has no vertex to remove
 	size_t mid = t->get_geometry_polyline().size();
 	tr->getDot(0)->deleteDot();
+	QCOMPARE(t->get_geometry_polyline().size(), mid);
+}
+
+void TestScene::test_double_click_removes_vertex()
+{
+	// a double click on an interior point dot removes it; endpoints are kept
+	QVERIFY(model->loadDocument("diagrams/polyline.graphml"));
+	scene->loadScene();
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+
+	CyberiadaSMEditorTransitionItem* tr =
+		dynamic_cast<CyberiadaSMEditorTransitionItem*>(scene->getMap().value("t0"));
+	QVERIFY(tr);
+	const Cyberiada::Transition* t =
+		static_cast<const Cyberiada::Transition*>(model->idToElement("t0"));
+	size_t before = t->get_geometry_polyline().size();
+	QVERIFY(before >= 1);
+
+	// select the transition and show its dots (a press on the line reveals them)
+	scene->clearSelection();
+	tr->setSelected(true);
+	mouse(QEvent::GraphicsSceneMousePress, QPointF(300, 300), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, QPointF(300, 300), Qt::NoButton);
+
+	// a double click on the interior dot removes its polyline point (the press
+	// that opens the gesture must land on the dot, as a real double click does)
+	QPointF at = tr->getDot(1)->scenePos();
+	mouse(QEvent::GraphicsSceneMousePress, at, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseDoubleClick, at, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, at, Qt::NoButton);
+	QCOMPARE(t->get_geometry_polyline().size(), before - 1);
+
+	// a double click on an endpoint dot removes nothing
+	size_t mid = t->get_geometry_polyline().size();
+	QPointF endp = tr->getDot(0)->scenePos();
+	mouse(QEvent::GraphicsSceneMousePress, endp, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseDoubleClick, endp, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, endp, Qt::NoButton);
 	QCOMPARE(t->get_geometry_polyline().size(), mid);
 }
 
