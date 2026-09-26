@@ -14,7 +14,9 @@ It suports multiple HSM formats and has many drawing tools - HSM diagram
 elements (states, pseudostate, transitions, etc.), view management (zoom,
 pan), copy/paste, undo/redo, etc.
 
-![The Cyberiada HSM Editor](images/gui-sample.jpg)
+![The Cyberiada HSM Editor. Sample 1](images/gui-sample-1.jpg)
+
+![The Cyberiada HSM Editor. Sample 2](images/gui-sample-2.jpg)
 
 ## Requirements
 
