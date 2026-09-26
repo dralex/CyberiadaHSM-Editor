@@ -1445,7 +1445,9 @@ void TransitionAction::parseLabel(const QString& text, QString& trigger, QString
     trigger = m.hasMatch() ? m.captured(1).trimmed() : QString();
     m = QRegularExpression(R"(\[\s*(.*?)\s*\])").match(text);   // all between [ and ]
     guard = m.hasMatch() ? m.captured(1).trimmed() : QString();
-    m = QRegularExpression(R"(\/\s*(.+)$)").match(text);        // all after /
+    // all after / - DotMatchesEverything so a multi-line behaviour is kept whole
+    m = QRegularExpression(R"(\/\s*(.+)$)",
+                           QRegularExpression::DotMatchesEverythingOption).match(text);
     behaviour = m.hasMatch() ? m.captured(1).trimmed() : QString();
 }
 

@@ -2606,6 +2606,18 @@ void TestScene::test_transition_edit()
 	QCOMPARE(QString(st->get_actions()[0].get_guard().c_str()), QString("y < 5"));
 	QCOMPARE(QString(st->get_actions()[0].get_behavior().c_str()), QString("clear()"));
 
+	// a behaviour split across two lines is kept whole, not dropped (the
+	// EVENT [guard] / behaviour parse spans newlines)
+	action = firstAction();
+	QVERIFY(action);
+	action->setTextInteractionFlags(Qt::TextEditorInteraction);
+	action->setFocus();
+	action->setPlainText("RESET [y < 5] / clear();\nreset()");
+	action->clearFocus();
+	QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+	QCOMPARE(int(st->get_actions().size()), 1);
+	QCOMPARE(QString(st->get_actions()[0].get_behavior().c_str()), QString("clear();\nreset()"));
+
 	// clearing the event leaves no valid internal transition: it is dropped
 	action = firstAction();
 	QVERIFY(action);
