@@ -24,11 +24,13 @@
 #include <QDebug>
 #include <QPainter>
 #include <QColor>
+#include <QFontMetricsF>
 #include <QTextCursor>
 #include <math.h>
 
 #include "myassert.h"
 #include "cyberiada_constants.h"
+#include "fontmanager.h"
 #include "cyberiadasm_editor_vertex_item.h"
 #include "cyberiadasm_editor_state_item.h"
 #include "cyberiadasm_editor_scene.h"
@@ -169,8 +171,14 @@ void CyberiadaSMEditorVertexItem::paint(QPainter* painter, const QStyleOptionGra
         QRectF r = fullCircle();
         painter->setBrush(painter->background());
         painter->drawEllipse(r);
-        QFont font = painter->font();
+        // the glyph is fitted to the square inscribed in the circle; both
+        // marks are measured as H* so they share one size
+        QFont font = FontManager::instance().baseFont();
         font.setBold(true);
+        const qreal side = VERTEX_POINT_RADIUS * M_SQRT2;
+        QRectF b = QFontMetricsF(font).boundingRect("H*");
+        qreal scale = qMin(side / b.width(), side / b.height());
+        font.setPixelSize(qMax(FONT_SIZE_MIN, int(font.pixelSize() * scale)));
         painter->setFont(font);
         QString glyph = (type == Cyberiada::elementDeepHistory) ? "H*" : "H";
         painter->drawText(r, Qt::AlignCenter, glyph);
