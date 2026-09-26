@@ -121,6 +121,25 @@ if(WIN32)
   endif()
 endif()
 
+if(APPLE)
+  # build a .app bundle so macdeployqt can turn it into a self-contained .dmg
+  set_target_properties(CyberiadaEditor PROPERTIES
+    MACOSX_BUNDLE ON
+    MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/packaging/macos/Info.plist.in
+    MACOSX_BUNDLE_BUNDLE_NAME "CyberiadaEditor"
+    MACOSX_BUNDLE_GUI_IDENTIFIER "dev.cyberiada.editor"
+    MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
+    MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
+    MACOSX_BUNDLE_ICON_FILE "cyberiada.icns")
+  # include the icon in Contents/Resources when it has been generated
+  # (packaging/macos/make-icns.sh, run by build-macos.sh before configuring)
+  set(_cyb_icns ${CMAKE_CURRENT_SOURCE_DIR}/packaging/macos/cyberiada.icns)
+  if(EXISTS ${_cyb_icns})
+    set_source_files_properties(${_cyb_icns} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+    target_sources(CyberiadaEditor PRIVATE ${_cyb_icns})
+  endif()
+endif()
+
 # installation and Debian packaging (mirrors the Cyberiada libraries)
 include(GNUInstallDirs)
 install(TARGETS CyberiadaEditor
