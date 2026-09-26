@@ -118,6 +118,7 @@ private slots:
 	void test_comment_relayout();
 	void test_history();
 	void test_submachine();
+	void test_point_keeps_border();
 	void test_promote_title();
 	void test_empty_action_deletes();
 	// runs last: it reloads and modifies the shared document
@@ -2561,6 +2562,64 @@ void TestScene::test_submachine()
 	// the reference is editable through the model
 	QVERIFY(model->updateSubmachineReference(model->elementToIndex(sub), "Changed"));
 	QCOMPARE(QString::fromStdString(sub->get_submachine_reference()), QString("Changed"));
+}
+
+void TestScene::test_point_keeps_border()
+{
+	// an entry/exit point may sit on its parent border (EDIT-NODE-14): creating
+	// or dragging one there neither grows the submachine state nor the machine
+	CyberiadaSMModel m(nullptr);
+	CyberiadaSMEditorScene s(&m, nullptr);
+	CyberiadaSMModel* model = &m;
+	CyberiadaSMEditorScene* scene = &s;
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	scene->addSMItem(Cyberiada::elementSM);           // a fresh empty bordered machine
+	Cyberiada::StateMachine* sm = model->rootDocument()->get_state_machines().back();
+	QVERIFY(sm && sm->has_geometry());
+	Cyberiada::SubmachineState* sub = model->newSubmachineState(sm, "OtherSM",
+															   Cyberiada::Rect(0, 0, 200, 120));
+	QVERIFY(sub);
+	Cyberiada::Rect subRect = sub->get_geometry_rect();
+	Cyberiada::Rect smRect = sm->get_geometry_rect();
+
+	// the connectors on the left and the right border of the submachine
+	Cyberiada::Element* en = model->newEntryPoint(sub, Cyberiada::Point(-subRect.width / 2, 0));
+	Cyberiada::Element* ex = model->newExitPoint(sub, Cyberiada::Point(subRect.width / 2, 0));
+	QVERIFY(en && ex);
+	QCOMPARE(sub->get_geometry_rect().width, subRect.width);
+	QCOMPARE(sub->get_geometry_rect().height, subRect.height);
+	QCOMPARE(sm->get_geometry_rect().width, smRect.width);
+	QCOMPARE(sm->get_geometry_rect().height, smRect.height);
+
+	// a standalone point on the machine border
+	Cyberiada::Element* top = model->newEntryPoint(sm, Cyberiada::Point(0, -smRect.height / 2));
+	QVERIFY(top);
+	QCOMPARE(sm->get_geometry_rect().width, smRect.width);
+	QCOMPARE(sm->get_geometry_rect().height, smRect.height);
+
+	// drag the exit connector out past the submachine's bottom edge
+	QGraphicsItem* exItem = scene->getMap().value(ex->get_id());
+	QVERIFY(exItem);
+	scene->setCurrentTool(ToolType::Select);
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+	scene->clearSelection();
+	exItem->setSelected(true);
+	QPointF start = exItem->sceneBoundingRect().center();
+	QPointF far = start + QPointF(0, subRect.height);
+	sceneMouse(scene, QEvent::GraphicsSceneMousePress, start, Qt::LeftButton);
+	sceneMouse(scene, QEvent::GraphicsSceneMouseMove, far, Qt::LeftButton);
+	sceneMouse(scene, QEvent::GraphicsSceneMouseRelease, far, Qt::NoButton);
+	QCOMPARE(sub->get_geometry_rect().width, subRect.width);
+	QCOMPARE(sub->get_geometry_rect().height, subRect.height);
+	QCOMPARE(sm->get_geometry_rect().width, smRect.width);
+	QCOMPARE(sm->get_geometry_rect().height, smRect.height);
+	// the resize floor ignores the points as well
+	CyberiadaSMEditorStateItem* subItem =
+		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value(sub->get_id()));
+	QVERIFY(subItem);
+	QVERIFY(subItem->minimumHeight() < subRect.height);
 }
 
 void TestScene::test_new_sm_single_item()

@@ -99,6 +99,13 @@ public:
     // hold their absolute place (paste/move); otherwise grow about the centre so
     // the existing children keep their stored positions (create).
     bool                                growToFitChildren(Cyberiada::Element* moved, bool directional = true);
+    // an entry/exit point lies on its parent border (EDIT-NODE-14): it is not
+    // content the border must contain, so it neither grows the parent nor
+    // floors its resize (like a comment)
+    static bool                         isConnectionPoint(const Cyberiada::Element* e) {
+        return e && (e->get_type() == Cyberiada::elementEntryPoint ||
+                     e->get_type() == Cyberiada::elementExitPoint);
+    }
     // the half-extent (from the collection centre, each axis) its children need;
     // the collection's own rect is excluded, so it is the bare content a border
     // must contain - the shared floor for resize clamps and auto-grow

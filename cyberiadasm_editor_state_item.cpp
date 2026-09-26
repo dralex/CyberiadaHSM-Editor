@@ -416,6 +416,8 @@ void CyberiadaSMEditorStateItem::addInternalTransition()
 void CyberiadaSMEditorStateItem::updateSizeToFitChildren(CyberiadaSMEditorAbstractItem* child)
 {
     if (!child || !element->has_geometry()) return;
+    // an entry/exit point lies on the state border (EDIT-NODE-14)
+    if (CyberiadaSMModel::isConnectionPoint(child->getElement())) return;
 
     prepareGeometryChange();
 

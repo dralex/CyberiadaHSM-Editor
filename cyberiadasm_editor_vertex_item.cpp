@@ -176,23 +176,18 @@ void CyberiadaSMEditorVertexItem::paint(QPainter* painter, const QStyleOptionGra
         painter->drawText(r, Qt::AlignCenter, glyph);
     } else if (type == Cyberiada::elementEntryPoint ||
                type == Cyberiada::elementExitPoint) {
-        // a circle with a triangle pointing in (entry) or out (exit)
+        // an empty circle (entry) or an empty circle with an inscribed cross
+        // (exit), as the tool icons; the terminate below keeps its heavy cross
+        // reaching the corners
         QRectF r = fullCircle();
         painter->setBrush(painter->background());
         painter->drawEllipse(r);
-        qreal w = r.width() * 0.28;
-        qreal h = r.height() * 0.28;
-        QPointF c = r.center();
-        QPolygonF tri;
-        if (type == Cyberiada::elementEntryPoint) {
-            tri << QPointF(c.x() - w, c.y() - h) << QPointF(c.x() - w, c.y() + h)
-                << QPointF(c.x() + w, c.y());
-        } else {
-            tri << QPointF(c.x() + w, c.y() - h) << QPointF(c.x() + w, c.y() + h)
-                << QPointF(c.x() - w, c.y());
+        if (type == Cyberiada::elementExitPoint) {
+            QPointF c = r.center();
+            qreal d = VERTEX_POINT_RADIUS * M_SQRT1_2;   // the cross ends on the circle
+            painter->drawLine(QPointF(c.x() - d, c.y() - d), QPointF(c.x() + d, c.y() + d));
+            painter->drawLine(QPointF(c.x() + d, c.y() - d), QPointF(c.x() - d, c.y() + d));
         }
-        painter->setBrush(QBrush(color));
-        painter->drawPolygon(tri);
     } else {
         MY_ASSERT(type == Cyberiada::elementTerminate);
 

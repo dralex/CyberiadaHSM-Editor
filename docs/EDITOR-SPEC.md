@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.7 (2026-09-24)
+**Document version:** 0.8 (2026-09-26)
 
 **Related authorities:**
 
@@ -201,12 +201,15 @@ the third is a derived display value the format does not store):
   composite, a submachine state, a state machine, a choice, a comment or a terminate; the fill of
   an initial, a history, or an entry/exit pseudostate; the outer-circle outline and the inner-circle
   fill of a final. A history pseudostate is drawn as a small circle like an initial, carrying an `H`
-  (shallow) or `H*` (deep) glyph; an entry/exit point is a small circle carrying a triangle pointing
-  in (entry) or out (exit); a submachine state is drawn like a state carrying a submachine marker.
+  (shallow) or `H*` (deep) glyph; an entry point is a small empty circle and an exit point a small
+  empty circle with an inscribed cross, as on the tool icons (a terminate keeps its heavy cross to the
+  corners); a submachine state is drawn like a state carrying a submachine marker.
   The selection highlight overrides it while selected. *design*
 - `EDIT-NODE-14` MUST [U]: an entry/exit point that is a submachine state's connector lies on that
   state's border and stays on it when moved; a standalone entry/exit point in a state machine may lie
-  on the border or anywhere inside it. *PNST 1044 8.1/8.3*
+  on the border or anywhere inside it. A point is not content the border must contain: moving or
+  creating one near the border never grows the parent (`EDIT-NODE-2` does not apply), and a point
+  does not floor the parent's resize (`EDIT-NODE-5`), like a comment. *PNST 1044 8.1/8.3*
 - `EDIT-NODE-11` MUST [A]: an auto-sized comment's box follows its body text; changing the body
   re-lays-out the box so its live geometry matches a save/reopen (keeps `EDIT-IO-1`). *design*
 - `EDIT-NODE-12` MUST [U]: the document bounding rect is the union of everything drawn — the

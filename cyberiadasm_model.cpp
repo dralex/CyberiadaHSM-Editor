@@ -955,6 +955,7 @@ void CyberiadaSMModel::childrenHalfExtent(const Cyberiada::ElementCollection* pc
 	if (!pc) return;
 	Cyberiada::ConstElementList kids = pc->get_children();
 	for (Cyberiada::ConstElementList::const_iterator i = kids.begin(); i != kids.end(); i++) {
+		if (isConnectionPoint(*i)) continue;
 		const Cyberiada::ElementCollection* c = dynamic_cast<const Cyberiada::ElementCollection*>(*i);
 		if (c && c->has_geometry()) {
 			Cyberiada::Rect cr = c->get_geometry_rect();
@@ -980,6 +981,7 @@ void CyberiadaSMModel::childrenExtent(const Cyberiada::ElementCollection* pc,
 	if (!pc) return;
 	Cyberiada::ConstElementList kids = pc->get_children();
 	for (Cyberiada::ConstElementList::const_iterator i = kids.begin(); i != kids.end(); i++) {
+		if (isConnectionPoint(*i)) continue;
 		double l, r, t, b;
 		const Cyberiada::ElementCollection* c = dynamic_cast<const Cyberiada::ElementCollection*>(*i);
 		if (c && c->has_geometry()) {

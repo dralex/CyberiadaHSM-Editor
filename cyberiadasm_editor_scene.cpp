@@ -1098,9 +1098,11 @@ void CyberiadaSMEditorScene::createByTool(ToolType tool, const QRectF& sceneRect
 void CyberiadaSMEditorScene::extendStateMachineForChild(CyberiadaSMEditorAbstractItem* smItem,
                                                         QGraphicsItem* child)
 {
-    // a comment does not extend the border: it may be created outside it
+    // a comment does not extend the border: it may be created outside it; an
+    // entry/exit point is placed on it (EDIT-NODE-14)
     if (CyberiadaSMEditorAbstractItem* ci = dynamic_cast<CyberiadaSMEditorAbstractItem*>(child)) {
-        if (Cyberiada::element_is_comment(ci->getElement())) return;
+        if (Cyberiada::element_is_comment(ci->getElement()) ||
+            CyberiadaSMModel::isConnectionPoint(ci->getElement())) return;
     }
     Cyberiada::ElementCollection* sm =
         static_cast<Cyberiada::ElementCollection*>(smItem->getElement());
