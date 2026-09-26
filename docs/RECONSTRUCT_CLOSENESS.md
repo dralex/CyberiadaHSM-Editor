@@ -55,16 +55,16 @@ layout work aims to raise (alongside clearing the render-soundness failures the 
 Validated on synthetic cases: an identical layout scores `K = 1.0`; a fully reversed axis `K ≈ 0.51`
 (order `0.5`); a row relaid as a column `K ≈ 0.33` (order `0`).
 
-Baseline over the corpus (`./run-polygon.sh reconstruct`, the current shelf packer), all 19 diagrams
-structurally intact:
+Over the corpus (`./run-polygon.sh reconstruct`), all 19 diagrams structurally intact:
 
 | band | K | diagrams |
 |---|---|---|
-| faithful | 1.00 | comment-links, labels, propagation, worker-submachine (few multi-child containers) |
-| close | 0.79–0.88 | submachine, orchestrate-home-ext, orchestrate-robot-ext |
-| loose | 0.52–0.72 | most (semaphore 0.58, microwave 0.60, dog 0.53, orchestrate-* 0.56–0.66, vacuum-robot 0.72) |
-| poor | 0.46 | maze-solver (deep nesting) |
+| faithful | 1.00 | comment-links, labels, propagation, worker-submachine |
+| close | 0.77–0.83 | orchestrate-* (0.70–0.83), semaphore 0.81, submachine 0.82, vacuum-robot 0.83, semaphore-hierarchy 0.80 |
+| loose | 0.56–0.74 | dog 0.72, simple-hoover 0.74, maze-solver 0.69, turtle-square 0.63, microwave 0.56 |
 
-**Closeness rate 0.719.** The shelf packer places children in child-list order, so it keeps the flow
-only when that order already matches the drawing; the deeper and wider the diagram, the more the
-arrangement drifts. Raising this rate is the Phase C target for the `libhtreegeom` layout.
+**Closeness rate 0.803.** The reconstruction orders each region's children by their original reading
+position (top-to-bottom rows, left-to-right) and lays them out in a clean frame, so the arrangement is
+reproduced; the shelf packer's row-wrapping is what still costs the deeper/wider diagrams. An earlier
+attempt to order by process flow instead scored lower on this metric (0.78) and is not used. Raising
+this rate further is the `libhtreegeom` layout target.

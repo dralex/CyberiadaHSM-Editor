@@ -501,8 +501,7 @@ def cmd_reconstruct(args):
                 K = RC.closeness(str(doc), str(recon))["K"]
             except Exception:
                 K = None
-        rows.append(dict(name=name, struct_ok=struct_ok, defects=len(defects),
-                         closeness=K))
+        rows.append(dict(name=name, struct_ok=struct_ok, defects=len(defects), closeness=K))
         print("%-22s struct=%-4s defects=%d closeness=%s" %
               (name, "ok" if struct_ok else "DIFF", len(defects),
                "%.3f" % K if K is not None else "-"))
