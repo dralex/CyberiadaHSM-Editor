@@ -316,6 +316,9 @@ void CyberiadaSMEditorScene::slotRowsInserted(const QModelIndex& parent, int fir
         }
     }
     noteModified(parent);
+    // the new items may sit outside the current scene rect (a from-scratch build):
+    // grow it so they stay reachable and zoom can frame them
+    updateSceneRect();
     update();
 }
 
@@ -359,7 +362,8 @@ void CyberiadaSMEditorScene::slotModelDataChanged(const QModelIndex &topLeft, co
 
 void CyberiadaSMEditorScene::slotSMSizeChanged(CyberiadaSMEditorAbstractItem::CornerFlags side, qreal d)
 {
-    // TODO
+    // resizing the machine border may push it past the scene rect: re-sync the range
+    updateSceneRect();
 }
 
 void CyberiadaSMEditorScene::slotGridSettingsChanged()
@@ -521,15 +525,23 @@ void CyberiadaSMEditorScene::loadScene(bool fit)
         }
     }
     clearSelection();
-    // pad the scene rect so the view keeps a scroll range at any zoom (pan/wheel);
-    // the fit still frames the content, not the padding
-    QRectF content = diagramRect();
-    double m = DEFAULT_SCENE_PAN_MARGIN;
-    setSceneRect(content.adjusted(-m, -m, m, m));
+    // the scene rect follows the content (padded for a pan/scroll range), so the
+    // view can always reach and frame the objects
+    updateSceneRect();
     if (fit && !views().isEmpty()) {
-        views().first()->fitInView(content, Qt::KeepAspectRatio);
+        views().first()->fitInView(diagramRect(), Qt::KeepAspectRatio);
     }
     update();
+}
+
+// keep the scene rect around the content, padded so the view keeps a scroll range
+// at any zoom. An empty scene keeps the reset() default
+void CyberiadaSMEditorScene::updateSceneRect()
+{
+    QRectF content = diagramRect();
+    if (content.isNull()) return;
+    double m = DEFAULT_SCENE_PAN_MARGIN;
+    setSceneRect(content.adjusted(-m, -m, m, m));
 }
 
 void CyberiadaSMEditorScene::migrateLabelsToRect()

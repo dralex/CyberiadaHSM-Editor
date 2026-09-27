@@ -72,6 +72,9 @@ public:
     QRectF visibleItemsBoundingRect() const;
     // the visible diagram with the scene margin around it
     QRectF diagramRect() const;
+    // keep the scene rect around the content (padded), so the view can reach and
+    // frame the objects however far they sit from the origin
+    void updateSceneRect();
     // convert any point labels to rect labels before an interactive save (edit mode)
     void migrateLabelsToRect();
 

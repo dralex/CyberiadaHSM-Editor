@@ -530,12 +530,16 @@ void CyberiadaSMEditorWindow::slotToolSelected(QAction *action)
 void CyberiadaSMEditorWindow::slotFitContent() {
     QRectF bounds = scene->visibleItemsBoundingRect();
     if (bounds.isNull()) return;
+    // the target may sit outside the current scene rect (fitInView cannot scroll
+    // past it); re-sync the rect to the content first
+    scene->updateSceneRect();
     sceneView->fitInView(bounds, Qt::KeepAspectRatio);
 }
 
 void CyberiadaSMEditorWindow::slotZoomToSM() {
     QRectF bounds = scene->recentlyModifiedSMRect();
     if (bounds.isNull()) { slotFitContent(); return; }
+    scene->updateSceneRect();
     sceneView->fitInView(bounds, Qt::KeepAspectRatio);
 }
 

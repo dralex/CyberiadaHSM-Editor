@@ -119,6 +119,7 @@ private slots:
 	void test_transition_event_bold();
 	void test_comment_snap();
 	void test_connection_point_clamp();
+	void test_scene_rect_tracks_content();
 	void test_name_only_state();
 	void test_title_drag_through();
 	void test_vertex_name();
@@ -2796,6 +2797,27 @@ void TestScene::test_connection_point_clamp()
 	QVERIFY(sp.y() >= border.top() - 0.5);
 	QVERIFY(sp.y() <= border.bottom() + 0.5);
 	QVERIFY(sp.x() >= border.left() - 0.5 && sp.x() <= border.right() + 0.5);
+}
+
+void TestScene::test_scene_rect_tracks_content()
+{
+	// an element placed far from the origin stays inside the scene rect, so the
+	// view can scroll to and zoom onto it (the fit/zoom target must be reachable)
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	Cyberiada::ElementCollection* smc =
+		dynamic_cast<Cyberiada::ElementCollection*>(model->indexToElement(model->firstSMIndex()));
+	QVERIFY(smc);
+
+	// far outside the current scene rect and its pan margin
+	Cyberiada::State* far = model->newState(smc, "Far", Cyberiada::Action(),
+											Cyberiada::Rect(9000, 9000, 100, 60));
+	QVERIFY(far);
+	QGraphicsItem* item = scene->getMap().value(far->get_id());
+	QVERIFY(item);
+	// the insert re-synced the scene rect around the content
+	QVERIFY(scene->sceneRect().contains(item->sceneBoundingRect()));
+	QVERIFY(scene->sceneRect().contains(scene->visibleItemsBoundingRect()));
 }
 
 void TestScene::test_history()
