@@ -248,6 +248,9 @@ protected:
     void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) override;
     void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
     void focusOutEvent(QFocusEvent *event) override;
+    // the entry/exit/do prefix is bold; an internal transition event name is bold
+    // when a guard or behaviour follows it (a lonely event stays normal)
+    void applyRichFormat() override;
 
 private:
     // enter text editing consistently (caret past the keyword prefix, then the

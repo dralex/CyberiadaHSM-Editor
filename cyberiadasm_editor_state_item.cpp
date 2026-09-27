@@ -964,6 +964,7 @@ StateAction::StateAction(const Cyberiada::Action* action, QGraphicsItem *parent)
             text += " / defer";
         else if (!behaviour.isEmpty()) text += (ownLine ? " /\n" : " / ") + behaviour;
         setPlainText(text);
+        applyRichFormat();
         return;
     }
     // TODO "exit", "entry" and "/" are constants from cyberiadamlpp
@@ -984,6 +985,19 @@ StateAction::StateAction(const Cyberiada::Action* action, QGraphicsItem *parent)
     }
 
     setPlainText(typeText + behaviour);
+    applyRichFormat();
+}
+
+void StateAction::applyRichFormat()
+{
+    const SettingsManager& sm = SettingsManager::instance();
+    if (transition) {
+        // the event name is bold only when a guard or behaviour follows it
+        bool more = !getGuard().isEmpty() || !getBehavior().isEmpty();
+        setBoldRange(getTrigger().length(), sm.getBoldEventName() && more);
+    } else {
+        setBoldRange(typeText.length(), sm.getBoldActionPrefix());
+    }
 }
 
 QString StateAction::getBehavior()

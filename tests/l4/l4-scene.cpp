@@ -23,6 +23,9 @@
 
 #include <QtTest>
 #include <QGraphicsView>
+#include <QTextCursor>
+#include <QTextCharFormat>
+#include <QFont>
 #include <cmath>
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_editor_scene.h"
@@ -112,6 +115,8 @@ private slots:
 	void test_action_multiline();
 	void test_internal_transition();
 	void test_transition_edit();
+	void test_action_bold();
+	void test_transition_event_bold();
 	void test_name_only_state();
 	void test_title_drag_through();
 	void test_vertex_name();
@@ -2624,6 +2629,99 @@ void TestScene::test_transition_edit()
 	action->clearFocus();
 	QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
 	QCOMPARE(int(st->get_actions().size()), 0);
+}
+
+// the QFont weight of the character at index pos (the format left of pos+1)
+static int weightAt(EditableTextItem* item, int pos)
+{
+	QTextCursor c(item->document());
+	c.setPosition(pos + 1);
+	return c.charFormat().fontWeight();
+}
+
+void TestScene::test_action_bold()
+{
+	// the entry/exit keyword is bold; an internal transition event name is bold
+	// only when a guard or behaviour follows it; the preferences switch each off
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	CyberiadaSMEditorStateItem* state =
+		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0-1"));
+	QVERIFY(state);
+	QModelIndex idx = model->elementToIndex(model->idToElement("node-0-1"));
+	SettingsManager& sm = SettingsManager::instance();
+
+	auto action = [&](const QString& start) -> StateAction* {
+		for (QGraphicsItem* c : state->childItems())
+			if (StateAction* a = dynamic_cast<StateAction*>(c))
+				if (a->toPlainText().startsWith(start)) return a;
+		return nullptr;
+	};
+
+	// the entry keyword is bold, the behaviour tail is normal
+	QVERIFY(model->newAction(idx, Cyberiada::actionEntry, QString(), QString(), "f()"));
+	StateAction* entry = action("entry");
+	QVERIFY(entry);
+	QCOMPARE(weightAt(entry, 0), int(QFont::Bold));
+	QVERIFY(weightAt(entry, entry->protectedLength()) != int(QFont::Bold));
+	// the preference switches it off live, then back on
+	sm.setBoldActionPrefix(false);
+	QVERIFY(weightAt(entry, 0) != int(QFont::Bold));
+	sm.setBoldActionPrefix(true);
+	QCOMPARE(weightAt(entry, 0), int(QFont::Bold));
+	QVERIFY(model->deleteAction(idx, 0));
+
+	// an internal transition event name is bold when a guard/behaviour follows it
+	QVERIFY(model->newAction(idx, Cyberiada::actionTransition, "TICK", "x > 0", "count()"));
+	StateAction* itr = action("TICK");
+	QVERIFY(itr);
+	QCOMPARE(weightAt(itr, 0), int(QFont::Bold));       // the T of TICK
+	QVERIFY(weightAt(itr, 5) != int(QFont::Bold));      // the guard bracket
+	sm.setBoldEventName(false);
+	QVERIFY(weightAt(itr, 0) != int(QFont::Bold));
+	sm.setBoldEventName(true);
+	QVERIFY(model->deleteAction(idx, 0));
+
+	// a lonely event name (no guard, no behaviour) stays normal even when bold is on
+	QVERIFY(model->newAction(idx, Cyberiada::actionTransition, "TICK", QString(), QString()));
+	StateAction* lone = action("TICK");
+	QVERIFY(lone);
+	QVERIFY(weightAt(lone, 0) != int(QFont::Bold));
+	QVERIFY(model->deleteAction(idx, 0));
+}
+
+void TestScene::test_transition_event_bold()
+{
+	// an edge transition event name is bold when a guard/behaviour follows it
+	QVERIFY(model->loadDocument("diagrams/polyline.graphml"));
+	scene->loadScene();
+	CyberiadaSMEditorTransitionItem* tr =
+		dynamic_cast<CyberiadaSMEditorTransitionItem*>(scene->getMap().value("t0"));
+	QVERIFY(tr);
+	QModelIndex idx = model->elementToIndex(model->idToElement("t0"));
+	SettingsManager& sm = SettingsManager::instance();
+
+	auto label = [&]() -> TransitionAction* {
+		for (QGraphicsItem* c : tr->childItems())
+			if (TransitionAction* a = dynamic_cast<TransitionAction*>(c)) return a;
+		return nullptr;
+	};
+
+	// t0 is a lonely event "GO" (no behaviour): the event name stays normal
+	TransitionAction* a = label();
+	QVERIFY(a);
+	QCOMPARE(a->toPlainText(), QString("GO"));
+	QVERIFY(weightAt(a, 0) != int(QFont::Bold));
+
+	// give it a behaviour: the event name becomes bold, and the preference switches it
+	QVERIFY(model->updateAction(idx, 0, "GO", QString(), "go()"));
+	a = label();
+	QVERIFY(a && a->getTrigger() == QString("GO"));
+	QCOMPARE(weightAt(a, 0), int(QFont::Bold));
+	sm.setBoldTransitionEventName(false);
+	QVERIFY(weightAt(a, 0) != int(QFont::Bold));
+	sm.setBoldTransitionEventName(true);
+	QCOMPARE(weightAt(a, 0), int(QFont::Bold));
 }
 
 void TestScene::test_history()

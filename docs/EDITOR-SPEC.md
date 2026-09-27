@@ -269,7 +269,10 @@ the third is a derived display value the format does not store):
   sideways. A simple state becoming composite reflows its title the same way. *design*
 - `EDIT-TEXT-2` MUST [U]: an action keeps its `entry/`, `exit/` or `event [guard]/`
   prefix. A single-line behaviour is drawn inline after the prefix and soft-wraps at the element
-  width if too long; a behaviour spanning several lines starts on its own line under the prefix. *design*
+  width if too long; a behaviour spanning several lines starts on its own line under the prefix. The
+  `entry/`, `exit/`, `do/` keyword prefix is drawn bold, and an event name (of an internal or an edge
+  transition) is drawn bold when a guard or behaviour follows it (a lonely event name stays normal);
+  a preference switches each of the three to normal weight (bold by default). *design*
 - `EDIT-TEXT-3` MUST [A]: a title, an action text, or an edge label is edited in place. *design*
 - `EDIT-TEXT-4` MUST [A]: if an edge label text no longer fits the label rect, it wraps at
   a word boundary. *design*

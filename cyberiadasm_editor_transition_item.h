@@ -218,6 +218,9 @@ public:
     QString getBehaviour() const;
     bool isDragging() const { return dragging; }
     bool isEditing() const { return isEdit; }
+    // the event name is bold when a guard or behaviour follows it (a lonely event
+    // stays normal), behind the transition event-name preference
+    void applyRichFormat() override;
 
 protected:
     void paint( QPainter *painter, const QStyleOptionGraphicsItem *o, QWidget *w) override;

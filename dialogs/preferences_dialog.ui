@@ -325,6 +325,27 @@
          </property>
         </widget>
        </item>
+       <item row="5" column="0" colspan="2">
+        <widget class="QCheckBox" name="boldActionPrefixCheckBox">
+         <property name="text">
+          <string>Bold entry/exit/do prefix</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="0" colspan="2">
+        <widget class="QCheckBox" name="boldEventNameCheckBox">
+         <property name="text">
+          <string>Bold event names in states</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="0" colspan="2">
+        <widget class="QCheckBox" name="boldTransitionEventNameCheckBox">
+         <property name="text">
+          <string>Bold event names on transitions</string>
+         </property>
+        </widget>
+       </item>
       </layout>
      </widget>
     </widget>

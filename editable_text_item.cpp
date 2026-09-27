@@ -29,6 +29,8 @@
 #include <QPainter>
 #include <QTextDocument>
 #include <QTextBlockFormat>
+#include <QTextCursor>
+#include <QTextCharFormat>
 #include <QDebug>
 
 #include "editable_text_item.h"
@@ -195,8 +197,20 @@ void EditableTextItem::setTextMargin(double newTextMargin)
 void EditableTextItem::applyFont()
 {
     setFont(FontManager::instance().font(fontRole));
+    applyRichFormat();
     emit sizeChanged();
     updateTextWidth();
+}
+
+void EditableTextItem::setBoldRange(int length, bool bold)
+{
+    if (length <= 0) return;
+    QTextCursor cursor(document());
+    cursor.setPosition(0);
+    cursor.setPosition(qMin(length, document()->characterCount() - 1), QTextCursor::KeepAnchor);
+    QTextCharFormat fmt;
+    fmt.setFontWeight(bold ? QFont::Bold : QFont::Normal);
+    cursor.mergeCharFormat(fmt);
 }
 
 void EditableTextItem::updateTextWidth()

@@ -67,6 +67,16 @@ public:
     int getFontSize(FontRole role) const;
     void setFontSize(FontRole role, int value);
 
+    // the reserved parts of an action are drawn bold: the entry/exit/do keyword
+    // prefix, the internal transition event name, and the edge transition event
+    // name (an event name is bold only when a guard or behaviour follows it)
+    bool getBoldActionPrefix() const { return boldActionPrefix; }
+    void setBoldActionPrefix(bool value);
+    bool getBoldEventName() const { return boldEventName; }
+    void setBoldEventName(bool value);
+    bool getBoldTransitionEventName() const { return boldTransitionEventName; }
+    void setBoldTransitionEventName(bool value);
+
     QString getLastDirectory() const { return lastDirectory; }
     void setLastDirectory(const QString& value);
     // the most recently opened files, newest first (for the Open Recent menu)
@@ -129,6 +139,9 @@ private:
     bool snapMode;
 
     // text
+    bool boldActionPrefix = true;
+    bool boldEventName = true;
+    bool boldTransitionEventName = true;
     QString fontFamily;
     int fontSizes[fontRolesCount];
 

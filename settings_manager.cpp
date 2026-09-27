@@ -56,6 +56,9 @@ void SettingsManager::load() {
     for (int role = 0; role < fontRolesCount; role++) {
         fontSizes[role] = s.value(fontSizeKey(FontRole(role)), FONT_SIZE).toInt();
     }
+    boldActionPrefix = s.value("display/boldActionPrefix", true).toBool();
+    boldEventName = s.value("display/boldEventName", true).toBool();
+    boldTransitionEventName = s.value("display/boldTransitionEventName", true).toBool();
 
     lastDirectory = s.value("files/lastDirectory", QDir::currentPath()).toString();
     recentFiles = s.value("files/recentFiles").toStringList();
@@ -86,6 +89,9 @@ void SettingsManager::loadDefaults()
     for (int role = 0; role < fontRolesCount; role++) {
         setFontSize(FontRole(role), FONT_SIZE);
     }
+    setBoldActionPrefix(true);
+    setBoldEventName(true);
+    setBoldTransitionEventName(true);
 
     setSelectionColor(QColor(Qt::red));
     setSelectionBorderWidth(2);
@@ -113,6 +119,33 @@ void SettingsManager::setFontSize(FontRole role, int value)
     if (fontSizes[stored] != value) {
         fontSizes[stored] = value;
         QSettings().setValue(fontSizeKey(stored), value);
+        emit fontSettingsChanged();
+    }
+}
+
+void SettingsManager::setBoldActionPrefix(bool value)
+{
+    if (boldActionPrefix != value) {
+        boldActionPrefix = value;
+        QSettings().setValue("display/boldActionPrefix", value);
+        emit fontSettingsChanged();
+    }
+}
+
+void SettingsManager::setBoldEventName(bool value)
+{
+    if (boldEventName != value) {
+        boldEventName = value;
+        QSettings().setValue("display/boldEventName", value);
+        emit fontSettingsChanged();
+    }
+}
+
+void SettingsManager::setBoldTransitionEventName(bool value)
+{
+    if (boldTransitionEventName != value) {
+        boldTransitionEventName = value;
+        QSettings().setValue("display/boldTransitionEventName", value);
         emit fontSettingsChanged();
     }
 }

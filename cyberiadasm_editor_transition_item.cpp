@@ -703,6 +703,7 @@ QString CyberiadaSMEditorTransitionItem::actionText() const
 void CyberiadaSMEditorTransitionItem::updateAction()
 {
     actionItem->setPlainText(actionText());
+    actionItem->applyRichFormat();
     updateActionPosition();
 }
 
@@ -1470,6 +1471,14 @@ QString TransitionAction::getBehaviour() const
     QString trigger, guard, behaviour;
     parseLabel(toPlainText(), trigger, guard, behaviour);
     return behaviour;
+}
+
+void TransitionAction::applyRichFormat()
+{
+    // the event name is bold only when a guard or behaviour follows it
+    bool more = !getGuard().isEmpty() || !getBehaviour().isEmpty();
+    setBoldRange(getTrigger().length(),
+                 SettingsManager::instance().getBoldTransitionEventName() && more);
 }
 
 void TransitionAction::paint(QPainter *painter, const QStyleOptionGraphicsItem *o, QWidget *w) {

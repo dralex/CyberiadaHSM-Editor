@@ -50,6 +50,9 @@ public:
     void startEditing();
     // the leading characters an edit may not touch (the action type)
     virtual int protectedLength() const { return 0; }
+    // re-apply per-character formatting (a bold prefix) after the font changes or
+    // after the owner sets the text; a plain text item has none
+    virtual void applyRichFormat() {}
 
 protected:
     void focusOutEvent(QFocusEvent *event) override;
@@ -60,6 +63,9 @@ protected:
     void hoverMoveEvent(QGraphicsSceneHoverEvent *event) override;
 
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
+
+    // weight the leading [0, length) characters bold or normal (idempotent)
+    void setBoldRange(int length, bool bold);
 
     // the resizable box the text belongs to, or null
     CyberiadaSMEditorAbstractItem* parentBox() const;

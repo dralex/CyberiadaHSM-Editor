@@ -97,6 +97,9 @@ void PreferencesDialog::loadFromSettings()
     ui->stateActionFontSizeSpinBox->setValue(sm.getFontSize(fontRoleStateAction));
     ui->transitionFontSizeSpinBox->setValue(sm.getFontSize(fontRoleTransition));
     ui->commentFontSizeSpinBox->setValue(sm.getFontSize(fontRoleComment));
+    ui->boldActionPrefixCheckBox->setChecked(sm.getBoldActionPrefix());
+    ui->boldEventNameCheckBox->setChecked(sm.getBoldEventName());
+    ui->boldTransitionEventNameCheckBox->setChecked(sm.getBoldTransitionEventName());
 }
 
 void PreferencesDialog::saveSettings()
@@ -126,4 +129,7 @@ void PreferencesDialog::saveSettings()
     sm.setFontSize(fontRoleStateAction, ui->stateActionFontSizeSpinBox->value());
     sm.setFontSize(fontRoleTransition, ui->transitionFontSizeSpinBox->value());
     sm.setFontSize(fontRoleComment, ui->commentFontSizeSpinBox->value());
+    sm.setBoldActionPrefix(ui->boldActionPrefixCheckBox->isChecked());
+    sm.setBoldEventName(ui->boldEventNameCheckBox->isChecked());
+    sm.setBoldTransitionEventName(ui->boldTransitionEventNameCheckBox->isChecked());
 }
