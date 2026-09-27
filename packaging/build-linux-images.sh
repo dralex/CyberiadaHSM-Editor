@@ -19,11 +19,13 @@ LINUXDIR="$here/linux-docker"
 RELEASES="20.04 22.04 24.04 26.04"
 REBUILD=0
 IMAGE="cyberiada-deb-builder"
+MIRROR="ru.archive.ubuntu.com"
 
 usage() {
     cat <<EOF
 usage: $0 [options]
   --releases "LIST" space-separated Ubuntu versions (default: "$RELEASES")
+  --mirror HOST     apt mirror host baked into the image (default: "$MIRROR")
   --rebuild         rebuild an image even if it already exists
   -h, --help        this help
 
@@ -34,6 +36,7 @@ EOF
 while [ $# -gt 0 ]; do
     case "$1" in
         --releases) RELEASES="$2"; shift 2 ;;
+        --mirror) MIRROR="$2"; shift 2 ;;
         --rebuild) REBUILD=1; shift ;;
         -h|--help) usage; exit 0 ;;
         *) echo "unknown option: $1" >&2; usage; exit 2 ;;
@@ -50,9 +53,11 @@ command -v docker >/dev/null 2>&1 || die "docker not found"
 docker_build() {
     tag="$1"; ver="$2"
     if docker buildx version >/dev/null 2>&1; then
-        docker buildx build --load --build-arg "UBUNTU_VERSION=$ver" -t "$tag" "$LINUXDIR"
+        docker buildx build --load --build-arg "UBUNTU_VERSION=$ver" \
+            --build-arg "APT_MIRROR_HOST=$MIRROR" -t "$tag" "$LINUXDIR"
     else
-        DOCKER_BUILDKIT=1 docker build --build-arg "UBUNTU_VERSION=$ver" -t "$tag" "$LINUXDIR"
+        DOCKER_BUILDKIT=1 docker build --build-arg "UBUNTU_VERSION=$ver" \
+            --build-arg "APT_MIRROR_HOST=$MIRROR" -t "$tag" "$LINUXDIR"
     fi
 }
 

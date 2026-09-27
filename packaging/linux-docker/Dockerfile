@@ -17,11 +17,22 @@ FROM ubuntu:${UBUNTU_VERSION}
 
 ENV DEBIAN_FRONTEND=noninteractive
 
+# fetch packages from a country apt mirror (default: the Russian archive). Only
+# the host is swapped, the /ubuntu path is kept, so it works with any mirror.
+# The rewritten sources persist in the image, so the run-time apt in
+# build-linux-docker.sh uses the mirror too
+ARG APT_MIRROR_HOST=ru.archive.ubuntu.com
+
 # build environment: compiler/cmake, packaging (dpkg-shlibdeps needs file+fakeroot),
 # libxml2 + Qt5 (Widgets/Svg/Test), python3-dev + pybind11 for the python binding,
 # fontconfig for the editor's text-metric tests, valgrind for the memcheck tests,
 # and locales to generate ru_RU.UTF-8
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN for f in /etc/apt/sources.list /etc/apt/sources.list.d/ubuntu.sources; do \
+        if [ -f "$f" ]; then \
+            sed -i -E "s@https?://(archive|security|ports)\.ubuntu\.com@http://${APT_MIRROR_HOST}@g" "$f"; \
+        fi; \
+    done \
+    && apt-get update && apt-get install -y --no-install-recommends \
         build-essential cmake git pkg-config \
         dpkg-dev fakeroot file \
         libxml2-dev \
