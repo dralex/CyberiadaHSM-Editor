@@ -57,7 +57,7 @@ eventPropagation/ block</data>
               <data key="dVertex">initial</data>
               <data key="dName"></data>
               <data key="dGeometry">
-                <point x="213.500000" y="70.000000"/>
+                <point x="200.000000" y="70.000000"/>
               </data>
             </node>
             <node id="node-0-0-1">

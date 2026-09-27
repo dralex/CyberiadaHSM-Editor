@@ -114,6 +114,21 @@ void CyberiadaSMEditorWindow::updateEditActions()
     actionDeleteElement->setEnabled(hasElement && !inspector);
     actionPaste->setEnabled(clipboardElement != nullptr && !inspector);
 
+    // an entry/exit point needs a container with a border to lie on: an explicit
+    // state-machine border or a submachine state. A borderless machine cannot hold
+    // one, so the tools are disabled until such a container exists
+    bool hasContainer = false;
+    if (model->rootDocument()) {
+        std::vector<Cyberiada::StateMachine*> sms = model->rootDocument()->get_state_machines();
+        for (size_t i = 0; i < sms.size() && !hasContainer; i++) {
+            if (sms[i]->has_geometry() ||
+                !sms[i]->find_elements_by_type(Cyberiada::elementSubmachineState).empty())
+                hasContainer = true;
+        }
+    }
+    actionNewEntryPoint->setEnabled(hasContainer && !inspector);
+    actionNewExitPoint->setEnabled(hasContainer && !inspector);
+
     // the file actions follow the document and its modified state (the creation
     // tools stay enabled: the model creates a document lazily on the first edit)
     bool docOpen  = (model->rootDocument() != nullptr);
@@ -709,7 +724,6 @@ void CyberiadaSMEditorWindow::slotInspectorModeChanged(bool on)
     editGroup->setEnabled(!on);
     actionUndo->setEnabled(!on && model->undoStack()->canUndo());
     actionRedo->setEnabled(!on && model->undoStack()->canRedo());
-    updateEditActions();   // cut/copy/paste/delete follow the inspector state too
     // disable the creation tools while inspecting, but keep select/pan/zoom so
     // the document can still be navigated
     for (auto i = toolActMap.constBegin(); i != toolActMap.constEnd(); i++) {
@@ -717,6 +731,8 @@ void CyberiadaSMEditorWindow::slotInspectorModeChanged(bool on)
             i.value()->setEnabled(!on);
         }
     }
+    // last, so the entry/exit-point container gating overrides the blanket enable
+    updateEditActions();   // cut/copy/paste/delete follow the inspector state too
     if (on && currentTool != ToolType::Select && currentTool != ToolType::Pan &&
         currentTool != ToolType::Zoom) {
         actionSelectTool->setChecked(true);

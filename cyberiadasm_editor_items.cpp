@@ -174,6 +174,19 @@ void CyberiadaSMEditorAbstractItem::onParentSizeChanged(CornerFlags side, qreal 
                                             tmpR.width(),
                                             tmpR.height());
         model->updateGeometry(model->elementToIndex(element), newR);
+    } else if (element->has_point_geometry()) {
+        // a point child (a pseudostate or an entry/exit point) holds its absolute
+        // place too: the parent centre moved by delta, so shift the point by -delta
+        // on the moved side. It is never dragged by a resize that does not reach it
+        Cyberiada::Point p = static_cast<Cyberiada::Vertex*>(element)->get_geometry_point();
+        switch (side) {
+        case CornerFlags::Right:  p.x -= delta; break;
+        case CornerFlags::Left:   p.x += delta; break;
+        case CornerFlags::Bottom: p.y -= delta; break;
+        case CornerFlags::Top:    p.y += delta; break;
+        default: break;
+        }
+        model->updateGeometry(model->elementToIndex(element), p);
     }
 }
 
@@ -323,11 +336,18 @@ void CyberiadaSMEditorAbstractItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *
     if (event->button() & Qt::LeftButton) {
         // flush the final moved position: the top/left move handle commits pos()
         // one event early (updatePosGeometry), so a release with no trailing move
-        // would drop the last step; updateGeometry no-ops when unchanged (P-75)
-        if (element && element->has_rect_geometry())
+        // would drop the last step; updateGeometry no-ops when unchanged (P-75).
+        // Snap the top-left corner to the grid here so every box that uses the base
+        // move path (a comment, a choice, the SM border) lands on it - a no-op when
+        // snap mode is off (the states/points snap live in their own handlers)
+        if (element && element->has_rect_geometry()) {
+            QPointF half(boundingRect().width() / 2.0, boundingRect().height() / 2.0);
+            QPointF snapped = snapToGrid(scenePos() - half) + half;
+            setPos(parentItem() ? parentItem()->mapFromScene(snapped) : snapped);
             model->updateGeometry(model->elementToIndex(element),
                 Cyberiada::Rect(pos().x(), pos().y(),
                                 boundingRect().width(), boundingRect().height()));
+        }
         isLeftMouseButtonPressed = false;
         setFlag(ItemIsMovable, false);
     }

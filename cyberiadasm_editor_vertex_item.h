@@ -42,6 +42,8 @@ public:
     VertexTitle(const QString& text, CyberiadaSMEditorVertexItem* parent);
 
 protected:
+    // a translucent background behind the name, like a transition label
+    void paint(QPainter* painter, const QStyleOptionGraphicsItem* o, QWidget* w) override;
     void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
     void mouseMoveEvent(QGraphicsSceneMouseEvent* event) override;
     void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;

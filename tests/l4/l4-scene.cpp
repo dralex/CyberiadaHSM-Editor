@@ -117,6 +117,8 @@ private slots:
 	void test_transition_edit();
 	void test_action_bold();
 	void test_transition_event_bold();
+	void test_comment_snap();
+	void test_connection_point_clamp();
 	void test_name_only_state();
 	void test_title_drag_through();
 	void test_vertex_name();
@@ -2722,6 +2724,78 @@ void TestScene::test_transition_event_bold()
 	QVERIFY(weightAt(a, 0) != int(QFont::Bold));
 	sm.setBoldTransitionEventName(true);
 	QCOMPARE(weightAt(a, 0), int(QFont::Bold));
+}
+
+void TestScene::test_comment_snap()
+{
+	// a comment lands on the grid on release when snap is on - it uses the base
+	// move path, which the states/points bypass with their own snapping
+	SettingsManager& sm = SettingsManager::instance();
+	sm.setGridSpacing(25);
+	sm.setSnapMode(true);
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+
+	Cyberiada::ElementCollection* smc =
+		dynamic_cast<Cyberiada::ElementCollection*>(model->indexToElement(model->firstSMIndex()));
+	QVERIFY(smc);
+	Cyberiada::Comment* c = model->newComment(smc, "note", Cyberiada::Rect(707, 603, 120, 60));
+	QVERIFY(c);
+	CyberiadaSMEditorAbstractItem* item =
+		dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene->getMap().value(c->get_id()));
+	QVERIFY(item);
+	scene->clearSelection();
+
+	// drag the comment by its top border to an off-grid spot; release snaps it
+	QRectF box = item->sceneBoundingRect();
+	QPointF at(box.center().x(), box.top() + 3);
+	mouse(QEvent::GraphicsSceneMousePress, at, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, at + QPointF(11, -9), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, at + QPointF(11, -9), Qt::NoButton);
+
+	// the top-left corner lands on grid multiples of 25
+	QPointF corner = item->sceneBoundingRect().topLeft();
+	QVERIFY(qAbs(std::fmod(corner.x(), 25.0)) < 0.01);
+	QVERIFY(qAbs(std::fmod(corner.y(), 25.0)) < 0.01);
+
+	sm.setSnapMode(false);
+}
+
+void TestScene::test_connection_point_clamp()
+{
+	// an entry point stays within its state-machine border, never above it
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+	QVERIFY(model->updateGeometry(model->firstSMIndex(), Cyberiada::Rect(0, 0, 600, 400)));
+	Cyberiada::ElementCollection* smc =
+		dynamic_cast<Cyberiada::ElementCollection*>(model->indexToElement(model->firstSMIndex()));
+	QVERIFY(smc);
+	CyberiadaSMEditorAbstractItem* smItem =
+		dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene->getMap().value(smc->get_id()));
+	QVERIFY(smItem);
+
+	Cyberiada::ConnectionPoint* ep = model->newEntryPoint(smc, Cyberiada::Point(0, -100));
+	QVERIFY(ep);
+	CyberiadaSMEditorAbstractItem* item =
+		dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene->getMap().value(ep->get_id()));
+	QVERIFY(item);
+	scene->clearSelection();
+
+	// drag the point far above the SM border: it is clamped onto/inside it
+	QRectF border = smItem->sceneBoundingRect();
+	QPointF start = item->scenePos();
+	mouse(QEvent::GraphicsSceneMousePress, start, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, QPointF(start.x(), border.top() - 500), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, QPointF(start.x(), border.top() - 500), Qt::NoButton);
+
+	QPointF sp = item->scenePos();
+	QVERIFY(sp.y() >= border.top() - 0.5);
+	QVERIFY(sp.y() <= border.bottom() + 0.5);
+	QVERIFY(sp.x() >= border.left() - 0.5 && sp.x() <= border.right() + 0.5);
 }
 
 void TestScene::test_history()

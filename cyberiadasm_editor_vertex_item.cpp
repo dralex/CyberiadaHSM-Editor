@@ -199,9 +199,9 @@ void CyberiadaSMEditorVertexItem::paint(QPainter* painter, const QStyleOptionGra
     } else {
         MY_ASSERT(type == Cyberiada::elementTerminate);
 
+        // a plain heavy cross, no circle
         painter->setPen(QPen(color, 2, Qt::SolidLine));
         QRectF r = fullCircle();
-        painter->drawEllipse(fullCircle());
         painter->drawLine(r.left(), r.top(), r.right(), r.bottom());
         painter->drawLine(r.right(), r.top(), r.left(), r.bottom());
     }
@@ -234,6 +234,21 @@ void CyberiadaSMEditorVertexItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event
             QPointF d = scenePos() - dragStartScenePos;
             if (qAbs(d.x()) >= qAbs(d.y())) sp.setY(dragStartScenePos.y());
             else                            sp.setX(dragStartScenePos.x());
+        }
+        // an entry/exit point stays on or inside its container's border, never
+        // outside it (EDIT-NODE-14)
+        if (CyberiadaSMModel::isConnectionPoint(element)) {
+            CyberiadaSMEditorAbstractItem* container =
+                dynamic_cast<CyberiadaSMEditorAbstractItem*>(parentItem());
+            if (!container) {
+                if (StateRegion* sr = dynamic_cast<StateRegion*>(parentItem()))
+                    container = dynamic_cast<CyberiadaSMEditorAbstractItem*>(sr->parentItem());
+            }
+            if (container) {
+                QRectF b = container->sceneBoundingRect();
+                sp.setX(qBound(b.left(), sp.x(), b.right()));
+                sp.setY(qBound(b.top(), sp.y(), b.bottom()));
+            }
         }
         setPos(parentItem() ? parentItem()->mapFromScene(sp) : sp);
         model->updateGeometry(model->elementToIndex(element),
@@ -280,6 +295,19 @@ VertexTitle::VertexTitle(const QString& text, CyberiadaSMEditorVertexItem* paren
     setTextAlignment(Qt::AlignCenter);
     setTextWidthEnabled(false);        // the label hugs its text
     setTextMargin(0);
+}
+
+void VertexTitle::paint(QPainter *painter, const QStyleOptionGraphicsItem *o, QWidget *w)
+{
+    // a translucent box behind the name, mirroring a transition label
+    if (!toPlainText().isEmpty()) {
+        QColor color = painter->background().color();
+        color.setAlpha(230);
+        painter->setBrush(color);
+        painter->setPen(Qt::NoPen);
+        painter->drawRect(boundingRect());
+    }
+    QGraphicsTextItem::paint(painter, o, w);
 }
 
 void VertexTitle::mousePressEvent(QGraphicsSceneMouseEvent *event)

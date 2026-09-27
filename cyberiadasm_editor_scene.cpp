@@ -1020,6 +1020,10 @@ void CyberiadaSMEditorScene::createByTool(ToolType tool, const QRectF& sceneRect
         }
     }
     if (!parentColl) {
+        // an entry/exit point needs an existing container with a border; never
+        // auto-create a borderless machine for it (the tools are disabled too)
+        if ((et == Cyberiada::elementEntryPoint || et == Cyberiada::elementExitPoint) && !currentSM)
+            return;
         if (!currentSM) { addSMItem(et); return; }   // empty canvas: auto-place
         parentColl = static_cast<Cyberiada::ElementCollection*>(currentSM);
         parentCItem = dynamic_cast<CyberiadaSMEditorAbstractItem*>(elementIdToItemMap.value(currentSM->get_id()));
