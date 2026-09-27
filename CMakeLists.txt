@@ -150,6 +150,10 @@ if(UNIX AND NOT APPLE)
   install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/images/cyberiada.png
     DESTINATION ${CMAKE_INSTALL_DATADIR}/pixmaps
     RENAME cyberiada-editor.png COMPONENT runtime)
+  # user-facing docs travel with the package (the editor has no ChangeLog yet)
+  install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/README.md
+                ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/cyberiada-editor COMPONENT runtime)
   # QtPropertyBrowser has no distribution package: bundle it privately and point
   # the installed binary at it through an rpath, so the .deb needs no extra package
   install(FILES ${QTPROPERTYBROWSER_LIBRARY}

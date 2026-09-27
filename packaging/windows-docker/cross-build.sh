@@ -175,6 +175,8 @@ pack_editor() {
             cp "$QT_PLUGINS/$grp"/*.dll "$stage/$grp/" 2>/dev/null || true
         fi
     done
+    # user-facing docs alongside the editor (the editor has no ChangeLog yet)
+    cp "$SRC/CyberiadaHSM-Editor/README.md" "$SRC/CyberiadaHSM-Editor/LICENSE" "$stage/" 2>/dev/null || true
 
     ( cd "$bdir/dist-stage" && zip -qr "$OUT/cyberiada-editor-1.0.0-win64-mingw.zip" CyberiadaEditor )
 
