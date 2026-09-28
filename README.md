@@ -27,6 +27,11 @@ pan), copy/paste, undo/redo, etc.
 
 ## Installation
 
+One can install ![binary releases](https://github.com/dralex/CyberiadaHSM-Editor/releases)
+for Ubuntu Linux or Windows.
+
+## Building from Sources
+
 Configure and build with CMake:
 
 ```
