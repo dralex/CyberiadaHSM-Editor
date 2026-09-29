@@ -23,7 +23,7 @@ Cyberiada GraphML. Редактор поддерживает множество 
 
 ## Установка
 
-Для установки доступны ![скомпилированные релизи](https://github.com/dralex/CyberiadaHSM-Editor/releases)
+Для установки доступны ![скомпилированные релизы](https://github.com/dralex/CyberiadaHSM-Editor/releases)
 под ОС Ubuntu Linux и Windows.
 
 ## Требования
