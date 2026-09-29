@@ -624,8 +624,11 @@ static bool sourceHasOutgoing(const Cyberiada::LocalDocument* root, const Cyberi
 static bool validEventName(const QString& trigger)
 {
 	if (trigger.isEmpty()) return true;
+	// UseUnicodeProperties so \w matches any script's letters (Cyrillic, etc.),
+	// not just ASCII - PNST 1044 event names may be non-Latin
 	static const QRegularExpression re(
-		QRegularExpression::anchoredPattern("\\w((\\w| |\\.)*\\w)?(\\(\\w+\\))?"));
+		QRegularExpression::anchoredPattern("\\w((\\w| |\\.)*\\w)?(\\(\\w+\\))?"),
+		QRegularExpression::UseUnicodePropertiesOption);
 	return re.match(trigger).hasMatch();
 }
 

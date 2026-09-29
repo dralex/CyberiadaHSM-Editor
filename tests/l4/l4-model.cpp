@@ -39,6 +39,7 @@ private slots:
 	void test_update_title();
 	void test_title_rules();
 	void test_actions();
+	void test_event_name_unicode();
 	void test_new_elements();
 	void test_update_id();
 	void test_reparent();
@@ -153,6 +154,38 @@ void TestModel::test_actions()
 	QVERIFY(model->updateAction(state, 0, "", "", "\n  x();\n\n\ny();  "));
 	QCOMPARE(QString(s->get_actions()[0].get_behavior().c_str()), QString("x();\ny();"));
 	QVERIFY(model->deleteAction(state, 0));
+}
+
+void TestModel::test_event_name_unicode()
+{
+	// event names may use any script's letters (Cyrillic), not only ASCII
+	QModelIndex state = indexOf("node-0-0-2");
+	const Cyberiada::State* s =
+		static_cast<const Cyberiada::State*>(model->idToElement("node-0-0-2"));
+
+	// an internal transition (a state action) with a Cyrillic event name
+	QVERIFY(model->newAction(state, Cyberiada::actionTransition,
+							 QString::fromUtf8("ТАЙМЕР"), "", QString::fromUtf8("код()")));
+	QCOMPARE(QString::fromUtf8(s->get_actions()[0].get_trigger().c_str()),
+			 QString::fromUtf8("ТАЙМЕР"));
+	QVERIFY(model->deleteAction(state, 0));
+
+	// a stray non-word character is still refused (the grammar still applies)
+	QVERIFY(!model->newAction(state, Cyberiada::actionTransition, "a:b", "", ""));
+
+	// an edge transition with a Cyrillic event name
+	Cyberiada::StateMachine* sm = model->rootDocument()->get_state_machines().front();
+	QVERIFY(sm);
+	Cyberiada::Element* src = model->idToElement("node-0-0-1");
+	Cyberiada::Element* tgt = model->idToElement("node-0-0-2");
+	QVERIFY(src && tgt);
+	Cyberiada::Transition* t = model->newTransition(sm, Cyberiada::transitionExternal, src, tgt,
+													Cyberiada::Action());
+	QVERIFY(t);
+	QModelIndex ti = model->elementToIndex(t);
+	QVERIFY(model->updateAction(ti, 0, QString::fromUtf8("ВКЛ"), "", ""));
+	QCOMPARE(QString::fromUtf8(t->get_action().get_trigger().c_str()), QString::fromUtf8("ВКЛ"));
+	QVERIFY(model->deleteElement(ti));
 }
 
 void TestModel::test_new_elements()
