@@ -18,6 +18,11 @@ pan), copy/paste, undo/redo, etc.
 
 ![The Cyberiada HSM Editor. Sample 2](images/gui-sample-2.jpg)
 
+## Installation
+
+One can install ![binary releases](https://github.com/dralex/CyberiadaHSM-Editor/releases)
+for Ubuntu Linux or Windows.
+
 ## Requirements
 
 * [libcyberidaml++](https://github.com/kruzhok-team/libcyberiadamlpp/) and its required parts: [libcyberiadaml](https://github.com/kruzhok-team/libcyberiadaml), [libhtreegeom](https://github.com/kruzhok-team/libhtreegeom) and libxml2 
@@ -25,7 +30,7 @@ pan), copy/paste, undo/redo, etc.
 * Qt Framework version 5.x
 * [QtPropertyBrowser](https://github.com/greenjava/QtPropertyBrowser/)
 
-## Installation
+## Building from Sources
 
 Configure and build with CMake:
 
