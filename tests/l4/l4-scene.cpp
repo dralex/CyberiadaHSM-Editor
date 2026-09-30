@@ -119,6 +119,7 @@ private slots:
 	void test_action_bold();
 	void test_transition_event_bold();
 	void test_comment_snap();
+	void test_choice_center_snap();
 	void test_connection_point_clamp();
 	void test_scene_rect_tracks_content();
 	void test_name_only_state();
@@ -2793,6 +2794,42 @@ void TestScene::test_comment_snap()
 	QPointF corner = item->sceneBoundingRect().topLeft();
 	QVERIFY(qAbs(std::fmod(corner.x(), 25.0)) < 0.01);
 	QVERIFY(qAbs(std::fmod(corner.y(), 25.0)) < 0.01);
+
+	sm.setSnapMode(false);
+}
+
+void TestScene::test_choice_center_snap()
+{
+	// a symmetric choice snaps by its centre, not its bounding-box corner, so the
+	// diamond tip alignment stays on the grid
+	SettingsManager& sm = SettingsManager::instance();
+	sm.setGridSpacing(25);
+	sm.setSnapMode(true);
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+
+	Cyberiada::ElementCollection* smc =
+		dynamic_cast<Cyberiada::ElementCollection*>(model->indexToElement(model->firstSMIndex()));
+	QVERIFY(smc);
+	// a symmetric 40x40 diamond centred off-grid
+	Cyberiada::ChoicePseudostate* ch = model->newChoice(smc, Cyberiada::Rect(706, 604, 40, 40));
+	QVERIFY(ch);
+	CyberiadaSMEditorAbstractItem* item =
+		dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene->getMap().value(ch->get_id()));
+	QVERIFY(item);
+	scene->clearSelection();
+
+	// drag it by its centre to another off-grid spot; release snaps the centre
+	QPointF at = item->sceneBoundingRect().center();
+	mouse(QEvent::GraphicsSceneMousePress, at, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, at + QPointF(13, -8), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, at + QPointF(13, -8), Qt::NoButton);
+
+	QPointF centre = item->sceneBoundingRect().center();
+	QVERIFY(qAbs(std::fmod(centre.x(), 25.0)) < 0.01);
+	QVERIFY(qAbs(std::fmod(centre.y(), 25.0)) < 0.01);
 
 	sm.setSnapMode(false);
 }

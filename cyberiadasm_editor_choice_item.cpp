@@ -102,10 +102,14 @@ void CyberiadaSMEditorChoiceItem::paint(QPainter* painter, const QStyleOptionGra
     if (Cyberiada::element_has_color(element)) {
         color = QColor(QString::fromStdString(Cyberiada::element_get_color(element)));
     }
+    // the same border as a state: width 2, the selection colour/width when selected
+    int width = 2;
     if (isSelected()) {
-        color = SettingsManager::instance().getSelectionColor();
+        SettingsManager& sm = SettingsManager::instance();
+        color = sm.getSelectionColor();
+        width = sm.getSelectionBorderWidth();
     }
-    painter->setPen(QPen(color, 1, Qt::SolidLine));
+    painter->setPen(QPen(color, width, Qt::SolidLine));
 
     QRectF r = boundingRect();
     const QPointF points[] = {
@@ -140,6 +144,27 @@ void CyberiadaSMEditorChoiceItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event
 
     QGraphicsItem::mouseMoveEvent(event);
     emit geometryChanged();
+}
+
+void CyberiadaSMEditorChoiceItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
+{
+    // a symmetric rhombus snaps by its centre (the centre-origin position), like a
+    // pseudostate point: the diamond tips matter, not the bounding-box corner. A
+    // non-symmetric choice keeps the base corner snap.
+    if (isEditable() && (event->button() & Qt::LeftButton) && element->has_rect_geometry()) {
+        Cyberiada::Rect r = choice->get_geometry_rect();
+        if (r.width == r.height) {
+            QPointF snapped = snapToGrid(scenePos());
+            setPos(parentItem() ? parentItem()->mapFromScene(snapped) : snapped);
+            model->updateGeometry(model->elementToIndex(element),
+                                  Cyberiada::Rect(pos().x(), pos().y(), r.width, r.height));
+            isLeftMouseButtonPressed = false;
+            setFlag(ItemIsMovable, false);
+            QGraphicsItem::mouseReleaseEvent(event);
+            return;
+        }
+    }
+    CyberiadaSMEditorAbstractItem::mouseReleaseEvent(event);
 }
 
 void CyberiadaSMEditorChoiceItem::hoverMoveEvent(QGraphicsSceneHoverEvent *event)
