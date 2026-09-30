@@ -60,6 +60,7 @@ private slots:
 	void test_double_click_action();
 	void test_action_layout();
 	void test_border_resize();
+	void test_resize_snap();
 	void test_comment_border_resize();
 	void test_container_resize_clamp();
 	void test_box_transition();
@@ -645,6 +646,38 @@ void TestScene::test_border_resize()
 	QCOMPARE(element->get_geometry_rect().width, before.width + 27);
 	QCOMPARE(element->get_geometry_rect().height, after.height);
 	QVERIFY(model->deleteAction(index, 0));
+}
+
+void TestScene::test_resize_snap()
+{
+	// dragging a border snaps the moved edge to the grid, like a move does
+	SettingsManager& sm = SettingsManager::instance();
+	sm.setGridSpacing(25);
+	sm.setSnapMode(true);
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+	CyberiadaSMEditorStateItem* state =
+		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0-0-2"));
+	QVERIFY(state);
+	scene->clearSelection();
+
+	// the right border lands on a grid line
+	QRectF box = state->sceneBoundingRect();
+	QPointF onRight(box.right() - 3, box.center().y());
+	mouse(QEvent::GraphicsSceneMousePress, onRight, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, QPointF(onRight.x() + 33, onRight.y()), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, QPointF(onRight.x() + 33, onRight.y()), Qt::NoButton);
+	QVERIFY(qAbs(std::fmod(state->sceneBoundingRect().right(), 25.0)) < 0.01);
+
+	// the bottom border lands on a grid line
+	box = state->sceneBoundingRect();
+	QPointF onBottom(box.center().x(), box.bottom() - 3);
+	mouse(QEvent::GraphicsSceneMousePress, onBottom, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, QPointF(onBottom.x(), onBottom.y() + 33), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, QPointF(onBottom.x(), onBottom.y() + 33), Qt::NoButton);
+	QVERIFY(qAbs(std::fmod(state->sceneBoundingRect().bottom(), 25.0)) < 0.01);
+
+	sm.setSnapMode(false);
 }
 
 void TestScene::test_comment_border_resize()

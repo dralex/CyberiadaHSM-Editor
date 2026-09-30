@@ -444,18 +444,21 @@ void CyberiadaSMEditorAbstractItem::hoverMoveEvent(QGraphicsSceneHoverEvent *eve
 // the centre moves during the resize)
 void CyberiadaSMEditorAbstractItem::resizeRight(const QPointF &scenePt)
 {
-    // directional: keep the left edge, move the right edge to the cursor
+    // directional: keep the left edge, move the right edge to the cursor, snapped
+    // to the grid (a no-op when snap is off or Alt is held)
     QRectF border = sceneBoundingRect();
-    if (scenePt.x() <= border.left()) return;
-    border.setRight(scenePt.x());
+    qreal x = snapToGrid(scenePt).x();
+    if (x <= border.left()) return;
+    border.setRight(x);
     applyBorderRect(border);
 }
 
 void CyberiadaSMEditorAbstractItem::resizeBottom(const QPointF &scenePt)
 {
     QRectF border = sceneBoundingRect();
-    if (scenePt.y() <= border.top()) return;
-    border.setBottom(scenePt.y());
+    qreal y = snapToGrid(scenePt).y();
+    if (y <= border.top()) return;
+    border.setBottom(y);
     applyBorderRect(border);
 }
 
