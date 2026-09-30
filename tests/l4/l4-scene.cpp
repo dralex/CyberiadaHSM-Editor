@@ -82,6 +82,7 @@ private slots:
 	void test_sm_title_size();
 	void test_ctrl_snap_endpoint();
 	void test_double_click_label();
+	void test_empty_label_removes_action();
 	void test_segment_drag_vertex();
 	void test_remove_vertex();
 	void test_double_click_removes_vertex();
@@ -1583,6 +1584,42 @@ void TestScene::test_ctrl_snap_endpoint()
 	end = pp.elementAt(pp.elementCount() - 1);
 	QVERIFY(qAbs(end.y() - adjacent.y()) > 0.5);
 	mouse(QEvent::GraphicsSceneMouseRelease, freeTarget, Qt::NoButton);
+}
+
+void TestScene::test_empty_label_removes_action()
+{
+	// deleting all the label text removes the action and its stored box, so an
+	// initial/completion edge with only a behaviour loses its label when emptied
+	QVERIFY(model->loadDocument("diagrams/polyline.graphml"));
+	scene->loadScene();
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+
+	QModelIndex idx = model->elementToIndex(model->idToElement("t0"));
+	QVERIFY(model->updateAction(idx, 0, "", "", "doStuff()"));
+	QVERIFY(model->updateLabel(idx, Cyberiada::Rect(0, 60, 80, 30)));
+	const Cyberiada::Transition* t =
+		static_cast<const Cyberiada::Transition*>(model->idToElement("t0"));
+	QVERIFY(t->has_action());
+	QVERIFY(t->has_geometry_label_rect());
+
+	CyberiadaSMEditorTransitionItem* tr =
+		dynamic_cast<CyberiadaSMEditorTransitionItem*>(scene->getMap().value("t0"));
+	QVERIFY(tr);
+	EditableTextItem* label = nullptr;
+	for (QGraphicsItem* child : tr->childItems())
+		if ((label = dynamic_cast<EditableTextItem*>(child))) break;
+	QVERIFY(label);
+
+	// the user selects all and deletes, then clicks away
+	label->startEditing();
+	label->setPlainText("");
+	label->clearFocus();
+	QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+
+	QVERIFY(!t->has_action());
+	QVERIFY(!t->has_geometry_label_rect());
+	QVERIFY(label->toPlainText().isEmpty());
 }
 
 void TestScene::test_double_click_label()

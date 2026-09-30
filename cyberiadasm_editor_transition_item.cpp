@@ -772,6 +772,9 @@ void CyberiadaSMEditorTransitionItem::syncFromModel()
     prepareGeometryChange();
     if (transition->has_action()) {
         updateAction();
+    } else {
+        // no action: drop any stale label text so the empty box/dots disappear
+        actionItem->setPlainText(QString());
     }
     updateDots();
     setDotsPosition();
@@ -1507,10 +1510,16 @@ void TransitionAction::focusOutEvent(QFocusEvent *event)
     CyberiadaSMEditorTransitionItem* transition = dynamic_cast<CyberiadaSMEditorTransitionItem*>(parentItem());
     if (!transition) return;
 
+    QModelIndex idx = transition->model->elementToIndex(transition->element);
+    // an emptied label removes the action and its stored box (a bare edge stays)
+    if (toPlainText().trimmed().isEmpty()) {
+        transition->model->deleteAction(idx, 0);
+        transition->model->updateLabel(idx, Cyberiada::Rect());
+        return;
+    }
     // commit the action text first (it re-syncs the label from the model), then
     // store the label box sized from that text, so a freshly typed label is a rect
-    transition->model->updateAction(transition->model->elementToIndex(transition->element), 0,
-                                    getTrigger(), getGuard(), getBehaviour());
+    transition->model->updateAction(idx, 0, getTrigger(), getGuard(), getBehaviour());
     persistLabelPosition();
 }
 
