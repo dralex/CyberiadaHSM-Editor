@@ -282,6 +282,23 @@ the third is a derived display value the format does not store):
 - `EDIT-TEXT-6` MUST [U]: `defer` is the whole behaviour of an internal transition of a state and
   never labels a transition; `propagate` and `block` accompany a non-empty event name. *PNST 1044
   6.8.1, 6.8.2*
+- `EDIT-TEXT-7` SHOULD [A]: the code parts of a text are highlighted by the language of the
+  `platformLanguage` metainformation parameter; an empty or unknown language leaves the text
+  plain. The highlighting is a display colour only: the text, the saved document and the bold
+  prefix (EDIT-TEXT-2) are not changed. A preference turns it off. *design*
+
+  ```
+  entry/ foo(1);        ─► after the keyword "/"          (entry, exit, do behaviour)
+  EV [x > 0] / f();     ─► the guard and after the "/"    (internal and edge transitions)
+  formal comment body   ─► the whole text
+  titles, names, informal comments ─► plain
+  ```
+
+  Languages (`syntax/*.json`): C, C++ (Arduino), C#, Java, JavaScript (TypeScript), Python; the
+  value is matched case-insensitively by the name or an alias.
+- `EDIT-TEXT-8` SHOULD [A]: the new action and new internal transition dialogs highlight the
+  entered text as EDIT-TEXT-7 does; an exported image is plain unless the export preference
+  keeps the colours. *design*
 
 ### 4.6 Tools and interaction — TOOL
 

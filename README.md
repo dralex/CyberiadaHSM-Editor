@@ -12,7 +12,9 @@ the GNU Free Documentation License (version 1.3).
 The editor is able to create HSM diagrams and edit Cyberiada GraphML files.
 It suports multiple HSM formats and has many drawing tools - HSM diagram
 elements (states, pseudostate, transitions, etc.), view management (zoom,
-pan), copy/paste, undo/redo, etc.
+pan), copy/paste, undo/redo, etc. The code in the actions, guards and formal
+comments is highlighted by the `platformLanguage` of the document (C, C++, C#,
+Java, JavaScript, Python; the rules are in `syntax/`).
 
 ![The Cyberiada HSM Editor. Sample 1](images/gui-sample-1.jpg)
 
