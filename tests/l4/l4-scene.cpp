@@ -83,6 +83,7 @@ private slots:
 	void test_ctrl_snap_endpoint();
 	void test_double_click_label();
 	void test_empty_label_removes_action();
+	void test_guard_newline_kept();
 	void test_segment_drag_vertex();
 	void test_remove_vertex();
 	void test_double_click_removes_vertex();
@@ -1621,6 +1622,44 @@ void TestScene::test_empty_label_removes_action()
 	QVERIFY(!t->has_action());
 	QVERIFY(!t->has_geometry_label_rect());
 	QVERIFY(label->toPlainText().isEmpty());
+}
+
+void TestScene::test_guard_newline_kept()
+{
+	// a newline inside the guard (a hand-wrapped long guard) must survive the edit:
+	// the guard keeps a single interior newline, and a blank line collapses to one
+	QVERIFY(model->loadDocument("diagrams/polyline.graphml"));
+	scene->loadScene();
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+
+	CyberiadaSMEditorTransitionItem* tr =
+		dynamic_cast<CyberiadaSMEditorTransitionItem*>(scene->getMap().value("t0"));
+	QVERIFY(tr);
+	EditableTextItem* label = nullptr;
+	for (QGraphicsItem* child : tr->childItems())
+		if ((label = dynamic_cast<EditableTextItem*>(child))) break;
+	QVERIFY(label);
+	const Cyberiada::Transition* t =
+		static_cast<const Cyberiada::Transition*>(model->idToElement("t0"));
+
+	// edit the label so the guard carries an interior newline, then commit
+	label->startEditing();
+	label->setPlainText("EVENT [light_sensor->\nnight()] / act()");
+	label->clearFocus();
+	QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+
+	QVERIFY(t->has_action());
+	QCOMPARE(QString(t->get_action().get_trigger().c_str()), QString("EVENT"));
+	QCOMPARE(QString(t->get_action().get_guard().c_str()), QString("light_sensor->\nnight()"));
+	QCOMPARE(QString(t->get_action().get_behavior().c_str()), QString("act()"));
+
+	// a blank line inside the guard collapses to a single newline (stays one block)
+	label->startEditing();
+	label->setPlainText("EVENT [a &&\n\n\nb] / act()");
+	label->clearFocus();
+	QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+	QCOMPARE(QString(t->get_action().get_guard().c_str()), QString("a &&\nb"));
 }
 
 void TestScene::test_double_click_label()

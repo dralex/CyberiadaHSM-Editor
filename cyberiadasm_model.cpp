@@ -671,7 +671,10 @@ bool CyberiadaSMModel::updateAction(const QModelIndex& index,
 			// a transition action may have no trigger (initial, completion)
 			if (new_trigger.isEmpty() && new_guard.isEmpty() && new_behaviour.trimmed().isEmpty()) return false;
 			if (!validEventName(new_trigger)) return false;
-			trans->get_action().update(new_trigger.toStdString(), new_guard.toStdString(),
+			// a single newline in the guard is kept (a manually wrapped guard); a blank
+			// line is collapsed so it never serializes as a block separator
+			trans->get_action().update(new_trigger.toStdString(),
+									   normalizedBehaviour(new_guard).toStdString(),
 									   normalizedBehaviour(new_behaviour).toStdString());
 		}
 	} else {
@@ -728,7 +731,8 @@ bool CyberiadaSMModel::newAction(const QModelIndex& index, Cyberiada::ActionType
 			// should edit available action
 			return false;
 		}
-		trans->get_action().update(trigger.toStdString(), guard.toStdString(),
+		trans->get_action().update(trigger.toStdString(),
+								   normalizedBehaviour(guard).toStdString(),
 								   normalizedBehaviour(behaviour).toStdString());
 	} else {
 		return false;
