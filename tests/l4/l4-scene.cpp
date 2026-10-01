@@ -122,6 +122,7 @@ private slots:
 	void test_comment_snap();
 	void test_choice_center_snap();
 	void test_connection_point_clamp();
+	void test_guard_bold_not_spread();
 	void test_scene_rect_tracks_content();
 	void test_name_only_state();
 	void test_title_drag_through();
@@ -2869,6 +2870,51 @@ void TestScene::test_choice_center_snap()
 	QVERIFY(qAbs(std::fmod(centre.y(), 25.0)) < 0.01);
 
 	sm.setSnapMode(false);
+}
+
+void TestScene::test_guard_bold_not_spread()
+{
+	// inserting a guard right after the bold event name must not leave the guard
+	// (or the behaviour) bold once the edit is committed - only the event is bold
+	QVERIFY(model->loadDocument("diagrams/polyline.graphml"));
+	scene->loadScene();
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+	QModelIndex idx = model->elementToIndex(model->idToElement("t0"));
+	QVERIFY(model->updateAction(idx, 0, "EVENT", "", "act()"));
+	CyberiadaSMEditorTransitionItem* tr =
+		dynamic_cast<CyberiadaSMEditorTransitionItem*>(scene->getMap().value("t0"));
+	QVERIFY(tr);
+	TransitionAction* a = nullptr;
+	for (QGraphicsItem* c : tr->childItems())
+		if (TransitionAction* x = dynamic_cast<TransitionAction*>(c)) a = x;
+	QVERIFY(a);
+
+	QGraphicsView view(scene); view.resize(900, 700); view.show();
+	QApplication::processEvents();
+	tr->setSelected(true);
+	QApplication::processEvents();
+
+	a->startEditing();
+	QApplication::processEvents();
+	// insert " [g]" just after "EVENT" - it inherits the bold format while editing
+	QTextCursor tc(a->document());
+	tc.setPosition(5);
+	a->setTextCursor(tc);
+	QTest::keyClicks(view.viewport(), " [g]");
+	QApplication::processEvents();
+	a->clearFocus();
+	QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+	QApplication::processEvents();
+	view.hide();
+
+	QCOMPARE(a->toPlainText(), QString("EVENT [g] / act()"));
+	// "EVENT" (0..4) bold, the guard and the behaviour (5..end) normal
+	for (int i = 0; i < a->toPlainText().length(); i++) {
+		int w = weightAt(a, i);
+		if (i < 5) QCOMPARE(w, int(QFont::Bold));
+		else       QVERIFY(w != int(QFont::Bold));
+	}
 }
 
 void TestScene::test_connection_point_clamp()

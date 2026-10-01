@@ -204,13 +204,26 @@ void EditableTextItem::applyFont()
 
 void EditableTextItem::setBoldRange(int length, bool bold)
 {
-    if (length <= 0) return;
+    // the first `length` characters are bold (when asked), the rest is forced back
+    // to normal - so bold left on the tail by in-place editing (e.g. a guard typed
+    // right after the event name) never survives the reformat
+    int end = document()->characterCount() - 1;
+    int split = qBound(0, length, end);
     QTextCursor cursor(document());
-    cursor.setPosition(0);
-    cursor.setPosition(qMin(length, document()->characterCount() - 1), QTextCursor::KeepAnchor);
-    QTextCharFormat fmt;
-    fmt.setFontWeight(bold ? QFont::Bold : QFont::Normal);
-    cursor.mergeCharFormat(fmt);
+    if (split > 0) {
+        cursor.setPosition(0);
+        cursor.setPosition(split, QTextCursor::KeepAnchor);
+        QTextCharFormat fmt;
+        fmt.setFontWeight(bold ? QFont::Bold : QFont::Normal);
+        cursor.mergeCharFormat(fmt);
+    }
+    if (split < end) {
+        cursor.setPosition(split);
+        cursor.setPosition(end, QTextCursor::KeepAnchor);
+        QTextCharFormat fmt;
+        fmt.setFontWeight(QFont::Normal);
+        cursor.mergeCharFormat(fmt);
+    }
 }
 
 void EditableTextItem::updateTextWidth()
