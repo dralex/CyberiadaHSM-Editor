@@ -1,0 +1,20 @@
+{
+    "name": "C++",
+    "aliases": ["cpp", "c++11", "c++14", "c++17", "c++20", "cxx", "arduino"],
+    "lineComment": "//",
+    "blockComment": ["/*", "*/"],
+    "quotes": "\"'",
+    "preprocessor": true,
+    "keywords": ["auto", "break", "case", "catch", "class", "const", "constexpr", "continue",
+                 "default", "delete", "do", "else", "enum", "explicit", "extern", "false",
+                 "for", "friend", "goto", "if", "inline", "namespace", "new", "noexcept",
+                 "nullptr", "operator", "private", "protected", "public", "return", "sizeof",
+                 "static", "static_cast", "dynamic_cast", "reinterpret_cast", "const_cast",
+                 "struct", "switch", "template", "this", "throw", "true", "try", "typedef",
+                 "typename", "union", "using", "virtual", "volatile", "while",
+                 "NULL", "HIGH", "LOW", "INPUT", "OUTPUT", "INPUT_PULLUP"],
+    "types": ["bool", "char", "double", "float", "int", "long", "short", "signed",
+              "unsigned", "void", "size_t", "int8_t", "int16_t", "int32_t", "int64_t",
+              "uint8_t", "uint16_t", "uint32_t", "uint64_t", "byte", "word", "String",
+              "std", "string", "vector"]
+}

@@ -1,0 +1,16 @@
+{
+    "name": "C#",
+    "aliases": ["csharp", "cs", "c#.net"],
+    "lineComment": "//",
+    "blockComment": ["/*", "*/"],
+    "quotes": "\"'",
+    "keywords": ["abstract", "as", "base", "break", "case", "catch", "class", "const",
+                 "continue", "default", "delegate", "do", "else", "enum", "event", "false",
+                 "finally", "for", "foreach", "if", "in", "interface", "internal", "is",
+                 "lock", "namespace", "new", "null", "out", "override", "private",
+                 "protected", "public", "readonly", "ref", "return", "sealed", "static",
+                 "struct", "switch", "this", "throw", "true", "try", "typeof", "using",
+                 "var", "virtual", "while", "async", "await"],
+    "types": ["bool", "byte", "char", "decimal", "double", "float", "int", "long",
+              "object", "sbyte", "short", "string", "uint", "ulong", "ushort", "void"]
+}

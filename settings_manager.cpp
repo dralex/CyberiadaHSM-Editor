@@ -59,6 +59,8 @@ void SettingsManager::load() {
     boldActionPrefix = s.value("display/boldActionPrefix", true).toBool();
     boldEventName = s.value("display/boldEventName", true).toBool();
     boldTransitionEventName = s.value("display/boldTransitionEventName", true).toBool();
+    highlightCode = s.value("display/highlightCode", true).toBool();
+    highlightInExports = s.value("export/highlightCode", false).toBool();
 
     lastDirectory = s.value("files/lastDirectory", QDir::currentPath()).toString();
     recentFiles = s.value("files/recentFiles").toStringList();
@@ -92,6 +94,8 @@ void SettingsManager::loadDefaults()
     setBoldActionPrefix(true);
     setBoldEventName(true);
     setBoldTransitionEventName(true);
+    setHighlightCode(true);
+    setHighlightInExports(false);
 
     setSelectionColor(QColor(Qt::red));
     setSelectionBorderWidth(2);
@@ -147,6 +151,24 @@ void SettingsManager::setBoldTransitionEventName(bool value)
         boldTransitionEventName = value;
         QSettings().setValue("display/boldTransitionEventName", value);
         emit fontSettingsChanged();
+    }
+}
+
+void SettingsManager::setHighlightCode(bool value)
+{
+    if (highlightCode != value) {
+        highlightCode = value;
+        QSettings().setValue("display/highlightCode", value);
+        emit highlightSettingsChanged();
+    }
+}
+
+void SettingsManager::setHighlightInExports(bool value)
+{
+    if (highlightInExports != value) {
+        highlightInExports = value;
+        QSettings().setValue("export/highlightCode", value);
+        emit highlightSettingsChanged();
     }
 }
 

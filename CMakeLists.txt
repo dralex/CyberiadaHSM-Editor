@@ -76,6 +76,7 @@ add_library(CyberiadaEditorCore STATIC
   cyberiadasm_editor_choice_item.h cyberiadasm_editor_choice_item.cpp
   cyberiadasm_editor_comment_item.h cyberiadasm_editor_comment_item.cpp
   fontmanager.h fontmanager.cpp
+  code_highlighter.h code_highlighter.cpp
   dialogs/stateactiondialog.h dialogs/stateactiondialog.cpp
   dialogs/about_dialog.h dialogs/about_dialog.cpp
   dialogs/export_image_dialog.h dialogs/export_image_dialog.cpp

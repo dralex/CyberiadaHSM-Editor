@@ -50,6 +50,14 @@
         <file>images/edit-copy.png</file>
         <file>images/edit-paste.png</file>
     </qresource>
+    <qresource prefix="/Syntax">
+        <file>syntax/c.json</file>
+        <file>syntax/cpp.json</file>
+        <file>syntax/csharp.json</file>
+        <file>syntax/java.json</file>
+        <file>syntax/javascript.json</file>
+        <file>syntax/python.json</file>
+    </qresource>
     <qresource prefix="/Fonts">
         <file>fonts/cyberiada-mono.ttf</file>
         <file>fonts/cyberiada-mono-bold.ttf</file>

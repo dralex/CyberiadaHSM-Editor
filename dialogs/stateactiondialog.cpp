@@ -32,6 +32,7 @@
 
 #include "stateactiondialog.h"
 #include "fontmanager.h"
+#include "code_highlighter.h"
 #include "cyberiadasm_editor_transition_item.h"
 
 StateActionDialog::StateActionDialog(const QString& keyword, QWidget* parent):
@@ -58,6 +59,9 @@ void StateActionDialog::setupUi(const QString& title, const QString& label, cons
 
     actionEdit = new QPlainTextEdit(this);
     actionEdit->setFont(FontManager::instance().font(fontRoleStateAction));
+    // highlighted as the action on the canvas (EDIT-TEXT-8)
+    new CodeHighlighter(actionEdit->document(),
+                        mode == Mode::Transition ? codeRoleTransition : codeRoleBehaviour);
     actionEdit->setPlainText(prefill);
     QTextCursor cursor = actionEdit->textCursor();
     cursor.movePosition(QTextCursor::End);

@@ -346,6 +346,20 @@
          </property>
         </widget>
        </item>
+       <item row="8" column="0" colspan="2">
+        <widget class="QCheckBox" name="highlightCodeCheckBox">
+         <property name="text">
+          <string>Highlight code by the platform language</string>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="0" colspan="2">
+        <widget class="QCheckBox" name="highlightInExportsCheckBox">
+         <property name="text">
+          <string>Keep the code highlighting in exported images</string>
+         </property>
+        </widget>
+       </item>
       </layout>
      </widget>
     </widget>

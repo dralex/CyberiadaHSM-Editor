@@ -1,0 +1,15 @@
+{
+    "name": "C",
+    "aliases": ["c", "c99", "c11"],
+    "lineComment": "//",
+    "blockComment": ["/*", "*/"],
+    "quotes": "\"'",
+    "preprocessor": true,
+    "keywords": ["break", "case", "const", "continue", "default", "do", "else", "enum",
+                 "extern", "for", "goto", "if", "inline", "register", "return", "sizeof",
+                 "static", "struct", "switch", "typedef", "union", "volatile", "while",
+                 "NULL", "true", "false"],
+    "types": ["bool", "char", "double", "float", "int", "long", "short", "signed",
+              "unsigned", "void", "size_t", "int8_t", "int16_t", "int32_t", "int64_t",
+              "uint8_t", "uint16_t", "uint32_t", "uint64_t"]
+}

@@ -34,6 +34,7 @@
 #include "settings_manager.h"
 #include "cyberiadasm_editor_scene.h"
 #include "fontmanager.h"
+#include "code_highlighter.h"
 
 // the final state and the transition label fill from the painter background,
 // so it is set explicitly instead of relying on the paint device default;
@@ -71,6 +72,8 @@ namespace {
 		{
 			sm.overrideShowGrid(false);
 			sm.overrideShowServiceObjects(false);
+			// plain code text unless the export preference keeps the colours
+			CodeStyle::instance().overrideExportPlain(true);
 			// the chosen export font, applied to every text item for the render
 			if (fontOverridden) sm.overrideFontFamily(fontFamily);
 		}
@@ -78,6 +81,7 @@ namespace {
 		{
 			sm.overrideShowGrid(grid);
 			sm.overrideShowServiceObjects(service);
+			CodeStyle::instance().overrideExportPlain(false);
 			if (fontOverridden) sm.overrideFontFamily(font);
 		}
 	};

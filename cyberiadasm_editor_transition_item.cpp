@@ -1440,6 +1440,7 @@ TransitionAction::TransitionAction(const QString &text, QGraphicsItem *parent) :
     setFontRole(fontRoleTransition);
     setTextAlignment(Qt::AlignCenter);
     setTextMargin(0);
+    setCodeRole(codeRoleTransition);
 }
 
 void TransitionAction::parseLabel(const QString& text, QString& trigger, QString& guard, QString& behaviour)

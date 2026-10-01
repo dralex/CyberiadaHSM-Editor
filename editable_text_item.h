@@ -27,6 +27,7 @@
 #include <QGraphicsTextItem>
 
 #include "cyberiada_constants.h"
+#include "code_highlighter.h"
 
 class CyberiadaSMEditorAbstractItem;
 
@@ -40,6 +41,9 @@ public:
     // the role sets the font: the size, the boldness and the fixed family
     void setFontRole(FontRole role);
     FontRole getFontRole() const { return fontRole; }
+    // the code parts are highlighted by the platform language (EDIT-TEXT-7)
+    void setCodeRole(CodeRole role);
+    CodeRole getCodeRole() const { return highlighter ? highlighter->getRole() : codeRoleNone; }
     // the wrap width follows the parent box, refreshed after a resize
     void updateTextWidth();
     // a title that hugs its text (a state machine header) rather than the box
@@ -85,6 +89,8 @@ protected:
     FontRole fontRole = fontRoleStateAction;
     // the comment body keeps the default: it wraps at the full element width
     double textMargin = 0;
+    // owned by the document
+    CodeHighlighter* highlighter = nullptr;
 };
 
 

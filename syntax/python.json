@@ -1,0 +1,12 @@
+{
+    "name": "Python",
+    "aliases": ["python3", "py", "py3", "micropython"],
+    "lineComment": "#",
+    "quotes": "\"'",
+    "keywords": ["and", "as", "assert", "async", "await", "break", "class", "continue", "def",
+                 "del", "elif", "else", "except", "False", "finally", "for", "from", "global",
+                 "if", "import", "in", "is", "lambda", "None", "nonlocal", "not", "or", "pass",
+                 "raise", "return", "self", "True", "try", "while", "with", "yield"],
+    "types": ["bool", "bytes", "dict", "float", "int", "list", "object", "set", "str",
+              "tuple", "print", "len", "range"]
+}

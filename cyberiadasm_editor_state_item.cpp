@@ -965,6 +965,7 @@ StateAction::StateAction(const Cyberiada::Action* action, QGraphicsItem *parent)
         else if (!behaviour.isEmpty()) text += (ownLine ? " /\n" : " / ") + behaviour;
         setPlainText(text);
         applyRichFormat();
+        setCodeRole(codeRoleTransition);
         return;
     }
     // TODO "exit", "entry" and "/" are constants from cyberiadamlpp
@@ -986,6 +987,7 @@ StateAction::StateAction(const Cyberiada::Action* action, QGraphicsItem *parent)
 
     setPlainText(typeText + behaviour);
     applyRichFormat();
+    setCodeRole(codeRoleBehaviour);
 }
 
 void StateAction::applyRichFormat()

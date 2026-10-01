@@ -67,6 +67,9 @@ CyberiadaSMEditorCommentItem::CyberiadaSMEditorCommentItem(QObject *parent_objec
 
     body->setFontRole(element->get_type() == Cyberiada::elementFormalComment ?
                       fontRoleFormalComment : fontRoleComment);
+    if (element->get_type() == Cyberiada::elementFormalComment) {
+        body->setCodeRole(codeRoleFormalComment);
+    }
     body->setTextAlignment(Qt::AlignLeft);
     body->setTextMargin(2 * COMMENT_TEXT_MARGIN);
 

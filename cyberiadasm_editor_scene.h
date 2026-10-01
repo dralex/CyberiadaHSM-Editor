@@ -119,6 +119,8 @@ protected:
     void  mouseDoubleClickEvent(QGraphicsSceneMouseEvent* event) override;
 
 private:
+    // the highlighting follows the platformLanguage parameter (EDIT-TEXT-7)
+    void updateCodeLanguage();
     void  addItemsRecursively(QGraphicsItem* parent, Cyberiada::ElementCollection* element);
     void addSceneItem(QGraphicsItem* item);
     QGraphicsItem* addElementItem(Cyberiada::Element* element, QGraphicsItem* parent_item);

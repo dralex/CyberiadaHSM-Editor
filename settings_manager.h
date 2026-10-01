@@ -76,6 +76,12 @@ public:
     void setBoldEventName(bool value);
     bool getBoldTransitionEventName() const { return boldTransitionEventName; }
     void setBoldTransitionEventName(bool value);
+    // the code parts of the texts are coloured by the platform language
+    // (EDIT-TEXT-7); an export keeps the colours only when asked
+    bool getHighlightCode() const { return highlightCode; }
+    void setHighlightCode(bool value);
+    bool getHighlightInExports() const { return highlightInExports; }
+    void setHighlightInExports(bool value);
 
     QString getLastDirectory() const { return lastDirectory; }
     void setLastDirectory(const QString& value);
@@ -115,6 +121,7 @@ signals:
     void snapModeChanged(bool);
 
     void fontSettingsChanged();
+    void highlightSettingsChanged();
 
     void selectionSettingsChanged();
 
@@ -142,6 +149,8 @@ private:
     bool boldActionPrefix = true;
     bool boldEventName = true;
     bool boldTransitionEventName = true;
+    bool highlightCode = true;
+    bool highlightInExports = false;
     QString fontFamily;
     int fontSizes[fontRolesCount];
 

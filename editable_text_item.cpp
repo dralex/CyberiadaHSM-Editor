@@ -178,6 +178,18 @@ void EditableTextItem::setFontRole(FontRole role)
     applyFont();
 }
 
+void EditableTextItem::setCodeRole(CodeRole role)
+{
+    if (role == codeRoleNone) {
+        delete highlighter;
+        highlighter = nullptr;
+    } else if (highlighter) {
+        highlighter->setRole(role);
+    } else {
+        highlighter = new CodeHighlighter(document(), role);
+    }
+}
+
 void EditableTextItem::setTextWidthEnabled(bool on)
 {
     isTextWidthEnabled = on;

@@ -50,6 +50,7 @@
 #include "settings_manager.h"
 #include "gesture_log.h"
 #include "myassert.h"
+#include "code_highlighter.h"
 
 static double DEFAULT_SCENE_X = -500;
 static double DEFAULT_SCENE_Y = -500;
@@ -104,6 +105,7 @@ void CyberiadaSMEditorScene::slotModelAboutToBeReset()
 
 void CyberiadaSMEditorScene::slotModelReset()
 {
+    updateCodeLanguage();
     if (model->firstSMIndex().isValid()) {
         loadScene(false);
     } else {
@@ -338,6 +340,8 @@ void CyberiadaSMEditorScene::slotRowsAboutToBeRemoved(const QModelIndex& parent,
 void CyberiadaSMEditorScene::slotModelDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight)
 {
     noteModified(topLeft);
+    // a metainformation edit may change the language
+    updateCodeLanguage();
     Cyberiada::Element* element = model->indexToElement(topLeft);
     if (!element) return;
     CyberiadaSMEditorAbstractItem* current_item = dynamic_cast<CyberiadaSMEditorAbstractItem*>(elementIdToItemMap.value(element->get_id()));
@@ -499,8 +503,17 @@ void CyberiadaSMEditorScene::setGridPen(const QPen &pen)
     update();
 }
 
+void CyberiadaSMEditorScene::updateCodeLanguage()
+{
+    const Cyberiada::LocalDocument* doc = model ? model->rootDocument() : nullptr;
+    QString language;
+    if (doc) language = QString::fromStdString(doc->meta().get_string("platformLanguage"));
+    CodeStyle::instance().setLanguage(language);
+}
+
 void CyberiadaSMEditorScene::loadScene(bool fit)
 {
+    updateCodeLanguage();
     elementIdToItemMap.clear();
 
     // clear() frees every item; release the grab and focus first so a pending

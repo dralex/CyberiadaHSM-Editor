@@ -100,6 +100,8 @@ void PreferencesDialog::loadFromSettings()
     ui->boldActionPrefixCheckBox->setChecked(sm.getBoldActionPrefix());
     ui->boldEventNameCheckBox->setChecked(sm.getBoldEventName());
     ui->boldTransitionEventNameCheckBox->setChecked(sm.getBoldTransitionEventName());
+    ui->highlightCodeCheckBox->setChecked(sm.getHighlightCode());
+    ui->highlightInExportsCheckBox->setChecked(sm.getHighlightInExports());
 }
 
 void PreferencesDialog::saveSettings()
@@ -132,4 +134,6 @@ void PreferencesDialog::saveSettings()
     sm.setBoldActionPrefix(ui->boldActionPrefixCheckBox->isChecked());
     sm.setBoldEventName(ui->boldEventNameCheckBox->isChecked());
     sm.setBoldTransitionEventName(ui->boldTransitionEventNameCheckBox->isChecked());
+    sm.setHighlightCode(ui->highlightCodeCheckBox->isChecked());
+    sm.setHighlightInExports(ui->highlightInExportsCheckBox->isChecked());
 }

@@ -1,0 +1,14 @@
+{
+    "name": "JavaScript",
+    "aliases": ["js", "ecmascript", "typescript", "ts", "node.js", "nodejs"],
+    "lineComment": "//",
+    "blockComment": ["/*", "*/"],
+    "quotes": "\"'`",
+    "keywords": ["async", "await", "break", "case", "catch", "class", "const", "continue",
+                 "default", "delete", "do", "else", "export", "extends", "false", "finally",
+                 "for", "function", "if", "import", "in", "instanceof", "let", "new", "null",
+                 "of", "return", "super", "switch", "this", "throw", "true", "try", "typeof",
+                 "undefined", "var", "void", "while", "yield", "interface", "type", "enum"],
+    "types": ["any", "boolean", "number", "string", "object", "never", "unknown",
+              "Array", "Map", "Set", "Promise"]
+}
