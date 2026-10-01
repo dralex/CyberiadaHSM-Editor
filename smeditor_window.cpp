@@ -95,6 +95,7 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     // cut/copy/paste/delete follow the selection and the clipboard
     connect(scene, &QGraphicsScene::selectionChanged, this, &CyberiadaSMEditorWindow::updateEditActions);
     updateEditActions();
+    updateTitle();   // start as a clean "untitled" document
 }
 
 void CyberiadaSMEditorWindow::updateEditActions()
@@ -162,17 +163,16 @@ void CyberiadaSMEditorWindow::slotRedoTextChanged(const QString& text)
 // the clean state of the undo stack is the saved state of the document
 void CyberiadaSMEditorWindow::slotCleanChanged(bool clean)
 {
-    // the marker only makes sense once a document title (with the [*] slot)
-    // is set; before that the window has no placeholder
-    if (!openFileName.isEmpty()) setWindowModified(!clean);
+    // the title always carries the [*] slot (an unsaved document is "untitled")
+    setWindowModified(!clean);
     updateEditActions();   // Save follows the modified state
 }
 
 // the title carries the modified marker; the inspected document is read-only
 void CyberiadaSMEditorWindow::updateTitle()
 {
-    if (openFileName.isEmpty()) return;
-    QString title = openFileName + "[*]";
+    // an unsaved document shows "untitled" so a new file clears the old name
+    QString title = (openFileName.isEmpty() ? tr("untitled") : openFileName) + "[*]";
     if (SettingsManager::instance().getInspectorMode()) {
         title += " (inspector mode)";
     }

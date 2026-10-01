@@ -37,6 +37,7 @@ private slots:
 	void initTestCase();
 	void test_undo_actions();
 	void test_modified_state();
+	void test_new_resets_title();
 	void test_creation_tools_arm();
 	void test_view_roundtrip();
 	void test_pan_tool();
@@ -97,6 +98,18 @@ void TestWindow::test_modified_state()
 	QVERIFY(!window->isWindowModified());
 	// a clean document closes without a prompt
 	QVERIFY(window->close());
+}
+
+void TestWindow::test_new_resets_title()
+{
+	// opening a file shows its name; File > New clears it to a clean "untitled"
+	QVERIFY(window->openDocument("diagrams/geometry.graphml"));
+	QVERIFY(window->windowTitle().contains("geometry"));
+	model->undoStack()->setClean();   // a clean document: New needs no prompt
+	window->actionNew->trigger();
+	QVERIFY(!window->windowTitle().contains("geometry"));
+	QVERIFY(window->windowTitle().contains(tr("untitled")));
+	QVERIFY(!window->isWindowModified());
 }
 
 void TestWindow::test_creation_tools_arm()
