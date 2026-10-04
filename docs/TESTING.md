@@ -19,11 +19,12 @@ to the requirement it holds.
     v
   CyberiadaEditor --batch <file>   (QT_QPA_PLATFORM=offscreen)
   +------------------------------------------------------+
-  | full application: window + scene + model             |
+  | full application: window + tab line + documents      |
   | batch driver instead of app.exec():                  |
   |   open <file>      -> model + scene loading          |
   |   dump             -> canonical text on stdout  (L1) |
   |   edit <op> ...    -> model/scene mutators      (L2) |
+  |   open/switch/close -> the tab line       (tabs)     |
   |   save / export    -> document / image files    (L2+)|
   |   errors           -> stderr + exit code, no dialogs |
   +------------------------------------------------------+
@@ -92,6 +93,7 @@ specification §2):
 | IO                      | [I]/[C]    | L1, reconstruct, L2 save/reject  |
 | META                    | [U]/[A]/[I]| L1, L2                           |
 | INSPECT                 | [C]/[A]/[I]| inspect-reject, inspect-render   |
+| DOC                     | [A]        | tabs, L4                         |
 
 The exploratory polygon runs the same requirements as standing laws over long histories;
 `POLYGON.md` maps the check kinds to its oracles.
@@ -113,6 +115,7 @@ it checks in a comment):
 | HIST   | `undo`/`redo-all` layer, `undo-all`, `test_gesture_recording`, `gestures-undo` |
 | IO     | `save-*`, `l1-*` dumps, `reconstruct-*`, export `test_export_image`, `l3-*` |
 | META   | `l2 update-meta`, `inspect-reject update-meta`, the `meta` diagram; META-1 (node hidden) via the `l1` scene dump |
+| DOC    | `tabs-*` (the document verbs with the `== tabs` dump, `EDIT-DOC-2/3/5/9`), `l4-tabs` (the tab line, the re-targeting, the prompts, `EDIT-DOC-1..8`) |
 | INSPECT| `inspect-reject-*` (editing refused under `--inspect`, `EDIT-INSPECT-1`); `inspect-render-*` (stored-geometry render vs a good image, `EDIT-INSPECT-2`) |
 
 Requirements with **no dedicated case yet** — the gaps to fill: `SEM-1` (one initial per
@@ -200,11 +203,23 @@ mouse gesture is suppressed (recorded once as the gesture) while an edit outside
 one is logged; and a session left without its exit line - a crash - keeps the
 `# start` marker with no `# exit`.
 
+`l4-tabs` drives the documents of the window (`EDITOR-SPEC` §4.11): one untitled
+document starts without the tab line, New adds a tab, Open takes a clean untitled
+tab or adds one and activates an already open file, a switch re-targets the tree,
+the undo actions, the title, the zoom and the armed tool, the clipboard pastes
+across documents, a modified tab prompts (Cancel keeps it, Discard drops it), the
+last tab gives way to a fresh untitled one, Exit activates the dirty background
+document for its prompt, a tab switch restarts the log session, and the
+command-line files open as tabs with the failures reported.
+
 ## Batch mode contract
 
 `CyberiadaEditor --batch <file.graphml>` opens the document through the same
 code path as the GUI (minus the dialogs) and exits. No dialog is ever shown in
-batch mode; all diagnostics go to stderr.
+batch mode; all diagnostics go to stderr. The window is the tabbed one of the
+GUI: the file is its first tab, the document verbs (`open`, `new-document`,
+`switch`, `close`) work the tab line, and the dumps, the save and the export
+describe the active tab.
 
 Exit codes:
 
@@ -242,6 +257,14 @@ independent of `--dump`, so a text case compares that section alone.
 `count`, the current `index` and the `clean` state. It is independent of
 `--dump` as well; the stack cases (`stack-<name>`) compare that section alone
 with `good/<name>-stack-output.txt`, after the named script or with none.
+
+`--dump-tabs` writes a `== tabs` section with the tab line: the document
+`count`, then one line per tab with its index, its tab text (the title, `*`
+appended when modified) and `active` on the current one. The tabs cases
+(`tabs-<name>`) pass it with `--dump`, so their good files
+`good/tabs-<name>-output.txt` carry the tab line and the active document; a
+refused script (a plain `close` of a modified document) is checked by its exit
+code alone.
 
 `--strict` loads the document with the library's strict standard checks: the
 graph, identifier, marker, name and vertex order requirements are checked in
@@ -358,6 +381,17 @@ takes the path of the GUI: the item handlers, the tools, the border zones.
 | `commit` | end the edit: the focus-out writes the text to the model |
 | `edit <id> <role> [<i>]` | open the inline editor of a canvas text (role `title`, `action <i>`, `label`, `body`) and leave it open for the keystroke verbs |
 | `edit-text <id> <role> [<i>] <text>` | open the editor, replace the editable text and commit, in one line (the `entry / ` prefix of an action and a transition label are re-parsed) |
+
+The document verbs work the tab line of the window as the GUI does
+(`EDIT-DOC-9`); they open no undo step, and the commands after them address the
+newly active document:
+
+| command | effect |
+|---|---|
+| `open <file> [reconstruct] [reconstruct-sm] [strict]` | load the file: an open file activates its tab, a clean untitled active document takes it, anything else gets a new tab |
+| `new-document` | a new untitled document in a new tab |
+| `switch <index\|title>` | activate the tab by its 0-based index or its title |
+| `close [index\|title] [discard]` | close the active (or the named) tab; a modified document is refused without `discard`; the last tab gives way to a fresh untitled one |
 
 A transition polyline is edited by gesture: click the transition to select it and
 show its point dots, then drag a segment to add a point, drag a point dot to move
@@ -574,6 +608,7 @@ tests/
   good/<name>-output.txt     reviewed good files for the L1/L2 dumps
   good/<name>-text-output.txt  reviewed good files for the text metrics
   good/<name>-stack-output.txt reviewed good files for the undo stack dumps
+  good/tabs-<name>-output.txt  reviewed good files for the tabs dumps (scripts/tabs-<name>.script)
   good/<case>-output.graphml reviewed good files for the L2 saved documents
   good/<name>-reconstruct[-sm]-output.txt      reviewed good files for the reconstruction dumps
   good/<name>-reconstruct[-sm]-output.graphml  reviewed good files for the reconstructed documents

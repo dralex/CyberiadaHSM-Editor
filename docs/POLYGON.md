@@ -312,6 +312,11 @@ Answer with three sections and nothing else:
   == expectations  facts to verify on the result, one per line
 ```
 
+The document verbs of the tabbed window (`open`, `new-document`, `switch`,
+`close`; `TESTING.md`, *Edit scripts*) are not in the catalog yet: the shadow
+model predicts one document, the active tab, so a cross-tab prediction (a
+paste from another document) is deferred to a later round.
+
 Mission A body:
 
 ```
