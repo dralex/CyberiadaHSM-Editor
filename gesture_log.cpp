@@ -58,6 +58,10 @@ void GestureLog::startSession(CyberiadaSMModel* model)
     QDateTime now = QDateTime::currentDateTime();
     QString stamp = now.toString("yyyyMMdd-HHmmss-zzz");
     dir = QDir(sessionsRoot()).filePath(stamp);
+    // two sessions within one second (a tab switch) keep separate folders
+    for (int n = 2; QDir(dir).exists(); n++) {
+        dir = QDir(sessionsRoot()).filePath(stamp + "-" + QString::number(n));
+    }
     if (!QDir().mkpath(dir)) {
         qWarning() << "cannot create the session log folder" << dir;
         dir.clear();
