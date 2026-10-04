@@ -41,7 +41,9 @@ enum BatchExitCode {
 
 // the editor window is built here, so its generated form stays inside the
 // library and no other target has to find a copy of it
-int runGuiMode(CyberiadaSMEditorApplication& app);
+// the files open as tabs in order, the last one active (EDIT-DOC-7)
+int runGuiMode(CyberiadaSMEditorApplication& app, const QStringList& files = QStringList(),
+			   bool reconstruct = false, bool reconstruct_sm = false, bool strict = false);
 
 int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName, bool dump = false,
 				 const QString& script = QString(), const QString& save = QString(),

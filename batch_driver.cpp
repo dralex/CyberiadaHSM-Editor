@@ -23,6 +23,7 @@
 
 #include <cstdio>
 #include <iostream>
+#include <QMessageBox>
 
 #include "batch_driver.h"
 #include "main.h"
@@ -31,10 +32,15 @@
 #include "batch_script.h"
 #include "cyberiadasm_render.h"
 
-int runGuiMode(CyberiadaSMEditorApplication& app)
+int runGuiMode(CyberiadaSMEditorApplication& app, const QStringList& files,
+			   bool reconstruct, bool reconstruct_sm, bool strict)
 {
 	CyberiadaSMEditorWindow win;
+	QString error;
+	bool ok = win.openFiles(files, &error, reconstruct, reconstruct_sm, strict);
 	win.show();
+	// the failed files are reported once the window is up; the rest are open
+	if (!ok) QMessageBox::warning(&win, QObject::tr("Open State Machine"), error);
 	return app.exec();
 }
 

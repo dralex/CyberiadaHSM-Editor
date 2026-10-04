@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
 	parser.addOption(epsilonOption);
 	QCommandLineOption maxDiffOption("max-diff", "Comparison allowed differing pixel fraction (default 0).", "f", "0");
 	parser.addOption(maxDiffOption);
-	parser.addPositionalArgument("file", "The CyberiadaML document to open in batch mode.", "[file]");
+	parser.addPositionalArgument("files", "The CyberiadaML documents to open (one in batch mode).", "[files...]");
 	parser.process(app);
 
 	bool batch = parser.isSet(batchOption);
@@ -158,7 +158,8 @@ int main(int argc, char *argv[])
 								parser.isSet(dumpTextOption), parser.isSet(dumpStackOption),
 								parser.value(dpiOption).toInt(), parser.value(fontOption));
 		}
-		return runGuiMode(app);
+		return runGuiMode(app, parser.positionalArguments(), parser.isSet(reconstructOption),
+						  parser.isSet(reconstructSMOption), parser.isSet(strictOption));
 	} catch(const QString& error) {
 		app.printMessage(error);
 	} catch(...) {
