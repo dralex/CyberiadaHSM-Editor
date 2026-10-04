@@ -110,6 +110,12 @@ void TestWindow::test_new_resets_title()
 	QVERIFY(!window->windowTitle().contains("geometry"));
 	QVERIFY(window->windowTitle().contains(tr("untitled")));
 	QVERIFY(!window->isWindowModified());
+	// the new document is a second tab: closing it brings the first one back
+	QCOMPARE(window->documentCount(), 2);
+	window->actionClose->trigger();
+	QCOMPARE(window->documentCount(), 1);
+	QCOMPARE(window->getModel(), model);
+	QVERIFY(window->windowTitle().contains("geometry"));
 }
 
 void TestWindow::test_creation_tools_arm()

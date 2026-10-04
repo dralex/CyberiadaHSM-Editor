@@ -35,6 +35,7 @@ class QToolBar;
 class QComboBox;
 class QMenu;
 class QUndoGroup;
+class QTabBar;
 
 // The window holds the documents (docs/WINDOW.md): the menus, the toolbars,
 // the clipboard and the armed tool are global; the structure tree, the
@@ -50,6 +51,21 @@ public:
     bool                    openDocument(const QString& fileName, QString* error = NULL,
                                          bool reconstruct = false, bool reconstruct_sm = false,
                                          bool strict = false);
+    // the tab policy (EDIT-DOC-2): an open file activates its tab, a clean untitled
+    // active document takes the file, anything else opens a new tab
+    bool                    openFile(const QString& fileName, QString* error = NULL,
+                                     bool reconstruct = false, bool reconstruct_sm = false,
+                                     bool strict = false);
+    // the command-line files, in order, the last one active; the failures are
+    // collected in error and skipped
+    bool                    openFiles(const QStringList& fileNames, QString* error = NULL,
+                                      bool reconstruct = false, bool reconstruct_sm = false,
+                                      bool strict = false);
+    // a new untitled document in a new tab
+    CyberiadaSMEditorDocument* newDocument();
+    void                    setCurrentDocument(CyberiadaSMEditorDocument* doc);
+    // the close prompt first; the last document is replaced by a fresh untitled one
+    bool                    closeDocument(CyberiadaSMEditorDocument* doc);
 
     // the active document and its parts
     CyberiadaSMEditorDocument* currentDocument() const { return current; }
@@ -81,10 +97,8 @@ private:
     void                    rebuildRecentMenu();
     void                    openRecentFile(const QString& path);
 
-    // a document with its page in the stack and its stack in the undo group
-    CyberiadaSMEditorDocument* newDocument();
-    // re-target the tree, the properties, the undo group, the tool and the zoom
-    void                    setCurrentDocument(CyberiadaSMEditorDocument* doc);
+    // the tab text: the title with the modified marker, the path as the tooltip
+    void                    updateTabTitle(CyberiadaSMEditorDocument* doc);
     // the selection links between the tree and the active scene
     void                    bindDocument(CyberiadaSMEditorDocument* doc);
     void                    unbindDocument(CyberiadaSMEditorDocument* doc);
@@ -99,6 +113,11 @@ private slots:
     void                    slotInspectorModeChanged(bool on);
     void                    slotServiceObjectsChanged(bool on);
     void                    slotLoggingChanged(bool on);
+    void                    activateDocument(int index);
+    void                    closeTab(int index);
+    void                    slotFileClose();
+    void                    slotNextDocument();
+    void                    slotPreviousDocument();
     // enable cut/copy/paste/delete only for a fitting selection (and not in inspector mode)
     void                    updateEditActions();
 
@@ -147,6 +166,8 @@ private:
     QList<CyberiadaSMEditorDocument*> documents;
     CyberiadaSMEditorDocument* current = nullptr;
     QUndoGroup*             undoGroup = nullptr;
+    // the tab line over the central area, shown from the second document on
+    QTabBar*                documentTabs = nullptr;
     QActionGroup *toolGroup;
     QActionGroup *editGroup;
     ToolType currentTool = ToolType::Select;

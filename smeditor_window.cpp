@@ -35,6 +35,7 @@
 #include <QScrollBar>
 #include <QUndoGroup>
 #include <QStackedWidget>
+#include <QTabBar>
 
 #include "smeditor_window.h"
 #include "cyberiadasm_editor_view.h"
@@ -61,6 +62,25 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
 	vSplitter->setStretchFactor(1, 0);
 
     undoGroup = new QUndoGroup(this);
+    // the tab line: a plain bar over the document stack and the right column,
+    // hidden while one document is open (EDIT-DOC-1)
+    documentTabs = new QTabBar(centralwidget);
+    documentTabs->setTabsClosable(true);
+    documentTabs->setMovable(true);
+    documentTabs->setAutoHide(true);
+    documentTabs->setExpanding(false);
+    documentTabs->setDocumentMode(true);
+    centralLayout->insertWidget(0, documentTabs);
+    connect(documentTabs, &QTabBar::currentChanged, this, &CyberiadaSMEditorWindow::activateDocument);
+    connect(documentTabs, &QTabBar::tabCloseRequested, this, &CyberiadaSMEditorWindow::closeTab);
+    connect(documentTabs, &QTabBar::tabMoved, this,
+            [this](int from, int to) { documents.move(from, to); });
+    actionNextDocument->setShortcut(QKeySequence::NextChild);
+    actionPreviousDocument->setShortcut(QKeySequence::PreviousChild);
+    connect(actionClose, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotFileClose);
+    connect(actionNextDocument, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotNextDocument);
+    connect(actionPreviousDocument, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotPreviousDocument);
+
     // the first, untitled document (the tools need an active scene)
     setCurrentDocument(newDocument());
     initializeTools();
@@ -94,6 +114,14 @@ CyberiadaSMEditorDocument* CyberiadaSMEditorWindow::newDocument()
     documents.append(doc);
     documentStack->addWidget(doc->view());
     undoGroup->addStack(doc->model()->undoStack());
+    {
+        // the bar would activate the new tab itself; setCurrentDocument decides
+        QSignalBlocker block(documentTabs);
+        documentTabs->addTab(doc->title());
+    }
+    updateTabTitle(doc);
+    connect(doc->model()->undoStack(), &QUndoStack::cleanChanged, this,
+            [this, doc](bool) { updateTabTitle(doc); });
     // the per-document signals reach the window from the active document only
     connect(doc->scene(), &QGraphicsScene::selectionChanged, this,
             [this, doc]() { if (doc == current) updateEditActions(); });
@@ -102,8 +130,104 @@ CyberiadaSMEditorDocument* CyberiadaSMEditorWindow::newDocument()
     connect(doc->view(), &CyberiadaSMGraphicsView::scaleChanged, this,
             [this, doc](qreal scale) { if (doc == current) slotZoomScaleChanged(scale); });
     connect(doc, &CyberiadaSMEditorDocument::titleChanged, this,
-            [this, doc]() { if (doc == current) updateTitle(); });
+            [this, doc]() { updateTabTitle(doc); if (doc == current) updateTitle(); });
     return doc;
+}
+
+void CyberiadaSMEditorWindow::updateTabTitle(CyberiadaSMEditorDocument* doc)
+{
+    int i = documents.indexOf(doc);
+    if (i < 0) return;
+    documentTabs->setTabText(i, doc->title() + (doc->isClean() ? "" : "*"));
+    documentTabs->setTabToolTip(i, doc->filePath());
+}
+
+void CyberiadaSMEditorWindow::activateDocument(int index)
+{
+    setCurrentDocument(documents.value(index, nullptr));
+}
+
+void CyberiadaSMEditorWindow::closeTab(int index)
+{
+    closeDocument(documents.value(index, nullptr));
+}
+
+void CyberiadaSMEditorWindow::slotFileClose()
+{
+    closeDocument(current);
+}
+
+void CyberiadaSMEditorWindow::slotNextDocument()
+{
+    int n = documents.size();
+    if (n > 1) activateDocument((documents.indexOf(current) + 1) % n);
+}
+
+void CyberiadaSMEditorWindow::slotPreviousDocument()
+{
+    int n = documents.size();
+    if (n > 1) activateDocument((documents.indexOf(current) + n - 1) % n);
+}
+
+bool CyberiadaSMEditorWindow::closeDocument(CyberiadaSMEditorDocument* doc)
+{
+    if (!doc || !confirmDiscard(doc)) return false;
+    // the window always holds a document: the last one gives way to a fresh untitled
+    if (documents.size() == 1) setCurrentDocument(newDocument());
+    int i = documents.indexOf(doc);
+    if (doc == current) {
+        // the right neighbour takes over, else the left one
+        CyberiadaSMEditorDocument* next = documents.value(i + 1, nullptr);
+        if (!next) next = documents.value(i - 1, nullptr);
+        setCurrentDocument(next);
+    }
+    documents.removeAt(i);
+    {
+        QSignalBlocker block(documentTabs);
+        documentTabs->removeTab(i);
+    }
+    documentStack->removeWidget(doc->view());
+    undoGroup->removeStack(doc->model()->undoStack());
+    delete doc;
+    return true;
+}
+
+bool CyberiadaSMEditorWindow::openFile(const QString& fileName, QString* error,
+                                       bool reconstruct, bool reconstruct_sm, bool strict)
+{
+    QString absolute = QFileInfo(fileName).absoluteFilePath();
+    // an open file is activated, not loaded twice
+    for (CyberiadaSMEditorDocument* doc : documents) {
+        if (doc->hasFile() && QFileInfo(doc->filePath()).absoluteFilePath() == absolute) {
+            setCurrentDocument(doc);
+            return true;
+        }
+    }
+    // a clean untitled active document takes the file, anything else gets a new tab
+    CyberiadaSMEditorDocument* fresh = nullptr;
+    if (!current->isUntitled()) {
+        fresh = newDocument();
+        setCurrentDocument(fresh);
+    }
+    if (!openDocument(fileName, error, reconstruct, reconstruct_sm, strict)) {
+        if (fresh) closeDocument(fresh);   // the tab opened for the failed file goes
+        return false;
+    }
+    return true;
+}
+
+bool CyberiadaSMEditorWindow::openFiles(const QStringList& fileNames, QString* error,
+                                        bool reconstruct, bool reconstruct_sm, bool strict)
+{
+    bool ok = true;
+    for (const QString& fileName : fileNames) {
+        QString one;
+        if (!openFile(fileName, &one, reconstruct, reconstruct_sm, strict)) {
+            ok = false;
+            if (error) *error += tr("Cannot open %1:\n%2\n").arg(fileName, one);
+        }
+    }
+    return ok;
 }
 
 void CyberiadaSMEditorWindow::setCurrentDocument(CyberiadaSMEditorDocument* doc)
@@ -114,6 +238,10 @@ void CyberiadaSMEditorWindow::setCurrentDocument(CyberiadaSMEditorDocument* doc)
     current = doc;
     sceneView = doc->view();
     documentStack->setCurrentWidget(sceneView);
+    {
+        QSignalBlocker block(documentTabs);
+        documentTabs->setCurrentIndex(documents.indexOf(doc));
+    }
 
     CyberiadaSMModel* m = doc->model();
     SMView->setModel(m);
@@ -269,12 +397,15 @@ bool CyberiadaSMEditorWindow::confirmDiscard(CyberiadaSMEditorDocument* doc)
 
 void CyberiadaSMEditorWindow::closeEvent(QCloseEvent* event)
 {
-    if (confirmDiscard()) {
-        GestureLog::instance().endSession();
-        event->accept();
-    } else {
-        event->ignore();
+    // every modified document asks in turn; a cancel keeps the editor open
+    for (CyberiadaSMEditorDocument* doc : documents) {
+        if (!confirmDiscard(doc)) {
+            event->ignore();
+            return;
+        }
     }
+    GestureLog::instance().endSession();
+    event->accept();
 }
 
 // the tree follows a restored document
@@ -323,14 +454,11 @@ void CyberiadaSMEditorWindow::showEvent(QShowEvent* event)
 
 void CyberiadaSMEditorWindow::slotFileNew()
 {
-    if (!confirmDiscard()) return;
-    current->clear();
-    updateTitle();
+    setCurrentDocument(newDocument());
 }
 
 void CyberiadaSMEditorWindow::slotFileOpen()
 {
-    if (!confirmDiscard()) return;
     OpenFileDialog dlg(this);
     if (dlg.exec() != QDialog::Accepted) { return; }
 
@@ -344,7 +472,7 @@ void CyberiadaSMEditorWindow::slotFileOpen()
         SettingsManager::instance().setInspectorMode(inspector);
 
         QString error;
-        if (!openDocument(fileName, &error, reconstruct, reconstruct_sm, strict)) {
+        if (!openFile(fileName, &error, reconstruct, reconstruct_sm, strict)) {
             QMessageBox::critical(this, tr("Load State Machine"), error);
         }
     }
@@ -398,9 +526,8 @@ void CyberiadaSMEditorWindow::rebuildRecentMenu()
 
 void CyberiadaSMEditorWindow::openRecentFile(const QString& path)
 {
-    if (!confirmDiscard()) return;
     QString error;
-    if (!openDocument(path, &error)) {
+    if (!openFile(path, &error)) {
         QMessageBox::warning(this, tr("Open State Machine"),
                              tr("Cannot open the document:\n") + error);
     }
