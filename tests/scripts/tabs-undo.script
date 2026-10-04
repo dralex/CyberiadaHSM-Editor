@@ -1,0 +1,7 @@
+# undo acts on the active tab only: the first document returns to its file
+# state (clean), the second keeps its change (EDIT-DOC-3)
+new-state G0 100 100 160 90 Widget
+open diagrams/geometry.graphml
+rename node-0-1 Renamed
+switch 0
+undo

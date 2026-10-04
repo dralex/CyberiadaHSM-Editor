@@ -2,7 +2,7 @@
 # SCRIPT adds an edit script, DUMP_GOOD compares the --dump output (written
 # to OUTPUT), SAVE_OUT/SAVE_GOOD compare the saved document and re-open it;
 # TEXT shows the text elements, DUMP_TEXT dumps their font and layout and
-# DUMP_STACK dumps the undo stack
+# DUMP_STACK dumps the undo stack, DUMP_TABS adds the tab line to the dump
 set(_args --batch --no-text)
 if(DEFINED RECONSTRUCT)
   list(APPEND _args --reconstruct)
@@ -27,6 +27,9 @@ if(DEFINED DUMP_TEXT)
 endif()
 if(DEFINED DUMP_STACK)
   list(APPEND _args --dump-stack)
+endif()
+if(DEFINED DUMP_TABS)
+  list(APPEND _args --dump-tabs)
 endif()
 if(DEFINED INPUT)
   list(APPEND _args ${INPUT})

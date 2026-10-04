@@ -1,0 +1,5 @@
+# a plain close of a modified document is a script error (EDIT-DOC-9)
+new-state G0 100 100 160 90 Widget
+open diagrams/geometry.graphml
+switch 0
+close

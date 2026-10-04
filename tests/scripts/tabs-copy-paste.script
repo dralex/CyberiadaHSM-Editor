@@ -1,0 +1,7 @@
+# the clipboard is shared: a state copied in the first tab is pasted into
+# the second document (EDIT-DOC-5)
+new-state G0 100 100 160 90 Widget
+click 100 100
+copy
+open diagrams/geometry.graphml
+paste

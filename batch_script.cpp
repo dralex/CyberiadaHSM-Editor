@@ -716,6 +716,63 @@ static bool runGesture(CyberiadaSMEditorScene* scene, const QStringList& tokens,
 	return true;
 }
 
+// the document verbs (EDIT-DOC-9): the tab line as the GUI drives it
+static bool isDocumentVerb(const QString& cmd)
+{
+	return cmd == "open" || cmd == "new-document" || cmd == "switch" || cmd == "close";
+}
+
+// switch/close address a tab by its index or its title
+static CyberiadaSMEditorDocument* documentByToken(CyberiadaSMEditorWindow* win, const QString& token)
+{
+	bool isIndex = false;
+	int index = token.toInt(&isIndex);
+	if (isIndex) return win->documentAt(index);
+	for (int i = 0; i < win->documentCount(); i++) {
+		if (win->documentAt(i)->title() == token) return win->documentAt(i);
+	}
+	return nullptr;
+}
+
+static bool runDocumentVerb(CyberiadaSMEditorWindow* win, const QStringList& tokens, QString* error)
+{
+	const QString& cmd = tokens.first();
+	if (cmd == "open") {
+		// open <file> [reconstruct|reconstruct-sm|strict ...]
+		if (tokens.size() < 2) { *error = "open needs a file"; return false; }
+		bool reconstruct = false, reconstruct_sm = false, strict = false;
+		for (int i = 2; i < tokens.size(); i++) {
+			if (tokens[i] == "reconstruct") reconstruct = true;
+			else if (tokens[i] == "reconstruct-sm") reconstruct_sm = true;
+			else if (tokens[i] == "strict") strict = true;
+			else { *error = "unknown open option " + tokens[i]; return false; }
+		}
+		return win->openFile(tokens[1], error, reconstruct, reconstruct_sm, strict);
+	}
+	if (cmd == "new-document") {
+		win->setCurrentDocument(win->newDocument());
+		return true;
+	}
+	if (cmd == "switch") {
+		if (tokens.size() != 2) { *error = "switch needs a tab index or title"; return false; }
+		CyberiadaSMEditorDocument* doc = documentByToken(win, tokens[1]);
+		if (!doc) { *error = "no document " + tokens[1]; return false; }
+		win->setCurrentDocument(doc);
+		return true;
+	}
+	// close [index|title] [discard]: a modified document needs the discard word
+	bool discard = tokens.last() == "discard" && tokens.size() > 1;
+	int args = tokens.size() - (discard ? 2 : 1);
+	if (args > 1) { *error = "close takes a tab and the discard word at most"; return false; }
+	CyberiadaSMEditorDocument* doc = args == 1 ? documentByToken(win, tokens[1]) : win->currentDocument();
+	if (!doc) { *error = "no document " + tokens[1]; return false; }
+	if (!doc->isClean() && !discard) {
+		*error = QString("document %1 has unsaved changes (close ... discard drops them)").arg(doc->title());
+		return false;
+	}
+	return win->closeDocument(doc, true);
+}
+
 bool runEditScript(CyberiadaSMEditorWindow* win, const QString& path, QString* error)
 {
 	CyberiadaSMModel* model = win->getModel();
@@ -736,13 +793,20 @@ bool runEditScript(CyberiadaSMEditorWindow* win, const QString& path, QString* e
 		QStringList tokens = trimmed.split(QRegularExpression("\\s+"));
 		QString message;
 		bool ok = false;
-		// every command is one undo step; undo/redo themselves are not, and
-		// a gesture is bracketed by the scene between the press and the release
+		// every command is one undo step; undo/redo themselves are not, a
+		// gesture is bracketed by the scene between the press and the release,
+		// and the document verbs act on the tab line, not on a document
 		const QString& cmd = tokens.first();
-		bool step = cmd != "undo" && cmd != "redo" && !isGesture(cmd);
+		bool docVerb = isDocumentVerb(cmd);
+		bool step = !docVerb && cmd != "undo" && cmd != "redo" && !isGesture(cmd);
 		if (step) model->beginUndoStep(cmd);
 		try {
-			if (isGesture(cmd)) {
+			if (docVerb) {
+				ok = runDocumentVerb(win, tokens, &message);
+				// the verbs change the active document
+				model = win->getModel();
+				scene = win->getScene();
+			} else if (isGesture(cmd)) {
 				ok = runGesture(scene, tokens, &gesture, &message);
 			} else if (cmd == "delete-selected") {
 				if (scene->selectedItems().isEmpty()) {

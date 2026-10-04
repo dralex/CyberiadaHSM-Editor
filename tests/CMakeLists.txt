@@ -204,6 +204,38 @@ endfunction()
 add_stack_dump_test(hierarchy hierarchy)
 add_stack_dump_test(add-elements hierarchy add-elements)
 
+# the tabs tier: a script with the document verbs; the dump carries the tab
+# line and the active document, or the script is refused with the exit code
+function(add_tabs_test name diagram expected_code)
+  set(_good)
+  if(expected_code EQUAL 0)
+    set(_good -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/tabs-${name}.out
+              -DDUMP_GOOD=${CMAKE_CURRENT_SOURCE_DIR}/good/tabs-${name}-output.txt)
+  endif()
+  add_test(NAME tabs-${name}
+    COMMAND ${CMAKE_COMMAND}
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaEditor>
+      -DINPUT=diagrams/${diagram}.graphml
+      -DSCRIPT=scripts/tabs-${name}.script
+      -DDUMP_TABS=1
+      -DEXPECTED=${expected_code}
+      -DWORKDIR=${CMAKE_CURRENT_SOURCE_DIR}
+      ${_good}
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunBatchTest.cmake)
+  set_tests_properties(tabs-${name} PROPERTIES
+    TIMEOUT 60
+    ENVIRONMENT "${L0_ENVIRONMENT}")
+endfunction()
+
+add_tabs_test(open hierarchy 0)
+add_tabs_test(switch hierarchy 0)
+add_tabs_test(reopen hierarchy 0)
+add_tabs_test(new-document hierarchy 0)
+add_tabs_test(copy-paste hierarchy 0)
+add_tabs_test(undo hierarchy 0)
+add_tabs_test(close-discard hierarchy 0)
+add_tabs_test(close-refused hierarchy 4)
+
 # The polygon is an optional exploratory framework with its own runner
 # (tests/polygon/run-polygon.sh, python -m polygon). It needs Python 3.11+
 # (tomllib) and a configured backend, so it is NOT part of the default test

@@ -64,8 +64,9 @@ public:
     // a new untitled document in a new tab
     CyberiadaSMEditorDocument* newDocument();
     void                    setCurrentDocument(CyberiadaSMEditorDocument* doc);
-    // the close prompt first; the last document is replaced by a fresh untitled one
-    bool                    closeDocument(CyberiadaSMEditorDocument* doc);
+    // the close prompt first (skipped with discard); the last document is
+    // replaced by a fresh untitled one
+    bool                    closeDocument(CyberiadaSMEditorDocument* doc, bool discard = false);
 
     // the active document and its parts
     CyberiadaSMEditorDocument* currentDocument() const { return current; }

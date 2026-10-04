@@ -169,9 +169,10 @@ void CyberiadaSMEditorWindow::slotPreviousDocument()
     if (n > 1) activateDocument((documents.indexOf(current) + n - 1) % n);
 }
 
-bool CyberiadaSMEditorWindow::closeDocument(CyberiadaSMEditorDocument* doc)
+bool CyberiadaSMEditorWindow::closeDocument(CyberiadaSMEditorDocument* doc, bool discard)
 {
-    if (!doc || !confirmDiscard(doc)) return false;
+    if (!doc) return false;
+    if (!discard && !confirmDiscard(doc)) return false;
     // the window always holds a document: the last one gives way to a fresh untitled
     if (documents.size() == 1) setCurrentDocument(newDocument());
     int i = documents.indexOf(doc);

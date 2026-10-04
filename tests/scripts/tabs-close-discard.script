@@ -1,0 +1,5 @@
+# close discard drops a modified document; the other tab stays (EDIT-DOC-9)
+new-state G0 100 100 160 90 Widget
+open diagrams/geometry.graphml
+switch hierarchy.graphml
+close discard

@@ -1,0 +1,2 @@
+# an open file is activated, not loaded twice: one tab (EDIT-DOC-2)
+open diagrams/hierarchy.graphml

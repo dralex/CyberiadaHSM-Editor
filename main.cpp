@@ -72,6 +72,8 @@ int main(int argc, char *argv[])
 	parser.addOption(dumpTextOption);
 	QCommandLineOption dumpStackOption("dump-stack", "Dump the undo stack: the step count, the index and the clean state.");
 	parser.addOption(dumpStackOption);
+	QCommandLineOption dumpTabsOption("dump-tabs", "Dump the tab line: the open documents and the active one.");
+	parser.addOption(dumpTabsOption);
 	QCommandLineOption reconstructOption("reconstruct", "Reconstruct absent or malformed geometry on load.");
 	parser.addOption(reconstructOption);
 	QCommandLineOption reconstructSMOption("reconstruct-sm", "Reconstruct the absent state machine border too (with --reconstruct).");
@@ -156,7 +158,8 @@ int main(int argc, char *argv[])
 								parser.isSet(reconstructSMOption),
 								parser.isSet(strictOption), save_format,
 								parser.isSet(dumpTextOption), parser.isSet(dumpStackOption),
-								parser.value(dpiOption).toInt(), parser.value(fontOption));
+								parser.value(dpiOption).toInt(), parser.value(fontOption),
+								parser.isSet(dumpTabsOption));
 		}
 		return runGuiMode(app, parser.positionalArguments(), parser.isSet(reconstructOption),
 						  parser.isSet(reconstructSMOption), parser.isSet(strictOption));

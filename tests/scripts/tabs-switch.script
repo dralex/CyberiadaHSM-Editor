@@ -1,0 +1,3 @@
+# the first tab is active again: the dump describes it (EDIT-DOC-3)
+open diagrams/geometry.graphml
+switch 0

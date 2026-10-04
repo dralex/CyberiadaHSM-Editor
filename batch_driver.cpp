@@ -56,7 +56,7 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName, boo
 				 const QString& script, const QString& save, const QString& exportImage,
 				 bool reconstruct, bool reconstruct_sm, bool strict,
 				 Cyberiada::DocumentFormat saveFormat, bool dumpTextMetrics, bool dumpUndoStack,
-				 int exportDpi, const QString& exportFont)
+				 int exportDpi, const QString& exportFont, bool dumpTabsLine)
 {
 	CyberiadaSMEditorWindow win;
 	win.show();
@@ -80,6 +80,11 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName, boo
 
 	// the assertions of every stage are caught by notify(); the flag says so
 	if (stageFailed(app)) return batchInternalError;
+
+	if (dumpTabsLine) {
+		std::cout << "== tabs" << std::endl;
+		dumpTabs(&win, std::cout);
+	}
 
 	if (dump) {
 		std::cout << "== document" << std::endl;

@@ -32,6 +32,7 @@ class EditableTextItem;
 
 class CyberiadaSMModel;
 class CyberiadaSMEditorScene;
+class CyberiadaSMEditorWindow;
 
 // the document part reuses the libcyberiadamlpp dump verbatim
 void dumpDocument(CyberiadaSMModel* model, std::ostream& os);
@@ -43,6 +44,10 @@ void dumpText(CyberiadaSMEditorScene* scene, CyberiadaSMModel* model, std::ostre
 
 // the undo stack: the step count, the current index and the clean state
 void dumpStack(CyberiadaSMModel* model, std::ostream& os);
+
+// the tab line: the count, then one line per tab with the index, the tab text
+// (the title with the modified marker) and the active mark
+void dumpTabs(CyberiadaSMEditorWindow* win, std::ostream& os);
 
 // the visible text items of a scene item sorted by role, y, x: the dump
 // lists them and the script addresses them in this order

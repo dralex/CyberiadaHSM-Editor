@@ -29,13 +29,19 @@
 #include <QUndoStack>
 
 #include "cyberiadasm_dump.h"
+#include "smeditor_window.h"
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_editor_scene.h"
 #include "editable_text_item.h"
 #include "settings_manager.h"
 
+// an untitled document before its first edit has no root yet
 void dumpDocument(CyberiadaSMModel* model, std::ostream& os)
 {
+	if (!model->rootDocument()) {
+		os << "(empty)" << std::endl;
+		return;
+	}
 	os << *model->rootDocument() << std::endl;
 }
 
@@ -99,6 +105,7 @@ static void dumpSceneElement(CyberiadaSMEditorScene* scene, Cyberiada::Element* 
 
 void dumpScene(CyberiadaSMEditorScene* scene, CyberiadaSMModel* model, std::ostream& os)
 {
+	if (!model->rootDocument()) return;
 	dumpSceneElement(scene, model->rootDocument(), 0, os);
 }
 
@@ -200,4 +207,15 @@ void dumpStack(CyberiadaSMModel* model, std::ostream& os)
 	os << "count: " << stack->count() << std::endl;
 	os << "index: " << stack->index() << std::endl;
 	os << "clean: " << (stack->isClean() ? "yes" : "no") << std::endl;
+}
+
+void dumpTabs(CyberiadaSMEditorWindow* win, std::ostream& os)
+{
+	os << "count: " << win->documentCount() << std::endl;
+	for (int i = 0; i < win->documentCount(); i++) {
+		CyberiadaSMEditorDocument* doc = win->documentAt(i);
+		os << i << " " << doc->title().toStdString() << (doc->isClean() ? "" : "*");
+		if (doc == win->currentDocument()) os << " active";
+		os << std::endl;
+	}
 }
