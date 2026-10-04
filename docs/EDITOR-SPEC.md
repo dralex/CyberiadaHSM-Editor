@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.8 (2026-09-26)
+**Document version:** 0.9 (2026-10-04)
 
 **Related authorities:**
 
@@ -79,7 +79,7 @@ it in editing mode; inspection mode is where a non-compliant diagram is read wit
  │ ПНСТ 984  │──structure───▶│ STRUCT  SEM      │───[U]─────▶│  model+scene │
  │ UML2      │               ├──────────────────┤            │  dump        │
  ├───────────┤  geometry     │ NODE  EDGE  TEXT │───[U]/[A]─▶│              │─▶ polygon laws
- │ editor    │──interaction─▶│ TOOL  INSPECT    │───[A]─────▶│  graph +     │   (every round)
+ │ editor    │──interaction─▶│ TOOL INSPECT DOC │───[A]─────▶│  graph +     │   (every round)
  │ design    │  history      │ HIST             │───[I]─────▶│  rectangle   │
  ├───────────┤               ├──────────────────┤            │  arithmetic  │─▶ ctest cases
  │ ПНСТ 1044 │──round-trip──▶│ ROBUST IO META   │───[I]/[C]─▶│              │   (per requirement)
@@ -391,6 +391,36 @@ the third is a derived display value the format does not store):
 - `EDIT-INSPECT-4` SHOULD [I]: leaving inspection mode re-applies the editing layout and the
   recovery — the region follows the text again and the `[U]` compliance laws regain force.
   *design*
+
+### 4.11 Documents and tabs — DOC
+
+The window holds several documents; the structure is drawn in `docs/WINDOW.md`.
+
+- `EDIT-DOC-1` MUST [A]: the window starts with one untitled document and no tab line; the tab
+  line appears with the second open document and disappears when one is left. *design*
+- `EDIT-DOC-2` MUST [A]: New opens a new untitled document in a new tab without a prompt; Open
+  loads into the active tab when it is a clean untitled document and into a new tab otherwise;
+  opening a path that is already open activates its tab instead of loading it twice. *design*
+- `EDIT-DOC-3` MUST [A]: the structure tree, the properties panel, undo/redo and their texts, the
+  window title with the modified marker, the zoom level and the armed tool follow the active
+  document on every tab switch; a background document is not changed by a switch. *design*
+- `EDIT-DOC-4` MUST [A]: closing a tab with unsaved changes asks to save, discard or cancel for that
+  document only; closing the last tab leaves a fresh untitled document; exiting the editor asks
+  for every modified document in turn and a cancel keeps the editor open. *design*
+- `EDIT-DOC-5` MUST [A]: the clipboard is shared by the documents — an element copied in one
+  document is pasted into the active one with the rules of `EDIT-TOOL-4`; the paste target is the
+  copied element's parent collection when the active document has it, else its first state
+  machine. *design*
+- `EDIT-DOC-6` MUST [A]: inspection mode is an application mode — switching it on makes every
+  open document read-only (`EDIT-INSPECT-1`) and the window title of the active document carries
+  the marker. *design*
+- `EDIT-DOC-7` MUST [A]: the files given on the command line in GUI mode open as tabs in order,
+  the last one active; a file that fails to load is reported and skipped. *design*
+- `EDIT-DOC-8` MUST [A]: a gesture-log session is bound to one document — a tab switch while
+  logging ends the session and starts a new one on the newly active document. *design*
+- `EDIT-DOC-9` MUST [A]: the batch verbs `open`, `new-document`, `switch` and `close` act on the
+  tab line as the GUI does; the dumps, the save and the export describe the active document;
+  `close` of a modified document is a script error unless it is `close discard`. *design*
 
 ## 5. Coverage
 
