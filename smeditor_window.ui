@@ -18,7 +18,7 @@
     <normaloff>:/Icons/images/cyberiada.png</normaloff>:/Icons/images/cyberiada.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QGridLayout" name="gridLayout">
+   <layout class="QVBoxLayout" name="centralLayout">
     <property name="leftMargin">
      <number>0</number>
     </property>
@@ -34,12 +34,12 @@
     <property name="spacing">
      <number>0</number>
     </property>
-    <item row="0" column="0">
+    <item>
      <widget class="QSplitter" name="vSplitter">
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
       </property>
-      <widget class="CyberiadaSMGraphicsView" name="sceneView"/>
+      <widget class="QStackedWidget" name="documentStack"/>
       <widget class="QSplitter" name="hSplitter">
        <property name="orientation">
         <enum>Qt::Vertical</enum>
@@ -694,11 +694,6 @@
    <slots>
     <slot>slotElementSelected(QModelIndex)</slot>
    </slots>
-  </customwidget>
-  <customwidget>
-   <class>CyberiadaSMGraphicsView</class>
-   <extends>QGraphicsView</extends>
-   <header>cyberiadasm_editor_view.h</header>
   </customwidget>
  </customwidgets>
  <resources>

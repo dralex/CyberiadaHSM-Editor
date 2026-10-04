@@ -59,6 +59,7 @@ add_library(CyberiadaEditorCore STATIC
     cyberiadasm_undo.cpp
   cyberiadasm_view.cpp
   smeditor_window.cpp
+  cyberiadasm_editor_document.cpp
   cyberiadasm_properties_widget.cpp
   cyberiadasm_editor_view.cpp
   cyberiadasm_editor_scene.cpp

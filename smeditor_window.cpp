@@ -33,6 +33,8 @@
 #include <QTimer>
 #include <QShowEvent>
 #include <QScrollBar>
+#include <QUndoGroup>
+#include <QStackedWidget>
 
 #include "smeditor_window.h"
 #include "cyberiadasm_editor_view.h"
@@ -58,25 +60,13 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
 	vSplitter->setStretchFactor(0, 1);
 	vSplitter->setStretchFactor(1, 0);
 
-	model = new CyberiadaSMModel(this);
-	SMView->setModel(model);
-	SMView->setRootIndex(model->rootIndex());
-	propertiesWidget->setModel(model);
-    scene = new CyberiadaSMEditorScene(model, this);
-	sceneView->setScene(scene);
-	propertiesWidget->setScene(scene);
-
-    openFileName = QString();
+    undoGroup = new QUndoGroup(this);
+    // the first, untitled document (the tools need an active scene)
+    setCurrentDocument(newDocument());
     initializeTools();
 
-    connect(SMView, SIGNAL(currentIndexActivated(QModelIndex)),
-            scene, SLOT(slotElementSelected(QModelIndex)));
-    connect(scene, &CyberiadaSMEditorScene::elementSelected, SMView, &CyberiadaSMView::select);
-    connect(model, &CyberiadaSMModel::modelReset, this, &CyberiadaSMEditorWindow::slotModelReset);
-
-    QUndoStack* stack = model->undoStack();
-    connect(actionUndo, &QAction::triggered, stack, &QUndoStack::undo);
-    connect(actionRedo, &QAction::triggered, stack, &QUndoStack::redo);
+    connect(actionUndo, &QAction::triggered, undoGroup, &QUndoGroup::undo);
+    connect(actionRedo, &QAction::triggered, undoGroup, &QUndoGroup::redo);
     // the session log records the undo/redo the user triggered
     connect(actionUndo, &QAction::triggered, this, []() { GestureLog::instance().logAction("undo"); });
     connect(actionRedo, &QAction::triggered, this, []() { GestureLog::instance().logAction("redo"); });
@@ -86,25 +76,94 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     connect(actionCopy, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotCopy);
     connect(actionPaste, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotPaste);
     connect(actionReconstructGeometry, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotReconstructGeometry);
-    connect(stack, &QUndoStack::canUndoChanged, actionUndo, &QAction::setEnabled);
-    connect(stack, &QUndoStack::canRedoChanged, actionRedo, &QAction::setEnabled);
-    connect(stack, &QUndoStack::undoTextChanged, this, &CyberiadaSMEditorWindow::slotUndoTextChanged);
-    connect(stack, &QUndoStack::redoTextChanged, this, &CyberiadaSMEditorWindow::slotRedoTextChanged);
-    connect(stack, &QUndoStack::cleanChanged, this, &CyberiadaSMEditorWindow::slotCleanChanged);
+    // the undo group speaks for the active document's stack
+    connect(undoGroup, &QUndoGroup::canUndoChanged, actionUndo, &QAction::setEnabled);
+    connect(undoGroup, &QUndoGroup::canRedoChanged, actionRedo, &QAction::setEnabled);
+    connect(undoGroup, &QUndoGroup::undoTextChanged, this, &CyberiadaSMEditorWindow::slotUndoTextChanged);
+    connect(undoGroup, &QUndoGroup::redoTextChanged, this, &CyberiadaSMEditorWindow::slotRedoTextChanged);
+    connect(undoGroup, &QUndoGroup::cleanChanged, this, &CyberiadaSMEditorWindow::slotCleanChanged);
     actionUndo->setEnabled(false);
     actionRedo->setEnabled(false);
-    // cut/copy/paste/delete follow the selection and the clipboard
-    connect(scene, &QGraphicsScene::selectionChanged, this, &CyberiadaSMEditorWindow::updateEditActions);
     updateEditActions();
     updateTitle();   // start as a clean "untitled" document
 }
 
+CyberiadaSMEditorDocument* CyberiadaSMEditorWindow::newDocument()
+{
+    CyberiadaSMEditorDocument* doc = new CyberiadaSMEditorDocument(this);
+    documents.append(doc);
+    documentStack->addWidget(doc->view());
+    undoGroup->addStack(doc->model()->undoStack());
+    // the per-document signals reach the window from the active document only
+    connect(doc->scene(), &QGraphicsScene::selectionChanged, this,
+            [this, doc]() { if (doc == current) updateEditActions(); });
+    connect(doc->scene(), &CyberiadaSMEditorScene::toolChanged, this,
+            [this, doc](ToolType tool) { if (doc == current) slotSceneToolChanged(tool); });
+    connect(doc->view(), &CyberiadaSMGraphicsView::scaleChanged, this,
+            [this, doc](qreal scale) { if (doc == current) slotZoomScaleChanged(scale); });
+    connect(doc, &CyberiadaSMEditorDocument::titleChanged, this,
+            [this, doc]() { if (doc == current) updateTitle(); });
+    return doc;
+}
+
+void CyberiadaSMEditorWindow::setCurrentDocument(CyberiadaSMEditorDocument* doc)
+{
+    if (!doc || doc == current) return;
+    bool switched = (current != nullptr);
+    if (current) unbindDocument(current);
+    current = doc;
+    sceneView = doc->view();
+    documentStack->setCurrentWidget(sceneView);
+
+    CyberiadaSMModel* m = doc->model();
+    SMView->setModel(m);
+    SMView->setRootIndex(m->rootIndex());
+    propertiesWidget->setModel(m);
+    propertiesWidget->setScene(doc->scene());
+    undoGroup->setActiveStack(m->undoStack());
+    bindDocument(doc);
+
+    // the armed tool and the zoom follow; the tool goes to the scene directly,
+    // so the session log gets no tool line
+    doc->scene()->setCurrentTool(currentTool);
+    sceneView->setCurrentTool(currentTool);
+    slotZoomScaleChanged(sceneView->currentScale());
+    expandAndWidenTree();
+    updateTitle();
+    updateEditActions();
+    // a log session is bound to one document: a switch starts a new one
+    if (switched && GestureLog::instance().isActive()) {
+        GestureLog::instance().endSession();
+        GestureLog::instance().startSession(m);
+    }
+    QTimer::singleShot(0, this, &CyberiadaSMEditorWindow::restoreSavedView);
+}
+
+void CyberiadaSMEditorWindow::bindDocument(CyberiadaSMEditorDocument* doc)
+{
+    // connected after the tree took the model: its own reset runs first and
+    // drops the root index this slot restores
+    connect(doc->model(), &CyberiadaSMModel::modelReset, this, &CyberiadaSMEditorWindow::slotModelReset);
+    connect(SMView, SIGNAL(currentIndexActivated(QModelIndex)),
+            doc->scene(), SLOT(slotElementSelected(QModelIndex)));
+    connect(doc->scene(), &CyberiadaSMEditorScene::elementSelected, SMView, &CyberiadaSMView::select);
+}
+
+// a QModelIndex belongs to one model: a background document is never linked
+void CyberiadaSMEditorWindow::unbindDocument(CyberiadaSMEditorDocument* doc)
+{
+    disconnect(doc->model(), &CyberiadaSMModel::modelReset, this, &CyberiadaSMEditorWindow::slotModelReset);
+    disconnect(SMView, nullptr, doc->scene(), nullptr);
+    disconnect(doc->scene(), nullptr, SMView, nullptr);
+}
+
 void CyberiadaSMEditorWindow::updateEditActions()
 {
+    if (!current) return;   // the documents are gone (destructor)
     Cyberiada::Element* el = nullptr;
-    if (!scene->selectedItems().isEmpty()) {
+    if (!scene()->selectedItems().isEmpty()) {
         if (CyberiadaSMEditorAbstractItem* item =
-                dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene->selectedItems().first())) {
+                dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene()->selectedItems().first())) {
             el = item->getElement();
         }
     }
@@ -120,8 +179,8 @@ void CyberiadaSMEditorWindow::updateEditActions()
     // state-machine border or a submachine state. A borderless machine cannot hold
     // one, so the tools are disabled until such a container exists
     bool hasContainer = false;
-    if (model->rootDocument()) {
-        std::vector<Cyberiada::StateMachine*> sms = model->rootDocument()->get_state_machines();
+    if (model()->rootDocument()) {
+        std::vector<Cyberiada::StateMachine*> sms = model()->rootDocument()->get_state_machines();
         for (size_t i = 0; i < sms.size() && !hasContainer; i++) {
             if (sms[i]->has_geometry() ||
                 !sms[i]->find_elements_by_type(Cyberiada::elementSubmachineState).empty())
@@ -133,21 +192,26 @@ void CyberiadaSMEditorWindow::updateEditActions()
 
     // the file actions follow the document and its modified state (the creation
     // tools stay enabled: the model creates a document lazily on the first edit)
-    bool docOpen  = (model->rootDocument() != nullptr);
-    bool modified = docOpen && !model->undoStack()->isClean();
+    bool docOpen  = (model()->rootDocument() != nullptr);
+    bool modified = docOpen && !model()->undoStack()->isClean();
     actionReconstructGeometry->setEnabled(docOpen && !inspector);
     actionSave->setEnabled(docOpen && modified && !inspector);
     actionSaveAs->setEnabled(docOpen);
     actionExport->setEnabled(docOpen);
 }
 
-// the actions die before the model's stack, whose destructor still signals
+// the documents go while the actions and the undo group are still alive; the
+// per-document slots are guarded by the current pointer
 CyberiadaSMEditorWindow::~CyberiadaSMEditorWindow()
 {
-    // the scene (a child) is torn down after this body: stop its selectionChanged
-    // from reaching updateEditActions while its items are being destroyed
-    if (scene) scene->disconnect(this);
-    model->undoStack()->disconnect(this);
+    if (current) unbindDocument(current);
+    current = nullptr;
+    sceneView = nullptr;
+    for (CyberiadaSMEditorDocument* doc : documents) {
+        documentStack->removeWidget(doc->view());
+        delete doc;
+    }
+    documents.clear();
     delete clipboardElement;
 }
 
@@ -172,18 +236,25 @@ void CyberiadaSMEditorWindow::slotCleanChanged(bool clean)
 // the title carries the modified marker; the inspected document is read-only
 void CyberiadaSMEditorWindow::updateTitle()
 {
-    // an unsaved document shows "untitled" so a new file clears the old name
-    QString title = (openFileName.isEmpty() ? tr("untitled") : openFileName) + "[*]";
+    if (!current) return;
+    // the title always carries the [*] slot (an unsaved document is "untitled")
+    QString title = current->title() + "[*]";
     if (SettingsManager::instance().getInspectorMode()) {
         title += " (inspector mode)";
     }
     setWindowTitle(title);
-    setWindowModified(!model->undoStack()->isClean());
+    setWindowModified(!current->isClean());
 }
 
 bool CyberiadaSMEditorWindow::confirmDiscard()
 {
-    if (model->undoStack()->isClean()) return true;
+    return confirmDiscard(current);
+}
+
+bool CyberiadaSMEditorWindow::confirmDiscard(CyberiadaSMEditorDocument* doc)
+{
+    if (!doc || doc->isClean()) return true;
+    setCurrentDocument(doc);   // the user sees the document the prompt is about
     QMessageBox::StandardButton answer = QMessageBox::question(
         this, tr("Unsaved changes"),
         tr("The document has unsaved changes. Save them?"),
@@ -191,7 +262,7 @@ bool CyberiadaSMEditorWindow::confirmDiscard()
     if (answer == QMessageBox::Cancel) return false;
     if (answer == QMessageBox::Save) {
         slotFileSave();
-        return model->undoStack()->isClean();
+        return doc->isClean();
     }
     return true;
 }
@@ -209,7 +280,7 @@ void CyberiadaSMEditorWindow::closeEvent(QCloseEvent* event)
 // the tree follows a restored document
 void CyberiadaSMEditorWindow::slotModelReset()
 {
-    SMView->setRootIndex(model->rootIndex());
+    SMView->setRootIndex(model()->rootIndex());
     expandAndWidenTree();
     updateEditActions();   // a loaded/reset document refreshes the file actions
 }
@@ -234,14 +305,13 @@ void CyberiadaSMEditorWindow::expandAndWidenTree()
 
 void CyberiadaSMEditorWindow::restoreSavedView()
 {
-    if (pendingViewState.isEmpty()) return;
+    if (!current || !current->hasPendingView()) return;
     // wait until the scene view has a real (laid-out) size, so the scrollbar-based
     // pan restores against the final width; the show path re-arms this otherwise
     if (sceneView->viewport()->width() <= 0) return;
     // re-fit the panel to the now-final width, then restore zoom + pan
     expandAndWidenTree();
-    sceneView->applyViewState(pendingViewState);
-    pendingViewState.clear();
+    current->restoreView();
 }
 
 void CyberiadaSMEditorWindow::showEvent(QShowEvent* event)
@@ -254,9 +324,7 @@ void CyberiadaSMEditorWindow::showEvent(QShowEvent* event)
 void CyberiadaSMEditorWindow::slotFileNew()
 {
     if (!confirmDiscard()) return;
-    model->reset();
-    model->undoStack()->clear();
-    openFileName = QString();
+    current->clear();
     updateTitle();
 }
 
@@ -285,34 +353,27 @@ void CyberiadaSMEditorWindow::slotFileOpen()
 bool CyberiadaSMEditorWindow::openDocument(const QString& fileName, QString* error,
                                            bool reconstruct, bool reconstruct_sm, bool strict)
 {
-    if (!model->loadDocument(fileName, reconstruct, reconstruct_sm, strict)) {
-        if (error) {
-            *error = model->loadError();
-        }
+    if (!current->load(fileName, error, reconstruct, reconstruct_sm, strict)) {
         return false;
     }
-    SMView->setRootIndex(model->rootIndex());
+    SMView->setRootIndex(model()->rootIndex());
     // show the full structure and widen the right panel to fit it
     expandAndWidenTree();
-    QModelIndex sm = model->firstSMIndex();
+    QModelIndex sm = model()->firstSMIndex();
     if (sm.isValid()) {
-        scene->loadScene();
         SMView->select(sm);
     }
     // restore the saved editor view only after the layout has settled, so the
     // scrollbar-based pan lands against the final scene-view size (the interim
     // fit from loadScene stands until then)
-    pendingViewState = model->editorView();
     QTimer::singleShot(0, this, &CyberiadaSMEditorWindow::restoreSavedView);
 
-    QFileInfo fileInfo(fileName);
-    openFileName = fileInfo.fileName();
     updateTitle();
-    SettingsManager::instance().addRecentFile(fileInfo.absoluteFilePath());
+    SettingsManager::instance().addRecentFile(QFileInfo(fileName).absoluteFilePath());
     // a new document begins a new session so the start snapshot matches it
     if (GestureLog::instance().isActive()) {
         GestureLog::instance().endSession();
-        GestureLog::instance().startSession(model);
+        GestureLog::instance().startSession(model());
     }
     return true;
 }
@@ -347,43 +408,34 @@ void CyberiadaSMEditorWindow::openRecentFile(const QString& path)
 
 void CyberiadaSMEditorWindow::slotFileSave()
 {
-    if (model->rootDocument() && !model->rootDocument()->get_file_path().empty()) {
-        try {
-            scene->migrateLabelsToRect();                    // point labels become rects
-            model->setEditorView(sceneView->viewState());    // persist the current view
-            model->saveDocument();
-        } catch (const Cyberiada::Exception& e) {
-            QMessageBox::critical(this, tr("Save State Machine"),
-                                  tr("Cannot save the document:\n") + QString(e.str().c_str()));
-        }
-    } else {
+    if (!current->hasFile()) {
         slotFileSaveAs();
+        return;
+    }
+    QString error;
+    if (!current->save(&error)) {
+        QMessageBox::critical(this, tr("Save State Machine"),
+                              tr("Cannot save the document:\n") + error);
     }
 }
 
 void CyberiadaSMEditorWindow::slotFileSaveAs()
 {
-    SaveFileDialog dlg(this, model->rootDocument());
+    SaveFileDialog dlg(this, model()->rootDocument());
     if (dlg.exec() != QDialog::Accepted) { return; }
 
     QString fileName = dlg.selectedFile();
     if (fileName.isEmpty()) {
         return;
     }
-    try {
-        scene->migrateLabelsToRect();                    // point labels become rects
-        model->setEditorView(sceneView->viewState());    // persist the current view
-        model->saveAsDocument(fileName, dlg.selectedFormat(), dlg.roundEnabled(),
-                              dlg.skipGeometryEnabled(), dlg.checkInitialEnabled(),
-                              dlg.strictActionsEnabled(), dlg.skipEmptyBehaviorEnabled());
-    } catch (const Cyberiada::Exception& e) {
+    QString error;
+    if (!current->saveAs(fileName, dlg.selectedFormat(), dlg.roundEnabled(),
+                         dlg.skipGeometryEnabled(), dlg.checkInitialEnabled(),
+                         dlg.strictActionsEnabled(), dlg.skipEmptyBehaviorEnabled(), &error)) {
         QMessageBox::critical(this, tr("Save State Machine"),
-                              tr("Cannot save the document:\n") + QString(e.str().c_str()));
+                              tr("Cannot save the document:\n") + error);
         return;
     }
-
-    QFileInfo fileInfo(fileName);
-    openFileName = fileInfo.fileName();
     updateTitle();
 }
 
@@ -395,7 +447,7 @@ void CyberiadaSMEditorWindow::slotFileExport()
     QString fileName = dlg.selectedFile();
     if (!fileName.isEmpty()) {
         QString error;
-        if (!renderScene(scene, fileName, &error, dlg.dpi(), dlg.fontFamily())) {
+        if (!renderScene(scene(), fileName, &error, dlg.dpi(), dlg.fontFamily())) {
             QMessageBox::critical(this, tr("Error"), error);
         }
     }
@@ -432,7 +484,6 @@ void CyberiadaSMEditorWindow::initializeTools()
     actionSelectTool->setChecked(true);
 
     connect(toolGroup, &QActionGroup::triggered, this, &CyberiadaSMEditorWindow::slotToolSelected);
-    connect(scene, &CyberiadaSMEditorScene::toolChanged, this, &CyberiadaSMEditorWindow::slotSceneToolChanged);
 
     // the zoom tool-options toolbar: actions (not tools), shown only when the
     // zoom tool is active
@@ -450,10 +501,9 @@ void CyberiadaSMEditorWindow::initializeTools()
     zoomOptionsToolBar->setVisible(false);
     toolOptionBars[ToolType::Zoom] = zoomOptionsToolBar;
 
-    connect(actionZoomIn, &QAction::triggered, sceneView, &CyberiadaSMGraphicsView::zoomIn);
-    connect(actionZoomOut, &QAction::triggered, sceneView, &CyberiadaSMGraphicsView::zoomOut);
+    connect(actionZoomIn, &QAction::triggered, this, [this]() { if (sceneView) sceneView->zoomIn(); });
+    connect(actionZoomOut, &QAction::triggered, this, [this]() { if (sceneView) sceneView->zoomOut(); });
     connect(actionZoomToSM, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotZoomToSM);
-    connect(sceneView, &CyberiadaSMGraphicsView::scaleChanged, this, &CyberiadaSMEditorWindow::slotZoomScaleChanged);
     connect(zoomCombo, &QComboBox::currentTextChanged, this, &CyberiadaSMEditorWindow::slotZoomComboActivated);
 
     emit toolGroup->triggered(actionSelectTool);
@@ -506,7 +556,7 @@ void CyberiadaSMEditorWindow::slotToolSelected(QAction *action)
     currentTool = toolActMap.key(action, ToolType::Select);
     // the scene is the source of truth; setting it emits nothing, so drive the
     // view and the option bars here
-    scene->setCurrentTool(currentTool);
+    scene()->setCurrentTool(currentTool);
     sceneView->setCurrentTool(currentTool);
     // show the active tool's options toolbar, hide the others
     for (auto i = toolOptionBars.constBegin(); i != toolOptionBars.constEnd(); i++) {
@@ -529,18 +579,18 @@ void CyberiadaSMEditorWindow::slotToolSelected(QAction *action)
 }
 
 void CyberiadaSMEditorWindow::slotFitContent() {
-    QRectF bounds = scene->visibleItemsBoundingRect();
+    QRectF bounds = scene()->visibleItemsBoundingRect();
     if (bounds.isNull()) return;
     // the target may sit outside the current scene rect (fitInView cannot scroll
     // past it); re-sync the rect to the content first
-    scene->updateSceneRect();
+    scene()->updateSceneRect();
     sceneView->fitInView(bounds, Qt::KeepAspectRatio);
 }
 
 void CyberiadaSMEditorWindow::slotZoomToSM() {
-    QRectF bounds = scene->recentlyModifiedSMRect();
+    QRectF bounds = scene()->recentlyModifiedSMRect();
     if (bounds.isNull()) { slotFitContent(); return; }
-    scene->updateSceneRect();
+    scene()->updateSceneRect();
     sceneView->fitInView(bounds, Qt::KeepAspectRatio);
 }
 
@@ -588,7 +638,7 @@ void CyberiadaSMEditorWindow::slotGridVisibilityTriggered(bool on)
 {
     SettingsManager& sm = SettingsManager::instance();
     sm.setShowGrid(on);
-    // scene->enableGrid(on);
+    // scene()->enableGrid(on);
 }
 
 void CyberiadaSMEditorWindow::slotLogSessionTriggered(bool on)
@@ -600,7 +650,7 @@ void CyberiadaSMEditorWindow::slotLoggingChanged(bool on)
 {
     actionLogSession->setChecked(on);
     if (on) {
-        GestureLog::instance().startSession(model);
+        GestureLog::instance().startSession(model());
     } else {
         GestureLog::instance().endSession();
     }
@@ -642,20 +692,20 @@ void CyberiadaSMEditorWindow::slotNewChoise() {}
 
 void CyberiadaSMEditorWindow::slotDeleteElement()
 {
-    if (scene->selectedItems().isEmpty()) return;
-    CyberiadaSMEditorAbstractItem* itemToDelete = dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene->selectedItems().first());
+    if (scene()->selectedItems().isEmpty()) return;
+    CyberiadaSMEditorAbstractItem* itemToDelete = dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene()->selectedItems().first());
     if (itemToDelete) {
         Cyberiada::Element* el = itemToDelete->getElement();
         // deleting a state machine removes only its border (the geometry); the
         // machine and its content stay
         if (el && el->get_type() == Cyberiada::elementSM) {
-            model->updateGeometry(model->elementToIndex(el), Cyberiada::Rect());
+            model()->updateGeometry(model()->elementToIndex(el), Cyberiada::Rect());
             return;
         }
-        model->deleteElement(model->elementToIndex(el));
+        model()->deleteElement(model()->elementToIndex(el));
         return;
     }
-    DotSignal* dotToDelete = dynamic_cast<DotSignal*>(scene->focusItem());
+    DotSignal* dotToDelete = dynamic_cast<DotSignal*>(scene()->focusItem());
     if(dotToDelete) {
         dotToDelete->deleteDot();
         return;
@@ -664,21 +714,21 @@ void CyberiadaSMEditorWindow::slotDeleteElement()
 
 void CyberiadaSMEditorWindow::slotReconstructGeometry()
 {
-    if (!model->rootDocument()) return;
+    if (!model()->rootDocument()) return;
     QMessageBox::StandardButton answer = QMessageBox::question(
         this, tr("Geometry reconstruction"),
         tr("Rebuild the whole diagram geometry from scratch? "
            "The current layout is replaced; use Undo to restore it."),
         QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
     if (answer != QMessageBox::Yes) return;
-    model->reconstructGeometry();
+    model()->reconstructGeometry();
 }
 
 void CyberiadaSMEditorWindow::slotCopy()
 {
-    if (scene->selectedItems().isEmpty()) return;
+    if (scene()->selectedItems().isEmpty()) return;
     CyberiadaSMEditorAbstractItem* item =
-        dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene->selectedItems().first());
+        dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene()->selectedItems().first());
     if (!item) return;
     Cyberiada::Element* el = item->getElement();
     if (!el || el->get_type() == Cyberiada::elementSM) return;   // a State Machine is not copyable
@@ -690,9 +740,9 @@ void CyberiadaSMEditorWindow::slotCopy()
 
 void CyberiadaSMEditorWindow::slotCut()
 {
-    if (scene->selectedItems().isEmpty()) return;
+    if (scene()->selectedItems().isEmpty()) return;
     CyberiadaSMEditorAbstractItem* item =
-        dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene->selectedItems().first());
+        dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene()->selectedItems().first());
     if (!item) return;
     Cyberiada::Element* el = item->getElement();
     if (!el || el->get_type() == Cyberiada::elementSM) return;
@@ -700,7 +750,7 @@ void CyberiadaSMEditorWindow::slotCut()
     clipboardElement = el->copy(nullptr);
     clipboardParentId = el->get_parent() ? el->get_parent()->get_id() : Cyberiada::ID();
     updateEditActions();
-    model->deleteElement(model->elementToIndex(el));
+    model()->deleteElement(model()->elementToIndex(el));
 }
 
 void CyberiadaSMEditorWindow::slotPaste()
@@ -709,13 +759,13 @@ void CyberiadaSMEditorWindow::slotPaste()
     // paste onto the copied element's original hierarchy level if it still exists,
     // else the first state machine
     Cyberiada::ElementCollection* target = dynamic_cast<Cyberiada::ElementCollection*>(
-        model->idToElement(QString::fromStdString(clipboardParentId)));
-    if (!target && model->rootDocument()) {
-        std::vector<Cyberiada::StateMachine*> sms = model->rootDocument()->get_state_machines();
+        model()->idToElement(QString::fromStdString(clipboardParentId)));
+    if (!target && model()->rootDocument()) {
+        std::vector<Cyberiada::StateMachine*> sms = model()->rootDocument()->get_state_machines();
         if (!sms.empty()) target = sms.front();
     }
     if (!target) return;
-    model->pasteElement(target, clipboardElement);
+    model()->pasteElement(target, clipboardElement);
 }
 
 void CyberiadaSMEditorWindow::slotInspectorModeTriggered(bool on)
@@ -727,8 +777,8 @@ void CyberiadaSMEditorWindow::slotInspectorModeChanged(bool on)
 {
     actionInspectorMode->setChecked(on);
     editGroup->setEnabled(!on);
-    actionUndo->setEnabled(!on && model->undoStack()->canUndo());
-    actionRedo->setEnabled(!on && model->undoStack()->canRedo());
+    actionUndo->setEnabled(!on && undoGroup->canUndo());
+    actionRedo->setEnabled(!on && undoGroup->canRedo());
     // disable the creation tools while inspecting, but keep select/pan/zoom so
     // the document can still be navigated
     for (auto i = toolActMap.constBegin(); i != toolActMap.constEnd(); i++) {

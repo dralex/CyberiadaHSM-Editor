@@ -1,7 +1,7 @@
 /* -----------------------------------------------------------------------------
  * The Cyberiada State Machine Editor
  * -----------------------------------------------------------------------------
- * 
+ *
  * The State Machine Editor Window
  *
  * Copyright (C) 2024 Alexey Fedoseev <aleksey@fedoseev.net>
@@ -10,7 +10,7 @@
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
@@ -25,14 +25,20 @@
 #define CYBERIADA_SM_WINDOW
 
 #include <QMainWindow>
+#include <QList>
 #include "ui_smeditor_window.h"
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_editor_scene.h"
+#include "cyberiadasm_editor_document.h"
 
 class QToolBar;
 class QComboBox;
 class QMenu;
+class QUndoGroup;
 
+// The window holds the documents (docs/WINDOW.md): the menus, the toolbars,
+// the clipboard and the armed tool are global; the structure tree, the
+// properties panel and the actions target the active document.
 class CyberiadaSMEditorWindow: public QMainWindow, public Ui_SMEditorWindow {
 Q_OBJECT
 public:
@@ -40,21 +46,33 @@ public:
 
     ~CyberiadaSMEditorWindow();
 
+    // load the file into the active document (the batch and test contract)
     bool                    openDocument(const QString& fileName, QString* error = NULL,
                                          bool reconstruct = false, bool reconstruct_sm = false,
                                          bool strict = false);
 
-    CyberiadaSMModel*       getModel() { return model; }
-    CyberiadaSMEditorScene* getScene() { return scene; }
+    // the active document and its parts
+    CyberiadaSMEditorDocument* currentDocument() const { return current; }
+    CyberiadaSMModel*       getModel() { return model(); }
+    CyberiadaSMEditorScene* getScene() { return scene(); }
+    int                     documentCount() const { return documents.size(); }
+    CyberiadaSMEditorDocument* documentAt(int i) const { return documents.value(i, nullptr); }
 
     // the unsaved changes prompt: true when the document may go
     bool                    confirmDiscard();
+    bool                    confirmDiscard(CyberiadaSMEditorDocument* doc);
+
+    // the active document's canvas view (the tests address it by name)
+    CyberiadaSMGraphicsView* sceneView = nullptr;
 
 protected:
     void                    closeEvent(QCloseEvent* event) override;
     void                    showEvent(QShowEvent* event) override;
 
 private:
+    CyberiadaSMModel*       model() const { return current ? current->model() : nullptr; }
+    CyberiadaSMEditorScene* scene() const { return current ? current->scene() : nullptr; }
+
     void                    initializeTools();
     void                    updateTitle();
     // on load: expand the tree fully and widen the right panel to fit its content
@@ -62,6 +80,14 @@ private:
     // the File > Open Recent submenu, rebuilt from the stored recent-files list
     void                    rebuildRecentMenu();
     void                    openRecentFile(const QString& path);
+
+    // a document with its page in the stack and its stack in the undo group
+    CyberiadaSMEditorDocument* newDocument();
+    // re-target the tree, the properties, the undo group, the tool and the zoom
+    void                    setCurrentDocument(CyberiadaSMEditorDocument* doc);
+    // the selection links between the tree and the active scene
+    void                    bindDocument(CyberiadaSMEditorDocument* doc);
+    void                    unbindDocument(CyberiadaSMEditorDocument* doc);
 
 private slots:
     void                    slotModelReset();
@@ -118,15 +144,13 @@ public slots:
     void                    slotPaste();
 
 private:
-	CyberiadaSMModel*       model;
-	CyberiadaSMEditorScene* scene;
+    QList<CyberiadaSMEditorDocument*> documents;
+    CyberiadaSMEditorDocument* current = nullptr;
+    QUndoGroup*             undoGroup = nullptr;
     QActionGroup *toolGroup;
     QActionGroup *editGroup;
     ToolType currentTool = ToolType::Select;
 
-    QString openFileName;
-    // the saved viewport waiting to be applied after the layout settles
-    QString pendingViewState;
     QMenu* recentMenu = nullptr;
 
     // a detached deep clone of the last copied/cut element (nullptr when empty),

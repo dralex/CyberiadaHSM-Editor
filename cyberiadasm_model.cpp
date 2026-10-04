@@ -169,8 +169,11 @@ void CyberiadaSMModel::reset()
 	beginResetModel();
 	if (root) {
 		root->reset();
-	}	
-	endResetModel();	
+	}
+	// a new document has no file
+	filePath.clear();
+	fileFormat = Cyberiada::formatCyberiada10;
+	endResetModel();
 }
 
 bool CyberiadaSMModel::loadDocument(const QString& path, bool reconstruct, bool reconstruct_sm, bool strict)
