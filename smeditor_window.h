@@ -81,6 +81,7 @@ public:
 
     // the active document's canvas view (the tests address it by name)
     CyberiadaSMGraphicsView* sceneView = nullptr;
+    QTabBar*                tabBar() const { return documentTabs; }
 
 protected:
     void                    closeEvent(QCloseEvent* event) override;
