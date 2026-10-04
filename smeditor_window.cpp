@@ -71,6 +71,7 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
 
     connect(SMView, SIGNAL(currentIndexActivated(QModelIndex)),
             scene, SLOT(slotElementSelected(QModelIndex)));
+    connect(scene, &CyberiadaSMEditorScene::elementSelected, SMView, &CyberiadaSMView::select);
     connect(model, &CyberiadaSMModel::modelReset, this, &CyberiadaSMEditorWindow::slotModelReset);
 
     QUndoStack* stack = model->undoStack();

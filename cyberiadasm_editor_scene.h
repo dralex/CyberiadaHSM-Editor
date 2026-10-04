@@ -95,6 +95,8 @@ public:
 
 signals:
     void  toolChanged(ToolType tool);
+    // the canvas selection, for the structure tree (the scene knows no window)
+    void  elementSelected(const QModelIndex& index);
 
 public slots:
 	void  slotElementSelected(const QModelIndex& index);

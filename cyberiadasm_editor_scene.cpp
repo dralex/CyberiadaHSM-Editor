@@ -30,6 +30,7 @@
 #include <QGraphicsScene>
 #include <QGraphicsRectItem>
 #include <QGraphicsLineItem>
+#include <QApplication>
 #include <QGraphicsSceneMouseEvent>
 #include <QPen>
 #include <QCursor>
@@ -46,7 +47,6 @@
 #include "cyberiadasm_editor_comment_item.h"
 #include "cyberiadasm_editor_choice_item.h"
 #include "cyberiada_constants.h"
-#include "smeditor_window.h"
 #include "settings_manager.h"
 #include "gesture_log.h"
 #include "myassert.h"
@@ -153,11 +153,7 @@ void CyberiadaSMEditorScene::slotSelectionChanged() {
         if(!element) return;
         MY_ASSERT(element);
 		QModelIndex index = model->elementToIndex(element);
-        // the scene may live without the editor window (batch, tests)
-        CyberiadaSMEditorWindow* p = dynamic_cast<CyberiadaSMEditorWindow*>(parent());
-        if (p) {
-            p->SMView->select(index);
-        }
+        emit elementSelected(index);
 	}
 }
 
