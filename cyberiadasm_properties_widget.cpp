@@ -179,9 +179,16 @@ void CyberiadaSMPropertiesWidget::setScene(CyberiadaSMEditorScene* scene)
 void CyberiadaSMPropertiesWidget::setModel(CyberiadaSMModel* model)
 {
 	MY_ASSERT(model);
+	// re-targeting to another document: drop the old model's signals and rows
+	if (this->model && this->model != model) {
+		disconnect(this->model, nullptr, this, nullptr);
+		clearProperties();
+	}
 	this->model = model;
 	element = NULL;
 
+	// the type names and icons are filled once
+	if (elementTypesEnumNames.isEmpty()) {
 	QMap<Cyberiada::ElementType, QString> types = {
 		{Cyberiada::elementRoot,           tr("Document", "Element type")},
 		{Cyberiada::elementSM,             tr("State Machine", "Element type")},
@@ -206,9 +213,10 @@ void CyberiadaSMPropertiesWidget::setModel(CyberiadaSMModel* model)
 		elementTypesEnumNames << types[t];
 		elementTypesEnumIcons[t] = model->getElementIcon(t);
     }
+	}
 
-    connect(model, &CyberiadaSMModel::dataChanged, this, &CyberiadaSMPropertiesWidget::slotModelDataChanged);
-    connect(model, &CyberiadaSMModel::modelAboutToBeReset, this, &CyberiadaSMPropertiesWidget::slotModelAboutToBeReset);
+    connect(model, &CyberiadaSMModel::dataChanged, this, &CyberiadaSMPropertiesWidget::slotModelDataChanged, Qt::UniqueConnection);
+    connect(model, &CyberiadaSMModel::modelAboutToBeReset, this, &CyberiadaSMPropertiesWidget::slotModelAboutToBeReset, Qt::UniqueConnection);
 }
 
 // the element goes away with the restored document
