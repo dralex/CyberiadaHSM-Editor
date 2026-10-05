@@ -301,8 +301,8 @@ the third is a derived display value the format does not store):
   keeps the colours. *design*
 - `EDIT-TEXT-9` SHOULD [A]: the Edit > Language menu (after Edit > Tools) sets the
   `platformLanguage` of the active document; choosing an entry writes the value, *Undefined*
-  removes the parameter, each choice is one undo step and creates the document when there is
-  none yet. The checked entry follows the active document on load, tab switch, properties edit,
+  removes the parameter, each choice is one undo step; an empty document first gets the state
+  machine the first drawn element would create (the format needs one). The checked entry follows the active document on load, tab switch, properties edit,
   undo/redo and batch `update-meta`. The menu is disabled in inspection mode. *design*
 
   ```
