@@ -392,7 +392,8 @@ void CyberiadaSMEditorStateItem::addAction(Cyberiada::ActionType type)
     // click would otherwise hang in the nested event loop
     if (qApp && qApp->property("batchMode").toBool()) return;
 
-    StateActionDialog dialog(type == Cyberiada::actionEntry ? "entry" : "exit");
+    StateActionDialog dialog(type == Cyberiada::actionEntry ? "entry" : "exit",
+                             EditableTextItem::sceneCodeLanguage(scene()));
 
     if (dialog.exec() == QDialog::Accepted) {
         model->newAction(model->elementToIndex(element), type,
@@ -405,7 +406,8 @@ void CyberiadaSMEditorStateItem::addInternalTransition()
     // batch mode has no user to dismiss a modal dialog (see addAction)
     if (qApp && qApp->property("batchMode").toBool()) return;
 
-    StateActionDialog dialog(StateActionDialog::Mode::Transition);
+    StateActionDialog dialog(StateActionDialog::Mode::Transition,
+                             EditableTextItem::sceneCodeLanguage(scene()));
 
     if (dialog.exec() == QDialog::Accepted) {
         model->newAction(model->elementToIndex(element), Cyberiada::actionTransition,

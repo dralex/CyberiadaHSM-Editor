@@ -67,7 +67,7 @@ struct CodeLanguage {
     QSet<QString> types;
 };
 
-// the language of the document and the switches; every highlighter follows it
+// the languages and the switches; the language itself belongs to a document
 class CodeStyle : public QObject {
     Q_OBJECT
 
@@ -80,12 +80,12 @@ public:
         return instance;
     }
 
-    // the platformLanguage value; matched by the name or an alias, any case
-    void setLanguage(const QString& name);
-    QString languageName() const { return currentName; }
-    // the language to draw with, null when the text is plain
-    const CodeLanguage* activeLanguage() const;
+    // the platformLanguage value matched by the name or an alias, any case;
+    // null for an empty or unknown value
+    const CodeLanguage* find(const QString& name) const;
     QStringList languages() const;
+    // the language to draw with, null when the switches make the text plain
+    const CodeLanguage* effective(const CodeLanguage* lang) const;
     // an export draws plain text unless the preference keeps the colours
     void overrideExportPlain(bool on);
 
@@ -100,11 +100,8 @@ signals:
 private:
     CodeStyle();
     void loadLanguages();
-    const CodeLanguage* find(const QString& name) const;
 
     QVector<CodeLanguage> registry;
-    QString currentName;
-    const CodeLanguage* current = nullptr;
     bool exportPlain = false;
 };
 
@@ -112,16 +109,20 @@ class CodeHighlighter : public QSyntaxHighlighter {
     Q_OBJECT
 
 public:
-    CodeHighlighter(QTextDocument* document, CodeRole role);
+    CodeHighlighter(QTextDocument* document, CodeRole role,
+                    const CodeLanguage* language = nullptr);
 
     CodeRole getRole() const { return role; }
     void setRole(CodeRole newRole);
+    const CodeLanguage* getLanguage() const { return language; }
+    void setLanguage(const CodeLanguage* newLanguage);
 
 protected:
     void highlightBlock(const QString& text) override;
 
 private:
     CodeRole role;
+    const CodeLanguage* language;
 };
 
 #endif // CODE_HIGHLIGHTER_H

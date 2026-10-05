@@ -43,6 +43,8 @@
 #include "cyberiadasm_editor_transition_item.h"
 #include "cyberiada_constants.h"
 
+struct CodeLanguage;
+
 class CyberiadaSMEditorScene: public QGraphicsScene {
 Q_OBJECT
 
@@ -93,10 +95,16 @@ public:
     // (for the zoom-to-SM action); a null rect if none is known
     QRectF recentlyModifiedSMRect() const;
 
+    // the platformLanguage of the document (EDIT-TEXT-7): the raw value and
+    // its rules, null when empty or unknown
+    QString codeLanguageName() const { return codeLanguageValue; }
+    const CodeLanguage* codeLanguage() const { return codeLanguagePtr; }
+
 signals:
     void  toolChanged(ToolType tool);
     // the canvas selection, for the structure tree (the scene knows no window)
     void  elementSelected(const QModelIndex& index);
+    void  codeLanguageChanged(const QString& value);
 
 public slots:
 	void  slotElementSelected(const QModelIndex& index);
@@ -145,6 +153,8 @@ private:
 
     CyberiadaSMModel*              model;
 	Cyberiada::StateMachine*       currentSM;
+    QString                        codeLanguageValue;
+    const CodeLanguage*            codeLanguagePtr = nullptr;
     QMap<Cyberiada::ID, QGraphicsItem*> elementIdToItemMap;
 	
     // int                            gridSize;

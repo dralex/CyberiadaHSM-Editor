@@ -93,20 +93,12 @@ const CodeLanguage* CodeStyle::find(const QString& name) const
     return nullptr;
 }
 
-void CodeStyle::setLanguage(const QString& name)
-{
-    if (name == currentName) return;
-    currentName = name;
-    current = find(name);
-    emit styleChanged();
-}
-
-const CodeLanguage* CodeStyle::activeLanguage() const
+const CodeLanguage* CodeStyle::effective(const CodeLanguage* lang) const
 {
     const SettingsManager& sm = SettingsManager::instance();
     if (!sm.getHighlightCode()) return nullptr;
     if (exportPlain && !sm.getHighlightInExports()) return nullptr;
-    return current;
+    return lang;
 }
 
 QStringList CodeStyle::languages() const
@@ -225,8 +217,9 @@ QVector<CodeSpan> CodeStyle::spans(const QString& text, CodeRole role, const Cod
     return result;
 }
 
-CodeHighlighter::CodeHighlighter(QTextDocument* document, CodeRole role):
-    QSyntaxHighlighter(document), role(role)
+CodeHighlighter::CodeHighlighter(QTextDocument* document, CodeRole role,
+                                 const CodeLanguage* language):
+    QSyntaxHighlighter(document), role(role), language(language)
 {
     connect(&CodeStyle::instance(), &CodeStyle::styleChanged, this, &QSyntaxHighlighter::rehighlight);
     // the first pass is otherwise deferred to the event loop and the edits
@@ -242,9 +235,16 @@ void CodeHighlighter::setRole(CodeRole newRole)
     rehighlight();
 }
 
+void CodeHighlighter::setLanguage(const CodeLanguage* newLanguage)
+{
+    if (language == newLanguage) return;
+    language = newLanguage;
+    rehighlight();
+}
+
 void CodeHighlighter::highlightBlock(const QString& text)
 {
-    const CodeLanguage* lang = CodeStyle::instance().activeLanguage();
+    const CodeLanguage* lang = CodeStyle::instance().effective(language);
     if (!lang || role == codeRoleNone) {
         setCurrentBlockState(0);
         return;

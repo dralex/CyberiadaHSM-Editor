@@ -504,7 +504,17 @@ void CyberiadaSMEditorScene::updateCodeLanguage()
     const Cyberiada::LocalDocument* doc = model ? model->rootDocument() : nullptr;
     QString language;
     if (doc) language = QString::fromStdString(doc->meta().get_string("platformLanguage"));
-    CodeStyle::instance().setLanguage(language);
+    if (language == codeLanguageValue) return;
+    codeLanguageValue = language;
+    codeLanguagePtr = CodeStyle::instance().find(language);
+    // the items added later take it from the scene themselves
+    const QList<QGraphicsItem*> all = items();
+    for (QGraphicsItem* item : all) {
+        if (EditableTextItem* text = dynamic_cast<EditableTextItem*>(item)) {
+            text->setCodeLanguage(codeLanguagePtr);
+        }
+    }
+    emit codeLanguageChanged(language);
 }
 
 void CyberiadaSMEditorScene::loadScene(bool fit)

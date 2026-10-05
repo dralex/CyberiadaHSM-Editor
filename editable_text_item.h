@@ -44,6 +44,11 @@ public:
     // the code parts are highlighted by the platform language (EDIT-TEXT-7)
     void setCodeRole(CodeRole role);
     CodeRole getCodeRole() const { return highlighter ? highlighter->getRole() : codeRoleNone; }
+    // the language of the document; the scene pushes a change
+    void setCodeLanguage(const CodeLanguage* language);
+    const CodeLanguage* getCodeLanguage() const { return highlighter ? highlighter->getLanguage() : nullptr; }
+    // the code language of the document drawn by the scene, or null
+    static const CodeLanguage* sceneCodeLanguage(QGraphicsScene* s);
     // the wrap width follows the parent box, refreshed after a resize
     void updateTextWidth();
     // a title that hugs its text (a state machine header) rather than the box
@@ -59,6 +64,8 @@ public:
     virtual void applyRichFormat() {}
 
 protected:
+    // the items are built before they join the scene of their document
+    QVariant itemChange(GraphicsItemChange change, const QVariant& value) override;
     void focusOutEvent(QFocusEvent *event) override;
     void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
     void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) override;

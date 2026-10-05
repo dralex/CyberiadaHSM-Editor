@@ -186,8 +186,27 @@ void EditableTextItem::setCodeRole(CodeRole role)
     } else if (highlighter) {
         highlighter->setRole(role);
     } else {
-        highlighter = new CodeHighlighter(document(), role);
+        highlighter = new CodeHighlighter(document(), role, sceneCodeLanguage(scene()));
     }
+}
+
+void EditableTextItem::setCodeLanguage(const CodeLanguage* language)
+{
+    if (highlighter) highlighter->setLanguage(language);
+}
+
+const CodeLanguage* EditableTextItem::sceneCodeLanguage(QGraphicsScene* s)
+{
+    CyberiadaSMEditorScene* smScene = dynamic_cast<CyberiadaSMEditorScene*>(s);
+    return smScene ? smScene->codeLanguage() : nullptr;
+}
+
+QVariant EditableTextItem::itemChange(GraphicsItemChange change, const QVariant& value)
+{
+    if (change == ItemSceneHasChanged) {
+        setCodeLanguage(sceneCodeLanguage(value.value<QGraphicsScene*>()));
+    }
+    return QGraphicsTextItem::itemChange(change, value);
 }
 
 void EditableTextItem::setTextWidthEnabled(bool on)

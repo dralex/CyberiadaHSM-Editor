@@ -27,6 +27,7 @@
 #include <QDialog>
 
 class QPlainTextEdit;
+struct CodeLanguage;
 
 class StateActionDialog : public QDialog {
     Q_OBJECT
@@ -34,10 +35,13 @@ class StateActionDialog : public QDialog {
 public:
     enum class Mode { EntryExit, Transition };
 
-    // entry/exit: a single behaviour under the "<keyword>/" header
-    StateActionDialog(const QString& keyword, QWidget* parent = nullptr);
+    // entry/exit: a single behaviour under the "<keyword>/" header; the text is
+    // highlighted by the language of the document (EDIT-TEXT-8)
+    StateActionDialog(const QString& keyword, const CodeLanguage* language = nullptr,
+                      QWidget* parent = nullptr);
     // internal transition: the full "EVENT [guard] / behaviour" notation
-    StateActionDialog(Mode mode, QWidget* parent = nullptr);
+    StateActionDialog(Mode mode, const CodeLanguage* language = nullptr,
+                      QWidget* parent = nullptr);
 
     // parse the entered text; on success the parts below are available
     bool parseInput();
@@ -52,6 +56,7 @@ private:
     void setupUi(const QString& title, const QString& label, const QString& prefill);
 
     Mode mode;
+    const CodeLanguage* language;
     QString keyword;
     QString trigger;
     QString guard;

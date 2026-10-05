@@ -49,6 +49,7 @@ private slots:
 	void test_multiline_comment();
 	void test_language_change();
 	void test_switch_off();
+	void test_documents();
 	void test_dialog();
 	void test_export();
 
@@ -115,26 +116,23 @@ void TestHighlight::test_languages()
 	CodeStyle& style = CodeStyle::instance();
 	QVERIFY(style.languages().contains("C++"));
 	QVERIFY(style.languages().contains("Python"));
-	QCOMPARE(style.languageName(), QString("C++"));
-	QVERIFY(style.activeLanguage());
+	// the scene keeps the language of its document
+	QCOMPARE(scene->codeLanguageName(), QString("C++"));
+	QVERIFY(scene->codeLanguage());
+	QCOMPARE(scene->codeLanguage()->name, QString("C++"));
 
 	// an alias, any case
-	style.setLanguage("ARDUINO");
-	QVERIFY(style.activeLanguage());
-	QCOMPARE(style.activeLanguage()->name, QString("C++"));
-	style.setLanguage("ts");
-	QCOMPARE(style.activeLanguage()->name, QString("JavaScript"));
+	QVERIFY(style.find("ARDUINO"));
+	QCOMPARE(style.find("ARDUINO")->name, QString("C++"));
+	QCOMPARE(style.find("ts")->name, QString("JavaScript"));
 	// unknown or empty: plain
-	style.setLanguage("Cobol");
-	QVERIFY(!style.activeLanguage());
-	style.setLanguage("");
-	QVERIFY(!style.activeLanguage());
-	style.setLanguage("C++");
+	QVERIFY(!style.find("Cobol"));
+	QVERIFY(!style.find(""));
 }
 
 void TestHighlight::test_spans()
 {
-	const CodeLanguage* cpp = CodeStyle::instance().activeLanguage();
+	const CodeLanguage* cpp = CodeStyle::instance().find("C++");
 	QVERIFY(cpp);
 
 	// the keyword prefix is not code
@@ -213,7 +211,7 @@ void TestHighlight::test_multiline_comment()
 	QTextDocument doc;
 	// a document without a layout emits no contentsChange; the items have one
 	doc.documentLayout();
-	CodeHighlighter highlighter(&doc, codeRoleFormalComment);
+	CodeHighlighter highlighter(&doc, codeRoleFormalComment, CodeStyle::instance().find("C++"));
 	doc.setPlainText("a /* x\ny */ int");
 	int second = doc.toPlainText().indexOf("y");
 	QCOMPARE(colorAt(&doc, second), kindColor(codeTokenComment));
@@ -234,12 +232,12 @@ void TestHighlight::test_language_change()
 	int pos = doc->toPlainText().indexOf("//");
 
 	QVERIFY(model->updateMetainformation(model->documentIndex(), "platformLanguage", "Python"));
-	QCOMPARE(CodeStyle::instance().languageName(), QString("Python"));
+	QCOMPARE(scene->codeLanguageName(), QString("Python"));
 	// "//" is no Python comment
 	QVERIFY(colorAt(doc, pos) != kindColor(codeTokenComment));
 
 	model->undoStack()->undo();
-	QCOMPARE(CodeStyle::instance().languageName(), QString("C++"));
+	QCOMPARE(scene->codeLanguageName(), QString("C++"));
 	doc = codeItems(codeRoleBehaviour)[0]->document();
 	QCOMPARE(colorAt(doc, pos), kindColor(codeTokenComment));
 }
@@ -257,9 +255,50 @@ void TestHighlight::test_switch_off()
 	QCOMPARE(doc->toPlainText(), text);
 }
 
+void TestHighlight::test_documents()
+{
+	// a second document with another language keeps its own colours (EDIT-TEXT-7)
+	CyberiadaSMModel python(this);
+	CyberiadaSMEditorScene pythonScene(&python);
+	QVERIFY(python.loadDocument("diagrams/code-highlight.graphml"));
+	pythonScene.loadScene();
+	QVERIFY(python.updateMetainformation(python.documentIndex(), "platformLanguage", "Python"));
+	QCOMPARE(pythonScene.codeLanguage()->name, QString("Python"));
+	QCOMPARE(scene->codeLanguage()->name, QString("C++"));
+
+	QTextDocument* cppDoc = codeItems(codeRoleBehaviour)[0]->document();
+	int pos = cppDoc->toPlainText().indexOf("//");
+	QCOMPARE(colorAt(cppDoc, pos), kindColor(codeTokenComment));
+	for (QGraphicsItem* item : pythonScene.items()) {
+		EditableTextItem* text = dynamic_cast<EditableTextItem*>(item);
+		if (!text || text->getCodeRole() != codeRoleBehaviour) continue;
+		QCOMPARE(text->getCodeLanguage(), pythonScene.codeLanguage());
+		QVERIFY(colorAt(text->document(), pos) != kindColor(codeTokenComment));
+	}
+
+	// a document without the parameter is plain
+	CyberiadaSMModel plain(this);
+	CyberiadaSMEditorScene plainScene(&plain);
+	QVERIFY(plain.loadDocument("diagrams/internal-transition.graphml"));
+	plainScene.loadScene();
+	QVERIFY(plainScene.codeLanguageName().isEmpty());
+	QVERIFY(!plainScene.codeLanguage());
+	for (QGraphicsItem* item : plainScene.items()) {
+		EditableTextItem* text = dynamic_cast<EditableTextItem*>(item);
+		if (text) QVERIFY(!hasFormats(text->document()));
+	}
+}
+
 void TestHighlight::test_dialog()
 {
-	StateActionDialog entry("entry");
+	// no language: plain
+	StateActionDialog none("entry");
+	QPlainTextEdit* plainEdit = none.findChild<QPlainTextEdit*>();
+	plainEdit->setPlainText("entry/ return 1;");
+	QVERIFY(!hasFormats(plainEdit->document()));
+
+	const CodeLanguage* cpp = CodeStyle::instance().find("C++");
+	StateActionDialog entry("entry", cpp);
 	QPlainTextEdit* edit = entry.findChild<QPlainTextEdit*>();
 	QVERIFY(edit);
 	QVERIFY(edit->document()->findChild<CodeHighlighter*>());
@@ -269,7 +308,7 @@ void TestHighlight::test_dialog()
 	QVERIFY(entry.parseInput());
 	QCOMPARE(entry.getBehaviour(), QString("return 1;"));
 
-	StateActionDialog transition(StateActionDialog::Mode::Transition);
+	StateActionDialog transition(StateActionDialog::Mode::Transition, cpp);
 	edit = transition.findChild<QPlainTextEdit*>();
 	CodeHighlighter* h = edit->document()->findChild<CodeHighlighter*>();
 	QVERIFY(h);

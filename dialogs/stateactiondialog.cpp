@@ -35,16 +35,17 @@
 #include "code_highlighter.h"
 #include "cyberiadasm_editor_transition_item.h"
 
-StateActionDialog::StateActionDialog(const QString& keyword, QWidget* parent):
-    QDialog(parent), mode(Mode::EntryExit), keyword(keyword)
+StateActionDialog::StateActionDialog(const QString& keyword, const CodeLanguage* language,
+                                     QWidget* parent):
+    QDialog(parent), mode(Mode::EntryExit), language(language), keyword(keyword)
 {
     // the keyword is part of the text: the behaviour continues on the same
     // line or, as in the document format, on the next one
     setupUi(tr("New action"), tr("Action:"), keyword + "/");
 }
 
-StateActionDialog::StateActionDialog(Mode mode, QWidget* parent):
-    QDialog(parent), mode(mode)
+StateActionDialog::StateActionDialog(Mode mode, const CodeLanguage* language, QWidget* parent):
+    QDialog(parent), mode(mode), language(language)
 {
     setupUi(tr("New internal transition"),
             tr("Internal transition (EVENT [guard] / behaviour):"), QString());
@@ -61,7 +62,8 @@ void StateActionDialog::setupUi(const QString& title, const QString& label, cons
     actionEdit->setFont(FontManager::instance().font(fontRoleStateAction));
     // highlighted as the action on the canvas (EDIT-TEXT-8)
     new CodeHighlighter(actionEdit->document(),
-                        mode == Mode::Transition ? codeRoleTransition : codeRoleBehaviour);
+                        mode == Mode::Transition ? codeRoleTransition : codeRoleBehaviour,
+                        language);
     actionEdit->setPlainText(prefill);
     QTextCursor cursor = actionEdit->textCursor();
     cursor.movePosition(QTextCursor::End);
