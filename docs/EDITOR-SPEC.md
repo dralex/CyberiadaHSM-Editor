@@ -283,8 +283,8 @@ the third is a derived display value the format does not store):
   never labels a transition; `propagate` and `block` accompany a non-empty event name. *PNST 1044
   6.8.1, 6.8.2*
 - `EDIT-TEXT-7` SHOULD [A]: the code parts of a text are highlighted by the language of the
-  `platformLanguage` metainformation parameter; an empty or unknown language leaves the text
-  plain. The highlighting is a display colour only: the text, the saved document and the bold
+  `platformLanguage` metainformation parameter of its own document, so the tabs are highlighted
+  independently; an empty or unknown language leaves the text plain. The highlighting is a display colour only: the text, the saved document and the bold
   prefix (EDIT-TEXT-2) are not changed. A preference turns it off. *design*
 
   ```
@@ -299,6 +299,20 @@ the third is a derived display value the format does not store):
 - `EDIT-TEXT-8` SHOULD [A]: the new action and new internal transition dialogs highlight the
   entered text as EDIT-TEXT-7 does; an exported image is plain unless the export preference
   keeps the colours. *design*
+- `EDIT-TEXT-9` SHOULD [A]: the Edit > Language menu (after Edit > Tools) sets the
+  `platformLanguage` of the active document; choosing an entry writes the value, *Undefined*
+  removes the parameter, each choice is one undo step and creates the document when there is
+  none yet. The checked entry follows the active document on load, tab switch, properties edit,
+  undo/redo and batch `update-meta`. The menu is disabled in inspection mode. *design*
+
+  ```
+  ( ) Undefined                 the parameter is absent or empty
+  ( ) C  C++ … Python           the languages of EDIT-TEXT-7; an alias checks its language
+  ─────────
+  ( ) Lua (no highlighting)     an unknown value of a loaded file, or one replaced from the
+                                menu: kept in the menu until the editor exits
+  (•) Rust (no highlighting)    an unknown value typed in the properties: shown while current
+  ```
 
 ### 4.6 Tools and interaction — TOOL
 

@@ -15,7 +15,7 @@ elements (states, pseudostate, transitions, etc.), view management (zoom,
 pan), copy/paste, undo/redo, etc. Several documents are open at once in tabs,
 with the clipboard shared between them. The code in the actions, guards and formal
 comments is highlighted by the `platformLanguage` of the document (C, C++, C#,
-Java, JavaScript, Python; the rules are in `syntax/`).
+Java, JavaScript, Python; the rules are in `syntax/`), chosen in Edit > Language.
 
 ![The Cyberiada HSM Editor. Sample 1](images/gui-sample-1.jpg)
 

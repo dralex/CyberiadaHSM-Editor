@@ -66,6 +66,7 @@ setCurrentDocument(doc)
 | Undo, Redo | document | the active stack of the `QUndoGroup` |
 | Cut, Copy, Delete, Reconstruct geometry | document | the active scene's selection |
 | Zoom in/out, Fit, Zoom to SM, zoom combo | document | the active view |
+| Edit > Language, code highlighting | document | the checked entry is the active document's `platformLanguage`; each tab is highlighted by its own (`EDIT-TEXT-9`); the list of unknown values met is global |
 | Structure tree, properties panel | shared widget | content re-targeted on a switch |
 | Window title and `[*]` | document | the active one; the tab text carries `*` when modified |
 | Saved viewport (zoom/pan in the document) | document | restored on the tab's first activation |
