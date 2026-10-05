@@ -120,6 +120,11 @@
      <addaction name="actionNewExitPoint"/>
      <addaction name="actionNewStateMachine"/>
     </widget>
+    <widget class="QMenu" name="menuLanguage">
+     <property name="title">
+      <string>Language</string>
+     </property>
+    </widget>
     <addaction name="actionCut"/>
     <addaction name="actionCopy"/>
     <addaction name="actionPaste"/>
@@ -130,6 +135,7 @@
     <addaction name="actionRedo"/>
     <addaction name="separator"/>
     <addaction name="menuTools"/>
+    <addaction name="menuLanguage"/>
     <addaction name="separator"/>
     <addaction name="actionInspectorMode"/>
    </widget>

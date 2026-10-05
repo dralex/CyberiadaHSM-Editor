@@ -36,6 +36,7 @@ class QComboBox;
 class QMenu;
 class QUndoGroup;
 class QTabBar;
+class QActionGroup;
 
 // The window holds the documents (docs/WINDOW.md): the menus, the toolbars,
 // the clipboard and the armed tool are global; the structure tree, the
@@ -101,6 +102,12 @@ private:
 
     // the tab text: the title with the modified marker, the path as the tooltip
     void                    updateTabTitle(CyberiadaSMEditorDocument* doc);
+    // Edit > Language (EDIT-TEXT-9): the fixed entries, the check of the active
+    // document's value, and the unknown values kept for the session
+    void                    initLanguageMenu();
+    QAction*                addLanguageAction(const QString& text, const QString& value);
+    void                    syncLanguageMenu();
+    void                    noteUnknownLanguage(const QString& value);
     // the selection links between the tree and the active scene
     void                    bindDocument(CyberiadaSMEditorDocument* doc);
     void                    unbindDocument(CyberiadaSMEditorDocument* doc);
@@ -120,6 +127,7 @@ private slots:
     void                    slotFileClose();
     void                    slotNextDocument();
     void                    slotPreviousDocument();
+    void                    slotLanguageTriggered(QAction* action);
     // enable cut/copy/paste/delete only for a fitting selection (and not in inspector mode)
     void                    updateEditActions();
 
@@ -175,6 +183,12 @@ private:
     ToolType currentTool = ToolType::Select;
 
     QMenu* recentMenu = nullptr;
+
+    QActionGroup* languageGroup = nullptr;
+    QAction* languageSeparator = nullptr;
+    // the unknown values loaded or replaced in this session, then the transient one
+    QStringList sessionLanguages;
+    QList<QAction*> extraLanguageActions;
 
     // a detached deep clone of the last copied/cut element (nullptr when empty),
     // and the id of its original parent collection (the paste target level)

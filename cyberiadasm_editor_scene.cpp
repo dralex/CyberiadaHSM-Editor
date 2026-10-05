@@ -503,7 +503,7 @@ void CyberiadaSMEditorScene::updateCodeLanguage()
 {
     const Cyberiada::LocalDocument* doc = model ? model->rootDocument() : nullptr;
     QString language;
-    if (doc) language = QString::fromStdString(doc->meta().get_string("platformLanguage"));
+    if (doc) language = QString::fromStdString(doc->meta().get_string(METAINFORMATION_KEY_PLATFORM_LANGUAGE));
     if (language == codeLanguageValue) return;
     codeLanguageValue = language;
     codeLanguagePtr = CodeStyle::instance().find(language);

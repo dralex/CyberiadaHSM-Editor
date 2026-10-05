@@ -36,6 +36,7 @@
 #include <QUndoGroup>
 #include <QStackedWidget>
 #include <QTabBar>
+#include <QActionGroup>
 
 #include "smeditor_window.h"
 #include "cyberiadasm_editor_view.h"
@@ -49,6 +50,7 @@
 #include "settings_manager.h"
 #include "cyberiadasm_render.h"
 #include "gesture_log.h"
+#include "code_highlighter.h"
 
 
 CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
@@ -81,6 +83,7 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     connect(actionNextDocument, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotNextDocument);
     connect(actionPreviousDocument, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotPreviousDocument);
 
+    initLanguageMenu();
     // the first, untitled document (the tools need an active scene)
     setCurrentDocument(newDocument());
     initializeTools();
@@ -131,6 +134,8 @@ CyberiadaSMEditorDocument* CyberiadaSMEditorWindow::newDocument()
             [this, doc](qreal scale) { if (doc == current) slotZoomScaleChanged(scale); });
     connect(doc, &CyberiadaSMEditorDocument::titleChanged, this,
             [this, doc]() { updateTabTitle(doc); if (doc == current) updateTitle(); });
+    connect(doc->scene(), &CyberiadaSMEditorScene::codeLanguageChanged, this,
+            [this, doc]() { if (doc == current) syncLanguageMenu(); });
     return doc;
 }
 
@@ -260,6 +265,7 @@ void CyberiadaSMEditorWindow::setCurrentDocument(CyberiadaSMEditorDocument* doc)
     expandAndWidenTree();
     updateTitle();
     updateEditActions();
+    syncLanguageMenu();
     // a log session is bound to one document: a switch starts a new one
     if (switched && GestureLog::instance().isActive()) {
         GestureLog::instance().endSession();
@@ -284,6 +290,85 @@ void CyberiadaSMEditorWindow::unbindDocument(CyberiadaSMEditorDocument* doc)
     disconnect(doc->model(), &CyberiadaSMModel::modelReset, this, &CyberiadaSMEditorWindow::slotModelReset);
     disconnect(SMView, nullptr, doc->scene(), nullptr);
     disconnect(doc->scene(), nullptr, SMView, nullptr);
+}
+
+void CyberiadaSMEditorWindow::initLanguageMenu()
+{
+    languageGroup = new QActionGroup(this);
+    languageGroup->setExclusive(true);
+    addLanguageAction(tr("Undefined"), QString());
+    for (const QString& name : CodeStyle::instance().languages()) {
+        addLanguageAction(name, name);
+    }
+    languageSeparator = menuLanguage->addSeparator();
+    languageSeparator->setVisible(false);
+    connect(languageGroup, &QActionGroup::triggered, this, &CyberiadaSMEditorWindow::slotLanguageTriggered);
+    menuLanguage->menuAction()->setEnabled(!SettingsManager::instance().getInspectorMode());
+}
+
+QAction* CyberiadaSMEditorWindow::addLanguageAction(const QString& text, const QString& value)
+{
+    QAction* action = menuLanguage->addAction(text);
+    action->setCheckable(true);
+    action->setData(value);
+    languageGroup->addAction(action);
+    return action;
+}
+
+void CyberiadaSMEditorWindow::noteUnknownLanguage(const QString& value)
+{
+    if (value.trimmed().isEmpty() || CodeStyle::instance().find(value) ||
+        sessionLanguages.contains(value)) return;
+    sessionLanguages.append(value);
+}
+
+void CyberiadaSMEditorWindow::syncLanguageMenu()
+{
+    if (!languageGroup || !current) return;
+    QString value = scene()->codeLanguageName();
+    const CodeLanguage* lang = CodeStyle::instance().find(value);
+
+    // the session entries and the transient one are rebuilt; the triggered
+    // action may be among them, so it is released later
+    for (QAction* action : extraLanguageActions) {
+        languageGroup->removeAction(action);
+        menuLanguage->removeAction(action);
+        action->deleteLater();
+    }
+    extraLanguageActions.clear();
+    QStringList extras = sessionLanguages;
+    bool undefined = value.trimmed().isEmpty();
+    if (!undefined && !lang && !extras.contains(value)) extras.append(value);
+    for (const QString& extra : extras) {
+        extraLanguageActions.append(addLanguageAction(tr("%1 (no highlighting)").arg(extra), extra));
+    }
+    languageSeparator->setVisible(!extras.isEmpty());
+
+    // an alias checks its language
+    QString key = undefined ? QString() : (lang ? lang->name : value);
+    const QList<QAction*> actions = languageGroup->actions();
+    for (QAction* action : actions) {
+        if (action->data().toString() == key) {
+            action->setChecked(true);
+            break;
+        }
+    }
+}
+
+void CyberiadaSMEditorWindow::slotLanguageTriggered(QAction* action)
+{
+    if (!current) return;
+    QString value = action->data().toString();
+    QString old = scene()->codeLanguageName();
+    const CodeLanguage* oldLang = CodeStyle::instance().find(old);
+    bool same = value == old || (value.isEmpty() && old.trimmed().isEmpty()) ||
+                (oldLang && CodeStyle::instance().find(value) == oldLang);
+    if (same) return;
+    // a replaced unknown value stays selectable (EDIT-TEXT-9)
+    noteUnknownLanguage(old);
+    if (!model()->setPlatformLanguage(value)) {
+        syncLanguageMenu();   // refused (inspection): the check goes back
+    }
 }
 
 void CyberiadaSMEditorWindow::updateEditActions()
@@ -485,6 +570,9 @@ bool CyberiadaSMEditorWindow::openDocument(const QString& fileName, QString* err
     if (!current->load(fileName, error, reconstruct, reconstruct_sm, strict)) {
         return false;
     }
+    // an unknown language of a file stays in Edit > Language for the session
+    noteUnknownLanguage(scene()->codeLanguageName());
+    syncLanguageMenu();
     SMView->setRootIndex(model()->rootIndex());
     // show the full structure and widen the right panel to fit it
     expandAndWidenTree();
@@ -905,6 +993,7 @@ void CyberiadaSMEditorWindow::slotInspectorModeChanged(bool on)
 {
     actionInspectorMode->setChecked(on);
     editGroup->setEnabled(!on);
+    menuLanguage->menuAction()->setEnabled(!on);
     actionUndo->setEnabled(!on && undoGroup->canUndo());
     actionRedo->setEnabled(!on && undoGroup->canRedo());
     // disable the creation tools while inspecting, but keep select/pan/zoom so

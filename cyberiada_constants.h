@@ -54,6 +54,8 @@
 #define METAINFORMATION_TARGET_SYSTEM     "Target System"
 #define METAINFORMATION_TRANSITION_ORDER  "Transition Order"
 #define METAINFORMATION_VERSION           "Version"
+// the parameter key of the code language (EDIT-TEXT-7)
+#define METAINFORMATION_KEY_PLATFORM_LANGUAGE "platformLanguage"
 
 // the value removing an optional metainformation parameter
 #define METAINFORMATION_VALUE_NONE        "none"

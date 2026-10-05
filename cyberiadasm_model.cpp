@@ -222,7 +222,8 @@ bool CyberiadaSMModel::readOnly() const
 std::string CyberiadaSMModel::snapshot(bool* ok) const
 {
 	if (ok) *ok = true;
-	if (!root) return std::string();
+	// the format needs a state machine: a document without one is empty
+	if (!root || root->get_state_machines().empty()) return std::string();
 	std::string buffer;
 	try {
 		root->encode(buffer, Cyberiada::formatCyberiada10);
@@ -1349,6 +1350,21 @@ bool CyberiadaSMModel::removeMetainformation(const QModelIndex& index, const QSt
 	emit dataChanged(comment_index, comment_index);
 	emit dataChanged(index, index);
 	return true;
+}
+
+bool CyberiadaSMModel::setPlatformLanguage(const QString& value)
+{
+	if (readOnly()) return false;
+	UndoScope scope(this, tr("platform language"));
+	// a document exists with a state machine only: the one the first drawn
+	// element would create
+	if (!root || root->get_state_machines().empty()) {
+		if (!newStateMachine("New State Machine")) return false;
+	}
+	if (value.isEmpty()) {
+		return removeMetainformation(documentIndex(), METAINFORMATION_KEY_PLATFORM_LANGUAGE);
+	}
+	return updateMetainformation(documentIndex(), METAINFORMATION_KEY_PLATFORM_LANGUAGE, value);
 }
 
 // the library keeps the transitions after the other children, so a new

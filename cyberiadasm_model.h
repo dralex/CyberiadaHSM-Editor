@@ -133,6 +133,9 @@ public:
     bool                                updateMetainformation(const QModelIndex& index, const QString& parameter, const QString& new_value);
     // drop a free-form metainformation parameter (the fixed ones cannot be removed)
     bool                                removeMetainformation(const QModelIndex& index, const QString& parameter);
+    // the Edit > Language choice (EDIT-TEXT-9): the empty value removes the
+    // parameter; an empty document gets its first state machine; one undo step
+    bool                                setPlatformLanguage(const QString& value);
 
     // a default name unique among the sibling states of the parent
     Cyberiada::Name                     uniqueStateName(const Cyberiada::ElementCollection* parent,
