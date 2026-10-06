@@ -79,6 +79,7 @@ add_library(CyberiadaEditorCore STATIC
   fontmanager.h fontmanager.cpp
   code_highlighter.h code_highlighter.cpp
   dialogs/stateactiondialog.h dialogs/stateactiondialog.cpp
+  dialogs/multilinetextdialog.h dialogs/multilinetextdialog.cpp
   dialogs/about_dialog.h dialogs/about_dialog.cpp
   dialogs/export_image_dialog.h dialogs/export_image_dialog.cpp
   dialogs/file_dialog.h dialogs/file_dialog.cpp

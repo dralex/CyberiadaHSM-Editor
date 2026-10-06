@@ -29,10 +29,12 @@
 #include <qteditorfactory.h>
 #include <QVector>
 #include <QMap>
+#include <QWidget>
 
 #include "cyberiadasm_model.h"
 
 class CyberiadaSMEditorScene;
+class MultilineEditorFactory;
 
 class CyberiadaSMPropertiesWidget: public QtTreePropertyBrowser {
 Q_OBJECT
@@ -44,6 +46,10 @@ public:
 	// the scene supplies the graphics item for an element so a geometry edit can
 	// clamp to content and re-base the nested states, as the border drag does
 	void                     setScene(CyberiadaSMEditorScene* scene);
+
+	// open the multiline editor for a behaviour or a comment body row and write
+	// the result back to the model through the row's manager (EDIT-TEXT-10)
+	void                     editMultilineProperty(QtProperty* property);
 
 public slots:
 	void                     slotElementSelected(const QModelIndex& index);
@@ -127,6 +133,7 @@ private:
 		propEditorRectGroup,
 		propEditorSourceElementLink,
 		propEditorString,
+		propEditorMultilineString,
 		propEditorSubjectElementLink,
 		propEditorSubjectType,
 		propEditorTargetElementLink,
@@ -151,6 +158,8 @@ private:
 
 	QtGroupPropertyManager*     groupManager;
 	QtStringPropertyManager*    stringManager;
+	// the multiline rows (a behaviour, a comment body) edited through a dialog
+	QtStringPropertyManager*    multilineStringManager;
 	QtEnumPropertyManager*      enumManager;
 	QtPointFPropertyManager*    pointManager;
 	QtRectFPropertyManager*     rectManager;
@@ -170,6 +179,7 @@ private:
 	QStringList                 geometryDeclarationEnumNames;
 	
 	QtLineEditFactory*          lineEditFactory;
+	MultilineEditorFactory*     multilineEditFactory;
     QtEnumEditorFactory*        enumEditorFactory;
     // QtDateTimeEditorFactory*    dateTimeEditorFactory;
     QtCheckBoxFactory*          checkBoxFactory;
@@ -178,6 +188,8 @@ private:
 	void                        clearProperties();
 	void                        newElement(Cyberiada::Element* new_element);
     void                        updateElement();
+	// the string value of a row, read from its own manager (string or multiline)
+	QString                     propertyString(QtProperty* property) const;
 	QtProperty*                 constructProperty(CyberiadaPropertyName prop, const QString& alt_name = "");
 	CyberiadaProperty&          findPropertyStruct(CyberiadaPropertyName prop);
 	CyberiadaProperty&          findPropertyStruct(const QString& propName, const QString& alt_name = "");
@@ -190,6 +202,35 @@ private:
 	QMap<int, QIcon>            generateElementIcons(ElementListKind kind) const;
 	int                         getElementNumber(ElementListKind kind, const Cyberiada::Element* e) const;
     const Cyberiada::Element*   getElementByNumber(ElementListKind kind, int index) const;
+};
+
+// the editor of a multiline string row: a one-line preview and a button that
+// opens the multiline dialog through the owning widget (EDIT-TEXT-10)
+class MultilineEditButton: public QWidget {
+public:
+	MultilineEditButton(CyberiadaSMPropertiesWidget* owner, QtStringPropertyManager* manager,
+	                    QtProperty* property, QWidget* parent);
+private:
+	void                        refresh();
+	CyberiadaSMPropertiesWidget* owner;
+	QtStringPropertyManager*    manager;
+	QtProperty*                 property;
+	class QLineEdit*            preview;
+};
+
+// the factory wiring the multiline string manager to the button editor
+class MultilineEditorFactory: public QtAbstractEditorFactory<QtStringPropertyManager> {
+public:
+	MultilineEditorFactory(CyberiadaSMPropertiesWidget* owner, QObject* parent = NULL):
+	    QtAbstractEditorFactory<QtStringPropertyManager>(parent), owner(owner) {}
+protected:
+	void     connectPropertyManager(QtStringPropertyManager*) {}
+	void     disconnectPropertyManager(QtStringPropertyManager*) {}
+	QWidget* createEditor(QtStringPropertyManager* manager, QtProperty* property, QWidget* parent) {
+		return new MultilineEditButton(owner, manager, property, parent);
+	}
+private:
+	CyberiadaSMPropertiesWidget* owner;
 };
 
 #endif

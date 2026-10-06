@@ -25,6 +25,10 @@
 #include <QMenu>
 #include <QAction>
 #include <QContextMenuEvent>
+#include <QApplication>
+#include <QHBoxLayout>
+#include <QLineEdit>
+#include <QToolButton>
 
 #include "myassert.h"
 #include "cyberiadasm_properties_widget.h"
@@ -32,14 +36,16 @@
 #include "settings_manager.h"
 #include "cyberiadasm_editor_scene.h"
 #include "cyberiadasm_editor_items.h"
+#include "code_highlighter.h"
+#include "dialogs/multilinetextdialog.h"
 
 CyberiadaSMPropertiesWidget::CyberiadaSMPropertiesWidget(QWidget *parent):
 	QtTreePropertyBrowser(parent), model(NULL), element(NULL)
 {
     cProperties = {
 		{propActionType,           propEditorActionType,        tr("Action Type", "Property name")},
-		{propBehavior,             propEditorString,            tr("Behavior", "Property name")},
-		{propBody,                 propEditorString,            tr("Body", "Property name")},
+		{propBehavior,             propEditorMultilineString,   tr("Behavior", "Property name")},
+		{propBody,                 propEditorMultilineString,   tr("Body", "Property name")},
 		{propColor,                propEditorColor,             tr("Color", "Property name")},
 		{propFormat,               propEditorFormatType,        tr("Format", "Property name")},
 		{propFragment,             propEditorString,            tr("Fragment", "Property name")},
@@ -85,6 +91,11 @@ CyberiadaSMPropertiesWidget::CyberiadaSMPropertiesWidget(QWidget *parent):
     connect(stringManager, SIGNAL(propertyChanged(QtProperty*)), this, SLOT(slotPropertyChanged(QtProperty*)));
     lineEditFactory = new QtLineEditFactory(this);
     setFactoryForManager(stringManager, lineEditFactory);
+
+	multilineStringManager = new QtStringPropertyManager(this);
+    connect(multilineStringManager, SIGNAL(propertyChanged(QtProperty*)), this, SLOT(slotPropertyChanged(QtProperty*)));
+    multilineEditFactory = new MultilineEditorFactory(this, this);
+    setFactoryForManager(multilineStringManager, multilineEditFactory);
 
 	enumManager = new QtEnumPropertyManager(this);
     connect(enumManager, SIGNAL(propertyChanged(QtProperty*)), this, SLOT(slotPropertyChanged(QtProperty*)));
@@ -344,17 +355,89 @@ void CyberiadaSMPropertiesWidget::slotInspectorModeChanged(bool on)
     // the inspected properties are displayed but not edited
     if (on) {
         unsetFactoryForManager(stringManager);
+        unsetFactoryForManager(multilineStringManager);
         unsetFactoryForManager(enumManager);
         unsetFactoryForManager(boolManager);
         unsetFactoryForManager(pointManager->subDoublePropertyManager());
         unsetFactoryForManager(rectManager->subDoublePropertyManager());
     } else {
         setFactoryForManager(stringManager, lineEditFactory);
+        setFactoryForManager(multilineStringManager, multilineEditFactory);
         setFactoryForManager(enumManager, enumEditorFactory);
         setFactoryForManager(boolManager, checkBoxFactory);
         setFactoryForManager(pointManager->subDoublePropertyManager(), doubleSpinBoxFactory);
         setFactoryForManager(rectManager->subDoublePropertyManager(), doubleSpinBoxFactory);
     }
+}
+
+QString CyberiadaSMPropertiesWidget::propertyString(QtProperty* property) const
+{
+    if (property && property->propertyManager() == multilineStringManager) {
+        return multilineStringManager->value(property);
+    }
+    return stringManager->value(property);
+}
+
+void CyberiadaSMPropertiesWidget::editMultilineProperty(QtProperty* property)
+{
+    if (!property || !element) return;
+    // no dialogs in batch mode: the tests drive the manager value directly
+    if (qApp && qApp->property("batchMode").toBool()) return;
+
+    const CyberiadaProperty& cp = findProperty(property);
+    // a behaviour and a formal/component comment body are code; an informal body is plain
+    CodeRole role = codeRoleFormalComment;
+    QString label = cp.propName;
+    if (cp.name == propBody && element->get_type() == Cyberiada::elementComment) {
+        role = codeRoleNone;
+    }
+    const CodeLanguage* language = NULL;
+    if (model && model->rootDocument()) {
+        QString lang = QString::fromStdString(
+            model->rootDocument()->meta().get_string(METAINFORMATION_KEY_PLATFORM_LANGUAGE));
+        language = CodeStyle::instance().find(lang);
+    }
+    MultilineTextDialog dialog(tr("Edit text"), label,
+                               multilineStringManager->value(property), role, language, this);
+    if (dialog.exec() == QDialog::Accepted) {
+        multilineStringManager->setValue(property, dialog.text());
+    }
+}
+
+// the first line of a multiline value, for the collapsed row preview
+static QString previewLine(const QString& text)
+{
+    int nl = text.indexOf('\n');
+    if (nl < 0) return text;
+    return text.left(nl) + QStringLiteral(" \xE2\x80\xA6");  // the ellipsis marks the hidden lines
+}
+
+MultilineEditButton::MultilineEditButton(CyberiadaSMPropertiesWidget* owner,
+                                         QtStringPropertyManager* manager,
+                                         QtProperty* property, QWidget* parent):
+    QWidget(parent), owner(owner), manager(manager), property(property)
+{
+    QHBoxLayout* layout = new QHBoxLayout(this);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(0);
+    preview = new QLineEdit(this);
+    preview->setReadOnly(true);
+    preview->setFrame(false);
+    layout->addWidget(preview);
+    QToolButton* button = new QToolButton(this);
+    button->setText(QStringLiteral("\xE2\x80\xA6"));  // the ellipsis button opens the dialog
+    layout->addWidget(button);
+    setFocusProxy(button);
+    connect(button, &QToolButton::clicked, this, [this]() { this->owner->editMultilineProperty(this->property); });
+    // follow the value: an edit through the dialog, or a model change, refreshes the preview
+    connect(manager, &QtStringPropertyManager::valueChanged, this,
+            [this](QtProperty* p, const QString&) { if (p == this->property) refresh(); });
+    refresh();
+}
+
+void MultilineEditButton::refresh()
+{
+    preview->setText(previewLine(manager->value(property)));
 }
 
 void CyberiadaSMPropertiesWidget::slotPropertyChanged(QtProperty* p)
@@ -375,7 +458,7 @@ void CyberiadaSMPropertiesWidget::slotPropertyChanged(QtProperty* p)
         // a free-form metainformation row carries its parameter key
         if (metaStringKeys.contains(p)) {
             model->updateMetainformation(model->documentIndex(),
-                                         metaStringKeys.value(p), stringManager->value(p));
+                                         metaStringKeys.value(p), propertyString(p));
             return;
         }
 
@@ -446,7 +529,7 @@ void CyberiadaSMPropertiesWidget::slotPropertyChanged(QtProperty* p)
 
     } else {
         if (cp.name == propID) {
-            model->updateID(i, stringManager->value(p));
+            model->updateID(i, propertyString(p));
         }
 
         if (type == Cyberiada::elementTransition) {
@@ -470,13 +553,13 @@ void CyberiadaSMPropertiesWidget::slotPropertyChanged(QtProperty* p)
             const Cyberiada::Action& a = trans->get_action();
 
             if (cp.name == propTrigger) {
-                model->updateAction(i, 0, stringManager->value(p), a.get_guard().c_str(), a.get_behavior().c_str());
+                model->updateAction(i, 0, propertyString(p), a.get_guard().c_str(), a.get_behavior().c_str());
             }
             if (cp.name == propGuard) {
-                model->updateAction(i, 0, a.get_trigger().c_str(), stringManager->value(p), a.get_behavior().c_str());
+                model->updateAction(i, 0, a.get_trigger().c_str(), propertyString(p), a.get_behavior().c_str());
             }
             if (cp.name == propBehavior) {
-                model->updateAction(i, 0, a.get_trigger().c_str(), a.get_guard().c_str(), stringManager->value(p));
+                model->updateAction(i, 0, a.get_trigger().c_str(), a.get_guard().c_str(), propertyString(p));
             }
 
             if (trans->has_geometry()) {
@@ -516,10 +599,10 @@ void CyberiadaSMPropertiesWidget::slotPropertyChanged(QtProperty* p)
 
             } else {
                 if (cp.name == propName) {
-                    model->updateTitle(i, stringManager->value(p));
+                    model->updateTitle(i, propertyString(p));
                 }
                 if (cp.name == propSubmachineRef) {
-                    model->updateSubmachineReference(i, stringManager->value(p));
+                    model->updateSubmachineReference(i, propertyString(p));
                 }
 
             if (type == Cyberiada::elementSimpleState || type == Cyberiada::elementCompositeState) {
@@ -537,21 +620,21 @@ void CyberiadaSMPropertiesWidget::slotPropertyChanged(QtProperty* p)
                     }
                     if (a.get_type() == Cyberiada::actionTransition) {
                         if (cp.name == propTrigger) {
-                            model->updateAction(i, action_index, stringManager->value(p), a.get_guard().c_str(), a.get_behavior().c_str());
+                            model->updateAction(i, action_index, propertyString(p), a.get_guard().c_str(), a.get_behavior().c_str());
                         }
                         if (cp.name == propGuard) {
-                            model->updateAction(i, action_index, a.get_trigger().c_str(), stringManager->value(p), a.get_behavior().c_str());
+                            model->updateAction(i, action_index, a.get_trigger().c_str(), propertyString(p), a.get_behavior().c_str());
                         }
                     }
                     if (cp.name == propBehavior) {
-                        model->updateAction(i, action_index, a.get_trigger().c_str(), a.get_guard().c_str(), stringManager->value(p));
+                        model->updateAction(i, action_index, a.get_trigger().c_str(), a.get_guard().c_str(), propertyString(p));
                     }
                 }
             } else if (type == Cyberiada::elementComment || type == Cyberiada::elementFormalComment) {
                 const Cyberiada::Comment* comment = static_cast<const Cyberiada::Comment*>(element);
 
                 if (cp.name == propBody) {
-                    model->updateCommentBody(i, stringManager->value(p));
+                    model->updateCommentBody(i, propertyString(p));
                 }
 
                 if (cp.name == propMarkup) {
@@ -637,7 +720,7 @@ void CyberiadaSMPropertiesWidget::slotPropertyChanged(QtProperty* p)
                     }
 
                     if (cp.name == propColor) {
-                        model->setColor(i, stringManager->value(p));
+                        model->setColor(i, propertyString(p));
                     }
 //                     QtProperty* color_prop = constructProperty(propColor);
 //                     stringManager->setValue(color_prop, QString(col.c_str()));
@@ -1410,6 +1493,10 @@ QtProperty* CyberiadaSMPropertiesWidget::constructProperty(CyberiadaPropertyName
 		} else {
 			new_property = stringManager->addProperty(alt_name);
 		}
+		break;
+	case propEditorMultilineString:
+		// a behaviour or a comment body: edited through the multiline dialog (EDIT-TEXT-10)
+		new_property = multilineStringManager->addProperty(alt_name.isEmpty() ? p.propName : alt_name);
 		break;
 	case propEditorSubjectType:
 		new_property = enumManager->addProperty(p.propName);
