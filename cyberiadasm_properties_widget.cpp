@@ -845,7 +845,7 @@ void CyberiadaSMPropertiesWidget::newElement(Cyberiada::Element* new_element)
 			action_group_prop->addSubProperty(guard_prop);
 			
 			QtProperty* behavior_prop = constructProperty(propBehavior);
-			stringManager->setValue(behavior_prop, QString(trans->get_action().get_behavior().c_str()));
+			multilineStringManager->setValue(behavior_prop, QString(trans->get_action().get_behavior().c_str()));
 			action_group_prop->addSubProperty(behavior_prop);
 
 			if (trans->has_geometry()) {
@@ -936,7 +936,7 @@ void CyberiadaSMPropertiesWidget::newElement(Cyberiada::Element* new_element)
 						}
 												
 						QtProperty* behavior_prop = constructProperty(propBehavior);
-						stringManager->setValue(behavior_prop, QString(a.get_behavior().c_str()));
+						multilineStringManager->setValue(behavior_prop, QString(a.get_behavior().c_str()));
 						action_prop->addSubProperty(behavior_prop);
 					}
 				}
@@ -947,7 +947,7 @@ void CyberiadaSMPropertiesWidget::newElement(Cyberiada::Element* new_element)
 				addProperty(comment_group_prop);
 
 				QtProperty* body_prop = constructProperty(propBody);
-				stringManager->setValue(body_prop, QString(comment->get_body().c_str()));
+				multilineStringManager->setValue(body_prop, QString(comment->get_body().c_str()));
 				comment_group_prop->addSubProperty(body_prop);
 				if (isMeta) disableRow(body_prop);
 
@@ -1126,7 +1126,7 @@ void CyberiadaSMPropertiesWidget::updateElement()
             stringManager->setValue(guard_prop, QString(trans->get_action().get_guard().c_str()));
 
             QtProperty* behavior_prop = findQtProperty(action_group_prop, findPropertyStruct(propBehavior).propName);
-            stringManager->setValue(behavior_prop, QString(trans->get_action().get_behavior().c_str()));
+            multilineStringManager->setValue(behavior_prop, QString(trans->get_action().get_behavior().c_str()));
 
             if (trans->has_geometry()) {
                 QtProperty* geom_group_prop = findQtProperty(nullptr, findPropertyStruct(propGroupGeometry).propName);
@@ -1253,7 +1253,7 @@ void CyberiadaSMPropertiesWidget::updateElement()
                             behavior_prop = constructProperty(propBehavior);
                             action_prop->addSubProperty(behavior_prop);
                         }
-                        stringManager->setValue(behavior_prop, QString(a.get_behavior().c_str()));
+                        multilineStringManager->setValue(behavior_prop, QString(a.get_behavior().c_str()));
 
                         index ++;
                     }
@@ -1264,7 +1264,7 @@ void CyberiadaSMPropertiesWidget::updateElement()
                 QtProperty* comment_group_prop = findQtProperty(nullptr, findPropertyStruct(propGroupComment).propName);
 
                 QtProperty* body_prop = findQtProperty(comment_group_prop, findPropertyStruct(propBody).propName);
-                stringManager->setValue(body_prop, QString(comment->get_body().c_str()));
+                multilineStringManager->setValue(body_prop, QString(comment->get_body().c_str()));
 
                 QtProperty* markup_prop = findQtProperty(comment_group_prop, findPropertyStruct(propMarkup).propName);
                 stringManager->setValue(markup_prop, QString(comment->get_markup().c_str()));

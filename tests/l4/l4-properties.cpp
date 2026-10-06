@@ -391,10 +391,20 @@ void TestProperties::test_multiline_edit()
 
 	QtStringPropertyManager* bm = dynamic_cast<QtStringPropertyManager*>(behaviour->propertyManager());
 	QVERIFY(bm);
-	bm->setValue(behaviour, "one();\ntwo();\nthree();");
 	const Cyberiada::State* state = static_cast<const Cyberiada::State*>(model->idToElement("parent"));
+	// the row shows the model value, newlines kept
+	QCOMPARE(bm->value(behaviour), QString(state->get_actions().front().get_behavior().c_str()));
+
+	// an edit through the row reaches the model
+	bm->setValue(behaviour, "one();\ntwo();\nthree();");
 	QCOMPARE(QString(state->get_actions().front().get_behavior().c_str()),
 	         QString("one();\ntwo();\nthree();"));
+
+	// a model change (a scene edit) refreshes the row in place
+	QVERIFY(model->updateAction(model->elementToIndex(model->idToElement("parent")), 0,
+	                            QString(), QString(), "alpha();\nbeta();"));
+	QCOMPARE(bm->value(behaviour), QString(state->get_actions().front().get_behavior().c_str()));
+	QVERIFY(bm->value(behaviour).contains('\n'));
 
 	// a comment body
 	QVERIFY(model->loadDocument("diagrams/components.graphml"));
@@ -410,9 +420,16 @@ void TestProperties::test_multiline_edit()
 
 	QtStringPropertyManager* cm = dynamic_cast<QtStringPropertyManager*>(body->propertyManager());
 	QVERIFY(cm);
-	cm->setValue(body, "first\nsecond");
 	const Cyberiada::Comment* comment = static_cast<const Cyberiada::Comment*>(model->idToElement("nComment"));
+	// the row shows the model body
+	QCOMPARE(cm->value(body), QString(comment->get_body().c_str()));
+
+	cm->setValue(body, "first\nsecond");
 	QCOMPARE(QString(comment->get_body().c_str()), QString("first\nsecond"));
+
+	// a model change refreshes the row
+	QVERIFY(model->updateCommentBody(model->elementToIndex(model->idToElement("nComment")), "edited\nbody"));
+	QCOMPARE(cm->value(body), QString(comment->get_body().c_str()));
 }
 
 QTEST_MAIN(TestProperties)
