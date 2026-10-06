@@ -409,7 +409,7 @@ static QString previewLine(const QString& text)
 {
     int nl = text.indexOf('\n');
     if (nl < 0) return text;
-    return text.left(nl) + QStringLiteral(" \xE2\x80\xA6");  // the ellipsis marks the hidden lines
+    return text.left(nl) + QStringLiteral(" …");  // the ellipsis marks the hidden lines
 }
 
 MultilineEditButton::MultilineEditButton(CyberiadaSMPropertiesWidget* owner,
@@ -425,7 +425,7 @@ MultilineEditButton::MultilineEditButton(CyberiadaSMPropertiesWidget* owner,
     preview->setFrame(false);
     layout->addWidget(preview);
     QToolButton* button = new QToolButton(this);
-    button->setText(QStringLiteral("\xE2\x80\xA6"));  // the ellipsis button opens the dialog
+    button->setText(QStringLiteral("…"));  // the ellipsis button opens the dialog
     layout->addWidget(button);
     setFocusProxy(button);
     connect(button, &QToolButton::clicked, this, [this]() { this->owner->editMultilineProperty(this->property); });
