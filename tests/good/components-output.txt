@@ -1,0 +1,8 @@
+== document
+LocalDocument: {Document: {id: '', name: '', geometry format: qt, meta: {standard version: '1.0', platformLanguage: 'cpp'}, elements: {State Machine: {id: 'G0', name: 'Components', elements: {Formal Comment: {id: 'nMeta', name: 'CGML_META', body: 'standardVersion/ 1.0
+
+platformLanguage/ cpp'}, Simple State: {id: 'n0', name: 'Working', geometry: (100; 50; 200; 100)}, Comment: {id: 'nComment', body: 'A plain note', geometry: (100; 240; 200; 80)}, Formal Comment: {id: 'nComp', name: 'CGML_COMPONENT Timer', body: 'type/ Timer', geometry: (500; 40; 200; 80)}}}}, bounding rect: (300; 140; 600; 280)}, file: 'diagrams/components.graphml', format: cyberiada, format_str: 'Cyberiada-GraphML-1.0'}
+== scene
+  State Machine: {id: 'G0', pos: (0.00; 0.00), rect: (0.00; 0.00; 600.00; 280.00)}
+    Simple State: {id: 'n0', pos: (100.00; 50.00), rect: (-100.00; -50.00; 200.00; 100.00)}
+    Comment: {id: 'nComment', pos: (100.00; 240.00), rect: (-100.00; -40.00; 200.00; 80.00)}

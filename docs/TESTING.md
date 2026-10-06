@@ -110,20 +110,20 @@ it checks in a comment):
 | SEM    | `test_choice_edge_rule`, `test_choice_tip_attach`; endpoint kinds via the transition cases |
 | NODE   | grow `test_move_grows_parent`, `test_nested_state_grows_parent`, `test_grow_cascades_to_ancestors`, `test_grow_skips_rectless_sm`; resize `test_border_resize`, `test_directional_grow`, `test_container_resize_clamp`, `test_comment_border_resize`; place `test_new_element_place`; comment name `test_comment_name`; blocks `test_action_layout`; frame `reconstruct-sm-*` |
 | EDGE   | attach `test_auto_attach`, `test_ctrl_snap_endpoint`, `test_choice_tip_attach`; points `l2 edge-points`, `test_point_edit`, `test_loop_polyline`, `test_double_click_removes_vertex`; rebind `test_retarget_id`, `test_box_transition`; label `test_label_move`, `test_label_drag_tracks`, `label-geometry-*` |
-| TEXT   | `test_action_edit`, `test_action_multiline`, `test_double_click_action`, `test_double_click_label`, `l2 text-edit`, `transition-notation`, the `text` metrics layer, `l4-highlight` (`EDIT-TEXT-7/8`), `l4-language` (`EDIT-TEXT-9`) |
+| TEXT   | `test_action_edit`, `test_action_multiline`, `test_double_click_action`, `test_double_click_label`, `l2 text-edit`, `transition-notation`, the `text` metrics layer, `l4-highlight` (`EDIT-TEXT-7/8`), `l4-language` (`EDIT-TEXT-9`), `l4-properties test_multiline_dialog`/`test_multiline_edit` (`EDIT-TEXT-10`) |
 | TOOL   | `test_creation_tools`, `test_creation_tools_arm`, `test_new_{state,choice,comment,sm}_place`, paste `test_paste_state`, `test_paste_transition`, `l2 copy-paste`, drag `test_body_drag` |
 | HIST   | `undo`/`redo-all` layer, `undo-all`, `test_gesture_recording`, `gestures-undo` |
 | IO     | `save-*`, `l1-*` dumps, `reconstruct-*`, export `test_export_image`, `l3-*` |
-| META   | `l2 update-meta`, `inspect-reject update-meta`, the `meta` diagram; META-1 (node hidden) via the `l1` scene dump |
+| META   | `l2 update-meta`, `inspect-reject update-meta`, the `meta` diagram; META-1 (node hidden) via the `l1` scene dump; META-6 (CGML_COMPONENT hidden by default) via `l4-scene test_component_comment_hidden` + the `components` `l1` scene dump |
 | DOC    | `tabs-*` (the document verbs with the `== tabs` dump, `EDIT-DOC-2/3/5/9`), `l4-tabs` (the tab line, the re-targeting, the prompts, `EDIT-DOC-1..8`) |
 | INSPECT| `inspect-reject-*` (editing refused under `--inspect`, `EDIT-INSPECT-1`); `inspect-render-*` (stored-geometry render vs a good image, `EDIT-INSPECT-2`) |
 
 Requirements with **no dedicated case yet** — the gaps to fill: `SEM-1` (one initial per
-level — only the polygon pseudostate drill and the standing law cover it), `NODE-6` (sibling
-no-overlap — the polygon standing law, now a hard defect, plus the reconstruct and copy-paste
-goldens), `EDGE-6` (the comment-subject link is not drawn yet), `TOOL-7` (pan/zoom not drivable
-in batch). The first two are held by the polygon; the last two await the editor additions. Colour (`IO-4`/`IO-5`/`NODE-10`/`EDGE-14`) is covered
-by `l2 set-color`.
+level — only the polygon pseudostate drill and the standing law cover it), `EDGE-6` (the
+comment-subject link is not drawn yet), `TOOL-7` (pan/zoom not drivable in batch). The first is
+held by the polygon; the last two await the editor additions. `NODE-6` (sibling no-overlap) is now
+held by `l4-model test_reparent_free_slot` and `l4-scene test_grow_pushes_siblings` beside the
+polygon standing law. Colour (`IO-4`/`IO-5`/`NODE-10`/`EDGE-14`) is covered by `l2 set-color`.
 
 ## In-process tests (L4)
 
@@ -325,6 +325,11 @@ say nothing about the mode - the region geometry follows `--inspect` alone -
 so the two options are independent and the tests use both. The option is
 runtime-only, like `--no-text`: the GUI toggle is a stored preference, and a
 batch run must not change it.
+
+`--show-components` draws the `CGML_COMPONENT` formal comments on the scene
+(`EDIT-META-6`); they are hidden by default. Like `--service` it is a runtime
+override of the stored *show component comments* preference and changes nothing
+saved.
 
 `--save-format <format>` chooses the format of the saved document:
 `cyberiada` (the default), `yed-ostranna` or `yed-berloga`. The yEd formats keep

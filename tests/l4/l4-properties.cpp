@@ -28,6 +28,7 @@
 #include "cyberiadasm_properties_widget.h"
 #include "settings_manager.h"
 #include "cyberiada_constants.h"
+#include "dialogs/multilinetextdialog.h"
 
 // the editor creation is protected in the browser
 class PropertiesProbe: public CyberiadaSMPropertiesWidget {
@@ -52,6 +53,8 @@ private slots:
 	void test_model_refresh();
 	void test_name_edit();
 	void test_meta_parameters();
+	void test_multiline_dialog();
+	void test_multiline_edit();
 
 private:
 	void select(const char* id);
@@ -359,6 +362,57 @@ void TestProperties::test_meta_parameters()
 	QVERIFY(doc->meta().get_string("author").empty());
 	QVERIFY(!model->removeMetainformation(docIndex, CYBERIADA_META_STANDARD_VERSION));
 	QCOMPARE(QString(doc->meta().standard_version.c_str()), QString("1.0"));
+}
+
+// the multiline dialog keeps the newlines of the edited text (EDIT-TEXT-10)
+void TestProperties::test_multiline_dialog()
+{
+	MultilineTextDialog dialog(QStringLiteral("Edit"), QStringLiteral("Text:"),
+	                           QStringLiteral("a\nb\nc"));
+	QCOMPARE(dialog.text(), QStringLiteral("a\nb\nc"));
+}
+
+// a behaviour and a comment body are multiline rows: their editor is the
+// multiline button, and a multiline value reaches the model (EDIT-TEXT-10)
+void TestProperties::test_multiline_edit()
+{
+	// a state behaviour
+	QVERIFY(model->loadDocument("diagrams/multiline-actions.graphml"));
+	scene->loadScene();
+	select("parent");
+	QList<QtProperty*> strings = rows<QtStringPropertyManager>();
+	QtProperty* behaviour = nullptr;
+	for (QList<QtProperty*>::const_iterator i = strings.begin(); i != strings.end(); i++) {
+		if ((*i)->propertyName() == tr("Behavior", "Property name")) { behaviour = *i; break; }
+	}
+	QVERIFY(behaviour);
+	// the row carries the multiline editor, not a line edit
+	QVERIFY(dynamic_cast<MultilineEditButton*>(view->createEditor(behaviour, view)));
+
+	QtStringPropertyManager* bm = dynamic_cast<QtStringPropertyManager*>(behaviour->propertyManager());
+	QVERIFY(bm);
+	bm->setValue(behaviour, "one();\ntwo();\nthree();");
+	const Cyberiada::State* state = static_cast<const Cyberiada::State*>(model->idToElement("parent"));
+	QCOMPARE(QString(state->get_actions().front().get_behavior().c_str()),
+	         QString("one();\ntwo();\nthree();"));
+
+	// a comment body
+	QVERIFY(model->loadDocument("diagrams/components.graphml"));
+	scene->loadScene();
+	select("nComment");
+	strings = rows<QtStringPropertyManager>();
+	QtProperty* body = nullptr;
+	for (QList<QtProperty*>::const_iterator i = strings.begin(); i != strings.end(); i++) {
+		if ((*i)->propertyName() == tr("Body", "Property name")) { body = *i; break; }
+	}
+	QVERIFY(body);
+	QVERIFY(dynamic_cast<MultilineEditButton*>(view->createEditor(body, view)));
+
+	QtStringPropertyManager* cm = dynamic_cast<QtStringPropertyManager*>(body->propertyManager());
+	QVERIFY(cm);
+	cm->setValue(body, "first\nsecond");
+	const Cyberiada::Comment* comment = static_cast<const Cyberiada::Comment*>(model->idToElement("nComment"));
+	QCOMPARE(QString(comment->get_body().c_str()), QString("first\nsecond"));
 }
 
 QTEST_MAIN(TestProperties)

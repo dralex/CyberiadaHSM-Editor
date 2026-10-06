@@ -50,6 +50,7 @@ endfunction()
 foreach(diagram
     choice
     comment-transition
+    components
     cyb-geometry
     empty-actions
     geometry
@@ -134,6 +135,7 @@ endfunction()
 foreach(diagram
     choice
     comment-transition
+    components
     cyb-geometry
     empty-actions
     geometry

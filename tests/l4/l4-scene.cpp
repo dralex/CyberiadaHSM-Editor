@@ -136,6 +136,7 @@ private slots:
 	void test_point_keeps_border();
 	void test_promote_title();
 	void test_empty_action_deletes();
+	void test_component_comment_hidden();
 	// runs last: it reloads and modifies the shared document
 	void test_directional_grow();
 
@@ -3221,6 +3222,39 @@ void TestScene::test_empty_action_deletes()
 	action->clearFocus();                // commit -> empty -> delete
 	QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
 	QCOMPARE(int(fresh->get_actions().size()), 0);
+}
+
+// a CGML_COMPONENT formal comment is hidden on the scene unless the preference
+// asks, while it stays in the model; the meta node is never drawn (EDIT-META-6)
+void TestScene::test_component_comment_hidden()
+{
+	SettingsManager& sm = SettingsManager::instance();
+	bool saved = sm.getShowComponentComments();
+	sm.overrideShowComponentComments(false);
+
+	QVERIFY(model->loadDocument("diagrams/components.graphml"));
+	scene->loadScene();
+	const QMap<Cyberiada::ID, QGraphicsItem*>& map = scene->getMap();
+
+	// hidden by default: the component comment and the meta node have no item,
+	// the plain comment and the state are drawn
+	QVERIFY(!map.contains("nComp"));
+	QVERIFY(!map.contains("nMeta"));
+	QVERIFY(map.contains("nComment"));
+	QVERIFY(map.contains("n0"));
+	// the component comment is still in the document (the tree and the properties)
+	QVERIFY(model->rootDocument()->find_element_by_id("nComp") != NULL);
+
+	// turning the preference on adds the item without touching the rest
+	sm.setShowComponentComments(true);
+	QVERIFY(map.contains("nComp"));
+	QVERIFY(map.contains("nComment"));
+	// turning it off removes it again
+	sm.setShowComponentComments(false);
+	QVERIFY(!map.contains("nComp"));
+	QVERIFY(map.contains("nComment"));
+
+	sm.setShowComponentComments(saved);
 }
 
 QTEST_MAIN(TestScene)
