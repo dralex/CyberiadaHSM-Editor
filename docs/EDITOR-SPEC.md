@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.9 (2026-10-04)
+**Document version:** 0.10 (2026-10-06)
 
 **Related authorities:**
 
@@ -313,6 +313,11 @@ the third is a derived display value the format does not store):
                                 menu: kept in the menu until the editor exits
   (•) Rust (no highlighting)    an unknown value typed in the properties: shown while current
   ```
+- `EDIT-TEXT-10` SHOULD [A]: a multiline text — a state action's behaviour and a comment body — is
+  editable in the properties view through a multiline editor (a dialog opened from the row), and the
+  newlines are preserved on write-back. The editor highlights the text as `EDIT-TEXT-7` does
+  (behaviour and a formal/component comment body by the document language, an informal body plain).
+  *design*
 
 ### 4.6 Tools and interaction — TOOL
 
@@ -390,6 +395,11 @@ the third is a derived display value the format does not store):
   event propagation, geometry mode, name) cannot be removed; each change is one undo step. *design*
 - `EDIT-META-5` MUST [U]: the state machines of a document carry distinct non-empty names. *PNST
   1044 6.1.2*
+- `EDIT-META-6` MUST [A]: a `CGML_COMPONENT` formal comment is a machine-readable component
+  descriptor; it is not drawn on the scene by default — even when it carries geometry (the geometry
+  reconstruction lays one out) — and is drawn only while the *show component comments* preference is
+  on. It is always present in the element tree and editable through the properties. A sibling of
+  `EDIT-META-1`, which keeps the `CGML_META` node off the scene unconditionally. *design*
 
 ### 4.10 Inspection mode — INSPECT
 
