@@ -121,6 +121,7 @@ private slots:
     void                    slotCleanChanged(bool clean);
     void                    slotInspectorModeChanged(bool on);
     void                    slotServiceObjectsChanged(bool on);
+    void                    slotComponentCommentsChanged(bool on);
     void                    slotLoggingChanged(bool on);
     void                    activateDocument(int index);
     void                    closeTab(int index);
@@ -150,6 +151,7 @@ public slots:
     void                    slotAbout();
     void                    slotGridVisibilityTriggered(bool on);
     void                    slotServiceObjectsTriggered(bool on);
+    void                    slotComponentCommentsTriggered(bool on);
     void                    slotLogSessionTriggered(bool on);
 
     void                    slotNewSM();

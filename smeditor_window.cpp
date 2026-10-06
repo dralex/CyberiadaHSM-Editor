@@ -750,6 +750,8 @@ void CyberiadaSMEditorWindow::initializeTools()
     // the same setting is reachable from the preferences, so the action follows it
     connect(&SettingsManager::instance(), &SettingsManager::serviceObjectsChanged,
             this, &CyberiadaSMEditorWindow::slotServiceObjectsChanged);
+    connect(&SettingsManager::instance(), &SettingsManager::componentCommentsChanged,
+            this, &CyberiadaSMEditorWindow::slotComponentCommentsChanged);
     connect(&SettingsManager::instance(), &SettingsManager::loggingChanged,
             this, &CyberiadaSMEditorWindow::slotLoggingChanged);
     // the exit line is written on a clean quit; its absence marks a crash
@@ -762,6 +764,7 @@ void CyberiadaSMEditorWindow::initializeTools()
     actionTransitionText->setChecked(sm.getShowTransitionText());
     slotInspectorModeChanged(sm.getInspectorMode());
     actionServiceObjects->setChecked(sm.getShowServiceObjects());
+    actionComponentComments->setChecked(sm.getShowComponentComments());
     actionSnapMode->setChecked(sm.getSnapMode());
     // seed the action and open the session if logging is on at launch
     slotLoggingChanged(sm.getLoggingEnabled());
@@ -848,6 +851,16 @@ void CyberiadaSMEditorWindow::slotServiceObjectsTriggered(bool on)
 void CyberiadaSMEditorWindow::slotServiceObjectsChanged(bool on)
 {
     actionServiceObjects->setChecked(on);
+}
+
+void CyberiadaSMEditorWindow::slotComponentCommentsTriggered(bool on)
+{
+    SettingsManager::instance().setShowComponentComments(on);
+}
+
+void CyberiadaSMEditorWindow::slotComponentCommentsChanged(bool on)
+{
+    actionComponentComments->setChecked(on);
 }
 
 void CyberiadaSMEditorWindow::slotGridVisibilityTriggered(bool on)

@@ -84,6 +84,8 @@ int main(int argc, char *argv[])
 	parser.addOption(inspectOption);
 	QCommandLineOption serviceOption("service", "Draw the service objects: the region borders and the coordinate origins.");
 	parser.addOption(serviceOption);
+	QCommandLineOption showComponentsOption("show-components", "Draw the CGML_COMPONENT formal comments on the scene.");
+	parser.addOption(showComponentsOption);
 	QCommandLineOption saveFormatOption("save-format",
 										"The format of the saved document: cyberiada (default), "
 										"yed-ostranna or yed-berloga.", "format", "cyberiada");
@@ -114,6 +116,9 @@ int main(int argc, char *argv[])
 	}
 	if (parser.isSet(serviceOption)) {
 		SettingsManager::instance().overrideShowServiceObjects(true);
+	}
+	if (parser.isSet(showComponentsOption)) {
+		SettingsManager::instance().overrideShowComponentComments(true);
 	}
 
     try {

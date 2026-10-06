@@ -39,6 +39,13 @@ public:
     void setShowServiceObjects(bool value);
     // the batch mode draws them without touching the stored preferences
     void overrideShowServiceObjects(bool value) { showServiceObjects = value; }
+
+    // the CGML_COMPONENT formal comments are hidden on the scene by default
+    // (EDIT-META-6); they stay in the element tree and the properties
+    bool getShowComponentComments() const { return showComponentComments; }
+    void setShowComponentComments(bool value);
+    // the batch mode shows them without touching the stored preferences
+    void overrideShowComponentComments(bool value) { showComponentComments = value; }
     // a runtime override, like the service objects one: no signal, not persisted
     void overrideShowGrid(bool value) { showGrid = value; }
     // a runtime override of the element font, not persisted; it emits so the
@@ -115,6 +122,7 @@ signals:
     void gridSettingsChanged();
     void showTransitionTextChanged(bool);
     void serviceObjectsChanged(bool);
+    void componentCommentsChanged(bool);
     void loggingChanged(bool);
     void inspectorModeChanged(bool);
     void printModeChanged(bool);
@@ -137,6 +145,7 @@ private:
     // visualisation
     bool showTransitionText;
     bool showServiceObjects;
+    bool showComponentComments;
     bool loggingEnabled;
     bool showText = true;
 

@@ -61,6 +61,17 @@ static double DEFAULT_SCENE_BORDER_MARGIN = 50;
 // padding around the content so the view always has a scroll range to pan/wheel into
 static double DEFAULT_SCENE_PAN_MARGIN = 2000;
 
+// a CGML_COMPONENT formal comment: a machine-readable component descriptor whose
+// title is CYBERIADA_COMPONENT_NODE_TITLE, optionally followed by an instance name
+static bool isComponentComment(const Cyberiada::Element* element)
+{
+    if (!element || element->get_type() != Cyberiada::elementFormalComment) return false;
+    const std::string& name = element->get_name();
+    const size_t len = sizeof(CYBERIADA_COMPONENT_NODE_TITLE) - 1;
+    return name.compare(0, len, CYBERIADA_COMPONENT_NODE_TITLE) == 0 &&
+           (name.size() == len || name[len] == ' ');
+}
+
 // report a creation error: a modal box in the GUI, a stderr line in batch mode
 // (a modal exec() would hang the headless batch run)
 static void showError(const QString& title, const QString& text)
@@ -81,6 +92,7 @@ CyberiadaSMEditorScene::CyberiadaSMEditorScene(CyberiadaSMModel* _model, QObject
     gridPen = QPen(Qt::gray, 0, Qt::DotLine);
     connect(&SettingsManager::instance(), &SettingsManager::gridSettingsChanged, this, &CyberiadaSMEditorScene::slotGridSettingsChanged);
     connect(&SettingsManager::instance(), &SettingsManager::serviceObjectsChanged, this, &CyberiadaSMEditorScene::slotServiceObjectsChanged);
+    connect(&SettingsManager::instance(), &SettingsManager::componentCommentsChanged, this, &CyberiadaSMEditorScene::slotComponentCommentsChanged);
 
 	setBackgroundBrush(Qt::white);
     connect(this, &QGraphicsScene::selectionChanged, this, &CyberiadaSMEditorScene::slotSelectionChanged);
@@ -377,6 +389,29 @@ void CyberiadaSMEditorScene::slotServiceObjectsChanged()
     update();
 }
 
+// add or remove the CGML_COMPONENT comment items to match the preference,
+// without rebuilding the rest of the scene (EDIT-META-6)
+void CyberiadaSMEditorScene::slotComponentCommentsChanged(bool show)
+{
+    if (!model || !model->rootDocument()) return;
+    std::vector<Cyberiada::StateMachine*> sms = model->rootDocument()->get_state_machines();
+    for (std::vector<Cyberiada::StateMachine*>::iterator sm = sms.begin(); sm != sms.end(); sm++) {
+        Cyberiada::ElementList comments = (*sm)->find_elements_by_type(Cyberiada::elementFormalComment);
+        for (Cyberiada::ElementList::iterator i = comments.begin(); i != comments.end(); i++) {
+            Cyberiada::Element* e = *i;
+            if (!isComponentComment(e)) continue;
+            bool has_item = elementIdToItemMap.contains(e->get_id());
+            if (show && !has_item && e->has_geometry()) {
+                addElementItem(e, graphicsParentFor(e->get_parent()));
+            } else if (!show && has_item) {
+                removeItemsForElement(e);
+            }
+        }
+    }
+    updateSceneRect();
+    update();
+}
+
 QGraphicsItem* CyberiadaSMEditorScene::graphicsParentFor(const Cyberiada::Element* parent)
 {
     if (!parent) return NULL;
@@ -437,8 +472,10 @@ QGraphicsItem* CyberiadaSMEditorScene::addElementItem(Cyberiada::Element* child,
         item = new CyberiadaSMEditorCommentItem(this, model, child, new_parent, elementIdToItemMap);
         break;
     case Cyberiada::elementFormalComment:
-        // the geometry-less formal comments (the document meta) are not drawn
-        if (child->has_geometry()) {
+        // the geometry-less formal comments (the document meta) are not drawn;
+        // the CGML_COMPONENT comments are hidden unless the preference asks (EDIT-META-6)
+        if (child->has_geometry() &&
+            (!isComponentComment(child) || SettingsManager::instance().getShowComponentComments())) {
             item = new CyberiadaSMEditorCommentItem(this, model, child, new_parent, elementIdToItemMap);
         }
         break;

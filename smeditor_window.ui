@@ -153,6 +153,7 @@
     <addaction name="actionTransitionText"/>
     <addaction name="actionGridVisibility"/>
     <addaction name="actionServiceObjects"/>
+    <addaction name="actionComponentComments"/>
     <addaction name="actionSnapMode"/>
     <addaction name="actionLogSession"/>
     <addaction name="separator"/>
@@ -680,6 +681,17 @@
     <string>Region borders and coordinate origins</string>
    </property>
   </action>
+  <action name="actionComponentComments">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Component comments</string>
+   </property>
+   <property name="toolTip">
+    <string>Draw the CGML_COMPONENT formal comments on the scene</string>
+   </property>
+  </action>
   <action name="actionGridVisibility">
    <property name="checkable">
     <bool>true</bool>
@@ -1100,6 +1112,22 @@
    </hints>
   </connection>
   <connection>
+   <sender>actionComponentComments</sender>
+   <signal>triggered(bool)</signal>
+   <receiver>SMEditorWindow</receiver>
+   <slot>slotComponentCommentsTriggered(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>511</x>
+     <y>383</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
    <sender>actionGridVisibility</sender>
    <signal>triggered(bool)</signal>
    <receiver>SMEditorWindow</receiver>
@@ -1188,6 +1216,7 @@
   <slot>slotSnapModeTriggered(bool)</slot>
   <slot>slotShowTransitionActionTriggered(bool)</slot>
   <slot>slotServiceObjectsTriggered(bool)</slot>
+  <slot>slotComponentCommentsTriggered(bool)</slot>
   <slot>slotNewSM()</slot>
   <slot>slotNewState()</slot>
   <slot>slotNewInitial()</slot>

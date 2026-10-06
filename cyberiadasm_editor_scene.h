@@ -117,6 +117,8 @@ public slots:
     // void  enableGridSnap(bool on = true);
     void  slotGridSettingsChanged();
     void  slotServiceObjectsChanged();
+    // the CGML_COMPONENT comment items follow the visibility preference (EDIT-META-6)
+    void  slotComponentCommentsChanged(bool show);
     void  slotSelectionChanged();
     void  slotModelAboutToBeReset();
     void  slotModelReset();
