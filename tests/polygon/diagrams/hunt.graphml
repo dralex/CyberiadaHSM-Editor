@@ -1,0 +1,410 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns">
+  <data key="gFormat">Cyberiada-GraphML-1.0</data>
+  <key id="gFormat" for="graphml" attr.name="format" attr.type="string"/>
+  <key id="dName" for="graph" attr.name="name" attr.type="string"/>
+  <key id="dName" for="node" attr.name="name" attr.type="string"/>
+  <key id="dStateMachine" for="graph" attr.name="stateMachine"/>
+  <key id="dNote" for="node" attr.name="note" attr.type="string"/>
+  <key id="dVertex" for="node" attr.name="vertex" attr.type="string"/>
+  <key id="dData" for="node" attr.name="data" attr.type="string"/>
+  <key id="dData" for="edge" attr.name="data" attr.type="string"/>
+  <graph id="F" edgedefault="directed">
+    <data key="dStateMachine"/>
+    <data key="dName">Focus</data>
+    <node id="f_meta">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_META</data>
+      <data key="dData">standardVersion/ 1.0
+
+platform/ CybersphereAgents
+
+platformLanguage/ Python
+
+name/ Focus</data>
+    </node>
+    <node id="f_c_oracle">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_COMPONENT oracle</data>
+      <data key="dData">type/ Oracle
+
+profile/ full</data>
+    </node>
+    <node id="f_c_focus">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_COMPONENT focus</data>
+      <data key="dData">type/ Focus</data>
+    </node>
+    <node id="f_init">
+      <data key="dVertex">initial</data>
+    </node>
+    <node id="f_node">
+      <data key="dName">Nodes</data>
+      <data key="dData">entry/
+focus.area('node')</data>
+    </node>
+    <node id="f_edge">
+      <data key="dName">Edges</data>
+      <data key="dData">entry/
+focus.area('edge')</data>
+    </node>
+    <node id="f_text">
+      <data key="dName">Texts</data>
+      <data key="dData">entry/
+focus.area('text')</data>
+    </node>
+    <node id="f_tool">
+      <data key="dName">Tools</data>
+      <data key="dData">entry/
+focus.area('tool')</data>
+    </node>
+    <node id="f_history">
+      <data key="dName">History</data>
+      <data key="dData">entry/
+focus.area('history')</data>
+    </node>
+    <node id="f_done">
+      <data key="dVertex">final</data>
+    </node>
+    <edge id="f_init-f_node" source="f_init" target="f_node">
+      <data key="dData"></data>
+    </edge>
+    <edge id="f_node-f_edge" source="f_node" target="f_edge">
+      <data key="dData">oracle.CLEAN [oracle.clean_streak &gt;= 3]/</data>
+    </edge>
+    <edge id="f_edge-f_text" source="f_edge" target="f_text">
+      <data key="dData">oracle.CLEAN [oracle.clean_streak &gt;= 3]/</data>
+    </edge>
+    <edge id="f_text-f_tool" source="f_text" target="f_tool">
+      <data key="dData">oracle.CLEAN [oracle.clean_streak &gt;= 3]/</data>
+    </edge>
+    <edge id="f_tool-f_history" source="f_tool" target="f_history">
+      <data key="dData">oracle.CLEAN [oracle.clean_streak &gt;= 3]/</data>
+    </edge>
+    <edge id="f_history-f_done" source="f_history" target="f_done">
+      <data key="dData">oracle.CLEAN [oracle.clean_streak &gt;= 3]/
+focus.exhausted()</data>
+    </edge>
+  </graph>
+  <graph id="G" edgedefault="directed">
+    <data key="dStateMachine"/>
+    <data key="dName">Hunt</data>
+    <node id="h_c_agent">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_COMPONENT agent</data>
+      <data key="dData">type/ Agent</data>
+    </node>
+    <node id="h_c_loop">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_COMPONENT loop</data>
+      <data key="dData">type/ Loop</data>
+    </node>
+    <node id="h_c_tools">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_COMPONENT tools</data>
+      <data key="dData">type/ Tools</data>
+    </node>
+    <node id="h_c_prompt">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_COMPONENT prompt</data>
+      <data key="dData">type/ Prompt</data>
+    </node>
+    <node id="h_c_log">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_COMPONENT log</data>
+      <data key="dData">type/ Log</data>
+    </node>
+    <node id="h_c_document">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_COMPONENT document</data>
+      <data key="dData">type/ Document</data>
+    </node>
+    <node id="h_c_oracle">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_COMPONENT oracle</data>
+      <data key="dData">type/ Oracle
+
+profile/ full</data>
+    </node>
+    <node id="h_c_register">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_COMPONENT register</data>
+      <data key="dData">type/ Register</data>
+    </node>
+    <node id="h_c_focus">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_COMPONENT focus</data>
+      <data key="dData">type/ Focus</data>
+    </node>
+    <node id="h_p_hunt">
+      <data key="dNote">formal</data>
+      <data key="dName">PROMPT hunt</data>
+      <data key="dData">You are testing the Cyberiada HSM editor through its batch commands. The polygon
+judges every step with reference-free checks against the editor's specification;
+your goal is to make the editor misbehave: a crash or a hang, a document that
+changes on save and reopen or on undo-all/redo-all, a child drawn outside its
+parent, overlapping siblings, a dangling transition, a broken law.
+
+You work area by area. Each area names its requirements and the tools you have.
+Build what the requirements need (states, nesting, transitions, texts), then push:
+extremes (tiny, huge, negative, deeply nested), repeated and interleaved
+operations, undo and redo in the middle of a sequence, deletes of things others
+depend on, gestures on crowded places. After a few edits signal CHECK: the oracles
+run the reruns and the laws and tell you what fired. Stop the area when you have
+tried its requirements from several sides. Signal DONE when you have nothing
+left to try.
+
+Ids are deterministic: the top-level elements of the machine G0 are n0, n1, ... in
+creation order, the children of a state are parent::n0, parent::n1, ..., a transition
+is source-target. Every edit answers with the new ids; use only ids you have seen,
+and call inspect when unsure.</data>
+    </node>
+    <node id="h_p_confirm">
+      <data key="dNote">formal</data>
+      <data key="dName">PROMPT confirm</data>
+      <data key="dData">A defect fired on your long history, given in the message above. Reproduce it from
+the start document (one empty state machine G0) with as few commands as you can:
+the shortest script that triggers the same failure. Every tool is available. When
+your script is complete, signal REPRODUCED; the oracles then check it. If it does
+not reproduce, you are told so and may try again. Call inspect to see the empty
+document.
+
+Ids are deterministic: the top-level elements of the machine G0 are n0, n1, ... in
+creation order, the children of a state are parent::n0, parent::n1, ..., a transition
+is source-target. Every edit answers with the new ids; use only ids you have seen,
+and call inspect when unsure.</data>
+    </node>
+    <node id="h_init">
+      <data key="dVertex">initial</data>
+    </node>
+    <node id="h_editing">
+      <data key="dName">Editing</data>
+      <data key="dData">entry/
+tools.allow(*focus.families)
+prompt.set('hunt')
+
+loop.FINISHED/
+prompt.add('A text answer changes nothing: use a tool, or signal CHECK or DONE.')
+
+focus.CHANGED/
+prompt.add(focus.requirements + focus.untried_text)</data>
+    </node>
+    <node id="h_applying">
+      <data key="dName">Applying</data>
+      <data key="dData">entry/
+tools.allow()</data>
+    </node>
+    <node id="h_checking">
+      <data key="dName">Checking</data>
+      <data key="dData">entry/
+tools.allow()
+oracle.check()</data>
+    </node>
+    <node id="h_confirm">
+      <data key="dName">Confirm</data>
+      <data key="dData">entry/
+tools.allow_all()
+prompt.set('confirm')
+
+loop.FINISHED/
+prompt.add('A text answer changes nothing: use a tool, or signal REPRODUCED.')</data>
+    </node>
+    <node id="h_reproducing">
+      <data key="dName">Reproducing</data>
+      <data key="dData">entry/
+tools.allow()</data>
+    </node>
+    <node id="h_confirming">
+      <data key="dName">Confirming</data>
+      <data key="dData">entry/
+tools.allow()
+document.attempt()
+oracle.check()</data>
+    </node>
+    <node id="h_done">
+      <data key="dVertex">final</data>
+    </node>
+    <node id="h_last">
+      <data key="dName">Last check</data>
+      <data key="dData">entry/
+tools.allow()
+oracle.check()</data>
+    </node>
+    <edge id="h_init-h_editing" source="h_init" target="h_editing">
+      <data key="dData"></data>
+    </edge>
+    <edge id="h_editing-h_applying" source="h_editing" target="h_applying">
+      <data key="dData">document.STARTED/</data>
+    </edge>
+    <edge id="h_applying-h_editing-1" source="h_applying" target="h_editing">
+      <data key="dData">document.EDITED [document.edits &lt; 6]/
+prompt.add(document.summary)</data>
+    </edge>
+    <edge id="h_applying-h_checking-1" source="h_applying" target="h_checking">
+      <data key="dData">document.EDITED [document.edits &gt;= 6]/
+prompt.add(document.summary)</data>
+    </edge>
+    <edge id="h_applying-h_editing-2" source="h_applying" target="h_editing">
+      <data key="dData">document.REJECTED [document.rejections &lt; 5]/
+prompt.add(document.summary)</data>
+    </edge>
+    <edge id="h_applying-h_done-1" source="h_applying" target="h_done">
+      <data key="dData">document.REJECTED [document.rejections &gt;= 5]/
+log.print('too many rejections')
+tools.allow()
+loop.stop()</data>
+    </edge>
+    <edge id="h_applying-h_confirm-1" source="h_applying" target="h_confirm">
+      <data key="dData">document.CRASHED [event.new]/
+document.branch(event.signature)
+prompt.add(document.summary)</data>
+    </edge>
+    <edge id="h_applying-h_editing-3" source="h_applying" target="h_editing">
+      <data key="dData">document.CRASHED [not event.new]/
+prompt.add(document.summary)</data>
+    </edge>
+    <edge id="h_editing-h_checking-1" source="h_editing" target="h_checking">
+      <data key="dData">agent.CHECK [document.edits &gt; 0]/</data>
+    </edge>
+    <edge id="h_checking-h_editing-1" source="h_checking" target="h_editing">
+      <data key="dData">oracle.CLEAN/</data>
+    </edge>
+    <edge id="h_checking-h_editing-2" source="h_checking" target="h_editing">
+      <data key="dData">oracle.FOUND [event.new == 0]/</data>
+    </edge>
+    <edge id="h_checking-h_confirm-1" source="h_checking" target="h_confirm">
+      <data key="dData">oracle.FOUND [event.new &gt; 0]/
+document.branch(oracle.target)
+prompt.add(oracle.last)</data>
+    </edge>
+    <edge id="h_confirm-h_reproducing" source="h_confirm" target="h_reproducing">
+      <data key="dData">document.STARTED/</data>
+    </edge>
+    <edge id="h_reproducing-h_confirm-1" source="h_reproducing" target="h_confirm">
+      <data key="dData">document.EDITED/
+prompt.add(document.summary)</data>
+    </edge>
+    <edge id="h_reproducing-h_confirm-2" source="h_reproducing" target="h_confirm">
+      <data key="dData">document.REJECTED/
+prompt.add(document.summary)</data>
+    </edge>
+    <edge id="h_reproducing-h_editing-1" source="h_reproducing" target="h_editing">
+      <data key="dData">document.CRASHED [event.signature == document.target]/
+register.confirm(document.target)
+document.restore()
+prompt.add('Reproduced and recorded. Back to the main line.')</data>
+    </edge>
+    <edge id="h_reproducing-h_confirm-3" source="h_reproducing" target="h_confirm">
+      <data key="dData">document.CRASHED [event.signature != document.target]/
+prompt.add(document.summary)</data>
+    </edge>
+    <edge id="h_confirm-h_confirming" source="h_confirm" target="h_confirming">
+      <data key="dData">agent.REPRODUCED [document.edits &gt; 0]/</data>
+    </edge>
+    <edge id="h_confirming-h_editing-1" source="h_confirming" target="h_editing">
+      <data key="dData">oracle.FOUND [document.target in oracle.signatures]/
+register.confirm(document.target)
+document.restore()
+prompt.add('Reproduced and recorded. Back to the main line.')</data>
+    </edge>
+    <edge id="h_confirming-h_confirm-1" source="h_confirming" target="h_confirm">
+      <data key="dData">oracle.FOUND [document.target not in oracle.signatures and document.tries &lt; 3]/
+prompt.add('Not reproduced: the defect did not fire. Try again from the start document.')</data>
+    </edge>
+    <edge id="h_confirming-h_editing-2" source="h_confirming" target="h_editing">
+      <data key="dData">oracle.FOUND [document.target not in oracle.signatures and document.tries &gt;= 3]/
+document.restore()
+prompt.add('Not reproduced; the long script is kept. Back to the main line.')</data>
+    </edge>
+    <edge id="h_confirming-h_confirm-2" source="h_confirming" target="h_confirm">
+      <data key="dData">oracle.CLEAN [document.tries &lt; 3]/
+prompt.add('Not reproduced: the check was clean. Try again from the start document.')</data>
+    </edge>
+    <edge id="h_confirming-h_editing-3" source="h_confirming" target="h_editing">
+      <data key="dData">oracle.CLEAN [document.tries &gt;= 3]/
+document.restore()
+prompt.add('Not reproduced; the long script is kept. Back to the main line.')</data>
+    </edge>
+    <edge id="h_editing-h_done-1" source="h_editing" target="h_done">
+      <data key="dData">agent.DONE [document.edits == 0]/
+tools.allow()
+loop.stop()</data>
+    </edge>
+    <edge id="h_editing-h_checking-2" source="h_editing" target="h_checking">
+      <data key="dData">agent.DONE [document.edits &gt; 0]/</data>
+    </edge>
+    <edge id="h_editing-h_last" source="h_editing" target="h_last">
+      <data key="dData">focus.EXHAUSTED/</data>
+    </edge>
+    <edge id="h_last-h_done-1" source="h_last" target="h_done">
+      <data key="dData">oracle.CLEAN/
+tools.allow()
+loop.stop()</data>
+    </edge>
+    <edge id="h_last-h_done-2" source="h_last" target="h_done">
+      <data key="dData">oracle.FOUND/
+tools.allow()
+loop.stop()</data>
+    </edge>
+  </graph>
+  <graph id="W" edgedefault="directed">
+    <data key="dStateMachine"/>
+    <data key="dName">Watchdog</data>
+    <node id="w_c_loop">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_COMPONENT loop</data>
+      <data key="dData">type/ Loop</data>
+    </node>
+    <node id="w_c_tools">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_COMPONENT tools</data>
+      <data key="dData">type/ Tools</data>
+    </node>
+    <node id="w_c_log">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_COMPONENT log</data>
+      <data key="dData">type/ Log</data>
+    </node>
+    <node id="w_c_budget">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_COMPONENT budget</data>
+      <data key="dData">type/ Budget
+
+priority/ 10</data>
+    </node>
+    <node id="w_c_document">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_COMPONENT document</data>
+      <data key="dData">type/ Document</data>
+    </node>
+    <node id="w_c_oracle">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_COMPONENT oracle</data>
+      <data key="dData">type/ Oracle
+
+profile/ full</data>
+    </node>
+    <node id="w_init">
+      <data key="dVertex">initial</data>
+    </node>
+    <node id="w_watching">
+      <data key="dName">Watching</data>
+      <data key="dData">entry/
+budget.limit(requests=document.max_calls, seconds=document.max_seconds)</data>
+    </node>
+    <node id="w_done">
+      <data key="dVertex">final</data>
+    </node>
+    <edge id="w_init-w_watching" source="w_init" target="w_watching">
+      <data key="dData"></data>
+    </edge>
+    <edge id="w_watching-w_done" source="w_watching" target="w_done">
+      <data key="dData">budget.EXCEEDED/
+log.print('stopped:', event.kind)
+document.stop()
+oracle.stop()
+tools.allow()
+loop.stop()</data>
+    </edge>
+  </graph>
+</graphml>

@@ -1,0 +1,368 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns">
+  <data key="gFormat">Cyberiada-GraphML-1.0</data>
+  <key id="gFormat" for="graphml" attr.name="format" attr.type="string"/>
+  <key id="dName" for="graph" attr.name="name" attr.type="string"/>
+  <key id="dName" for="node" attr.name="name" attr.type="string"/>
+  <key id="dStateMachine" for="graph" attr.name="stateMachine"/>
+  <key id="dNote" for="node" attr.name="note" attr.type="string"/>
+  <key id="dVertex" for="node" attr.name="vertex" attr.type="string"/>
+  <key id="dData" for="node" attr.name="data" attr.type="string"/>
+  <key id="dData" for="edge" attr.name="data" attr.type="string"/>
+  <graph id="G" edgedefault="directed">
+    <data key="dStateMachine"/>
+    <data key="dName">Stress</data>
+    <node id="s_meta">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_META</data>
+      <data key="dData">standardVersion/ 1.0
+
+platform/ CybersphereAgents
+
+platformLanguage/ Python
+
+name/ Stress</data>
+    </node>
+    <node id="s_c_agent">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_COMPONENT agent</data>
+      <data key="dData">type/ Agent</data>
+    </node>
+    <node id="s_c_loop">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_COMPONENT loop</data>
+      <data key="dData">type/ Loop</data>
+    </node>
+    <node id="s_c_tools">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_COMPONENT tools</data>
+      <data key="dData">type/ Tools</data>
+    </node>
+    <node id="s_c_prompt">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_COMPONENT prompt</data>
+      <data key="dData">type/ Prompt</data>
+    </node>
+    <node id="s_c_log">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_COMPONENT log</data>
+      <data key="dData">type/ Log</data>
+    </node>
+    <node id="s_c_document">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_COMPONENT document</data>
+      <data key="dData">type/ Document</data>
+    </node>
+    <node id="s_c_oracle">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_COMPONENT oracle</data>
+      <data key="dData">type/ Oracle
+
+profile/ stress</data>
+    </node>
+    <node id="s_c_register">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_COMPONENT register</data>
+      <data key="dData">type/ Register</data>
+    </node>
+    <node id="s_c_fuzzer">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_COMPONENT fuzzer</data>
+      <data key="dData">type/ Fuzzer</data>
+    </node>
+    <node id="s_c_metric">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_COMPONENT metric</data>
+      <data key="dData">type/ Metric</data>
+    </node>
+    <node id="s_p_stress">
+      <data key="dNote">formal</data>
+      <data key="dName">PROMPT stress</data>
+      <data key="dData">Design and keep improving the machine named in the task as a hierarchical state
+machine under the state machine G0: the states, the nesting, the pseudostates,
+the transitions with triggers, guards and actions. Make it a real, working design,
+then make it genuinely more complex: nest states in composite states, add feedback
+loops, add choice pseudostates with guarded branches, factor a part into a
+submachine state, route self-loops and polylines, restructure what you built.
+Prefer depth and connection over width.
+
+After every check the polygon injects random micro-operations into your diagram
+and measures its complexity; ids and geometry may shift, so call inspect before
+you continue, and spend the next edits where the measurement says the diagram is
+thinnest. Keep it clean: children inside their parents with a margin, siblings
+apart, no overlaps. Signal CHECK after a few edits and DONE when a round no longer
+makes the diagram meaningfully more complex.
+
+Ids are deterministic: the top-level elements of the machine G0 are n0, n1, ... in
+creation order, the children of a state are parent::n0, parent::n1, ..., a transition
+is source-target. Every edit answers with the new ids; use only ids you have seen,
+and call inspect when unsure.</data>
+    </node>
+    <node id="s_p_confirm">
+      <data key="dNote">formal</data>
+      <data key="dName">PROMPT confirm</data>
+      <data key="dData">A defect fired on your long history, given in the message above. Reproduce it from
+the start document (one empty state machine G0) with as few commands as you can:
+the shortest script that triggers the same failure. Every tool is available. When
+your script is complete, signal REPRODUCED; the oracles then check it. If it does
+not reproduce, you are told so and may try again. Call inspect to see the empty
+document.
+
+Ids are deterministic: the top-level elements of the machine G0 are n0, n1, ... in
+creation order, the children of a state are parent::n0, parent::n1, ..., a transition
+is source-target. Every edit answers with the new ids; use only ids you have seen,
+and call inspect when unsure.</data>
+    </node>
+    <node id="s_init">
+      <data key="dVertex">initial</data>
+    </node>
+    <node id="s_editing">
+      <data key="dName">Editing</data>
+      <data key="dData">entry/
+tools.allow('create', 'connect', 'behave', 'arrange')
+prompt.set('stress')
+
+loop.FINISHED/
+prompt.add('A text answer changes nothing: use a tool, or signal CHECK or DONE.')</data>
+    </node>
+    <node id="s_applying">
+      <data key="dName">Applying</data>
+      <data key="dData">entry/
+tools.allow()</data>
+    </node>
+    <node id="s_checking">
+      <data key="dName">Checking</data>
+      <data key="dData">entry/
+tools.allow()
+oracle.check()</data>
+    </node>
+    <node id="s_confirm">
+      <data key="dName">Confirm</data>
+      <data key="dData">entry/
+tools.allow_all()
+prompt.set('confirm')
+
+loop.FINISHED/
+prompt.add('A text answer changes nothing: use a tool, or signal REPRODUCED.')</data>
+    </node>
+    <node id="s_reproducing">
+      <data key="dName">Reproducing</data>
+      <data key="dData">entry/
+tools.allow()</data>
+    </node>
+    <node id="s_confirming">
+      <data key="dName">Confirming</data>
+      <data key="dData">entry/
+tools.allow()
+document.attempt()
+oracle.check()</data>
+    </node>
+    <node id="s_done">
+      <data key="dVertex">final</data>
+    </node>
+    <node id="s_stress">
+      <data key="dName">Stress</data>
+      <data key="dData">entry/
+tools.allow()
+fuzzer.burst()</data>
+    </node>
+    <node id="s_measure">
+      <data key="dName">Measure</data>
+      <data key="dData">entry/
+metric.measure()</data>
+    </node>
+    <edge id="s_init-s_editing" source="s_init" target="s_editing">
+      <data key="dData"></data>
+    </edge>
+    <edge id="s_editing-s_applying" source="s_editing" target="s_applying">
+      <data key="dData">document.STARTED/</data>
+    </edge>
+    <edge id="s_applying-s_editing-1" source="s_applying" target="s_editing">
+      <data key="dData">document.EDITED [document.edits &lt; 6]/
+prompt.add(document.summary)</data>
+    </edge>
+    <edge id="s_applying-s_checking-1" source="s_applying" target="s_checking">
+      <data key="dData">document.EDITED [document.edits &gt;= 6]/
+prompt.add(document.summary)</data>
+    </edge>
+    <edge id="s_applying-s_editing-2" source="s_applying" target="s_editing">
+      <data key="dData">document.REJECTED [document.rejections &lt; 5]/
+prompt.add(document.summary)</data>
+    </edge>
+    <edge id="s_applying-s_done-1" source="s_applying" target="s_done">
+      <data key="dData">document.REJECTED [document.rejections &gt;= 5]/
+log.print('too many rejections')
+tools.allow()
+loop.stop()</data>
+    </edge>
+    <edge id="s_applying-s_confirm-1" source="s_applying" target="s_confirm">
+      <data key="dData">document.CRASHED [event.new]/
+document.branch(event.signature)
+prompt.add(document.summary)</data>
+    </edge>
+    <edge id="s_applying-s_editing-3" source="s_applying" target="s_editing">
+      <data key="dData">document.CRASHED [not event.new]/
+prompt.add(document.summary)</data>
+    </edge>
+    <edge id="s_editing-s_checking-1" source="s_editing" target="s_checking">
+      <data key="dData">agent.CHECK [document.edits &gt; 0]/</data>
+    </edge>
+    <edge id="s_checking-s_stress-1" source="s_checking" target="s_stress">
+      <data key="dData">oracle.CLEAN/</data>
+    </edge>
+    <edge id="s_checking-s_stress-2" source="s_checking" target="s_stress">
+      <data key="dData">oracle.FOUND [event.new == 0]/</data>
+    </edge>
+    <edge id="s_checking-s_confirm-1" source="s_checking" target="s_confirm">
+      <data key="dData">oracle.FOUND [event.new &gt; 0]/
+document.branch(oracle.target)
+prompt.add(oracle.last)</data>
+    </edge>
+    <edge id="s_confirm-s_reproducing" source="s_confirm" target="s_reproducing">
+      <data key="dData">document.STARTED/</data>
+    </edge>
+    <edge id="s_reproducing-s_confirm-1" source="s_reproducing" target="s_confirm">
+      <data key="dData">document.EDITED/
+prompt.add(document.summary)</data>
+    </edge>
+    <edge id="s_reproducing-s_confirm-2" source="s_reproducing" target="s_confirm">
+      <data key="dData">document.REJECTED/
+prompt.add(document.summary)</data>
+    </edge>
+    <edge id="s_reproducing-s_editing-1" source="s_reproducing" target="s_editing">
+      <data key="dData">document.CRASHED [event.signature == document.target]/
+register.confirm(document.target)
+document.restore()
+prompt.add('Reproduced and recorded. Back to the main line.')</data>
+    </edge>
+    <edge id="s_reproducing-s_confirm-3" source="s_reproducing" target="s_confirm">
+      <data key="dData">document.CRASHED [event.signature != document.target]/
+prompt.add(document.summary)</data>
+    </edge>
+    <edge id="s_confirm-s_confirming" source="s_confirm" target="s_confirming">
+      <data key="dData">agent.REPRODUCED [document.edits &gt; 0]/</data>
+    </edge>
+    <edge id="s_confirming-s_editing-1" source="s_confirming" target="s_editing">
+      <data key="dData">oracle.FOUND [document.target in oracle.signatures]/
+register.confirm(document.target)
+document.restore()
+prompt.add('Reproduced and recorded. Back to the main line.')</data>
+    </edge>
+    <edge id="s_confirming-s_confirm-1" source="s_confirming" target="s_confirm">
+      <data key="dData">oracle.FOUND [document.target not in oracle.signatures and document.tries &lt; 3]/
+prompt.add('Not reproduced: the defect did not fire. Try again from the start document.')</data>
+    </edge>
+    <edge id="s_confirming-s_editing-2" source="s_confirming" target="s_editing">
+      <data key="dData">oracle.FOUND [document.target not in oracle.signatures and document.tries &gt;= 3]/
+document.restore()
+prompt.add('Not reproduced; the long script is kept. Back to the main line.')</data>
+    </edge>
+    <edge id="s_confirming-s_confirm-2" source="s_confirming" target="s_confirm">
+      <data key="dData">oracle.CLEAN [document.tries &lt; 3]/
+prompt.add('Not reproduced: the check was clean. Try again from the start document.')</data>
+    </edge>
+    <edge id="s_confirming-s_editing-3" source="s_confirming" target="s_editing">
+      <data key="dData">oracle.CLEAN [document.tries &gt;= 3]/
+document.restore()
+prompt.add('Not reproduced; the long script is kept. Back to the main line.')</data>
+    </edge>
+    <edge id="s_editing-s_done-1" source="s_editing" target="s_done">
+      <data key="dData">agent.DONE [document.edits == 0]/
+tools.allow()
+loop.stop()</data>
+    </edge>
+    <edge id="s_editing-s_checking-2" source="s_editing" target="s_checking">
+      <data key="dData">agent.DONE [document.edits &gt; 0]/</data>
+    </edge>
+    <edge id="s_stress-s_measure" source="s_stress" target="s_measure">
+      <data key="dData">fuzzer.DONE/</data>
+    </edge>
+    <edge id="s_stress-s_confirm" source="s_stress" target="s_confirm">
+      <data key="dData">document.CRASHED [event.new]/
+document.branch(event.signature)
+prompt.add(document.summary)</data>
+    </edge>
+    <edge id="s_measure-s_done-1" source="s_measure" target="s_done">
+      <data key="dData">metric.MEASURED [metric.c &gt;= metric.target]/
+prompt.add(metric.nudges)
+tools.allow()
+loop.stop()</data>
+    </edge>
+    <edge id="s_measure-s_editing-1" source="s_measure" target="s_editing">
+      <data key="dData">metric.MEASURED [metric.c &lt; metric.target]/
+prompt.add(metric.nudges)</data>
+    </edge>
+  </graph>
+  <graph id="W" edgedefault="directed">
+    <data key="dStateMachine"/>
+    <data key="dName">Watchdog</data>
+    <node id="w_c_loop">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_COMPONENT loop</data>
+      <data key="dData">type/ Loop</data>
+    </node>
+    <node id="w_c_tools">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_COMPONENT tools</data>
+      <data key="dData">type/ Tools</data>
+    </node>
+    <node id="w_c_log">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_COMPONENT log</data>
+      <data key="dData">type/ Log</data>
+    </node>
+    <node id="w_c_budget">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_COMPONENT budget</data>
+      <data key="dData">type/ Budget
+
+priority/ 10</data>
+    </node>
+    <node id="w_c_document">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_COMPONENT document</data>
+      <data key="dData">type/ Document</data>
+    </node>
+    <node id="w_c_oracle">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_COMPONENT oracle</data>
+      <data key="dData">type/ Oracle
+
+profile/ stress</data>
+    </node>
+    <node id="w_c_fuzzer">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_COMPONENT fuzzer</data>
+      <data key="dData">type/ Fuzzer</data>
+    </node>
+    <node id="w_c_metric">
+      <data key="dNote">formal</data>
+      <data key="dName">CGML_COMPONENT metric</data>
+      <data key="dData">type/ Metric</data>
+    </node>
+    <node id="w_init">
+      <data key="dVertex">initial</data>
+    </node>
+    <node id="w_watching">
+      <data key="dName">Watching</data>
+      <data key="dData">entry/
+budget.limit(requests=document.max_calls, seconds=document.max_seconds)</data>
+    </node>
+    <node id="w_done">
+      <data key="dVertex">final</data>
+    </node>
+    <edge id="w_init-w_watching" source="w_init" target="w_watching">
+      <data key="dData"></data>
+    </edge>
+    <edge id="w_watching-w_done" source="w_watching" target="w_done">
+      <data key="dData">budget.EXCEEDED/
+log.print('stopped:', event.kind)
+document.stop()
+oracle.stop()
+fuzzer.stop()
+metric.stop()
+tools.allow()
+loop.stop()</data>
+    </edge>
+  </graph>
+</graphml>
