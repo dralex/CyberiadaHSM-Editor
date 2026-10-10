@@ -280,6 +280,8 @@ class Replay:
     def next(self, dump, exclude=()):
         while self.rounds:
             r = self.rounds.pop(0)
+            if r.get("branch"):
+                continue               # a reproduction branch of the tester, not the main line
             if r["accepted"] or not r["script_error"]:
                 return r["lines"], r["verb"], r["kind"], r.get("expectations", ""), r.get("plan", "")
         return None
