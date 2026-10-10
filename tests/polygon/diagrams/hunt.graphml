@@ -180,7 +180,7 @@ and call inspect when unsure.</data>
     <node id="h_editing">
       <data key="dName">Editing</data>
       <data key="dData">entry/
-tools.allow(*focus.families)
+tools.allow('inspect', 'expect', *focus.families)
 prompt.set('hunt')
 
 loop.FINISHED/

@@ -132,7 +132,7 @@ and call inspect when unsure.</data>
     <node id="d_editing">
       <data key="dName">Editing</data>
       <data key="dData">entry/
-tools.allow('create', 'connect', 'behave', 'arrange')
+tools.allow('inspect', 'expect', 'create', 'connect', 'behave', 'arrange')
 prompt.set('draw')
 
 loop.FINISHED/

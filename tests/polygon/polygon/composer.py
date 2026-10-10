@@ -21,8 +21,9 @@
 #
 # -----------------------------------------------------------------------------
 
-"""A mission from a seed: the diagram, and for a combination the operation
-subset, the theme, the budget and the untried cells of the coverage."""
+"""A mission from a seed: the start document, the story, the corpus
+diagram, the domain, the theme and the budget. The strategy is the
+diagram of the mission (diagrams/<kind>.graphml)."""
 
 import json
 import random
@@ -31,34 +32,37 @@ from pathlib import Path
 
 from . import catalog as CAT
 
-REPRODUCE = "reproduce"
-COMBINE = "combine"
-EXPLORE = "explore"
-TOUR = "tour"
+HUNT = "hunt"
 DRAW = "draw"
-CLIMB = "climb"
+STRESS = "stress"
+REBUILD = "rebuild"
+KINDS = (HUNT, DRAW, STRESS, REBUILD)
 
 DOMAINS = ("a traffic light", "a vending machine", "a lift controller",
-          "a microwave oven", "a robot patrol mission", "a game character AI",
-          "a turnstile", "a thermostat", "a media player")
-MIN_OPERATIONS = 3
-MAX_OPERATIONS = 6
-MAX_UNTRIED = 4
+           "a microwave oven", "a robot patrol mission", "a game character AI",
+           "a turnstile", "a thermostat", "a media player")
+BUDGETS = {HUNT: (40, 120), STRESS: (30, 70), REBUILD: (20, 80)}
+DIAGRAMS_DIR = Path(__file__).resolve().parents[1] / "diagrams"
 
 
 @dataclass
 class Mission:
     kind: str
     seed: int
-    name: str            # the corpus diagram name
-    diagram: Path        # the document the session edits (empty for a reproduction)
-    original: Path = None   # the diagram to reproduce
-    operations: list = field(default_factory=list)
-    theme: dict = None
+    name: str            # the corpus diagram name, the story, or the kind
+    diagram: Path        # the start document the session edits
+    original: Path = None   # the corpus diagram to rebuild
+    theme: dict = None   # a hint seasoning the task (catalog/themes.json)
     budget: tuple = (0, 0)
-    untried: list = field(default_factory=list)
-    domain: str = ""     # the explore mission's design brief subject
+    domain: str = ""     # the stress mission's design subject
     story: dict = None   # the draw mission's diagram to draw (catalog/stories.json)
+    operations: list = field(default_factory=list)   # kept for the session record
+    untried: list = field(default_factory=list)
+
+    @property
+    def strategy(self):
+        """The diagram that drives the mission."""
+        return DIAGRAMS_DIR / (self.kind + ".graphml")
 
 
 def corpus(env):
@@ -89,48 +93,24 @@ def stories():
     return json.loads((CAT.CATALOG_DIR / "stories.json").read_text())["stories"]
 
 
-def compose(kind, env, catalog, coverage, seed, name=None, theme_name=None, story_name=None):
+def compose(kind, env, seed, name=None, theme_name=None, story_name=None):
     rng = random.Random(seed)
     diagrams, starts = corpus(env)
-    if name is None:
-        name, path = rng.choice(diagrams)
-    else:
-        path = dict(diagrams).get(name) or (env.diagrams / (name + ".graphml"))
-    if kind == REPRODUCE:
-        return Mission(kind, seed, name, starts["empty"], original=path)
-    if kind == EXPLORE:
-        return Mission(kind, seed, "explore", starts["empty"], domain=rng.choice(DOMAINS),
-                       budget=(12, 30))
-    if kind == CLIMB:
-        return Mission(kind, seed, "climb", starts["empty"], domain=rng.choice(DOMAINS),
-                       budget=(30, 70))
-    if kind == TOUR:
-        return Mission(kind, seed, "tour", starts["empty"], budget=(20, 40))
+    empty = starts["empty"]
+    theme = next((t for t in themes() if t["name"] == theme_name), None) if theme_name else None
+    if kind == REBUILD:
+        if name is None:
+            name, path = rng.choice(diagrams)
+        else:
+            path = dict(diagrams).get(name) or (env.diagrams / (name + ".graphml"))
+        return Mission(kind, seed, name, empty, original=path, budget=BUDGETS[kind], theme=theme)
     if kind == DRAW:
         all_stories = stories()
         story = next((s for s in all_stories if s["name"] == story_name), None) if story_name \
             else rng.choice(all_stories)
-        return Mission(kind, seed, "draw-" + story["name"], starts["empty"], story=story,
-                       budget=tuple(story["budget"]))
-    theme = next((t for t in themes() if t["name"] == theme_name), None) if theme_name else rng.choice(themes())
-    start = theme.get("start", "corpus")
-    if start in starts and starts[start].exists():
-        # the story begins from an empty or a small document, not the corpus
-        name, path = start, starts[start]
-    forms = theme.get("forms", [CAT.FORM_MODEL, CAT.FORM_GESTURE_FORM])
-    verbs = catalog.verbs(*forms)
-    verbs = [v for v in verbs if v not in ("undo", "redo")]
-    weights = [coverage.verb_weight(v, catalog.find(v).targets) for v in verbs]
-    chosen = []
-    while len(chosen) < rng.randint(MIN_OPERATIONS, MAX_OPERATIONS) and verbs:
-        v = rng.choices(verbs, weights=weights)[0]
-        i = verbs.index(v)
-        verbs.pop(i)
-        weights.pop(i)
-        chosen.append(v)
-    chosen += ["undo", "redo"] if rng.random() < 0.5 else []
-    untried = [(v, k) for v, k in coverage.untried(catalog) if v in chosen]
-    rng.shuffle(untried)
-    untried = ["%s on a %s" % (v, k) for v, k in untried[:MAX_UNTRIED]]
-    return Mission(COMBINE, seed, name, path, operations=chosen, theme=theme,
-                   budget=tuple(theme["budget"]), untried=untried)
+        return Mission(kind, seed, "draw-" + story["name"], empty, story=story,
+                       budget=tuple(story["budget"]), theme=theme)
+    if kind == STRESS:
+        return Mission(kind, seed, "stress", empty, domain=rng.choice(DOMAINS),
+                       budget=BUDGETS[kind], theme=theme)
+    return Mission(HUNT, seed, "hunt", empty, budget=BUDGETS[HUNT], theme=theme)

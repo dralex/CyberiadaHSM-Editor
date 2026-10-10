@@ -103,7 +103,7 @@ and call inspect when unsure.</data>
     <node id="r_editing">
       <data key="dName">Editing</data>
       <data key="dData">entry/
-tools.allow('create', 'connect', 'behave', 'arrange')
+tools.allow('inspect', 'expect', 'create', 'connect', 'behave', 'arrange')
 prompt.set('rebuild')
 
 loop.FINISHED/

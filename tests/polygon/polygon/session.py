@@ -33,13 +33,11 @@ from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
 
-from . import climb
 from . import dump as D
 from . import oracles
 from . import register as R
 from . import render
 from . import runner
-from .adapters.base import AdapterError
 
 MAX_REJECTIONS = 5
 
@@ -56,9 +54,6 @@ class Round:
     expectations: str = ""
     plan: str = ""
     result: object = field(default=None, repr=False)
-    cx: dict = None          # the climb diagram-complexity C of the document after this round
-    dx: dict = None          # the climb drawing-complexity D of the session so far
-    standing: str = ""       # the climb standing block fed back to the agent
 
 
 class Session:
@@ -82,8 +77,6 @@ class Session:
         self.reproduction = None
         self.error = ""
         self.stress = False
-        self.burst = None
-        self.climb = False       # measure C/D each round and steer the agent to raise them
         self.invariant = False   # a drill: expectation failures are invariants (registered)
         self.folder.mkdir(parents=True, exist_ok=True)
         self.work = self.folder / "work"
@@ -110,17 +103,11 @@ class Session:
         self.initial_dump()
         total = 0
         for n in range(1, rounds + 1):
-            try:
-                record = self.round(n)
-            except AdapterError as e:
-                self.error = str(e)
-                break
+            record = self.round(n)
             if record is None:
                 break
             self.rounds.append(record)
             total += len(record.findings)
-            if record.accepted and self.burst:
-                total += self.run_burst(n)
             self.save()
         self.finish()
         self.elapsed = time.time() - getattr(self, "started", time.time())
@@ -190,30 +177,7 @@ class Session:
             self.script += list(lines)
             self.dump = result.dump
             (self.folder / ("round-%d.dump" % n)).write_text(result.run.stdout)
-            if self.climb and not str(verb).startswith("burst:"):
-                record.cx, record.dx = climb.measure(self.env, self.config, self.start,
-                                                      self.text(), self.work)
-                record.standing = climb.standing(record.cx, record.dx,
-                                                  self.mission.budget, len(self.script))
         return record
-
-    def run_burst(self, n):
-        """A burst of fuzzer micro-ops on the current diagram after an accepted
-        agent round; returns the number of findings. A crash or a rejected op
-        stops the burst."""
-        fuzzer, count = self.burst
-        found = 0
-        for k in range(count):
-            step = fuzzer.next(self.dump)
-            if step is None:
-                break
-            lines, verb, kind = step[0], step[1], step[2]
-            record = self.apply(n, lines, "burst:" + verb, kind)
-            self.rounds.append(record)
-            found += len(record.findings)
-            if record.script_error or any(f[0] == oracles.KIND_CRASH for f in record.findings):
-                break
-        return found
 
     def register_finding(self, finding, lines, expectations, plan, verb):
         script = self.text(lines)
@@ -247,11 +211,7 @@ class Session:
                 "rounds": [{"n": r.number, "verb": r.verb, "kind": r.kind, "lines": r.lines,
                             "accepted": r.accepted, "script_error": r.script_error,
                             "findings": r.findings, "expectations": r.expectations,
-                            "plan": r.plan,
-                            "cx": r.cx["C"] if r.cx else None,
-                            "dx": r.dx["P"] if r.dx else None} for r in self.rounds]}
-        if self.climb:
-            data["climb"] = climb.session_metrics(self.rounds, len(self.script))
+                            "plan": r.plan} for r in self.rounds]}
         (self.folder / "session.json").write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
         (self.folder / "script").write_text(self.text())
         self.coverage.save()

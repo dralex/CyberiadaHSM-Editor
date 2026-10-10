@@ -38,19 +38,19 @@ from . import catalog as CAT
 from . import coverage as COV
 from . import fuzzer as F
 from . import session as S
-from . import agent as A
 from . import brief as B
 from . import composer as M
-from . import climb as CL
-from . import prompt as P
 from . import runner
 from . import tour as TOUR
 from . import toolcover as TC
 from .drills import nesting as DRILLS
 from .drills import features as DRILLF
 from .drills import compound as DRILLC
-from .adapters import base as adapters
 import json
+
+HARNESS_HINT = ("the LLM commands need the cybersphere agents harness (cybersphere-agents, "
+                "hsm-dispatcher-py, pydantic-ai, the CyberiadaML binding); use the environment "
+                "that has them, e.g. ~/sources/_venv")
 
 
 def _env():
@@ -246,119 +246,56 @@ def cmd_fuzz(args):
     return 0
 
 
-def _mission(env, cfg, catalog, coverage, args):
-    return M.compose(args.mission, env, catalog, coverage, args.seed, args.diagram,
-                     getattr(args, "theme", None), getattr(args, "story", None))
-
-
-def _first_message(env, cfg, mission):
-    result = runner.run(env, mission.original if mission.kind == M.REPRODUCE else mission.diagram,
-                        dump=True, stack=True, timeout=cfg.timeout)
-    if result.exit != runner.EXIT_OK:
-        print("cannot open %s: %s" % (mission.name, " ".join(result.messages())), file=sys.stderr)
+def _harness():
+    """The harness module, or a clear message without the framework."""
+    try:
+        from . import harness as H
+    except ImportError as e:
+        print("%s (%s)" % (HARNESS_HINT, e), file=sys.stderr)
         sys.exit(2)
-    dump = D.parse_dump(result.stdout)
-    if mission.kind == M.REPRODUCE:
-        return P.mission_reproduce(B.brief(mission.name, dump.document))
-    if mission.kind == M.EXPLORE:
-        return P.mission_explore(mission.domain, mission.budget)
-    if mission.kind == M.CLIMB:
-        return P.mission_climb(mission.domain, mission.budget)
-    if mission.kind == M.TOUR:
-        return P.mission_tour(_tour_tools(), mission.budget)
-    if mission.kind == M.DRAW:
-        return P.mission_draw(mission.story, mission.budget)
-    return P.mission_combine(mission.name, D.describe(dump.document), P.scene_text(dump), dump.stack,
-                             mission.operations, mission.theme, mission.budget, mission.untried)
+    return H
 
 
-def _tour_tools():
-    """(tool name, how-to) pairs for the tour prompt, from the tool model."""
-    how = {CAT.FAMILY_RECT: "draw a rect or click for a default size",
-           CAT.FAMILY_PLACE: "click to place", CAT.FAMILY_TRANSITION:
-           "press a source state and drag to a target", CAT.FAMILY_MANIPULATE:
-           "drag to move, drag a border to resize, double-click to edit text, "
-           "drag the point dots of a transition, delete the selected element"}
-    out = []
-    for t in CAT.tools():
-        if t.family == CAT.FAMILY_VIEW:
-            continue
-        out.append((t.name, how.get(t.family, "")))
-    return out
-
-
-def _run_session(env, cfg, catalog, coverage, backend, mission, folder, args):
-    """One agent session of a pre-composed mission; returns the Session."""
-    key = C.api_key(backend)
-    if not key:
-        raise SystemExit("no key for backend %s (%s)" % (backend.name, backend.key_env or backend.key_file))
-    folder.mkdir(parents=True, exist_ok=True)
-    log = open(folder / "conversation.txt", "a")
-    recorder = lambda kind, text: (log.write("---- %s\n%s\n" % (kind, text)), log.flush())
-    adapter = adapters.make(backend, key)
-    producer = A.Agent(adapter, catalog, mission, _first_message(env, cfg, mission), recorder)
-    session = S.Session(env, cfg, mission.diagram, producer, _register(env), coverage, folder,
-                        producer_name="agent:%s:%s" % (backend.name, backend.model), seed=mission.seed,
-                        minimize=not args.no_minimize)
-    session.mission = mission
-    if mission.kind in (M.EXPLORE, M.CLIMB):
-        # random micro-op bursts after each accepted agent round; no ink check
-        session.stress = True
-        burst_fuzzer = F.Fuzzer(catalog, coverage, mission.seed, gestures=True)
-        burst_fuzzer.gestures_only = True
-        session.burst = (burst_fuzzer, getattr(args, "burst", 5) or 5)
-    if mission.kind == M.CLIMB:
-        # measure C/D each round and steer the agent to raise them densely
-        session.climb = True
-    if mission.kind == M.DRAW:
-        # a clean draw of a known diagram: reference-free oracles, no burst
-        session.stress = True
-    # the tour is pure systematic agent: no burst, full oracles (a tool that
-    # draws nothing is a finding)
-    session.run(args.rounds or cfg.rounds)
-    (folder / "usage.json").write_text(json.dumps(adapter.usage, indent=2) + "\n")
-    log.close()
-    session.calls = adapter.calls
-    session.tokens = sum(u.get("total_tokens", 0) or (u.get("input_tokens", 0) + u.get("output_tokens", 0))
-                         for u in adapter.usage)
-    return session
-
-
-def _session_stats(session):
-    accepted = sum(1 for r in session.rounds if r.accepted)
-    errors = sum(1 for r in session.rounds if r.script_error)
-    defects = {f[1] for r in session.rounds for f in r.findings if f[0] in ("crash", "oracle", "render")}
-    cands = sum(1 for r in session.rounds for f in r.findings if f[0] in ("semantic", "review"))
-    rep = session.reproduction
-    stats = {"rounds": len(session.rounds), "accepted": accepted, "errors": errors,
-             "calls": getattr(session, "calls", 0), "tokens": getattr(session, "tokens", 0),
-             "commands": len(session.script), "elapsed": round(getattr(session, "elapsed", 0.0), 1),
-             "defects": len(defects), "candidates": cands,
+def _session_stats(result):
+    accepted = sum(1 for r in result.rounds if r["accepted"])
+    errors = sum(1 for r in result.rounds if r["script_error"])
+    rep = result.reproduction
+    stats = {"rounds": len(result.rounds), "accepted": accepted, "errors": errors,
+             "calls": result.calls, "tokens": result.tokens, "commands": result.commands,
+             "elapsed": result.elapsed, "defects": result.defects, "candidates": result.candidates,
              "reproduction": "-" if rep is None else ("match" if rep["matches"] else "differ %d" % len(rep["differences"]))}
-    if getattr(session, "climb", False):
-        stats.update(CL.session_metrics(session.rounds, len(session.script)))
+    if result.metrics:
+        cs = [c["C"] for c, _ in result.metrics if c]
+        ds = [d["P"] for _, d in result.metrics if d]
+        peak_c = max(cs, default=0.0)
+        stats.update({"peak_c": round(peak_c, 1), "peak_d": round(max(ds, default=0.0), 1),
+                      "band": next((c["band"] for c, _ in result.metrics if c and c["C"] == peak_c), ""),
+                      "density": round(peak_c / result.commands, 2) if result.commands else 0.0})
     return stats
 
 
 def cmd_run(args):
     env = _env()
     cfg = C.load(args.config)
+    H = _harness()
     catalog = CAT.Catalog()
     coverage = COV.Coverage(env.polygon / "coverage.json")
     names = [b.strip() for b in (args.backends.split(",") if args.backends else [args.backend]) if b and b.strip()]
     if not names:
         print("give --backend or --backends", file=sys.stderr)
         return 2
-    mission = _mission(env, cfg, catalog, coverage, args)
+    mission = M.compose(args.mission, env, args.seed, args.diagram, args.theme, args.story)
     ledger = _Ledger(env.polygon / "productivity.json")
     compare = len(names) > 1
     base = S.session_folder(env.polygon, "compare-" + mission.kind if compare else "agent-" + mission.kind, args.seed)
     rows = []
+    code = 0
     for name in names:
         backend = cfg.backend(name)
         folder = (base / name) if compare else base
-        session = _run_session(env, cfg, catalog, coverage, backend, mission, folder, args)
-        stats = _session_stats(session)
+        result = H.run_session(env, cfg, catalog, coverage, backend, mission, folder, _register(env),
+                               burst=args.burst or H.PC.DEFAULT_BURST, trace=args.trace)
+        stats = _session_stats(result)
         stats["backend"] = "%s:%s" % (backend.name, backend.model)
         rows.append(stats)
         ledger.add(backend.name, stats)
@@ -366,13 +303,18 @@ def cmd_run(args):
         if "peak_c" in stats:
             extra = ", peak C=%.1f (%s) D=%.1f density=%.2f" % (
                 stats["peak_c"], stats["band"], stats["peak_d"], stats["density"])
-        print("%s [%s]: %s, %d calls%s" % (folder, backend.name, session.summary(), stats["calls"], extra))
+        print("%s [%s]: %s, %d calls%s" % (folder, backend.name, result.summary(), stats["calls"], extra))
+        for r in result.rounds:
+            for kind, signature, note in r["findings"]:
+                print("  edit %d %s %s: %s" % (r["n"], kind, signature[:60], note[:100]))
+        if result.failed or result.error:
+            code = 2
     ledger.save()
     if compare:
         base.mkdir(parents=True, exist_ok=True)
         (base / "comparison.txt").write_text(_comparison_table(mission, rows))
         print("\n" + _comparison_table(mission, rows))
-    return 0
+    return code
 
 
 def _comparison_table(mission, rows):
@@ -560,17 +502,16 @@ def main(argv=None):
     p.add_argument("--boundary", action="store_true", help="drive features to extremes (compound drill)")
     p.add_argument("--no-minimize", action="store_true")
     p.set_defaults(func=cmd_drill)
-    p = sub.add_parser("run", help="an agent session (one backend, or a comma list to compare)")
+    p = sub.add_parser("run", help="a tester session (one backend, or a comma list to compare)")
     p.add_argument("--backend")
     p.add_argument("--backends", help="a comma list: run the same mission on each and compare")
-    p.add_argument("--mission", choices=[M.REPRODUCE, M.COMBINE, M.EXPLORE, M.TOUR, M.DRAW, M.CLIMB], default=M.COMBINE)
-    p.add_argument("--diagram")
-    p.add_argument("--theme", help="the combination theme (its start rule and hint)")
+    p.add_argument("--mission", choices=list(M.KINDS), default=M.HUNT)
+    p.add_argument("--diagram", help="the corpus diagram to rebuild (rebuild mission)")
+    p.add_argument("--theme", help="a theme seasoning the task (catalog/themes.json)")
     p.add_argument("--story", help="the diagram to draw (draw mission; catalog/stories.json)")
     p.add_argument("--seed", type=int, default=1)
-    p.add_argument("--rounds", type=int)
-    p.add_argument("--burst", type=int, help="fuzzer micro-ops after each explore round (default 5)")
-    p.add_argument("--no-minimize", action="store_true")
+    p.add_argument("--burst", type=int, help="fuzzer micro-ops after each clean check of a stress session (default 5)")
+    p.add_argument("--trace", action="store_true", help="print the moves of the machine")
     p.set_defaults(func=cmd_run)
     p = sub.add_parser("replay", help="replay a recorded session without the backend")
     p.add_argument("folder")
