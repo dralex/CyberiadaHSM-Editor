@@ -152,7 +152,7 @@ operations, undo and redo in the middle of a sequence, deletes of things others
 depend on, gestures on crowded places. After a few edits signal CHECK: the oracles
 run the reruns and the laws and tell you what fired. Stop the area when you have
 tried its requirements from several sides. Signal DONE when you have nothing
-left to try.
+left to try. Put several commands in one call: every call costs one request.
 
 Ids are deterministic: the top-level elements of the machine G0 are n0, n1, ... in
 creation order, the children of a state are parent::n0, parent::n1, ..., a transition
