@@ -1,109 +1,271 @@
 # The Test Polygon
 
-The polygon is an exploratory test system driven by a child LLM agent. The
+The polygon is the exploratory test system of the editor: a tester agent edits
+diagrams through the batch mode, reference-free oracles judge every step, and
+the found problems are kept with their reproductions for bugfixing. The
 good-file tests of `TESTING.md` prove fixed diagrams against reviewed
 references; they cannot invent the long, twisted edit histories where the
-editor crashes. The polygon lets an agent draw real diagrams and combine the
-editing operations in low-predicted ways through the batch mode, judges every
-run with reference-free checks, and keeps the found problems with their
-reproductions for bugfixing.
+editor crashes. The polygon lets an agent build real diagrams and combine the
+editing operations in ways nobody planned.
 
 The behaviour it judges is the one written down in `docs/EDITOR-SPEC.md` — the
 root specification of the editor's required behaviour. Its requirements become
-the polygon's standing laws, the way the good-file tests take their references
-from reviewed dumps. Two complexity metrics — the diagram metric of
-`docs/COMPLEXITY.md` and the drawing-process metric of `docs/DRAWING_COMPLEXITY.md`
-— measure how hard a diagram and its edit history are, and steer the climb mission.
+the polygon's standing laws and the targets of the hunt mission. Two complexity
+metrics — the diagram metric of `docs/COMPLEXITY.md` and the drawing-process
+metric of `docs/DRAWING_COMPLEXITY.md` — measure how hard a diagram and its
+edit history are and steer the stress mission.
 
-The tool lives in `tests/polygon/`, is written in Python 3 with the standard
-library and one HTTP client, and runs the editor binary exactly as the ctest
-tiers do: offscreen, `--batch`, `--no-text`, hermetic fonts and config. The
-LLM backend is configurable; the agent is never a fixed vendor.
+The tool lives in `tests/polygon/`, is written in Python 3 and runs the editor
+binary exactly as the ctest tiers do: offscreen, `--batch`, hermetic fonts and
+config. The deterministic producers (the fuzzer, the drills, the tool tour, the
+register) need the standard library only. The LLM tester is an agent of the
+cybersphere agents framework (`sources/cybersphere-agents` over
+`hsm-dispatcher-py`): its strategy is a state machine diagram, its hands are
+the editor's verb families offered as tools, its judgement is the oracles raised
+as facts. The model is configurable; the tester is never a fixed vendor.
 
 ## Architecture
 
 ```
-  catalog/operations      coverage.json            catalog/briefs + corpus
-  (verbs, kinds,          (coverage: verb pairs,   (domain briefs, the
-   preconditions)          verb x kind, fired)      diagrams to reproduce)
-        \                      |                      /
-         v                     v                     v
-       +-------------------- mission composer --------------------+
-       |  seed -> mission: start document, operations, theme,     |
-       |          budget, untried cells, or a diagram to rebuild  |
-       +---------------------------+-------------------------------+
-                                   | prompt
-                  +----------------+----------------+
-                  v                                 v
-           agent adapter                          fuzzer
-     (chat-completions | messages,        (random valid sequence
-      vision flag, retries, budget)          from the catalog, seeded)
-                  |  == plan / == script / == expectations
-                  v
-       +------------------------------ runner --------------------------------+
-       |  CyberiadaEditor --batch <doc> --script <s> --dump --dump-stack |
-       |  subprocess, timeout, signal and exit code capture                 |
-       |  reruns: --save + reopen | undo-all / redo-all | --export          |
-       +-------------------------------+------------------------------------+
-                                       | exit code, stderr, dump, files
-                                       v
-       +--------------------------- oracles ----------------------------+
-       | tier 1  no-brain: crash, save/reopen, undo-all, export         |
-       | tier 2  expectations vs the parsed dump                        |
-       | tier 3  render: dump vs image ink; vision review (optional)    |
-       +---------------+-----------------------------+------------------+
-                       | feedback to the next round  | problems
-                       v                             v
-                 agent (round n+1)        problems/register.json
-                                          problems/<id>/  script, doc, png
-                                                     |
-                                                     v
-                                          ctest tier polygon-<id>
-                                          (known failure, green on a fix)
+  polygon run --backend b --mission m --seed s
+      |
+      v
+  harness.py:  compose the mission (start document, story / brief / domain,
+               budget), install the components, build the agent on
+               diagrams/<m>.graphml, run it
+      |
+      v  the diagram: the strategy (what the tester is doing now)
+  +-----------------------------------------------------------------------------+
+  |  Mission machine      Focus machine (hunt)         Watchdog machine         |
+  |  Editing -> Applying  Nodes -> Edges -> ...        Watching --budget.       |
+  |  -> Checking -> Confirm -> ... -> @                EXCEEDED--> @            |
+  +------+-------------------------------+----------------+---------------------+
+         | methods                       | facts, at a tick                     | agent loop tools
+         v                               |                                      | prompt budget log
+  +--------------------------------------+-----------------------------------+  (the framework)
+  |  the polygon components                                                  |
+  |   document   the diagram under edit: the start document plus the         |
+  |              accepted script, replayed on every edit                      |
+  |   oracle     the reruns, the laws, the render check; the expectations     |
+  |   register   the problems and their reproductions                         |
+  |   focus      the areas of EDITOR-SPEC: the families, the requirements,    |
+  |              the untried cells of the coverage                            |
+  |   metric     the complexity C and D of the document                       |
+  |   fuzzer     a burst of random micro-operations                           |
+  +---------------------------+----------------------------------------------+
+                              | wraps
+  runner  dump  oracles  laws  render  expectations  register  coverage  fuzzer  climb
+                              ^
+     the tools of the model:  create  connect  arrange  behave  clipboard  history
+                              gesture  (one per verb family)   inspect   expect
+                              signal (the framework's: the moves of the diagram)
+                              |
+                      the engine (Pydantic AI)  <->  the model
 ```
 
-The composer decides *what* is combined, the agent decides *how*. The
-oracles need no reference: every check compares the run with itself. The
-document of a round is the start document with the accumulated script
-replayed from the beginning, so the accumulated script is the reproduction.
+The components own the mechanics, the diagram owns the control flow, the tools
+are the model's hands. An edit is one editor run on the start document with the
+accumulated script, so the accumulated script is always the reproduction. The
+long work — an edit, a check, a burst, a comparison — is an activity of a
+component: a method starts it and returns, the dispatcher keeps ticking, and the
+result arrives as a signal that moves the diagram. The model is asked only when
+the diagram offers it something.
+
+## The tester
+
+### The workspace: the document
+
+The `document` component holds the diagram under edit: the start document (the
+empty document with one state machine `G0`, or a corpus diagram), the accepted
+script and the last dump. `apply(family, script)` is the activity behind every
+family tool: the script is parsed, a verb outside the family or an empty script
+is refused at once, otherwise the editor runs the accumulated script plus the
+new lines with `--dump --dump-stack`; at the next tick the component raises
+`EDITED(family, commands, created)`, `REJECTED(line, message)` (an error in the
+new lines, the document unchanged) or `CRASHED(signature)`. Its `summary` is the
+edit in words — the lines accepted, the new ids in creation order, the counts,
+the undo depth; after a rejection the current ids and the note to use only
+them. `inspect()` renders the document, the scene (absolute rects) and the undo
+stack from the last dump without running the editor.
+
+For a reproduction `branch(target)` sets the main script aside and starts an
+empty one; `restore()` brings the main line back. `compare(name)` runs the
+structural diff against a corpus original (`MATCHES` / `DIFFERS(count, text)`).
+The variables the diagram reads: `commands`, `edits` (since the last check),
+`elements`, `undo_depth`, `rejections` (consecutive), `tries`, `branched`,
+`target`, and the limits of the session `budget`, `max_calls`, `max_seconds`.
+
+### The hands: the verb families
+
+The batch script has sixty-two verbs (`catalog/operations.json`): thirty model
+verbs, sixteen raw gestures and sixteen named gesture forms. The tester sees them
+grouped by their effect on the diagram, each family aligned with the areas of
+`EDITOR-SPEC` whose requirements it can violate, and each family is one tool:
+
+| Family | Model verbs | Gesture forms | Spec areas |
+|---|---|---|---|
+| `create` | new-state, new-sm, new-submachine-state, new-initial, new-final, new-choice, new-terminate, new-shallow-history, new-deep-history, new-entry-point, new-exit-point, new-comment, new-formal-comment | the creation tools: `tool <name>` and a click or a rect | STRUCT, SEM, NODE |
+| `connect` | new-transition, polyline, label, new-subject, delete-subject | draw-loop, add-point, move-point, remove-point, move-endpoint | EDGE, SEM |
+| `arrange` | move, reparent, delete | drag-state, resize-state, resize-comment, click-delete | NODE |
+| `behave` | new-action, update-action, delete-action, rename, update-comment, update-id, update-meta | edit-title, edit-action, edit-label, edit-body, double-click-action | TEXT, META |
+| `clipboard` | — | copy-paste, cut-paste (copy, cut, paste) | TOOL, NODE |
+| `history` | undo, redo | — | HIST |
+| `gesture` | — | press, drag, release, click, double-click, tool, delete-selected, edit, edit-text, type, key, select-all, commit | TOOL |
+
+A family tool takes a script of its own verbs; its description, generated from
+the catalog, lists only those verbs with the line syntax and the id rules, so the
+model carries the protocol of the state it is in, not the whole catalog. The
+diagram allows families per state with `tools.allow(...)`: in the edge area the
+model sees `create` and `connect` and nothing else, and the framework hides the
+rest before every request. Two more tools: `inspect()` returns the current
+document, scene and undo stack; `expect(facts)` evaluates facts of the
+expectation language on the last dump and returns the result, a failed fact
+becoming a `CANDIDATE` at the next step. `signal(event, reason)` is the
+framework's: the moves of the diagram the model may request (`CHECK`, `DONE`,
+`REPRODUCED`).
+
+A tool returns at once: "applying N commands, the result comes as the next
+message". The diagram enters a state without tools while the edit runs, the
+engine waits, and when `EDITED` arrives the diagram adds `document.summary` as a
+message and re-allows the tools; the next request carries the summary.
+
+### The judgement: the oracle
+
+The `oracle` component runs the reference-free checks (below) on the accumulated
+script as an activity, `check()`, when the diagram asks: on the model's
+`CHECK`, every few edits, on leaving an area, before the end. At the tick that
+sees it done it raises one `DEFECT(kind, req, signature, note, new)` per crash,
+oracle, render or law finding (`req` is the `EDIT-` requirement of a law), one
+`CANDIDATE(fact, reason)` per failed expectation, and then `CLEAN` or
+`FOUND(new, known)`. Every defect is recorded in the register with the script
+that produced it; `new` counts the signatures the register had not seen.
+`profile('full' | 'stress')` turns the render check on or off; `expect(facts)`
+keeps the facts for the model's tool; `stop()` kills a running check. The
+variables: `checks`, `clean_streak`, `defects`, `candidates`, `signatures` (of
+the last check), `target` and `last` (the first new defect and its note).
+
+### Defects are a state: Confirm
+
+A defect found on a long history is a fact with a long script. The hunt, draw
+and stress diagrams react to `FOUND` with a new signature by entering
+`Confirm`: the document is branched, the model is told what fired and asked to
+rebuild it from the start document in as few commands as it can with every
+family at hand, and signals `REPRODUCED`; a check of the branch that raises the
+same signature confirms the problem and the register takes the short script as
+its reproduction. Three misses leave the problem with the long script, and the
+main line is restored either way. The model's reproduction replaces mechanical
+minimisation for the tester's findings; the fuzzer, the drills and the tour keep
+the prefix-replay minimisation of the register.
+
+### The focus, the metric and the fuzzer
+
+`focus` knows the areas of `EDITOR-SPEC` §4: `area(name)` sets the families of
+the area (the table above), its requirement lines read from the specification
+(`requirements`, for the prompt), and the untried cells of the coverage store
+within those families (`untried`); `next()` moves to the next area and raises
+`CHANGED(area)` or `EXHAUSTED`. `metric` measures the complexity `C` of the
+document and `D` of the script (`measure()`, an activity; `MEASURED(c, band,
+d)`; `nudges`, the thinnest dimensions as instruction; `target`, the complex
+band). `fuzzer` fires `burst(k)` random micro-operations through the same
+document as an activity, `DONE(commands)`; a crash in a burst is the document's
+`CRASHED`.
+
+### The session
+
+A session is one run of the agent on one mission diagram with one backend. Its
+folder `sessions/<date>-agent-<mission>-<seed>/` holds `session.json` (the
+mission, the edits with their family, lines, acceptance and findings — the
+`rounds` of the replay command), `script` (the accepted lines), `edit-<n>.dump`,
+`messages.json` (the conversation and the snapshot of the dispatcher, the engine
+session, resumable with `--load`), `usage.json` (requests and tokens) and
+`trace.txt` (the moves of the machine). `replay <folder>` re-runs the stored
+lines through the oracles without a model.
 
 ## Missions
 
-A session is one mission and a number of rounds on one document. Two mission
-kinds share the runner, the oracles and the register and differ in the prompt.
+A mission is a diagram in `tests/polygon/diagrams/`, drawn with the editor and
+validated like any CyberiadaML document. Every document declares the framework
+components (`agent`, `loop`, `tools`, `prompt`, `log`, `budget`) and the polygon
+ones it uses, holds its instructions as `PROMPT <name>` formal comments, and
+carries a `Watchdog` machine beside the mission machine: `budget.limit` on
+entry, and on `budget.EXCEEDED` it stops the running activities, hides the tools
+and ends the loop.
 
-| Mission | Start | Task of the agent | Extra oracle |
+| Mission | Start | Strategy | Profile |
 |---|---|---|---|
-| A reproduction | empty document, one state machine | rebuild a corpus diagram from its description, never from the file | structural diff of the result dump against the original dump: kinds, names, nesting, transitions, actions; geometry free |
-| B combination | a corpus diagram (dump given) | combine a drawn subset of operations under a theme so that each step changes what the next one relies on | none beyond the tiers |
-| C exploration | empty document | design and keep improving a real diagram of a given domain; between rounds a fuzzer burst injects random micro-operations on the current diagram | none; the stress profile (crash, save/reopen, undo-all, export) runs each round |
-| D drawing | empty document | draw one named diagram (a drawing story) cleanly from scratch; the intro presents the editor's rules so the drawing stays well-formed; no fuzzer burst | none; the stress profile runs each round |
-| E climb | empty document (or a corpus diagram to extend) | build toward a target complexity band within an operation budget, adding structure and transition craft where the `C`/`D` profile is thin, then stop at saturation | none; the stress profile runs each round |
+| `hunt` | empty | the main one: a `Focus` machine walks the areas of `EDITOR-SPEC` (nodes, edges, texts, tools, history); in each the model has the families of the area and its requirements as the target — make the editor violate one of them; the area changes on a clean streak or when its cells are covered | full |
+| `draw` | empty | draw one named diagram (a drawing story) cleanly, under the drawing rules | stress |
+| `stress` | empty | build a real machine of a domain; after every clean check a fuzzer burst and a measurement, the thinnest dimensions of `C`/`D` fed back as nudges until the complex band | stress |
+| `rebuild` | empty | rebuild a corpus diagram from its brief, never from the file; `compare` after the check, the differences fed back | full |
 
-Mission A exercises the creation paths and grows the corpus: every accepted
-reproduction is stored as a new starting document. The corpus also carries real
-diagrams adopted from the sibling repositories (a vacuum robot, ROS turtle
-missions, arduino-course microwave/semaphore/dog/hoover — see `corpus/SOURCES.md`),
-each re-saved to the native format and verified law-clean and save-reopen stable.
-The `orchestrate-*` diagrams are **compositions**: `tools/combine.py` wraps several
-of these machines in an orchestrator whose states are submachine states, wired
-through entry/exit connection points — the durable exercise of the submachine
-feature (embedded, the machines inlined and referenced by id; and external,
-referenced by file name). Mission B exercises the
-editing paths in sequences nobody planned. Each theme carries a `start` rule
-(`corpus`, `small` or `empty`) so a story can begin from an empty document,
-and an optional `forms` restriction. The stories: nesting under change,
-geometry extremes, undo/redo interleaving, deletion of parents, identity
-changes, comments and subjects, transitions everywhere, gestures on a
-crowded diagram, build from scratch by gestures (empty start, gesture and
-text verbs only), refactoring session, text-heavy behaviours (real code in
-C, Python or a pseudolanguage, multi-line, edits), student session with
-mistakes (small start, the refusals and corrections), and sequential growth
-from a single state to a clean complex system.
+A `--theme` seasons the hunt and draw task with a hint from
+`catalog/themes.json` (geometry extremes, undo/redo interleaving, text-heavy
+behaviours, ...). The seeded part of a mission — the story, the brief, the
+domain, the theme, the budget, the start document — is the task the run begins
+with; the static strategy is the `PROMPT` of the state.
+
+The hunt diagram, the pattern of the others:
+
+```
+ machine Hunt
+ * -> Editing: entry/ tools.allow(*focus.families); prompt.set('hunt')
+      loop.FINISHED/ prompt.add('A text answer changes nothing: use a tool, or signal CHECK or DONE.')
+      focus.CHANGED/ prompt.add(focus.requirements + focus.untried)
+ Editing  --document.STARTED--> Applying: entry/ tools.allow()
+ Applying --document.EDITED [document.edits < 6]/ prompt.add(document.summary)--> Editing
+ Applying --document.EDITED [else]/ prompt.add(document.summary)--> Checking
+ Applying --document.REJECTED/ prompt.add(document.summary)--> Editing
+ Applying --document.CRASHED/ prompt.add(document.summary)--> Checking
+ Editing  --agent.CHECK [document.edits > 0]--> Checking
+ Checking: entry/ tools.allow(); oracle.check()
+ Checking --oracle.CLEAN--> Editing
+ Checking --oracle.FOUND [event.new == 0]--> Editing
+ Checking --oracle.FOUND [else]/ document.branch(oracle.target); prompt.add(oracle.last)--> Confirm
+ Confirm: entry/ tools.allow_all(); prompt.set('confirm')
+ Confirm  --document.STARTED--> Reproducing: entry/ tools.allow()
+ Reproducing --document.EDITED | REJECTED | CRASHED / prompt.add(document.summary)--> Confirm
+ Confirm  --agent.REPRODUCED [document.edits > 0]--> Confirming: entry/ tools.allow(); document.attempt(); oracle.check()
+ Confirming --oracle.FOUND [document.target in oracle.signatures]/ register.confirm(document.target); document.restore()--> Editing
+ Confirming --oracle.FOUND | CLEAN [document.tries < 3]/ prompt.add('Not reproduced; try again from the start.')--> Confirm
+ Confirming --oracle.FOUND | CLEAN [else]/ document.restore()--> Editing
+ Editing  --agent.DONE [document.edits == 0]--> @
+ Editing  --focus.EXHAUSTED--> Checking (the last check, then @)
+
+ machine Focus
+ * -> Nodes: entry/ focus.area('node')
+ Nodes --oracle.CLEAN [oracle.clean_streak >= 3 or not focus.untried]/ focus.next()--> Edges
+ Edges -> Texts -> Tools -> History the same way (entry/ focus.area(...)); the last raises EXHAUSTED
+
+ machine Watchdog
+ * -> Watching: entry/ budget.limit(requests=document.max_calls, seconds=document.max_seconds)
+ Watching --budget.EXCEEDED/ document.stop(); oracle.stop(); tools.allow(); loop.stop()--> @
+```
+
+The `agent.` triggers sit on the states that offer tools: while an activity runs
+the diagram offers nothing and the model is not asked. `draw` has no `Focus`
+machine and allows `create`, `connect`, `behave` and `arrange`; `stress` adds a
+`Stress` state after every clean check (`fuzzer.burst(5)`, then
+`metric.measure()`, then the nudges as a message, until `metric.c` reaches the
+target); `rebuild` ends with `Comparing` (`document.compare(name)`; a
+difference is fed back while the budget lasts).
+
+### What the model reads
+
+| Text | Where it lives |
+|---|---|
+| the line syntax, the id rules, the verbs of one family | the description of the family tool, generated from the catalog |
+| the expectation vocabulary | the description of `expect` |
+| the strategy of a mission, the drawing rules, the confirm instructions | `PROMPT <name>` comments of the diagram, `prompt.set` on entry |
+| the story, the brief, the domain, the theme, the budget | the task the run begins with |
+| the requirements and the untried cells of an area | `prompt.add(focus.requirements + focus.untried)` on `focus.CHANGED` |
+| the outcome of an edit, the ids | `prompt.add(document.summary)` on `EDITED` / `REJECTED` / `CRASHED` |
+| the defect to reproduce | `prompt.add(oracle.last)` entering `Confirm` |
+| the complexity nudges | `prompt.add(metric.nudges)` on `MEASURED` |
+| the current document, scene and undo stack | the `inspect` tool, on demand |
 
 ### Drawing stories
 
-The **drawing mission** (`run --mission draw`) asks the agent to draw one named
+The **draw mission** (`run --mission draw`) asks the tester to draw one named
 diagram from an empty document. The diagrams are **drawing stories** in
 `catalog/stories.json` — each a `name`, a one-line `subject`, a `hint` giving the
 states, nesting, pseudostates and key transitions to draw, a `budget`, and a
@@ -117,14 +279,15 @@ state referencing an external machine with its entry/exit connection points, so
 those are covered by the drawing missions as well as the fuzzer and the
 submachine drill. Pick one with `--story <name>`, or let the seed choose.
 
-Unlike exploration, a drawing session does not inject fuzzer bursts: it is a
-clean build of a known machine. Its intro **presents the editor's rules**
-(`prompt.DRAWING_RULES`, kept in step with `EDITOR-SPEC` §4): containment and
+Unlike the stress mission, a drawing session fires no fuzzer burst: it is a
+clean build of a known machine. Its prompt **presents the editor's rules**
+(the `PROMPT draw` comment of `diagrams/draw.graphml`, kept in step with
+`EDITOR-SPEC` §4): containment and
 grow-to-fit, siblings apart, one initial per region, legal endpoint kinds,
 guarded choices, unique names, endpoints on the border, an arrow on the line,
-colour drawn per kind. The agent draws to satisfy them and the reference-free
+colour drawn per kind. The tester draws to satisfy them and the reference-free
 tiers (crash, save/reopen, undo-all, export) plus the standing `[U]` laws check
-that the drawn diagram does. A clean drawing can be kept as a corpus document,
+that the drawn diagram does; a check runs every six edits and before the end. A clean drawing can be kept as a corpus document,
 as a reproduction is.
 
 ### The drill class
@@ -135,7 +298,7 @@ the generic oracles miss. Drills target the dependent-history logic where the wo
 live. Each drill is a producer on a small base (`polygon/drills/`), holding a state model
 and a step counter; each round is one escalation step returning a script and its invariant
 facts. The invariants are guaranteed properties, so a violation registers as a defect
-(`invariant` kind), unlike an agent's expectations which stay candidates.
+(`invariant` kind), unlike the tester's expectations which stay candidates.
 
 The drills: **nesting** (create, reparent deeper, move out then in; depth grows, out-then-in
 restores, a child stays inside its parent); **pseudostate** (initial and final in and out of
@@ -206,12 +369,12 @@ rect or place a default size on a click; the six placement tools create on a cli
 container is the element under the press point, and a creation tool reverts to select after
 one use. `catalog/tools.json` is the polygon's model of them.
 
-The **tour mission** is the systematic build-from-scratch strategy: the agent works through
-the tools one at a time, using each in several ways (a single element, several, inside a
-container, at an extreme position, then undo, in combination with what it built) before
-moving to the next. It is pure agent, no fuzzer burst, and runs the full oracles including
-the render-content check, so a tool that draws nothing is a finding. It complements the
-free-design `explore` mission.
+The **deterministic tour** (`tour`) walks the (tool, pattern) matrix of
+`toolcover.json` in prerequisite order without a model, under the stress
+profile. The tester's tour is the `tools` area of the hunt mission: the model
+has the `gesture` family only, the requirements of `EDITOR-SPEC` §4.6 as its
+target, and the full oracles including the render-content check, so a tool that
+draws nothing is a finding.
 
 The **fuzzer** is a lean tool-driven core: it picks a tool or a select-tool manipulation
 weighted by coverage, and emits the gesture — a creation tool draws or places, the
@@ -219,252 +382,51 @@ transition tool presses a source and drags to a target, the select tool drags, r
 edits text, drives the transition point dots, or deletes. Creation goes through the real
 tools, not the model verbs, so the fuzzer exercises the same paths a user does. The
 gesture-less model-only verbs (metainformation, id changes, comment subjects, whole-polyline
-replacement) are left to the agent and the good-file cases.
+replacement) are left to the tester and the good-file cases.
 
-### Exploration and the fuzzer burst
+### Stress, the fuzzer burst and the climb
 
-The exploration mission is the build-then-stress strategy and the default balance
-between the two producers. The agent draws a real diagram of a domain (a lift, a
-vending machine, a robot mission) from the empty document and keeps improving it,
-changing its mind, moving and re-nesting states, rerouting and re-pointing edges,
-rewriting actions. After every accepted agent round a **fuzzer burst** fires K random
-micro-operations on the current diagram: the drags, resizes, endpoint moves and polyline
-point edits a designer would not think to try. The agent supplies coherent, dependent
-state where the worst crashes live; the fuzzer supplies volume and the awkward
-micro-gestures. The balance is layered, not a dial: the fuzzer is the cheap, seeded,
-reproducible breadth over single operations and short sequences, the agent is the
-human-like design history. The ratio is tuned by measurement (the productivity ledger).
+The stress mission is the build-then-stress strategy and the balance between the
+two producers. The tester builds a real machine of a domain (a lift, a vending
+machine, a robot mission) from the empty document and keeps improving it. After
+every clean check a **fuzzer burst** fires K random micro-operations on the
+current diagram: the drags, resizes, endpoint moves and polyline point edits a
+designer would not think to try. The tester supplies coherent, dependent state
+where the worst crashes live; the fuzzer supplies volume and the awkward
+micro-gestures. The ratio is tuned by measurement (the productivity ledger).
 
-The edges are stressed directly. From the document `sp`/`tp`/`polyline` and the scene
-node centres the polygon computes the scene coordinates of every transition handle, then
-drives them by gesture: `add-point` (drag a segment), `move-point` (drag a point dot),
-`remove-point` (click a point dot, `key delete`), and `move-endpoint` (drag an endpoint,
-Ctrl to snap, onto a node to reattach). A pure `fuzz --stress` sweep biases toward the
-gesture forms so the drags and the edge and point edits are exercised while the model
-verbs keep the diagram populated.
+The edges are stressed directly. From the document `sp`/`tp`/`polyline` and the
+scene node centres the polygon computes the scene coordinates of every
+transition handle, then drives them by gesture: `add-point` (drag a segment),
+`move-point` (drag a point dot), `remove-point` (click a point dot, `key
+delete`), and `move-endpoint` (drag an endpoint, Ctrl to snap, onto a node to
+reattach). A pure `fuzz --stress` sweep biases toward the gesture forms so the
+drags and the edge and point edits are exercised while the model verbs keep the
+diagram populated.
 
-The **stress oracle profile** is reference-free: crash and hang, save then reopen,
-undo-all then redo-all, and export success (PNG and SVG exit and write a file). The heavy
-render-content ink check is off for random operations, and no result is predicted for the
-agent. A universal law is not a prediction but a property of the result, so the standing
-`[U]` laws (when added) belong to this profile as well.
+The **stress oracle profile** is reference-free: crash and hang, save then
+reopen, undo-all then redo-all, and export success (PNG and SVG exit and write
+a file). The heavy render-content ink check is off for random operations. A
+universal law is a property of the result, not a prediction, so the standing
+`[U]` laws belong to this profile as well.
 
-### The complexity climb
-
-The climb mission directs the agent to build a **more complex** diagram — deeper, more connected,
-more varied — through a **richer drawing process**, and to stop when it is complex enough rather than
-pad it. Two measures drive it, both reference-free and both computed each round: the **diagram
-complexity** `C` of the current document (`docs/COMPLEXITY.md`, `tools/complexity.py`) — its weighted
-element count with nesting amplified, its branching, its graph connectivity, its submachine coupling
-and kind variety — and the **drawing complexity** `D` of the session so far
-(`docs/DRAWING_COMPLEXITY.md`, `tools/drawing_complexity.py`) — the breadth and manner of the
-operations, the restructuring and reuse, and above all the transition-drawing craft. `C` scores what
-was built; `D` scores how.
-
-A climb carries a **budget**: an operation allowance `B` for the whole session (as a drawing story
-carries its `budget`), a **target complexity band** the composer sets (moderate, complex or extreme;
-fixed for a mission, or escalating across a campaign as the drills do), and a **saturation** rule —
-the climb stops at the knee of the `C` curve, where the marginal complexity per operation falls off
-and further elements are only noise. The budget is what keeps "more complex" from becoming "more
-elements": the count cannot run away because the allowance is finite; because `C` is non-linear (a
-nested loop or a submachine is worth far more than another flat sibling, so the efficient spend is
-dense structure, and the mission scores **density** — `C` per operation — not size); and because the
-diagram must stay a coherent machine of its domain (the reference-free oracles and the theme reject
-dense noise).
-
-Each round the feedback the agent already receives (exit code, diagnostics, dump) is joined by its
-standing: the current `C` and `D` with their bands, the target, the budget left, and — turned into
-plain instruction — the **thinnest dimensions** of the two profiles. A flat diagram is told to nest a
-composite; one with no feedback edge to add a cycle; one with no branch to add a guarded choice; a
-single machine to factor a part into a submachine; a diagram that never restructured to reparent a
-subtree or wrap states in a new composite; one that never reused to copy-paste a substructure; and a
-diagram whose transitions are plain auto-attached edges to route one with a polyline, a self-loop, a
-cross-boundary edge and a label — the emphasised craft. The agent answers with its usual plan, script
-and expectations; the fuzzer burst still fires between rounds for breadth while the agent supplies the
-dense design.
-
-A climb session is scored on reaching its target band **efficiently and coherently**: the score
-rewards a high `C` reached at high density and drawn with a high `D`, and is zero when a round breaks
-an oracle or a standing law. Run on several backends, the highest-scoring coherent drawing is kept —
-the same target drawn different ways, the richest retained — as a new corpus document, exactly as an
-accepted reproduction or drawing is. And the real return is the defects: a deep, restructured,
-transition-heavy machine reaches editor code the fixed missions never touch, and every crash or oracle
-failure it finds is registered with its reproduction. `productivity.json` gains the complexity a
-backend reached — peak `C`, peak `D`, density — beside its commands and defects.
-
-### Prompts
-
-The preamble is generated from the operation catalog and is the same for
-both missions:
-
-```
-You edit hierarchical state machine diagrams through a batch script.
-The editor runs your script on a document and returns the exit code,
-the diagnostics and a dump of the resulting scene.
-
-Commands, one per line (ids are deterministic: top-level states n0, n1...,
-children parent::n0..., transitions src-tgt):
-  <the verb table of TESTING.md, generated from catalog/operations>
-
-Answer with three sections and nothing else:
-  == plan          a numbered list of what you intend and what you expect
-  == script        the commands
-  == expectations  facts to verify on the result, one per line
-```
-
-The document verbs of the tabbed window (`open`, `new-document`, `switch`,
-`close`; `TESTING.md`, *Edit scripts*) are not in the catalog yet: the shadow
-model predicts one document, the active tab, so a cross-tab prediction (a
-paste from another document) is deferred to a later round.
-
-Mission A body:
-
-```
-Mission: reproduce a diagram.
-Start from an empty document with one state machine G0.
-The diagram is a pure hierarchy, no transitions, no vertices:
-  - two top-level composite states, "Parent 0" and "Parent 1";
-  - "Parent 0" holds a simple state "State 0-0" and a composite state
-    "Subparent 0-1", which holds "State 0-1-0" and "State 0-1-1";
-  - "Parent 1" holds "State 1-0" and "State 1-1".
-Choose a geometry in which every child lies inside its parent with a
-margin and siblings do not overlap. Create parents before children.
-Your expectations must cover every state and its parent.
-```
-
-Mission B body:
-
-```
-Mission: stress the editor by combining operations in an order a user
-would not plan.
-Starting document: <dump of tests/diagrams/hierarchy.graphml>
-Operations to combine: reparent, move (resize form), delete, undo, redo.
-Theme: nesting under change. Budget: 12 to 20 commands.
-Untried so far: resize a parent below the size of its child, then reparent
-the child out and undo; delete a parent that was just resized and redo.
-Combine the operations so that each step changes the situation the next
-step relies on. In the plan, say for each risky step what you expect the
-editor to do. Keep the document valid: every command must be accepted.
-```
-
-An answer to mission B:
-
-```
-== plan
-1. shrink n0 to 60x40 so that its child n0::n1 no longer fits
-2. reparent n0::n1 to n1 while the parent is smaller than the child
-3. undo twice: the child is back in n0, n0 has its old size
-4. redo once, then delete n0 with n0::n0 still inside
-5. undo the delete: n0 and n0::n0 are back with the old geometry
-== script
-move n0 10 10 60 40
-reparent n0::n1 n1
-undo
-undo
-redo
-delete n0
-undo
-== expectations
-state Parent 0 parent G0
-state Subparent 0-1 parent n0
-rect-inside n0::n1 n0
-count state 8
-undo-depth 4
-```
-
-The description of a corpus diagram for mission A is written once into
-`catalog/briefs/` (a human description, or generated from the dump and
-reviewed); the file itself never reaches the agent.
-
-Mission E body and the first round of a climb (seed: theme "a drink
-vending machine", target `complex`, budget 40 operations):
-
-```
-Mission: climb to a more complex diagram, densely and coherently.
-Start from an empty document with one state machine G0.
-Theme: a drink vending machine. Target: complex (C >= 65).
-Budget: 40 operations for the whole session; this round is your base.
-Prefer depth and feedback over width: a nested region, a loop back to the
-start, guarded branches and triggered transitions are each worth far more
-than another flat sibling. Create parents before children; keep it valid.
-```
-
-A first-round answer lays a coherent, cyclic base — an initial, a nested
-`Selecting`, and a loop `Idle -> Selecting -> Paying -> Dispensing -> Idle`:
-
-```
-== script
-new-initial G0
-new-state G0
-rename n1 Idle
-new-state G0
-rename n2 Selecting
-new-state n2
-rename n2::n0 ChooseDrink
-new-state n2
-rename n2::n1 ConfirmChoice
-new-state G0
-rename n3 Paying
-new-action n3 entry start_timer
-new-state G0
-rename n4 Dispensing
-new-transition n0 n1
-new-transition n1 n2
-new-action n1-n2 transition coin
-new-transition n2::n0 n2::n1
-new-transition n2 n3
-new-transition n3 n4
-new-transition n4 n1
-new-transition n3 n1
-== expectations
-kind n2 composite
-state ChooseDrink parent n2
-count state 6
-transition n4 n1
-undo-depth 0
-```
-
-The metric tools then compute the standing the next round carries — the
-score, the target gap and the thinnest dimensions turned into instruction:
-
-```
-C = 31.4 (moderate)  struct 19.2 · trans 7.5 · combo 0.0 · conn 1.0 · M 0.0 · V 3.0
-P = 14.8 (rich)      E 10.5 · R 0.0 · U 0.0
-target complex not reached · 24 of 40 operations spent, 16 left
-Thinnest — spend the rest here:
-  combo 0: add a guarded choice (sold-out vs dispense)
-  M 0: factor the payment protocol into a submachine
-  R 0: wrap two states in a new composite, or reparent a subtree
-  U 0: copy-paste a substructure you already built
-  E: route a polyline, a self-loop (retry on Paying), a cross-boundary edge
-```
-
-The agent reached C 31 for 24 operations — density ≈ 1.3 C/op — and the
-nudges point at the highest C-per-operation moves (a branch, a submachine,
-β-amplified nesting), so the next round climbs by getting denser, not wider.
-
-## Round protocol
-
-```
-  round n:  prompt (mission + history of the session + last feedback)
-               |
-               v
-            agent answer  ->  parse: plan, script, expectations
-               |                    (a malformed answer is retried once,
-               v                     then the round is dropped)
-            runner: document(n-1) + script  ->  document(n), dump(n)
-               |
-               v
-            oracles  ->  feedback: exit code, stderr, dump, expectation diff
-               |
-               v
-  round n+1 continues on document(n); a crashed run keeps document(n-1)
-```
-
-A session is fully determined by the mission seed, the backend and the
-model, so a session can be replayed from its stored prompts and answers
-without the backend (`sessions/<date>-<seed>/`). The budget of a session:
-the number of rounds and the number of model calls, both configured.
+After the burst the `metric` measures the **diagram complexity** `C` of the
+document (`docs/COMPLEXITY.md`, `tools/complexity.py` — the weighted element
+count with nesting amplified, the branching, the connectivity, the submachine
+coupling and the kind variety) and the **drawing complexity** `D` of the script
+(`docs/DRAWING_COMPLEXITY.md`, `tools/drawing_complexity.py` — the breadth and
+manner of the operations, the restructuring and reuse, the transition-drawing
+craft). The thinnest dimensions go back to the model as nudges: a flat diagram
+is told to nest a composite, one with no feedback edge to add a cycle, one with
+no branch to add a guarded choice, a single machine to factor a part into a
+submachine, a diagram that never restructured to reparent a subtree, one that
+never reused to copy-paste, and one with plain edges to route a polyline, a
+self-loop or a cross-boundary transition. The mission ends when `C` reaches the
+complex band or the budget runs out. `C` is non-linear — a nested loop or a
+submachine is worth far more than another flat sibling — so the efficient spend
+is dense structure, and the session records the peak `C`, the peak `D` and the
+density (`C` per command) beside its commands and defects. A deep, restructured,
+transition-heavy machine reaches editor code the fixed missions never touch.
 
 ## Oracles
 
@@ -475,9 +437,8 @@ the number of rounds and the number of model calls, both configured.
 | 1 | save the result, reopen it, dump again: the two dumps differ | `oracle` |
 | 1 | append one `undo` per step: the dump differs from the input dump; redo them all: the dump differs from the edited dump | `oracle` |
 | 1 | `--export` to png and svg fails | `oracle` |
-| 2 | an expectation of the agent does not hold on the dump | `semantic` |
+| 2 | an expectation of the tester does not hold on the dump | `semantic` |
 | 3 | an element of the dump leaves no ink on the image, a child is painted outside its parent, siblings overlap where they must not | `render` |
-| 3 | the vision review says the picture does not show the plan | `review` |
 
 The tier 1 checks are the no-brain checks: mechanical reruns of the same
 script with other batch options. The comparisons skip the fields the
@@ -502,17 +463,18 @@ signature; `[oracles] strict = false` switches it off.
 ```
 
 The polygon runs in text mode by default (`--text`): the canvas texts are
-shown, so the agent edits titles, actions, transition labels and comment
+shown, so the tester edits titles, actions, transition labels and comment
 bodies as a user does, and the render check verifies that every shown text
 leaves ink on the canvas (`shown`/`hidden` facts state what the canvas
 shows). The borders and the containment are still checked on a text-free
 render, which stays reproducible; the L1/L2 editor tiers keep `--no-text`.
 
-A `semantic` or `review` finding is a candidate: the agent may have expected
-the wrong thing. Both stay in the session record with the plan attached for
-a human to read; `register add` promotes one with its script and
-expectations. A `crash`, `oracle` or `render` finding is a defect until
-proven otherwise and goes to the register at once.
+A `semantic` finding is a candidate: the tester may have expected the wrong
+thing. It stays in the session record for a human to read; `register add`
+promotes one with its script and expectations. A `crash`, `oracle`, `render`
+or `law` finding is a defect until proven otherwise and goes to the register
+at once, with the script that produced it; the tester then reproduces it in
+`Confirm` (above).
 
 The check kinds of `EDITOR-SPEC` (§2) map onto these tiers: **[C] crash-free** is
 the tier-1 crash and hang check; **[I] identity** is the tier-1 save/reopen and
@@ -558,9 +520,9 @@ anything.
 | `shown <id> <role> <text>` | the canvas shows that text for the element (role `title`, `action`, `label`, `body`) |
 | `hidden <id> <role>` | the element shows no such text on the canvas |
 
-The vocabulary is deliberately small; what it cannot express is left to the
-vision review. The undo-all rerun reuses the evaluator with the facts of the
-untouched input.
+The vocabulary is deliberately small. The undo-all rerun reuses the evaluator
+with the facts of the untouched input; the shadow model of the drills emits
+its equivalence facts in the same language.
 
 ## Render check
 
@@ -590,18 +552,14 @@ check runs under `--no-text`, so it samples shapes only and stays
 machine-independent. The png of every fired check is kept with the
 reproduction so a human sees what fired.
 
-The vision review is a separate, optional step: when the backend declares
-`vision = true`, the agent receives its plan and the png and answers whether
-the picture shows the plan. Its verdicts are `review` candidates.
-
 ## Operation catalog, composer, coverage, fuzzer
 
 `catalog/operations.json` lists every operation of the batch script: the verb,
-the argument shape, the element kinds it applies to and its preconditions
-(`reparent` needs a target that may contain the element, `delete-action`
-needs an existing action, ...). It is the single source for the prompt verb
-table, the fuzzer grammar and the coverage cells. It covers the model verbs
-of `TESTING.md` and the gesture verbs of the same script:
+the argument shape, the element kinds it applies to, its form (`model`,
+`gesture`, `gesture-form`) and its **family** (the table above). It is the
+single source for the tool descriptions of the tester, the fuzzer grammar and
+the coverage cells. The gesture verbs of `TESTING.md` are in it beside the
+model verbs:
 
 | command | effect |
 |---|---|
@@ -610,7 +568,7 @@ of `TESTING.md` and the gesture verbs of the same script:
 | `release x y` | mouse release |
 | `click x y [mods]` | press and release at one point |
 | `double-click x y` | double click |
-| `tool select\|transition` | select the scene tool |
+| `tool <name>` | select the scene tool |
 | `delete-selected` | delete the selected element |
 | `edit <id> <role> [<i>]` | open the inline editor of a canvas text |
 | `edit-text <id> <role> [<i>] <text>` | open, replace and commit a canvas text in one line |
@@ -619,32 +577,30 @@ of `TESTING.md` and the gesture verbs of the same script:
 A gesture is one undo step opened on press and closed on release, as in the
 GUI, and the dump after a gesture shows the scene the gesture built, so the
 expectation facts apply unchanged. The catalog lists the gesture forms of the
-operations (`drag`, `resize`, `draw transition`, `delete selected`) beside
-the verbs, and mission B draws them alike.
+operations (`drag-state`, `resize-state`, `draw-loop`, `click-delete`, ...)
+beside the verbs.
 
-The composer draws a mission from a seed: the start document, three to six
-operations, a theme, a budget, and the untried cells it reads from the
-coverage store. For a climb mission it also sets the target complexity band and
-the operation allowance `B`, and the run records the `C` and `D` a session
-reached (from the two metric tools) beside `coverage.json` and `toolcover.json`. `coverage.json` counts, across sessions, every executed
-`(verb, kind)` cell and every consecutive verb pair, and marks the cells
-that fired an oracle. The draw is biased toward empty cells, so the coverage grows the way
-pairwise testing does, and the fired cells are revisited with other
-neighbours.
+The composer draws a mission from a seed: the start document, the story or the
+corpus diagram, the domain, the theme and the budget. `coverage.json` counts,
+across sessions, every executed `(verb, kind)` cell and every consecutive verb
+pair, and marks the cells that fired an oracle; a family's untried cells are
+what `focus.untried` tells the tester. The fuzzer's draw is biased toward empty
+cells, so the coverage grows the way pairwise testing does, and the fired cells
+are revisited with other neighbours.
 
-The fuzzer is the second producer: from the same catalog it generates a
-random valid sequence for the drawn operations, tracking the ids and kinds
-the previous commands created so that every command is accepted. It brings
-volume and exact reproducibility; the agent brings intent. Both feed the same
-runner, oracles and register, and a fuzzer session is a mission with the
-producer set to `fuzzer`.
+The fuzzer is the second producer: from the same catalog it generates a random
+valid sequence, tracking the ids and kinds the previous commands created so
+that every command is accepted. It brings volume and exact reproducibility; the
+tester brings intent. Both feed the same runner, oracles and register: a fuzzer
+session is a mission with the producer set to `fuzzer`, and the stress mission
+calls it through the `fuzzer` component.
 
 ## Competition
 
 `run --backends deepseek,haiku` composes one mission and runs it on each
-backend in turn; the pair's folders sit under `sessions/<date>-compare-<seed>/`
-with a `comparison.txt` (wall time, calls, tokens, accepted rounds, commands,
-script errors, defects, reproduction). `productivity.json` accumulates the
+backend in turn, one session after the other; the pair's folders sit under `sessions/<date>-compare-<seed>/`
+with a `comparison.txt` (wall time, requests, tokens, accepted edits, commands,
+rejections, defects, reproduction). `productivity.json` accumulates the
 totals per backend across campaigns, printed by `report`. The keys never
 enter any of it; only the backend and the model names are recorded.
 
@@ -658,7 +614,7 @@ compliance suite:
   "kind": "crash",
   "title": "reparent into a resized parent after undo aborts",
   "signature": "signal:SIGSEGV|CyberiadaSMEditorScene::syncItem",
-  "note": "hierarchy.graphml, mission B seed 4711, round 3, command 5",
+  "note": "hunt seed 4711, edit 3, command 5",
   "found": "2026-09-12", "revision": "a41928f",
   "status": "open" }
 ```
@@ -668,11 +624,13 @@ The signature is the normalized failure line: the signal or the assertion
 whose signature is already registered is counted, not registered again.
 
 `problems/<id>/` holds the reproduction: `start.graphml`, `script`, the
-`dump` and `stderr` of the run, the `png` for a render problem, the `plan`
-for a semantic or review one. The script is minimized before storing:
-prefix replay finds the first failing command, then every earlier command is
-dropped in turn while the signature stays. Sessions keep their full history
-in `sessions/`.
+`dump` and `stderr` of the run, the `png` for a render problem. A finding of
+the fuzzer, a drill or the tour is minimized before storing: prefix replay
+finds the first failing command, then every earlier command is dropped in turn
+while the signature stays (a law or an invariant keeps its full script). A
+finding of the tester is stored with its long script at once and replaced by
+the short script the model rebuilds in `Confirm`. Sessions keep their full
+history in `sessions/`.
 
 With the opt-in ctest tier (`-DPOLYGON_TESTS=ON`) every open problem is a case
 `polygon-<id>` running
@@ -689,33 +647,35 @@ worth keeping is reported to the developers with its reproduction.
 
 ## LLM backends
 
-`polygon.toml` (the example is committed, the real one is not):
+The tester runs on the cybersphere agents framework, so the model is a
+Pydantic AI model id, `provider:model-name`, and the key is the provider's
+environment variable. `polygon.toml` (the example is committed, the real one is
+not) names the backends:
 
 ```
-[backend.local]
-kind = "chat-completions"            # or "messages"
-base_url = "http://localhost:11434/v1"
-model = "qwen2.5-coder:32b"
-key_env = "POLYGON_LOCAL_KEY"        # the key never enters the file
-vision = false
-temperature = 0.7
+[run]
+timeout = 30          # seconds per editor run
+calls = 40            # model requests per session
+seconds = 0           # wall-clock limit of a session, 0 for none
+
+[backend.deepseek]
+model = "deepseek:deepseek-chat"
+key_file = "~/DEEPSEEK_API_KEY"    # or key_env = "DEEPSEEK_API_KEY"
 max_calls = 40
+temperature = 0.7
 
-[backend.cloud]
-kind = "messages"
-base_url = "..."
-model = "..."
-key_file = "~/cloud.key"             # or key_env; the first line of the file
-vision = true
+[backend.local]
+model = "openai:qwen2.5-coder:32b"  # any server speaking the chat completions protocol
+key_env = "OPENAI_API_KEY"          # with OPENAI_BASE_URL in the environment
 ```
 
-The adapter interface is two calls: `complete(messages) -> text` and
-`supports_images()`. The `chat-completions` kind covers every server speaking the
-chat completions protocol, local ones included; `messages` covers the
-messages protocol. Both are raw HTTP through the standard library, no vendor
-SDK. A backend is selected per session on the command line; the model name
-and the backend name are recorded with the session and the problems, never
-the key.
+The key is read from the file or the variable and exported into the provider's
+variable for the run only; it never enters the configuration, the sessions or
+the register. A backend is selected per session on the command line; the backend
+name and the model id are recorded with the session and the problems. The LLM
+commands need the harness installed (`cybersphere-agents`, `hsm-dispatcher-py`,
+`pydantic-ai`, the CyberiadaML binding); without it they stop with a message,
+and the deterministic commands run on the standard library.
 
 ## Layout
 
@@ -725,35 +685,41 @@ tests/polygon/
   polygon.example.toml      backends and thresholds; the real polygon.toml is not committed
   run-polygon.sh            wrapper: python3 -m polygon <command>
   polygon/                  the package
-    __main__.py             run | fuzz | replay | brief | check-script | check | register
+    __main__.py             run | fuzz | tour | drill | replay | brief | check-script | check | register | report
     config.py  env.py       the toml, the keys; the binary and the batch environment
     runner.py               one editor run: exit code, signal, timeout, streams
     dump.py                 dump parser, describe(), compare(), structural_diff()
     expectations.py         the fact language
-    oracles.py  render.py   tier 1 reruns and tier 2; the png ink check
-    catalog.py  coverage.py the operation catalog; the coverage store and its bias
-    fuzzer.py               one valid command or gesture group per round
+    oracles.py  laws.py     tier 1 reruns and tier 2; the standing laws
+    render.py               the png ink check
+    catalog.py  coverage.py the operation catalog and the families; the coverage store
+    fuzzer.py  tour.py      one valid command or gesture group per round; the deterministic tour
+    drills/                 the drill class, the shadow model, the compound drill
     composer.py  brief.py   missions from a seed; the generated briefs
-    prompt.py  agent.py     the preamble, the mission bodies, the feedback; the agent producer
-    session.py              the round loop, the recording, the replay
+    prompt.py               the generated texts: the tool descriptions, the summaries
+    components.py           document, oracle, register, focus, metric, fuzzer
+    harness.py              the tools, the agent session, the key export
+    session.py              the round loop of the deterministic producers, the replay
     register.py             problems, signatures, minimisation, cases.cmake
-    adapters/               base.py, chat_completions.py, messages.py
+    climb.py                the complexity measures of the metric
+  diagrams/                 the mission diagrams: hunt, draw, stress, rebuild
   catalog/
-    operations.json         the operation catalog
+    operations.json         the operation catalog, with the families
+    tools.json              the tool model of the editor
     format.json             the fields the format does not preserve
-    model.md                the model card of the preamble
-    themes.json             the combination themes
+    model.md                the model card of the tool descriptions
+    themes.json  stories.json  the themes; the drawing stories
     briefs/                 hand-written briefs overriding the generated ones
   corpus/                   manifest.json (the corpus names), empty.graphml (the
-                            start of a reproduction), the accepted reproductions
+                            start document), the accepted reproductions
   problems/                 local results, not committed
     register.json  cases.cmake
-    P-<n>/                  start.graphml, script, expectations, dump, stderr, render.png, plan
-  coverage.json  productivity.json  local, not committed
-  sessions/<date>-<producer>-<seed>/   session.json (with elapsed), script,
-                            round-<n>.dump, conversation.txt, usage.json;
-                            <date>-compare-<seed>/ holds a backend pair and
-                            comparison.txt (not committed)
+    P-<n>/                  start.graphml, script, expectations, dump, stderr, render.png
+  coverage.json  toolcover.json  productivity.json   local, not committed
+  sessions/<date>-agent-<mission>-<seed>/   session.json, script, edit-<n>.dump,
+                            messages.json, usage.json, trace.txt;
+                            <date>-compare-<mission>-<seed>/ holds a backend set
+                            and comparison.txt (not committed)
   tests/                    the unit tests (ctest: polygon-unit)
 ```
 
@@ -762,17 +728,22 @@ and include `problems/cases.cmake` for the `polygon-<id>` cases, both under the
 `L0_ENVIRONMENT` of the other tiers with the editor binary in
 `POLYGON_INSPECTOR`. These are **not** part of the default test run: the polygon
 needs Python 3.11+ (`tomllib`) and a configured backend, so it stays a separate
-framework with its own runner. Add its ctest tier with `-DPOLYGON_TESTS=ON`.
+framework with its own runner. Add its ctest tier with `-DPOLYGON_TESTS=ON`; the
+tests of the harness skip when the framework is not importable, so point
+`Python3_EXECUTABLE` at the environment that has it to run them.
 
 ## Running
 
 ```
 cd tests/polygon
 cp polygon.example.toml polygon.toml       # fill in the backends
-POLYGON_LOCAL_KEY=... ./run-polygon.sh --backend local --mission reproduce --seed 1
-./run-polygon.sh --backend local --mission combine --seed 4711 --rounds 8
-./run-polygon.sh --producer fuzzer --seed 1 --rounds 200
-./run-polygon.sh --replay sessions/2026-09-12-4711
+./run-polygon.sh run --backend deepseek --mission hunt --seed 1
+./run-polygon.sh run --backend deepseek --mission draw --story keyboard
+./run-polygon.sh run --backends deepseek,haiku --mission stress --seed 9
+./run-polygon.sh run --backend deepseek --mission rebuild --diagram lift --trace
+./run-polygon.sh fuzz --diagram geometry --seed 1 --rounds 30
+./run-polygon.sh drill --which all --seed 5
+./run-polygon.sh replay sessions/<folder>
 ./run-polygon.sh check --problem P-1              # reproduce one registered problem
 ```
 
