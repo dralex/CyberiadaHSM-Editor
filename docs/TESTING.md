@@ -74,7 +74,7 @@ mechanism; the matrix after them maps each specification area to the layers that
 | text  | text metrics: font and layout of every text item vs good text | implemented |
 | reconstruct | reconstruction: the rebuilt geometry, shown and saved, vs good files | implemented |
 | undo  | undo/redo: a script edits and undoes, the dump vs the existing good files | implemented |
-| polygon-unit | the unit tests of the test polygon package (`tests/polygon/`, see `POLYGON.md`); opt-in with `-DPOLYGON_TESTS=ON` | implemented |
+| polygon-unit | the unit tests of the test polygon package (`tests/polygon/`, see `POLYGON.md`); opt-in with `-DPOLYGON_TESTS=ON`; the tests of the tester's harness skip unless `Python3_EXECUTABLE` has the cybersphere agents framework | implemented |
 | polygon-<id> | one case per open problem of the polygon register, green while it reproduces; opt-in with `-DPOLYGON_TESTS=ON` | implemented |
 
 Which layer checks which `EDITOR-SPEC` area (the check kind is the requirement's, see the
