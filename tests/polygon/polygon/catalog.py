@@ -22,8 +22,8 @@
 # -----------------------------------------------------------------------------
 
 """The operations of the batch script (catalog/operations.json): the verb
-table of the prompt, the cells of the coverage store, the forms the fuzzer
-generates."""
+tables of the tester's tools, the cells of the coverage store, the forms the
+fuzzer generates, the families the diagrams allow."""
 
 import json
 from dataclasses import dataclass
@@ -35,6 +35,17 @@ FORM_MODEL = "model"
 FORM_GESTURE = "gesture"
 FORM_GESTURE_FORM = "gesture-form"
 
+# the verb families, one tool of the tester each (docs/POLYGON.md, the hands)
+FAMILY_CREATE = "create"
+FAMILY_CONNECT = "connect"
+FAMILY_ARRANGE = "arrange"
+FAMILY_BEHAVE = "behave"
+FAMILY_CLIPBOARD = "clipboard"
+FAMILY_HISTORY = "history"
+FAMILY_GESTURE = "gesture"
+FAMILIES = (FAMILY_CREATE, FAMILY_CONNECT, FAMILY_ARRANGE, FAMILY_BEHAVE,
+            FAMILY_CLIPBOARD, FAMILY_HISTORY, FAMILY_GESTURE)
+
 
 @dataclass
 class Operation:
@@ -43,6 +54,7 @@ class Operation:
     effect: str
     targets: list
     form: str
+    family: str
 
     @property
     def usage(self):
@@ -67,6 +79,21 @@ class Catalog:
     def verbs(self, *forms):
         return [op.verb for op in self.by_form(*forms)]
 
+    def by_family(self, family, *forms):
+        """The operations of a family, of the given forms (all by default)."""
+        return [op for op in self.operations
+                if op.family == family and (not forms or op.form in forms)]
+
+    def family_of(self, verb):
+        op = self.find(verb)
+        return op.family if op else None
+
+    def accepts(self, family, verb):
+        """Whether a family tool takes the verb: its own verbs, and the raw
+        gestures, which are the GUI way of doing the same thing."""
+        own = self.family_of(verb)
+        return own is not None and own in (family, FAMILY_GESTURE)
+
     def cells(self):
         """Every (verb, target kind) pair the coverage store counts."""
         out = []
@@ -75,10 +102,12 @@ class Catalog:
                 out.append((op.verb, kind))
         return out
 
-    def table(self, *forms):
-        """The markdown verb table of the prompt."""
+    def table(self, *forms, family=None):
+        """The markdown verb table of a tool description: the forms given,
+        within one family when asked."""
         lines = ["| command | effect |", "|---|---|"]
-        for op in self.by_form(*forms):
+        ops = self.by_family(family, *forms) if family else self.by_form(*forms)
+        for op in ops:
             lines.append("| `%s` | %s |" % (op.usage, op.effect))
         return "\n".join(lines)
 

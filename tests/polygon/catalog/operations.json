@@ -9,7 +9,8 @@
         "composite",
         "simple"
       ],
-      "form": "model"
+      "form": "model",
+      "family": "create"
     },
     {
       "verb": "new-submachine-state",
@@ -20,7 +21,8 @@
         "composite",
         "simple"
       ],
-      "form": "model"
+      "form": "model",
+      "family": "create"
     },
     {
       "verb": "new-initial",
@@ -31,7 +33,8 @@
         "composite",
         "simple"
       ],
-      "form": "model"
+      "form": "model",
+      "family": "create"
     },
     {
       "verb": "new-final",
@@ -42,7 +45,8 @@
         "composite",
         "simple"
       ],
-      "form": "model"
+      "form": "model",
+      "family": "create"
     },
     {
       "verb": "new-comment",
@@ -53,7 +57,8 @@
         "composite",
         "simple"
       ],
-      "form": "model"
+      "form": "model",
+      "family": "create"
     },
     {
       "verb": "new-formal-comment",
@@ -64,7 +69,8 @@
         "composite",
         "simple"
       ],
-      "form": "model"
+      "form": "model",
+      "family": "create"
     },
     {
       "verb": "new-choice",
@@ -75,7 +81,8 @@
         "composite",
         "simple"
       ],
-      "form": "model"
+      "form": "model",
+      "family": "create"
     },
     {
       "verb": "new-terminate",
@@ -86,7 +93,8 @@
         "composite",
         "simple"
       ],
-      "form": "model"
+      "form": "model",
+      "family": "create"
     },
     {
       "verb": "new-shallow-history",
@@ -97,7 +105,8 @@
         "composite",
         "simple"
       ],
-      "form": "model"
+      "form": "model",
+      "family": "create"
     },
     {
       "verb": "new-deep-history",
@@ -108,7 +117,8 @@
         "composite",
         "simple"
       ],
-      "form": "model"
+      "form": "model",
+      "family": "create"
     },
     {
       "verb": "new-entry-point",
@@ -118,7 +128,8 @@
         "sm",
         "submachine-state"
       ],
-      "form": "model"
+      "form": "model",
+      "family": "create"
     },
     {
       "verb": "new-exit-point",
@@ -128,7 +139,8 @@
         "sm",
         "submachine-state"
       ],
-      "form": "model"
+      "form": "model",
+      "family": "create"
     },
     {
       "verb": "new-transition",
@@ -140,7 +152,8 @@
         "initial",
         "choice"
       ],
-      "form": "model"
+      "form": "model",
+      "family": "connect"
     },
     {
       "verb": "new-sm",
@@ -149,7 +162,8 @@
       "targets": [
         "document"
       ],
-      "form": "model"
+      "form": "model",
+      "family": "create"
     },
     {
       "verb": "rename",
@@ -160,7 +174,8 @@
         "composite",
         "sm"
       ],
-      "form": "model"
+      "form": "model",
+      "family": "behave"
     },
     {
       "verb": "move",
@@ -175,7 +190,8 @@
         "terminate",
         "comment"
       ],
-      "form": "model"
+      "form": "model",
+      "family": "arrange"
     },
     {
       "verb": "reparent",
@@ -190,7 +206,8 @@
         "terminate",
         "comment"
       ],
-      "form": "model"
+      "form": "model",
+      "family": "arrange"
     },
     {
       "verb": "delete",
@@ -206,7 +223,8 @@
         "comment",
         "transition"
       ],
-      "form": "model"
+      "form": "model",
+      "family": "arrange"
     },
     {
       "verb": "new-action",
@@ -217,7 +235,8 @@
         "composite",
         "transition"
       ],
-      "form": "model"
+      "form": "model",
+      "family": "behave"
     },
     {
       "verb": "update-action",
@@ -228,7 +247,8 @@
         "composite",
         "transition"
       ],
-      "form": "model"
+      "form": "model",
+      "family": "behave"
     },
     {
       "verb": "delete-action",
@@ -239,7 +259,8 @@
         "composite",
         "transition"
       ],
-      "form": "model"
+      "form": "model",
+      "family": "behave"
     },
     {
       "verb": "update-comment",
@@ -249,7 +270,8 @@
         "comment",
         "formal-comment"
       ],
-      "form": "model"
+      "form": "model",
+      "family": "behave"
     },
     {
       "verb": "update-meta",
@@ -258,7 +280,8 @@
       "targets": [
         "document"
       ],
-      "form": "model"
+      "form": "model",
+      "family": "behave"
     },
     {
       "verb": "update-id",
@@ -274,7 +297,8 @@
         "comment",
         "transition"
       ],
-      "form": "model"
+      "form": "model",
+      "family": "behave"
     },
     {
       "verb": "polyline",
@@ -283,7 +307,8 @@
       "targets": [
         "transition"
       ],
-      "form": "model"
+      "form": "model",
+      "family": "connect"
     },
     {
       "verb": "label",
@@ -292,7 +317,8 @@
       "targets": [
         "transition"
       ],
-      "form": "model"
+      "form": "model",
+      "family": "connect"
     },
     {
       "verb": "new-subject",
@@ -302,7 +328,8 @@
         "comment",
         "formal-comment"
       ],
-      "form": "model"
+      "form": "model",
+      "family": "connect"
     },
     {
       "verb": "delete-subject",
@@ -312,7 +339,8 @@
         "comment",
         "formal-comment"
       ],
-      "form": "model"
+      "form": "model",
+      "family": "connect"
     },
     {
       "verb": "undo",
@@ -321,7 +349,8 @@
       "targets": [
         "document"
       ],
-      "form": "model"
+      "form": "model",
+      "family": "history"
     },
     {
       "verb": "redo",
@@ -330,119 +359,136 @@
       "targets": [
         "document"
       ],
-      "form": "model"
+      "form": "model",
+      "family": "history"
     },
     {
       "verb": "press",
       "args": "x y [ctrl|shift|alt ...]",
       "effect": "press the left button at the scene point",
       "targets": [],
-      "form": "gesture"
+      "form": "gesture",
+      "family": "gesture"
     },
     {
       "verb": "drag",
       "args": "x y",
       "effect": "move the pointer with the button pressed",
       "targets": [],
-      "form": "gesture"
+      "form": "gesture",
+      "family": "gesture"
     },
     {
       "verb": "release",
       "args": "x y",
       "effect": "release the button",
       "targets": [],
-      "form": "gesture"
+      "form": "gesture",
+      "family": "gesture"
     },
     {
       "verb": "click",
       "args": "x y [mods]",
       "effect": "press and release at one point",
       "targets": [],
-      "form": "gesture"
+      "form": "gesture",
+      "family": "gesture"
     },
     {
       "verb": "double-click",
       "args": "x y [mods]",
       "effect": "double click at the point",
       "targets": [],
-      "form": "gesture"
+      "form": "gesture",
+      "family": "gesture"
     },
     {
       "verb": "tool",
       "args": "select|pan|zoom|transition|new-sm|new-state|new-submachine-state|new-initial|new-final|new-choice|new-terminate|new-shallow-history|new-deep-history|new-entry-point|new-exit-point|new-comment|new-formal-comment",
       "effect": "select the scene tool; the creation tools draw a rect (new-sm, new-state, new-submachine-state) or place on click, then revert to select",
       "targets": [],
-      "form": "gesture"
+      "form": "gesture",
+      "family": "gesture"
     },
     {
       "verb": "delete-selected",
       "args": "",
       "effect": "delete the selected element",
       "targets": [],
-      "form": "gesture"
+      "form": "gesture",
+      "family": "gesture"
     },
     {
       "verb": "copy",
       "args": "",
       "effect": "copy the selected element to the clipboard",
       "targets": [],
-      "form": "gesture"
+      "form": "gesture",
+      "family": "clipboard"
     },
     {
       "verb": "cut",
       "args": "",
       "effect": "cut the selected element to the clipboard",
       "targets": [],
-      "form": "gesture"
+      "form": "gesture",
+      "family": "clipboard"
     },
     {
       "verb": "paste",
       "args": "",
       "effect": "paste the clipboard element as a sibling with a fresh id and +20 offset",
       "targets": [],
-      "form": "gesture"
+      "form": "gesture",
+      "family": "clipboard"
     },
     {
       "verb": "edit",
       "args": "<id> <role> [<i>]",
       "effect": "open the inline editor of a canvas text (role title|action <i>|label|body) for the keystroke verbs",
       "targets": [],
-      "form": "gesture"
+      "form": "gesture",
+      "family": "gesture"
     },
     {
       "verb": "edit-text",
       "args": "<id> <role> [<i>] <text>",
       "effect": "open the editor, replace the text and commit in one line",
       "targets": [],
-      "form": "gesture"
+      "form": "gesture",
+      "family": "gesture"
     },
     {
       "verb": "type",
       "args": "<text>",
       "effect": "type the text into the editor being edited",
       "targets": [],
-      "form": "gesture"
+      "form": "gesture",
+      "family": "gesture"
     },
     {
       "verb": "key",
       "args": "<name> [mods]",
       "effect": "one named key into the editor",
       "targets": [],
-      "form": "gesture"
+      "form": "gesture",
+      "family": "gesture"
     },
     {
       "verb": "select-all",
       "args": "",
       "effect": "select the whole editable text",
       "targets": [],
-      "form": "gesture"
+      "form": "gesture",
+      "family": "gesture"
     },
     {
       "verb": "commit",
       "args": "",
       "effect": "end the edit and write the text to the model",
       "targets": [],
-      "form": "gesture"
+      "form": "gesture",
+      "family": "gesture"
     },
     {
       "verb": "drag-state",
@@ -452,7 +498,8 @@
         "simple",
         "composite"
       ],
-      "form": "gesture-form"
+      "form": "gesture-form",
+      "family": "arrange"
     },
     {
       "verb": "resize-state",
@@ -462,7 +509,8 @@
         "simple",
         "composite"
       ],
-      "form": "gesture-form"
+      "form": "gesture-form",
+      "family": "arrange"
     },
     {
       "verb": "resize-comment",
@@ -472,7 +520,8 @@
         "comment",
         "formal-comment"
       ],
-      "form": "gesture-form"
+      "form": "gesture-form",
+      "family": "arrange"
     },
     {
       "verb": "draw-loop",
@@ -482,7 +531,8 @@
         "simple",
         "composite"
       ],
-      "form": "gesture-form"
+      "form": "gesture-form",
+      "family": "connect"
     },
     {
       "verb": "click-delete",
@@ -492,7 +542,8 @@
         "simple",
         "composite"
       ],
-      "form": "gesture-form"
+      "form": "gesture-form",
+      "family": "arrange"
     },
     {
       "verb": "double-click-action",
@@ -502,7 +553,8 @@
         "simple",
         "composite"
       ],
-      "form": "gesture-form"
+      "form": "gesture-form",
+      "family": "behave"
     },
     {
       "verb": "edit-title",
@@ -513,7 +565,8 @@
         "composite",
         "sm"
       ],
-      "form": "gesture-form"
+      "form": "gesture-form",
+      "family": "behave"
     },
     {
       "verb": "edit-action",
@@ -523,7 +576,8 @@
         "simple",
         "composite"
       ],
-      "form": "gesture-form"
+      "form": "gesture-form",
+      "family": "behave"
     },
     {
       "verb": "edit-label",
@@ -532,7 +586,8 @@
       "targets": [
         "transition"
       ],
-      "form": "gesture-form"
+      "form": "gesture-form",
+      "family": "behave"
     },
     {
       "verb": "edit-body",
@@ -542,7 +597,8 @@
         "comment",
         "formal-comment"
       ],
-      "form": "gesture-form"
+      "form": "gesture-form",
+      "family": "behave"
     },
     {
       "verb": "add-point",
@@ -551,7 +607,8 @@
       "targets": [
         "transition"
       ],
-      "form": "gesture-form"
+      "form": "gesture-form",
+      "family": "connect"
     },
     {
       "verb": "move-point",
@@ -560,7 +617,8 @@
       "targets": [
         "transition"
       ],
-      "form": "gesture-form"
+      "form": "gesture-form",
+      "family": "connect"
     },
     {
       "verb": "remove-point",
@@ -569,7 +627,8 @@
       "targets": [
         "transition"
       ],
-      "form": "gesture-form"
+      "form": "gesture-form",
+      "family": "connect"
     },
     {
       "verb": "move-endpoint",
@@ -578,7 +637,8 @@
       "targets": [
         "transition"
       ],
-      "form": "gesture-form"
+      "form": "gesture-form",
+      "family": "connect"
     },
     {
       "verb": "copy-paste",
@@ -588,7 +648,8 @@
         "simple",
         "composite"
       ],
-      "form": "gesture-form"
+      "form": "gesture-form",
+      "family": "clipboard"
     },
     {
       "verb": "cut-paste",
@@ -598,7 +659,8 @@
         "simple",
         "composite"
       ],
-      "form": "gesture-form"
+      "form": "gesture-form",
+      "family": "clipboard"
     }
   ]
 }
