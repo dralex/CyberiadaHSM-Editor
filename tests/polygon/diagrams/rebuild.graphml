@@ -78,9 +78,9 @@ DONE: the result is compared with the original and the differences come back to
 you.
 
 Ids are deterministic: the top-level elements of the machine G0 are n0, n1, ... in
-creation order, the children of a state are parent::n0, parent::n1, ..., a transition
-is source-target. Every edit answers with the new ids; use only ids you have seen,
-and call inspect when unsure.</data>
+creation order (never G0::n0), the children of a state are parent::n0, parent::n1, ...
+(the first child of n0 is n0::n0), a transition is source-target. Every edit answers
+with the new ids; use only ids you have seen, and call inspect when unsure.</data>
     </node>
     <node id="r_p_confirm">
       <data key="dNote">formal</data>
@@ -93,9 +93,9 @@ not reproduce, you are told so and may try again. Call inspect to see the empty
 document.
 
 Ids are deterministic: the top-level elements of the machine G0 are n0, n1, ... in
-creation order, the children of a state are parent::n0, parent::n1, ..., a transition
-is source-target. Every edit answers with the new ids; use only ids you have seen,
-and call inspect when unsure.</data>
+creation order (never G0::n0), the children of a state are parent::n0, parent::n1, ...
+(the first child of n0 is n0::n0), a transition is source-target. Every edit answers
+with the new ids; use only ids you have seen, and call inspect when unsure.</data>
     </node>
     <node id="r_init">
       <data key="dVertex">initial</data>
