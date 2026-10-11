@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.10 (2026-10-06)
+**Document version:** 0.11 (2026-10-11)
 
 **Related authorities:**
 
@@ -150,6 +150,9 @@ over those rows; nothing more than the existing dump is needed.
   one shallow and at most one deep history (one of each); a second of a kind is refused. *PNST 984*
 - `EDIT-STRUCT-10` MUST [U]: a state carries at most one `entry/` and at most one `exit/`
   behaviour block (and at most one `do/` where the model supports it). *PNST 1044 6.8.1*
+- `EDIT-STRUCT-11` MUST [A]: a state machine with no geometry is not drawn on the scene; the
+  element tree marks it — its name is shown in square brackets and its icon greyed — while the
+  inline-rename value stays the plain name. *design*
 - `EDIT-SEM-7` MUST [U]: an entry point and an exit point carry a non-empty name; a new point
   gets a unique default name. *PNST 1044 8.3.1*
 - `EDIT-SEM-8` MUST [U]: a submachine state never references the state machine that contains it;
