@@ -308,7 +308,9 @@ bool CyberiadaSMModel::reconstructGeometry()
 {
 	if (readOnly() || !root) return false;
 	// rebuild the state machine border only when it was explicitly present, so a
-	// frameless machine stays frameless (read before the geometry is cleaned)
+	// single frameless machine stays frameless (read before the geometry is
+	// cleaned); a document with several machines gets every border from the
+	// library anyway, the machines placed side by side (EDIT-NODE-4)
 	bool reconstruct_sm = false;
 	Cyberiada::StateMachineList sms = root->get_state_machines();
 	if (!sms.empty()) {

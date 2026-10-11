@@ -1,0 +1,9 @@
+== document
+LocalDocument: {Document: {id: '', name: '', geometry format: qt, meta: {standard version: '1.0', transition order: action first, event propagation: block events}, elements: {State Machine: {id: 'G0', name: 'SM1', geometry: (150; 100; 300; 200), elements: {Formal Comment: {id: 'nMeta', name: 'CGML_META', body: 'standardVersion/ 1.0
+
+transitionOrder/ actionFirst
+
+eventPropagation/ block'}}}, State Machine: {id: 'G1', name: 'SM2', geometry: (530; 100; 300; 200)}}, bounding rect: (340; 100; 680; 200)}, file: 'diagrams/two-sms.graphml', format: cyberiada, format_str: 'Cyberiada-GraphML-1.0'}
+== scene
+  State Machine: {id: 'G0', pos: (150.00; 100.00), rect: (-150.00; -100.00; 300.00; 200.00)}
+  State Machine: {id: 'G1', pos: (530.00; 100.00), rect: (-150.00; -100.00; 300.00; 200.00)}

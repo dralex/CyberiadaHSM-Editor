@@ -310,7 +310,10 @@ next to Delete (with an approval dialog), the batch verb `reconstruct`, and the
 model method `reconstructGeometry`. It is one atomic undo step, leaves the
 structure untouched, and rebuilds the state machine border only when the
 machine carried one. `test_reconstruct_geometry` (L4) proves the atomicity and
-the structure preservation.
+the structure preservation. A document with several machines gets every border and the
+machines side by side whatever they carried: the `reconstruct-two-sms` L2 case
+runs the `reconstruct` verb on `two-sms.graphml` (one machine with a rect, one
+without) and compares the dump and the saved file.
 
 `--inspect` opens the document read-only, as the GUI does through the open
 dialog: every model mutation is refused, so an edit script fails with exit

@@ -184,7 +184,10 @@ the third is a derived display value the format does not store):
   is in absolute coordinates, a nested one relative to its parent's centre.
   *design*
 - `EDIT-NODE-4` SHOULD [U]: a state machine without a rect frames the union of
-  its content and sits at the origin. *design*
+  its content and sits at the origin; several rect-less machines would share
+  the origin, so the geometry reconstruction of a document with several
+  machines gives every machine its rect and places the machines side by side.
+  *design*
 - `EDIT-NODE-5` MUST [A]: a state, a comment, and a state machine resize directionally - a drag
   of the right or bottom border (or the corner between them) grows that side; a drag of the top or
   left border moves the element. A state and a machine clamp to their content; a comment holds none.
