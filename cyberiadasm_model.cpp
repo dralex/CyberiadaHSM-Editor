@@ -22,6 +22,7 @@
  * ----------------------------------------------------------------------------- */
 
 #include <QIcon>
+#include <QPixmap>
 #include <QList>
 #include <QMimeData>
 #include <QRegularExpression>
@@ -153,6 +154,11 @@ CyberiadaSMModel::CyberiadaSMModel(QObject *parent):
 	icons[Cyberiada::elementEntryPoint] = QIcon(":/Icons/images/entry-point.png");
 	icons[Cyberiada::elementExitPoint] = QIcon(":/Icons/images/exit-point.png");
 	icons[Cyberiada::elementTransition] = QIcon(":/Icons/images/trans.png");;
+	// the greyed SM icon marks a state machine with no geometry, not drawn on the
+	// scene (EDIT-STRUCT-11)
+	QPixmap smPixmap(":/Icons/images/sm.png");
+	grayedSMIcon = smPixmap.isNull() ? emptyIcon
+		: QIcon(icons[Cyberiada::elementSM].pixmap(smPixmap.size(), QIcon::Disabled));
 
 	cyberiadaStateMimeType = CYBERIADA_MIME_TYPE_STATE;
 }
@@ -419,6 +425,14 @@ QVariant CyberiadaSMModel::data(const QModelIndex &index, int role) const
 				return QString(source_name + " -> " + target_name);
 			} else {
 				QString name = element->get_name().c_str();
+				// a state machine with no geometry is not drawn on the scene: show
+				// its name bracketed in the tree (EDIT-STRUCT-11); the rename editor
+				// (EditRole) keeps the plain name
+				if (role != Qt::EditRole &&
+					element->get_type() == Cyberiada::elementSM && !element->has_geometry()) {
+					QString base = name.isEmpty() ? QString(element->get_id().c_str()) : name;
+					return QString("[") + base + "]";
+				}
 				if (name.isEmpty()) {
 					name = QString("[") + element->get_id().c_str() + "]";
 				}
@@ -452,6 +466,10 @@ QIcon CyberiadaSMModel::getIndexIcon(const QModelIndex& index) const
 	if (!index.isValid() || index == rootIndex()) return emptyIcon;
 	const Cyberiada::Element *element = static_cast<const Cyberiada::Element*>(index.internalPointer());
 	MY_ASSERT(element);
+	// a not-drawn state machine (no geometry) carries the greyed icon (EDIT-STRUCT-11)
+	if (element->get_type() == Cyberiada::elementSM && !element->has_geometry()) {
+		return grayedSMIcon;
+	}
 	return getElementIcon(element->get_type());
 }
 

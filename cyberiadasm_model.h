@@ -253,6 +253,8 @@ private:
 	Cyberiada::DocumentFormat           fileFormat;
 	QString							   	cyberiadaStateMimeType;
 	QIcon                              	emptyIcon;
+	// the greyed SM icon for a state machine not drawn on the scene (EDIT-STRUCT-11)
+	QIcon                              	grayedSMIcon;
 	QMap<Cyberiada::ElementType, QIcon> icons;
 };
 

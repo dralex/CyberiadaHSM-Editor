@@ -26,6 +26,7 @@
 #include <QtTest>
 #include <functional>
 #include <QAbstractItemModelTester>
+#include <QIcon>
 #include "cyberiadasm_model.h"
 #include "settings_manager.h"
 
@@ -57,6 +58,7 @@ private slots:
 	void test_snap_to_grid();
 	void test_undo_reset();
 	void test_reconstruct_geometry();
+	void test_sm_not_drawn_mark();
 
 private:
 	static bool rectsOverlap(const Cyberiada::Rect& a, const Cyberiada::Rect& b);
@@ -640,6 +642,32 @@ void TestModel::test_undo_reset()
 
 	QVERIFY(model->updateTitle(idx, "Y"));          // its own scope -> its own step
 	QCOMPARE(stack->count(), base + 1);
+}
+
+// a state machine with no geometry is not drawn on the scene: the tree brackets
+// its name and greys its icon, while the rename value stays plain (EDIT-STRUCT-11)
+void TestModel::test_sm_not_drawn_mark()
+{
+	QVERIFY(model->loadDocument("diagrams/components.graphml"));
+	QModelIndex sm = model->firstSMIndex();
+	QVERIFY(sm.isValid());
+	Cyberiada::Element* smEl = model->idToElement("G0");
+	QVERIFY(smEl && !smEl->has_geometry());
+
+	QCOMPARE(model->data(sm, Qt::DisplayRole).toString(), QString("[Components]"));
+	// the inline-rename editor keeps the plain name
+	QCOMPARE(model->data(sm, Qt::EditRole).toString(), QString("Components"));
+	// the shown icon is the greyed one, not the normal SM icon
+	QIcon normal = model->getElementIcon(Cyberiada::elementSM);
+	QIcon shown = model->data(sm, Qt::DecorationRole).value<QIcon>();
+	QVERIFY(!shown.isNull());
+	QVERIFY(shown.cacheKey() != normal.cacheKey());
+
+	// giving the SM a geometry rect makes it drawn: the mark is gone
+	QVERIFY(model->updateGeometry(sm, Cyberiada::Rect(0, 0, 400, 300)));
+	QVERIFY(smEl->has_geometry());
+	QCOMPARE(model->data(sm, Qt::DisplayRole).toString(), QString("Components"));
+	QCOMPARE(model->data(sm, Qt::DecorationRole).value<QIcon>().cacheKey(), normal.cacheKey());
 }
 
 QTEST_MAIN(TestModel)
