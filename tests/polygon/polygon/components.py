@@ -469,6 +469,7 @@ class Oracle(Polygon):
         self.signatures = []           # of the last check
         self.target = ""               # the first new defect of the last check
         self.last = ""                 # its note, for the prompt
+        self.report = ""               # the last check in words, for the prompt
         self.facts = ""                # the expectations the next check evaluates
 
     @property
@@ -525,12 +526,28 @@ class Oracle(Polygon):
                       note=finding.note, new=bool(is_new))
         document.note_findings(result.findings)
         self.defects += new
+        self.report = self._report(result.findings, new, known)
         if self.signatures:
             self.clean_streak = 0
             self.emit("FOUND", new=new, known=known)
         else:
             self.clean_streak += 1
             self.emit("CLEAN")
+
+    def _report(self, findings, new, known):
+        defects = [f for f in findings if f.kind in R.DEFECT_KINDS]
+        failed = [f for f in findings if f.kind not in R.DEFECT_KINDS]
+        if not defects:
+            lines = ["Check %d: clean - no crash, the document survives save/reopen and undo/redo%s."
+                     % (self.checks, ", every law holds" if self.profile_name == PROFILE_FULL else "")]
+        else:
+            lines = ["Check %d: %d defect%s fired (%d new, %d already known), recorded:"
+                     % (self.checks, len(defects), "" if len(defects) == 1 else "s", new, known)]
+            lines += ["  - %s: %s" % (f.kind, f.note) for f in defects]
+        if failed:
+            lines.append("Your expectations that do not hold (candidates, not defects):")
+            lines += ["  - %s" % f.note for f in failed]
+        return "\n".join(lines)
 
 
 # --- the register ---------------------------------------------------------
@@ -551,12 +568,19 @@ class Register(Polygon):
         return self.store.by_signature(signature) is not None
 
     def found(self, finding, script):
-        """Record a defect with the script that produced it; a known
-        signature counts a hit. Returns (problem, is_new)."""
+        """Record a defect with the script that produced it; a known open
+        signature counts a hit, a fixed one fires again and is reopened as
+        new. Returns (problem, is_new)."""
         document = self.document
         problem, is_new = self.store.add(
             finding, document.start_path, script, producer=self.context.producer,
             root=document.env.root, env_fp=document.env.fingerprint())
+        if not is_new and problem.status == R.STATUS_FIXED:
+            problem.status = R.STATUS_OPEN
+            problem.note = (problem.note + " | fired again on %s" % date.today().isoformat()).strip(" |")
+            (self.store.folder / problem.folder / "script").write_text(script)
+            self.store.save()
+            is_new = True
         if is_new:
             self.defects += 1
         return problem, is_new

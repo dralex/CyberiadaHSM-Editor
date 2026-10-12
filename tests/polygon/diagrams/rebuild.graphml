@@ -192,15 +192,17 @@ prompt.add(document.summary)</data>
       <data key="dData">agent.CHECK [document.edits &gt; 0]/</data>
     </edge>
     <edge id="r_checking-r_editing-1" source="r_checking" target="r_editing">
-      <data key="dData">oracle.CLEAN/</data>
+      <data key="dData">oracle.CLEAN/
+prompt.add(oracle.report)</data>
     </edge>
     <edge id="r_checking-r_editing-2" source="r_checking" target="r_editing">
-      <data key="dData">oracle.FOUND [event.new == 0]/</data>
+      <data key="dData">oracle.FOUND [event.new == 0]/
+prompt.add(oracle.report)</data>
     </edge>
     <edge id="r_checking-r_confirm-1" source="r_checking" target="r_confirm">
       <data key="dData">oracle.FOUND [event.new &gt; 0]/
 document.branch(oracle.target)
-prompt.add(oracle.last)</data>
+prompt.add(oracle.report + '\nReproduce the first new one: ' + oracle.last)</data>
     </edge>
     <edge id="r_confirm-r_reproducing" source="r_confirm" target="r_reproducing">
       <data key="dData">document.STARTED/</data>
@@ -257,15 +259,17 @@ prompt.add('Not reproduced; the long script is kept. Back to the main line.')</d
       <data key="dData">agent.DONE [document.edits == 0]/</data>
     </edge>
     <edge id="r_final-r_comparing-1" source="r_final" target="r_comparing">
-      <data key="dData">oracle.CLEAN/</data>
+      <data key="dData">oracle.CLEAN/
+prompt.add(oracle.report)</data>
     </edge>
     <edge id="r_final-r_comparing-2" source="r_final" target="r_comparing">
-      <data key="dData">oracle.FOUND [event.new == 0]/</data>
+      <data key="dData">oracle.FOUND [event.new == 0]/
+prompt.add(oracle.report)</data>
     </edge>
     <edge id="r_final-r_confirm-1" source="r_final" target="r_confirm">
       <data key="dData">oracle.FOUND [event.new &gt; 0]/
 document.branch(oracle.target)
-prompt.add(oracle.last)</data>
+prompt.add(oracle.report + '\nReproduce the first new one: ' + oracle.last)</data>
     </edge>
     <edge id="r_comparing-r_done-1" source="r_comparing" target="r_done">
       <data key="dData">document.MATCHES/

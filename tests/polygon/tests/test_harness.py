@@ -179,7 +179,7 @@ if HAVE_HARNESS:
             Stub.__init__(self, ident, dispatcher, **parameters)
             self.checks = self.clean_streak = self.defects = self.candidates = 0
             self.profile_name = parameters.get("profile", "")
-            self.signatures, self.target, self.last = [], "", ""
+            self.signatures, self.target, self.last, self.report = [], "", "", "the report"
 
         def check(self):
             self.calls.append(("check",))
@@ -321,7 +321,7 @@ class DiagramTest(unittest.TestCase):
             self.assertEqual(controller.states("G"), ["h_confirm"])
             self.assertEqual(document.calls[-1], ("branch", "law:NODE-1:x"))
             self.assertIsNone(engine.allowed()[-1])            # allow_all
-            self.assertEqual(engine.messages()[-1], "law: x outside")
+            self.assertIn("law: x outside", engine.messages()[-1])
             self.assertEqual(sorted(controller.requests()), ["REPRODUCED"])
             controller.notify("document", "EDIT", family="create", script="new-state G0 A")
             document.edited()

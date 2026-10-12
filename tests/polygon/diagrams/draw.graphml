@@ -210,15 +210,17 @@ prompt.add(document.summary)</data>
       <data key="dData">agent.CHECK [document.edits &gt; 0]/</data>
     </edge>
     <edge id="d_checking-d_editing-1" source="d_checking" target="d_editing">
-      <data key="dData">oracle.CLEAN/</data>
+      <data key="dData">oracle.CLEAN/
+prompt.add(oracle.report)</data>
     </edge>
     <edge id="d_checking-d_editing-2" source="d_checking" target="d_editing">
-      <data key="dData">oracle.FOUND [event.new == 0]/</data>
+      <data key="dData">oracle.FOUND [event.new == 0]/
+prompt.add(oracle.report)</data>
     </edge>
     <edge id="d_checking-d_confirm-1" source="d_checking" target="d_confirm">
       <data key="dData">oracle.FOUND [event.new &gt; 0]/
 document.branch(oracle.target)
-prompt.add(oracle.last)</data>
+prompt.add(oracle.report + '\nReproduce the first new one: ' + oracle.last)</data>
     </edge>
     <edge id="d_confirm-d_reproducing" source="d_confirm" target="d_reproducing">
       <data key="dData">document.STARTED/</data>
