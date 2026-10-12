@@ -61,6 +61,7 @@ private slots:
 	void test_reconstruct_geometry();
 	void test_sm_not_drawn_mark();
 	void test_tree_drag_flags();
+	void test_grow_holds_rect_children();
 
 private:
 	static bool rectsOverlap(const Cyberiada::Rect& a, const Cyberiada::Rect& b);
@@ -565,6 +566,53 @@ void TestModel::test_paste_grows_packed_parent()
 	QVERIFY(p->get_geometry_rect().width > before);   // grew to hold the copy
 	Cyberiada::Rect cr = static_cast<const Cyberiada::ElementCollection*>(copy)->get_geometry_rect();
 	QVERIFY(!rectsOverlap(cr, a->get_geometry_rect()));
+}
+
+void TestModel::test_grow_holds_rect_children()
+{
+	// a directional grow holds a rect choice and a comment in place too (EDIT-NODE-5):
+	// sizing and holding must cover the same children, and a geometry-less comment is
+	// never given a fabricated rect - without that, the degenerate rect aborts the
+	// encode with the library's "Crytical error" (EDIT-ROBUST-1; polygon P-90)
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	Cyberiada::ElementCollection* sm = static_cast<Cyberiada::ElementCollection*>(
+		model->idToElement("G"));
+	QVERIFY(sm);
+	Cyberiada::State* p = model->newState(sm, "P", Cyberiada::Action(), Cyberiada::Rect(0, 0, 200, 150));
+	Cyberiada::State* c = model->newState(p, "C", Cyberiada::Action(), Cyberiada::Rect(0, 0, 60, 40));
+	Cyberiada::ChoicePseudostate* ch = model->newChoice(p, Cyberiada::Rect(-60, 0, 40, 40));
+	Cyberiada::Comment* note = model->newComment(p, "a comment inside a composite that is rather long");
+	QVERIFY(p && c && ch && note);
+	QVERIFY(!note->has_geometry());   // created without a rect, laid out by the scene
+
+	// drive the child far outside the parent to force the directional grow (which
+	// re-bases every held child by the centre offset) and then encode. Without the
+	// fix a 0x0 rect is fabricated for the comment and the bound computation aborts;
+	// the whole sequence is guarded so a regression fails cleanly instead of killing
+	// the process
+	QTemporaryDir dir;
+	QVERIFY(dir.isValid());
+	bool threw = false;
+	try {
+		model->updateGeometry(model->elementToIndex(c), Cyberiada::Rect(320, 320, 60, 40));
+		model->growToFitChildren(c);
+		model->saveAsDocument(dir.filePath("p90.graphml"), Cyberiada::formatCyberiada10, false);
+	} catch (...) {
+		threw = true;
+	}
+	QVERIFY2(!threw, "a geometry-less child produced a degenerate rect that aborted the grow/save");
+
+	// the comment is still geometry-less: the grow neither counts nor relocates it
+	QVERIFY(!note->has_geometry());
+	// the grown parent contains the held choice (EDIT-NODE-1/5)
+	Cyberiada::Rect pr = p->get_geometry_rect();
+	Cyberiada::Rect chr = ch->get_geometry_rect();
+	const double tol = 1.0;
+	QVERIFY2(chr.x - chr.width / 2.0 >= -pr.width / 2.0 - tol
+			 && chr.x + chr.width / 2.0 <= pr.width / 2.0 + tol
+			 && chr.y - chr.height / 2.0 >= -pr.height / 2.0 - tol
+			 && chr.y + chr.height / 2.0 <= pr.height / 2.0 + tol,
+			 "the choice is outside the grown parent");
 }
 
 static int countTransitions(Cyberiada::ElementCollection* sm)
