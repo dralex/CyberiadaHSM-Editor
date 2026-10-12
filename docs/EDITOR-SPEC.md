@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.11 (2026-10-11)
+**Document version:** 0.12 (2026-10-12)
 
 **Related authorities:**
 
@@ -352,6 +352,13 @@ the third is a derived display value the format does not store):
 - `EDIT-TOOL-11` MUST [A]: the submachine-state, entry-point and exit-point creation tools each
   create one element of their kind under the press point; a new submachine state takes a default
   reference set afterward in the property panel. *design*
+- `EDIT-TOOL-12` MUST [A]: a click selects the smallest (innermost) element under the cursor — a
+  leaf, or a smaller state over a larger one — even when it overlaps a composite state; clicking the
+  composite's own margin or title still selects the composite. *design*
+- `EDIT-TOOL-13` MUST [A]: the element tree can drag any reparentable element (a state, a
+  pseudostate or a comment) to a new parent, through the same reparent step as a scene drag; the
+  state machine, a transition, an entry/exit connector and the metainformation node are not
+  tree-draggable. *design*
 
 ### 4.7 History — HIST
 
