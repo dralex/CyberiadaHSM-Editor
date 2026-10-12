@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.12 (2026-10-12)
+**Document version:** 0.13 (2026-10-12)
 
 **Related authorities:**
 
@@ -194,7 +194,9 @@ the third is a derived display value the format does not store):
 - `EDIT-NODE-5` MUST [A]: a state, a comment, and a state machine resize directionally - a drag
   of the right or bottom border (or the corner between them) grows that side; a drag of the top or
   left border moves the element. A state and a machine clamp to their content; a comment holds none.
-  *design*
+  A container resize holds the absolute position of every contained element (a state, a pseudostate
+  including a rect choice, and a comment alike); only the dragged edge extends, no child is
+  relocated. *design*
 - `EDIT-NODE-6` MUST [U]: sibling elements do not overlap. *design*
 - `EDIT-NODE-7` MUST [U]: If an element is separated from parent it should be placed on
   the top level of hierarchy not overlapping the parent and the rest of the elements, but
