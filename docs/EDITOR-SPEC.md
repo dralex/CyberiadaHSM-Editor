@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.13 (2026-10-12)
+**Document version:** 0.14 (2026-10-13)
 
 **Related authorities:**
 
@@ -196,7 +196,9 @@ the third is a derived display value the format does not store):
   left border moves the element. A state and a machine clamp to their content; a comment holds none.
   A container resize holds the absolute position of every contained element (a state, a pseudostate
   including a rect choice, and a comment alike); only the dragged edge extends, no child is
-  relocated. *design*
+  relocated. A child without stored geometry is laid out by the scene and is neither counted in the
+  content the resize clamps to nor relocated by it, so sizing and holding cover the same children;
+  the editor never fabricates a rectangle for such a child (`EDIT-ROBUST-1`). *design*
 - `EDIT-NODE-6` MUST [U]: sibling elements do not overlap. *design*
 - `EDIT-NODE-7` MUST [U]: If an element is separated from parent it should be placed on
   the top level of hierarchy not overlapping the parent and the rest of the elements, but
