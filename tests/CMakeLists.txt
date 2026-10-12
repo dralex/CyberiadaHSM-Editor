@@ -59,6 +59,7 @@ foreach(diagram
     lift
     meta
     multiline-actions
+    overlap
     polyline
     sources
     two-sms)

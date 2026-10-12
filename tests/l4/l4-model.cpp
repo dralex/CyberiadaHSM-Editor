@@ -27,6 +27,7 @@
 #include <functional>
 #include <QAbstractItemModelTester>
 #include <QIcon>
+#include <QMimeData>
 #include "cyberiadasm_model.h"
 #include "settings_manager.h"
 
@@ -59,6 +60,7 @@ private slots:
 	void test_undo_reset();
 	void test_reconstruct_geometry();
 	void test_sm_not_drawn_mark();
+	void test_tree_drag_flags();
 
 private:
 	static bool rectsOverlap(const Cyberiada::Rect& a, const Cyberiada::Rect& b);
@@ -668,6 +670,40 @@ void TestModel::test_sm_not_drawn_mark()
 	QVERIFY(smEl->has_geometry());
 	QCOMPARE(model->data(sm, Qt::DisplayRole).toString(), QString("Components"));
 	QCOMPARE(model->data(sm, Qt::DecorationRole).value<QIcon>().cacheKey(), normal.cacheKey());
+}
+
+// any reparentable element can be dragged in the tree; the SM, a transition, an
+// entry/exit connector and the metainformation node cannot (EDIT-TOOL-13)
+void TestModel::test_tree_drag_flags()
+{
+	QVERIFY(model->loadDocument("diagrams/components.graphml"));
+	// a plain comment, a component (formal) comment and a state are draggable
+	QVERIFY(model->flags(indexOf("nComment")).testFlag(Qt::ItemIsDragEnabled));
+	QVERIFY(model->flags(indexOf("nComp")).testFlag(Qt::ItemIsDragEnabled));
+	QVERIFY(model->flags(indexOf("n0")).testFlag(Qt::ItemIsDragEnabled));
+	// the metainformation node and the state machine are not draggable
+	QVERIFY(!model->flags(indexOf("nMeta")).testFlag(Qt::ItemIsDragEnabled));
+	QVERIFY(!model->flags(indexOf("G0")).testFlag(Qt::ItemIsDragEnabled));
+	QVERIFY(model->flags(indexOf("G0")).testFlag(Qt::ItemIsDropEnabled));
+	// the mime data of a draggable element is encoded under the state mime type
+	QMimeData* md = model->mimeData(QModelIndexList() << indexOf("nComment"));
+	QVERIFY(md);
+	QVERIFY(!model->mimeTypes().isEmpty());
+	QVERIFY(!md->data(model->mimeTypes().first()).isEmpty());
+	delete md;
+
+	// a choice pseudostate is draggable
+	QVERIFY(model->loadDocument("diagrams/choice.graphml"));
+	QVERIFY(model->flags(indexOf("n0")).testFlag(Qt::ItemIsDragEnabled));
+
+	// an entry/exit connector is not draggable, a standalone initial is
+	QVERIFY(model->loadDocument("diagrams/unnamed-point.graphml"));
+	QVERIFY(!model->flags(indexOf("ep0")).testFlag(Qt::ItemIsDragEnabled));
+	QVERIFY(model->flags(indexOf("init")).testFlag(Qt::ItemIsDragEnabled));
+
+	// a transition is not draggable
+	QVERIFY(model->loadDocument("diagrams/comment-transition.graphml"));
+	QVERIFY(!model->flags(indexOf("t0")).testFlag(Qt::ItemIsDragEnabled));
 }
 
 QTEST_MAIN(TestModel)

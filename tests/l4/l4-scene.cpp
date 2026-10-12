@@ -137,6 +137,7 @@ private slots:
 	void test_promote_title();
 	void test_empty_action_deletes();
 	void test_component_comment_hidden();
+	void test_select_over_composite();
 	// runs last: it reloads and modifies the shared document
 	void test_directional_grow();
 
@@ -3255,6 +3256,37 @@ void TestScene::test_component_comment_hidden()
 	QVERIFY(map.contains("nComment"));
 
 	sm.setShowComponentComments(saved);
+}
+
+// the smallest element under the cursor is selected: a leaf over a composite, and
+// a smaller composite over a larger one (area-based stacking, EDIT-TOOL-12)
+void TestScene::test_select_over_composite()
+{
+	QVERIFY(model->loadDocument("diagrams/overlap.graphml"));
+	scene->loadScene();
+	const QMap<Cyberiada::ID, QGraphicsItem*>& map = scene->getMap();
+	QGraphicsItem* comment = map.value("nNote");
+	QGraphicsItem* composite = map.value("nComp");
+	QGraphicsItem* small = map.value("nSmall");
+	QVERIFY(comment && composite && small);
+
+	// the smaller comment stacks above the composite it overlaps
+	QVERIFY(comment->zValue() > composite->zValue());
+	QRectF overlap = comment->sceneBoundingRect() & composite->sceneBoundingRect();
+	QVERIFY(!overlap.isEmpty());
+
+	// clicking the overlap selects the comment, not the composite beneath it
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+	QPointF p = overlap.center();
+	sceneMouse(scene, QEvent::GraphicsSceneMousePress, p, Qt::LeftButton);
+	sceneMouse(scene, QEvent::GraphicsSceneMouseRelease, p, Qt::NoButton);
+	QVERIFY(comment->isSelected());
+	QVERIFY(!composite->isSelected());
+
+	// the composite-over-composite case: a smaller state machine-level composite
+	// stacks above a larger one (same-level siblings, so the Z values compare)
+	QVERIFY(small->zValue() > composite->zValue());
 }
 
 QTEST_MAIN(TestScene)
