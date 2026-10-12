@@ -1039,10 +1039,11 @@ void CyberiadaSMModel::rebaseChildren(Cyberiada::ElementCollection* pc, double d
 	if (!pc || (std::fabs(dx) < 1e-6 && std::fabs(dy) < 1e-6)) return;
 	Cyberiada::ElementList kids = pc->get_children();
 	for (Cyberiada::ElementList::const_iterator i = kids.begin(); i != kids.end(); i++) {
-		Cyberiada::ElementCollection* c = dynamic_cast<Cyberiada::ElementCollection*>(*i);
-		if (c && c->has_geometry()) {
-			Cyberiada::Rect cr = c->get_geometry_rect();
-			updateGeometry(elementToIndex(c), Cyberiada::Rect(cr.x + dx, cr.y + dy, cr.width, cr.height), false);
+		// a rect child (a state, a choice or a comment) and a point child (a
+		// pseudostate or an entry/exit point) each hold their absolute place
+		Cyberiada::Rect cr;
+		if (elementRect(*i, cr)) {
+			updateGeometry(elementToIndex(*i), Cyberiada::Rect(cr.x + dx, cr.y + dy, cr.width, cr.height), false);
 			continue;
 		}
 		Cyberiada::Vertex* v = dynamic_cast<Cyberiada::Vertex*>(*i);
@@ -1113,8 +1114,6 @@ void CyberiadaSMModel::pushSiblingsClear(Cyberiada::Element* pc,
 		}
 	}
 }
-
-static bool elementRect(const Cyberiada::Element* element, Cyberiada::Rect& out);
 
 // find a centre in pc's child frame where a (w x h) box clears every existing
 // child (skipping `skip` and transitions): keep `preferred` when it is already
@@ -2266,7 +2265,7 @@ static double elementRectWidth(const Cyberiada::Element* element)
 }
 
 // the rect of a rect-geometry element (choice/comment/collection); false otherwise
-static bool elementRect(const Cyberiada::Element* element, Cyberiada::Rect& out)
+bool CyberiadaSMModel::elementRect(const Cyberiada::Element* element, Cyberiada::Rect& out)
 {
     if (!element->has_rect_geometry()) return false;
     Cyberiada::ElementType type = element->get_type();

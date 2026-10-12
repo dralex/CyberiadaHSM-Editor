@@ -149,8 +149,10 @@ void CyberiadaSMEditorAbstractItem::onParentGeometryChanged() {
 
 void CyberiadaSMEditorAbstractItem::onParentSizeChanged(CornerFlags side, qreal delta)
 {
-    if(auto collection = dynamic_cast<Cyberiada::ElementCollection*>(element)) {
-        Cyberiada::Rect r = collection->get_geometry_rect();
+    Cyberiada::Rect r;
+    // a rect child (a state, a rect choice or a comment) holds its absolute place:
+    // the parent centre moved by delta, so shift the child by -delta on the moved side
+    if (CyberiadaSMModel::elementRect(element, r)) {
         QRectF tmpR = QRectF(r.x, r.y, r.width, r.height);
         switch (side) {
         case CornerFlags::Right:

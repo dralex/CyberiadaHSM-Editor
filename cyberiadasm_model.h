@@ -116,6 +116,10 @@ public:
     void                                childrenExtent(const Cyberiada::ElementCollection* pc,
                                                        double& left, double& right,
                                                        double& top, double& bottom) const;
+    // read an element's rect regardless of its concrete type (a state, a rect choice
+    // or a comment); false (out untouched) for a point element. the shared reader for
+    // the hold-in-place re-base on a container resize
+    static bool                         elementRect(const Cyberiada::Element* element, Cyberiada::Rect& out);
     void                                rebaseChildren(Cyberiada::ElementCollection* pc, double dx, double dy);
     // shift pc's siblings out of the way when pc grew from oldRect to newRect
     void                                pushSiblingsClear(Cyberiada::Element* pc,
