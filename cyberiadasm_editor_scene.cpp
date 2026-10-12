@@ -72,6 +72,21 @@ static bool isComponentComment(const Cyberiada::Element* element)
            (name.size() == len || name[len] == ' ');
 }
 
+// smaller items stack on top, so an overlapping leaf or a smaller state wins the
+// click, and a nested child (a graphics child of its parent region) stays above
+// its parent; an edge keeps a constant high order so a thin line over a node is
+// still clickable (EDIT-TOOL-12)
+static void applyItemZ(QGraphicsItem* item, Cyberiada::ElementType type)
+{
+    if (!item) return;
+    if (type == Cyberiada::elementTransition) {
+        item->setZValue(1.0e7);
+        return;
+    }
+    QRectF r = item->boundingRect();
+    item->setZValue(-(r.width() * r.height()));
+}
+
 // report a creation error: a modal box in the GUI, a stderr line in batch mode
 // (a modal exec() would hang the headless batch run)
 static void showError(const QString& title, const QString& text)
@@ -368,6 +383,9 @@ void CyberiadaSMEditorScene::slotModelDataChanged(const QModelIndex &topLeft, co
     }
     if (current_item != nullptr) {
         current_item->syncFromModel();
+        // the item's area may have changed (resize, grow, reparent): re-apply its
+        // stacking order so the smallest item still wins the click (EDIT-TOOL-12)
+        applyItemZ(current_item, element->get_type());
     }
     update();
 }
@@ -442,6 +460,7 @@ QGraphicsItem* CyberiadaSMEditorScene::addElementItem(Cyberiada::Element* child,
         elementIdToItemMap.insert(child->get_id(), state);
         // the subtree is built inside an attached root, or Qt would detach it
         addSceneItem(state);
+        applyItemZ(state, child->get_type());
         addItemsRecursively(state->getRegion(), static_cast<Cyberiada::ElementCollection*>(child));
         return state;
     }
@@ -450,6 +469,7 @@ QGraphicsItem* CyberiadaSMEditorScene::addElementItem(Cyberiada::Element* child,
         CyberiadaSMEditorStateItem* state = new CyberiadaSMEditorStateItem(this, model, child, new_parent);
         elementIdToItemMap.insert(child->get_id(), state);
         addSceneItem(state);
+        applyItemZ(state, child->get_type());
         addItemsRecursively(state, static_cast<Cyberiada::ElementCollection*>(child));
         return state;
     }
@@ -488,6 +508,7 @@ QGraphicsItem* CyberiadaSMEditorScene::addElementItem(Cyberiada::Element* child,
     if (item) {
         elementIdToItemMap.insert(child->get_id(), item);
         addSceneItem(item);
+        applyItemZ(item, child->get_type());
     }
     return item;
 }
@@ -500,6 +521,7 @@ void CyberiadaSMEditorScene::addItemsRecursively(QGraphicsItem* parent, Cyberiad
         new_parent = new CyberiadaSMEditorSMItem(model, collection, parent);
         elementIdToItemMap.insert(collection->get_id(), new_parent);
         addSceneItem(new_parent);
+        applyItemZ(new_parent, collection->get_type());
         new_parent->setSelected(true);
     }
 
