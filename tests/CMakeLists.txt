@@ -61,6 +61,7 @@ foreach(diagram
     multiline-actions
     overlap
     polyline
+    resize-hold
     sources
     two-sms)
   add_l0_test(${diagram} 0)

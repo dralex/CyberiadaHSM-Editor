@@ -138,6 +138,7 @@ private slots:
 	void test_empty_action_deletes();
 	void test_component_comment_hidden();
 	void test_select_over_composite();
+	void test_resize_holds_children();
 	// runs last: it reloads and modifies the shared document
 	void test_directional_grow();
 
@@ -3287,6 +3288,50 @@ void TestScene::test_select_over_composite()
 	// the composite-over-composite case: a smaller state machine-level composite
 	// stacks above a larger one (same-level siblings, so the Z values compare)
 	QVERIFY(small->zValue() > composite->zValue());
+}
+
+void TestScene::test_resize_holds_children()
+{
+	// resizing a container holds the absolute place of every child - a state, a
+	// rect choice and a comment alike; only the dragged edge extends (EDIT-NODE-5).
+	// Before the fix the choice and comment drifted by the centre delta.
+	QVERIFY(model->loadDocument("diagrams/resize-hold.graphml"));
+	scene->loadScene();
+	const QMap<Cyberiada::ID, QGraphicsItem*>& map = scene->getMap();
+	QGraphicsItem* outer = map.value("nOuter");
+	QGraphicsItem* state = map.value("nState");
+	QGraphicsItem* choice = map.value("nChoice");
+	QGraphicsItem* note = map.value("nNote");
+	QVERIFY(outer && state && choice && note);
+
+	scene->setCurrentTool(ToolType::Select);
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+	outer->setSelected(true);
+
+	QPointF stateC = state->sceneBoundingRect().center();
+	QPointF choiceC = choice->sceneBoundingRect().center();
+	QPointF noteC = note->sceneBoundingRect().center();
+	QRectF before = outer->sceneBoundingRect();
+
+	// grab the composite's bottom border (just inside, within the 7px zone) and
+	// drag it down, growing the container downward
+	QPointF grab(before.center().x(), before.bottom() - 3.0);
+	QPointF end(before.center().x(), before.bottom() + 80.0);
+	mouse(QEvent::GraphicsSceneMousePress, grab, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, grab, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, end, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, end, Qt::NoButton);
+
+	QRectF after = outer->sceneBoundingRect();
+	// the container grew downward: taller, top edge unchanged (directional resize)
+	QVERIFY2(after.height() > before.height() + 10.0, "the container did not grow");
+	QVERIFY2(qAbs(after.top() - before.top()) < 1.0, "the top edge moved");
+
+	// every child stayed put in absolute scene coordinates
+	QVERIFY2(QLineF(state->sceneBoundingRect().center(), stateC).length() < 1.5, "the state moved");
+	QVERIFY2(QLineF(choice->sceneBoundingRect().center(), choiceC).length() < 1.5, "the choice moved");
+	QVERIFY2(QLineF(note->sceneBoundingRect().center(), noteC).length() < 1.5, "the comment moved");
 }
 
 QTEST_MAIN(TestScene)
