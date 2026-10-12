@@ -1014,9 +1014,10 @@ void CyberiadaSMModel::childrenExtent(const Cyberiada::ElementCollection* pc,
 	for (Cyberiada::ConstElementList::const_iterator i = kids.begin(); i != kids.end(); i++) {
 		if (isConnectionPoint(*i)) continue;
 		double l, r, t, b;
-		const Cyberiada::ElementCollection* c = dynamic_cast<const Cyberiada::ElementCollection*>(*i);
-		if (c && c->has_geometry()) {
-			Cyberiada::Rect cr = c->get_geometry_rect();
+		// count every rect child the resize holds in place (a state, a rect choice,
+		// a comment) so sizing and holding cover the same set, then point children
+		Cyberiada::Rect cr;
+		if (elementRect(*i, cr)) {
 			l = cr.x - cr.width / 2.0; r = cr.x + cr.width / 2.0;
 			t = cr.y - cr.height / 2.0; b = cr.y + cr.height / 2.0;
 		} else {
@@ -2267,7 +2268,9 @@ static double elementRectWidth(const Cyberiada::Element* element)
 // the rect of a rect-geometry element (choice/comment/collection); false otherwise
 bool CyberiadaSMModel::elementRect(const Cyberiada::Element* element, Cyberiada::Rect& out)
 {
-    if (!element->has_rect_geometry()) return false;
+    // a type with rect geometry but no stored rect (e.g. a comment created without
+    // one) has no place to hold; never fabricate a degenerate 0x0 rect for it
+    if (!element->has_rect_geometry() || !element->has_geometry()) return false;
     Cyberiada::ElementType type = element->get_type();
     if (type == Cyberiada::elementChoice) {
         out = static_cast<const Cyberiada::ChoicePseudostate*>(element)->get_geometry_rect();
