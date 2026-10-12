@@ -1938,12 +1938,18 @@ Qt::ItemFlags CyberiadaSMModel::flags(const QModelIndex &index) const
 	}
 	if (isSMIndex(index)) {
 		return Qt::ItemIsDropEnabled | default_flags;
-	} else if (isStateIndex(index) || isInitialIndex(index)) {
-		default_flags |= Qt::ItemIsDragEnabled | Qt::ItemIsEditable;
-		if (isStateIndex(index)) {
-			default_flags |= Qt::ItemIsDropEnabled;
-		}
-		return default_flags;
+	}
+	// a state or the initial pseudostate is renamed in place
+	if (isStateIndex(index) || isInitialIndex(index)) {
+		default_flags |= Qt::ItemIsEditable;
+	}
+	// any reparentable element can be dragged (EDIT-TOOL-13)
+	if (isDraggableIndex(index)) {
+		default_flags |= Qt::ItemIsDragEnabled;
+	}
+	// a state can receive a dropped element
+	if (isStateIndex(index)) {
+		default_flags |= Qt::ItemIsDropEnabled;
 	}
 	return default_flags;
 }
@@ -2190,6 +2196,32 @@ bool CyberiadaSMModel::isInitialIndex(const QModelIndex& index) const
 	const Cyberiada::Element* element = static_cast<const Cyberiada::Element*>(index.internalPointer());
 	MY_ASSERT(element);
 	return element->get_type() == Cyberiada::elementInitial;
+}
+
+bool CyberiadaSMModel::isDraggableIndex(const QModelIndex& index) const
+{
+	if (!index.isValid()) return false;
+	const Cyberiada::Element* element = static_cast<const Cyberiada::Element*>(index.internalPointer());
+	MY_ASSERT(element);
+	// the metainformation node is special and never moved
+	if (root && element == root->get_meta_element()) return false;
+	switch (element->get_type()) {
+	case Cyberiada::elementSimpleState:
+	case Cyberiada::elementCompositeState:
+	case Cyberiada::elementSubmachineState:
+	case Cyberiada::elementInitial:
+	case Cyberiada::elementFinal:
+	case Cyberiada::elementTerminate:
+	case Cyberiada::elementChoice:
+	case Cyberiada::elementShallowHistory:
+	case Cyberiada::elementDeepHistory:
+	case Cyberiada::elementComment:
+	case Cyberiada::elementFormalComment:
+		return true;
+	default:
+		// the state machine, a transition, an entry/exit connector, the root
+		return false;
+	}
 }
 
 bool CyberiadaSMModel::isTransitionIndex(const QModelIndex& index) const
@@ -2551,7 +2583,7 @@ QMimeData* CyberiadaSMModel::mimeData(const QModelIndexList &indexes) const
 	QByteArray encodedData;
 	QDataStream stream(&encodedData, QIODevice::WriteOnly);
 	foreach(QModelIndex index, indexes) {
-		if (!isStateIndex(index) && !isInitialIndex(index)) continue;
+		if (!isDraggableIndex(index)) continue;
 		const Cyberiada::Element* element = indexToElement(index);
 		MY_ASSERT(element);
         stream << QString(element->get_id().c_str());

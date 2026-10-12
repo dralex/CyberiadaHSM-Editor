@@ -199,6 +199,10 @@ public:
 	bool                                isInitialIndex(const QModelIndex& index) const;
 	bool                                isStateIndex(const QModelIndex& index) const;
 	bool                                isSimpleStateIndex(const QModelIndex& index) const;
+	// an element that can be dragged to a new parent in the tree (EDIT-TOOL-13):
+	// a state, a pseudostate or a comment, but not the SM, a transition, an
+	// entry/exit connector or the metainformation node
+	bool                                isDraggableIndex(const QModelIndex& index) const;
 	bool                                isCompositeStateIndex(const QModelIndex& index) const;
 	bool                                isTransitionIndex(const QModelIndex& index) const;
 
