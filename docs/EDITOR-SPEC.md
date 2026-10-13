@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.14 (2026-10-13)
+**Document version:** 0.15 (2026-10-13)
 
 **Related authorities:**
 
@@ -112,11 +112,15 @@ over those rows; nothing more than the existing dump is needed.
 - `EDIT-STRUCT-3` MUST [U]: the containment tree is a forest rooted at the state
   machines — one parent per element, no cycle. *PNST 1044*
 - `EDIT-STRUCT-4` MUST [U]: a transition's source and target resolve to elements
-  of the same state machine. *PNST 1044*
+  of the same state machine. The invariant holds on creation and on an endpoint
+  retarget alike: a retarget that would bind an end to an element of another machine
+  is refused and the endpoint stays put. *PNST 1044*
 - `EDIT-STRUCT-5` MUST [U]: deleting an element removes its whole subtree and
   every incident transition — no dangling endpoint. The only exception is a state
   machine. Deleting a state machine just removes the geometry and makes the element
-  invisible. *design*
+  invisible. Clearing the border preserves the content's absolute position (the children
+  are re-based back to global coordinates, the inverse of adding a border) and the now
+  frameless machine is re-anchored to the origin, so the live scene matches a reload. *design*
 - `EDIT-STRUCT-6` MUST [U]: a state with children is composite, a leaf is
   simple and is a state or a pseudostate. *PNST 984*
 - `EDIT-STRUCT-7` MUST [U]: a state might contain several blocks: a header block with the
