@@ -66,6 +66,7 @@ private slots:
 	void test_move_within_parent_maintains_containment();
 	void test_unique_machine_name();
 	void test_submachine_point_rename_guarded();
+	void test_new_submachine_state_clears_siblings();
 
 private:
 	static bool rectsOverlap(const Cyberiada::Rect& a, const Cyberiada::Rect& b);
@@ -712,6 +713,22 @@ void TestModel::test_submachine_point_rename_guarded()
 	// accepted: another entry point of the referenced machine
 	QVERIFY2(model->updateTitle(idx, "in2"), "a valid referenced-machine point name was refused");
 	QCOMPARE(QString(en->get_name().c_str()), QString("in2"));
+}
+
+void TestModel::test_new_submachine_state_clears_siblings()
+{
+	// a new submachine state placed at a taken spot is relocated clear of its siblings
+	// (EDIT-NODE-6), the same as a plain state — before the fix it overlapped (P-97/P-102)
+	QVERIFY(model->loadDocument("diagrams/two-sm-bordered.graphml"));   // machines M and W
+	Cyberiada::ElementCollection* m = static_cast<Cyberiada::ElementCollection*>(model->idToElement("M"));
+	QVERIFY(m);
+	Cyberiada::State* a = model->newState(m, "A", Cyberiada::Action(), Cyberiada::Rect(0, 0, 120, 80));
+	QVERIFY(a);
+	// a submachine state (referencing the other machine W) asked at A's exact spot
+	Cyberiada::SubmachineState* sub = model->newSubmachineState(m, "W", Cyberiada::Rect(0, 0, 120, 80));
+	QVERIFY(sub);
+	QVERIFY2(!rectsOverlap(a->get_geometry_rect(), sub->get_geometry_rect()),
+			 "the new submachine state overlaps a sibling");
 }
 
 static int countTransitions(Cyberiada::ElementCollection* sm)
