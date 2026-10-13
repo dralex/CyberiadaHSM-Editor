@@ -109,9 +109,9 @@ it checks in a comment):
 | STRUCT | `l1-*` / `l4 test_item_hierarchy`, `test_load_scene`; names `test_name_edit`, `test_default_name_unique`, `test_name_only_state`; delete `l2 delete` + `test_delete`; subjects `l2 subjects`, `transition-subjects`, `test_move_subjects`; not-drawn SM tree mark `l4-model test_sm_not_drawn_mark` (`EDIT-STRUCT-11`); same-machine transition on retarget `l4-model test_retarget_refuses_cross_machine` (`EDIT-STRUCT-4`); clear-border content+origin `l4-scene test_clear_border_holds_content` (`EDIT-STRUCT-5`) |
 | SEM    | `test_choice_edge_rule`, `test_choice_tip_attach`; endpoint kinds via the transition cases |
 | NODE   | grow `test_move_grows_parent`, `test_nested_state_grows_parent`, `test_grow_cascades_to_ancestors`, `test_grow_skips_rectless_sm`; resize `test_border_resize`, `test_directional_grow`, `test_container_resize_clamp`, `test_comment_border_resize`, `test_resize_holds_children` (NODE-5: a resize holds every child — state, choice, comment — in place), `test_grow_holds_rect_children` (NODE-5/ROBUST-1: a grow counts the same rect children it holds and never fabricates a rect for a geometry-less child — no crash); place `test_new_element_place`; comment name `test_comment_name`; blocks `test_action_layout`; frame `reconstruct-sm-*` |
-| EDGE   | attach `test_auto_attach`, `test_ctrl_snap_endpoint`, `test_choice_tip_attach`; points `l2 edge-points`, `test_point_edit`, `test_loop_polyline`, `test_double_click_removes_vertex`; rebind `test_retarget_id`, `test_box_transition`; label `test_label_move`, `test_label_drag_tracks`, `label-geometry-*` |
+| EDGE   | attach `test_auto_attach`, `test_ctrl_snap_endpoint`, `test_choice_tip_attach`; points `l2 edge-points`, `test_point_edit`, `test_loop_polyline`, `test_double_click_removes_vertex`; rebind `test_retarget_id`, `test_box_transition`; label `test_label_move`, `test_label_drag_tracks`, `label-geometry-*`; snap (`EDIT-EDGE-15/16`) `l2 snap-transition`, `test_snap_border_rule`, `test_snap_endpoint_{drag,corner,exempt,ctrl,release}`, `test_snap_vertex_{small_steps,insert}`, `test_snap_loop_seed`, `test_snap_label_free`, `test_snap_roundtrip` |
 | TEXT   | `test_action_edit`, `test_action_multiline`, `test_double_click_action`, `test_double_click_label`, `l2 text-edit`, `transition-notation`, the `text` metrics layer, `l4-highlight` (`EDIT-TEXT-7/8/11`), `l4-language` (`EDIT-TEXT-9/12`), `l4-properties test_multiline_dialog`/`test_multiline_edit` (`EDIT-TEXT-10`) |
-| TOOL   | `test_creation_tools`, `test_creation_tools_arm`, `test_new_{state,choice,comment,sm}_place`, paste `test_paste_state`, `test_paste_transition`, `l2 copy-paste`, drag `test_body_drag`; select overlapping leaf `l4-scene test_select_over_composite` (`EDIT-TOOL-12`); tree drag `l4-model test_tree_drag_flags` (`EDIT-TOOL-13`) |
+| TOOL   | `test_creation_tools`, `test_creation_tools_arm`, `test_new_{state,choice,comment,sm}_place`, paste `test_paste_state`, `test_paste_transition`, `l2 copy-paste`, drag `test_body_drag`; select overlapping leaf `l4-scene test_select_over_composite` (`EDIT-TOOL-12`); tree drag `l4-model test_tree_drag_flags` (`EDIT-TOOL-13`); snap `test_snap_corner`, `test_resize_snap`, `l4-model test_snap_to_grid` (`EDIT-TOOL-8`), `l2 snap-alt`, `test_snap_alt_suspends` (`EDIT-TOOL-9`), `l2 snap-default`, `l4-log test_snap_state` (`EDIT-TOOL-14`) |
 | HIST   | `undo`/`redo-all` layer, `undo-all`, `test_gesture_recording`, `gestures-undo` |
 | IO     | `save-*`, `l1-*` dumps, `reconstruct-*`, export `test_export_image`, `l3-*` |
 | META   | `l2 update-meta`, `inspect-reject update-meta`, the `meta` diagram; META-1 (node hidden) via the `l1` scene dump; META-6 (CGML_COMPONENT hidden by default) via `l4-scene test_component_comment_hidden` + the `components` `l1` scene dump |
@@ -348,6 +348,11 @@ a single state machine with the geometry and have no shape for the terminate
 pseudostate, so a document they cannot express fails with exit code 3; the GUI
 save dialog disables such a format and shows the reason instead.
 
+A batch run starts with snap-to-grid off and the default grid spacing (25),
+whatever the GUI settings hold (`EDIT-TOOL-14`). `--snap` turns the snap on and
+`--grid <n>` sets the spacing for the run; like `--service` they are runtime
+overrides and change nothing saved.
+
 ## Edit scripts
 
 `--batch <file.graphml> --script <file> [--dump] [--save <out.graphml>]` runs
@@ -420,6 +425,23 @@ newly active document:
 | `new-document` | a new untitled document in a new tab |
 | `switch <index\|title>` | activate the tab by its 0-based index or its title |
 | `close [index\|title] [discard]` | close the active (or the named) tab; a modified document is refused without `discard`; the last tab gives way to a fresh untitled one |
+
+The setting verbs change the run, not a document, and open no undo step
+(`EDIT-TOOL-14`):
+
+| command | effect |
+|---|---|
+| `snap on\|off` | turn snap-to-grid on or off for the following gestures |
+| `grid <n>` | set the grid spacing |
+
+With snap on the gestures snap as in the GUI: the nodes by their corner, an
+endpoint along the straight edge it lands on (`EDIT-EDGE-15`), a polyline point
+and a placed self-loop to the grid (`EDIT-EDGE-16`); an `alt` modifier on the
+press suspends it for the gesture. The model verbs (`move`, `polyline`, `label`)
+always take their coordinates as given. `l2-snap-transition` snaps the gestures,
+`l2-snap-alt` repeats them with `alt`, and `l2-snap-default` repeats them with
+no setting verb under a settings profile with snap on: it owns no good file and
+must give the `snap-alt` one.
 
 A transition polyline is edited by gesture: click the transition to select it and
 show its point dots, then drag a segment to add a point, drag a point dot to move
@@ -516,7 +538,9 @@ data location) holding:
   no start document.
 - `session.script` - a header (`# <app> <version> rev <sha>`), the document line
   (`# document start.graphml` or `# document (empty)`), a `# start <ISO>` line,
-  the recorded verbs, and a `# exit <ISO>` line on a clean quit. A crash never
+  the `grid`/`snap` lines of a non-default snap state, the recorded verbs (a
+  snap toggle or a spacing change among them), and a `# exit <ISO>` line on a
+  clean quit. A crash never
   writes the exit line, so a `# start` with no `# exit` is the crash marker.
 
 The recording is hybrid. Raw mouse input is logged as the gesture verbs
