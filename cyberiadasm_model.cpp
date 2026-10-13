@@ -1762,6 +1762,17 @@ Cyberiada::SubmachineState *CyberiadaSMModel::newSubmachineState(Cyberiada::Elem
     beginInsertRows(elementToIndex(parent), row, row);
     Cyberiada::SubmachineState* element = root->new_submachine_state(parent, ref, Cyberiada::Name(), r);
     endInsertRows();
+    // keep siblings clear (EDIT-NODE-6): a submachine state placed at a taken spot is
+    // relocated to a free slot, as a plain state is (P-97/P-102)
+    Cyberiada::Rect er;
+    if (element && elementRect(element, er) && er.valid && er.width > 0.0 && er.height > 0.0) {
+        Cyberiada::Point f = freeChildCentre(parent, element, er.width, er.height,
+                                             Cyberiada::Point(er.x, er.y));
+        if (f.x != er.x || f.y != er.y) {
+            updateGeometry(elementToIndex(element),
+                           Cyberiada::Rect(f.x, f.y, er.width, er.height), false);
+        }
+    }
     if (element) growToFitChildren(element, false);
 
     if (element) {
