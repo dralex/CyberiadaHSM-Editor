@@ -1,0 +1,33 @@
+# the gestures of snap-transition with alt held: nothing snaps (EDIT-TOOL-9)
+grid 20
+snap on
+# select t0 by its middle segment
+click 300 300
+# the target endpoint at (500; 200): its border projection slides along the bottom edge
+press 500 200 alt
+drag 533 186
+release 533 186
+# the interior vertex at (100; 300) in small steps, which must add up; a
+# click first shows the dots again
+click 300 300
+press 100 300 alt
+drag 103.5 300
+drag 107 300
+drag 110.5 300
+drag 114 300
+drag 117.5 300
+drag 121 300
+drag 124.5 300
+drag 128 300
+release 128 300
+# insert a vertex on the middle segment and carry it
+press 300 300 alt
+drag 307 333
+drag 311 352
+release 311 352
+# a self-loop placed upward on n0: a bump on its top side
+tool transition
+press 100 150 alt
+drag 100 130
+drag 100 110
+release 100 110

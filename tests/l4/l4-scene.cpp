@@ -26,6 +26,7 @@
 #include <QTextCursor>
 #include <QTextCharFormat>
 #include <QFont>
+#include <QTemporaryDir>
 #include <cmath>
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_editor_scene.h"
@@ -140,6 +141,18 @@ private slots:
 	void test_select_over_composite();
 	void test_resize_holds_children();
 	void test_clear_border_holds_content();
+	void test_snap_border_rule();
+	void test_snap_endpoint_drag();
+	void test_snap_endpoint_corner();
+	void test_snap_endpoint_exempt();
+	void test_snap_endpoint_ctrl();
+	void test_snap_endpoint_release();
+	void test_snap_vertex_small_steps();
+	void test_snap_vertex_insert();
+	void test_snap_loop_seed();
+	void test_snap_alt_suspends();
+	void test_snap_label_free();
+	void test_snap_roundtrip();
 	// runs last: it reloads and modifies the shared document
 	void test_directional_grow();
 
@@ -149,6 +162,9 @@ private:
 	void deleteTransition(const Cyberiada::ID& source, const Cyberiada::ID& target);
 	void mouse(QEvent::Type type, const QPointF& scenePos, Qt::MouseButtons buttons,
 			   Qt::KeyboardModifiers mods = Qt::NoModifier);
+	CyberiadaSMEditorTransitionItem* loadPolyline();
+	void dragDot(CyberiadaSMEditorTransitionItem* tr, int index, const QList<QPointF>& path,
+				 Qt::KeyboardModifiers mods = Qt::NoModifier);
 	CyberiadaSMModel* model;
 	CyberiadaSMEditorScene* scene;
 };
@@ -3357,6 +3373,405 @@ void TestScene::test_clear_border_holds_content()
 	QVERIFY2(QLineF(sm->pos(), QPointF(0, 0)).length() < 0.5, "the frameless machine is not at the origin");
 	// the content held its absolute place (children re-based back to global)
 	QVERIFY2(QLineF(child->sceneBoundingRect().center(), childBefore).length() < 1.5, "the content moved");
+}
+
+// the snap mode and the grid spacing for one test, restored afterwards even when
+// an assertion returns early; a runtime override, never persisted
+class SnapScope {
+public:
+	explicit SnapScope(int spacing, bool on = true):
+		snap(SettingsManager::instance().getSnapMode()),
+		grid(int(SettingsManager::instance().getGridSpacing()))
+	{
+		SettingsManager::instance().overrideGridSpacing(spacing);
+		SettingsManager::instance().overrideSnapMode(on);
+	}
+	~SnapScope()
+	{
+		SettingsManager::instance().overrideSnapMode(snap);
+		SettingsManager::instance().overrideGridSpacing(grid);
+	}
+private:
+	bool snap;
+	int grid;
+};
+
+// a coordinate on a grid line of the spacing
+static bool onGridLine(qreal v, qreal spacing)
+{
+	qreal r = std::fmod(std::fabs(v), spacing);
+	return r < 0.01 || spacing - r < 0.01;
+}
+
+static bool samePoint(const QPointF& a, const QPointF& b)
+{
+	return QLineF(a, b).length() < 0.01;
+}
+
+// the scene points of a transition: the source end, the polyline, the target end
+static QList<QPointF> route(CyberiadaSMEditorTransitionItem* tr, const Cyberiada::Transition* t)
+{
+	QList<QPointF> points;
+	points << tr->sourcePoint() + tr->sourceCenter();
+	if (t->has_polyline()) {
+		for (const Cyberiada::Point& p : t->get_geometry_polyline())
+			points << QPointF(p.x, p.y) + tr->sourceCenter();
+	}
+	points << tr->targetPoint() + tr->targetCenter();
+	return points;
+}
+
+// the polyline diagram in scene coordinates: n0 (0; 100)-(200; 200), n1 (400;
+// 100)-(600; 200) and t0 (100; 200) -> (100; 300) -> (500; 300) -> (500; 200),
+// its dots 0 (source) to 3 (target)
+CyberiadaSMEditorTransitionItem* TestScene::loadPolyline()
+{
+	if (!model->loadDocument("diagrams/polyline.graphml")) return nullptr;
+	scene->loadScene();
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+	scene->setCurrentTool(ToolType::Select);
+	return dynamic_cast<CyberiadaSMEditorTransitionItem*>(scene->getMap().value("t0"));
+}
+
+// drag a dot of the selected transition through the points, the modifiers held
+void TestScene::dragDot(CyberiadaSMEditorTransitionItem* tr, int index, const QList<QPointF>& path,
+						Qt::KeyboardModifiers mods)
+{
+	scene->clearSelection();
+	tr->setSelected(true);
+	DotSignal* dot = tr->getDot(index);
+	QVERIFY(dot);
+	dot->setVisible(true);
+	QPointF on = dot->scenePos();
+	QVERIFY(scene->itemAt(on, QTransform()) == dot);
+	mouse(QEvent::GraphicsSceneMousePress, on, Qt::LeftButton, mods);
+	for (const QPointF& p : path) mouse(QEvent::GraphicsSceneMouseMove, p, Qt::LeftButton, mods);
+	mouse(QEvent::GraphicsSceneMouseRelease, path.last(), Qt::NoButton, mods);
+}
+
+void TestScene::test_snap_border_rule()
+{
+	// EDIT-EDGE-15: a border point on a straight edge slides along it to the
+	// nearest grid line within the edge; a rounded corner, an edge with no grid
+	// line, a pseudostate, a choice and a Ctrl-locked coordinate keep the point
+	typedef CyberiadaSMEditorTransitionItem Tr;
+	Tr* tr = loadPolyline();
+	QVERIFY(tr);
+	CyberiadaSMEditorAbstractItem* n0 = dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene->getMap().value("n0"));
+	CyberiadaSMEditorAbstractItem* n1 = dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene->getMap().value("n1"));
+	QVERIFY(n0 && n1);
+	QPointF bottom(533.3, 200);   // on the bottom of n1, its straight part 410-590
+	{
+		SnapScope snap(20);
+		QVERIFY(samePoint(tr->snapAlongBorder(n1, bottom, Qt::NoModifier, Tr::LockNone), QPointF(540, 200)));
+		QVERIFY(samePoint(tr->snapAlongBorder(n0, QPointF(200, 171.4), Qt::NoModifier, Tr::LockNone),
+						  QPointF(200, 180)));
+		// the straight right edge of n0 ends at y 190, the corner arc follows
+		QPointF corner(199.96, 190.96);
+		QCOMPARE(tr->snapAlongBorder(n0, corner, Qt::NoModifier, Tr::LockNone), corner);
+		// the Ctrl-locked x keeps the neighbour's, a locked y lets x slide
+		QCOMPARE(tr->snapAlongBorder(n1, bottom, Qt::NoModifier, Tr::LockX), bottom);
+		QVERIFY(samePoint(tr->snapAlongBorder(n1, bottom, Qt::NoModifier, Tr::LockY), QPointF(540, 200)));
+		QCOMPARE(tr->snapAlongBorder(n1, bottom, Qt::AltModifier, Tr::LockNone), bottom);
+
+		// a narrow state: its straight bottom (702-712) holds no grid line
+		Cyberiada::StateMachine* sm = dynamic_cast<Cyberiada::StateMachine*>(model->idToElement("G0"));
+		QVERIFY(sm);
+		Cyberiada::State* narrow = model->newState(sm, std::string("N"), Cyberiada::Action(),
+												   Cyberiada::Rect(707, 150, 30, 100));
+		QVERIFY(narrow);
+		CyberiadaSMEditorAbstractItem* nItem =
+			dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene->getMap().value(narrow->get_id()));
+		QVERIFY(nItem);
+		QCOMPARE(nItem->sceneBoundingRect(), QRectF(692, 100, 30, 100));
+		QCOMPARE(tr->snapAlongBorder(nItem, QPointF(705, 200), Qt::NoModifier, Tr::LockNone), QPointF(705, 200));
+
+		// a pseudostate and a choice keep their attachment (EDIT-EDGE-2/4)
+		Cyberiada::InitialPseudostate* init = model->newInitial(sm, Cyberiada::Point(300, 500));
+		Cyberiada::ChoicePseudostate* choice = model->newChoice(sm, Cyberiada::Rect(300, 600, 40, 40));
+		QVERIFY(init && choice);
+		CyberiadaSMEditorAbstractItem* iItem =
+			dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene->getMap().value(init->get_id()));
+		CyberiadaSMEditorAbstractItem* cItem =
+			dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene->getMap().value(choice->get_id()));
+		QVERIFY(iItem && cItem);
+		QPointF onCircle = iItem->sceneBoundingRect().center() + QPointF(0, VERTEX_POINT_RADIUS);
+		QCOMPARE(tr->snapAlongBorder(iItem, onCircle, Qt::NoModifier, Tr::LockNone), onCircle);
+		QPointF tip(cItem->sceneBoundingRect().center().x(), cItem->sceneBoundingRect().top());
+		QCOMPARE(tr->snapAlongBorder(cItem, tip, Qt::NoModifier, Tr::LockNone), tip);
+	}
+	{
+		// the nearest grid line past the straight part is clamped into it: on
+		// spacing 30 the bottom of n1 holds 420..570, 588 rounds to 600
+		SnapScope snap(30);
+		QVERIFY(samePoint(tr->snapAlongBorder(n1, QPointF(588, 200), Qt::NoModifier, Tr::LockNone),
+						  QPointF(570, 200)));
+	}
+	SnapScope off(20, false);
+	QCOMPARE(tr->snapAlongBorder(n1, bottom, Qt::NoModifier, Tr::LockNone), bottom);
+}
+
+void TestScene::test_snap_endpoint_drag()
+{
+	// EDIT-EDGE-15: a dragged endpoint stays on the straight edge it projects to,
+	// its coordinate along the edge on the grid
+	SnapScope snap(20);
+	CyberiadaSMEditorTransitionItem* tr = loadPolyline();
+	QVERIFY(tr);
+	// the cursor snaps to (540; 180), which projects toward (500; 300) onto the
+	// bottom of n1 at x 533.3
+	dragDot(tr, 3, {QPointF(533, 186)});
+	if (QTest::currentTestFailed()) return;
+	QVERIFY(samePoint(tr->targetPoint() + tr->targetCenter(), QPointF(540, 200)));
+	// the cursor snaps to (240; 120), which projects toward (100; 300) onto the
+	// right of n0 at y 171.4
+	dragDot(tr, 0, {QPointF(236, 123)});
+	if (QTest::currentTestFailed()) return;
+	QVERIFY(samePoint(tr->sourcePoint() + tr->sourceCenter(), QPointF(200, 180)));
+}
+
+void TestScene::test_snap_endpoint_corner()
+{
+	// an endpoint projected onto a rounded corner keeps the plain projection:
+	// the cursor snapped to (210; 180) on spacing 30 lands where that cursor
+	// lands with snap off, on the bottom-right arc of n0
+	QPointF plain;
+	{
+		SnapScope off(30, false);
+		CyberiadaSMEditorTransitionItem* tr = loadPolyline();
+		QVERIFY(tr);
+		dragDot(tr, 0, {QPointF(210, 180)});
+		if (QTest::currentTestFailed()) return;
+		plain = tr->sourcePoint() + tr->sourceCenter();
+	}
+	QVERIFY2(plain.x() > 190 && plain.y() > 190, "the projection missed the corner arc");
+	SnapScope snap(30);
+	CyberiadaSMEditorTransitionItem* tr = loadPolyline();
+	QVERIFY(tr);
+	dragDot(tr, 0, {QPointF(213, 176)});
+	if (QTest::currentTestFailed()) return;
+	QVERIFY(samePoint(tr->sourcePoint() + tr->sourceCenter(), plain));
+}
+
+void TestScene::test_snap_endpoint_exempt()
+{
+	// a pseudostate endpoint stays on the circle border with snap on (EDIT-EDGE-2)
+	SnapScope snap(20);
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	QGraphicsItem* fromItem = scene->getMap().value("node-0-0-2");
+	QGraphicsItem* initItem = scene->getMap().value("node-0-0-0");
+	QVERIFY(fromItem && initItem);
+	scene->setCurrentTool(ToolType::Transition);
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+	QPointF to = initItem->sceneBoundingRect().center() + QPointF(3, 4);
+	mouse(QEvent::GraphicsSceneMousePress, fromItem->sceneBoundingRect().center(), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, to, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, to, Qt::NoButton);
+
+	const Cyberiada::Transition* t = findTransition(model, "node-0-0-2", "node-0-0-0");
+	QVERIFY(t);
+	CyberiadaSMEditorTransitionItem* item =
+		dynamic_cast<CyberiadaSMEditorTransitionItem*>(scene->getMap().value(t->get_id()));
+	QVERIFY(item);
+	QPointF tp = item->targetPoint();
+	QVERIFY(qAbs(std::hypot(tp.x(), tp.y()) - VERTEX_POINT_RADIUS) < 0.5);
+}
+
+void TestScene::test_snap_endpoint_ctrl()
+{
+	// Ctrl wins on the coordinate it locks (EDIT-TOOL-10): an off-grid neighbour
+	// keeps the target segment vertical, the bottom edge does not slide it
+	SnapScope snap(20);
+	CyberiadaSMEditorTransitionItem* tr = loadPolyline();
+	QVERIFY(tr);
+	const Cyberiada::Transition* t = static_cast<const Cyberiada::Transition*>(model->idToElement("t0"));
+	// Alt leaves the neighbour of the target off the grid
+	dragDot(tr, 2, {QPointF(507, 300)}, Qt::AltModifier);
+	if (QTest::currentTestFailed()) return;
+	QVERIFY(samePoint(route(tr, t).at(2), QPointF(507, 300)));
+	dragDot(tr, 3, {QPointF(533, 186)}, Qt::ControlModifier);
+	if (QTest::currentTestFailed()) return;
+	QVERIFY(samePoint(tr->targetPoint() + tr->targetCenter(), QPointF(507, 200)));
+}
+
+void TestScene::test_snap_endpoint_release()
+{
+	// a transition drawn by one drag binds its target on the release; the bound
+	// endpoint snaps along the straight edge like a dragged one
+	SnapScope snap(20);
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	QGraphicsItem* fromItem = scene->getMap().value("node-0-1");
+	QGraphicsItem* toItem = scene->getMap().value("node-0-0-2");
+	QVERIFY(fromItem && toItem);
+	QPointF to = toItem->sceneBoundingRect().center();
+	scene->setCurrentTool(ToolType::Transition);
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+	mouse(QEvent::GraphicsSceneMousePress, fromItem->sceneBoundingRect().center(), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, to, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, to, Qt::NoButton);
+
+	const Cyberiada::Transition* t = findTransition(model, "node-0-1", "node-0-0-2");
+	QVERIFY(t);
+	QVERIFY2(t->has_geometry_target_point(), "the release bind stores the endpoint");
+	CyberiadaSMEditorTransitionItem* item =
+		dynamic_cast<CyberiadaSMEditorTransitionItem*>(scene->getMap().value(t->get_id()));
+	QVERIFY(item);
+	QPointF end = item->targetPoint() + item->targetCenter();
+	QRectF box = toItem->sceneBoundingRect();
+	bool horizontal = qAbs(end.y() - box.top()) < 0.01 || qAbs(end.y() - box.bottom()) < 0.01;
+	bool vertical = qAbs(end.x() - box.left()) < 0.01 || qAbs(end.x() - box.right()) < 0.01;
+	QVERIFY2(horizontal || vertical, "the endpoint is not on a straight edge");
+	QVERIFY(horizontal ? onGridLine(end.x(), 20) : onGridLine(end.y(), 20));
+}
+
+void TestScene::test_snap_vertex_small_steps()
+{
+	// EDIT-EDGE-16: a polyline point follows the cursor, so the steps shorter
+	// than half the spacing add up instead of snapping back each time
+	SnapScope snap(20);
+	CyberiadaSMEditorTransitionItem* tr = loadPolyline();
+	QVERIFY(tr);
+	const Cyberiada::Transition* t = static_cast<const Cyberiada::Transition*>(model->idToElement("t0"));
+	QList<QPointF> steps;
+	const qreal STEP = 3.5;
+	const int STEPS = 8;
+	for (int i = 1; i <= STEPS; i++) steps << QPointF(100 + STEP * i, 300);
+	dragDot(tr, 1, steps);
+	if (QTest::currentTestFailed()) return;
+	// the cursor ends at (128; 300), on the grid at (120; 300)
+	QVERIFY(samePoint(route(tr, t).at(1), QPointF(120, 300)));
+}
+
+void TestScene::test_snap_vertex_insert()
+{
+	// EDIT-EDGE-16: a vertex inserted by a segment drag lands on the grid and
+	// stays on it while the same gesture carries it
+	SnapScope snap(20);
+	CyberiadaSMEditorTransitionItem* tr = loadPolyline();
+	QVERIFY(tr);
+	const Cyberiada::Transition* t = static_cast<const Cyberiada::Transition*>(model->idToElement("t0"));
+	scene->clearSelection();
+	tr->setSelected(true);
+	mouse(QEvent::GraphicsSceneMousePress, QPointF(300, 300), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, QPointF(307, 333), Qt::LeftButton);
+	QCOMPARE(int(t->get_geometry_polyline().size()), 3);
+	QVERIFY(samePoint(route(tr, t).at(2), QPointF(300, 340)));
+	mouse(QEvent::GraphicsSceneMouseMove, QPointF(311, 352), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, QPointF(311, 352), Qt::NoButton);
+	QVERIFY(samePoint(route(tr, t).at(2), QPointF(320, 360)));
+}
+
+void TestScene::test_snap_loop_seed()
+{
+	// EDIT-EDGE-16: a self-loop placed with snap on has its endpoints slid
+	// along the border, its vertices on grid crossings and orthogonal segments
+	SnapScope snap(20);
+	QVERIFY(loadPolyline());
+	scene->setCurrentTool(ToolType::Transition);
+	mouse(QEvent::GraphicsSceneMousePress, QPointF(100, 150), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, QPointF(100, 130), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, QPointF(100, 110), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, QPointF(100, 110), Qt::NoButton);
+
+	const Cyberiada::Transition* loop = findTransition(model, "n0", "n0");
+	QVERIFY(loop && loop->has_polyline());
+	CyberiadaSMEditorTransitionItem* item =
+		dynamic_cast<CyberiadaSMEditorTransitionItem*>(scene->getMap().value(loop->get_id()));
+	QVERIFY(item);
+	QList<QPointF> points = route(item, loop);
+	// an upward drag: a bump on the top of n0 (y 100)
+	QVERIFY(qAbs(points.first().y() - 100) < 0.01 && onGridLine(points.first().x(), 20));
+	QVERIFY(qAbs(points.last().y() - 100) < 0.01 && onGridLine(points.last().x(), 20));
+	for (int i = 1; i < points.size() - 1; i++) {
+		QVERIFY(onGridLine(points[i].x(), 20) && onGridLine(points[i].y(), 20));
+	}
+	for (int i = 1; i < points.size(); i++) {
+		QPointF d = points[i] - points[i - 1];
+		QVERIFY(qAbs(d.x()) < 0.01 || qAbs(d.y()) < 0.01);
+	}
+}
+
+void TestScene::test_snap_alt_suspends()
+{
+	// EDIT-TOOL-9: the gesture's own Alt leaves the endpoints and the vertices
+	// unrounded
+	SnapScope snap(20);
+	CyberiadaSMEditorTransitionItem* tr = loadPolyline();
+	QVERIFY(tr);
+	const Cyberiada::Transition* t = static_cast<const Cyberiada::Transition*>(model->idToElement("t0"));
+	dragDot(tr, 3, {QPointF(533, 186)}, Qt::AltModifier);
+	if (QTest::currentTestFailed()) return;
+	QPointF end = tr->targetPoint() + tr->targetCenter();
+	QVERIFY(qAbs(end.y() - 200) < 0.01 && !onGridLine(end.x(), 20));
+	dragDot(tr, 1, {QPointF(107, 300)}, Qt::AltModifier);
+	if (QTest::currentTestFailed()) return;
+	QVERIFY(samePoint(route(tr, t).at(1), QPointF(107, 300)));
+}
+
+void TestScene::test_snap_label_free()
+{
+	// EDIT-EDGE-16: the label box is not snapped, its drag tracks the cursor
+	SnapScope snap(20);
+	CyberiadaSMModel m(nullptr);
+	CyberiadaSMEditorScene s(&m, nullptr);
+	QVERIFY(m.loadDocument("diagrams/geometry.graphml"));
+	s.loadScene();
+	QCoreApplication::processEvents();
+	CyberiadaSMEditorTransitionItem* tr =
+		dynamic_cast<CyberiadaSMEditorTransitionItem*>(s.getMap().value("edge-2"));
+	QVERIFY(tr);
+	TransitionAction* label = nullptr;
+	for (QGraphicsItem* c : tr->childItems())
+		if ((label = dynamic_cast<TransitionAction*>(c))) break;
+	QVERIFY(label);
+	label->setVisible(true);
+
+	s.setCurrentTool(ToolType::Select);
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(&s, &activate);
+	label->grabMouse();
+	QPointF anchor = label->scenePos();
+	// a delta no grid of spacing 20 keeps: 25 and 18 would round to 20
+	QPointF delta(25, 18);
+	sceneMouse(&s, QEvent::GraphicsSceneMousePress, anchor, Qt::LeftButton);
+	sceneMouse(&s, QEvent::GraphicsSceneMouseMove, anchor, Qt::LeftButton);
+	QVERIFY(label->isDragging());
+	QPointF startPos = label->pos();
+	sceneMouse(&s, QEvent::GraphicsSceneMouseMove, anchor + delta, Qt::LeftButton);
+	sceneMouse(&s, QEvent::GraphicsSceneMouseRelease, anchor + delta, Qt::NoButton);
+	QVERIFY(QLineF(label->pos() - startPos, delta).length() < 1.0);
+}
+
+void TestScene::test_snap_roundtrip()
+{
+	// the snapped points save and reopen exactly
+	SnapScope snap(20);
+	CyberiadaSMEditorTransitionItem* tr = loadPolyline();
+	QVERIFY(tr);
+	dragDot(tr, 3, {QPointF(533, 186)});
+	if (QTest::currentTestFailed()) return;
+	dragDot(tr, 1, {QPointF(128, 307)});
+	if (QTest::currentTestFailed()) return;
+	const Cyberiada::Transition* t = static_cast<const Cyberiada::Transition*>(model->idToElement("t0"));
+	QList<QPointF> before = route(tr, t);
+	QCOMPARE(before.at(1), QPointF(120, 300));
+	QCOMPARE(before.last(), QPointF(540, 200));
+
+	QTemporaryDir dir;
+	QVERIFY(dir.isValid());
+	QString path = dir.filePath("snapped.graphml");
+	model->saveAsDocument(path, Cyberiada::formatCyberiada10);
+	QVERIFY(model->loadDocument(path));
+	scene->loadScene();
+	tr = dynamic_cast<CyberiadaSMEditorTransitionItem*>(scene->getMap().value("t0"));
+	QVERIFY(tr);
+	t = static_cast<const Cyberiada::Transition*>(model->idToElement("t0"));
+	QCOMPARE(route(tr, t), before);
 }
 
 QTEST_MAIN(TestScene)

@@ -37,6 +37,7 @@
 #include "gesture_log.h"
 #include "batch_script.h"
 #include "cyberiadasm_dump.h"
+#include "settings_manager.h"
 
 class TestLog: public QObject {
 	Q_OBJECT
@@ -47,6 +48,7 @@ private slots:
 	void test_gesture_recording();
 	void test_gesture_suppression();
 	void test_crash_marker();
+	void test_snap_state();
 
 private:
 	QString readScript(const QString& dir) const;
@@ -195,6 +197,60 @@ void TestLog::test_crash_marker()
 
 	// leave the singleton clean for any later case
 	GestureLog::instance().endSession();
+}
+
+// a session records the snap state as the setting verbs, so a replay that
+// starts from the batch defaults snaps as the recording did (EDIT-TOOL-14)
+void TestLog::test_snap_state()
+{
+	SettingsManager& sm = SettingsManager::instance();
+	bool snapWas = sm.getSnapMode();
+	double gridWas = sm.getGridSpacing();
+	sm.setGridSpacing(20);
+	sm.setSnapMode(true);
+
+	CyberiadaSMEditorWindow win;
+	QVERIFY(win.openDocument("diagrams/polyline.graphml"));
+	CyberiadaSMEditorScene* scene = win.getScene();
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+	GestureLog::instance().startSession(win.getModel());
+	QString dir = GestureLog::instance().sessionDir();
+	// select t0 by its middle segment, then drag its target end: it snaps to
+	// (540; 200) on the bottom of n1
+	sendMouse(scene, QEvent::GraphicsSceneMousePress, QPointF(300, 300), Qt::LeftButton);
+	sendMouse(scene, QEvent::GraphicsSceneMouseRelease, QPointF(300, 300), Qt::NoButton);
+	sendMouse(scene, QEvent::GraphicsSceneMousePress, QPointF(500, 200), Qt::LeftButton);
+	sendMouse(scene, QEvent::GraphicsSceneMouseMove, QPointF(533, 186), Qt::LeftButton);
+	sendMouse(scene, QEvent::GraphicsSceneMouseRelease, QPointF(533, 186), Qt::NoButton);
+	sm.setSnapMode(false);
+	GestureLog::instance().endSession();
+	sm.setSnapMode(snapWas);
+	sm.setGridSpacing(gridWas);
+
+	QString script = readScript(dir);
+	QVERIFY(script.contains("\ngrid 20\nsnap on\n"));
+	QVERIFY(script.contains("\nsnap off\n"));
+	const Cyberiada::Transition* recorded =
+		static_cast<const Cyberiada::Transition*>(win.getModel()->idToElement("t0"));
+	QVERIFY(recorded && recorded->has_geometry_target_point());
+	QCOMPARE(recorded->get_target_point().x, 40.0);   // (540; 200) from the n1 centre
+
+	// the replay starts with snap off and the default spacing, as a batch run
+	sm.overrideSnapMode(false);
+	sm.overrideGridSpacing(GRID_SPACING_DEFAULT);
+	CyberiadaSMEditorWindow replay;
+	QVERIFY(replay.openDocument(QDir(dir).filePath("start.graphml")));
+	QString error;
+	bool ok = runEditScript(&replay, QDir(dir).filePath("session.script"), &error);
+	sm.overrideSnapMode(snapWas);
+	sm.overrideGridSpacing(int(gridWas));
+	QVERIFY2(ok, qPrintable(error));
+	const Cyberiada::Transition* replayed =
+		static_cast<const Cyberiada::Transition*>(replay.getModel()->idToElement("t0"));
+	QVERIFY(replayed && replayed->has_geometry_target_point());
+	QCOMPARE(replayed->get_target_point().x, recorded->get_target_point().x);
+	QCOMPARE(replayed->get_target_point().y, recorded->get_target_point().y);
 }
 
 QTEST_MAIN(TestLog)

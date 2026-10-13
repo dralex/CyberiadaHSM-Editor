@@ -312,6 +312,34 @@ add_l2_test(edge-points polyline)
 add_l2_test(copy-paste empty)
 add_l2_test(set-color empty)
 add_l2_test(reconstruct-two-sms two-sms)
+add_l2_test(snap-transition polyline)
+add_l2_test(snap-alt polyline)
+
+# a batch run starts with snap off whatever the settings hold (EDIT-TOOL-14):
+# under a profile with snap on, the snap-transition gestures give the snap-alt
+# result, so the case owns no reference file. The settings file is named after
+# CYBERIADA_VENDOR/CYBERIADA_APP_NAME (version.h.in)
+set(SNAP_CONFIG_HOME ${CMAKE_CURRENT_BINARY_DIR}/config-snap)
+file(WRITE "${SNAP_CONFIG_HOME}/Cyberiada/Cyberiada State Machine Editor.conf"
+  "[display]\nsnapMode=true\ngridSpacing=20\n")
+set(SNAP_ENVIRONMENT ${L0_ENVIRONMENT})
+list(FILTER SNAP_ENVIRONMENT EXCLUDE REGEX "^XDG_CONFIG_HOME=")
+list(APPEND SNAP_ENVIRONMENT "XDG_CONFIG_HOME=${SNAP_CONFIG_HOME}")
+add_test(NAME l2-snap-default
+  COMMAND ${CMAKE_COMMAND}
+    -DBATCH_BIN=$<TARGET_FILE:CyberiadaEditor>
+    -DINPUT=diagrams/polyline.graphml
+    -DSCRIPT=scripts/snap-default.script
+    -DEXPECTED=0
+    -DWORKDIR=${CMAKE_CURRENT_SOURCE_DIR}
+    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/l2-snap-default.out
+    -DDUMP_GOOD=${CMAKE_CURRENT_SOURCE_DIR}/good/snap-alt-output.txt
+    -DSAVE_OUT=${CMAKE_CURRENT_BINARY_DIR}/l2-snap-default.graphml
+    -DSAVE_GOOD=${CMAKE_CURRENT_SOURCE_DIR}/good/snap-alt-output.graphml
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunBatchTest.cmake)
+set_tests_properties(l2-snap-default PROPERTIES
+  TIMEOUT 60
+  ENVIRONMENT "${SNAP_ENVIRONMENT}")
 
 # The L2 text cases run with the text shown: the canvas text verbs need the
 # text items on the canvas (see docs/TESTING.md)
