@@ -564,6 +564,15 @@ def values_equal(a, b):
     and every number within a small relative tolerance (~5 significant figures)."""
     if a == b:
         return True
+    # a field value may be a number or a nested tuple/list (a structured sub-record),
+    # not a string: compare numbers within the same tolerance and recurse into a
+    # tuple/list so the round-trip noise is absorbed at the leaves, not byte for byte
+    if isinstance(a, (int, float)) and isinstance(b, (int, float)):
+        return abs(a - b) <= 1e-3 + 1e-4 * max(abs(a), abs(b))
+    if isinstance(a, (tuple, list)) and isinstance(b, (tuple, list)):
+        return len(a) == len(b) and all(values_equal(x, y) for x, y in zip(a, b))
+    if not isinstance(a, str) or not isinstance(b, str):
+        return False
     if _NUMBER.sub("#", a) != _NUMBER.sub("#", b):
         return False
     na = [float(x) for x in _NUMBER.findall(a)]
@@ -600,7 +609,11 @@ def compare(a_text, b_text, ignore=()):
                 return d
         if skipped:
             continue
-        return Difference(ra[0], "record", record_text(ra), record_text(rb))
+        # the records differ byte for byte (ra != rb) but every paired field matched
+        # within the coordinate tolerance; only a real structural change (a different
+        # field count) is a difference, not round-trip float noise
+        if len(ra[2]) != len(rb[2]):
+            return Difference(ra[0], "record", record_text(ra), record_text(rb))
     if len(fa) != len(fb):
         extra = fa[len(fb)] if len(fa) > len(fb) else fb[len(fa)]
         return Difference("count", "elements", "%d elements" % len(fa),
