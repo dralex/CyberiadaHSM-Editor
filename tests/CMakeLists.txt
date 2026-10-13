@@ -63,6 +63,7 @@ foreach(diagram
     polyline
     resize-hold
     sources
+    submachine-points
     two-sm-bordered
     two-sms)
   add_l0_test(${diagram} 0)

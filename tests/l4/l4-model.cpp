@@ -65,6 +65,7 @@ private slots:
 	void test_retarget_refuses_cross_machine();
 	void test_move_within_parent_maintains_containment();
 	void test_unique_machine_name();
+	void test_submachine_point_rename_guarded();
 
 private:
 	static bool rectsOverlap(const Cyberiada::Rect& a, const Cyberiada::Rect& b);
@@ -688,6 +689,29 @@ void TestModel::test_unique_machine_name()
 	QCOMPARE(QString(model->uniqueMachineName("Fresh").c_str()), QString("Fresh"));
 	QCOMPARE(QString(model->uniqueMachineName("Orchestrator").c_str()), QString("Orchestrator 1"));
 	QCOMPARE(QString(model->uniqueMachineName("Worker").c_str()), QString("Worker 1"));
+}
+
+void TestModel::test_submachine_point_rename_guarded()
+{
+	// a submachine state's entry/exit point may only be named after a point of the
+	// referenced machine (EDIT-SEM-8), and never empty (EDIT-SEM-7). Without the guard
+	// a rename to an action-like string broke the strict reload (polygon P-98/P-99).
+	// machine R has entry points 'in','in2' and exit 'out'; sub mirrors R.
+	QVERIFY(model->loadDocument("diagrams/submachine-points.graphml"));
+	Cyberiada::Element* en = model->idToElement("sub::en");   // an entry point of submachine state sub
+	QVERIFY(en && en->get_type() == Cyberiada::elementEntryPoint);
+	QModelIndex idx = model->elementToIndex(en);
+
+	// refused: a name that is not a point of the referenced machine, the wrong kind
+	// (an exit name for an entry point), or empty — the point keeps its name
+	QVERIFY2(!model->updateTitle(idx, "EV/ f()"), "an arbitrary submachine point name was accepted");
+	QVERIFY2(!model->updateTitle(idx, "out"), "an exit-point name was accepted for an entry point");
+	QVERIFY2(!model->updateTitle(idx, ""), "an empty point name was accepted");
+	QCOMPARE(QString(en->get_name().c_str()), QString("in"));
+
+	// accepted: another entry point of the referenced machine
+	QVERIFY2(model->updateTitle(idx, "in2"), "a valid referenced-machine point name was refused");
+	QCOMPARE(QString(en->get_name().c_str()), QString("in2"));
 }
 
 static int countTransitions(Cyberiada::ElementCollection* sm)
