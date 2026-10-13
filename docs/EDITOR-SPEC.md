@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.18 (2026-10-13)
+**Document version:** 0.19 (2026-10-13)
 
 **Related authorities:**
 
@@ -186,7 +186,10 @@ the third is a derived display value the format does not store):
   (the whole rect minus a header, other blocks, etc.) *design*
 - `EDIT-NODE-2` MUST [U]: when an operation would leave a child outside its parent, the
   editor grows the parent to fit; a parent never shrinks below its content. Adding new
-  content (by `move` or `new-state`) grow the parent (see also `EDIT-NODE-5`). *design*
+  content (by `move` or `new-state`) grow the parent (see also `EDIT-NODE-5`). A drag that
+  moves a child within its own parent grows the parent to keep it inside the same way
+  (snap-to-grid included); a dragged element is never relocated away from where it is
+  dropped. *design*
 - `EDIT-NODE-3` MUST [A]: an element's point is its centre; a top-level element
   is in absolute coordinates, a nested one relative to its parent's centre.
   *design*
