@@ -139,6 +139,7 @@ private slots:
 	void test_component_comment_hidden();
 	void test_select_over_composite();
 	void test_resize_holds_children();
+	void test_clear_border_holds_content();
 	// runs last: it reloads and modifies the shared document
 	void test_directional_grow();
 
@@ -3332,6 +3333,30 @@ void TestScene::test_resize_holds_children()
 	QVERIFY2(QLineF(state->sceneBoundingRect().center(), stateC).length() < 1.5, "the state moved");
 	QVERIFY2(QLineF(choice->sceneBoundingRect().center(), choiceC).length() < 1.5, "the choice moved");
 	QVERIFY2(QLineF(note->sceneBoundingRect().center(), noteC).length() < 1.5, "the comment moved");
+}
+
+void TestScene::test_clear_border_holds_content()
+{
+	// clearing a state machine's border re-anchors the now frameless machine to the
+	// origin and keeps its content's absolute position (EDIT-STRUCT-5), so the live
+	// scene matches a reload. Before the fix the live SM item kept the old border
+	// centre while a reload placed it at (0,0).
+	QVERIFY(model->loadDocument("diagrams/two-sm-bordered.graphml"));
+	scene->loadScene();
+	QGraphicsItem* sm = scene->getMap().value("M");
+	QGraphicsItem* child = scene->getMap().value("mS");
+	QVERIFY(sm && child);
+	QPointF childBefore = child->sceneBoundingRect().center();
+
+	Cyberiada::Element* m = model->idToElement("M");
+	QVERIFY(m && m->has_geometry());
+	QVERIFY(model->clearStateMachineBorder(model->elementToIndex(m)));
+
+	// the machine is frameless and its item sits at the origin
+	QVERIFY(!m->has_geometry());
+	QVERIFY2(QLineF(sm->pos(), QPointF(0, 0)).length() < 0.5, "the frameless machine is not at the origin");
+	// the content held its absolute place (children re-based back to global)
+	QVERIFY2(QLineF(child->sceneBoundingRect().center(), childBefore).length() < 1.5, "the content moved");
 }
 
 QTEST_MAIN(TestScene)

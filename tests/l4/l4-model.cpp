@@ -62,6 +62,7 @@ private slots:
 	void test_sm_not_drawn_mark();
 	void test_tree_drag_flags();
 	void test_grow_holds_rect_children();
+	void test_retarget_refuses_cross_machine();
 
 private:
 	static bool rectsOverlap(const Cyberiada::Rect& a, const Cyberiada::Rect& b);
@@ -613,6 +614,38 @@ void TestModel::test_grow_holds_rect_children()
 			 && chr.y - chr.height / 2.0 >= -pr.height / 2.0 - tol
 			 && chr.y + chr.height / 2.0 <= pr.height / 2.0 + tol,
 			 "the choice is outside the grown parent");
+}
+
+void TestModel::test_retarget_refuses_cross_machine()
+{
+	// a transition endpoint retarget may not cross state machines (EDIT-STRUCT-4): the
+	// model refuses a rebind whose new end is in another machine, so the edge keeps its
+	// endpoints. Without the guard the retarget made a cross-machine edge that corrupted
+	// the document order on save-reopen (polygon P-57/P-60); a same-machine rebind works.
+	QVERIFY(model->loadDocument("diagrams/two-sm-bordered.graphml"));
+	Cyberiada::StateMachine* smM = dynamic_cast<Cyberiada::StateMachine*>(model->idToElement("M"));
+	QVERIFY(smM);
+	Cyberiada::Element* mS = model->idToElement("mS");   // a state in machine M
+	Cyberiada::Element* wS = model->idToElement("wS");   // a state in machine W
+	QVERIFY(mS && wS);
+	// a second state in M so a within-M transition can be drawn
+	Cyberiada::State* mS2 = model->newState(smM, "M2", Cyberiada::Action(), Cyberiada::Rect(80, 50, 120, 80));
+	QVERIFY(mS2);
+	Cyberiada::Transition* t = model->newTransition(smM, Cyberiada::transitionExternal, mS, mS2, Cyberiada::Action());
+	QVERIFY(t);
+	Cyberiada::ID beforeTarget = t->target_element_id();
+
+	// retarget the target to wS (in machine W): refused, the endpoint is unchanged
+	QVERIFY2(!model->updateGeometry(model->elementToIndex(t), mS->get_id(), wS->get_id()),
+			 "a cross-machine retarget was accepted");
+	QCOMPARE(QString(t->target_element_id().c_str()), QString(beforeTarget.c_str()));
+
+	// a same-machine retarget still works (the guard does not block a legal rebind)
+	Cyberiada::State* mS3 = model->newState(smM, "M3", Cyberiada::Action(), Cyberiada::Rect(0, 120, 120, 80));
+	QVERIFY(mS3);
+	QVERIFY2(model->updateGeometry(model->elementToIndex(t), mS->get_id(), mS3->get_id()),
+			 "a same-machine retarget was refused");
+	QCOMPARE(QString(t->target_element_id().c_str()), QString(mS3->get_id().c_str()));
 }
 
 static int countTransitions(Cyberiada::ElementCollection* sm)
