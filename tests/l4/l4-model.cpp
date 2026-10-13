@@ -63,6 +63,7 @@ private slots:
 	void test_tree_drag_flags();
 	void test_grow_holds_rect_children();
 	void test_retarget_refuses_cross_machine();
+	void test_move_within_parent_maintains_containment();
 
 private:
 	static bool rectsOverlap(const Cyberiada::Rect& a, const Cyberiada::Rect& b);
@@ -646,6 +647,35 @@ void TestModel::test_retarget_refuses_cross_machine()
 	QVERIFY2(model->updateGeometry(model->elementToIndex(t), mS->get_id(), mS3->get_id()),
 			 "a same-machine retarget was refused");
 	QCOMPARE(QString(t->target_element_id().c_str()), QString(mS3->get_id().c_str()));
+}
+
+void TestModel::test_move_within_parent_maintains_containment()
+{
+	// a move within the same parent (a drag release / a snapped drag) grows the parent
+	// to re-contain the child (EDIT-NODE-2), just like a reparent — the dragged child
+	// stays where it was dropped. Before the fix a same-parent updateParent
+	// early-returned, so a snapped drag left the child outside its parent (polygon
+	// P-101 / snap NODE-1).
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	Cyberiada::ElementCollection* sm = static_cast<Cyberiada::ElementCollection*>(
+		model->idToElement("G"));
+	QVERIFY(sm);
+	Cyberiada::State* p = model->newState(sm, "P", Cyberiada::Action(), Cyberiada::Rect(0, 0, 200, 150));
+	Cyberiada::State* a = model->newState(p, "A", Cyberiada::Action(), Cyberiada::Rect(-40, 0, 80, 60));
+	QVERIFY(p && a);
+	const double tol = 1.0;
+
+	// move A to poke well outside P (centre still inside P, so a GUI drag would not
+	// reparent), then a same-parent updateParent must grow P to re-contain it
+	model->updateGeometry(model->elementToIndex(a), Cyberiada::Rect(260, 0, 80, 60));
+	QVERIFY(model->updateParent(model->elementToIndex(a), p->get_id()));
+	Cyberiada::Rect pr = p->get_geometry_rect();
+	Cyberiada::Rect ar = a->get_geometry_rect();
+	QVERIFY2(ar.x - ar.width / 2.0 >= -pr.width / 2.0 - tol
+			 && ar.x + ar.width / 2.0 <= pr.width / 2.0 + tol
+			 && ar.y - ar.height / 2.0 >= -pr.height / 2.0 - tol
+			 && ar.y + ar.height / 2.0 <= pr.height / 2.0 + tol,
+			 "the moved child is outside its parent");
 }
 
 static int countTransitions(Cyberiada::ElementCollection* sm)
