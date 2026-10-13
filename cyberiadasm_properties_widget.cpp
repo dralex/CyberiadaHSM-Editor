@@ -389,7 +389,7 @@ void CyberiadaSMPropertiesWidget::editMultilineProperty(QtProperty* property)
     // follows its markup
     CodeRole role = codeRoleFormalComment;
     QString label = cp.propName;
-    if (cp.name == propBody && element->get_type() == Cyberiada::elementComment) {
+    if (cp.name == propBody && CyberiadaSMModel::isMarkupBody(element)) {
         role = codeRoleMarkup;
     }
     const CodeLanguage* language = NULL;
@@ -400,9 +400,11 @@ void CyberiadaSMPropertiesWidget::editMultilineProperty(QtProperty* property)
             QString::fromStdString(meta.get_string(METAINFORMATION_KEY_PLATFORM_LANGUAGE)));
         if (role == codeRoleMarkup) {
             const Cyberiada::Comment* comment = static_cast<const Cyberiada::Comment*>(element);
-            markup = CodeStyle::commentMarkup(
-                QString::fromStdString(comment->get_markup()),
-                CodeStyle::findMarkup(QString::fromStdString(meta.get_string(METAINFORMATION_KEY_MARKUP_LANGUAGE))));
+            // a formal comment has no document default (EDIT-TEXT-11)
+            CodeMarkup document = element->get_type() == Cyberiada::elementComment ?
+                CodeStyle::findMarkup(QString::fromStdString(meta.get_string(METAINFORMATION_KEY_MARKUP_LANGUAGE))) :
+                codeMarkupPlain;
+            markup = CodeStyle::commentMarkup(QString::fromStdString(comment->get_markup()), document);
         }
     }
     MultilineTextDialog dialog(tr("Edit text"), label,

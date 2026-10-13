@@ -38,6 +38,7 @@
 #include "gesture_log.h"
 #include "myassert.h"
 #include "cyberiada_constants.h"
+#include "code_highlighter.h"
 
 // the state machine an element belongs to (the element itself when it is one)
 static const Cyberiada::Element* containingMachine(const Cyberiada::Element* e)
@@ -1394,6 +1395,31 @@ bool CyberiadaSMModel::removeMetainformation(const QModelIndex& index, const QSt
 	emit dataChanged(comment_index, comment_index);
 	emit dataChanged(index, index);
 	return true;
+}
+
+bool CyberiadaSMModel::isComponentComment(const Cyberiada::Element* e)
+{
+	if (!e || e->get_type() != Cyberiada::elementFormalComment) return false;
+	const std::string& name = e->get_name();
+	const size_t len = sizeof(CYBERIADA_COMPONENT_NODE_TITLE) - 1;
+	return name.compare(0, len, CYBERIADA_COMPONENT_NODE_TITLE) == 0 &&
+	       (name.size() == len || name[len] == ' ');
+}
+
+bool CyberiadaSMModel::isReservedComment(const Cyberiada::Element* e)
+{
+	if (!e || e->get_type() != Cyberiada::elementFormalComment) return false;
+	return e->get_name() == CYBERIADA_META_NODE_TITLE || isComponentComment(e);
+}
+
+bool CyberiadaSMModel::isMarkupBody(const Cyberiada::Element* e)
+{
+	if (!e) return false;
+	if (e->get_type() == Cyberiada::elementComment) return true;
+	if (e->get_type() != Cyberiada::elementFormalComment || isReservedComment(e)) return false;
+	// a formal comment has no document default (compat spec 1.9 CGML-9.3-3)
+	const Cyberiada::Comment* comment = static_cast<const Cyberiada::Comment*>(e);
+	return CodeStyle::findMarkup(QString::fromStdString(comment->get_markup())) == codeMarkupMarkdown;
 }
 
 bool CyberiadaSMModel::setDocumentChoice(const QString& key, const QString& value, const QString& undoText)

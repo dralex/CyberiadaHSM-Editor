@@ -29,6 +29,7 @@
 #include "cyberiada_constants.h"
 #include "fontmanager.h"
 #include "settings_manager.h"
+#include "cyberiadasm_model.h"
 
 /* -----------------------------------------------------------------------------
  * Comment Item
@@ -67,12 +68,7 @@ CyberiadaSMEditorCommentItem::CyberiadaSMEditorCommentItem(QObject *parent_objec
 
     body->setFontRole(element->get_type() == Cyberiada::elementFormalComment ?
                       fontRoleFormalComment : fontRoleComment);
-    if (element->get_type() == Cyberiada::elementFormalComment) {
-        body->setCodeRole(codeRoleFormalComment);
-    } else {
-        body->setCodeRole(codeRoleMarkup);
-        body->setMarkupOverride(QString::fromStdString(comment->get_markup()));
-    }
+    applyBodyRole();
     body->setTextAlignment(Qt::AlignLeft);
     body->setTextMargin(2 * COMMENT_TEXT_MARGIN);
 
@@ -184,6 +180,18 @@ void CyberiadaSMEditorCommentItem::setTextPosition()
     body->setPos(r.left() + margin, top);
 }
 
+// Markdown by the comment's markup, else code (EDIT-TEXT-11); a formal comment's
+// own dMarkup is never empty here, so the document default does not reach it
+void CyberiadaSMEditorCommentItem::applyBodyRole()
+{
+    if (CyberiadaSMModel::isMarkupBody(element)) {
+        body->setCodeRole(codeRoleMarkup);
+        body->setMarkupOverride(QString::fromStdString(comment->get_markup()));
+    } else {
+        body->setCodeRole(codeRoleFormalComment);
+    }
+}
+
 void CyberiadaSMEditorCommentItem::syncFromModel()
 {
     prepareGeometryChange();
@@ -199,9 +207,7 @@ void CyberiadaSMEditorCommentItem::syncFromModel()
     // (otherwise a stale box survives an edit and disagrees on save/reopen)
     QString bodyText = QString::fromStdString(comment->get_body());
     if (body->toPlainText() != bodyText) body->setPlainText(bodyText);
-    if (element->get_type() == Cyberiada::elementComment) {
-        body->setMarkupOverride(QString::fromStdString(comment->get_markup()));
-    }
+    applyBodyRole();
     body->setVisible(SettingsManager::instance().getShowText());
     setTextPosition();
     CyberiadaSMEditorAbstractItem::syncFromModel();

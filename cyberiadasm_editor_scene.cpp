@@ -61,17 +61,6 @@ static double DEFAULT_SCENE_BORDER_MARGIN = 50;
 // padding around the content so the view always has a scroll range to pan/wheel into
 static double DEFAULT_SCENE_PAN_MARGIN = 2000;
 
-// a CGML_COMPONENT formal comment: a machine-readable component descriptor whose
-// title is CYBERIADA_COMPONENT_NODE_TITLE, optionally followed by an instance name
-static bool isComponentComment(const Cyberiada::Element* element)
-{
-    if (!element || element->get_type() != Cyberiada::elementFormalComment) return false;
-    const std::string& name = element->get_name();
-    const size_t len = sizeof(CYBERIADA_COMPONENT_NODE_TITLE) - 1;
-    return name.compare(0, len, CYBERIADA_COMPONENT_NODE_TITLE) == 0 &&
-           (name.size() == len || name[len] == ' ');
-}
-
 // smaller items stack on top, so an overlapping leaf or a smaller state wins the
 // click, and a nested child (a graphics child of its parent region) stays above
 // its parent; an edge keeps a constant high order so a thin line over a node is
@@ -417,7 +406,7 @@ void CyberiadaSMEditorScene::slotComponentCommentsChanged(bool show)
         Cyberiada::ElementList comments = (*sm)->find_elements_by_type(Cyberiada::elementFormalComment);
         for (Cyberiada::ElementList::iterator i = comments.begin(); i != comments.end(); i++) {
             Cyberiada::Element* e = *i;
-            if (!isComponentComment(e)) continue;
+            if (!CyberiadaSMModel::isComponentComment(e)) continue;
             bool has_item = elementIdToItemMap.contains(e->get_id());
             if (show && !has_item && e->has_geometry()) {
                 addElementItem(e, graphicsParentFor(e->get_parent()));
@@ -495,7 +484,7 @@ QGraphicsItem* CyberiadaSMEditorScene::addElementItem(Cyberiada::Element* child,
         // the geometry-less formal comments (the document meta) are not drawn;
         // the CGML_COMPONENT comments are hidden unless the preference asks (EDIT-META-6)
         if (child->has_geometry() &&
-            (!isComponentComment(child) || SettingsManager::instance().getShowComponentComments())) {
+            (!CyberiadaSMModel::isComponentComment(child) || SettingsManager::instance().getShowComponentComments())) {
             item = new CyberiadaSMEditorCommentItem(this, model, child, new_parent, elementIdToItemMap);
         }
         break;

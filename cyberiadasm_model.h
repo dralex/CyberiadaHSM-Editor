@@ -108,6 +108,14 @@ public:
         return e && (e->get_type() == Cyberiada::elementEntryPoint ||
                      e->get_type() == Cyberiada::elementExitPoint);
     }
+    // a CGML_COMPONENT formal comment: a machine-readable component descriptor whose
+    // title is CYBERIADA_COMPONENT_NODE_TITLE, optionally followed by an instance name
+    static bool                         isComponentComment(const Cyberiada::Element* e);
+    // CGML_META or CGML_COMPONENT: a fixed grammar, always code
+    static bool                         isReservedComment(const Cyberiada::Element* e);
+    // a comment body highlighted by its markup (EDIT-TEXT-11): every informal comment,
+    // and a formal one whose own dMarkup is Markdown (not a reserved one)
+    static bool                         isMarkupBody(const Cyberiada::Element* e);
     // the half-extent (from the collection centre, each axis) its children need;
     // the collection's own rect is excluded, so it is the bare content a border
     // must contain - the shared floor for resize clamps and auto-grow

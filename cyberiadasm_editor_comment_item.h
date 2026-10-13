@@ -62,6 +62,8 @@ private slots:
     void onTitleChanged();
 
 private:
+    void applyBodyRole();
+
     EditableTextItem* title;   // the comment name, bold, at the top (when set)
     EditableTextItem* body;
     QBrush commentBrush;
