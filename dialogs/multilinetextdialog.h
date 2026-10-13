@@ -38,7 +38,7 @@ class MultilineTextDialog : public QDialog {
 public:
     MultilineTextDialog(const QString& title, const QString& label, const QString& text,
                         CodeRole role = codeRoleNone, const CodeLanguage* language = nullptr,
-                        QWidget* parent = nullptr);
+                        QWidget* parent = nullptr, CodeMarkup markup = codeMarkupPlain);
 
     QString text() const;
 

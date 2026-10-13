@@ -49,6 +49,12 @@ public:
     const CodeLanguage* getCodeLanguage() const { return highlighter ? highlighter->getLanguage() : nullptr; }
     // the code language of the document drawn by the scene, or null
     static const CodeLanguage* sceneCodeLanguage(QGraphicsScene* s);
+    // the markup of an informal comment body: its own dMarkup, else the
+    // document markupLanguage the scene pushes (EDIT-TEXT-11)
+    void setMarkupOverride(const QString& markup);
+    void setDocumentMarkup(CodeMarkup markup);
+    CodeMarkup getCodeMarkup() const { return highlighter ? highlighter->getMarkup() : codeMarkupPlain; }
+    static CodeMarkup sceneMarkup(QGraphicsScene* s);
     // the wrap width follows the parent box, refreshed after a resize
     void updateTextWidth();
     // a title that hugs its text (a state machine header) rather than the box
@@ -98,6 +104,11 @@ protected:
     double textMargin = 0;
     // owned by the document
     CodeHighlighter* highlighter = nullptr;
+    QString markupOverride;
+    CodeMarkup documentMarkup = codeMarkupPlain;
+
+private:
+    void applyMarkup();
 };
 
 

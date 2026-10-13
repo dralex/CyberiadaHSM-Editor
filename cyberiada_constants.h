@@ -56,6 +56,8 @@
 #define METAINFORMATION_VERSION           "Version"
 // the parameter key of the code language (EDIT-TEXT-7)
 #define METAINFORMATION_KEY_PLATFORM_LANGUAGE "platformLanguage"
+// the default markup of the informal comments (EDIT-TEXT-11)
+#define METAINFORMATION_KEY_MARKUP_LANGUAGE   "markupLanguage"
 
 // the value removing an optional metainformation parameter
 #define METAINFORMATION_VALUE_NONE        "none"

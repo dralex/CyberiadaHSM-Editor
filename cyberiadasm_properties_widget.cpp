@@ -385,20 +385,28 @@ void CyberiadaSMPropertiesWidget::editMultilineProperty(QtProperty* property)
     if (qApp && qApp->property("batchMode").toBool()) return;
 
     const CyberiadaProperty& cp = findProperty(property);
-    // a behaviour and a formal/component comment body are code; an informal body is plain
+    // a behaviour and a formal/component comment body are code; an informal body
+    // follows its markup
     CodeRole role = codeRoleFormalComment;
     QString label = cp.propName;
     if (cp.name == propBody && element->get_type() == Cyberiada::elementComment) {
-        role = codeRoleNone;
+        role = codeRoleMarkup;
     }
     const CodeLanguage* language = NULL;
+    CodeMarkup markup = codeMarkupPlain;
     if (model && model->rootDocument()) {
-        QString lang = QString::fromStdString(
-            model->rootDocument()->meta().get_string(METAINFORMATION_KEY_PLATFORM_LANGUAGE));
-        language = CodeStyle::instance().find(lang);
+        const Cyberiada::DocumentMetainformation& meta = model->rootDocument()->meta();
+        language = CodeStyle::instance().find(
+            QString::fromStdString(meta.get_string(METAINFORMATION_KEY_PLATFORM_LANGUAGE)));
+        if (role == codeRoleMarkup) {
+            const Cyberiada::Comment* comment = static_cast<const Cyberiada::Comment*>(element);
+            markup = CodeStyle::commentMarkup(
+                QString::fromStdString(comment->get_markup()),
+                CodeStyle::findMarkup(QString::fromStdString(meta.get_string(METAINFORMATION_KEY_MARKUP_LANGUAGE))));
+        }
     }
     MultilineTextDialog dialog(tr("Edit text"), label,
-                               multilineStringManager->value(property), role, language, this);
+                               multilineStringManager->value(property), role, language, this, markup);
     if (dialog.exec() == QDialog::Accepted) {
         multilineStringManager->setValue(property, dialog.text());
     }

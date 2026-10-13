@@ -42,8 +42,7 @@
 #include "cyberiadasm_editor_state_item.h"
 #include "cyberiadasm_editor_transition_item.h"
 #include "cyberiada_constants.h"
-
-struct CodeLanguage;
+#include "code_highlighter.h"
 
 class CyberiadaSMEditorScene: public QGraphicsScene {
 Q_OBJECT
@@ -99,12 +98,16 @@ public:
     // its rules, null when empty or unknown
     QString codeLanguageName() const { return codeLanguageValue; }
     const CodeLanguage* codeLanguage() const { return codeLanguagePtr; }
+    // the markupLanguage of the document (EDIT-TEXT-11): the raw value and its markup
+    QString markupLanguageName() const { return markupLanguageValue; }
+    CodeMarkup markupLanguage() const { return CodeStyle::findMarkup(markupLanguageValue); }
 
 signals:
     void  toolChanged(ToolType tool);
     // the canvas selection, for the structure tree (the scene knows no window)
     void  elementSelected(const QModelIndex& index);
     void  codeLanguageChanged(const QString& value);
+    void  markupLanguageChanged(const QString& value);
 
 public slots:
 	void  slotElementSelected(const QModelIndex& index);
@@ -131,8 +134,8 @@ protected:
     void  mouseDoubleClickEvent(QGraphicsSceneMouseEvent* event) override;
 
 private:
-    // the highlighting follows the platformLanguage parameter (EDIT-TEXT-7)
-    void updateCodeLanguage();
+    // the highlighting follows the platformLanguage and markupLanguage parameters
+    void updateTextLanguages();
     void  addItemsRecursively(QGraphicsItem* parent, Cyberiada::ElementCollection* element);
     void addSceneItem(QGraphicsItem* item);
     QGraphicsItem* addElementItem(Cyberiada::Element* element, QGraphicsItem* parent_item);
@@ -157,6 +160,7 @@ private:
 	Cyberiada::StateMachine*       currentSM;
     QString                        codeLanguageValue;
     const CodeLanguage*            codeLanguagePtr = nullptr;
+    QString                        markupLanguageValue;
     QMap<Cyberiada::ID, QGraphicsItem*> elementIdToItemMap;
 	
     // int                            gridSize;

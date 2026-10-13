@@ -32,7 +32,8 @@
 
 MultilineTextDialog::MultilineTextDialog(const QString& title, const QString& label,
                                          const QString& text, CodeRole role,
-                                         const CodeLanguage* language, QWidget* parent):
+                                         const CodeLanguage* language, QWidget* parent,
+                                         CodeMarkup markup):
     QDialog(parent)
 {
     setWindowTitle(title);
@@ -41,9 +42,10 @@ MultilineTextDialog::MultilineTextDialog(const QString& title, const QString& la
 
     edit = new QPlainTextEdit(this);
     edit->setFont(FontManager::instance().font(fontRoleStateAction));
-    // highlighted as the code of the role, by the document language (EDIT-TEXT-10)
+    // highlighted as the code of the role, by the document language, or an
+    // informal body by its markup (EDIT-TEXT-10/11)
     if (role != codeRoleNone) {
-        new CodeHighlighter(edit->document(), role, language);
+        new CodeHighlighter(edit->document(), role, language, markup);
     }
     edit->setPlainText(text);
     QTextCursor cursor = edit->textCursor();

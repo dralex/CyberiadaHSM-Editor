@@ -36,7 +36,14 @@ enum CodeRole {
     codeRoleNone = 0,
     codeRoleBehaviour,       // "entry/ code"
     codeRoleTransition,      // "EVENT [code] / code"
-    codeRoleFormalComment    // the whole text
+    codeRoleFormalComment,   // the whole text
+    codeRoleMarkup           // an informal comment body by its markup (EDIT-TEXT-11)
+};
+
+// the markup language of an informal comment (PNST 1044 9.3)
+enum CodeMarkup {
+    codeMarkupPlain = 0,
+    codeMarkupMarkdown
 };
 
 enum CodeTokenKind {
@@ -45,6 +52,12 @@ enum CodeTokenKind {
     codeTokenString,
     codeTokenNumber,
     codeTokenComment,
+    // the Markdown elements
+    codeTokenHeading,
+    codeTokenEmphasis,
+    codeTokenCode,
+    codeTokenLink,
+    codeTokenMarker,
     codeTokenKindsCount
 };
 
@@ -86,6 +99,15 @@ public:
     QStringList languages() const;
     // the language to draw with, null when the switches make the text plain
     const CodeLanguage* effective(const CodeLanguage* lang) const;
+    bool isActive() const;
+
+    // the markupLanguage or dMarkup value: empty and "plain" are plain, "markdown"
+    // or "md" Markdown; known is false for any other value
+    static CodeMarkup findMarkup(const QString& value, bool* known = nullptr);
+    // the value written for the markup, empty for plain
+    static QString markupValue(CodeMarkup markup);
+    // an informal comment: its own dMarkup when set, else the document markup
+    static CodeMarkup commentMarkup(const QString& own, CodeMarkup document);
     // an export draws plain text unless the preference keeps the colours
     void overrideExportPlain(bool on);
 
@@ -93,6 +115,8 @@ public:
 
     // the coloured spans of the whole text
     static QVector<CodeSpan> spans(const QString& text, CodeRole role, const CodeLanguage& lang);
+    // the Markdown spans; a fenced block by the language of its tag, else by the fallback
+    QVector<CodeSpan> markdownSpans(const QString& text, const CodeLanguage* fallback) const;
 
 signals:
     void styleChanged();
@@ -110,19 +134,24 @@ class CodeHighlighter : public QSyntaxHighlighter {
 
 public:
     CodeHighlighter(QTextDocument* document, CodeRole role,
-                    const CodeLanguage* language = nullptr);
+                    const CodeLanguage* language = nullptr,
+                    CodeMarkup markup = codeMarkupPlain);
 
     CodeRole getRole() const { return role; }
     void setRole(CodeRole newRole);
     const CodeLanguage* getLanguage() const { return language; }
     void setLanguage(const CodeLanguage* newLanguage);
+    CodeMarkup getMarkup() const { return markup; }
+    void setMarkup(CodeMarkup newMarkup);
 
 protected:
     void highlightBlock(const QString& text) override;
 
 private:
     CodeRole role;
+    // the code language; for the markup role, the fallback of a fenced block
     const CodeLanguage* language;
+    CodeMarkup markup;
 };
 
 #endif // CODE_HIGHLIGHTER_H

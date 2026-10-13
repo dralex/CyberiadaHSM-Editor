@@ -69,6 +69,9 @@ CyberiadaSMEditorCommentItem::CyberiadaSMEditorCommentItem(QObject *parent_objec
                       fontRoleFormalComment : fontRoleComment);
     if (element->get_type() == Cyberiada::elementFormalComment) {
         body->setCodeRole(codeRoleFormalComment);
+    } else {
+        body->setCodeRole(codeRoleMarkup);
+        body->setMarkupOverride(QString::fromStdString(comment->get_markup()));
     }
     body->setTextAlignment(Qt::AlignLeft);
     body->setTextMargin(2 * COMMENT_TEXT_MARGIN);
@@ -196,6 +199,9 @@ void CyberiadaSMEditorCommentItem::syncFromModel()
     // (otherwise a stale box survives an edit and disagrees on save/reopen)
     QString bodyText = QString::fromStdString(comment->get_body());
     if (body->toPlainText() != bodyText) body->setPlainText(bodyText);
+    if (element->get_type() == Cyberiada::elementComment) {
+        body->setMarkupOverride(QString::fromStdString(comment->get_markup()));
+    }
     body->setVisible(SettingsManager::instance().getShowText());
     setTextPosition();
     CyberiadaSMEditorAbstractItem::syncFromModel();

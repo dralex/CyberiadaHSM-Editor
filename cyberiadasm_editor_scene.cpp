@@ -132,7 +132,7 @@ void CyberiadaSMEditorScene::slotModelAboutToBeReset()
 
 void CyberiadaSMEditorScene::slotModelReset()
 {
-    updateCodeLanguage();
+    updateTextLanguages();
     if (model->firstSMIndex().isValid()) {
         loadScene(false);
     } else {
@@ -364,7 +364,7 @@ void CyberiadaSMEditorScene::slotModelDataChanged(const QModelIndex &topLeft, co
 {
     noteModified(topLeft);
     // a metainformation edit may change the language
-    updateCodeLanguage();
+    updateTextLanguages();
     Cyberiada::Element* element = model->indexToElement(topLeft);
     if (!element) return;
     CyberiadaSMEditorAbstractItem* current_item = dynamic_cast<CyberiadaSMEditorAbstractItem*>(elementIdToItemMap.value(element->get_id()));
@@ -558,27 +558,35 @@ void CyberiadaSMEditorScene::setGridPen(const QPen &pen)
     update();
 }
 
-void CyberiadaSMEditorScene::updateCodeLanguage()
+void CyberiadaSMEditorScene::updateTextLanguages()
 {
     const Cyberiada::LocalDocument* doc = model ? model->rootDocument() : nullptr;
-    QString language;
-    if (doc) language = QString::fromStdString(doc->meta().get_string(METAINFORMATION_KEY_PLATFORM_LANGUAGE));
-    if (language == codeLanguageValue) return;
+    QString language, markup;
+    if (doc) {
+        language = QString::fromStdString(doc->meta().get_string(METAINFORMATION_KEY_PLATFORM_LANGUAGE));
+        markup = QString::fromStdString(doc->meta().get_string(METAINFORMATION_KEY_MARKUP_LANGUAGE));
+    }
+    bool languageChanged = (language != codeLanguageValue);
+    bool markupChanged = (markup != markupLanguageValue);
+    if (!languageChanged && !markupChanged) return;
     codeLanguageValue = language;
     codeLanguagePtr = CodeStyle::instance().find(language);
-    // the items added later take it from the scene themselves
+    markupLanguageValue = markup;
+    // the items added later take them from the scene themselves
     const QList<QGraphicsItem*> all = items();
     for (QGraphicsItem* item : all) {
         if (EditableTextItem* text = dynamic_cast<EditableTextItem*>(item)) {
             text->setCodeLanguage(codeLanguagePtr);
+            text->setDocumentMarkup(markupLanguage());
         }
     }
-    emit codeLanguageChanged(language);
+    if (languageChanged) emit codeLanguageChanged(language);
+    if (markupChanged) emit markupLanguageChanged(markup);
 }
 
 void CyberiadaSMEditorScene::loadScene(bool fit)
 {
-    updateCodeLanguage();
+    updateTextLanguages();
     elementIdToItemMap.clear();
 
     // clear() frees every item; release the grab and focus first so a pending

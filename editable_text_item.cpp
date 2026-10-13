@@ -187,7 +187,33 @@ void EditableTextItem::setCodeRole(CodeRole role)
         highlighter->setRole(role);
     } else {
         highlighter = new CodeHighlighter(document(), role, sceneCodeLanguage(scene()));
+        documentMarkup = sceneMarkup(scene());
+        applyMarkup();
     }
+}
+
+void EditableTextItem::setMarkupOverride(const QString& markup)
+{
+    markupOverride = markup;
+    applyMarkup();
+}
+
+void EditableTextItem::setDocumentMarkup(CodeMarkup markup)
+{
+    documentMarkup = markup;
+    applyMarkup();
+}
+
+void EditableTextItem::applyMarkup()
+{
+    if (!highlighter) return;
+    highlighter->setMarkup(CodeStyle::commentMarkup(markupOverride, documentMarkup));
+}
+
+CodeMarkup EditableTextItem::sceneMarkup(QGraphicsScene* s)
+{
+    CyberiadaSMEditorScene* smScene = dynamic_cast<CyberiadaSMEditorScene*>(s);
+    return smScene ? smScene->markupLanguage() : codeMarkupPlain;
 }
 
 void EditableTextItem::setCodeLanguage(const CodeLanguage* language)
@@ -204,7 +230,9 @@ const CodeLanguage* EditableTextItem::sceneCodeLanguage(QGraphicsScene* s)
 QVariant EditableTextItem::itemChange(GraphicsItemChange change, const QVariant& value)
 {
     if (change == ItemSceneHasChanged) {
-        setCodeLanguage(sceneCodeLanguage(value.value<QGraphicsScene*>()));
+        QGraphicsScene* s = value.value<QGraphicsScene*>();
+        setCodeLanguage(sceneCodeLanguage(s));
+        setDocumentMarkup(sceneMarkup(s));
     }
     return QGraphicsTextItem::itemChange(change, value);
 }
