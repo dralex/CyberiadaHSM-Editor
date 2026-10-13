@@ -110,7 +110,7 @@ it checks in a comment):
 | SEM    | `test_choice_edge_rule`, `test_choice_tip_attach`; endpoint kinds via the transition cases |
 | NODE   | grow `test_move_grows_parent`, `test_nested_state_grows_parent`, `test_grow_cascades_to_ancestors`, `test_grow_skips_rectless_sm`; resize `test_border_resize`, `test_directional_grow`, `test_container_resize_clamp`, `test_comment_border_resize`, `test_resize_holds_children` (NODE-5: a resize holds every child — state, choice, comment — in place), `test_grow_holds_rect_children` (NODE-5/ROBUST-1: a grow counts the same rect children it holds and never fabricates a rect for a geometry-less child — no crash); place `test_new_element_place`; comment name `test_comment_name`; blocks `test_action_layout`; frame `reconstruct-sm-*` |
 | EDGE   | attach `test_auto_attach`, `test_ctrl_snap_endpoint`, `test_choice_tip_attach`; points `l2 edge-points`, `test_point_edit`, `test_loop_polyline`, `test_double_click_removes_vertex`; rebind `test_retarget_id`, `test_box_transition`; label `test_label_move`, `test_label_drag_tracks`, `label-geometry-*` |
-| TEXT   | `test_action_edit`, `test_action_multiline`, `test_double_click_action`, `test_double_click_label`, `l2 text-edit`, `transition-notation`, the `text` metrics layer, `l4-highlight` (`EDIT-TEXT-7/8`), `l4-language` (`EDIT-TEXT-9`), `l4-properties test_multiline_dialog`/`test_multiline_edit` (`EDIT-TEXT-10`) |
+| TEXT   | `test_action_edit`, `test_action_multiline`, `test_double_click_action`, `test_double_click_label`, `l2 text-edit`, `transition-notation`, the `text` metrics layer, `l4-highlight` (`EDIT-TEXT-7/8/11`), `l4-language` (`EDIT-TEXT-9/12`), `l4-properties test_multiline_dialog`/`test_multiline_edit` (`EDIT-TEXT-10`) |
 | TOOL   | `test_creation_tools`, `test_creation_tools_arm`, `test_new_{state,choice,comment,sm}_place`, paste `test_paste_state`, `test_paste_transition`, `l2 copy-paste`, drag `test_body_drag`; select overlapping leaf `l4-scene test_select_over_composite` (`EDIT-TOOL-12`); tree drag `l4-model test_tree_drag_flags` (`EDIT-TOOL-13`) |
 | HIST   | `undo`/`redo-all` layer, `undo-all`, `test_gesture_recording`, `gestures-undo` |
 | IO     | `save-*`, `l1-*` dumps, `reconstruct-*`, export `test_export_image`, `l3-*` |
@@ -216,13 +216,21 @@ command-line files open as tabs with the failures reported.
 lookup by name and alias, the code spans of each role, the colours on the
 canvas with the bold prefix kept, a block comment across lines, a
 `platformLanguage` edit and its undo, two documents with their own languages,
-the preference switch, the dialogs, and a plain or coloured export.
+the preference switch, the dialogs, and a plain or coloured export. The Markdown
+cases (`EDIT-TEXT-11`): the markup lookup and the comment override, the spans of
+each element, a fence by its tag, by the document language or in one code
+colour, a fence closed on a later line, the `markdown-comments` diagram on the
+canvas (a `dMarkup` `plain` comment stays plain), a `markupLanguage` removal and
+its undo, and the multiline dialog.
 
 `l4-language` drives Edit > Language (`EDIT-TEXT-9`): the entries after Tools,
 the choice on an empty document (its first state machine, one undo step), the
 choice and Undefined on a loaded file, the properties path with an alias, the
 check following the tabs, an unknown loaded value kept for the session, a
 hand-typed one shown while current, and the menu disabled in inspection mode.
+Edit > Markup (`EDIT-TEXT-12`) follows the same cases: placed after Language,
+Plain removes the parameter, an explicit `plain` checks Plain, an unknown `html`
+kept in its own session list, the check following the tabs.
 
 ## Batch mode contract
 
