@@ -1,5 +1,4 @@
 #include <QDir>
-#include <QGuiApplication>
 
 #include "settings_manager.h"
 
@@ -25,14 +24,24 @@ SettingsManager& SettingsManager::instance() {
     return instance;
 }
 
-QPointF snapToGrid(const QPointF& p)
+bool snapActive(Qt::KeyboardModifiers mods)
 {
     SettingsManager& sm = SettingsManager::instance();
-    double g = sm.getGridSpacing();
-    if (!sm.getSnapMode() || g <= 0.0) return p;
-    // holding Alt suspends snapping while the key is pressed
-    if (QGuiApplication::keyboardModifiers() & Qt::AltModifier) return p;
-    return QPointF(qRound(p.x() / g) * g, qRound(p.y() / g) * g);
+    // holding Alt suspends snapping; the gesture carries the modifier, so a
+    // scripted alt suspends it too (EDIT-TOOL-9)
+    return sm.getSnapMode() && sm.getGridSpacing() > 0.0 && !(mods & Qt::AltModifier);
+}
+
+qreal snapCoord(qreal v)
+{
+    double g = SettingsManager::instance().getGridSpacing();
+    return qRound(v / g) * g;
+}
+
+QPointF snapToGrid(const QPointF& p, Qt::KeyboardModifiers mods)
+{
+    if (!snapActive(mods)) return p;
+    return QPointF(snapCoord(p.x()), snapCoord(p.y()));
 }
 
 SettingsManager::SettingsManager() {
@@ -43,7 +52,7 @@ void SettingsManager::load() {
     QSettings s;
 
     showGrid = s.value("display/showGrid", true).toBool();
-    gridSpacing = s.value("display/gridSpacing", 25).toInt();
+    gridSpacing = s.value("display/gridSpacing", GRID_SPACING_DEFAULT).toInt();
 
     showTransitionText = s.value("display/showTransitionText", true).toBool();
     showServiceObjects = s.value("display/showServiceObjects", false).toBool();
@@ -79,7 +88,7 @@ void SettingsManager::load() {
 void SettingsManager::loadDefaults()
 {
     setShowGrid(true);
-    setGridSpacing(25);
+    setGridSpacing(GRID_SPACING_DEFAULT);
 
     setShowTransitionText(true);
     setShowServiceObjects(false);

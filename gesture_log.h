@@ -63,12 +63,18 @@ private:
     GestureLog& operator=(const GestureLog&) = delete;
 
     void writeLine(const QString& line);
+    // the snap state as the setting verbs, written when it differs from the
+    // last logged one; a replay starts from the batch defaults (EDIT-TOOL-14)
+    void logSnapState();
 
     QString  dir;
     QFile    file;
     QTextStream stream;
     bool     active = false;
     int      gestureDepth = 0;
+    bool     settingsConnected = false;
+    bool     loggedSnap = false;
+    int      loggedSpacing = 0;
 };
 
 #endif

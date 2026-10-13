@@ -701,10 +701,13 @@ void TestModel::test_snap_to_grid()
 	sm.setGridSpacing(25);
 
 	sm.setSnapMode(false);
-	QCOMPARE(snapToGrid(QPointF(12, 63)), QPointF(12, 63));   // off: unchanged
+	QCOMPARE(snapToGrid(QPointF(12, 63), Qt::NoModifier), QPointF(12, 63));   // off: unchanged
 	sm.setSnapMode(true);
-	QCOMPARE(snapToGrid(QPointF(12, 63)), QPointF(0, 75));    // 12->0, 63->75
-	QCOMPARE(snapToGrid(QPointF(-12, -63)), QPointF(0, -75)); // rounds toward the nearest line
+	QCOMPARE(snapToGrid(QPointF(12, 63), Qt::NoModifier), QPointF(0, 75));    // 12->0, 63->75
+	QCOMPARE(snapToGrid(QPointF(-12, -63), Qt::NoModifier), QPointF(0, -75)); // rounds toward the nearest line
+	// the gesture's own Alt suspends it (EDIT-TOOL-9)
+	QCOMPARE(snapToGrid(QPointF(12, 63), Qt::AltModifier), QPointF(12, 63));
+	QCOMPARE(snapToGrid(QPointF(12, 63), Qt::ControlModifier), QPointF(0, 75));
 
 	sm.setSnapMode(oldSnap);
 	sm.setGridSpacing(oldGrid);

@@ -807,7 +807,7 @@ void CyberiadaSMEditorScene::mouseMoveEvent(QGraphicsSceneMouseEvent* event)
 void CyberiadaSMEditorScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* event)
 {
     if (transitionDrawLine && event->button() == Qt::LeftButton) {
-        finishTransitionDraw(event->scenePos());   // creates the transition and reverts to Select
+        finishTransitionDraw(event->scenePos(), event->modifiers());   // creates the transition and reverts to Select
         // the finish path skips the base release handler; release any leaked grab
         // (a DotSignal grabbed the mouse on press) so later presses route correctly
         if (QGraphicsItem* g = mouseGrabberItem()) g->ungrabMouse();
@@ -1305,7 +1305,7 @@ void CyberiadaSMEditorScene::beginTransitionDraw(CyberiadaSMEditorAbstractItem* 
     addItem(transitionDrawLine);
 }
 
-void CyberiadaSMEditorScene::finishTransitionDraw(const QPointF& scenePos)
+void CyberiadaSMEditorScene::finishTransitionDraw(const QPointF& scenePos, Qt::KeyboardModifiers mods)
 {
     CyberiadaSMEditorAbstractItem* src = transitionSource;
     if (transitionDrawLine) {
@@ -1342,7 +1342,7 @@ void CyberiadaSMEditorScene::finishTransitionDraw(const QPointF& scenePos)
                     if (CyberiadaSMEditorTransitionItem* trans =
                             dynamic_cast<CyberiadaSMEditorTransitionItem*>(item)) {
                         QPointF dir = scenePos - src->sceneBoundingRect().center();
-                        trans->seedDefaultLoop(dir, dir);
+                        trans->seedDefaultLoop(dir, dir, mods);
                     }
                 }
             }

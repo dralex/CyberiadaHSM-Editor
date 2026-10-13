@@ -37,6 +37,8 @@
 #define ELEMENT_MIN_SIZE     10
 // the clearance kept between a placed child and its siblings (paste/reparent)
 #define PLACEMENT_GAP        20
+// the grid spacing of a fresh profile and of every batch run
+#define GRID_SPACING_DEFAULT 25
 
 // Metainformation constants
 #define METAINFORMATION_AUTHOR            "Author"

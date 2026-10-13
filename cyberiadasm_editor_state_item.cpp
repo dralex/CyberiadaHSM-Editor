@@ -601,7 +601,7 @@ void CyberiadaSMEditorStateItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
         // off the crossings unless the size were a multiple of 2x the spacing
         QPointF rawCentre = event->scenePos() + grabOffset;
         QPointF half(boundingRect().width() / 2.0, boundingRect().height() / 2.0);
-        QPointF target = snapToGrid(rawCentre - half) + half;
+        QPointF target = snapToGrid(rawCentre - half, event->modifiers()) + half;
         // Ctrl locks the move to the dominant axis (strict horizontal/vertical)
         if (event->modifiers() & Qt::ControlModifier) {
             QPointF d = rawCentre - dragStartScenePos;

@@ -291,20 +291,20 @@ void CyberiadaSMEditorAbstractItem::mouseMoveEvent(QGraphicsSceneMouseEvent *eve
         updatePosGeometry();
         break;
     case Bottom:
-        resizeBottom(scenePt);
+        resizeBottom(scenePt, event->modifiers());
         break;
     case Left:
         updatePosGeometry();
         break;
     case Right:
-        resizeRight(scenePt);
+        resizeRight(scenePt, event->modifiers());
         break;
     case TopLeft:
         updatePosGeometry();
         break;
     case BottomRight:
-        resizeBottom(scenePt);
-        resizeRight(scenePt);
+        resizeBottom(scenePt, event->modifiers());
+        resizeRight(scenePt, event->modifiers());
         break;
     default:
         break;
@@ -344,7 +344,7 @@ void CyberiadaSMEditorAbstractItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *
         // snap mode is off (the states/points snap live in their own handlers)
         if (element && element->has_rect_geometry()) {
             QPointF half(boundingRect().width() / 2.0, boundingRect().height() / 2.0);
-            QPointF snapped = snapToGrid(scenePos() - half) + half;
+            QPointF snapped = snapToGrid(scenePos() - half, event->modifiers()) + half;
             setPos(parentItem() ? parentItem()->mapFromScene(snapped) : snapped);
             model->updateGeometry(model->elementToIndex(element),
                 Cyberiada::Rect(pos().x(), pos().y(),
@@ -444,21 +444,21 @@ void CyberiadaSMEditorAbstractItem::hoverMoveEvent(QGraphicsSceneHoverEvent *eve
 
 // pt is the cursor in SCENE coordinates (the item's own coords are unstable while
 // the centre moves during the resize)
-void CyberiadaSMEditorAbstractItem::resizeRight(const QPointF &scenePt)
+void CyberiadaSMEditorAbstractItem::resizeRight(const QPointF &scenePt, Qt::KeyboardModifiers mods)
 {
     // directional: keep the left edge, move the right edge to the cursor, snapped
     // to the grid (a no-op when snap is off or Alt is held)
     QRectF border = sceneBoundingRect();
-    qreal x = snapToGrid(scenePt).x();
+    qreal x = snapToGrid(scenePt, mods).x();
     if (x <= border.left()) return;
     border.setRight(x);
     applyBorderRect(border);
 }
 
-void CyberiadaSMEditorAbstractItem::resizeBottom(const QPointF &scenePt)
+void CyberiadaSMEditorAbstractItem::resizeBottom(const QPointF &scenePt, Qt::KeyboardModifiers mods)
 {
     QRectF border = sceneBoundingRect();
-    qreal y = snapToGrid(scenePt).y();
+    qreal y = snapToGrid(scenePt, mods).y();
     if (y <= border.top()) return;
     border.setBottom(y);
     applyBorderRect(border);

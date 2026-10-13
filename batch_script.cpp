@@ -716,6 +716,31 @@ static bool runGesture(CyberiadaSMEditorScene* scene, const QStringList& tokens,
 	return true;
 }
 
+// the run settings (EDIT-TOOL-14): snap on|off and grid <n>, never persisted
+static bool isSettingVerb(const QString& cmd)
+{
+	return cmd == "snap" || cmd == "grid";
+}
+
+static bool runSettingVerb(const QStringList& tokens, QString* error)
+{
+	SettingsManager& sm = SettingsManager::instance();
+	if (tokens.size() != 2) { *error = tokens.first() + " takes one argument"; return false; }
+	if (tokens.first() == "snap") {
+		if (tokens.at(1) != "on" && tokens.at(1) != "off") {
+			*error = "snap requires on or off";
+			return false;
+		}
+		sm.overrideSnapMode(tokens.at(1) == "on");
+		return true;
+	}
+	bool ok = false;
+	int spacing = tokens.at(1).toInt(&ok);
+	if (!ok || spacing <= 0) { *error = "grid requires a positive spacing"; return false; }
+	sm.overrideGridSpacing(spacing);
+	return true;
+}
+
 // the document verbs (EDIT-DOC-9): the tab line as the GUI drives it
 static bool isDocumentVerb(const QString& cmd)
 {
@@ -795,10 +820,12 @@ bool runEditScript(CyberiadaSMEditorWindow* win, const QString& path, QString* e
 		bool ok = false;
 		// every command is one undo step; undo/redo themselves are not, a
 		// gesture is bracketed by the scene between the press and the release,
-		// and the document verbs act on the tab line, not on a document
+		// the document verbs act on the tab line and the setting verbs on the
+		// run, not on a document
 		const QString& cmd = tokens.first();
 		bool docVerb = isDocumentVerb(cmd);
-		bool step = !docVerb && cmd != "undo" && cmd != "redo" && !isGesture(cmd);
+		bool step = !docVerb && !isSettingVerb(cmd) && cmd != "undo" && cmd != "redo" &&
+			!isGesture(cmd);
 		if (step) model->beginUndoStep(cmd);
 		try {
 			if (docVerb) {
@@ -806,6 +833,8 @@ bool runEditScript(CyberiadaSMEditorWindow* win, const QString& path, QString* e
 				// the verbs change the active document
 				model = win->getModel();
 				scene = win->getScene();
+			} else if (isSettingVerb(cmd)) {
+				ok = runSettingVerb(tokens, &message);
 			} else if (isGesture(cmd)) {
 				ok = runGesture(scene, tokens, &gesture, &message);
 			} else if (cmd == "delete-selected") {

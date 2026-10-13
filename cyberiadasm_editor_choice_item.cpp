@@ -154,7 +154,7 @@ void CyberiadaSMEditorChoiceItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *ev
     if (isEditable() && (event->button() & Qt::LeftButton) && element->has_rect_geometry()) {
         Cyberiada::Rect r = choice->get_geometry_rect();
         if (r.width == r.height) {
-            QPointF snapped = snapToGrid(scenePos());
+            QPointF snapped = snapToGrid(scenePos(), event->modifiers());
             setPos(parentItem() ? parentItem()->mapFromScene(snapped) : snapped);
             model->updateGeometry(model->elementToIndex(element),
                                   Cyberiada::Rect(pos().x(), pos().y(), r.width, r.height));

@@ -93,8 +93,17 @@ public:
     }
 
     // seed a placed self-loop with a default orthogonal border-to-border
-    // polyline; the two sides follow the initial and final drag direction
-    void seedDefaultLoop(const QPointF& startDir, const QPointF& endDir);
+    // polyline; the two sides follow the initial and final drag direction, the
+    // modifiers of the placing gesture decide the snap (EDIT-EDGE-16)
+    void seedDefaultLoop(const QPointF& startDir, const QPointF& endDir,
+                         Qt::KeyboardModifiers mods);
+
+    // the coordinate a Ctrl drag of an endpoint locks to its neighbour
+    enum LockedAxis { LockNone, LockX, LockY };
+    // EDIT-EDGE-15: a border point on a straight edge of a rect node slid along
+    // the edge to the nearest grid line within it; unchanged otherwise
+    QPointF snapAlongBorder(const CyberiadaSMEditorAbstractItem* item, const QPointF& p,
+                            Qt::KeyboardModifiers mods, LockedAxis locked) const;
 
     QPainterPath path() const;
     void updatePath();
@@ -148,7 +157,8 @@ private:
     // erase the polyline vertex behind interior dot dotIndex (endpoints ignored)
     void removePolylineVertex(int dotIndex);
     void drawArrow(QPainter* painter);
-    CyberiadaSMEditorAbstractItem* itemUnderCursor();
+    // the node under the cursor itself: a snapped point may leave a small node
+    CyberiadaSMEditorAbstractItem* itemUnderCursor(const QPointF& cursor);
     // the attachment of an end without a stored point: the node border toward
     // the next point of the edge, a vertex at its centre
     QPointF attachedPoint(const CyberiadaSMEditorAbstractItem* item, const QPointF& toward) const;
@@ -157,6 +167,11 @@ private:
                                      const QPointF& start, const QPointF& end,
                                      bool* hasIntersections,
                                      bool forwardOnly = false) const;
+    // findIntersectionWithItem with the found point snapped along the border
+    QPointF snappedIntersection(const CyberiadaSMEditorAbstractItem* item,
+                                const QPointF& start, const QPointF& end,
+                                bool* hasIntersections,
+                                Qt::KeyboardModifiers mods, LockedAxis locked) const;
     void updateCoordinates(CyberiadaSMEditorAbstractItem::CornerFlags side,
                            QPointF& point, qreal d);
     void movePolyline(QPointF delta);
@@ -192,6 +207,11 @@ private:
     QPointF pressPos;
     bool vertexDragArmed = false;
     int draggingVertex = -1;
+
+    // an interior dot being dragged and its offset from the cursor: the point
+    // follows the cursor, so a snap never swallows the small move steps
+    QGraphicsItem* vertexDragDot = nullptr;
+    QPointF vertexGrab;
 
     void initializeDots() override;
     void updateDots();

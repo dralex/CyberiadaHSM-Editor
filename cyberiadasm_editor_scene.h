@@ -181,7 +181,7 @@ private:
     // the transition rubber-band draw (from a pseudostate or the choice)
     QGraphicsLineItem* transitionDrawLine = nullptr;
     CyberiadaSMEditorAbstractItem* transitionSource = nullptr;
-    void  finishTransitionDraw(const QPointF& scenePos);
+    void  finishTransitionDraw(const QPointF& scenePos, Qt::KeyboardModifiers mods);
     bool  handleCreationPress(QGraphicsSceneMouseEvent* event);
     void  handleCreationMove(QGraphicsSceneMouseEvent* event);
     void  handleCreationRelease(QGraphicsSceneMouseEvent* event);

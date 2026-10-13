@@ -65,6 +65,10 @@ public:
     void setPrintMode(bool value);
     bool getSnapMode() const { return snapMode; }
     void setSnapMode(bool value);
+    // the batch mode sets the snap state for the run only (EDIT-TOOL-14):
+    // no signal, not persisted
+    void overrideSnapMode(bool value) { snapMode = value; }
+    void overrideGridSpacing(int value) { gridSpacing = value; }
 
     // the shared family of the element text, empty means the bundled font
     QString getFontFamily() const { return fontFamily; }
@@ -177,7 +181,11 @@ private:
     bool selectionInvertText;
 };
 
-// round a scene point to the grid when snap mode is on; unchanged otherwise
-QPointF snapToGrid(const QPointF& p);
+// true when a gesture with these modifiers snaps: snap mode on, Alt not held
+bool snapActive(Qt::KeyboardModifiers mods);
+// the grid line nearest to a scene coordinate
+qreal snapCoord(qreal v);
+// round a scene point to the grid when the gesture snaps; unchanged otherwise
+QPointF snapToGrid(const QPointF& p, Qt::KeyboardModifiers mods);
 
 #endif // SETTINGS_MANAGER_H

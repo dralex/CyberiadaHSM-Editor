@@ -150,6 +150,8 @@ void DotSignal::keyPressEvent(QKeyEvent *event)
 void DotSignal::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
     dragArmed = false;
+    // a quick release delivers no move: keep the modifiers of the release too
+    lastModifiers = event->modifiers();
     emit signalMouseRelease(this, event->scenePos());
     ungrabMouse();
     QGraphicsItem::mouseReleaseEvent(event);

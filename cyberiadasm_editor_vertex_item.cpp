@@ -228,7 +228,7 @@ void CyberiadaSMEditorVertexItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event
 
     if (isLeftMouseButtonPressed) {
         // snap the moved point to the grid in scene space (no-op when snap is off)
-        QPointF sp = snapToGrid(scenePos());
+        QPointF sp = snapToGrid(scenePos(), event->modifiers());
         // Ctrl locks the move to the dominant axis (strict horizontal/vertical)
         if (event->modifiers() & Qt::ControlModifier) {
             QPointF d = scenePos() - dragStartScenePos;

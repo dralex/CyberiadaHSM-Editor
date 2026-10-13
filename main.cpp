@@ -86,6 +86,11 @@ int main(int argc, char *argv[])
 	parser.addOption(serviceOption);
 	QCommandLineOption showComponentsOption("show-components", "Draw the CGML_COMPONENT formal comments on the scene.");
 	parser.addOption(showComponentsOption);
+	QCommandLineOption snapOption("snap", "Snap the gestures to the grid in batch mode (off by default).");
+	parser.addOption(snapOption);
+	QCommandLineOption gridOption("grid", "The grid spacing in batch mode.", "n",
+								  QString::number(GRID_SPACING_DEFAULT));
+	parser.addOption(gridOption);
 	QCommandLineOption saveFormatOption("save-format",
 										"The format of the saved document: cyberiada (default), "
 										"yed-ostranna or yed-berloga.", "format", "cyberiada");
@@ -119,6 +124,17 @@ int main(int argc, char *argv[])
 	}
 	if (parser.isSet(showComponentsOption)) {
 		SettingsManager::instance().overrideShowComponentComments(true);
+	}
+	if (batch) {
+		// a batch run never inherits the GUI snap state (EDIT-TOOL-14)
+		bool ok = false;
+		int spacing = parser.value(gridOption).toInt(&ok);
+		if (!ok || spacing <= 0) {
+			fprintf(stderr, "invalid grid spacing %s\n", qPrintable(parser.value(gridOption)));
+			return batchUsageError;
+		}
+		SettingsManager::instance().overrideSnapMode(parser.isSet(snapOption));
+		SettingsManager::instance().overrideGridSpacing(spacing);
 	}
 
     try {

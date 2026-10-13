@@ -29,6 +29,7 @@
 
 #include "gesture_log.h"
 #include "cyberiadasm_model.h"
+#include "settings_manager.h"
 #include "version.h"
 
 GestureLog& GestureLog::instance()
@@ -88,6 +89,33 @@ void GestureLog::startSession(CyberiadaSMModel* model)
         writeLine("# document (empty)");
     }
     writeLine("# start " + now.toString(Qt::ISODate));
+
+    if (!settingsConnected) {
+        SettingsManager& sm = SettingsManager::instance();
+        QObject::connect(&sm, &SettingsManager::snapModeChanged,
+                         [](bool) { GestureLog::instance().logSnapState(); });
+        QObject::connect(&sm, &SettingsManager::gridSettingsChanged,
+                         []() { GestureLog::instance().logSnapState(); });
+        settingsConnected = true;
+    }
+    loggedSnap = false;
+    loggedSpacing = GRID_SPACING_DEFAULT;
+    logSnapState();
+}
+
+void GestureLog::logSnapState()
+{
+    if (!active) return;
+    SettingsManager& sm = SettingsManager::instance();
+    int spacing = int(sm.getGridSpacing());
+    if (spacing != loggedSpacing) {
+        writeLine(QString("grid %1").arg(spacing));
+        loggedSpacing = spacing;
+    }
+    if (sm.getSnapMode() != loggedSnap) {
+        writeLine(sm.getSnapMode() ? "snap on" : "snap off");
+        loggedSnap = sm.getSnapMode();
+    }
 }
 
 void GestureLog::endSession()

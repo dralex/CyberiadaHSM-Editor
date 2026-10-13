@@ -304,7 +304,8 @@ CyberiadaSMEditorTransitionItem::sideFromDir(const QPointF& dir)
 // and returns straight into the target side. The two sides follow the initial
 // (startDir) and final (endDir) drag direction; equal sides make a bump, distinct
 // ones a corner, opposite ones wrap around an adjacent side.
-void CyberiadaSMEditorTransitionItem::seedDefaultLoop(const QPointF& startDir, const QPointF& endDir)
+void CyberiadaSMEditorTransitionItem::seedDefaultLoop(const QPointF& startDir, const QPointF& endDir,
+                                                      Qt::KeyboardModifiers mods)
 {
     if (!source() || source() != target()) return;
     if (transition->has_polyline()) return;   // only a fresh (arc) loop
@@ -313,8 +314,13 @@ void CyberiadaSMEditorTransitionItem::seedDefaultLoop(const QPointF& startDir, c
     const qreal LOOP_LATERAL = 30.0;  // endpoint offset along a shared side
 
     QRectF r = source()->sceneBoundingRect();
+    QPointF c = r.center();
     qreal hw = r.width() / 2.0;
     qreal hh = r.height() / 2.0;
+    // with snap on the endpoints slide along the border and the out-levels lie
+    // on grid lines; the vertices are built from both, so the segments stay
+    // orthogonal (EDIT-EDGE-16)
+    bool snap = snapActive(mods);
 
     LoopSide s1 = startDir.isNull() ? LoopTop   : sideFromDir(startDir);
     LoopSide s2 = endDir.isNull()   ? LoopRight : sideFromDir(endDir);
@@ -322,19 +328,30 @@ void CyberiadaSMEditorTransitionItem::seedDefaultLoop(const QPointF& startDir, c
     // the border point at lateral offset off along a side, and the vertex the
     // depth-length stub reaches straight out from it (coords are centre-relative)
     auto border = [&](LoopSide s, qreal off) -> QPointF {
+        QPointF e;
         switch (s) {
-        case LoopTop:    return QPointF(off, -hh);
-        case LoopBottom: return QPointF(off,  hh);
-        case LoopLeft:   return QPointF(-hw, off);
-        default:         return QPointF( hw, off);   // LoopRight
+        case LoopTop:    e = QPointF(off, -hh); break;
+        case LoopBottom: e = QPointF(off,  hh); break;
+        case LoopLeft:   e = QPointF(-hw, off); break;
+        default:         e = QPointF( hw, off); break;   // LoopRight
         }
+        return snap ? snapAlongBorder(source(), e + c, mods, LockNone) - c : e;
+    };
+    // the level LOOP_DEPTH past a border coordinate (sign: the outward side),
+    // moved to a grid line still past the border when snapping
+    auto level = [&](qreal edge, qreal sign, qreal origin) -> qreal {
+        qreal v = edge + sign * LOOP_DEPTH;
+        if (!snap) return v;
+        qreal snapped = snapCoord(v + origin) - origin;
+        if ((snapped - edge) * sign <= 0) snapped += sign * SettingsManager::instance().getGridSpacing();
+        return snapped;
     };
     auto outward = [&](LoopSide s, const QPointF& e) -> QPointF {
         switch (s) {
-        case LoopTop:    return e + QPointF(0, -LOOP_DEPTH);
-        case LoopBottom: return e + QPointF(0,  LOOP_DEPTH);
-        case LoopLeft:   return e + QPointF(-LOOP_DEPTH, 0);
-        default:         return e + QPointF( LOOP_DEPTH, 0);
+        case LoopTop:    return QPointF(e.x(), level(e.y(), -1, c.y()));
+        case LoopBottom: return QPointF(e.x(), level(e.y(),  1, c.y()));
+        case LoopLeft:   return QPointF(level(e.x(), -1, c.x()), e.y());
+        default:         return QPointF(level(e.x(),  1, c.x()), e.y());
         }
     };
     auto vertical = [](LoopSide s) { return s == LoopTop || s == LoopBottom; };
@@ -356,7 +373,7 @@ void CyberiadaSMEditorTransitionItem::seedDefaultLoop(const QPointF& startDir, c
         pl.push_back(Cyberiada::Point(v1.x(), v1.y()));
         if (vertical(s1) == vertical(s2)) {
             // opposite sides: wrap around an adjacent side with two corners
-            qreal wrap = vertical(s1) ? (hw + LOOP_DEPTH) : (hh + LOOP_DEPTH);
+            qreal wrap = vertical(s1) ? level(hw, 1, c.x()) : level(hh, 1, c.y());
             QPointF c1 = vertical(s1) ? QPointF(wrap, v1.y()) : QPointF(v1.x(), wrap);
             QPointF c2 = vertical(s1) ? QPointF(wrap, vn.y()) : QPointF(vn.x(), wrap);
             pl.push_back(Cyberiada::Point(c1.x(), c1.y()));
@@ -531,9 +548,9 @@ void CyberiadaSMEditorTransitionItem::drawArrow(QPainter* painter)
     painter->drawPolygon(arrowHead);
 }
 
-CyberiadaSMEditorAbstractItem *CyberiadaSMEditorTransitionItem::itemUnderCursor()
+CyberiadaSMEditorAbstractItem *CyberiadaSMEditorTransitionItem::itemUnderCursor(const QPointF& cursor)
 {
-    QList<QGraphicsItem*> items = scene()->items(prevPosition);
+    QList<QGraphicsItem*> items = scene()->items(cursor);
 
     CyberiadaSMEditorAbstractItem* cItem = nullptr;
     for (QGraphicsItem* item : items) {
@@ -837,8 +854,10 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
     DotSignal* movedDot = dynamic_cast<DotSignal*>(signalOwner);
     Qt::KeyboardModifiers mods = movedDot ? movedDot->modifiers() : Qt::NoModifier;
 
+    // the cursor before the snap: an interior point follows it by its grab offset
+    QPointF cursor = p;
     // snap the dragged line point to the grid (no-op when snap mode is off)
-    p = snapToGrid(p);
+    p = snapToGrid(p, mods);
     prevPosition = p;
 
     // the first move of a self-loop being placed fixes its initial drag
@@ -857,22 +876,28 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
                     Cyberiada::Polyline polyline = transition->get_geometry_polyline();
                     nextPoint = QPointF(polyline.front().x, polyline.front().y) + sourceCenter();
                 }
+                LockedAxis locked = LockNone;
                 if (mods & Qt::ControlModifier) {
-                    if (qAbs(p.x() - nextPoint.x()) <= qAbs(p.y() - nextPoint.y())) p.setX(nextPoint.x());
-                    else                                                            p.setY(nextPoint.y());
+                    if (qAbs(p.x() - nextPoint.x()) <= qAbs(p.y() - nextPoint.y())) {
+                        p.setX(nextPoint.x());
+                        locked = LockX;
+                    } else {
+                        p.setY(nextPoint.y());
+                        locked = LockY;
+                    }
                     prevPosition = p;
                 }
 
-                CyberiadaSMEditorAbstractItem* cItem = itemUnderCursor();
+                CyberiadaSMEditorAbstractItem* cItem = itemUnderCursor(cursor);
                 if (cItem) {
                     QPointF newPoint;
-                    bool hasIntersections;
+                    bool hasIntersections = false;
 
                     // loop
                     if (cItem == target()) {
                         setSource(cItem);
                         hasIntersections = false;
-                        QPointF newPoint = findIntersectionWithItem(source(), p, sourceCenter(), &hasIntersections) -
+                        QPointF newPoint = snappedIntersection(source(), p, sourceCenter(), &hasIntersections, mods, locked) -
                                            sourceCenter();
                         isSourceTraking = false;
                         setSourcePoint(newPoint);
@@ -882,7 +907,7 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
                     //
                     if (cItem == source()) {
                         hasIntersections = false;
-                        QPointF newPoint = findIntersectionWithItem(source(), p, nextPoint, &hasIntersections) -
+                        QPointF newPoint = snappedIntersection(source(), p, nextPoint, &hasIntersections, mods, locked) -
                                            sourceCenter();
                         if (hasIntersections) {
                             isSourceTraking = false;
@@ -891,7 +916,7 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
                         }
                     }
 
-                    newPoint = findIntersectionWithItem(cItem, p, nextPoint, &hasIntersections) -
+                    newPoint = snappedIntersection(cItem, p, nextPoint, &hasIntersections, mods, locked) -
                                cItem->sceneBoundingRect().center();
                     // intersectoin with item under cursor
                     if (hasIntersections) {
@@ -910,7 +935,7 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
                     nextPoint = sourceCenter();
                 }
 
-                QPointF newPoint = findIntersectionWithItem(source(), p, nextPoint, &hasIntersections) -
+                QPointF newPoint = snappedIntersection(source(), p, nextPoint, &hasIntersections, mods, locked) -
                            sourceCenter();
                 // intersection with source in adjusted bounding rect
                 if (hasIntersections) {
@@ -932,21 +957,27 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
                     Cyberiada::Polyline polyline = transition->get_geometry_polyline();
                     nextPoint = QPointF(polyline.back().x, polyline.back().y) + sourceCenter();
                 }
+                LockedAxis locked = LockNone;
                 if (mods & Qt::ControlModifier) {
-                    if (qAbs(p.x() - nextPoint.x()) <= qAbs(p.y() - nextPoint.y())) p.setX(nextPoint.x());
-                    else                                                            p.setY(nextPoint.y());
+                    if (qAbs(p.x() - nextPoint.x()) <= qAbs(p.y() - nextPoint.y())) {
+                        p.setX(nextPoint.x());
+                        locked = LockX;
+                    } else {
+                        p.setY(nextPoint.y());
+                        locked = LockY;
+                    }
                     prevPosition = p;
                 }
 
-                CyberiadaSMEditorAbstractItem* cItem = itemUnderCursor();
+                CyberiadaSMEditorAbstractItem* cItem = itemUnderCursor(cursor);
                 if (cItem) {
                     QPointF newPoint;
-                    bool hasIntersections;
+                    bool hasIntersections = false;
                     if (cItem == source()) {
                         // loop
                         setTarget(cItem);
                         hasIntersections = false;
-                        QPointF newPoint = findIntersectionWithItem(target(), p, targetCenter(), &hasIntersections) -
+                        QPointF newPoint = snappedIntersection(target(), p, targetCenter(), &hasIntersections, mods, locked) -
                                            targetCenter();
                         isTargetTraking = false;
                         setTargetPoint(newPoint);
@@ -955,7 +986,7 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
 
                     if (cItem == target()) {
                         hasIntersections = false;
-                        QPointF newPoint = findIntersectionWithItem(target(), p, nextPoint, &hasIntersections) -
+                        QPointF newPoint = snappedIntersection(target(), p, nextPoint, &hasIntersections, mods, locked) -
                                            targetCenter();
                         if (hasIntersections) {
                             isTargetTraking = false;
@@ -964,7 +995,7 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
                         }
                     }
 
-                    newPoint = findIntersectionWithItem(cItem, p, nextPoint, &hasIntersections) -
+                    newPoint = snappedIntersection(cItem, p, nextPoint, &hasIntersections, mods, locked) -
                                cItem->sceneBoundingRect().center();
                     if (hasIntersections) {
                         isTargetTraking = false;
@@ -982,7 +1013,7 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
                     nextPoint = sourceCenter();
                 }
 
-                QPointF newPoint = findIntersectionWithItem(target(), p, nextPoint, &hasIntersections) -
+                QPointF newPoint = snappedIntersection(target(), p, nextPoint, &hasIntersections, mods, locked) -
                                    targetCenter();
 
                 if (hasIntersections) {
@@ -999,13 +1030,17 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
             // polyline points
             Cyberiada::Polyline pol = transition->get_geometry_polyline();
             Cyberiada::Point pt = pol.at(i - 1);
-            pt.x += dx;
-            pt.y += dy;
-            // snap the interior point to the grid in scene space (the polyline is
-            // stored relative to the source centre); Ctrl can still lock an axis
-            QPointF snapped = snapToGrid(QPointF(pt.x, pt.y) + sourceCenter()) - sourceCenter();
-            pt.x = snapped.x();
-            pt.y = snapped.y();
+            // the first move fixes the grab offset (dx, dy is the step from the
+            // press); the point then follows the cursor and snaps in scene space,
+            // so the small steps add up (EDIT-EDGE-16). The polyline is stored
+            // relative to the source centre; Ctrl can still lock an axis
+            if (vertexDragDot != signalOwner) {
+                vertexDragDot = signalOwner;
+                vertexGrab = QPointF(pt.x, pt.y) + sourceCenter() - (cursor - QPointF(dx, dy));
+            }
+            QPointF moved = snapToGrid(cursor + vertexGrab, mods) - sourceCenter();
+            pt.x = moved.x();
+            pt.y = moved.y();
             if (mods & Qt::ControlModifier) {
                 // like the endpoints: snap the point onto the axis of its
                 // previous neighbour so the incoming segment stays orthogonal
@@ -1019,6 +1054,54 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
             break;
         }
     }
+}
+
+QPointF CyberiadaSMEditorTransitionItem::snapAlongBorder(const CyberiadaSMEditorAbstractItem* item,
+                                                         const QPointF& p, Qt::KeyboardModifiers mods,
+                                                         LockedAxis locked) const
+{
+    if (!item || !snapActive(mods)) return p;
+    // a pseudostate and a choice keep their own attachment (EDIT-EDGE-2/3/4)
+    if (item->type() == CyberiadaSMEditorAbstractItem::VertexItem ||
+        item->type() == CyberiadaSMEditorAbstractItem::ChoiceItem) {
+        return p;
+    }
+    // a straight edge is exactly axis-aligned, a rounded corner is not; the
+    // computed intersection lies on its edge up to the rounding error
+    const qreal AXIS_EPSILON = 1e-6;
+    const qreal ON_EDGE = 0.01;
+    qreal g = SettingsManager::instance().getGridSpacing();
+    QPolygonF polygon = item->sceneTransform().map(item->shape()).toFillPolygon();
+    for (int i = 0; i < polygon.size(); ++i) {
+        QPointF a = polygon[i];
+        QPointF b = polygon[(i + 1) % polygon.size()];
+        bool horizontal = qAbs(a.y() - b.y()) < AXIS_EPSILON && qAbs(a.x() - b.x()) > ON_EDGE;
+        bool vertical   = qAbs(a.x() - b.x()) < AXIS_EPSILON && qAbs(a.y() - b.y()) > ON_EDGE;
+        if (!horizontal && !vertical) continue;
+        qreal lo     = horizontal ? qMin(a.x(), b.x()) : qMin(a.y(), b.y());
+        qreal hi     = horizontal ? qMax(a.x(), b.x()) : qMax(a.y(), b.y());
+        qreal along  = horizontal ? p.x() : p.y();
+        qreal across = horizontal ? p.y() - a.y() : p.x() - a.x();
+        if (qAbs(across) > ON_EDGE || along < lo - ON_EDGE || along > hi + ON_EDGE) continue;
+        // the Ctrl-locked coordinate keeps the neighbour's (EDIT-TOOL-10)
+        if ((horizontal && locked == LockX) || (vertical && locked == LockY)) return p;
+        qreal first = std::ceil(lo / g) * g;
+        qreal last = std::floor(hi / g) * g;
+        if (first > last) return p;   // no grid line on this edge
+        qreal snapped = qBound(first, snapCoord(along), last);
+        return horizontal ? QPointF(snapped, a.y()) : QPointF(a.x(), snapped);
+    }
+    return p;
+}
+
+QPointF CyberiadaSMEditorTransitionItem::snappedIntersection(const CyberiadaSMEditorAbstractItem* item,
+                                                             const QPointF& start, const QPointF& end,
+                                                             bool* hasIntersections,
+                                                             Qt::KeyboardModifiers mods,
+                                                             LockedAxis locked) const
+{
+    QPointF p = findIntersectionWithItem(item, start, end, hasIntersections);
+    return *hasIntersections ? snapAlongBorder(item, p, mods, locked) : p;
 }
 
 // true when anc is item's element or one of its ancestors in the model tree
@@ -1037,6 +1120,7 @@ void CyberiadaSMEditorTransitionItem::slotMouseReleaseDot(QGraphicsItem *signalO
 {
     isSourceTraking = false;
     isTargetTraking = false;
+    vertexDragDot = nullptr;
 
     if (SettingsManager::instance().getInspectorMode()) { return; }
 
@@ -1047,11 +1131,14 @@ void CyberiadaSMEditorTransitionItem::slotMouseReleaseDot(QGraphicsItem *signalO
     if (source() != target()) { return; }
     if (listDots.isEmpty()) { return; }
 
-    int idx = listDots.indexOf(dynamic_cast<DotSignal*>(signalOwner));
+    DotSignal* dot = dynamic_cast<DotSignal*>(signalOwner);
+    int idx = listDots.indexOf(dot);
     if (idx != 0 && idx != listDots.size() - 1) { return; }
 
+    Qt::KeyboardModifiers mods = dot ? dot->modifiers() : Qt::NoModifier;
+    CyberiadaSMEditorAbstractItem* cItem = itemUnderCursor(p);
+    p = snapToGrid(p, mods);
     prevPosition = p;
-    CyberiadaSMEditorAbstractItem* cItem = itemUnderCursor();
     if (!cItem) { return; }
 
     prepareGeometryChange();
@@ -1060,10 +1147,10 @@ void CyberiadaSMEditorTransitionItem::slotMouseReleaseDot(QGraphicsItem *signalO
         // a small drag that ends over an ancestor of the source (the parent SM
         // it sits in) is a self-loop being placed, not a retarget to the parent
         if (cItem == target() || isAncestorOf(cItem, source())) {
-            seedDefaultLoop(loopStartDir, p - sourceCenter());
+            seedDefaultLoop(loopStartDir, p - sourceCenter(), mods);
             return;
         }
-        QPointF newPoint = findIntersectionWithItem(cItem, p, sourceCenter(), &hasIntersections) -
+        QPointF newPoint = snappedIntersection(cItem, p, sourceCenter(), &hasIntersections, mods, LockNone) -
                            cItem->sceneBoundingRect().center();
         if (!hasIntersections) { return; }
         isTargetTraking = false;
@@ -1071,10 +1158,10 @@ void CyberiadaSMEditorTransitionItem::slotMouseReleaseDot(QGraphicsItem *signalO
         setTargetPoint(newPoint);
     } else {
         if (cItem == source() || isAncestorOf(cItem, target())) {
-            seedDefaultLoop(loopStartDir, p - sourceCenter());
+            seedDefaultLoop(loopStartDir, p - sourceCenter(), mods);
             return;
         }
-        QPointF newPoint = findIntersectionWithItem(cItem, p, targetCenter(), &hasIntersections) -
+        QPointF newPoint = snappedIntersection(cItem, p, targetCenter(), &hasIntersections, mods, LockNone) -
                            cItem->sceneBoundingRect().center();
         if (!hasIntersections) { return; }
         isSourceTraking = false;
@@ -1211,7 +1298,9 @@ void CyberiadaSMEditorTransitionItem::mouseMoveEvent(QGraphicsSceneMouseEvent *e
     if (draggingVertex >= 0 && transition->has_polyline()) {
         Cyberiada::Polyline pol = transition->get_geometry_polyline();
         if (draggingVertex < int(pol.size())) {
-            QPointF p = event->pos() - sourceCenter();
+            // snapped like a dragged vertex (EDIT-EDGE-16), from the move that
+            // inserts it on
+            QPointF p = snapToGrid(event->scenePos(), event->modifiers()) - sourceCenter();
             pol.at(draggingVertex) = Cyberiada::Point(p.x(), p.y());
             model->updateGeometry(model->elementToIndex(element), pol);
         }
