@@ -35,8 +35,9 @@
 #include "settings_manager.h"
 #include "fontmanager.h"
 #include "dialogs/stateactiondialog.h"
+#include "dialogs/multilinetextdialog.h"
 
-// EDIT-TEXT-7, EDIT-TEXT-8
+// EDIT-TEXT-7, EDIT-TEXT-8, EDIT-TEXT-11
 class TestHighlight: public QObject {
 	Q_OBJECT
 
@@ -52,6 +53,11 @@ private slots:
 	void test_documents();
 	void test_dialog();
 	void test_export();
+	void test_markup_lookup();
+	void test_markdown_spans();
+	void test_markdown_fence_lines();
+	void test_markdown_canvas();
+	void test_markdown_dialog();
 
 private:
 	QList<EditableTextItem*> codeItems(CodeRole role);
@@ -341,6 +347,169 @@ void TestHighlight::test_export()
 	QVERIFY(colour.open(QIODevice::ReadOnly));
 	QVERIFY(QString(colour.readAll()).contains(keyword, Qt::CaseInsensitive));
 	sm.setHighlightInExports(false);
+}
+
+// the kind of the span covering the position, -1 when none
+static int kindAt(const QVector<CodeSpan>& spans, int pos)
+{
+	for (const CodeSpan& span : spans) {
+		if (pos >= span.start && pos < span.start + span.length) return span.kind;
+	}
+	return -1;
+}
+
+void TestHighlight::test_markup_lookup()
+{
+	bool known = false;
+	QCOMPARE(CodeStyle::findMarkup("Markdown", &known), codeMarkupMarkdown);
+	QVERIFY(known);
+	QCOMPARE(CodeStyle::findMarkup("md", &known), codeMarkupMarkdown);
+	QCOMPARE(CodeStyle::findMarkup("", &known), codeMarkupPlain);
+	QVERIFY(known);
+	QCOMPARE(CodeStyle::findMarkup(" PLAIN ", &known), codeMarkupPlain);
+	QVERIFY(known);
+	QCOMPARE(CodeStyle::findMarkup("html", &known), codeMarkupPlain);
+	QVERIFY(!known);
+	QCOMPARE(CodeStyle::markupValue(codeMarkupMarkdown), QString("markdown"));
+	QVERIFY(CodeStyle::markupValue(codeMarkupPlain).isEmpty());
+	// the comment's own markup wins over the document one
+	QCOMPARE(CodeStyle::commentMarkup("plain", codeMarkupMarkdown), codeMarkupPlain);
+	QCOMPARE(CodeStyle::commentMarkup("", codeMarkupMarkdown), codeMarkupMarkdown);
+	QCOMPARE(CodeStyle::commentMarkup("markdown", codeMarkupPlain), codeMarkupMarkdown);
+}
+
+void TestHighlight::test_markdown_spans()
+{
+	const CodeStyle& style = CodeStyle::instance();
+	QString text = "# Head\n> quote\n- item **bold** *em* `x` [a](http://b)\n---\n1. one ~~gone~~ <http://c>";
+	QVector<CodeSpan> spans = style.markdownSpans(text, nullptr);
+	QCOMPARE(kindAt(spans, text.indexOf("Head")), int(codeTokenHeading));
+	QCOMPARE(kindAt(spans, text.indexOf(">")), int(codeTokenMarker));
+	QCOMPARE(kindAt(spans, text.indexOf("quote")), -1);
+	QCOMPARE(kindAt(spans, text.indexOf("- item")), int(codeTokenMarker));
+	QCOMPARE(kindAt(spans, text.indexOf("item")), -1);
+	QCOMPARE(kindAt(spans, text.indexOf("bold")), int(codeTokenEmphasis));
+	QCOMPARE(kindAt(spans, text.indexOf("em*")), int(codeTokenEmphasis));
+	QCOMPARE(kindAt(spans, text.indexOf("`x`")), int(codeTokenCode));
+	QCOMPARE(kindAt(spans, text.indexOf("[a]")), int(codeTokenLink));
+	QCOMPARE(kindAt(spans, text.indexOf("---")), int(codeTokenMarker));
+	QCOMPARE(kindAt(spans, text.indexOf("1.")), int(codeTokenMarker));
+	QCOMPARE(kindAt(spans, text.indexOf("gone")), int(codeTokenEmphasis));
+	QCOMPARE(kindAt(spans, text.indexOf("<http")), int(codeTokenLink));
+
+	// an inline code span hides the emphasis inside it
+	text = "`*x*` and 2*3*4";
+	spans = style.markdownSpans(text, nullptr);
+	QCOMPARE(spans.size(), 1);
+	QCOMPARE(spans[0].kind, codeTokenCode);
+
+	// a fence by its tag, else by the fallback, else one code colour
+	const CodeLanguage* python = style.find("Python");
+	text = "```cpp\nreturn 0;\n```\n```\nreturn None\n```\n~~~lua\nlocal x\n~~~";
+	spans = style.markdownSpans(text, python);
+	QCOMPARE(kindAt(spans, 0), int(codeTokenMarker));
+	QCOMPARE(kindAt(spans, text.indexOf("return 0")), int(codeTokenKeyword));
+	QCOMPARE(kindAt(spans, text.indexOf("0;")), int(codeTokenNumber));
+	QCOMPARE(kindAt(spans, text.indexOf("None")), int(codeTokenKeyword));
+	// an unknown tag falls back to the document language: no Python keyword
+	QCOMPARE(kindAt(spans, text.indexOf("local")), -1);
+	spans = style.markdownSpans(text, nullptr);
+	QCOMPARE(kindAt(spans, text.indexOf("None")), int(codeTokenCode));
+	QCOMPARE(kindAt(spans, text.indexOf("local")), int(codeTokenCode));
+	// inside a fence there is no Markdown
+	text = "```\n# not a heading\n";
+	spans = style.markdownSpans(text, nullptr);
+	QCOMPARE(kindAt(spans, text.indexOf("# not")), int(codeTokenCode));
+}
+
+void TestHighlight::test_markdown_fence_lines()
+{
+	QTextDocument doc;
+	doc.documentLayout();
+	CodeHighlighter highlighter(&doc, codeRoleMarkup, nullptr, codeMarkupMarkdown);
+	doc.setPlainText("```\nx\ny");
+	int y = doc.toPlainText().indexOf("y");
+	QCOMPARE(colorAt(&doc, y), kindColor(codeTokenCode));
+
+	// closing the fence on the middle line re-highlights the last one
+	QTextCursor cursor(&doc);
+	cursor.setPosition(y);
+	cursor.insertText("```\n");
+	y = doc.toPlainText().indexOf("y");
+	QVERIFY(colorAt(&doc, y) != kindColor(codeTokenCode));
+
+	// a plain markup draws nothing
+	highlighter.setMarkup(codeMarkupPlain);
+	QVERIFY(!hasFormats(&doc));
+}
+
+void TestHighlight::test_markdown_canvas()
+{
+	CyberiadaSMModel notes(this);
+	CyberiadaSMEditorScene notesScene(&notes);
+	QVERIFY(notes.loadDocument("diagrams/markdown-comments.graphml"));
+	notesScene.loadScene();
+	QCOMPARE(notesScene.markupLanguage(), codeMarkupMarkdown);
+
+	EditableTextItem* readme = nullptr;
+	EditableTextItem* plain = nullptr;
+	EditableTextItem* formal = nullptr;
+	for (QGraphicsItem* item : notesScene.items()) {
+		EditableTextItem* text = dynamic_cast<EditableTextItem*>(item);
+		if (!text) continue;
+		if (text->getCodeRole() == codeRoleMarkup) {
+			if (text->toPlainText().startsWith("# Title")) readme = text;
+			else plain = text;
+		} else if (text->getCodeRole() == codeRoleFormalComment) {
+			formal = text;
+		}
+	}
+	QVERIFY(readme && plain && formal);
+
+	QTextDocument* doc = readme->document();
+	QString text = doc->toPlainText();
+	QCOMPARE(readme->getCodeMarkup(), codeMarkupMarkdown);
+	QCOMPARE(colorAt(doc, 0), kindColor(codeTokenHeading));
+	QCOMPARE(colorAt(doc, text.indexOf("this")), kindColor(codeTokenEmphasis));
+	QCOMPARE(colorAt(doc, text.indexOf("`code`")), kindColor(codeTokenCode));
+	QCOMPARE(colorAt(doc, text.indexOf("return")), kindColor(codeTokenKeyword));
+	// the comment's own dMarkup "plain" wins
+	QCOMPARE(plain->getCodeMarkup(), codeMarkupPlain);
+	QVERIFY(!hasFormats(plain->document()));
+	// a formal comment stays code (Python: "#" starts a comment)
+	QCOMPARE(colorAt(formal->document(), 0), kindColor(codeTokenComment));
+
+	// the document markup removed: plain; undo: Markdown again
+	QVERIFY(notes.removeMetainformation(notes.documentIndex(), METAINFORMATION_KEY_MARKUP_LANGUAGE));
+	QCOMPARE(notesScene.markupLanguage(), codeMarkupPlain);
+	QVERIFY(!hasFormats(readme->document()));
+	notes.undoStack()->undo();
+	QCOMPARE(notesScene.markupLanguage(), codeMarkupMarkdown);
+	for (QGraphicsItem* item : notesScene.items()) {
+		EditableTextItem* t = dynamic_cast<EditableTextItem*>(item);
+		if (t && t->getCodeRole() == codeRoleMarkup && t->toPlainText().startsWith("# Title")) readme = t;
+	}
+	QCOMPARE(colorAt(readme->document(), 0), kindColor(codeTokenHeading));
+	QCOMPARE(readme->document()->toPlainText(), text);
+
+	// the preference turns it off as well
+	SettingsManager::instance().setHighlightCode(false);
+	QVERIFY(!hasFormats(readme->document()));
+	SettingsManager::instance().setHighlightCode(true);
+	QVERIFY(hasFormats(readme->document()));
+}
+
+void TestHighlight::test_markdown_dialog()
+{
+	MultilineTextDialog markdown("Edit text", "Body", "# Title", codeRoleMarkup, nullptr,
+	                             nullptr, codeMarkupMarkdown);
+	QPlainTextEdit* edit = markdown.findChild<QPlainTextEdit*>();
+	QVERIFY(edit);
+	QCOMPARE(colorAt(edit->document(), 0), kindColor(codeTokenHeading));
+
+	MultilineTextDialog plainDialog("Edit text", "Body", "# Title", codeRoleMarkup, nullptr,
+	                                nullptr, codeMarkupPlain);
+	QVERIFY(!hasFormats(plainDialog.findChild<QPlainTextEdit*>()->document()));
 }
 
 QTEST_MAIN(TestHighlight)

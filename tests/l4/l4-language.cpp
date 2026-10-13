@@ -30,7 +30,7 @@
 #include "settings_manager.h"
 #include "gesture_log.h"
 
-// EDIT-TEXT-9: the menu writes the platformLanguage of the active document and
+// EDIT-TEXT-9/12: the menus write the platformLanguage of the active document and
 // follows it on load, tab switch, properties edit and undo
 class TestLanguage: public QObject {
 	Q_OBJECT
@@ -46,11 +46,19 @@ private slots:
 	void test_unknown_kept();
 	void test_transient_unknown();
 	void test_inspector_disables();
+	void test_markup_layout();
+	void test_markup_choose();
+	void test_markup_values();
+	void test_markup_tabs();
 
 private:
 	QAction* entry(const QString& text) const;
 	QString checkedText() const;
 	QString meta() const;
+	QAction* markupEntry(const QString& text) const;
+	QString markupChecked() const;
+	QString markupMeta() const;
+	bool setMarkupMeta(const QString& value);
 	bool setMeta(const QString& value);
 
 	CyberiadaSMEditorWindow* window;
@@ -80,6 +88,38 @@ QString TestLanguage::meta() const
 	const Cyberiada::LocalDocument* doc = window->getModel()->rootDocument();
 	if (!doc) return QString();
 	return QString::fromStdString(doc->meta().get_string(METAINFORMATION_KEY_PLATFORM_LANGUAGE));
+}
+
+QAction* TestLanguage::markupEntry(const QString& text) const
+{
+	const QList<QAction*> actions = window->menuMarkup->actions();
+	for (QAction* action : actions) {
+		if (action->isCheckable() && action->text() == text) return action;
+	}
+	return nullptr;
+}
+
+QString TestLanguage::markupChecked() const
+{
+	const QList<QAction*> actions = window->menuMarkup->actions();
+	for (QAction* action : actions) {
+		if (action->isChecked()) return action->text();
+	}
+	return QString();
+}
+
+QString TestLanguage::markupMeta() const
+{
+	const Cyberiada::LocalDocument* doc = window->getModel()->rootDocument();
+	if (!doc) return QString();
+	return QString::fromStdString(doc->meta().get_string(METAINFORMATION_KEY_MARKUP_LANGUAGE));
+}
+
+bool TestLanguage::setMarkupMeta(const QString& value)
+{
+	CyberiadaSMModel* model = window->getModel();
+	return model->updateMetainformation(model->documentIndex(),
+	                                    METAINFORMATION_KEY_MARKUP_LANGUAGE, value);
 }
 
 // the properties panel path
@@ -267,8 +307,95 @@ void TestLanguage::test_inspector_disables()
 {
 	SettingsManager::instance().setInspectorMode(true);
 	QVERIFY(!window->menuLanguage->menuAction()->isEnabled());
+	QVERIFY(!window->menuMarkup->menuAction()->isEnabled());
 	SettingsManager::instance().setInspectorMode(false);
 	QVERIFY(window->menuLanguage->menuAction()->isEnabled());
+	QVERIFY(window->menuMarkup->menuAction()->isEnabled());
+}
+
+// EDIT-TEXT-12: right after Edit > Language, Plain and Markdown
+void TestLanguage::test_markup_layout()
+{
+	const QList<QAction*> edit = window->menuEdit->actions();
+	int language = edit.indexOf(window->menuLanguage->menuAction());
+	QVERIFY(language >= 0);
+	QCOMPARE(edit.value(language + 1), window->menuMarkup->menuAction());
+	QStringList texts;
+	const QList<QAction*> actions = window->menuMarkup->actions();
+	for (QAction* action : actions) {
+		if (action->isCheckable()) texts.append(action->text());
+	}
+	QCOMPARE(texts, QStringList() << "Plain" << "Markdown");
+	QCOMPARE(markupChecked(), QString("Plain"));
+}
+
+void TestLanguage::test_markup_choose()
+{
+	QVERIFY(window->openFile("diagrams/markdown-comments.graphml"));
+	QCOMPARE(markupChecked(), QString("Markdown"));
+	QCOMPARE(window->getScene()->markupLanguage(), codeMarkupMarkdown);
+	CyberiadaSMModel* model = window->getModel();
+	int steps = model->undoStack()->count();
+
+	// the checked entry again changes nothing
+	markupEntry("Markdown")->trigger();
+	QCOMPARE(model->undoStack()->count(), steps);
+
+	// Plain removes the parameter, one undo step
+	markupEntry("Plain")->trigger();
+	QCOMPARE(markupMeta(), QString());
+	QCOMPARE(window->getScene()->markupLanguage(), codeMarkupPlain);
+	QCOMPARE(model->undoStack()->count(), steps + 1);
+	// the language menu is untouched
+	QCOMPARE(checkedText(), QString("Python"));
+
+	model->undoStack()->undo();
+	QCOMPARE(markupMeta(), QString("markdown"));
+	QCOMPARE(markupChecked(), QString("Markdown"));
+}
+
+void TestLanguage::test_markup_values()
+{
+	// an explicit "plain" checks Plain; choosing it keeps the value
+	QVERIFY(setMarkupMeta("plain"));
+	QCOMPARE(markupChecked(), QString("Plain"));
+	CyberiadaSMModel* model = window->getModel();
+	int steps = model->undoStack()->count();
+	markupEntry("Plain")->trigger();
+	QCOMPARE(markupMeta(), QString("plain"));
+	QCOMPARE(model->undoStack()->count(), steps);
+
+	// an unknown value is shown, and kept once replaced from the menu
+	QString html = "html (no highlighting)";
+	QVERIFY(setMarkupMeta("html"));
+	QCOMPARE(markupChecked(), html);
+	markupEntry("Markdown")->trigger();
+	QCoreApplication::processEvents();
+	QCOMPARE(markupMeta(), QString("markdown"));
+	QVERIFY(markupEntry(html));
+	QVERIFY(!markupEntry(html)->isChecked());
+	// the language menu keeps its own session list
+	QVERIFY(!entry(html));
+}
+
+void TestLanguage::test_markup_tabs()
+{
+	CyberiadaSMEditorDocument* notes = window->currentDocument();
+	window->actionNew->trigger();
+	CyberiadaSMEditorDocument* fresh = window->currentDocument();
+	QCOMPARE(markupChecked(), QString("Plain"));
+	markupEntry("Markdown")->trigger();
+	QCOMPARE(markupMeta(), QString("markdown"));
+	// the empty document got its first state machine
+	QCOMPARE(int(window->getModel()->rootDocument()->get_state_machines().size()), 1);
+	window->setCurrentDocument(notes);
+	QCOMPARE(markupChecked(), QString("Markdown"));
+	markupEntry("Plain")->trigger();
+	window->setCurrentDocument(fresh);
+	QCOMPARE(markupChecked(), QString("Markdown"));
+	window->setCurrentDocument(notes);
+	QCOMPARE(markupChecked(), QString("Plain"));
+	QVERIFY(window->closeDocument(fresh, true));
 }
 
 QTEST_MAIN(TestLanguage)
