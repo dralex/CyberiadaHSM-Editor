@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.16 (2026-10-13)
+**Document version:** 0.17 (2026-10-13)
 
 **Related authorities:**
 
@@ -304,7 +304,7 @@ the third is a derived display value the format does not store):
   ```
   entry/ foo(1);        ─► after the keyword "/"          (entry, exit, do behaviour)
   EV [x > 0] / f();     ─► the guard and after the "/"    (internal and edge transitions)
-  formal comment body   ─► the whole text
+  formal comment body   ─► the whole text, unless its own dMarkup is markdown (EDIT-TEXT-11)
   titles, names, informal comments ─► plain
   ```
 
@@ -332,11 +332,20 @@ the third is a derived display value the format does not store):
   newlines are preserved on write-back. The editor highlights the text as `EDIT-TEXT-7` does
   (behaviour and a formal/component comment body by the document language, an informal body by its
   markup as `EDIT-TEXT-11` does). *design*
-- `EDIT-TEXT-11` SHOULD [A]: an informal comment body is highlighted by its markup language: the
-  comment's own `dMarkup`, else the document `markupLanguage`, else `plain` (no highlighting).
-  `markdown` (alias `md`) colours the elements below; a fenced block is highlighted by the language
-  of its tag (EDIT-TEXT-7 names and aliases), else by the document `platformLanguage`, else in one
-  code colour. Colour only, as EDIT-TEXT-7: the text and its size are not changed. *PNST 1044 9.3*
+- `EDIT-TEXT-11` SHOULD [A]: a comment body is highlighted by its markup language. An informal
+  comment takes its own `dMarkup`, else the document `markupLanguage`, else `plain` (no
+  highlighting). A formal comment has no document default: its own `dMarkup` `markdown` makes it
+  Markdown, anything else keeps it code (EDIT-TEXT-7); the reserved `CGML_META` and
+  `CGML_COMPONENT` comments are always code. `markdown` (alias `md`) colours the elements below; a
+  fenced block is highlighted by the language of its tag (EDIT-TEXT-7 names and aliases), else by
+  the document `platformLanguage`, else in one code colour. Colour only, as EDIT-TEXT-7: the text
+  and its size are not changed. *PNST 1044 9.3; compat spec 1.9 CGML-9.3-1/3*
+
+  ```
+  informal   own dMarkup ─► markupLanguage ─► plain
+  formal     CGML_META, CGML_COMPONENT ─► code
+             own dMarkup markdown ─► Markdown      otherwise ─► code
+  ```
 
   ```
   # Heading            ─► heading (the whole line)
