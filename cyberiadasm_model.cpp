@@ -1286,30 +1286,41 @@ bool CyberiadaSMModel::updateParent(const QModelIndex &index, const Cyberiada::I
     for (const Cyberiada::Element* a = new_parent; a; a = a->get_parent()) {
         if (a == element) return false;
     }
-    if (parent(index) == elementToIndex(new_parent)) return true;
+    // a drop onto the current parent is not a re-parent, but it is still a move
+    // within it: skip move() and the reparent log, yet run the same containment and
+    // no-overlap maintenance below so a drag (snap-to-grid included) keeps the laws
+    bool same_parent = (parent(index) == elementToIndex(new_parent));
     if (element->get_type() == Cyberiada::elementInitial) {
         // TODO check
     }
     // move() frees the original element, so capture the id before the call
     Cyberiada::ID moved_id = element->get_id();
-    move(element, new_parent);
-    // move() keeps the child's absolute position but does not grow the new parent
-    // or clear its existing children; if the drop overlaps a sibling, relocate the
-    // moved child to a free slot, then grow the parent so it stays inside (as paste)
+    if (!same_parent) {
+        move(element, new_parent);
+    }
+    // move()/a same-parent drag keeps the child's absolute position but does not grow
+    // the parent to re-contain it. On a re-parent the drop may also land on a sibling
+    // of the NEW parent, so relocate the incoming child to a free slot (as paste and
+    // create do); on a same-parent drag the child stays where the user dropped it (we
+    // never relocate a dragged element) and only the parent grows — EDIT-NODE-2.
     if (Cyberiada::Element* moved = idToElement(moved_id.c_str())) {
-        Cyberiada::Rect r;
-        if (elementRect(moved, r)) {
-            Cyberiada::Point f = freeChildCentre(new_parent, moved, r.width, r.height,
-                                                 Cyberiada::Point(r.x, r.y));
-            if (f.x != r.x || f.y != r.y) {
-                updateGeometry(elementToIndex(moved),
-                               Cyberiada::Rect(f.x, f.y, r.width, r.height), false);
+        if (!same_parent) {
+            Cyberiada::Rect r;
+            if (elementRect(moved, r)) {
+                Cyberiada::Point f = freeChildCentre(new_parent, moved, r.width, r.height,
+                                                     Cyberiada::Point(r.x, r.y));
+                if (f.x != r.x || f.y != r.y) {
+                    updateGeometry(elementToIndex(moved),
+                                   Cyberiada::Rect(f.x, f.y, r.width, r.height), false);
+                }
             }
         }
         growToFitChildren(moved);
     }
-    GestureLog::instance().logAction("reparent " + QString::fromStdString(moved_id) + " " +
-                                     QString::fromStdString(new_parent_id));
+    if (!same_parent) {
+        GestureLog::instance().logAction("reparent " + QString::fromStdString(moved_id) + " " +
+                                         QString::fromStdString(new_parent_id));
+    }
     return true;
 }
 
