@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.15 (2026-10-13)
+**Document version:** 0.16 (2026-10-13)
 
 **Related authorities:**
 
@@ -330,8 +330,28 @@ the third is a derived display value the format does not store):
 - `EDIT-TEXT-10` SHOULD [A]: a multiline text — a state action's behaviour and a comment body — is
   editable in the properties view through a multiline editor (a dialog opened from the row), and the
   newlines are preserved on write-back. The editor highlights the text as `EDIT-TEXT-7` does
-  (behaviour and a formal/component comment body by the document language, an informal body plain).
-  *design*
+  (behaviour and a formal/component comment body by the document language, an informal body by its
+  markup as `EDIT-TEXT-11` does). *design*
+- `EDIT-TEXT-11` SHOULD [A]: an informal comment body is highlighted by its markup language: the
+  comment's own `dMarkup`, else the document `markupLanguage`, else `plain` (no highlighting).
+  `markdown` (alias `md`) colours the elements below; a fenced block is highlighted by the language
+  of its tag (EDIT-TEXT-7 names and aliases), else by the document `platformLanguage`, else in one
+  code colour. Colour only, as EDIT-TEXT-7: the text and its size are not changed. *PNST 1044 9.3*
+
+  ```
+  # Heading            ─► heading (the whole line)
+  > quote  - item  1.  ─► the markers
+  ---  ***             ─► a rule
+  **strong** *em*      ─► emphasis
+  `code`               ─► code
+  [text](url) <url>    ─► link
+  ```cpp … ```         ─► the fence lines as markers, the body as code
+  ```
+- `EDIT-TEXT-12` SHOULD [A]: the Edit > Markup menu (after Edit > Language) sets the
+  `markupLanguage` of the active document with the rules of `EDIT-TEXT-9`: *Plain* removes the
+  parameter (a `plain` value checks it too), *Markdown* writes `markdown`, an unknown value shows as
+  an extra entry kept for the session, the check follows the active document, and the menu is
+  disabled in inspection mode. A comment's own `dMarkup` still overrides the document value. *design*
 
 ### 4.6 Tools and interaction — TOOL
 
