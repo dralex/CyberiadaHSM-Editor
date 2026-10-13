@@ -136,6 +136,9 @@ protected:
     void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
 
 private:
+    // true when the two items resolve to elements of different state machines, so a
+    // retarget binding one end there would cross machines (EDIT-STRUCT-4)
+    bool crossesMachine(CyberiadaSMEditorAbstractItem* moving, CyberiadaSMEditorAbstractItem* fixed) const;
     bool isArcLoop() const;
     // the border side a drag direction points at
     enum LoopSide { LoopTop, LoopBottom, LoopLeft, LoopRight };

@@ -121,6 +121,10 @@ public:
     // the hold-in-place re-base on a container resize
     static bool                         elementRect(const Cyberiada::Element* element, Cyberiada::Rect& out);
     void                                rebaseChildren(Cyberiada::ElementCollection* pc, double dx, double dy);
+    // clear a state machine's border in one undo step: re-base its children back to
+    // global coordinates (the inverse of adding a border) so their absolute place is
+    // kept, then drop the geometry; the machine becomes frameless at the origin
+    bool                                clearStateMachineBorder(const QModelIndex& index);
     // shift pc's siblings out of the way when pc grew from oldRect to newRect
     void                                pushSiblingsClear(Cyberiada::Element* pc,
                                                           const Cyberiada::Rect& oldRect,

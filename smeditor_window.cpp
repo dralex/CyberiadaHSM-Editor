@@ -926,9 +926,9 @@ void CyberiadaSMEditorWindow::slotDeleteElement()
     if (itemToDelete) {
         Cyberiada::Element* el = itemToDelete->getElement();
         // deleting a state machine removes only its border (the geometry); the
-        // machine and its content stay
+        // machine and its content stay, re-anchored to the origin in place
         if (el && el->get_type() == Cyberiada::elementSM) {
-            model()->updateGeometry(model()->elementToIndex(el), Cyberiada::Rect());
+            model()->clearStateMachineBorder(model()->elementToIndex(el));
             return;
         }
         model()->deleteElement(model()->elementToIndex(el));

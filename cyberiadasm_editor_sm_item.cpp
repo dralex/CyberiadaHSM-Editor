@@ -46,6 +46,8 @@ CyberiadaSMEditorSMItem::CyberiadaSMEditorSMItem(CyberiadaSMModel* model,
 
     if(element->has_geometry()) {
         setPos(rect.x(), rect.y());
+    } else {
+        setPos(0, 0);   // a frameless machine is anchored to the origin
     }
     setFlags(ItemIsSelectable);
     setAcceptHoverEvents(true);   // the resize cursor over the border
@@ -110,6 +112,8 @@ void CyberiadaSMEditorSMItem::syncFromModel()
     if (element->has_geometry()) {
         QRectF rect = toQtRect(element->get_bound_rect(*(model->rootDocument())));
         setPos(rect.x(), rect.y());
+    } else {
+        setPos(0, 0);   // the border was cleared: re-anchor to the origin, as a reload does
     }
     if (title) {
         QString name = QString(element->get_name().c_str());

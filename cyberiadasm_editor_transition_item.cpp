@@ -146,9 +146,23 @@ CyberiadaSMEditorAbstractItem *CyberiadaSMEditorTransitionItem::source() const
     return static_cast<CyberiadaSMEditorAbstractItem*>(elementIdToItemMap.value(transition->source_element_id()));
 }
 
+bool CyberiadaSMEditorTransitionItem::crossesMachine(CyberiadaSMEditorAbstractItem* moving,
+                                                     CyberiadaSMEditorAbstractItem* fixed) const
+{
+    // only a positively determined mismatch blocks the retarget; when either end or
+    // its machine is unknown, let the model choke point be the backstop
+    if (!moving || !fixed || !model || !model->rootDocument()) return false;
+    Cyberiada::StateMachine* a = model->rootDocument()->get_parent_sm(moving->getElement());
+    Cyberiada::StateMachine* b = model->rootDocument()->get_parent_sm(fixed->getElement());
+    return a && b && a != b;
+}
+
 void CyberiadaSMEditorTransitionItem::setSource(CyberiadaSMEditorAbstractItem *newSource)
 {
     if (source() == newSource) return;
+    // EDIT-STRUCT-4: a retarget may not cross state machines; refuse before touching
+    // the view so the dragged dot snaps back (the model would refuse it anyway)
+    if (crossesMachine(newSource, target())) return;
 
     movePolyline(sourceCenter() - newSource->sceneBoundingRect().center());
 
@@ -224,6 +238,8 @@ CyberiadaSMEditorAbstractItem *CyberiadaSMEditorTransitionItem::target() const
 void CyberiadaSMEditorTransitionItem::setTarget(CyberiadaSMEditorAbstractItem *newTarget)
 {
     if (target() == newTarget) return;
+    // EDIT-STRUCT-4: a retarget may not cross state machines (see setSource)
+    if (crossesMachine(newTarget, source())) return;
 
     disconnect(target(), &CyberiadaSMEditorAbstractItem::geometryChanged, this, &CyberiadaSMEditorTransitionItem::onTargetGeomertyChanged);
     disconnect(target(), &CyberiadaSMEditorAbstractItem::sizeChanged, this, &CyberiadaSMEditorTransitionItem::onTargetSizeChanged);

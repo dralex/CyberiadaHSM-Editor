@@ -954,10 +954,16 @@ bool CyberiadaSMModel::updateGeometry(const QModelIndex &index, const Cyberiada:
     if (!element) return false;
     if (element->get_type() != Cyberiada::elementTransition) return false;
     Cyberiada::Transition* trans = static_cast<Cyberiada::Transition*>(element);
-    if (root->find_element_by_id(source) == NULL || root->find_element_by_id(target) == NULL) {
+    Cyberiada::Element* se = root->find_element_by_id(source);
+    Cyberiada::Element* te = root->find_element_by_id(target);
+    if (se == NULL || te == NULL) {
         // the id isn't available in the document
         return false;
     }
+    // EDIT-STRUCT-4: a retarget must keep both ends in one machine; a cross-machine
+    // rebind corrupts the document (an edge that spans two machines), so refuse it
+    Cyberiada::StateMachine* sm = root->get_parent_sm(se);
+    if (!sm || root->get_parent_sm(te) != sm) return false;
     trans->update(source, target);
     // the id encodes the endpoints (source-target); a retarget renames it so a
     // transition drawn as a loop no longer keeps its loop id
@@ -1053,6 +1059,24 @@ void CyberiadaSMModel::rebaseChildren(Cyberiada::ElementCollection* pc, double d
 			updateGeometry(elementToIndex(v), Cyberiada::Point(vp.x + dx, vp.y + dy), false);
 		}
 	}
+}
+
+bool CyberiadaSMModel::clearStateMachineBorder(const QModelIndex& index)
+{
+	if (readOnly() || !root) return false;
+	Cyberiada::Element* el = indexToElement(index);
+	if (!el || el->get_type() != Cyberiada::elementSM) return false;
+	Cyberiada::ElementCollection* sm = static_cast<Cyberiada::ElementCollection*>(el);
+	if (!sm->has_geometry()) return false;   // already frameless, nothing to clear
+	// one undo step: the before-snapshot is taken here, before the re-base, so undo
+	// restores both the children and the border
+	UndoScope scope(this, tr("clear border"));
+	// the border centre is the rect's x,y (Qt centre coords); +centre maps the
+	// children back to global coordinates, the inverse of the adopt-a-border re-base
+	Cyberiada::Rect c = sm->get_geometry_rect();
+	rebaseChildren(sm, c.x, c.y);
+	updateGeometry(index, Cyberiada::Rect(), false);
+	return true;
 }
 
 // pc just grew from oldRect to newRect (same parent-centre frame); shift the
