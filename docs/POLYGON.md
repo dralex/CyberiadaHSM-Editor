@@ -18,7 +18,10 @@ edit history are and steer the stress mission.
 The tool lives in `tests/polygon/`, is written in Python 3 and runs the editor
 binary exactly as the ctest tiers do: offscreen, `--batch`, hermetic fonts and
 config. The deterministic producers (the fuzzer, the drills, the tool tour, the
-register) need the standard library only. The LLM tester is an agent of the
+register) need the standard library only. `fuzz` and `drill` take `--snap`
+(optionally `--grid <n>`) to run a whole sweep with snap-to-grid on: the snap is
+recorded as `snap on`/`grid n` verbs at the head of the script, so a finding
+reproduces on its own rather than depending on an unrecorded editor flag. The LLM tester is an agent of the
 cybersphere agents framework (`sources/cybersphere-agents` over
 `hsm-dispatcher-py`): its strategy is a state machine diagram, its hands are
 the editor's verb families offered as tools, its judgement is the oracles raised

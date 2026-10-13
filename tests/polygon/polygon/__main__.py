@@ -169,9 +169,22 @@ DRILL_CLASSES = {
 }
 
 
+def _snap_preamble(args):
+    """The script verbs a --snap/--grid option prepends, so a whole sweep runs
+    with snap on (the batch default is off) and the finding reproduces on its
+    own: snap is recorded in the script, not passed as an unrecorded flag."""
+    if not getattr(args, "snap", False):
+        return ()
+    lines = ["snap on"]
+    if getattr(args, "grid", None):
+        lines.append("grid %d" % args.grid)
+    return tuple(lines)
+
+
 def cmd_drill(args):
     """A deterministic drill: escalate one feature, check its invariants."""
     env = _env()
+    preamble = _snap_preamble(args)
     cfg = C.load(args.config)
     catalog = CAT.Catalog()
     coverage = COV.Coverage(env.polygon / "coverage.json")
@@ -184,7 +197,8 @@ def cmd_drill(args):
             producer.boundary = True
         folder = S.session_folder(env.polygon, "drill-" + name, args.seed)
         session = S.Session(env, cfg, start, producer, _register(env), coverage, folder,
-                            producer_name="drill:" + name, seed=args.seed, minimize=not args.no_minimize)
+                            producer_name="drill:" + name, seed=args.seed, minimize=not args.no_minimize,
+                            preamble=preamble)
         session.stress = True
         session.invariant = True
         session.run(args.rounds)
@@ -234,7 +248,8 @@ def cmd_fuzz(args):
     producer = F.Fuzzer(catalog, coverage, args.seed, gestures=not args.no_gestures)
     folder = S.session_folder(env.polygon, "fuzz", args.seed)
     session = S.Session(env, cfg, document, producer, _register(env), coverage, folder,
-                        producer_name="fuzzer", seed=args.seed, minimize=not args.no_minimize)
+                        producer_name="fuzzer", seed=args.seed, minimize=not args.no_minimize,
+                        preamble=_snap_preamble(args))
     session.stress = getattr(args, "stress", False)
     if session.stress:
         producer.gesture_bias = 4.0   # exercise the drags and edge/point edits
@@ -487,6 +502,8 @@ def main(argv=None):
     p.add_argument("--no-gestures", action="store_true")
     p.add_argument("--stress", action="store_true", help="crash/save-reopen/undo-all/export only, no ink check")
     p.add_argument("--no-minimize", action="store_true")
+    p.add_argument("--snap", action="store_true", help="run every gesture with snap-to-grid on")
+    p.add_argument("--grid", type=int, default=None, help="the grid spacing for --snap")
     p.set_defaults(func=cmd_fuzz)
     p = sub.add_parser("tour", help="the deterministic tool tour (no backend)")
     p.add_argument("--seed", type=int, default=1)
@@ -501,6 +518,8 @@ def main(argv=None):
     p.add_argument("--rounds", type=int, default=20)
     p.add_argument("--boundary", action="store_true", help="drive features to extremes (compound drill)")
     p.add_argument("--no-minimize", action="store_true")
+    p.add_argument("--snap", action="store_true", help="run every gesture with snap-to-grid on")
+    p.add_argument("--grid", type=int, default=None, help="the grid spacing for --snap")
     p.set_defaults(func=cmd_drill)
     p = sub.add_parser("run", help="a tester session (one backend, or a comma list to compare)")
     p.add_argument("--backend")

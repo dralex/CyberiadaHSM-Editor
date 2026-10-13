@@ -58,7 +58,7 @@ class Round:
 
 class Session:
     def __init__(self, env, config, start, producer, register, coverage, folder,
-                 producer_name="", seed=0, minimize=True, gestures=True):
+                 producer_name="", seed=0, minimize=True, gestures=True, preamble=()):
         self.env = env
         self.config = config
         self.start = Path(start)
@@ -69,7 +69,9 @@ class Session:
         self.producer_name = producer_name
         self.seed = seed
         self.minimize = minimize
-        self.script = []           # the accepted lines
+        # the accepted lines; a preamble (e.g. snap on / grid N) is recorded first so
+        # it replays with every oracle run and the reproduction is self-contained
+        self.script = list(preamble)
         self.rounds = []
         self.dump = None
         self.previous_verb = None
