@@ -158,6 +158,8 @@ public:
     // a default name unique among the sibling states of the parent
     Cyberiada::Name                     uniqueStateName(const Cyberiada::ElementCollection* parent,
                                                         const Cyberiada::Name& base) const;
+    // a machine name unused among the document's state machines (EDIT-META-5)
+    Cyberiada::Name                     uniqueMachineName(const Cyberiada::Name& base) const;
     Cyberiada::StateMachine*            newStateMachine(const Cyberiada::String& sm_name, const Cyberiada::Rect& r = Cyberiada::Rect());
     Cyberiada::State*                   newState(Cyberiada::ElementCollection* parent, const Cyberiada::String& state_name,
                                                  const Cyberiada::Action& a = Cyberiada::Action(), const Cyberiada::Rect& r = Cyberiada::Rect(),

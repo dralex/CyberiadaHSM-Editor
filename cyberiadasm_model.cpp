@@ -1488,6 +1488,20 @@ Cyberiada::Name CyberiadaSMModel::uniqueStateName(const Cyberiada::ElementCollec
 	}
 }
 
+Cyberiada::Name CyberiadaSMModel::uniqueMachineName(const Cyberiada::Name &base) const
+{
+	if (!root) return base;
+	Cyberiada::StateMachineList sms = root->get_state_machines();
+	for (int n = 0; ; n++) {
+		Cyberiada::Name candidate = n == 0 ? base : base + " " + std::to_string(n);
+		bool taken = false;
+		for (Cyberiada::StateMachineList::const_iterator i = sms.begin(); i != sms.end(); i++) {
+			if ((*i)->get_name() == candidate) { taken = true; break; }
+		}
+		if (!taken) return candidate;
+	}
+}
+
 Cyberiada::StateMachine *CyberiadaSMModel::newStateMachine(const Cyberiada::String &sm_name, const Cyberiada::Rect &r)
 {
 	if (readOnly()) return NULL;
@@ -1496,15 +1510,18 @@ Cyberiada::StateMachine *CyberiadaSMModel::newStateMachine(const Cyberiada::Stri
         root = new Cyberiada::LocalDocument();
     }
 
+    // the document's machines carry distinct names (EDIT-META-5): dedupe the default
+    // or a colliding name so two machines are never created with the same name
+    Cyberiada::Name name = uniqueMachineName(sm_name);
     int row = rowCount(rootIndex());
     beginInsertRows(rootIndex(), row, row);
-    Cyberiada::StateMachine* element = root->new_state_machine(sm_name, r);
+    Cyberiada::StateMachine* element = root->new_state_machine(name, r);
     endInsertRows();
 
     if (element) {
         QString verb = "new-sm";
         if (r.valid) verb += " " + logRect(r);
-        verb += " " + logEsc(QString::fromStdString(sm_name));
+        verb += " " + logEsc(QString::fromStdString(name));
         GestureLog::instance().logAction(verb);
     }
     return element;
