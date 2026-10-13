@@ -64,6 +64,7 @@ private slots:
 	void test_grow_holds_rect_children();
 	void test_retarget_refuses_cross_machine();
 	void test_move_within_parent_maintains_containment();
+	void test_unique_machine_name();
 
 private:
 	static bool rectsOverlap(const Cyberiada::Rect& a, const Cyberiada::Rect& b);
@@ -676,6 +677,17 @@ void TestModel::test_move_within_parent_maintains_containment()
 			 && ar.y - ar.height / 2.0 >= -pr.height / 2.0 - tol
 			 && ar.y + ar.height / 2.0 <= pr.height / 2.0 + tol,
 			 "the moved child is outside its parent");
+}
+
+void TestModel::test_unique_machine_name()
+{
+	// a new state machine gets a name distinct from the document's machines
+	// (EDIT-META-5): newStateMachine dedupes the default/colliding name through this
+	// helper, so the NewSM tool never makes two "New State Machine" machines (P-100).
+	QVERIFY(model->loadDocument("diagrams/two-sm-bordered.graphml"));   // machines: Orchestrator, Worker
+	QCOMPARE(QString(model->uniqueMachineName("Fresh").c_str()), QString("Fresh"));
+	QCOMPARE(QString(model->uniqueMachineName("Orchestrator").c_str()), QString("Orchestrator 1"));
+	QCOMPARE(QString(model->uniqueMachineName("Worker").c_str()), QString("Worker 1"));
 }
 
 static int countTransitions(Cyberiada::ElementCollection* sm)
