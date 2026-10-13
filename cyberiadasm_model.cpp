@@ -90,6 +90,28 @@ static int submachinePointName(Cyberiada::LocalDocument* root, const Cyberiada::
 	return PointRefuse;
 }
 
+// SEM-8 for a rename: a submachine state's connection point may only be named after
+// a point (of the same kind) of the referenced machine. An external/unresolved
+// reference is unchecked (as creation treats it), and a point outside a submachine
+// state is not constrained here.
+static bool submachinePointNameAllowed(Cyberiada::LocalDocument* root,
+									   const Cyberiada::Element* point, const Cyberiada::Name& name)
+{
+	if (!point) return true;
+	Cyberiada::ElementType t = point->get_type();
+	if (t != Cyberiada::elementEntryPoint && t != Cyberiada::elementExitPoint) return true;
+	const Cyberiada::Element* parent = point->get_parent();
+	if (!root || !parent || parent->get_type() != Cyberiada::elementSubmachineState) return true;
+	Cyberiada::ID ref = static_cast<const Cyberiada::SubmachineState*>(parent)->get_submachine_reference();
+	const Cyberiada::Element* target = ref.empty() ? NULL : root->find_element_by_id(ref);
+	if (!target || target->get_type() != Cyberiada::elementSM) return true;   // external: unchecked
+	Cyberiada::ConstElementList pts = static_cast<const Cyberiada::ElementCollection*>(target)->get_children();
+	for (Cyberiada::ConstElementList::const_iterator p = pts.begin(); p != pts.end(); p++) {
+		if ((*p)->get_type() == t && !(*p)->get_name().empty() && (*p)->get_name() == name) return true;
+	}
+	return false;
+}
+
 // the session log helpers: a model mutation is written as its batch verb (see
 // batch_script.cpp) so a recorded session replays as a test. logAction is a
 // no-op while a mouse gesture is in flight (the gesture records the same edit)
@@ -553,6 +575,13 @@ bool CyberiadaSMModel::updateTitle(const QModelIndex& index, const QString& new_
 	// the states of one level are told apart by name; the vertices have none
 	if (isState(element) && (new_value.trimmed().isEmpty() || siblingStateNamed(element, new_name))) {
 		return false;
+	}
+	// an entry/exit point carries a non-empty name (EDIT-SEM-7); a submachine state's
+	// point is named after a point of the referenced machine (EDIT-SEM-8)
+	if (element->get_type() == Cyberiada::elementEntryPoint ||
+	    element->get_type() == Cyberiada::elementExitPoint) {
+		if (new_value.trimmed().isEmpty()) return false;
+		if (!submachinePointNameAllowed(root, element, new_name)) return false;
 	}
 	element->set_name(new_name);
 	GestureLog::instance().logAction("rename " + qid(element) + " " + logEsc(new_value));
