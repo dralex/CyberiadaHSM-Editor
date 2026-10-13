@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.17 (2026-10-13)
+**Document version:** 0.18 (2026-10-13)
 
 **Related authorities:**
 
@@ -275,6 +275,16 @@ the third is a derived display value the format does not store):
   driven by the `label <x y w h>` verb. *design*
 - `EDIT-EDGE-14` MUST [U]: a transition with a colour draws its line and arrow in it; the
   selection highlight overrides it while selected. *design*
+- `EDIT-EDGE-15` MUST [A]: with snap on, an endpoint placed by a drag or a release bind on a
+  straight edge of a rect node stays on that edge and slides along it to the nearest grid line
+  within the edge; on a rounded corner, or on an edge with no grid line, it keeps the plain
+  projection. Pseudostates and choices keep `EDIT-EDGE-2/3/4`; the coordinate locked by `Ctrl`
+  keeps the neighbour's. The node under the cursor itself takes the endpoint, so a snapped point
+  never misses a small node. *design*
+- `EDIT-EDGE-16` MUST [A]: with snap on, a polyline point placed, moved or inserted by a gesture
+  lies on a grid crossing in scene coordinates, whatever the size of the drag steps. A seeded
+  self-loop has its endpoints snapped by `EDIT-EDGE-15`, its out-levels on grid lines past the
+  border and its segments orthogonal. The label box is not snapped. *design*
 
 ### 4.5 Text of names, actions, and labels — TEXT
 
@@ -383,8 +393,10 @@ the third is a derived display value the format does not store):
   unchanged. Zoom-to-content frames a rect-less state machine, and the viewport is restored after
   a layout pass. *design*
 - `EDIT-TOOL-8` MUST [A]: with snap-to-grid on (the toolbar toggle), a placed, moved or resized
-  geometry snaps to the grid spacing; with it off the geometry is unrounded. *design*
-- `EDIT-TOOL-9` MUST [A]: holding `Alt` suspends snap-to-grid while it is held. *design*
+  geometry snaps to the grid spacing (the grid lines are its multiples in scene coordinates); with
+  it off the geometry is unrounded. The transition points follow `EDIT-EDGE-15`/`16`. *design*
+- `EDIT-TOOL-9` MUST [A]: holding `Alt` suspends snap-to-grid while it is held; the modifier is
+  read from the gesture, so a scripted `alt` suspends it too. *design*
 - `EDIT-TOOL-10` MUST [A]: holding `Ctrl` locks a move to a single axis (the dominant one). *design*
 - `EDIT-TOOL-11` MUST [A]: the submachine-state, entry-point and exit-point creation tools each
   create one element of their kind under the press point; a new submachine state takes a default
@@ -396,6 +408,10 @@ the third is a derived display value the format does not store):
   pseudostate or a comment) to a new parent, through the same reparent step as a scene drag; the
   state machine, a transition, an entry/exit connector and the metainformation node are not
   tree-draggable. *design*
+- `EDIT-TOOL-14` MUST [A]: the batch mode starts with snap off and the default spacing, whatever
+  the GUI settings hold; `--snap`, `--grid <n>` and the script verbs `snap on|off` and `grid <n>`
+  set them for the run only, never persisted. A gesture log records a non-default snap state at its
+  start and every change during the session, so a replay snaps as the recording did. *design*
 
 ### 4.7 History — HIST
 
