@@ -125,6 +125,11 @@
       <string>Language</string>
      </property>
     </widget>
+    <widget class="QMenu" name="menuMarkup">
+     <property name="title">
+      <string>Markup</string>
+     </property>
+    </widget>
     <addaction name="actionCut"/>
     <addaction name="actionCopy"/>
     <addaction name="actionPaste"/>
@@ -136,6 +141,7 @@
     <addaction name="separator"/>
     <addaction name="menuTools"/>
     <addaction name="menuLanguage"/>
+    <addaction name="menuMarkup"/>
     <addaction name="separator"/>
     <addaction name="actionInspectorMode"/>
    </widget>

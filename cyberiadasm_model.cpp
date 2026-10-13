@@ -1396,19 +1396,29 @@ bool CyberiadaSMModel::removeMetainformation(const QModelIndex& index, const QSt
 	return true;
 }
 
-bool CyberiadaSMModel::setPlatformLanguage(const QString& value)
+bool CyberiadaSMModel::setDocumentChoice(const QString& key, const QString& value, const QString& undoText)
 {
 	if (readOnly()) return false;
-	UndoScope scope(this, tr("platform language"));
+	UndoScope scope(this, undoText);
 	// a document exists with a state machine only: the one the first drawn
 	// element would create
 	if (!root || root->get_state_machines().empty()) {
 		if (!newStateMachine("New State Machine")) return false;
 	}
 	if (value.isEmpty()) {
-		return removeMetainformation(documentIndex(), METAINFORMATION_KEY_PLATFORM_LANGUAGE);
+		return removeMetainformation(documentIndex(), key);
 	}
-	return updateMetainformation(documentIndex(), METAINFORMATION_KEY_PLATFORM_LANGUAGE, value);
+	return updateMetainformation(documentIndex(), key, value);
+}
+
+bool CyberiadaSMModel::setPlatformLanguage(const QString& value)
+{
+	return setDocumentChoice(METAINFORMATION_KEY_PLATFORM_LANGUAGE, value, tr("platform language"));
+}
+
+bool CyberiadaSMModel::setMarkupLanguage(const QString& value)
+{
+	return setDocumentChoice(METAINFORMATION_KEY_MARKUP_LANGUAGE, value, tr("markup language"));
 }
 
 // the library keeps the transitions after the other children, so a new

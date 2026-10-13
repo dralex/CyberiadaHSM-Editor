@@ -144,6 +144,8 @@ public:
     // the Edit > Language choice (EDIT-TEXT-9): the empty value removes the
     // parameter; an empty document gets its first state machine; one undo step
     bool                                setPlatformLanguage(const QString& value);
+    // the Edit > Markup choice (EDIT-TEXT-12), as setPlatformLanguage
+    bool                                setMarkupLanguage(const QString& value);
 
     // a default name unique among the sibling states of the parent
     Cyberiada::Name                     uniqueStateName(const Cyberiada::ElementCollection* parent,
@@ -242,8 +244,12 @@ public:
 	Cyberiada::Element*                 idToElement(const QString& id);
 	
 private:
-	// on failure returns "" and sets ok to false; an empty document (no root)
-	// succeeds with an empty snapshot
+	// write or remove (empty value) a metainformation choice as one undo step,
+	// giving an empty document its first state machine
+	bool                                setDocumentChoice(const QString& key, const QString& value,
+	                                                      const QString& undoText);
+	// on failure returns "" and sets ok to false; an empty document (no root or
+	// no state machine) succeeds with an empty snapshot
 	std::string                         snapshot(bool* ok = nullptr) const;
 	void                                move(Cyberiada::Element* element, Cyberiada::ElementCollection* target_parent);
 	void                                declareGeometry(Cyberiada::DocumentFormat f, bool skip_geometry);
