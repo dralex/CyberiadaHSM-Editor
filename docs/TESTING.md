@@ -74,6 +74,7 @@ mechanism; the matrix after them maps each specification area to the layers that
 | text  | text metrics: font and layout of every text item vs good text | implemented |
 | reconstruct | reconstruction: the rebuilt geometry, shown and saved, vs good files | implemented |
 | undo  | undo/redo: a script edits and undoes, the dump vs the existing good files | implemented |
+| plugin | plugins: the batch plugin stage runs the example plugins of `tests/plugins/` through the test helper; the plugin sections, the dumps and the saved documents vs good files | planned |
 | polygon-unit | the unit tests of the test polygon package (`tests/polygon/`, see `POLYGON.md`); opt-in with `-DPOLYGON_TESTS=ON`; the tests of the tester's harness skip unless `Python3_EXECUTABLE` has the cybersphere agents framework | implemented |
 | polygon-<id> | one case per open problem of the polygon register, green while it reproduces; opt-in with `-DPOLYGON_TESTS=ON` | implemented |
 
@@ -94,6 +95,7 @@ specification §2):
 | META                    | [U]/[A]/[I]| L1, L2                           |
 | INSPECT                 | [C]/[A]/[I]| inspect-reject, inspect-render   |
 | DOC                     | [A]        | tabs, L4                         |
+| PLUG                    | [A]/[U]/[I]/[C] | plugin, L4                  |
 
 The exploratory polygon runs the same requirements as standing laws over long histories;
 `POLYGON.md` maps the check kinds to its oracles.
@@ -117,6 +119,7 @@ it checks in a comment):
 | META   | `l2 update-meta`, `inspect-reject update-meta`, the `meta` diagram; META-1 (node hidden) via the `l1` scene dump; META-6 (CGML_COMPONENT hidden by default) via `l4-scene test_component_comment_hidden` + the `components` `l1` scene dump; META-5 distinct machine names via `l4-model test_unique_machine_name` (NewSM dedupes the default name) |
 | DOC    | `tabs-*` (the document verbs with the `== tabs` dump, `EDIT-DOC-2/3/5/9`), `l4-tabs` (the tab line, the re-targeting, the prompts, `EDIT-DOC-1..8`) |
 | INSPECT| `inspect-reject-*` (editing refused under `--inspect`, `EDIT-INSPECT-1`); `inspect-render-*` (stored-geometry render vs a good image, `EDIT-INSPECT-2`) |
+| PLUG   | (planned) the `plugin-*` cases: discovery and rejection (`EDIT-PLUG-1..4`), variables and secrets (`EDIT-PLUG-8..11`), the results and failures (`EDIT-PLUG-12..20`), save and cwd (`EDIT-PLUG-25`), the batch contract (`EDIT-PLUG-27/28`); `l4-plugin-core`; `l4-plugins` for the window (`EDIT-PLUG-5..7`, `EDIT-PLUG-15`, `EDIT-PLUG-21..24`, `EDIT-PLUG-29..32`) |
 
 Requirements with **no dedicated case yet** — the gaps to fill: `SEM-1` (one initial per
 level — only the polygon pseudostate drill and the standing law cover it), `EDGE-6` (the
@@ -146,6 +149,14 @@ the document. The states of one level are told apart by name: the model
 refuses an empty or a taken state name on every rename path (the property
 view, the tree, the canvas title, the batch `rename`), while the vertices
 keep their empty names.
+
+`l4-plugin-core` (planned) checks the plugin core without a window: the descriptor
+parsing and its rejections, the search path and the shadowing, the interpreter
+lookup, the variable expansion with the conditional elements, the values and their
+settings keys, the diagnostics file, and the runner's cancel, timeout and output
+decoding. `l4-plugins` (planned) drives the window: the Plugins menu, the plugin
+toolbars, the generated dialog, the document lock, the plugin dock and the plugin
+manager.
 
 `l4-text` checks the per-role fonts: the bundled font is found through the
 resources of the core library, every role carries its own point size, the
@@ -251,10 +262,11 @@ Exit codes:
 | 3    | internal error (assertion or exception thrown) |
 | 4    | edit script error (bad command, unknown id)    |
 | 5    | image comparison mismatch                      |
+| 6    | plugin run failed (`--plugin`)                 |
 
 Assertion failures are reported with their `file:line` location (`MY_ASSERT`
 throws it as the error message). The error flag is checked after every
-stage - the script, the dumps, the export and the save - so an assertion
+stage - the script, the plugin, the dumps, the export and the save - so an assertion
 thrown while dumping or saving exits with code 3 as well.
 
 `--no-text` hides all text elements (state titles and actions, transition
@@ -358,6 +370,70 @@ A batch run starts with snap-to-grid off and the default grid spacing (25),
 whatever the GUI settings hold (`EDIT-TOOL-14`). `--snap` turns the snap on and
 `--grid <n>` sets the spacing for the run; like `--service` they are runtime
 overrides and change nothing saved.
+
+### Plugins
+
+`--plugin <id>[:<action>]` runs one plugin action after the script stage
+(`docs/PLUGINS.md`, the contract in `docs/PLUGIN-API.md`): no dialog, no stored
+value — the defaults and the `--plugin-param <name>=<value>` options only
+(`@file` reads a value, `@@` stands for a leading `@`). `--plugin-path <dir>`
+(repeatable) replaces the plugin search path; `--list-plugins` prints the
+plugins found and needs no document; a run without a document starts from an
+empty one. A done run exits 0, a usage error (an unknown plugin or action, a
+missing or invalid value) 1, a failed run 6. The plugin's stderr goes to the
+editor's stderr; its stdout is captured into the `== plugin` section when a dump
+is asked, and copied to stdout otherwise. `--dump` adds `== plugin` and
+`== diagnostics` after `== scene`; `--dump-plugin` prints these two alone.
+
+```
+== plugins
+echo 0.1.0 enabled plugin-path 1
+nointerp 0.1.0 disabled plugin-path 1: the interpreter 'no-such-interpreter' is not found
+echo 0.1.0 shadowed plugin-path 2
+api2 - rejected plugin-path 3: the api 2 is not supported
+extra 0.1.0 enabled plugin-path 3
+  warning: unknown field 'colour'
+== plugin
+action: edit:rename
+result: replace
+state: done
+exit: 0
+changes: yes
+stdout:
+  renamed
+== diagnostics
+count: 2
+warning CGML-6.9-4-4 nMeta line 31: transitionOrder 'transitionFirst' is not admissible
+info CGML-6.4-4-2 G9 (absent) line 28: state machine 'G9' contains no initial pseudostate
+```
+
+* `== plugins` — one line per plugin folder in the scan order: the id (the folder
+  name for a descriptor without a readable id), the version or `-`, the state
+  (`enabled`, `disabled`, `shadowed`, `rejected`), the origin of the folder
+  (`plugin-path <n>`, `env <n>`, `user`, `system`) and the reason; the warnings
+  follow, indented.
+* `== plugin` — `action`, `result`, `state` (`done`, `failed`), `exit` (the plugin's
+  exit code, `-` when it never ran), then by the result: `changes: yes|no` for
+  `replace`, `tab: <index>` for `new-document`, the `files:` block (`new` or
+  `changed` and the path under the outdir) for `files`; `error: <reason>` for a
+  failed run; the `stdout:` block, each line indented, when there is stdout. A path
+  of the run directory, the plugin directory or the document directory is printed
+  as `<rundir>`, `<plugin_dir>` or `<document_dir>`.
+* `== diagnostics` — the `count`, then one line per finding: the severity, the rule
+  or `-`, the element or `-` with `(absent)` when the document has no such element,
+  the `line` when given, and the message.
+
+The plugin layer (`plugin-<case>`) runs the example plugins of
+`tests/plugins/<set>/<id>/` (the sets `main`, `rejected`, `shadow`; the data in
+`tests/plugins/data/`). They drive one small test helper (`tests/plugin-helper/`,
+plain C++ with no dependencies) whose arguments are a list of operations, so the
+cases need no interpreter. CMake copies the sets into the build tree next to the
+helper; the descriptors call it as `${plugin_dir}/../../bin/plugin-helper`. The
+settings are isolated (`XDG_CONFIG_HOME`, `XDG_DATA_HOME`) and
+`CYBERIADA_EDITOR_PLUGIN_PATH` is empty, so only `--plugin-path` folders are seen. The
+cases compare the dump with `good/plugin-<case>-output.txt` and the saved document
+with `good/plugin-<case>-output.graphml`; a case that must not leak a secret checks
+that the output does not contain it.
 
 ## Edit scripts
 
@@ -559,6 +635,11 @@ gesture, so a replayed session never applies it twice. To replay a folder:
 `CyberiadaEditor --batch --script <dir>/session.script <dir>/start.graphml`
 (drop the file for a from-scratch session).
 
+A plugin run is not a script verb: the log writes it as the comment
+`# plugin <id>:<action>`, and after a `replace` or `new-document` result it ends the
+session and starts a new one from the new document, so every session stays
+replayable (`EDIT-PLUG-29`).
+
 ## Rendering and image comparison
 
 `--batch <file.graphml> [--script <file>] --export <out.png>` renders the
@@ -674,6 +755,11 @@ tests/
   good/<name>-render.svg     reviewed good files for the vector renders
   good/<name>-inspect-render.png  reviewed good images for the inspect renders
   good/<name>-<format>-output.graphml  reviewed good files for the saved formats
+  good/plugin-<case>-output.{txt,graphml}  reviewed good files for the plugin cases
+  scripts/plugin-<case>.script  edit scripts run before a plugin case
+  plugin-helper/plugin_helper.cpp  the test helper the example plugins run
+  plugins/<set>/<id>/plugin.json   the example plugins (sets main, rejected, shadow)
+  plugins/data/         the parameter files of the plugin cases
   regen-good.sh         regenerates the good files and shows the diff
 run-tests.sh            build-and-run wrapper: ctest --output-on-failure
 ```

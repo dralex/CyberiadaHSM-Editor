@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.19 (2026-10-13)
+**Document version:** 0.20 (2026-10-14)
 
 **Related authorities:**
 
@@ -81,7 +81,7 @@ it in editing mode; inspection mode is where a non-compliant diagram is read wit
  │ UML2      │               ├──────────────────┤            │  dump        │
  ├───────────┤  geometry     │ NODE  EDGE  TEXT │───[U]/[A]─▶│              │─▶ polygon laws
  │ editor    │──interaction─▶│ TOOL INSPECT DOC │───[A]─────▶│  graph +     │   (every round)
- │ design    │  history      │ HIST             │───[I]─────▶│  rectangle   │
+ │ design    │  history      │ HIST  PLUG       │───[I]/[A]─▶│  rectangle   │
  ├───────────┤               ├──────────────────┤            │  arithmetic  │─▶ ctest cases
  │ ПНСТ 1044 │──round-trip──▶│ ROBUST IO META   │───[I]/[C]─▶│              │   (per requirement)
  └───────────┘               └──────────────────┘            └──────────────┘
@@ -515,6 +515,97 @@ The window holds several documents; the structure is drawn in `docs/WINDOW.md`.
 - `EDIT-DOC-9` MUST [A]: the batch verbs `open`, `new-document`, `switch` and `close` act on the
   tab line as the GUI does; the dumps, the save and the export describe the active document;
   `close` of a modified document is a script error unless it is `close discard`. *design*
+
+### 4.12 Plugins — PLUG
+
+The plugins are external programs run on the active document: the architecture is
+`docs/PLUGINS.md`, the contract a plugin follows is `docs/PLUGIN-API.md` (`api` 1).
+
+- `EDIT-PLUG-1` MUST [A]: the plugins are looked up in `--plugin-path` (which replaces the
+  rest), `$CYBERIADA_EDITOR_PLUGIN_PATH`, the user folder and the system folder, in this order;
+  the first folder holding an id wins, a later one with the same id is listed as shadowed.
+  *design*
+- `EDIT-PLUG-2` MUST [C]: a descriptor that is not valid JSON, has an unknown `api` major or
+  breaks a field rule of the contract is rejected with its folder and the reason; the editor
+  starts normally. *design*
+- `EDIT-PLUG-3` SHOULD [A]: an unknown descriptor field is ignored and listed as a warning.
+  *design*
+- `EDIT-PLUG-4` MUST [A]: a plugin whose interpreter is not found (the Preferences, then `PATH`)
+  is listed as disabled with the reason; its actions are disabled, the reason in the tooltip.
+  *design*
+- `EDIT-PLUG-5` MUST [A]: the Plugins menu stands before Help: a submenu per plugin, ending with
+  Settings... when the plugin has stored parameters, or a single entry for a plugin with one
+  action and none; Output panel and Plugin manager... close the menu. *design*
+- `EDIT-PLUG-6` MUST [A]: the actions marked `toolbar` form one toolbar per plugin to the right
+  of the main toolbar; View > Plugin toolbars shows or hides each, and the choice is kept.
+  *design*
+- `EDIT-PLUG-7` MUST [A]: an action opens the generated parameter dialog when it has `run`
+  parameters, a `document` parameter not set for the document, or a required `persistent`
+  parameter without a value, and runs at once otherwise; Cancel in the dialog starts nothing.
+  *design*
+- `EDIT-PLUG-8` MUST [A]: the command is the interpreter plus the argv, with no shell; every
+  variable expands as the contract says, a conditional element is added only when its
+  parameter is true or not empty, a `$` not followed by `{` is kept, and an unknown variable
+  fails the run before it starts. *design*
+- `EDIT-PLUG-9` MUST [A]: `${input}` holds the active document as Cyberiada 1.0 with its unsaved
+  edits (an empty file for an empty document), `${selection}` the selected element ids in the
+  document order; `request.json` is written exactly when the argv uses `${request}`. *design*
+- `EDIT-PLUG-10` MUST [U]: a secret value never appears in the argv, `request.json`, the Output,
+  the dumps, the session log or the settings; only the environment variable named by `export`
+  carries it to the plugin process. *design*
+- `EDIT-PLUG-11` MUST [A]: a `run` value starts from its default, a `persistent` value is kept
+  per user, a `document` value per user and document file — in the settings, never in the
+  diagram; the values of an untitled document last for the session. *design*
+- `EDIT-PLUG-12` MUST [A]: a `replace` result is one undo step "Plugin: <label>" that keeps the
+  file path and the save format; an output equal to the input pushes no step and is reported
+  as no changes. *design*
+- `EDIT-PLUG-13` MUST [I]: undoing a `replace` step restores the document exactly as it was
+  before the run. *design*
+- `EDIT-PLUG-14` MUST [A]: a `new-document` result becomes the active modified untitled
+  document — in the active tab when that is an empty untitled one (as `EDIT-DOC-2`), in a new
+  tab otherwise; the source document is untouched. *design*
+- `EDIT-PLUG-15` MUST [A]: the findings of a run are shown in Diagnostics; a click selects and
+  centres the element, a finding whose element is absent has no link, and the findings turn
+  grey once the document changes. *design*
+- `EDIT-PLUG-16` MUST [A]: a `files` result lists the new and changed files under the action's
+  outdir in the path order. *design*
+- `EDIT-PLUG-17` MUST [A]: the plugin's stdout and stderr stream into Output during the run, one
+  block per run, capped. *design*
+- `EDIT-PLUG-18` MUST [C]: a failed run — the program does not start, an exit code outside
+  `exit_ok`, a crash, a timeout, a missing, empty or unreadable output, a malformed diagnostics
+  file — leaves the document untouched and reports the reason, the exit code and the end of
+  stderr. *design*
+- `EDIT-PLUG-19` MUST [A]: the output document is decoded with the action's `load` options
+  (`strict`, `reconstruct`) before the document is touched. *design*
+- `EDIT-PLUG-20` MUST [A]: a timeout or Cancel terminates the plugin process and kills it after
+  the grace period; only the direct child is stopped. *design*
+- `EDIT-PLUG-21` MUST [A]: one run per document at a time; the runs of different documents may
+  overlap; a result is applied to the document the run started from. *design*
+- `EDIT-PLUG-22` MUST [A]: a `replace` run locks its document — editing, undo and redo are
+  refused and the canvas takes no input until the run ends. *design*
+- `EDIT-PLUG-23` MUST [A]: closing a tab with a run asks, then cancels the run; exiting the
+  editor cancels every run; the result for a closed document is never applied. *design*
+- `EDIT-PLUG-24` MUST [A]: inspection mode disables the `replace` actions, and a result that
+  arrives after it is switched on is refused. *design*
+- `EDIT-PLUG-25` MUST [A]: an action with `save` or `cwd: document` saves a modified or untitled
+  document first — an untitled one asks for a name, a cancel cancels the run, and in batch mode
+  an untitled document fails it; `cwd: document` runs the plugin in the document's directory.
+  *design*
+- `EDIT-PLUG-26` MUST [C]: each run has a fresh run directory, removed after the run unless
+  `CYBERIADA_EDITOR_PLUGIN_KEEP=1`. *design*
+- `EDIT-PLUG-27` MUST [A]: in batch mode the plugin stage runs after the script with the
+  defaults and the `--plugin-param` values only; the exit code is 0 for a done run, 1 for a
+  usage error and 6 for a failed run. *design*
+- `EDIT-PLUG-28` MUST [A]: the batch sections `== plugins`, `== plugin` and `== diagnostics` are
+  deterministic and name no machine path. *design*
+- `EDIT-PLUG-29` MUST [A]: the session log records a run as the comment `# plugin <id>:<action>`
+  and starts a new session after a `replace` or `new-document` result. *design*
+- `EDIT-PLUG-30` MUST [A]: the plugin manager lists every plugin found with its folder and
+  state; the enable switch is kept, and Rescan rebuilds the menu and the toolbars. *design*
+- `EDIT-PLUG-31` SHOULD [A]: an interpreter path set in the Preferences takes effect at the
+  next scan. *design*
+- `EDIT-PLUG-32` MUST [A]: the plugin dock is hidden until the first run and shows every
+  running plugin with its time and Cancel. *design*
 
 ## 5. Coverage
 
