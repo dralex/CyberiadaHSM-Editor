@@ -632,7 +632,7 @@
         <location line="+1"/>
         <source>Label Rect</source>
         <comment>Property name</comment>
-        <translation type="unfinished">Прямоугольник надписи</translation>
+        <translation type="unfinished">Рамка надписи</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -674,7 +674,7 @@
         <location line="+1"/>
         <source>Subjects</source>
         <comment>Property name</comment>
-        <translation type="unfinished">Предметы комментирования</translation>
+        <translation type="unfinished">Предметы</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -723,7 +723,7 @@
         <location line="+1"/>
         <source>Transition Order</source>
         <comment>Property name</comment>
-        <translation type="unfinished">Порядок выполнения переходов</translation>
+        <translation type="unfinished">Порядок переходов</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -747,7 +747,7 @@
         <location line="+1"/>
         <source>Subject Target</source>
         <comment>Property name</comment>
-        <translation type="unfinished">Комментируемый элемент</translation>
+        <translation type="unfinished">Цель предмета</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -1768,7 +1768,7 @@
         <translation type="unfinished">Программа</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+6"/>
         <source>Plugins</source>
         <translation type="unfinished">Плагины</translation>
     </message>

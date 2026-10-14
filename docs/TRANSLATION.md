@@ -58,7 +58,7 @@ The terms follow ПНСТ 984-2024 (clause 3); a menu or a tool may use the shor
 | submachine state | состояние с вложенной машиной состояний | вложенная машина | 3.49 |
 | region | область | | 3.24 |
 | comment / formal / informal | комментарий / формальный (машиночитаемый) / неформальный (человекочитаемый) | | 3.12 / 3.13 / 3.14 |
-| subject (of a comment) | предмет комментирования | | 3.38 |
+| subject (of a comment) | предмет комментирования | предмет | 3.38 |
 | event, trigger | событие | | 3.44 |
 | guard | ограждающее условие | условие | 3.26 |
 | action, behaviour | поведение; действие (a transition's) | | 3.32 |
@@ -80,7 +80,8 @@ The terms follow ПНСТ 984-2024 (clause 3); a menu or a tool may use the shor
 - Never translate the notation and the format names: `entry`, `exit`, `do`, `propagate`,
   `block`, `defer`, `else`, `H`, `H*`, `CGML_*`, `platformLanguage`, `markupLanguage`, the
   file format names (`graphml`, `yEd`, `PNG`, `SVG`, …) and the keyboard shortcuts.
-- The property names of one element must stay distinct (the panel finds a row by its label).
+- The property names of one element must stay distinct (the panel finds a row by its label)
+  and short: the panel is narrow, use the short forms of the glossary.
 - Undo and redo texts are built as `Undo %1` from a noun: translate as «Отменить: %1» and
   the nouns in the nominative case.
 - Keep `%1`, `%2`, the HTML tags and `\n` of the source.
