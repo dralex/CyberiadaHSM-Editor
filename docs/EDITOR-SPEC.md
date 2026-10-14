@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.20 (2026-10-14)
+**Document version:** 0.21 (2026-10-14)
 
 **Related authorities:**
 
@@ -606,6 +606,21 @@ The plugins are external programs run on the active document: the architecture i
   next scan. *design*
 - `EDIT-PLUG-32` MUST [A]: the plugin dock is hidden until the first run and shows every
   running plugin with its time and Cancel. *design*
+
+### 4.13 Interface language — UI
+
+The interface translations and their workflow are in `docs/TRANSLATION.md`.
+
+- `EDIT-UI-1` SHOULD [A]: the *Interface language* of the Preferences (General) offers *System
+  default* and every bundled language in its own name; the choice is stored per user and takes
+  effect at the next start. *System default* takes the first of the system UI languages the
+  editor has, else English. *design*
+- `EDIT-UI-2` MUST [A]: the batch mode and the command line are English whatever the setting
+  and the system locale — the dumps, the saved names of new elements and the messages of a
+  batch run do not depend on the interface language. *design*
+- `EDIT-UI-3` SHOULD [A]: in the GUI the names of new elements (state machine, state, comment,
+  entry/exit point) and the Qt standard dialogs and buttons follow the interface language.
+  *design*
 
 ## 5. Coverage
 
