@@ -52,7 +52,7 @@ To build on Windows, see [docs/BUILDING-WINDOWS.md](docs/BUILDING-WINDOWS.md).
 
 The editor is extended by plugins, external programs shipped by the tools themselves: see
 `docs/PLUGINS.md` for the plugin system architecture and `docs/PLUGIN-API.md` for writing
-a plugin.
+a plugin (in Russian: `docs/PLUGIN-API-ru.md`).
 
 ## Testing
 

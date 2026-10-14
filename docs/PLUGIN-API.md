@@ -1,6 +1,7 @@
 # The Plugin Interface
 
-**Document version:** 0.3 (2026-10-14), plugin contract `api` 1.
+**Document version:** 0.3 (2026-10-14), plugin contract `api` 1. In Russian:
+`PLUGIN-API-ru.md`.
 
 This is the brief for a plugin author. A plugin gives the Cyberiada HSM Editor a new
 action — check a diagram, generate code, compile, draw — without changing the editor. The
