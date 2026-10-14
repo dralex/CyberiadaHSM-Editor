@@ -9,10 +9,11 @@ rem Every package is collected into one output directory. The editor is the
 rem endpoint: a self-contained .zip with Qt (via windeployqt) and every toolchain
 rem DLL bundled next to the executable.
 rem
-rem Order: libhtreegeom -> libcyberiadaml -> libcyberiadamlpp -> (libcyberiadamlpp-py)
-rem        -> QtPropertyBrowser -> CyberiadaHSM-Editor
-rem The python binding is a separate .zip (not bundled into the editor); QtPropertyBrowser
-rem is bundled into the editor. Skip the binding with --no-python.
+rem Order: libhtreegeom -> libcyberiadaml -> libcyberiadamlpp -> (libcyberiadamlpp-py
+rem        + the four python packages) -> QtPropertyBrowser -> CyberiadaHSM-Editor
+rem The python binding is a self-contained .zip and the four python packages are
+rem .zip + pip wheel, all separate from the editor; QtPropertyBrowser is bundled
+rem into the editor. Skip the whole python set with --no-python.
 rem
 rem Prerequisites: Visual Studio (MSVC), CMake, Git, vcpkg (VCPKG_ROOT set), and a
 rem Qt 5 installation (Widgets, Svg) whose bin dir holds windeployqt.
@@ -115,14 +116,22 @@ rem --- build each repo -------------------------------------------------------
 call :build_repo libhtreegeom      %BRANCH% zip   || exit /b 1
 call :build_repo libcyberiadaml    %BRANCH% zip   || exit /b 1
 call :build_repo libcyberiadamlpp  %BRANCH% zip   || exit /b 1
-rem the python binding is a separate package (python3-libcyberiadamlpp), not in the editor
-if "%PYTHON%"=="1" ( call :build_repo libcyberiadamlpp-py %BRANCH% zip || exit /b 1 )
+rem the python binding (self-contained zip: CyberiadaML.pyd + its dep DLLs) and the
+rem distribution-independent python packages (zip + pip wheel), all separate from the editor
+if "%PYTHON%"=="1" (
+  call :build_repo libcyberiadamlpp-py %BRANCH% python || exit /b 1
+  call :build_pydeb hsm-dispatcher-py     %BRANCH% || exit /b 1
+  call :build_pydeb cybersphere-hsm-maker %BRANCH% || exit /b 1
+  call :build_pydeb hsm-to-python         %BRANCH% || exit /b 1
+  call :build_pydeb cybersphere-agents    %BRANCH% || exit /b 1
+)
 call :build_repo QtPropertyBrowser master   nozip || exit /b 1
 call :build_repo CyberiadaHSM-Editor %BRANCH% editor || exit /b 1
 
 echo.
 echo == packages collected in %OUT%
 dir /B "%OUT%\*.zip"
+dir /B "%OUT%\*.whl" 2>nul
 exit /b 0
 
 rem ---------------------------------------------------------------------------
@@ -173,6 +182,7 @@ if "%PACK%"=="zip" (
   popd
   copy /Y "%BDIR%\*.zip" "%OUT%\" >nul
 )
+if "%PACK%"=="python" call :pack_python || exit /b 1
 if "%PACK%"=="editor" call :pack_editor || exit /b 1
 exit /b 0
 
@@ -206,4 +216,71 @@ del /Q "%STAGE%\python*.dll" >nul 2>&1
 
 rem zip the folder (fonts and icons are compiled into Qt resources)
 powershell -NoProfile -Command "Compress-Archive -Force -Path '%STAGE%' -DestinationPath '%OUT%\cyberiada-editor-1.0.0-win64.zip'" || exit /b 1
+exit /b 0
+
+rem ---------------------------------------------------------------------------
+rem :pack_python  - a self-contained zip of the CyberiadaML binding: the .pyd plus
+rem its dependency DLLs, so it imports on a matching Windows Python without a
+rem separate install. The Python itself is the user's (the .pyd is ABI-bound to the
+rem Python it was built against here); see docs/BUILDING-WINDOWS.md.
+rem ---------------------------------------------------------------------------
+:pack_python
+set "PYSTAGE=%BDIR%\dist-stage\CyberiadaML"
+if exist "%BDIR%\dist-stage" rmdir /S /Q "%BDIR%\dist-stage"
+mkdir "%PYSTAGE%"
+
+rem the extension module (MSVC puts it under Release)
+if exist "%BDIR%\Release\CyberiadaML.pyd" (
+  copy /Y "%BDIR%\Release\CyberiadaML.pyd" "%PYSTAGE%\" >nul
+) else (
+  copy /Y "%BDIR%\CyberiadaML.pyd" "%PYSTAGE%\" >nul
+)
+
+rem its dependency DLLs (cyberiadaml/mlpp in bin, htgeom in lib) + libxml2 and the
+rem vcpkg runtime deps; NOT python*.dll (the user's Python provides that)
+for %%D in (cyberiadaml cyberiadamlpp htgeom) do (
+  if exist "%PREFIX%\bin\%%D.dll" copy /Y "%PREFIX%\bin\%%D.dll" "%PYSTAGE%\" >nul
+  if exist "%PREFIX%\lib\%%D.dll" copy /Y "%PREFIX%\lib\%%D.dll" "%PYSTAGE%\" >nul
+)
+copy /Y "%VCPKG_INST%\bin\*.dll" "%PYSTAGE%\" >nul
+del /Q "%PYSTAGE%\python*.dll" >nul 2>&1
+
+if exist "%SOURCES%\libcyberiadamlpp-py\README.md" copy /Y "%SOURCES%\libcyberiadamlpp-py\README.md" "%PYSTAGE%\" >nul
+if exist "%SOURCES%\libcyberiadamlpp-py\LICENSE" copy /Y "%SOURCES%\libcyberiadamlpp-py\LICENSE" "%PYSTAGE%\" >nul
+
+powershell -NoProfile -Command "Compress-Archive -Force -Path '%PYSTAGE%' -DestinationPath '%OUT%\cyberiada-mlpp-binding-win64.zip'" || exit /b 1
+exit /b 0
+
+rem ---------------------------------------------------------------------------
+rem :build_pydeb  name  branch
+rem a distribution-independent python package (hsm-dispatcher, hsm-to-python,
+rem cybersphere-hsm-maker, cybersphere-agents): LANGUAGES NONE, nothing to compile.
+rem Produces a .zip (its files, incl. the editor plugin under
+rem share/cyberiada-editor/plugins/<id>) and a pip wheel (console-script .exe shims +
+rem the plugin data-files). Tests run on the Linux tier (they need the binding +
+rem pytest); here we only produce the Windows artifacts.
+rem ---------------------------------------------------------------------------
+:build_pydeb
+set "REPO=%~1"
+set "REPO_BRANCH=%~2"
+set "DIR=%SOURCES%\%REPO%"
+echo.
+echo == %REPO%
+if not exist "%DIR%" ( echo error: repository not found: %DIR% & exit /b 1 )
+
+if "%PULL%"=="1" (
+  git -C "%DIR%" fetch --quiet origin || exit /b 1
+  git -C "%DIR%" checkout --quiet %REPO_BRANCH% || exit /b 1
+  git -C "%DIR%" pull --quiet --ff-only origin %REPO_BRANCH% || exit /b 1
+)
+
+set "BDIR=%DIR%\build-win"
+cmake -S "%DIR%" -B "%BDIR%" -DCMAKE_INSTALL_PREFIX="%PREFIX%" || exit /b 1
+pushd "%BDIR%"
+cpack -G ZIP || ( popd & exit /b 1 )
+popd
+copy /Y "%BDIR%\*.zip" "%OUT%\" >nul
+
+rem the arch-independent pip wheel (needs python + pip on PATH)
+python -m pip wheel --no-deps --wheel-dir "%OUT%" "%DIR%" || exit /b 1
 exit /b 0

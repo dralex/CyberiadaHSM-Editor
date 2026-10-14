@@ -327,9 +327,16 @@ build_pydeb() {
         fi
     fi
 
+    # the .deb (Debian), the .zip (its files, incl. the editor plugin under
+    # share/cyberiada-editor/plugins/<id>, for other platforms) and the pip wheel
+    # (arch-independent; carries the console-script shims and the plugin data-files).
+    # pip builds in a temp dir, so the mounted source tree is not polluted.
     echo "Packing $repo..."
     ( cd "$bdir" && cpack -G DEB >/dev/null )
-    cp "$bdir"/*.deb "$OUT"/
+    ( cd "$bdir" && cpack -G ZIP >/dev/null )
+    cp "$bdir"/*.deb "$bdir"/*.zip "$OUT"/
+    echo "Building the wheel for $repo..."
+    python3 -m pip wheel --no-build-isolation --no-deps --wheel-dir "$OUT" "$dir" >/dev/null
 
     if [ -n "$orig_branch" ]; then git -C "$dir" checkout --quiet "$orig_branch"; fi
 }

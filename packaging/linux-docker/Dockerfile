@@ -39,6 +39,7 @@ RUN for f in /etc/apt/sources.list /etc/apt/sources.list.d/ubuntu.sources; do \
         qtbase5-dev qttools5-dev qttools5-dev-tools libqt5svg5-dev qttranslations5-l10n \
         python3 python3-dev pybind11-dev \
         python3-pytest pylint \
+        python3-pip python3-setuptools python3-wheel \
         fontconfig valgrind \
         locales ca-certificates \
     && sed -i '/ru_RU.UTF-8/s/^# //' /etc/locale.gen \

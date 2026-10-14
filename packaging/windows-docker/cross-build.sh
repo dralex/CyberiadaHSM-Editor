@@ -178,6 +178,19 @@ pack_editor() {
     # user-facing docs alongside the editor (the editor has no ChangeLog yet)
     cp "$SRC/CyberiadaHSM-Editor/README.md" "$SRC/CyberiadaHSM-Editor/LICENSE" "$stage/" 2>/dev/null || true
 
+    # bundle the python tool plugins so the editor lists them under its system
+    # plugin folder (next to the exe); running them still needs a python with the
+    # CyberiadaML binding, set as the interpreter in Preferences. The plugin id is
+    # the folder name, which differs from the repo name for the maker.
+    plugdir="$stage/share/cyberiada-editor/plugins"
+    for spec in "hsm-to-python:hsm-to-python" "cybersphere-hsm-maker:hsm-maker" "cybersphere-agents:cybersphere-agents"; do
+        prepo=${spec%%:*}; pid=${spec##*:}
+        if [ -d "$SRC/$prepo/editor-plugin" ]; then
+            mkdir -p "$plugdir/$pid"
+            cp -a "$SRC/$prepo/editor-plugin/." "$plugdir/$pid/"
+        fi
+    done
+
     ( cd "$bdir/dist-stage" && zip -qr "$OUT/cyberiada-editor-1.0.0-win64-mingw.zip" CyberiadaEditor )
 
     # a second archive to run the editor's L0 batch tests on native Windows without
