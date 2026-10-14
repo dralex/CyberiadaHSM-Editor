@@ -25,6 +25,7 @@
 #include <QFileDialog>
 #include <QDebug>
 #include <QDir>
+#include <QFileInfo>
 #include <QMessageBox>
 #include <QToolBar>
 #include <QComboBox>
@@ -1068,7 +1069,7 @@ bool CyberiadaSMEditorWindow::pluginContext(CyberiadaSMEditorDocument* doc, Plug
         if (error) *error = tr("the document cannot be encoded");
         return false;
     }
-    context->documentPath = doc->filePath();
+    context->documentPath = doc->hasFile() ? QFileInfo(doc->filePath()).absoluteFilePath() : QString();
     context->documentFormat = documentFormatName(m->rootDocument());
     context->modified = !doc->isClean();
     const Cyberiada::LocalDocument* root = m->rootDocument();

@@ -588,10 +588,18 @@ void PluginRunner::validate()
                 return;
             }
             doc.encode(res.document, Cyberiada::formatCyberiada10);
-        } catch (const Cyberiada::Exception& e) {
-            finish(PluginResult::stateFailed,
-                   QString("the output document cannot be read: %1")
-                   .arg(QString::fromStdString(e.str()).simplified()));
+        } catch (const Cyberiada::XMLException&) {
+            // the library's own text names its source line, not the document
+            finish(PluginResult::stateFailed, "the output document is not well-formed XML");
+            return;
+        } catch (const Cyberiada::MetainformationException&) {
+            finish(PluginResult::stateFailed, "the output document has invalid metainformation");
+            return;
+        } catch (const Cyberiada::CybMLException&) {
+            finish(PluginResult::stateFailed, "the output document is not a valid CyberiadaML document");
+            return;
+        } catch (const Cyberiada::Exception&) {
+            finish(PluginResult::stateFailed, "the output document cannot be read");
             return;
         }
     }
