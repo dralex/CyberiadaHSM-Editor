@@ -47,6 +47,69 @@ find_package(Qt5 COMPONENTS Widgets REQUIRED)
 # the Qt5 components above must be found first, the Svg config depends on them
 find_package(Qt5Svg REQUIRED)
 
+# the interface translations (docs/TRANSLATION.md): English is the source
+# language, each code below has translations/<domain>_<code>.ts
+find_package(Qt5LinguistTools REQUIRED)
+set(EDITOR_TRANSLATIONS ru)
+set(EDITOR_TS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/translations)
+set(EDITOR_I18N_DIR ${CMAKE_CURRENT_BINARY_DIR}/i18n)
+set(EDITOR_TS_FILES)
+set(PROPERTYBROWSER_TS_FILES)
+foreach(_lang ${EDITOR_TRANSLATIONS})
+  list(APPEND EDITOR_TS_FILES ${EDITOR_TS_DIR}/cyberiada-editor_${_lang}.ts)
+  list(APPEND PROPERTYBROWSER_TS_FILES ${EDITOR_TS_DIR}/qtpropertybrowser_${_lang}.ts)
+endforeach()
+set_source_files_properties(${EDITOR_TS_FILES} ${PROPERTYBROWSER_TS_FILES}
+  PROPERTIES OUTPUT_LOCATION ${EDITOR_I18N_DIR})
+qt5_add_translation(EDITOR_QM_FILES ${EDITOR_TS_FILES} ${PROPERTYBROWSER_TS_FILES})
+
+# Qt's own strings (the standard buttons and dialogs) travel in the resources:
+# the Windows and macOS bundles carry no Qt translations
+set(QT_TRANSLATIONS_DIR "" CACHE PATH "the translations of Qt (default: asked from qmake)")
+set(_qt_tr_dir ${QT_TRANSLATIONS_DIR})
+if(NOT _qt_tr_dir)
+  get_target_property(_qmake Qt5::qmake IMPORTED_LOCATION)
+  execute_process(COMMAND ${_qmake} -query QT_INSTALL_TRANSLATIONS
+    OUTPUT_VARIABLE _qt_tr_dir OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+endif()
+foreach(_lang ${EDITOR_TRANSLATIONS})
+  if(EXISTS "${_qt_tr_dir}/qtbase_${_lang}.qm")
+    configure_file(${_qt_tr_dir}/qtbase_${_lang}.qm ${EDITOR_I18N_DIR}/qtbase_${_lang}.qm COPYONLY)
+    list(APPEND EDITOR_QM_FILES ${EDITOR_I18N_DIR}/qtbase_${_lang}.qm)
+  else()
+    message(STATUS "qtbase_${_lang}.qm is not in '${_qt_tr_dir}': the Qt dialogs stay English")
+  endif()
+endforeach()
+
+# the compiled translations become the :/i18n resources of the core library
+set(_qrc "<RCC>\n  <qresource prefix=\"/i18n\">\n")
+foreach(_qm ${EDITOR_QM_FILES})
+  get_filename_component(_name ${_qm} NAME)
+  string(APPEND _qrc "    <file alias=\"${_name}\">i18n/${_name}</file>\n")
+endforeach()
+string(APPEND _qrc "  </qresource>\n</RCC>\n")
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/i18n.qrc.new "${_qrc}")
+configure_file(${CMAKE_CURRENT_BINARY_DIR}/i18n.qrc.new ${CMAKE_CURRENT_BINARY_DIR}/i18n.qrc COPYONLY)
+qt5_add_resources(EDITOR_I18N_SOURCES ${CMAKE_CURRENT_BINARY_DIR}/i18n.qrc)
+
+# refresh the .ts files from the sources (run by hand, never by the build);
+# the property browser labels need its checkout: -DQTPROPERTYBROWSER_SOURCE_DIR=...
+set(QTPROPERTYBROWSER_SOURCE_DIR "" CACHE PATH "the QtPropertyBrowser checkout for translations-update")
+file(GLOB _tr_sources
+  ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/*.h ${CMAKE_CURRENT_SOURCE_DIR}/*.ui
+  ${CMAKE_CURRENT_SOURCE_DIR}/dialogs/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/dialogs/*.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/dialogs/*.ui)
+string(REPLACE ";" "\n" _tr_list "${_tr_sources}")
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/translations-sources.lst "${_tr_list}\n")
+set(_tr_commands COMMAND Qt5::lupdate -locations relative
+  @${CMAKE_CURRENT_BINARY_DIR}/translations-sources.lst -ts ${EDITOR_TS_FILES})
+if(QTPROPERTYBROWSER_SOURCE_DIR)
+  list(APPEND _tr_commands COMMAND Qt5::lupdate -locations relative
+    ${QTPROPERTYBROWSER_SOURCE_DIR}/src -ts ${PROPERTYBROWSER_TS_FILES})
+endif()
+add_custom_target(translations-update ${_tr_commands} VERBATIM
+  COMMENT "Updating the translation sources")
+
 # the core library: everything but the entry point, linkable from the
 # in-process tests (see docs/TESTING.md, L4)
 add_library(CyberiadaEditorCore STATIC
@@ -54,6 +117,8 @@ add_library(CyberiadaEditorCore STATIC
   # the resources live in the core so the in-process tests get the bundled
   # font and the icons too; FontManager pulls them in with Q_INIT_RESOURCE
   smeditor.qrc
+  # the compiled translations (:/i18n), initialised by ui_language.cpp
+  ${EDITOR_I18N_SOURCES}
   myassert.cpp
   cyberiadasm_model.cpp
     cyberiadasm_undo.cpp

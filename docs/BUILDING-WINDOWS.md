@@ -8,7 +8,8 @@ toolchain. The steps below use `cmake` from the command line; the same
 ## Prerequisites
 
 * CMake 3.12 or newer.
-* Qt 5.12 or newer for your toolchain (the Widgets and Svg modules), for example
+* Qt 5.12 or newer for your toolchain (the Widgets and Svg modules and the Linguist
+  tools, which every Qt kit carries), for example
   `C:\Qt\5.15.2\msvc2019_64`. Use the Qt installer or build Qt from source.
 * A compiler matching that Qt build: Visual Studio 2019 (or newer) for an
   `msvc` Qt, or the MinGW that ships with Qt for a `mingw` Qt. Qt binaries are

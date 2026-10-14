@@ -36,7 +36,7 @@ RUN for f in /etc/apt/sources.list /etc/apt/sources.list.d/ubuntu.sources; do \
         build-essential cmake git pkg-config \
         dpkg-dev fakeroot file \
         libxml2-dev \
-        qtbase5-dev qttools5-dev qttools5-dev-tools libqt5svg5-dev \
+        qtbase5-dev qttools5-dev qttools5-dev-tools libqt5svg5-dev qttranslations5-l10n \
         python3 python3-dev pybind11-dev \
         fontconfig valgrind \
         locales ca-certificates \

@@ -31,7 +31,8 @@ for Ubuntu Linux or Windows.
 
 * [libcyberidaml++](https://github.com/kruzhok-team/libcyberiadamlpp/) and its required parts: [libcyberiadaml](https://github.com/kruzhok-team/libcyberiadaml), [libhtreegeom](https://github.com/kruzhok-team/libhtreegeom) and libxml2 
 * cmake (version 3.12+)
-* Qt Framework version 5.x
+* Qt Framework version 5.12+ with the Linguist tools (`qttools5-dev` and
+  `qttools5-dev-tools` on Debian/Ubuntu)
 * [QtPropertyBrowser](https://github.com/greenjava/QtPropertyBrowser/)
 
 ## Building from Sources
@@ -45,6 +46,11 @@ cmake --build build
 
 If the dependencies are not in the default system location, point
 `find_package` at them with `-DCMAKE_PREFIX_PATH=<prefix>`.
+
+The Russian translations of the Qt dialogs are taken from the Qt translations
+folder (`qttranslations5-l10n` on Debian/Ubuntu); `-DQT_TRANSLATIONS_DIR=<dir>`
+names another one. The interface translations are described in
+[docs/TRANSLATION.md](docs/TRANSLATION.md).
 
 Build a Debian package with `cpack -G DEB` from the build directory.
 

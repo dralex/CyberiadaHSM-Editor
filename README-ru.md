@@ -36,7 +36,8 @@ Python; правила в каталоге `syntax/`), который выбир
   и ее зависимости: [libcyberiadaml](https://github.com/kruzhok-team/libcyberiadaml),
   [libhtreegeom](https://github.com/kruzhok-team/libhtreegeom), а также libxml2 
 * cmake (версия 3.12+)
-* Библиотека Qt версии 5.x
+* Библиотека Qt версии 5.12+ с инструментами Linguist (`qttools5-dev` и
+  `qttools5-dev-tools` в Debian/Ubuntu)
 * [QtPropertyBrowser](https://github.com/greenjava/QtPropertyBrowser/)
 
 ## Сборка из исходников
@@ -51,6 +52,11 @@ cmake --build build
 Если зависимости не усановлены глобально, добавляйте при сборке параметр
 `-DCMAKE_PREFIX_PATH=<prefix>`, чтобы правильно указать директорию для
 `find_package`.
+
+Русский перевод стандартных диалогов Qt берется из каталога переводов Qt
+(пакет `qttranslations5-l10n` в Debian/Ubuntu); другой каталог задается
+параметром `-DQT_TRANSLATIONS_DIR=<dir>`. Переводы интерфейса описаны в
+[docs/TRANSLATION.md](docs/TRANSLATION.md).
 
 Пакет под дистрибутив семейства Debian можно получить командой `cpack -G DEB`
 из директории сборки.
