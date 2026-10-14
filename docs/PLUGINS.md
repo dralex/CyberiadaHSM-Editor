@@ -1,6 +1,6 @@
 # The Plugin System — Architecture
 
-**Document version:** 0.2 (2026-10-14), not implemented yet
+**Document version:** 0.3 (2026-10-14)
 
 A plugin adds a feature to the editor without rebuilding it: a diagram checker, a code
 generator, a compiler front end, an LLM diagram maker. A plugin is a directory with a
@@ -11,8 +11,8 @@ the action declares — a document, diagnostics, files or a log. The editor gain
 and the Qt JSON classes only: no interpreter, no network library, no plugin ABI.
 
 This document is the editor side. The contract a plugin author follows — the descriptor,
-the variables, the files and the formats — is `PLUGIN-API.md`. The requirements
-(`EDIT-PLUG-n` in `EDITOR-SPEC.md`), the descriptor JSON Schema and the code come next.
+the variables, the files and the formats — is `PLUGIN-API.md`; the requirements are
+`EDIT-PLUG-1..32` in `EDITOR-SPEC.md` §4.12, the tests the plugin layer of `TESTING.md`.
 
 ```
  smeditor_window.cpp, batch_driver.cpp
@@ -329,4 +329,5 @@ left for the level 2 design.
 
 Deferred: a `network` flag with a first-run notice, localised labels, a `${sm}` variable
 for documents with several state machines, plugin shortcuts, element context-menu actions,
-the toolbar positions (`saveState`), stdout as the output document, level 2.
+the toolbar positions (`saveState`), stdout as the output document, a JSON Schema of the
+descriptor, level 2.

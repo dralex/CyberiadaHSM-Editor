@@ -1,16 +1,19 @@
 # The Editor Window — Documents and Tabs
 
-**Document version:** 0.1 (2026-10-04)
+**Document version:** 0.2 (2026-10-14)
 
 The window holds several documents at once. The menus, the toolbars, the tab line and the
 right column are one set; each document brings its own model, scene and canvas view. The
-requirements are `EDIT-DOC-1..9` in `EDITOR-SPEC.md` §4.11.
+requirements are `EDIT-DOC-1..9` in `EDITOR-SPEC.md` §4.11; the plugin parts follow
+`docs/PLUGINS.md` (`EDIT-PLUG-n`, §4.12).
 
 ## Structure
 
 ```
 CyberiadaSMEditorWindow (QMainWindow)                                   GLOBAL
  | menuBar  mainToolBar (top)  elementToolBar (left)  zoomOptionsToolBar  zoomCombo
+ | Plugins menu + plugin toolbars (PluginsMenu, before zoomOptionsToolBar)
+ | pluginDock (QDockWidget, bottom, hidden until the first run)   pluginRuns
  | clipboard (a detached element copy)   armed tool (toolGroup)   QUndoGroup
  | documents : QList<CyberiadaSMEditorDocument*>   current
  |
@@ -29,6 +32,7 @@ CyberiadaSMEditorWindow (QMainWindow)                                   GLOBAL
        scene : CyberiadaSMEditorScene   the canvas items (parent: the document)
        view  : CyberiadaSMGraphicsView  the stacked page (zoom, pan)
        pendingViewState                 the saved viewport, applied on the first activation
+       pluginRun()                      the running plugin (one); a replace run locks
        title()                          "untitled" or the file basename
 ```
 
@@ -73,7 +77,10 @@ setCurrentDocument(doc)
 | Saved viewport (zoom/pan in the document) | document | restored on the tab's first activation |
 | Gesture-log session | bound to one document | a switch ends it and starts a new one (`EDIT-DOC-8`) |
 | Batch mode | the tab line | `open`, `new-document`, `switch`, `close`; dumps of the active tab (`EDIT-DOC-9`) |
-| Exit | global | asks for every modified document in turn; a cancel keeps the editor open |
+| Exit | global | asks for every modified document in turn; a cancel keeps the editor open; running plugins are cancelled after one question (`EDIT-PLUG-23`) |
+| Plugins menu, plugin toolbars | global | an action runs on the active document; its state and tooltip follow it (`EDIT-PLUG-4..7`) |
+| Plugin run | bound to one document | one at a time; a replace run locks the document; the result goes to it after any switch (`EDIT-PLUG-21/22`) |
+| Plugin dock | global | the findings link to the document of their run (`EDIT-PLUG-15/17/32`) |
 | Command-line files (GUI) | global | each opens a tab, the last one active (`EDIT-DOC-7`) |
 
 ## Lifetimes and traps

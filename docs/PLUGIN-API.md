@@ -1,7 +1,6 @@
 # The Plugin Interface
 
-**Document version:** 0.2 (2026-10-14), plugin contract `api` 1 — a draft: the editor does
-not implement it yet, and the contract may change until it does.
+**Document version:** 0.3 (2026-10-14), plugin contract `api` 1.
 
 This is the brief for a plugin author. A plugin gives the Cyberiada HSM Editor a new
 action — check a diagram, generate code, compile, draw — without changing the editor. The
@@ -194,7 +193,7 @@ otherwise.
 | `${param:x}` | the value of the parameter `x`; a bool is `true` or `false` |
 | `${param-file:x}` | a run dir file holding the value of `x`; use it for long texts such as prompts |
 | `${meta:k}` | a document meta value: `platform`, `platformVersion`, `platformLanguage`, `markupLanguage`, `name`, ...; empty when absent |
-| `${selection}` | the ids of the selected elements in the document order, comma-separated |
+| `${selection}` | the ids of the selected elements in the document order, comma-separated (the editor selects one element at a time) |
 | `${document}` | the document file on disk; empty when untitled; current only with `save` |
 | `${document_dir}`, `${document_name}` | its directory; its base name without the extension |
 
