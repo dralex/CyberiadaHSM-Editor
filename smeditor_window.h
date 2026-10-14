@@ -40,6 +40,7 @@ class QTabBar;
 class QActionGroup;
 class MetaChoiceMenu;
 class PluginsMenu;
+class PluginDock;
 
 // The window holds the documents (docs/WINDOW.md): the menus, the toolbars,
 // the clipboard and the armed tool are global; the structure tree, the
@@ -109,6 +110,7 @@ public:
                                               const QList<const PluginParameter*>& parameters,
                                               CyberiadaSMEditorDocument* doc, const PluginValues& values);
     PluginsMenu*            pluginsMenu() const { return pluginMenu; }
+    PluginDock*             pluginDock() const { return pluginDockWidget; }
 
 signals:
     void                    pluginRunStarted(PluginRunner* run);
@@ -144,7 +146,8 @@ private:
                                           QString* error) const;
     // save, cwd: document need the file to be current (EDIT-PLUG-25)
     bool                    savePluginDocument(CyberiadaSMEditorDocument* doc, QString* error);
-    void                    applyPluginResult(PluginRunner* run, CyberiadaSMEditorDocument* doc);
+    // the document the result went to: the run's own, or the new one
+    CyberiadaSMEditorDocument* applyPluginResult(PluginRunner* run, CyberiadaSMEditorDocument* doc);
 
 private slots:
     void                    slotModelReset();
@@ -168,11 +171,18 @@ private slots:
     // the enabled state and the tooltips of the plugin actions (EDIT-PLUG-4)
     void                    updatePluginActions();
     void                    slotPluginsScanned();
+    // the interpreters or the switches changed: the plugins are scanned again
+    void                    slotPluginSettingsChanged();
+    // undo and redo wait for the inspection mode and a plugin lock (EDIT-PLUG-22)
+    void                    updateUndoActions();
 
 public slots:
     // a click on a plugin action: the dialog when needed, then the run
     void                    slotPluginTriggered(const QString& pluginId, const QString& actionId);
     void                    slotPluginSettings(const QString& pluginId);
+    void                    slotPluginManager();
+    // a finding was clicked: select and centre its element (EDIT-PLUG-15)
+    void                    slotDiagnosticActivated(CyberiadaSMEditorDocument* doc, const QString& elementId);
 
 public slots:
 	void                    slotFileNew();
@@ -233,6 +243,7 @@ private:
 
     MetaChoiceMenu* languageChoice = nullptr;
     PluginsMenu* pluginMenu = nullptr;
+    PluginDock* pluginDockWidget = nullptr;
     MetaChoiceMenu* markupChoice = nullptr;
 
     // a detached deep clone of the last copied/cut element (nullptr when empty),

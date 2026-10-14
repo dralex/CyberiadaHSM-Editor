@@ -2,9 +2,15 @@
 #include "ui_preferences_dialog.h"
 
 #include <QColorDialog>
+#include <QHeaderView>
+#include <QLabel>
+#include <QTableWidget>
+#include <QVBoxLayout>
 #include <QSpinBox>
 #include <QSettings>
 #include <QDebug>
+
+#include <QSet>
 
 #include "settings_manager.h"
 #include "fontmanager.h"
@@ -14,6 +20,17 @@ PreferencesDialog::PreferencesDialog(QWidget *parent) :
     ui(new Ui::PreferencesDialog)
 {
     ui->setupUi(this);
+    // the plugin interpreters: a name of plugin.json, the program it stands for
+    QWidget* pluginsTab = new QWidget(this);
+    QVBoxLayout* pluginsLayout = new QVBoxLayout(pluginsTab);
+    pluginsLayout->addWidget(new QLabel(tr("Plugin interpreters (empty: looked up in PATH)"), pluginsTab));
+    interpreters = new QTableWidget(0, 2, pluginsTab);
+    interpreters->setObjectName("interpreterTable");
+    interpreters->setHorizontalHeaderLabels(QStringList() << tr("Interpreter") << tr("Program"));
+    interpreters->horizontalHeader()->setStretchLastSection(true);
+    interpreters->verticalHeader()->hide();
+    pluginsLayout->addWidget(interpreters);
+    ui->tabWidget->addTab(pluginsTab, tr("Plugins"));
 
     // the forms cannot use the constants, so the limits are set here
     QSpinBox* sizes[] = { ui->stateTitleFontSizeSpinBox, ui->stateActionFontSizeSpinBox,
@@ -102,6 +119,18 @@ void PreferencesDialog::loadFromSettings()
     ui->boldTransitionEventNameCheckBox->setChecked(sm.getBoldTransitionEventName());
     ui->highlightCodeCheckBox->setChecked(sm.getHighlightCode());
     ui->highlightInExportsCheckBox->setChecked(sm.getHighlightInExports());
+
+    // plugins: the configured interpreters, python3 always offered, a free row last
+    QMap<QString, QString> paths = sm.getInterpreterPaths();
+    if (!paths.contains("python3")) paths.insert("python3", QString());
+    interpreters->setRowCount(0);
+    for (QMap<QString, QString>::const_iterator i = paths.begin(); i != paths.end(); i++) {
+        int row = interpreters->rowCount();
+        interpreters->insertRow(row);
+        interpreters->setItem(row, 0, new QTableWidgetItem(i.key()));
+        interpreters->setItem(row, 1, new QTableWidgetItem(i.value()));
+    }
+    interpreters->insertRow(interpreters->rowCount());
 }
 
 void PreferencesDialog::saveSettings()
@@ -136,4 +165,20 @@ void PreferencesDialog::saveSettings()
     sm.setBoldTransitionEventName(ui->boldTransitionEventNameCheckBox->isChecked());
     sm.setHighlightCode(ui->highlightCodeCheckBox->isChecked());
     sm.setHighlightInExports(ui->highlightInExportsCheckBox->isChecked());
+
+    // plugins: a row without a program removes the entry
+    QMap<QString, QString> old = sm.getInterpreterPaths();
+    QSet<QString> kept;
+    for (int row = 0; row < interpreters->rowCount(); row++) {
+        QTableWidgetItem* name = interpreters->item(row, 0);
+        QTableWidgetItem* path = interpreters->item(row, 1);
+        QString n = name ? name->text().trimmed() : QString();
+        if (n.isEmpty()) continue;
+        QString value = path ? path->text().trimmed() : QString();
+        if (!value.isEmpty()) kept.insert(n);
+        sm.setInterpreterPath(n, value);
+    }
+    for (QMap<QString, QString>::const_iterator i = old.begin(); i != old.end(); i++) {
+        if (!kept.contains(i.key())) sm.setInterpreterPath(i.key(), QString());
+    }
 }

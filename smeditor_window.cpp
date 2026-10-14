@@ -56,6 +56,8 @@
 #include "meta_choice_menu.h"
 #include "plugin_registry.h"
 #include "plugins_menu.h"
+#include "plugin_dock.h"
+#include "dialogs/plugin_manager_dialog.h"
 #include "dialogs/plugin_parameter_dialog.h"
 
 
@@ -100,6 +102,19 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     connect(pluginMenu, &PluginsMenu::settingsTriggered, this, &CyberiadaSMEditorWindow::slotPluginSettings);
     connect(&PluginRegistry::instance(), &PluginRegistry::scanned,
             this, &CyberiadaSMEditorWindow::slotPluginsScanned);
+    pluginDockWidget = new PluginDock(this);
+    addDockWidget(Qt::BottomDockWidgetArea, pluginDockWidget);
+    pluginDockWidget->hide();
+    QAction* outputPanel = pluginDockWidget->toggleViewAction();
+    outputPanel->setText(tr("Output panel"));
+    QAction* manager = new QAction(tr("Plugin manager..."), this);
+    connect(manager, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotPluginManager);
+    pluginMenu->setTailActions(QList<QAction*>() << outputPanel << manager);
+    connect(this, &CyberiadaSMEditorWindow::pluginRunStarted, pluginDockWidget, &PluginDock::runStarted);
+    connect(pluginDockWidget, &PluginDock::diagnosticActivated,
+            this, &CyberiadaSMEditorWindow::slotDiagnosticActivated);
+    connect(&SettingsManager::instance(), &SettingsManager::pluginsChanged,
+            this, &CyberiadaSMEditorWindow::slotPluginSettingsChanged);
     PluginRegistry::instance().setInterpreterPaths(SettingsManager::instance().getInterpreterPaths());
     PluginRegistry::instance().scan();
 
@@ -116,8 +131,8 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     connect(actionReconstructGeometry, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotReconstructGeometry);
     connect(actionUpdateGeometry, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotUpdateGeometry);
     // the undo group speaks for the active document's stack
-    connect(undoGroup, &QUndoGroup::canUndoChanged, actionUndo, &QAction::setEnabled);
-    connect(undoGroup, &QUndoGroup::canRedoChanged, actionRedo, &QAction::setEnabled);
+    connect(undoGroup, &QUndoGroup::canUndoChanged, this, &CyberiadaSMEditorWindow::updateUndoActions);
+    connect(undoGroup, &QUndoGroup::canRedoChanged, this, &CyberiadaSMEditorWindow::updateUndoActions);
     connect(undoGroup, &QUndoGroup::undoTextChanged, this, &CyberiadaSMEditorWindow::slotUndoTextChanged);
     connect(undoGroup, &QUndoGroup::redoTextChanged, this, &CyberiadaSMEditorWindow::slotRedoTextChanged);
     connect(undoGroup, &QUndoGroup::cleanChanged, this, &CyberiadaSMEditorWindow::slotCleanChanged);
@@ -195,6 +210,13 @@ void CyberiadaSMEditorWindow::slotPreviousDocument()
 bool CyberiadaSMEditorWindow::closeDocument(CyberiadaSMEditorDocument* doc, bool discard)
 {
     if (!doc) return false;
+    // a running plugin is cancelled with its document (EDIT-PLUG-23)
+    if (doc->pluginRun() && !discard && !qApp->property("batchMode").toBool() &&
+        QMessageBox::question(this, tr("Close"),
+                              tr("A plugin is running on %1. Cancel it and close?").arg(doc->title()),
+                              QMessageBox::Yes | QMessageBox::No) != QMessageBox::Yes) {
+        return false;
+    }
     if (!discard && !confirmDiscard(doc)) return false;
     // the window always holds a document: the last one gives way to a fresh untitled
     if (documents.size() == 1) setCurrentDocument(newDocument());
@@ -364,7 +386,8 @@ void CyberiadaSMEditorWindow::updateEditActions()
             el = item->getElement();
         }
     }
-    bool inspector = SettingsManager::instance().getInspectorMode();
+    // a document locked by a plugin run is read-only like an inspected one (EDIT-PLUG-22)
+    bool inspector = SettingsManager::instance().getInspectorMode() || model()->isLocked();
     bool hasElement = (el != nullptr);
     bool copyable = hasElement && el->get_type() != Cyberiada::elementSM;   // an SM is not copyable
     actionCut->setEnabled(copyable && !inspector);
@@ -396,6 +419,7 @@ void CyberiadaSMEditorWindow::updateEditActions()
     actionSave->setEnabled(docOpen && modified && !inspector);
     actionSaveAs->setEnabled(docOpen);
     actionExport->setEnabled(docOpen);
+    updateUndoActions();
     updatePluginActions();
 }
 
@@ -468,6 +492,12 @@ bool CyberiadaSMEditorWindow::confirmDiscard(CyberiadaSMEditorDocument* doc)
 
 void CyberiadaSMEditorWindow::closeEvent(QCloseEvent* event)
 {
+    if (!pluginRuns.isEmpty() &&
+        QMessageBox::question(this, tr("Exit"), tr("Plugins are running. Cancel them and exit?"),
+                              QMessageBox::Yes | QMessageBox::No) != QMessageBox::Yes) {
+        event->ignore();
+        return;
+    }
     // every modified document asks in turn; a cancel keeps the editor open
     for (CyberiadaSMEditorDocument* doc : documents) {
         if (!confirmDiscard(doc)) {
@@ -475,6 +505,8 @@ void CyberiadaSMEditorWindow::closeEvent(QCloseEvent* event)
             return;
         }
     }
+    // every run ends with the editor (EDIT-PLUG-23)
+    for (PluginRunner* run: pluginRuns.keys()) run->abort();
     GestureLog::instance().endSession();
     event->accept();
 }
@@ -1001,8 +1033,7 @@ void CyberiadaSMEditorWindow::slotInspectorModeChanged(bool on)
     editGroup->setEnabled(!on);
     languageChoice->setEnabled(!on);
     markupChoice->setEnabled(!on);
-    actionUndo->setEnabled(!on && undoGroup->canUndo());
-    actionRedo->setEnabled(!on && undoGroup->canRedo());
+    updateUndoActions();
     // disable the creation tools while inspecting, but keep select/pan/zoom so
     // the document can still be navigated
     for (auto i = toolActMap.constBegin(); i != toolActMap.constEnd(); i++) {
@@ -1208,12 +1239,14 @@ void CyberiadaSMEditorWindow::slotPluginFinished()
     PluginRunner* run = qobject_cast<PluginRunner*>(sender());
     if (!run || !pluginRuns.contains(run)) return;
     QPointer<CyberiadaSMEditorDocument> doc = pluginRuns.take(run);
-    applyPluginResult(run, doc.data());
+    CyberiadaSMEditorDocument* target = applyPluginResult(run, doc.data());
+    if (pluginDockWidget) pluginDockWidget->runFinished(run, target);
     emit pluginRunFinished(run);
     run->deleteLater();
 }
 
-void CyberiadaSMEditorWindow::applyPluginResult(PluginRunner* run, CyberiadaSMEditorDocument* doc)
+CyberiadaSMEditorDocument* CyberiadaSMEditorWindow::applyPluginResult(PluginRunner* run,
+                                                                     CyberiadaSMEditorDocument* doc)
 {
     PluginResult* r = run->mutableResult();
     const PluginAction& action = run->action();
@@ -1230,7 +1263,7 @@ void CyberiadaSMEditorWindow::applyPluginResult(PluginRunner* run, CyberiadaSMEd
     }
     if (r->state != PluginResult::stateDone) {
         updateEditActions();
-        return;
+        return doc;
     }
     QString logLine = QString("# plugin %1:%2").arg(run->plugin().descriptor.id, action.id);
     GestureLog::instance().logAction(logLine);
@@ -1243,7 +1276,7 @@ void CyberiadaSMEditorWindow::applyPluginResult(PluginRunner* run, CyberiadaSMEd
             r->state = PluginResult::stateFailed;
             r->error = tr("the document is read-only");
             updateEditActions();
-            return;
+            return doc;
         }
         r->changed = changed;
         if (changed && doc == current && GestureLog::instance().isActive()) {
@@ -1269,6 +1302,7 @@ void CyberiadaSMEditorWindow::applyPluginResult(PluginRunner* run, CyberiadaSMEd
     }
     updateEditActions();
     updateTitle();
+    return target;
 }
 
 void CyberiadaSMEditorWindow::slotPluginsScanned()
@@ -1387,4 +1421,36 @@ void CyberiadaSMEditorWindow::slotPluginSettings(const QString& pluginId)
     PluginParameterDialog dlg(tr("%1 - Settings").arg(entry->descriptor.name), parameters, values,
                               tr("Save"), this);
     if (dlg.exec() == QDialog::Accepted) storePluginValues(*entry, parameters, current, dlg.values());
+}
+
+void CyberiadaSMEditorWindow::updateUndoActions()
+{
+    bool blocked = SettingsManager::instance().getInspectorMode() || (model() && model()->isLocked());
+    actionUndo->setEnabled(!blocked && undoGroup->canUndo());
+    actionRedo->setEnabled(!blocked && undoGroup->canRedo());
+}
+
+void CyberiadaSMEditorWindow::slotPluginSettingsChanged()
+{
+    PluginRegistry::instance().setInterpreterPaths(SettingsManager::instance().getInterpreterPaths());
+    PluginRegistry::instance().scan();
+}
+
+void CyberiadaSMEditorWindow::slotPluginManager()
+{
+    PluginManagerDialog dlg(this);
+    dlg.exec();
+}
+
+void CyberiadaSMEditorWindow::slotDiagnosticActivated(CyberiadaSMEditorDocument* doc,
+                                                      const QString& elementId)
+{
+    if (!doc || !documents.contains(doc)) return;
+    setCurrentDocument(doc);
+    if (!model()->rootDocument()) return;
+    const Cyberiada::Element* element = model()->idToElement(elementId);
+    if (!element) return;
+    SMView->select(model()->elementToIndex(element));
+    QGraphicsItem* item = scene()->getMap().value(elementId.toStdString(), nullptr);
+    if (item && sceneView) sceneView->centerOn(item);
 }

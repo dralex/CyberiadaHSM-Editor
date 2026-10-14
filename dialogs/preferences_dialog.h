@@ -3,6 +3,8 @@
 
 #include <QDialog>
 
+class QTableWidget;
+
 namespace Ui {
 class PreferencesDialog;
 }
@@ -28,6 +30,10 @@ private:
 private:
     Ui::PreferencesDialog *ui;
     QColor selectionColor;
+    // the plugin interpreters by logical name (EDIT-PLUG-31)
+    QTableWidget* interpreters = nullptr;
+public:
+    QTableWidget* interpreterTable() const { return interpreters; }
 };
 
 #endif // PREFERENCES_DIALOG_H
