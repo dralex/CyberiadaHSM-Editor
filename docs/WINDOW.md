@@ -61,7 +61,7 @@ setCurrentDocument(doc)
 | Part / action | Scope | Rule |
 |---|---|---|
 | Menus, toolbars, tab line | global | one set; the actions target the active document |
-| New, Open, Open Recent, Exit, Preferences, About | global | New = a new tab; Open = replace a clean untitled tab, else a new tab; an open path activates its tab |
+| New, Open, Open Recent, Exit, Preferences, About | global | New = a new tab; Open = replace a clean untitled tab, else a new tab; an open path activates its tab; the interface language of the Preferences applies at the next start (`EDIT-UI-1`) |
 | Grid, Snap, Service objects, Transition text, Log session | global | settings; every scene listens to `SettingsManager` |
 | Inspection mode | global | every document is read-only together (`EDIT-DOC-6`) |
 | Armed tool | global | pushed to the active scene on a switch; a scene's own tool change is honoured only from the active scene |

@@ -2,6 +2,7 @@
 #include "ui_preferences_dialog.h"
 
 #include <QColorDialog>
+#include <QLocale>
 #include <QHeaderView>
 #include <QLabel>
 #include <QTableWidget>
@@ -14,6 +15,7 @@
 
 #include "settings_manager.h"
 #include "fontmanager.h"
+#include "interface_language.h"
 
 PreferencesDialog::PreferencesDialog(QWidget *parent) :
     QDialog(parent),
@@ -31,6 +33,16 @@ PreferencesDialog::PreferencesDialog(QWidget *parent) :
     interpreters->verticalHeader()->hide();
     pluginsLayout->addWidget(interpreters);
     ui->tabWidget->addTab(pluginsTab, tr("Plugins"));
+
+    // the interface languages by their own names; the empty code is the system one
+    QString system = resolveUiLanguage(QString(), QLocale::system().uiLanguages());
+    ui->interfaceLanguageComboBox->addItem(tr("System default (%1)").arg(uiLanguageName(system)), QString());
+    for (const UiLanguage& l: availableUiLanguages()) {
+        ui->interfaceLanguageComboBox->addItem(l.name, l.code);
+    }
+
+    connect(ui->interfaceLanguageComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &PreferencesDialog::slotInterfaceLanguageChanged);
 
     // the forms cannot use the constants, so the limits are set here
     QSpinBox* sizes[] = { ui->stateTitleFontSizeSpinBox, ui->stateActionFontSizeSpinBox,
@@ -68,6 +80,14 @@ void PreferencesDialog::slotSelectionColorClicked()
     }
 }
 
+// the note shows while the choice differs from the language in use
+void PreferencesDialog::slotInterfaceLanguageChanged()
+{
+    QString chosen = resolveUiLanguage(ui->interfaceLanguageComboBox->currentData().toString(),
+                                       QLocale::system().uiLanguages());
+    ui->interfaceLanguageNote->setVisible(chosen != currentUiLanguage());
+}
+
 void PreferencesDialog::slotAcceptSettings()
 {
     saveSettings();
@@ -89,6 +109,9 @@ void PreferencesDialog::loadFromSettings()
 {
     SettingsManager& sm = SettingsManager::instance();
 
+    int language = ui->interfaceLanguageComboBox->findData(sm.getInterfaceLanguage());
+    ui->interfaceLanguageComboBox->setCurrentIndex(language < 0 ? 0 : language);
+    slotInterfaceLanguageChanged();
     ui->printModeCheckBox->setChecked(sm.getPrintMode());
     ui->snapModeCheckBox->setChecked(sm.getSnapMode());
 
@@ -137,7 +160,8 @@ void PreferencesDialog::saveSettings()
 {
     SettingsManager& sm = SettingsManager::instance();
 
-    // general
+    // general; the language is read at the start only (EDIT-UI-1)
+    sm.setInterfaceLanguage(ui->interfaceLanguageComboBox->currentData().toString());
     sm.setPrintMode(ui->printModeCheckBox->isChecked());
     sm.setSnapMode(ui->snapModeCheckBox->isChecked());
 

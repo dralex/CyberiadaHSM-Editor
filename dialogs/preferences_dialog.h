@@ -22,6 +22,7 @@ private slots:
     void slotAcceptSettings();
     void slotApplySettings();
     void slotResetSettings();
+    void slotInterfaceLanguageChanged();
 
 private:
     void loadFromSettings();

@@ -33,10 +33,14 @@
 #include "cyberiadasm_render.h"
 #include "plugin_registry.h"
 #include "plugin_runner.h"
+#include "interface_language.h"
 
 int runGuiMode(CyberiadaSMEditorApplication& app, const QStringList& files,
 			   bool reconstruct, bool reconstruct_sm, bool strict)
 {
+	// the texts are set as the window is built, so the translators come first;
+	// the batch mode installs none (EDIT-UI-2)
+	installUiTranslators(app);
 	CyberiadaSMEditorWindow win;
 	QString error;
 	bool ok = win.openFiles(files, &error, reconstruct, reconstruct_sm, strict);

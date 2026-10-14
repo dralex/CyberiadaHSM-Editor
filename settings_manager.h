@@ -95,6 +95,11 @@ public:
     bool getHighlightInExports() const { return highlightInExports; }
     void setHighlightInExports(bool value);
 
+    // the interface language code (EDIT-UI-1): empty = the system one; read at
+    // the start only, so a change applies at the next start
+    QString getInterfaceLanguage() const { return interfaceLanguage; }
+    void setInterfaceLanguage(const QString& value);
+
     QString getLastDirectory() const { return lastDirectory; }
     void setLastDirectory(const QString& value);
     // the most recently opened files, newest first (for the Open Recent menu)
@@ -194,6 +199,7 @@ private:
     int fontSizes[fontRolesCount];
 
     // files
+    QString interfaceLanguage;
     QString lastDirectory;
     QStringList recentFiles;
     QSize dialogSize;

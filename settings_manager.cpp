@@ -62,6 +62,8 @@ void SettingsManager::load() {
     printMode = s.value("display/printMode", false).toBool();
     snapMode = s.value("display/snapMode", false).toBool();
 
+    interfaceLanguage = s.value("interface/language", QString()).toString();
+
     fontFamily = s.value("display/fontFamily", QString()).toString();
     for (int role = 0; role < fontRolesCount; role++) {
         fontSizes[role] = s.value(fontSizeKey(FontRole(role)), FONT_SIZE).toInt();
@@ -97,6 +99,7 @@ void SettingsManager::loadDefaults()
 
     setPrintMode(false);
     setSnapMode(false);
+    setInterfaceLanguage(QString());
 
     setFontFamily(QString());
     for (int role = 0; role < fontRolesCount; role++) {
@@ -245,6 +248,14 @@ void SettingsManager::setPrintMode(bool value) {
         printMode = value;
         QSettings().setValue("display/printMode", value);
         emit printModeChanged(value);
+    }
+}
+
+void SettingsManager::setInterfaceLanguage(const QString& value)
+{
+    if (interfaceLanguage != value) {
+        interfaceLanguage = value;
+        QSettings().setValue("interface/language", value);
     }
 }
 
