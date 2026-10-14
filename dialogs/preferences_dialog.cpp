@@ -30,6 +30,8 @@ PreferencesDialog::PreferencesDialog(QWidget *parent) :
     interpreters->setObjectName("interpreterTable");
     interpreters->setHorizontalHeaderLabels(QStringList() << tr("Interpreter") << tr("Program"));
     interpreters->horizontalHeader()->setStretchLastSection(true);
+    // a translated header may be longer than the names below it
+    interpreters->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
     interpreters->verticalHeader()->hide();
     pluginsLayout->addWidget(interpreters);
     ui->tabWidget->addTab(pluginsTab, tr("Plugins"));
