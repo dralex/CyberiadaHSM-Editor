@@ -115,7 +115,7 @@ bool PluginRunner::expandArguments(const PluginDescriptor& plugin, const PluginA
                 continue;
             }
             int close = text.indexOf('}', i + 2);
-            if (close < 0) return fail(error, QString("the variable at '%1' is not closed").arg(text.mid(i)));
+            if (close < 0) return fail(error, PluginRunner::tr("the variable at '%1' is not closed").arg(text.mid(i)));
             QString name = text.mid(i + 2, close - i - 2);
             i = close + 1;
             if (name.startsWith("param:") || name.startsWith("param-file:")) {
@@ -123,10 +123,10 @@ bool PluginRunner::expandArguments(const PluginDescriptor& plugin, const PluginA
                 QString id = name.mid(name.indexOf(':') + 1);
                 const PluginParameter* p = plugin.parameter(id);
                 if (!p || !values.contains(id)) {
-                    return fail(error, QString("the variable ${%1} is unknown").arg(name));
+                    return fail(error, PluginRunner::tr("the variable ${%1} is unknown").arg(name));
                 }
                 if (p->type == PluginParameter::typeSecret) {
-                    return fail(error, QString("the secret '%1' cannot be in the argv").arg(id));
+                    return fail(error, PluginRunner::tr("the secret '%1' cannot be in the argv").arg(id));
                 }
                 if (file) {
                     out->parameterFiles.insert(paramFileName(id), values.value(id));
@@ -146,7 +146,7 @@ bool PluginRunner::expandArguments(const PluginDescriptor& plugin, const PluginA
                 if (name == "request") out->usesRequest = true;
                 result->append(variables.value(name));
             } else {
-                return fail(error, QString("the variable ${%1} is unknown").arg(name));
+                return fail(error, PluginRunner::tr("the variable ${%1} is unknown").arg(name));
             }
         }
         return true;
@@ -168,7 +168,7 @@ bool PluginRunner::expandArguments(const PluginDescriptor& plugin, const PluginA
             out->arguments.append(expanded);
         }
     }
-    if (out->arguments.isEmpty()) return fail(error, "the argv is empty");
+    if (out->arguments.isEmpty()) return fail(error, PluginRunner::tr("the argv is empty"));
     return true;
 }
 
@@ -179,11 +179,11 @@ bool PluginRunner::readDiagnostics(const QByteArray& json, QList<PluginDiagnosti
     QJsonParseError pe;
     QJsonDocument doc = QJsonDocument::fromJson(json, &pe);
     if (pe.error != QJsonParseError::NoError || !doc.isArray()) {
-        return fail(error, "the diagnostics file is not a JSON array");
+        return fail(error, PluginRunner::tr("the diagnostics file is not a JSON array"));
     }
     static const char* const severities[] = { "error", "warning", "info", "info" };
     for (const QJsonValue& v: doc.array()) {
-        if (!v.isObject()) return fail(error, "a finding is not an object");
+        if (!v.isObject()) return fail(error, PluginRunner::tr("a finding is not an object"));
         QJsonObject o = v.toObject();
         PluginDiagnostic d;
         QJsonValue sev = o.value("severity");
@@ -195,22 +195,22 @@ bool PluginRunner::readDiagnostics(const QByteArray& json, QList<PluginDiagnosti
             // the LSP severity numbers
             d.severity = severities[sev.toInt() - 1];
         } else {
-            return fail(error, "a finding has no valid severity");
+            return fail(error, PluginRunner::tr("a finding has no valid severity"));
         }
-        if (!o.value("message").isString()) return fail(error, "a finding has no message");
+        if (!o.value("message").isString()) return fail(error, PluginRunner::tr("a finding has no message"));
         d.message = o.value("message").toString().simplified();
         if (o.contains("rule")) {
-            if (!o.value("rule").isString()) return fail(error, "the rule of a finding is not a string");
+            if (!o.value("rule").isString()) return fail(error, PluginRunner::tr("the rule of a finding is not a string"));
             d.rule = o.value("rule").toString();
         }
         if (o.contains("element")) {
-            if (!o.value("element").isString()) return fail(error, "the element of a finding is not a string");
+            if (!o.value("element").isString()) return fail(error, PluginRunner::tr("the element of a finding is not a string"));
             d.element = o.value("element").toString();
         }
         if (o.contains("line")) {
             QJsonValue line = o.value("line");
             if (!line.isDouble() || line.toDouble() != line.toInt() || line.toInt() < 0) {
-                return fail(error, "the line of a finding is not a number");
+                return fail(error, PluginRunner::tr("the line of a finding is not a number"));
             }
             d.line = line.toInt();
         }
@@ -260,7 +260,7 @@ bool PluginRunner::resolveProgram(const QStringList& arguments, QString* program
         }
     }
     // the file name only: the message must not depend on the machine (EDIT-PLUG-28)
-    return fail(error, QString("the program '%1' is not found").arg(QFileInfo(first).fileName()));
+    return fail(error, PluginRunner::tr("the program '%1' is not found").arg(QFileInfo(first).fileName()));
 }
 
 bool PluginRunner::prepareEnvironment(QProcessEnvironment* env, QString* error) const
@@ -280,14 +280,14 @@ bool PluginRunner::prepareEnvironment(QProcessEnvironment* env, QString* error) 
         if (ref.startsWith("env:")) {
             QString name = ref.mid(4);
             if (!qEnvironmentVariableIsSet(name.toLocal8Bit().constData())) {
-                return fail(error, QString("the secret '%1' is not set: the variable %2 is absent")
+                return fail(error, PluginRunner::tr("the secret '%1' is not set: the variable %2 is absent")
                             .arg(p->id, name));
             }
             secret = qEnvironmentVariable(name.toLocal8Bit().constData());
         } else {
             QFile f(ref.mid(5));
             if (!f.open(QIODevice::ReadOnly)) {
-                return fail(error, QString("the secret '%1' is not set: its file cannot be read").arg(p->id));
+                return fail(error, PluginRunner::tr("the secret '%1' is not set: its file cannot be read").arg(p->id));
             }
             secret = QString::fromUtf8(f.readLine()).trimmed();
         }
@@ -305,12 +305,12 @@ bool PluginRunner::prepareOutdir(QString* error)
     }
     const PluginParameter* p = entry.descriptor.parameter(a.outdir);
     QString value = runValues.value(a.outdir);
-    if (value.isEmpty()) return fail(error, QString("the outdir parameter '%1' has no value").arg(a.outdir));
+    if (value.isEmpty()) return fail(error, PluginRunner::tr("the outdir parameter '%1' has no value").arg(a.outdir));
     QString dir = p && p->type == PluginParameter::typeFile ? QFileInfo(value).absolutePath()
                                                             : QDir(value).absolutePath();
     if (!QDir(dir).exists()) {
         if (!(p && p->create) || !QDir().mkpath(dir)) {
-            return fail(error, QString("the output directory of '%1' does not exist").arg(a.outdir));
+            return fail(error, PluginRunner::tr("the output directory of '%1' does not exist").arg(a.outdir));
         }
     }
     outdir = QDir(dir).canonicalPath();
@@ -368,21 +368,21 @@ void PluginRunner::writeRequest(const QString& path) const
 bool PluginRunner::stage(QString* error)
 {
     const PluginAction& a = action();
-    if (a.id.isEmpty()) return fail(error, QString("the plugin has no action '%1'").arg(actionId));
+    if (a.id.isEmpty()) return fail(error, PluginRunner::tr("the plugin has no action '%1'").arg(actionId));
     runDir = new QTemporaryDir(QDir::tempPath() + "/cyberiada-plugin-XXXXXX");
-    if (!runDir->isValid()) return fail(error, "cannot create the run directory");
+    if (!runDir->isValid()) return fail(error, PluginRunner::tr("cannot create the run directory"));
     if (!qEnvironmentVariableIsEmpty(PLUGIN_KEEP_VARIABLE)) runDir->setAutoRemove(false);
     // the canonical form, so the dumps can name it (macOS tmp is a link)
     runPath = QDir(runDir->path()).canonicalPath();
     res.runDir = runPath;
 
     if (!writeFile(QDir(runPath).filePath(INPUT_FILE), QByteArray::fromStdString(context.input))) {
-        return fail(error, "cannot write the input document");
+        return fail(error, PluginRunner::tr("cannot write the input document"));
     }
     if (!prepareOutdir(error)) return false;
 
     PluginDocumentPaths doc = pluginDocumentPaths(context.documentPath);
-    if (a.cwdDocument && doc.untitled()) return fail(error, "the document is not saved");
+    if (a.cwdDocument && doc.untitled()) return fail(error, PluginRunner::tr("the document is not saved"));
     workDir = a.cwdDocument ? doc.dir : runPath;
 
     QMap<QString, QString> variables;
@@ -405,7 +405,7 @@ bool PluginRunner::stage(QString* error)
     for (QMap<QString, QString>::const_iterator i = expansion.parameterFiles.begin();
          i != expansion.parameterFiles.end(); i++) {
         if (!writeFile(QDir(runPath).filePath(i.key()), i.value().toUtf8())) {
-            return fail(error, "cannot write a parameter file");
+            return fail(error, PluginRunner::tr("cannot write a parameter file"));
         }
     }
     if (expansion.usesRequest) writeRequest(QDir(runPath).filePath(REQUEST_FILE));
@@ -449,7 +449,7 @@ void PluginRunner::cancel()
     if (finishedFlag || cancelled) return;
     cancelled = true;
     if (!process || process->state() == QProcess::NotRunning) {
-        finish(PluginResult::stateCancelled, "cancelled");
+        finish(PluginResult::stateCancelled, PluginRunner::tr("cancelled"));
         return;
     }
     process->terminate();
@@ -465,7 +465,7 @@ void PluginRunner::abort()
         process->kill();
         process->waitForFinished(PLUGIN_KILL_GRACE_MS);
     }
-    if (!finishedFlag) finish(PluginResult::stateCancelled, "cancelled");
+    if (!finishedFlag) finish(PluginResult::stateCancelled, PluginRunner::tr("cancelled"));
 }
 
 QString PluginRunner::decode(const QByteArray& bytes, QTextDecoder** decoder)
@@ -528,7 +528,7 @@ void PluginRunner::slotError(QProcess::ProcessError error)
 {
     if (error != QProcess::FailedToStart || finishedFlag) return;
     QString name = QFileInfo(process->program()).fileName();
-    finish(PluginResult::stateFailed, QString("the program '%1' cannot start").arg(name));
+    finish(PluginResult::stateFailed, PluginRunner::tr("the program '%1' cannot start").arg(name));
 }
 
 void PluginRunner::slotFinished(int exitCode, QProcess::ExitStatus status)
@@ -539,20 +539,20 @@ void PluginRunner::slotFinished(int exitCode, QProcess::ExitStatus status)
     slotStdout();
     slotStderr();
     if (timedOut) {
-        finish(PluginResult::stateFailed, QString("the run timed out after %1 s").arg(action().timeout));
+        finish(PluginResult::stateFailed, PluginRunner::tr("the run timed out after %1 s").arg(action().timeout));
         return;
     }
     if (cancelled) {
-        finish(PluginResult::stateCancelled, "cancelled");
+        finish(PluginResult::stateCancelled, PluginRunner::tr("cancelled"));
         return;
     }
     if (status == QProcess::CrashExit) {
-        finish(PluginResult::stateFailed, "the plugin crashed");
+        finish(PluginResult::stateFailed, PluginRunner::tr("the plugin crashed"));
         return;
     }
     res.exitCode = exitCode;
     if (!action().exitOk.contains(exitCode)) {
-        finish(PluginResult::stateFailed, QString("the exit code %1 is not a success").arg(exitCode));
+        finish(PluginResult::stateFailed, PluginRunner::tr("the exit code %1 is not a success").arg(exitCode));
         return;
     }
     validate();
@@ -564,16 +564,16 @@ void PluginRunner::validate()
     if (a.result == PluginAction::resultReplace || a.result == PluginAction::resultNewDocument) {
         QFile f(QDir(runPath).filePath(OUTPUT_FILE));
         if (!f.exists()) {
-            finish(PluginResult::stateFailed, "the output document is missing");
+            finish(PluginResult::stateFailed, PluginRunner::tr("the output document is missing"));
             return;
         }
         if (!f.open(QIODevice::ReadOnly)) {
-            finish(PluginResult::stateFailed, "the output document cannot be read");
+            finish(PluginResult::stateFailed, PluginRunner::tr("the output document cannot be read"));
             return;
         }
         std::string buffer = f.readAll().toStdString();
         if (buffer.empty()) {
-            finish(PluginResult::stateFailed, "the output document is empty");
+            finish(PluginResult::stateFailed, PluginRunner::tr("the output document is empty"));
             return;
         }
         // decoded before anything is touched (EDIT-PLUG-19)
@@ -584,22 +584,22 @@ void PluginRunner::validate()
             doc.decode(buffer, format, format_str, Cyberiada::geometryFormatQt,
                        a.loadReconstruct, a.loadReconstruct, false, false, false, a.loadStrict);
             if (doc.get_state_machines().empty()) {
-                finish(PluginResult::stateFailed, "the output document has no state machine");
+                finish(PluginResult::stateFailed, PluginRunner::tr("the output document has no state machine"));
                 return;
             }
             doc.encode(res.document, Cyberiada::formatCyberiada10);
         } catch (const Cyberiada::XMLException&) {
             // the library's own text names its source line, not the document
-            finish(PluginResult::stateFailed, "the output document is not well-formed XML");
+            finish(PluginResult::stateFailed, PluginRunner::tr("the output document is not well-formed XML"));
             return;
         } catch (const Cyberiada::MetainformationException&) {
-            finish(PluginResult::stateFailed, "the output document has invalid metainformation");
+            finish(PluginResult::stateFailed, PluginRunner::tr("the output document has invalid metainformation"));
             return;
         } catch (const Cyberiada::CybMLException&) {
-            finish(PluginResult::stateFailed, "the output document is not a valid CyberiadaML document");
+            finish(PluginResult::stateFailed, PluginRunner::tr("the output document is not a valid CyberiadaML document"));
             return;
         } catch (const Cyberiada::Exception&) {
-            finish(PluginResult::stateFailed, "the output document cannot be read");
+            finish(PluginResult::stateFailed, PluginRunner::tr("the output document cannot be read"));
             return;
         }
     }
@@ -609,12 +609,12 @@ void PluginRunner::validate()
         QString error;
         if (!diagnostics.open(QIODevice::ReadOnly) ||
             !readDiagnostics(diagnostics.readAll(), &res.diagnostics, &error)) {
-            finish(PluginResult::stateFailed, error.isEmpty() ? QString("the diagnostics file cannot be read")
+            finish(PluginResult::stateFailed, error.isEmpty() ? PluginRunner::tr("the diagnostics file cannot be read")
                                                                : error);
             return;
         }
     } else if (a.result == PluginAction::resultDiagnostics) {
-        finish(PluginResult::stateFailed, "the diagnostics file is missing");
+        finish(PluginResult::stateFailed, PluginRunner::tr("the diagnostics file is missing"));
         return;
     }
 

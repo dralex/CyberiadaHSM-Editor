@@ -91,7 +91,7 @@ bool renderScene(CyberiadaSMEditorScene* scene, const QString& path, QString* er
 				 const QString& fontFamily)
 {
 	if (scene->items().isEmpty()) {
-		if (error) *error = "the scene is empty, nothing to export";
+		if (error) *error = QCoreApplication::translate("Render", "the scene is empty, nothing to export");
 		return false;
 	}
 	// exported images must not show the editing selection or the aids
@@ -118,7 +118,7 @@ bool renderScene(CyberiadaSMEditorScene* scene, const QString& path, QString* er
 		{
 			QPainter painter(&generator);
 			if (!painter.isActive()) {
-				if (error) *error = "cannot write the image " + path;
+				if (error) *error = QCoreApplication::translate("Render", "cannot write the image %1").arg(path);
 				return false;
 			}
 			preparePainter(painter, target);
@@ -140,7 +140,7 @@ bool renderScene(CyberiadaSMEditorScene* scene, const QString& path, QString* er
 		{
 			QPainter painter(&writer);
 			if (!painter.isActive()) {
-				if (error) *error = "cannot write the image " + path;
+				if (error) *error = QCoreApplication::translate("Render", "cannot write the image %1").arg(path);
 				return false;
 			}
 			preparePainter(painter, target);

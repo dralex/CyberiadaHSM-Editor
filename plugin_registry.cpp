@@ -45,6 +45,16 @@ QString PluginEntry::statusName(Status status)
     }
 }
 
+QString PluginEntry::statusText(Status status)
+{
+    switch (status) {
+    case statusEnabled:  return PluginRegistry::tr("enabled", "plugin status");
+    case statusDisabled: return PluginRegistry::tr("disabled", "plugin status");
+    case statusShadowed: return PluginRegistry::tr("shadowed", "plugin status");
+    default:             return PluginRegistry::tr("rejected", "plugin status");
+    }
+}
+
 PluginRegistry& PluginRegistry::instance()
 {
     static PluginRegistry registry;
@@ -151,14 +161,14 @@ void PluginRegistry::scan()
             entry.folder = pluginDir;
             QString error;
             if (!file.open(QIODevice::ReadOnly)) {
-                entry.reason = QString("cannot read %1").arg(PLUGIN_DESCRIPTOR_FILE);
+                entry.reason = PluginRegistry::tr("cannot read %1").arg(PLUGIN_DESCRIPTOR_FILE);
             } else if (!PluginDescriptor::parse(file.readAll(), pluginDir, &entry.descriptor, &error)) {
                 entry.descriptor = PluginDescriptor();
                 entry.reason = error;
             } else if (owners.contains(entry.descriptor.id)) {
                 // a rejected descriptor claims no id, so it never shadows (EDIT-PLUG-1)
                 entry.status = PluginEntry::statusShadowed;
-                entry.reason = QString("shadowed by %1").arg(owners.value(entry.descriptor.id));
+                entry.reason = PluginRegistry::tr("shadowed by %1").arg(owners.value(entry.descriptor.id));
             } else {
                 owners.insert(entry.descriptor.id, entry.origin);
                 entry.status = PluginEntry::statusEnabled;
@@ -167,7 +177,7 @@ void PluginRegistry::scan()
                     !resolveInterpreter(interpreter, interpreterPaths, &entry.program,
                                         &entry.programArguments)) {
                     entry.status = PluginEntry::statusDisabled;
-                    entry.reason = QString("the interpreter '%1' is not found").arg(interpreter);
+                    entry.reason = PluginRegistry::tr("the interpreter '%1' is not found").arg(interpreter);
                 }
             }
             list.append(entry);

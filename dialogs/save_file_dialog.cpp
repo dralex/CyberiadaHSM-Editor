@@ -132,7 +132,7 @@ void SaveFileDialog::slotFormatChanged(int index)
     for (int i = 0; i < ui->formatComboBox->count(); i++) {
         QString reason = ui->formatComboBox->itemData(i, formatReasonRole).toString();
         if (!reason.isEmpty()) {
-            hint = tr("yEd formats are unavailable: ") + reason;
+            hint = tr("yEd formats are unavailable: %1").arg(reason);
             break;
         }
     }

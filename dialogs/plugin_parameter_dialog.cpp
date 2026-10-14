@@ -158,7 +158,7 @@ QWidget* PluginParameterDialog::createEditor(const PluginParameter* p, const QSt
     case PluginParameter::typeSecret: {
         // a reference to the key, never the key (EDIT-PLUG-10)
         QLineEdit* edit = new QLineEdit(value, this);
-        edit->setPlaceholderText("env:NAME or file:PATH");
+        edit->setPlaceholderText(tr("env:NAME or file:PATH"));
         edit->setValidator(new QRegularExpressionValidator(QRegularExpression("^(|env:.*|file:.*)$"), edit));
         connect(edit, &QLineEdit::textChanged, this, &PluginParameterDialog::updateAccept);
         editor = field = edit;

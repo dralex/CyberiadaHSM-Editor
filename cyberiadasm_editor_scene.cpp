@@ -894,7 +894,7 @@ void CyberiadaSMEditorScene::addSMItem(Cyberiada::ElementType type)
             const qreal gap = 40;
             QSizeF smSize(2 * 200 + 3 * gap, 2 * 100 + 3 * gap);   // 520 x 320
             QPointF c = freeStateMachinePlace(smSize);
-            Cyberiada::Element* element = model->newStateMachine("New State Machine",
+            Cyberiada::Element* element = model->newStateMachine(tr("New State Machine").toStdString(),
                                                                  Cyberiada::Rect(c.x(), c.y(),
                                                                                  smSize.width(), smSize.height()));
             if (!element) return;
@@ -928,7 +928,7 @@ void CyberiadaSMEditorScene::addSMItem(Cyberiada::ElementType type)
     }
     if (parentCItem == nullptr) {
         if (currentSM == nullptr) {
-            Cyberiada::Element* element = model->newStateMachine("New State Machine");
+            Cyberiada::Element* element = model->newStateMachine(tr("New State Machine").toStdString());
             if (!element) return;
             currentSM = static_cast<Cyberiada::StateMachine*>(element);
             // the row insert already built and mapped the SM item; reuse it
@@ -965,7 +965,7 @@ void CyberiadaSMEditorScene::addSMItem(Cyberiada::ElementType type)
         switch(type) {
         case Cyberiada::elementCompositeState:
         case Cyberiada::elementSimpleState:
-            element = model->newState(parentColl, model->uniqueStateName(parentColl, "New state"),
+            element = model->newState(parentColl, model->uniqueStateName(parentColl, tr("New state").toStdString()),
                                       Cyberiada::Action(),
                                       Cyberiada::Rect(center.x(), center.y(), 200, 100));
             break;
@@ -999,11 +999,11 @@ void CyberiadaSMEditorScene::addSMItem(Cyberiada::ElementType type)
                                                                    CHOICE_DEFAULT_SIZE, CHOICE_DEFAULT_SIZE));
             break;
         case Cyberiada::elementComment:
-            element = model->newComment(parentColl, "New comment",
+            element = model->newComment(parentColl, tr("New comment").toStdString(),
                                         Cyberiada::Rect(center.x(), center.y(), 200, 100));
             break;
         case Cyberiada::elementFormalComment:
-            element = model->newFormalComment(parentColl, "New formal comment",
+            element = model->newFormalComment(parentColl, tr("New formal comment").toStdString(),
                                               Cyberiada::Rect(center.x(), center.y(), 200, 100));
             break;
         default:
@@ -1081,7 +1081,7 @@ void CyberiadaSMEditorScene::createByTool(ToolType tool, const QRectF& sceneRect
                                                   total.width(), total.height()));
             return;
         }
-        Cyberiada::Element* element = model->newStateMachine("New State Machine",
+        Cyberiada::Element* element = model->newStateMachine(tr("New State Machine").toStdString(),
             Cyberiada::Rect(r.center().x(), r.center().y(), r.width(), r.height()));
         if (!element) return;
         currentSM = static_cast<Cyberiada::StateMachine*>(element);
@@ -1125,7 +1125,7 @@ void CyberiadaSMEditorScene::createByTool(ToolType tool, const QRectF& sceneRect
     try {
         switch (et) {
         case Cyberiada::elementSimpleState:
-            element = model->newState(parentColl, model->uniqueStateName(parentColl, "New state"),
+            element = model->newState(parentColl, model->uniqueStateName(parentColl, tr("New state").toStdString()),
                                       Cyberiada::Action(), Cyberiada::Rect(c.x(), c.y(), w, h));
             break;
         case Cyberiada::elementChoice:
@@ -1133,10 +1133,10 @@ void CyberiadaSMEditorScene::createByTool(ToolType tool, const QRectF& sceneRect
                                                                    CHOICE_DEFAULT_SIZE, CHOICE_DEFAULT_SIZE));
             break;
         case Cyberiada::elementComment:
-            element = model->newComment(parentColl, "New comment", Cyberiada::Rect(c.x(), c.y(), 200, 100));
+            element = model->newComment(parentColl, tr("New comment").toStdString(), Cyberiada::Rect(c.x(), c.y(), 200, 100));
             break;
         case Cyberiada::elementFormalComment:
-            element = model->newFormalComment(parentColl, "New formal comment", Cyberiada::Rect(c.x(), c.y(), 200, 100));
+            element = model->newFormalComment(parentColl, tr("New formal comment").toStdString(), Cyberiada::Rect(c.x(), c.y(), 200, 100));
             break;
         case Cyberiada::elementInitial:
             element = model->newInitial(parentColl, Cyberiada::Point(c.x(), c.y()));

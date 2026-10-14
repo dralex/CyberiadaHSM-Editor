@@ -215,9 +215,9 @@ bool CyberiadaSMModel::loadDocument(const QString& path, bool reconstruct, bool 
 		new_doc->open(path.toStdString(), Cyberiada::formatDetect, Cyberiada::geometryFormatQt,
 					  reconstruct, reconstruct_sm, false, false, false, strict);
 	} catch (const Cyberiada::XMLException& e) {
-		lastLoadError = tr("XML grapml error:\n") + QString(e.str().c_str());
+		lastLoadError = tr("XML graphml error:\n") + QString(e.str().c_str());
 	} catch (const Cyberiada::CybMLException& e) {
-		lastLoadError = tr("Wrong format of the Cyberiada grapml file:\n") + QString(e.str().c_str());
+		lastLoadError = tr("Wrong format of the Cyberiada graphml file:\n") + QString(e.str().c_str());
 	} catch (const Cyberiada::Exception& e) {
 		lastLoadError = tr("Cannot load state machine graph:\n") + QString(e.str().c_str());
 	}
@@ -1508,7 +1508,7 @@ bool CyberiadaSMModel::setDocumentChoice(const QString& key, const QString& valu
 	// a document exists with a state machine only: the one the first drawn
 	// element would create
 	if (!root || root->get_state_machines().empty()) {
-		if (!newStateMachine("New State Machine")) return false;
+		if (!newStateMachine(tr("New State Machine").toStdString())) return false;
 	}
 	if (value.isEmpty()) {
 		return removeMetainformation(documentIndex(), key);
@@ -1831,7 +1831,7 @@ Cyberiada::ConnectionPoint *CyberiadaSMModel::newEntryPoint(Cyberiada::ElementCo
 	QString mirror;
 	int st = submachinePointName(root, parent, Cyberiada::elementEntryPoint, &mirror);
 	if (st == PointRefuse) return NULL;
-	Cyberiada::Name name = (st == PointMirror) ? mirror.toStdString() : pointName(parent, "in");
+	Cyberiada::Name name = (st == PointMirror) ? mirror.toStdString() : pointName(parent, tr("in", "entry point name").toStdString());
 	UndoScope scope(this, tr("new element"));
     int row = newElementRow(parent);
     beginInsertRows(elementToIndex(parent), row, row);
@@ -1858,7 +1858,7 @@ Cyberiada::ConnectionPoint *CyberiadaSMModel::newExitPoint(Cyberiada::ElementCol
 	QString mirror;
 	int st = submachinePointName(root, parent, Cyberiada::elementExitPoint, &mirror);
 	if (st == PointRefuse) return NULL;
-	Cyberiada::Name name = (st == PointMirror) ? mirror.toStdString() : pointName(parent, "out");
+	Cyberiada::Name name = (st == PointMirror) ? mirror.toStdString() : pointName(parent, tr("out", "exit point name").toStdString());
 	UndoScope scope(this, tr("new element"));
     int row = newElementRow(parent);
     beginInsertRows(elementToIndex(parent), row, row);

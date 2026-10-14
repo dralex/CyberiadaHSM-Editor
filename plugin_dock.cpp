@@ -49,6 +49,15 @@ enum DiagnosticColumn {
     columnsCount
 };
 
+// the protocol token shown in the interface language
+static QString severityText(const QString& severity)
+{
+    if (severity == "error") return PluginDock::tr("error", "severity");
+    if (severity == "warning") return PluginDock::tr("warning", "severity");
+    if (severity == "info") return PluginDock::tr("info", "severity");
+    return severity;
+}
+
 PluginDock::PluginDock(QWidget* parent):
     QDockWidget(tr("Plugins"), parent)
 {
@@ -155,7 +164,7 @@ void PluginDock::runFinished(PluginRunner* run, CyberiadaSMEditorDocument* doc)
     }
     if (r.state != PluginResult::stateDone) return;
     for (const PluginFileChange& f: r.files) {
-        append(QString("%1 %2").arg(f.isNew ? tr("new") : tr("changed"), f.path), false);
+        append((f.isNew ? tr("new %1", "plugin file") : tr("changed %1", "plugin file")).arg(f.path), false);
     }
     if (r.diagnostics.isEmpty() && run->action().result != PluginAction::resultDiagnostics) return;
 
@@ -166,7 +175,7 @@ void PluginDock::runFinished(PluginRunner* run, CyberiadaSMEditorDocument* doc)
     stale = false;
     for (const PluginDiagnostic& d: r.diagnostics) {
         QTreeWidgetItem* item = new QTreeWidgetItem(diagnosticsList);
-        item->setText(columnSeverity, d.severity);
+        item->setText(columnSeverity, severityText(d.severity));
         item->setText(columnRule, d.rule);
         item->setText(columnElement, d.element.isEmpty() ? QString() :
                       (d.linked ? d.element : tr("%1 (absent)").arg(d.element)));

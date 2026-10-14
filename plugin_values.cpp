@@ -21,6 +21,7 @@
  *
  * ----------------------------------------------------------------------------- */
 
+#include <QCoreApplication>
 #include <QCryptographicHash>
 #include <QFile>
 #include <QFileInfo>
@@ -90,7 +91,7 @@ bool pluginCheckValue(const PluginParameter& parameter, const QString& value, QS
     if (ok && parameter.hasMin && number < parameter.min) ok = false;
     if (ok && parameter.hasMax && number > parameter.max) ok = false;
     if (!ok && error) {
-        *error = QString("the value '%1' does not fit the %2 parameter '%3'")
+        *error = QCoreApplication::translate("PluginValues", "the value '%1' does not fit the %2 parameter '%3'")
             .arg(parameter.type == PluginParameter::typeSecret ? QString("...") : value,
                  PluginDescriptor::typeName(parameter.type), parameter.id);
     }
@@ -114,13 +115,13 @@ bool pluginParseValues(const PluginDescriptor& plugin, const PluginAction& actio
     for (const QString& item: nameValues) {
         int eq = item.indexOf('=');
         if (eq <= 0) {
-            if (error) *error = QString("the plugin parameter '%1' is not name=value").arg(item);
+            if (error) *error = QCoreApplication::translate("PluginValues", "the plugin parameter '%1' is not name=value").arg(item);
             return false;
         }
         QString name = item.left(eq);
         QString value = item.mid(eq + 1);
         if (!values->contains(name)) {
-            if (error) *error = QString("the action '%1' has no parameter '%2'").arg(action.id, name);
+            if (error) *error = QCoreApplication::translate("PluginValues", "the action '%1' has no parameter '%2'").arg(action.id, name);
             return false;
         }
         if (value.startsWith("@@")) {
@@ -128,7 +129,7 @@ bool pluginParseValues(const PluginDescriptor& plugin, const PluginAction& actio
         } else if (value.startsWith('@')) {
             QFile f(value.mid(1));
             if (!f.open(QIODevice::ReadOnly)) {
-                if (error) *error = QString("cannot read the value of '%1' from %2").arg(name, value.mid(1));
+                if (error) *error = QCoreApplication::translate("PluginValues", "cannot read the value of '%1' from %2").arg(name, value.mid(1));
                 return false;
             }
             value = QString::fromUtf8(f.readAll());
@@ -143,7 +144,7 @@ bool pluginParseValues(const PluginDescriptor& plugin, const PluginAction& actio
     }
     QString missing = pluginMissingValue(plugin, action, *values);
     if (!missing.isEmpty()) {
-        if (error) *error = QString("the required parameter '%1' has no value").arg(missing);
+        if (error) *error = QCoreApplication::translate("PluginValues", "the required parameter '%1' has no value").arg(missing);
         return false;
     }
     return true;

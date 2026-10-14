@@ -61,6 +61,8 @@ struct PluginEntry {
     QString name() const;
     bool usable() const { return status == statusEnabled || status == statusDisabled; }
     static QString statusName(Status status);
+    // the translated status for the GUI; statusName stays the dump token
+    static QString statusText(Status status);
 };
 
 class PluginRegistry: public QObject {

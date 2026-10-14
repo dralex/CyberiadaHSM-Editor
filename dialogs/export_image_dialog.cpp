@@ -33,8 +33,9 @@
 
 ExportImageDialog::ExportImageDialog(QWidget* parent)
     : CyberiadaFileDialog(parent, tr("Export the scene as an image"),
-                          tr("PNG (*.png);;JPEG (*.jpg *.jpeg);;BMP (*.bmp);;TIFF (*.tiff);;"
-                             "SVG (*.svg);;PDF (*.pdf)")),
+                          // format names only, never translated: the suffix follows the prefix
+                          QString("PNG (*.png);;JPEG (*.jpg *.jpeg);;BMP (*.bmp);;TIFF (*.tiff);;"
+                                  "SVG (*.svg);;PDF (*.pdf)")),
       dpiSpin(nullptr), fontCombo(nullptr)
 {
     setFileMode(QFileDialog::AnyFile);

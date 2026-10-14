@@ -26,6 +26,7 @@
 
 
 #include <QObject>
+#include <QCoreApplication>
 #include <QGraphicsSceneMouseEvent>
 #include <QGraphicsRectItem>
 #include <QPainter>
@@ -202,6 +203,7 @@ private:
 
 class StateTitle : public EditableTextItem
 {
+    Q_DECLARE_TR_FUNCTIONS(StateTitle)
 public:
     explicit StateTitle(const QString &text,
                         QGraphicsItem *parent = nullptr);

@@ -78,7 +78,7 @@ void PluginManagerDialog::fill()
         QString name = e.descriptor.name.isEmpty() ? e.name() : QString("%1 (%2)").arg(e.descriptor.name, e.name());
         item->setText(columnName, name);
         item->setText(columnVersion, e.descriptor.version);
-        QString state = PluginEntry::statusName(e.status);
+        QString state = PluginEntry::statusText(e.status);
         if (!e.reason.isEmpty()) state += ": " + e.reason;
         item->setText(columnState, state);
         item->setText(columnFolder, QString("%1 (%2)").arg(e.folder, e.origin));

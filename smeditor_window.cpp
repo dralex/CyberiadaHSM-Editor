@@ -465,7 +465,7 @@ void CyberiadaSMEditorWindow::updateTitle()
     // the title always carries the [*] slot (an unsaved document is "untitled")
     QString title = current->title() + "[*]";
     if (SettingsManager::instance().getInspectorMode()) {
-        title += " (inspector mode)";
+        title += " " + tr("(inspector mode)");
     }
     setWindowTitle(title);
     setWindowModified(!current->isClean());
@@ -1086,7 +1086,7 @@ QString CyberiadaSMEditorWindow::pluginDisabledReason(const PluginEntry& plugin,
                                                       CyberiadaSMEditorDocument* doc) const
 {
     if (plugin.status == PluginEntry::statusDisabled) return plugin.reason;
-    if (!plugin.usable()) return tr("the plugin is %1").arg(PluginEntry::statusName(plugin.status));
+    if (!plugin.usable()) return tr("the plugin is %1").arg(PluginEntry::statusText(plugin.status));
     // the batch mode ignores the switch of the plugin manager
     if (!qApp->property("batchMode").toBool() &&
         !SettingsManager::instance().getPluginEnabled(plugin.descriptor.id)) {

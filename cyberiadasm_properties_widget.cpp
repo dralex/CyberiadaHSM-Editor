@@ -71,10 +71,10 @@ CyberiadaSMPropertiesWidget::CyberiadaSMPropertiesWidget(QWidget *parent):
 		{propID,                   propEditorString,            tr("ID", "Property name")},
 		{propMarkup,               propEditorString,            tr("Markup", "Property name")},
 		{propMetaString,           propEditorString,            ""},
-		{propMetaEventPropagation, propEditorEventPropagation,  tr(METAINFORMATION_EVENT_PROPAGATION, "Property name")},
-		{propMetaGeometry,         propEditorGeometryDeclaration, tr(METAINFORMATION_GEOMETRY, "Property name")},
-		{propMetaStandardVersion,  propEditorString,            tr(METAINFORMATION_STANDARD_VERSION, "Property name")},
-		{propMetaTransitionOrder,  propEditorTransitionOrder,   tr(METAINFORMATION_TRANSITION_ORDER, "Property name")},
+		{propMetaEventPropagation, propEditorEventPropagation,  tr("Event Propagation", "Property name")},
+		{propMetaGeometry,         propEditorGeometryDeclaration, tr("Geometry", "Property name")},
+		{propMetaStandardVersion,  propEditorString,            tr("Standard Version", "Property name")},
+		{propMetaTransitionOrder,  propEditorTransitionOrder,   tr("Transition Order", "Property name")},
 		{propName,                 propEditorString,            tr("Name", "Property name")},
 		{propSubmachineRef,        propEditorString,            tr("Submachine", "Property name")},
 		{propSource,               propEditorSourceElementLink, tr("Source", "Property name")},
@@ -257,19 +257,20 @@ void CyberiadaSMPropertiesWidget::rebuildProperties()
 }
 
 // the standard free-form metainformation parameters: canonical key and its label
+// (translated where it is shown)
 static const QVector<QPair<QString, QString>>& knownMetaParameters()
 {
 	static const QVector<QPair<QString, QString>> params = {
-		{ "author",           METAINFORMATION_AUTHOR },
-		{ "contact",          METAINFORMATION_CONTACT },
-		{ "createdAt",        METAINFORMATION_DATE },
-		{ "description",      METAINFORMATION_DESCRIPTION },
-		{ "markupLanguage",   METAINFORMATION_MARKUP_LANGUAGE },
-		{ "platform",         METAINFORMATION_PLATFORM_NAME },
-		{ "platformLanguage", METAINFORMATION_PLATFORM_LANGUAGE },
-		{ "platformVersion",  METAINFORMATION_PLATFORM_VERSION },
-		{ "target",           METAINFORMATION_TARGET_SYSTEM },
-		{ "version",          METAINFORMATION_VERSION },
+		{ "author",           QT_TRANSLATE_NOOP("CyberiadaSMPropertiesWidget", "Author") },
+		{ "contact",          QT_TRANSLATE_NOOP("CyberiadaSMPropertiesWidget", "Contact") },
+		{ "createdAt",        QT_TRANSLATE_NOOP("CyberiadaSMPropertiesWidget", "Date") },
+		{ "description",      QT_TRANSLATE_NOOP("CyberiadaSMPropertiesWidget", "Description") },
+		{ "markupLanguage",   QT_TRANSLATE_NOOP("CyberiadaSMPropertiesWidget", "Markup Language") },
+		{ "platform",         QT_TRANSLATE_NOOP("CyberiadaSMPropertiesWidget", "Platform Name") },
+		{ "platformLanguage", QT_TRANSLATE_NOOP("CyberiadaSMPropertiesWidget", "Platform Language") },
+		{ "platformVersion",  QT_TRANSLATE_NOOP("CyberiadaSMPropertiesWidget", "Platform Version") },
+		{ "target",           QT_TRANSLATE_NOOP("CyberiadaSMPropertiesWidget", "Target System") },
+		{ "version",          QT_TRANSLATE_NOOP("CyberiadaSMPropertiesWidget", "Version") },
 	};
 	return params;
 }
@@ -295,7 +296,7 @@ void CyberiadaSMPropertiesWidget::contextMenuEvent(QContextMenuEvent* event)
 			if (s.first == key) { present = true; break; }
 		}
 		if (present) continue;
-		QAction* a = addMenu->addAction(p.second);
+		QAction* a = addMenu->addAction(tr(p.second.toUtf8().constData()));
 		const QString canonical = p.first;
 		connect(a, &QAction::triggered, this, [this, canonical]() {
 			model->updateMetainformation(model->documentIndex(), canonical, QString());
