@@ -1,0 +1,10 @@
+# the batch mode is English under a Russian profile and locale (EDIT-UI-2): the
+# tab title and the default names of the new elements stay the sources
+new-document
+tool new-sm
+press 0 0
+drag 400 300
+release 400 300
+tool new-state
+click 150 150
+tool select

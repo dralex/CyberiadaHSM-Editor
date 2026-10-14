@@ -1,0 +1,9 @@
+== tabs
+count: 2
+0 hierarchy.graphml
+1 untitled* active
+== document
+LocalDocument: {Document: {id: '', name: '', geometry format: qt, meta: {standard version: '1.0', transition order: action first, event propagation: block events}, elements: {State Machine: {id: 'G0', name: 'New State Machine', geometry: (200; 150; 400; 300), elements: {Simple State: {id: 'n0', name: 'New state', geometry: (-50; 0; 200; 100)}}}}, bounding rect: (200; 150; 400; 300)}, format: cyberiada, format_str: 'Cyberiada-GraphML-1.0'}
+== scene
+  State Machine: {id: 'G0', pos: (200.00; 150.00), rect: (-200.00; -150.00; 400.00; 300.00)}
+    Simple State: {id: 'n0', pos: (-50.00; 0.00), rect: (-100.00; -50.00; 200.00; 100.00)}

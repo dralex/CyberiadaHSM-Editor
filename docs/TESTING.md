@@ -119,6 +119,7 @@ it checks in a comment):
 | META   | `l2 update-meta`, `inspect-reject update-meta`, the `meta` diagram; META-1 (node hidden) via the `l1` scene dump; META-6 (CGML_COMPONENT hidden by default) via `l4-scene test_component_comment_hidden` + the `components` `l1` scene dump; META-5 distinct machine names via `l4-model test_unique_machine_name` (NewSM dedupes the default name) |
 | DOC    | `tabs-*` (the document verbs with the `== tabs` dump, `EDIT-DOC-2/3/5/9`), `l4-tabs` (the tab line, the re-targeting, the prompts, `EDIT-DOC-1..8`) |
 | INSPECT| `inspect-reject-*` (editing refused under `--inspect`, `EDIT-INSPECT-1`); `inspect-render-*` (stored-geometry render vs a good image, `EDIT-INSPECT-2`) |
+| UI     | `l4-translation` (`EDIT-UI-1/3`: the bundled languages, the Preferences selector, the Russian menus, Qt's buttons, the property labels, the default names, the property lookup), `ui-batch-english` (`EDIT-UI-2`) |
 | PLUG   | the `plugin-*` cases: discovery and rejection (`EDIT-PLUG-1..4`), variables and secrets (`EDIT-PLUG-8..11`), the results and failures (`EDIT-PLUG-12..20`), save and cwd (`EDIT-PLUG-25`), the batch contract (`EDIT-PLUG-27/28`); `l4-plugin-core`; `l4-plugins` for the window (`EDIT-PLUG-5..7`, `EDIT-PLUG-15`, `EDIT-PLUG-21..24`, `EDIT-PLUG-29..32`) |
 
 Requirements with **no dedicated case yet** — the gaps to fill: `SEM-1` (one initial per
@@ -244,6 +245,15 @@ hand-typed one shown while current, and the menu disabled in inspection mode.
 Edit > Markup (`EDIT-TEXT-12`) follows the same cases: placed after Language,
 Plain removes the parameter, an explicit `plain` checks Plain, an unknown `html`
 kept in its own session list, the check following the tabs.
+
+`l4-translation` checks the interface language (`EDIT-UI-1/3`) under its own settings
+path: the bundled languages and their own names, the system default resolution, the
+Preferences selector with its restart note, Apply and Reset; then it installs the Russian
+translators and requires every menu text to differ from its English twin (an unwrapped
+or an untranslated string keeps its English text), Qt's Cancel button and the property
+browser labels translated, the default names of the new elements in Russian and a rename
+through the Russian name row. The translators stay installed, so the English cases run
+first.
 
 ## Batch mode contract
 
@@ -372,6 +382,10 @@ A batch run starts with snap-to-grid off and the default grid spacing (25),
 whatever the GUI settings hold (`EDIT-TOOL-14`). `--snap` turns the snap on and
 `--grid <n>` sets the spacing for the run; like `--service` they are runtime
 overrides and change nothing saved.
+
+The batch mode installs no translator (`EDIT-UI-2`): `ui-batch-english` runs a new
+document with a state machine and a state drawn by the tools under a profile with Russian
+chosen and a Russian locale, and its dump keeps `untitled` and the English default names.
 
 ### Plugins
 

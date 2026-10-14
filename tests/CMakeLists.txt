@@ -241,6 +241,29 @@ add_tabs_test(switch hierarchy 0)
 add_tabs_test(reopen hierarchy 0)
 add_tabs_test(new-document hierarchy 0)
 add_tabs_test(copy-paste hierarchy 0)
+
+# the batch mode is English whatever the interface language and the locale
+# (EDIT-UI-2): a profile with Russian chosen and a Russian locale change nothing
+set(UI_CONFIG_HOME ${CMAKE_CURRENT_BINARY_DIR}/config-ui)
+file(WRITE "${UI_CONFIG_HOME}/Cyberiada/Cyberiada State Machine Editor.conf"
+  "[interface]\nlanguage=ru\n")
+set(UI_ENVIRONMENT ${L0_ENVIRONMENT})
+list(FILTER UI_ENVIRONMENT EXCLUDE REGEX "^XDG_CONFIG_HOME=")
+list(APPEND UI_ENVIRONMENT "XDG_CONFIG_HOME=${UI_CONFIG_HOME}" "LANG=ru_RU.UTF-8" "LANGUAGE=ru")
+add_test(NAME ui-batch-english
+  COMMAND ${CMAKE_COMMAND}
+    -DBATCH_BIN=$<TARGET_FILE:CyberiadaEditor>
+    -DINPUT=diagrams/hierarchy.graphml
+    -DSCRIPT=scripts/ui-batch-english.script
+    -DDUMP_TABS=1
+    -DEXPECTED=0
+    -DWORKDIR=${CMAKE_CURRENT_SOURCE_DIR}
+    -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/ui-batch-english.out
+    -DDUMP_GOOD=${CMAKE_CURRENT_SOURCE_DIR}/good/ui-batch-english-output.txt
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunBatchTest.cmake)
+set_tests_properties(ui-batch-english PROPERTIES
+  TIMEOUT 60
+  ENVIRONMENT "${UI_ENVIRONMENT}")
 add_tabs_test(undo hierarchy 0)
 add_tabs_test(close-discard hierarchy 0)
 add_tabs_test(close-refused hierarchy 4)
@@ -600,6 +623,7 @@ add_l4_test(window)
 add_l4_test(log)
 add_l4_test(tabs)
 add_l4_test(language)
+add_l4_test(translation)
 
 # The plugin layer: the batch plugin stage over the example plugins of
 # plugins/<set>/, which all run one helper with no dependencies (see
