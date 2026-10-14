@@ -30,6 +30,7 @@
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_editor_scene.h"
 #include "cyberiadasm_editor_document.h"
+#include "plugin_runner.h"
 
 class QToolBar;
 class QComboBox;
@@ -85,6 +86,25 @@ public:
     CyberiadaSMGraphicsView* sceneView = nullptr;
     QTabBar*                tabBar() const { return documentTabs; }
 
+    // PLUGINS (docs/PLUGINS.md): start an action on the document, the active one by
+    // default; nullptr with the reason when it cannot start; the result is applied
+    // to the document the run started from (EDIT-PLUG-21)
+    PluginRunner*           runPlugin(const QString& pluginId, const QString& actionId,
+                                      const PluginValues& values, QString* error = nullptr,
+                                      CyberiadaSMEditorDocument* doc = nullptr);
+    // the batch and test form: run, wait in a local event loop, return the result
+    PluginResult            runPluginAndWait(const QString& pluginId, const QString& actionId,
+                                             const PluginValues& values,
+                                             CyberiadaSMEditorDocument* doc = nullptr);
+    // why the action cannot run on the document now; empty when it can
+    QString                 pluginDisabledReason(const PluginEntry& plugin, const PluginAction& action,
+                                                 CyberiadaSMEditorDocument* doc) const;
+
+signals:
+    void                    pluginRunStarted(PluginRunner* run);
+    // emitted after the result is applied; the runner is deleted later
+    void                    pluginRunFinished(PluginRunner* run);
+
 protected:
     void                    closeEvent(QCloseEvent* event) override;
     void                    showEvent(QShowEvent* event) override;
@@ -109,6 +129,12 @@ private:
     // the selection links between the tree and the active scene
     void                    bindDocument(CyberiadaSMEditorDocument* doc);
     void                    unbindDocument(CyberiadaSMEditorDocument* doc);
+    // the run context of a document (the snapshot, the meta, the selection)
+    bool                    pluginContext(CyberiadaSMEditorDocument* doc, PluginRunContext* context,
+                                          QString* error) const;
+    // save, cwd: document need the file to be current (EDIT-PLUG-25)
+    bool                    savePluginDocument(CyberiadaSMEditorDocument* doc, QString* error);
+    void                    applyPluginResult(PluginRunner* run, CyberiadaSMEditorDocument* doc);
 
 private slots:
     void                    slotModelReset();
@@ -128,6 +154,7 @@ private slots:
     void                    slotPreviousDocument();
     // enable cut/copy/paste/delete only for a fitting selection (and not in inspector mode)
     void                    updateEditActions();
+    void                    slotPluginFinished();
 
 public slots:
 	void                    slotFileNew();
@@ -175,6 +202,8 @@ public slots:
 private:
     QList<CyberiadaSMEditorDocument*> documents;
     CyberiadaSMEditorDocument* current = nullptr;
+    // the running plugins and the documents they started from
+    QMap<PluginRunner*, QPointer<CyberiadaSMEditorDocument> > pluginRuns;
     QUndoGroup*             undoGroup = nullptr;
     // the tab line over the central area, shown from the second document on
     QTabBar*                documentTabs = nullptr;

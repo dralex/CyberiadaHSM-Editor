@@ -17,7 +17,7 @@ the variables, the files and the formats — is `PLUGIN-API.md`. The requirement
 ```
  smeditor_window.cpp, batch_driver.cpp
 +----------------------------------------------------------------------------------------+
-| Plugins menu, plugin toolbars, --plugin               plugin dock: Diagnostics, Output |
+| Plugins menu, plugin toolbars, --run-plugin           plugin dock: Diagnostics, Output |
 +----------------------------------------------------------------------------------------+
        |                                                     ^
        | action, parameter values                            | findings, log, progress
@@ -135,7 +135,7 @@ Output line. The scan runs at start and on Rescan in the plugin manager.
 ## The run
 
 ```
-   menu, toolbar, or --plugin
+   menu, toolbar, or --run-plugin
           |
           v
    +-------------+

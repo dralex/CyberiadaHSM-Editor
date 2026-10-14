@@ -25,6 +25,7 @@
 #define CYBERIADA_SM_DUMP
 
 #include <ostream>
+#include <QList>
 #include <vector>
 
 class QGraphicsItem;
@@ -33,6 +34,9 @@ class EditableTextItem;
 class CyberiadaSMModel;
 class CyberiadaSMEditorScene;
 class CyberiadaSMEditorWindow;
+struct PluginEntry;
+struct PluginAction;
+struct PluginResult;
 
 // the document part reuses the libcyberiadamlpp dump verbatim
 void dumpDocument(CyberiadaSMModel* model, std::ostream& os);
@@ -48,6 +52,16 @@ void dumpStack(CyberiadaSMModel* model, std::ostream& os);
 // the tab line: the count, then one line per tab with the index, the tab text
 // (the title with the modified marker) and the active mark
 void dumpTabs(CyberiadaSMEditorWindow* win, std::ostream& os);
+
+// the plugins found, one line per plugin folder: the id, the version, the state,
+// the origin and the reason, then the warnings (EDIT-PLUG-28)
+void dumpPlugins(const QList<PluginEntry>& entries, std::ostream& os);
+// a plugin run: the action, the result, the state, the exit code, the outcome,
+// the error and the stdout; the run, plugin and document dirs by name only
+void dumpPluginRun(const PluginEntry& plugin, const PluginAction& action,
+                   const PluginResult& result, std::ostream& os);
+// the findings of a run: the count, then one line per finding
+void dumpDiagnostics(const PluginResult& result, std::ostream& os);
 
 // the visible text items of a scene item sorted by role, y, x: the dump
 // lists them and the script addresses them in this order

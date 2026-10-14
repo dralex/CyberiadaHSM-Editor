@@ -31,6 +31,8 @@
 #include "cyberiadasm_dump.h"
 #include "batch_script.h"
 #include "cyberiadasm_render.h"
+#include "plugin_registry.h"
+#include "plugin_runner.h"
 
 int runGuiMode(CyberiadaSMEditorApplication& app, const QStringList& files,
 			   bool reconstruct, bool reconstruct_sm, bool strict)
@@ -52,10 +54,72 @@ static bool stageFailed(CyberiadaSMEditorApplication& app)
 	return app.errorReported();
 }
 
+// the plugin stage (EDIT-PLUG-27): a usage error stops the run, a failed run is
+// reported with the dumps and ends with batchPluginError
+static int runPluginStage(CyberiadaSMEditorWindow& win, const BatchOptions& options,
+						  const PluginEntry** entry, const PluginAction** action, PluginResult* result)
+{
+	QString id = options.plugin.section(':', 0, 0);
+	QString actionId = options.plugin.section(':', 1);
+	*entry = PluginRegistry::instance().find(id);
+	if (!*entry) {
+		fprintf(stderr, "the plugin %s is not found\n", qPrintable(id));
+		return batchUsageError;
+	}
+	const PluginDescriptor& plugin = (*entry)->descriptor;
+	if (actionId.isEmpty()) {
+		if (plugin.actions.size() != 1) {
+			fprintf(stderr, "the plugin %s has several actions: name one as %s:<action>\n",
+					qPrintable(id), qPrintable(id));
+			return batchUsageError;
+		}
+		actionId = plugin.actions.first().id;
+	}
+	*action = plugin.action(actionId);
+	if (!*action) {
+		fprintf(stderr, "the plugin %s has no action %s\n", qPrintable(id), qPrintable(actionId));
+		return batchUsageError;
+	}
+	PluginValues values;
+	QString error;
+	PluginDocumentPaths paths = pluginDocumentPaths(win.currentDocument()->filePath());
+	if (!pluginParseValues(plugin, **action, options.pluginParams, paths, &values, &error)) {
+		fprintf(stderr, "%s\n", qPrintable(error));
+		return batchUsageError;
+	}
+	bool dumping = options.dump || options.dumpPlugin;
+	// stderr goes through as it comes; stdout to the dump, or through without one
+	QMetaObject::Connection started = QObject::connect(&win, &CyberiadaSMEditorWindow::pluginRunStarted,
+		[dumping](PluginRunner* run) {
+			QObject::connect(run, &PluginRunner::output, [dumping](const QString& text, bool isError) {
+				if (isError) {
+					fputs(text.toLocal8Bit().constData(), stderr);
+				} else if (!dumping) {
+					fputs(text.toLocal8Bit().constData(), stdout);
+					fflush(stdout);
+				}
+			});
+		});
+	*result = win.runPluginAndWait(id, actionId, values);
+	QObject::disconnect(started);
+	if (result->state != PluginResult::stateDone) {
+		fprintf(stderr, "the plugin %s:%s failed\n%s\n", qPrintable(id), qPrintable(actionId),
+				qPrintable(result->error));
+		return batchPluginError;
+	}
+	return batchOK;
+}
+
 int runBatchMode(CyberiadaSMEditorApplication& app, const BatchOptions& options)
 {
 	CyberiadaSMEditorWindow win;
 	win.show();
+
+	// the plugins found, before anything else; no document needed
+	if (options.listPlugins) {
+		std::cout << "== plugins" << std::endl;
+		dumpPlugins(PluginRegistry::instance().entries(), std::cout);
+	}
 
 	QString error;
 	// a from-scratch session has no start document: the script's first verb
@@ -78,6 +142,16 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const BatchOptions& options)
 	// the assertions of every stage are caught by notify(); the flag says so
 	if (stageFailed(app)) return batchInternalError;
 
+	const PluginEntry* plugin = nullptr;
+	const PluginAction* action = nullptr;
+	PluginResult pluginResult;
+	int pluginCode = batchOK;
+	if (!options.plugin.isEmpty()) {
+		pluginCode = runPluginStage(win, options, &plugin, &action, &pluginResult);
+		if (pluginCode == batchUsageError) return pluginCode;
+		if (stageFailed(app)) return batchInternalError;
+	}
+
 	if (options.dumpTabsLine) {
 		std::cout << "== tabs" << std::endl;
 		dumpTabs(&win, std::cout);
@@ -89,6 +163,13 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const BatchOptions& options)
 		std::cout << "== scene" << std::endl;
 		dumpScene(win.getScene(), win.getModel(), std::cout);
 		if (stageFailed(app)) return batchInternalError;
+	}
+
+	if (plugin && action && (options.dump || options.dumpPlugin)) {
+		std::cout << "== plugin" << std::endl;
+		dumpPluginRun(*plugin, *action, pluginResult, std::cout);
+		std::cout << "== diagnostics" << std::endl;
+		dumpDiagnostics(pluginResult, std::cout);
 	}
 
 	if (options.dumpTextMetrics) {
@@ -124,5 +205,5 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const BatchOptions& options)
 		}
 		if (stageFailed(app)) return batchInternalError;
 	}
-	return batchOK;
+	return pluginCode;
 }

@@ -37,6 +37,7 @@
 #include <QStackedWidget>
 #include <QTabBar>
 #include <QActionGroup>
+#include <QEventLoop>
 
 #include "smeditor_window.h"
 #include "cyberiadasm_editor_view.h"
@@ -52,6 +53,7 @@
 #include "gesture_log.h"
 #include "code_highlighter.h"
 #include "meta_choice_menu.h"
+#include "plugin_registry.h"
 
 
 CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
@@ -88,6 +90,10 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     // the first, untitled document (the tools need an active scene)
     setCurrentDocument(newDocument());
     initializeTools();
+
+    // the plugins installed now (EDIT-PLUG-1); the search path comes from main
+    PluginRegistry::instance().setInterpreterPaths(SettingsManager::instance().getInterpreterPaths());
+    PluginRegistry::instance().scan();
 
     connect(actionUndo, &QAction::triggered, undoGroup, &QUndoGroup::undo);
     connect(actionRedo, &QAction::triggered, undoGroup, &QUndoGroup::redo);
@@ -198,6 +204,8 @@ bool CyberiadaSMEditorWindow::closeDocument(CyberiadaSMEditorDocument* doc, bool
     }
     documentStack->removeWidget(doc->view());
     undoGroup->removeStack(doc->model()->undoStack());
+    // the result of a closed document is never applied (EDIT-PLUG-23)
+    if (doc->pluginRun()) doc->pluginRun()->abort();
     delete doc;
     return true;
 }
@@ -1015,3 +1023,240 @@ void CyberiadaSMEditorWindow::slotSnapModeTriggered(bool on)
 }
 
 
+
+// PLUGINS
+
+static QString documentFormatName(const Cyberiada::LocalDocument* root)
+{
+    if (!root) return "cyberiada";
+    switch (root->get_file_format()) {
+    case Cyberiada::formatLegacyYEDOstranna:  return "yed-ostranna";
+    case Cyberiada::formatLegacyYEDBerloga16: return "yed-berloga";
+    case Cyberiada::formatLegacyYED:
+        return QString::fromStdString(root->get_file_format_str()).contains("Berloga") ?
+            "yed-berloga" : "yed-ostranna";
+    default:                                  return "cyberiada";
+    }
+}
+
+QString CyberiadaSMEditorWindow::pluginDisabledReason(const PluginEntry& plugin,
+                                                      const PluginAction& action,
+                                                      CyberiadaSMEditorDocument* doc) const
+{
+    if (plugin.status == PluginEntry::statusDisabled) return plugin.reason;
+    if (!plugin.usable()) return tr("the plugin is %1").arg(PluginEntry::statusName(plugin.status));
+    // the batch mode ignores the switch of the plugin manager
+    if (!qApp->property("batchMode").toBool() &&
+        !SettingsManager::instance().getPluginEnabled(plugin.descriptor.id)) {
+        return tr("the plugin is switched off");
+    }
+    if (!doc) return tr("there is no document");
+    if (doc->pluginRun()) return tr("a plugin is running on the document");
+    if (action.changesDocument() && SettingsManager::instance().getInspectorMode()) {
+        return tr("the inspection mode keeps the document read-only");
+    }
+    return QString();
+}
+
+bool CyberiadaSMEditorWindow::pluginContext(CyberiadaSMEditorDocument* doc, PluginRunContext* context,
+                                            QString* error) const
+{
+    CyberiadaSMModel* m = doc->model();
+    bool ok = true;
+    context->input = m->snapshot(&ok);
+    if (!ok) {
+        if (error) *error = tr("the document cannot be encoded");
+        return false;
+    }
+    context->documentPath = doc->filePath();
+    context->documentFormat = documentFormatName(m->rootDocument());
+    context->modified = !doc->isClean();
+    const Cyberiada::LocalDocument* root = m->rootDocument();
+    if (root) {
+        const Cyberiada::DocumentMetainformation& meta = root->meta();
+        if (!meta.standard_version.empty()) {
+            context->meta.append(qMakePair(QString("standardVersion"),
+                                           QString::fromStdString(meta.standard_version)));
+        }
+        for (const std::pair<Cyberiada::String, Cyberiada::String>& item: meta.strings) {
+            QString key = QString::fromStdString(item.first);
+            // the view state is the editor's own (docs/PLUGIN-API.md, request.json)
+            if (key == "cyberiadaEditorView") continue;
+            context->meta.append(qMakePair(key, QString::fromStdString(item.second)));
+        }
+    }
+    context->selection = doc->scene()->selectedIds();
+    return true;
+}
+
+bool CyberiadaSMEditorWindow::savePluginDocument(CyberiadaSMEditorDocument* doc, QString* error)
+{
+    if (doc->hasFile() && doc->isClean()) return true;
+    if (!doc->hasFile()) {
+        if (qApp->property("batchMode").toBool()) {
+            if (error) *error = tr("the document is not saved");
+            return false;
+        }
+        setCurrentDocument(doc);
+        slotFileSaveAs();
+    } else if (!doc->save(error)) {
+        return false;
+    }
+    if (!doc->hasFile() || !doc->isClean()) {
+        if (error && error->isEmpty()) *error = tr("the document is not saved");
+        return false;
+    }
+    return true;
+}
+
+PluginRunner* CyberiadaSMEditorWindow::runPlugin(const QString& pluginId, const QString& actionId,
+                                                 const PluginValues& values, QString* error,
+                                                 CyberiadaSMEditorDocument* doc)
+{
+    if (!doc) doc = current;
+    const PluginEntry* entry = PluginRegistry::instance().find(pluginId);
+    if (!entry) {
+        if (error) *error = tr("the plugin '%1' is not found").arg(pluginId);
+        return nullptr;
+    }
+    const PluginAction* action = entry->descriptor.action(actionId);
+    if (!action) {
+        if (error) *error = tr("the plugin '%1' has no action '%2'").arg(pluginId, actionId);
+        return nullptr;
+    }
+    QString reason = pluginDisabledReason(*entry, *action, doc);
+    if (!reason.isEmpty()) {
+        if (error) *error = reason;
+        return nullptr;
+    }
+    QString saveError;
+    if (action->needsSavedDocument() && !savePluginDocument(doc, &saveError)) {
+        if (error) *error = saveError;
+        return nullptr;
+    }
+    PluginRunContext context;
+    if (!pluginContext(doc, &context, error)) return nullptr;
+
+    PluginRunner* run = new PluginRunner(*entry, action->id, values, context, this);
+    doc->setPluginRun(run);
+    pluginRuns.insert(run, QPointer<CyberiadaSMEditorDocument>(doc));
+    if (action->changesDocument()) {
+        // the document waits for the result (EDIT-PLUG-22)
+        doc->model()->setLocked(true);
+        doc->view()->setInteractive(false);
+        updateEditActions();
+    }
+    connect(run, &PluginRunner::finished, this, &CyberiadaSMEditorWindow::slotPluginFinished);
+    emit pluginRunStarted(run);
+    run->start();
+    return run;
+}
+
+PluginResult CyberiadaSMEditorWindow::runPluginAndWait(const QString& pluginId, const QString& actionId,
+                                                       const PluginValues& values,
+                                                       CyberiadaSMEditorDocument* doc)
+{
+    PluginResult result;
+    QString error;
+    bool done = false;
+    // the result is taken when it is applied; the runner is deleted later
+    QMetaObject::Connection taken;
+    PluginRunner* run = nullptr;
+    taken = connect(this, &CyberiadaSMEditorWindow::pluginRunFinished, this,
+                    [&result, &done, &run](PluginRunner* finished) {
+                        if (finished != run) return;
+                        result = finished->result();
+                        done = true;
+                    });
+    run = runPlugin(pluginId, actionId, values, &error, doc);
+    if (!run) {
+        disconnect(taken);
+        result.state = PluginResult::stateFailed;
+        result.error = error;
+        return result;
+    }
+    // a staging failure finishes inside runPlugin, before a loop could catch it
+    if (run->isFinished() && !done) {
+        result = run->result();
+        done = true;
+    }
+    if (!done) {
+        QEventLoop loop;
+        QMetaObject::Connection quit = connect(this, &CyberiadaSMEditorWindow::pluginRunFinished, &loop,
+                                               [&loop, run](PluginRunner* finished) {
+                                                   if (finished == run) loop.quit();
+                                               });
+        loop.exec();
+        disconnect(quit);
+    }
+    disconnect(taken);
+    return result;
+}
+
+void CyberiadaSMEditorWindow::slotPluginFinished()
+{
+    PluginRunner* run = qobject_cast<PluginRunner*>(sender());
+    if (!run || !pluginRuns.contains(run)) return;
+    QPointer<CyberiadaSMEditorDocument> doc = pluginRuns.take(run);
+    applyPluginResult(run, doc.data());
+    emit pluginRunFinished(run);
+    run->deleteLater();
+}
+
+void CyberiadaSMEditorWindow::applyPluginResult(PluginRunner* run, CyberiadaSMEditorDocument* doc)
+{
+    PluginResult* r = run->mutableResult();
+    const PluginAction& action = run->action();
+    if (doc) {
+        doc->setPluginRun(nullptr);
+        if (action.changesDocument()) {
+            doc->model()->setLocked(false);
+            doc->view()->setInteractive(true);
+        }
+    }
+    if (r->state == PluginResult::stateDone && !doc) {
+        r->state = PluginResult::stateFailed;
+        r->error = tr("the document is closed");
+    }
+    if (r->state != PluginResult::stateDone) {
+        updateEditActions();
+        return;
+    }
+    QString logLine = QString("# plugin %1:%2").arg(run->plugin().descriptor.id, action.id);
+    GestureLog::instance().logAction(logLine);
+
+    CyberiadaSMEditorDocument* target = doc;
+    if (action.result == PluginAction::resultReplace) {
+        // the mode may have been switched on during the run (EDIT-PLUG-24)
+        bool changed = false;
+        if (!doc->model()->replaceDocument(r->document, tr("Plugin: %1").arg(action.label), &changed)) {
+            r->state = PluginResult::stateFailed;
+            r->error = tr("the document is read-only");
+            updateEditActions();
+            return;
+        }
+        r->changed = changed;
+        if (changed && doc == current && GestureLog::instance().isActive()) {
+            // a plugin is no script verb: the log goes on from the new document
+            GestureLog::instance().endSession();
+            GestureLog::instance().startSession(doc->model());
+        }
+    } else if (action.result == PluginAction::resultNewDocument) {
+        // the active clean untitled tab takes it, as Open does (EDIT-PLUG-14)
+        target = current && current->isUntitled() && !current->pluginRun() ? current : newDocument();
+        target->model()->restoreSnapshot(r->document);
+        target->model()->undoStack()->resetClean();
+        setCurrentDocument(target);
+        slotFitContent();
+        r->changed = true;
+        r->tab = documents.indexOf(target);
+    }
+
+    // a finding links to an element the document has (EDIT-PLUG-15)
+    const Cyberiada::LocalDocument* root = target ? target->model()->rootDocument() : nullptr;
+    for (PluginDiagnostic& d: r->diagnostics) {
+        d.linked = !d.element.isEmpty() && root && target->model()->idToElement(d.element);
+    }
+    updateEditActions();
+    updateTitle();
+}

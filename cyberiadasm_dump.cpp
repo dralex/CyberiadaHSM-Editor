@@ -29,6 +29,8 @@
 #include <QUndoStack>
 
 #include "cyberiadasm_dump.h"
+#include "plugin_runner.h"
+#include <algorithm>
 #include "smeditor_window.h"
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_editor_scene.h"
@@ -217,5 +219,80 @@ void dumpTabs(CyberiadaSMEditorWindow* win, std::ostream& os)
 		os << i << " " << doc->title().toStdString() << (doc->isClean() ? "" : "*");
 		if (doc == win->currentDocument()) os << " active";
 		os << std::endl;
+	}
+}
+
+void dumpPlugins(const QList<PluginEntry>& entries, std::ostream& os)
+{
+	for (const PluginEntry& e: entries) {
+		QString version = e.descriptor.version.isEmpty() ? QString("-") : e.descriptor.version;
+		os << e.name().toStdString() << " " << version.toStdString() << " "
+		   << PluginEntry::statusName(e.status).toStdString() << " " << e.origin.toStdString();
+		if (!e.reason.isEmpty()) os << ": " << e.reason.simplified().toStdString();
+		os << std::endl;
+		for (const QString& w: e.descriptor.warnings) {
+			os << "  warning: " << w.toStdString() << std::endl;
+		}
+	}
+}
+
+// the machine paths of a run are printed by name, longest first (EDIT-PLUG-28)
+static QString normalizePaths(QString text, const PluginResult& result)
+{
+	QList<QPair<QString, QString> > names;
+	if (!result.runDir.isEmpty()) names.append(qMakePair(result.runDir, QString("<rundir>")));
+	if (!result.pluginDir.isEmpty()) names.append(qMakePair(result.pluginDir, QString("<plugin_dir>")));
+	if (!result.documentDir.isEmpty()) names.append(qMakePair(result.documentDir, QString("<document_dir>")));
+	std::sort(names.begin(), names.end(), [](const QPair<QString, QString>& a, const QPair<QString, QString>& b) {
+		return a.first.size() > b.first.size();
+	});
+	for (const QPair<QString, QString>& n: names) text.replace(n.first, n.second);
+	return text;
+}
+
+void dumpPluginRun(const PluginEntry& plugin, const PluginAction& action,
+				   const PluginResult& result, std::ostream& os)
+{
+	static const char* const states[] = { "done", "failed", "cancelled" };
+	os << "action: " << plugin.descriptor.id.toStdString() << ":" << action.id.toStdString() << std::endl;
+	os << "result: " << PluginDescriptor::resultName(action.result).toStdString() << std::endl;
+	os << "state: " << states[result.state] << std::endl;
+	os << "exit: ";
+	if (result.exitCode < 0) os << "-";
+	else os << result.exitCode;
+	os << std::endl;
+	if (result.state == PluginResult::stateDone) {
+		if (action.result == PluginAction::resultReplace) {
+			os << "changes: " << (result.changed ? "yes" : "no") << std::endl;
+		} else if (action.result == PluginAction::resultNewDocument) {
+			os << "tab: " << result.tab << std::endl;
+		} else if (action.result == PluginAction::resultFiles && !result.files.isEmpty()) {
+			os << "files:" << std::endl;
+			for (const PluginFileChange& f: result.files) {
+				os << "  " << (f.isNew ? "new " : "changed ") << f.path.toStdString() << std::endl;
+			}
+		}
+	} else {
+		os << "error: " << normalizePaths(result.error, result).toStdString() << std::endl;
+	}
+	if (!result.stdoutText.isEmpty()) {
+		os << "stdout:" << std::endl;
+		QString text = normalizePaths(result.stdoutText, result);
+		for (const QString& line: text.split('\n')) {
+			if (line.isEmpty()) continue;
+			os << "  " << line.toStdString() << std::endl;
+		}
+	}
+}
+
+void dumpDiagnostics(const PluginResult& result, std::ostream& os)
+{
+	os << "count: " << result.diagnostics.size() << std::endl;
+	for (const PluginDiagnostic& d: result.diagnostics) {
+		os << d.severity.toStdString() << " " << (d.rule.isEmpty() ? std::string("-") : d.rule.toStdString())
+		   << " " << (d.element.isEmpty() ? std::string("-") : d.element.toStdString());
+		if (!d.element.isEmpty() && !d.linked) os << " (absent)";
+		if (d.line > 0) os << " line " << d.line;
+		os << ": " << d.message.toStdString() << std::endl;
 	}
 }

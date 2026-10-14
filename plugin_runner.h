@@ -115,6 +115,8 @@ public:
     const PluginAction&  action() const;
     const PluginValues&  values() const { return runValues; }
     const PluginResult&  result() const { return res; }
+    // the window completes the result when it applies it
+    PluginResult*        mutableResult() { return &res; }
     bool                 isFinished() const { return finishedFlag; }
     qint64               elapsedMs() const;
 

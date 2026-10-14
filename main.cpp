@@ -28,6 +28,7 @@
 #include "settings_manager.h"
 #include "fontmanager.h"
 #include "batch_driver.h"
+#include "plugin_registry.h"
 #include "cyberiadasm_render.h"
 #include "version.h"
 
@@ -101,6 +102,20 @@ int main(int argc, char *argv[])
 	parser.addOption(epsilonOption);
 	QCommandLineOption maxDiffOption("max-diff", "Comparison allowed differing pixel fraction (default 0).", "f", "0");
 	parser.addOption(maxDiffOption);
+	// not "plugin": QGuiApplication takes -plugin for its own generic plugins
+	QCommandLineOption pluginOption("run-plugin", "Run a plugin action after the script in batch mode.",
+									"id[:action]");
+	parser.addOption(pluginOption);
+	QCommandLineOption pluginParamOption("plugin-param",
+										 "A plugin parameter value in batch mode (@file reads it).",
+										 "name=value");
+	parser.addOption(pluginParamOption);
+	QCommandLineOption pluginPathOption("plugin-path", "Look for the plugins in the folder only.", "dir");
+	parser.addOption(pluginPathOption);
+	QCommandLineOption listPluginsOption("list-plugins", "Print the plugins found (the == plugins section).");
+	parser.addOption(listPluginsOption);
+	QCommandLineOption dumpPluginOption("dump-plugin", "Print the == plugin and == diagnostics sections only.");
+	parser.addOption(dumpPluginOption);
 	parser.addPositionalArgument("files", "The CyberiadaML documents to open (one in batch mode).", "[files...]");
 	parser.process(app);
 
@@ -152,14 +167,19 @@ int main(int argc, char *argv[])
 			if (res < 0) return batchInternalError;
 			return res == 0 ? batchOK : batchImageMismatch;
 		}
+		// --plugin-path replaces the plugin search path in both modes (EDIT-PLUG-1)
+		PluginRegistry::instance().setSearchPath(parser.values(pluginPathOption));
 		if (batch) {
 			QStringList args = parser.positionalArguments();
 			// a document file is required unless a script bootstraps the
 			// document from scratch (a from-scratch recorded session, whose
 			// first verb is new-sm)
+			// a plugin run starts from an empty document, a listing needs none
 			if (args.size() > 1 ||
-				(args.size() == 0 && !parser.isSet(scriptOption))) {
-				fprintf(stderr, "batch mode requires one document file, or a --script with no file\n");
+				(args.size() == 0 && !parser.isSet(scriptOption) && !parser.isSet(pluginOption) &&
+				 !parser.isSet(listPluginsOption))) {
+				fprintf(stderr, "batch mode requires one document file, or a --script, --run-plugin or "
+						"--list-plugins with no file\n");
 				return batchUsageError;
 			}
 			BatchOptions options;
@@ -185,6 +205,10 @@ int main(int argc, char *argv[])
 			options.exportDpi = parser.value(dpiOption).toInt();
 			options.exportFont = parser.value(fontOption);
 			options.dumpTabsLine = parser.isSet(dumpTabsOption);
+			options.plugin = parser.value(pluginOption);
+			options.pluginParams = parser.values(pluginParamOption);
+			options.listPlugins = parser.isSet(listPluginsOption);
+			options.dumpPlugin = parser.isSet(dumpPluginOption);
 			return runBatchMode(app, options);
 		}
 		return runGuiMode(app, parser.positionalArguments(), parser.isSet(reconstructOption),

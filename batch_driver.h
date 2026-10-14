@@ -25,6 +25,7 @@
 #define CYBERIADA_SM_BATCH_DRIVER
 
 #include <QString>
+#include <QStringList>
 #include <cyberiadamlpp.h>
 
 class CyberiadaSMEditorApplication;
@@ -36,7 +37,8 @@ enum BatchExitCode {
 	batchLoadError = 2,
 	batchInternalError = 3,
 	batchScriptError = 4,
-	batchImageMismatch = 5
+	batchImageMismatch = 5,
+	batchPluginError = 6
 };
 
 // the editor window is built here, so its generated form stays inside the
@@ -61,6 +63,11 @@ struct BatchOptions {
 	int exportDpi = 96;
 	QString exportFont;
 	bool dumpTabsLine = false;
+	// the plugin stage (docs/TESTING.md, Plugins): id[:action] and name=value items
+	QString plugin;
+	QStringList pluginParams;
+	bool listPlugins = false;
+	bool dumpPlugin = false;
 };
 
 int runBatchMode(CyberiadaSMEditorApplication& app, const BatchOptions& options);

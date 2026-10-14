@@ -109,7 +109,7 @@ An action:
 
 | Field | Default | Meaning |
 |---|---|---|
-| `id` | required | the action id, unique in the plugin; `--plugin <plugin>:<action>` |
+| `id` | required | the action id, unique in the plugin; `--run-plugin <plugin>:<action>` |
 | `label` | required | the menu text; end it with `...` when the action asks for input |
 | `result` | required | `replace`, `new-document`, `diagnostics`, `files` or `log` (see Results) |
 | `argv` | required | the command: a list of strings with variables, and conditional elements (see The command line) |
@@ -348,15 +348,15 @@ defaults and the `--plugin-param` options.
 # in the tool repository: the folder . holds editor-plugin/plugin.json
 CyberiadaEditor --batch --plugin-path . --list-plugins
 CyberiadaEditor --batch light.graphml --plugin-path . \
-    --plugin hsm-ros2:generate --plugin-param dir=/tmp/ros --dump
-CyberiadaEditor --batch --plugin-path . --plugin hsm-maker:draw \
+    --run-plugin hsm-ros2:generate --plugin-param dir=/tmp/ros --dump
+CyberiadaEditor --batch --plugin-path . --run-plugin hsm-maker:draw \
     --plugin-param prompt=@light.txt --plugin-param key=env:DEEPSEEK_API_KEY \
     --save light.graphml
 ```
 
 | Option | Meaning |
 |---|---|
-| `--plugin <id>[:<action>]` | run the action; `:<action>` may be omitted when the plugin has one |
+| `--run-plugin <id>[:<action>]` | run the action; `:<action>` may be omitted when the plugin has one |
 | `--plugin-param <name>=<value>` | a parameter value, repeatable; `<name>=@<file>` reads it from a file, `@@` stands for a leading `@`; a bool is `true` or `false`; a secret takes `env:NAME` or `file:PATH` |
 | `--plugin-path <dir>` | look for plugins in `<dir>` only, repeatable; relative to the current directory; also in the GUI |
 | `--list-plugins` | print the plugins found, their state and why a plugin is disabled or rejected; needs no document |

@@ -262,7 +262,7 @@ Exit codes:
 | 3    | internal error (assertion or exception thrown) |
 | 4    | edit script error (bad command, unknown id)    |
 | 5    | image comparison mismatch                      |
-| 6    | plugin run failed (`--plugin`)                 |
+| 6    | plugin run failed (`--run-plugin`)             |
 
 Assertion failures are reported with their `file:line` location (`MY_ASSERT`
 throws it as the error message). The error flag is checked after every
@@ -373,7 +373,7 @@ overrides and change nothing saved.
 
 ### Plugins
 
-`--plugin <id>[:<action>]` runs one plugin action after the script stage
+`--run-plugin <id>[:<action>]` runs one plugin action after the script stage
 (`docs/PLUGINS.md`, the contract in `docs/PLUGIN-API.md`): no dialog, no stored
 value — the defaults and the `--plugin-param <name>=<value>` options only
 (`@file` reads a value, `@@` stands for a leading `@`). `--plugin-path <dir>`
