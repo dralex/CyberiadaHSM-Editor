@@ -1,6 +1,6 @@
 # The Plugin Interface
 
-**Document version:** 0.1 (2026-10-14), plugin contract `api` 1 — a draft: the editor does
+**Document version:** 0.2 (2026-10-14), plugin contract `api` 1 — a draft: the editor does
 not implement it yet, and the contract may change until it does.
 
 This is the brief for a plugin author. A plugin gives the Cyberiada HSM Editor a new
@@ -112,13 +112,13 @@ An action:
 | `id` | required | the action id, unique in the plugin; `--plugin <plugin>:<action>` |
 | `label` | required | the menu text; end it with `...` when the action asks for input |
 | `result` | required | `replace`, `new-document`, `diagnostics`, `files` or `log` (see Results) |
-| `argv` | required | the command: a list of strings with variables |
+| `argv` | required | the command: a list of strings with variables, and conditional elements (see The command line) |
 | `exit_ok` | `[0]` | the exit codes of a successful run |
 | `timeout` | `60` | seconds; `0` means none |
 | `parameters` | all | the ids of the parameters this action uses and shows |
-| `outdir` | none | the id of the `dir` (or `file`) parameter that receives the files of a `files` action |
+| `outdir` | none | the id of the `dir` (or `file`) parameter that receives the files; required for a `files` action |
 | `load` | `{}` | `strict`: reject an output that is not strictly conforming; `reconstruct`: lay out an output without geometry |
-| `save` | `false` | save the document before the run, so `${document}` is current (an untitled one asks for a name) |
+| `save` | `false` | save a modified or untitled document before the run, so `${document}` is current (an untitled one asks for a name) |
 | `cwd` | `"run"` | the working directory: `run` (the run dir) or `document` (the document's directory; implies `save`) |
 | `toolbar` | `false` | put the action on the plugin toolbar |
 | `icon` | the plugin icon | the action icon for the toolbar and the menu |
@@ -131,9 +131,10 @@ An action:
   stored parameters is a single entry.
 * **The plugin toolbar** — the actions with `toolbar: true` form a small toolbar named
   after the plugin, to the right of the main toolbar; the user can hide it.
-* **A click** — when the action has `run` parameters, or a `document` parameter not yet
-  set for this document, the editor opens a dialog generated from them; otherwise the
-  action runs at once with the stored values.
+* **A click** — when the action has `run` parameters, a `document` parameter not yet set
+  for this document, or a required `persistent` parameter without a value, the editor
+  opens a dialog generated from them; otherwise the action runs at once with the stored
+  values.
 * **The plugin dock** — the Output tab shows stdout and stderr of every run, the
   Diagnostics tab the findings; the running plugin has a Cancel button.
 
@@ -166,14 +167,24 @@ declared as parameters, so the same action also runs in the batch mode.
 ## The command line
 
 The command is `interpreter + argv`, or `argv` alone; without an interpreter `argv[0]` is
-a program relative to the plugin directory, or found in `PATH`. There is no shell: each
-list element is one argument, quoting is never needed, and a substituted value is never
-expanded again. stdin is closed. The environment is the editor's, plus `env`, plus the
-exported secrets.
+a program relative to the plugin directory, or found in `PATH`; on Windows a program
+without a suffix also matches `<name>.exe`, and a `.bat` or `.cmd` file cannot be one.
+There is no shell: each list element is one argument, quoting is never needed, and a
+substituted value is never expanded again. stdin is the null device. The environment is
+the editor's, plus `env`, plus the exported secrets.
+
+An argv element may be conditional: `{"if": "<param>", "argv": [...]}` adds its strings
+when the parameter is `true` (a bool) or not empty (any other type), and nothing
+otherwise.
+
+```json
+"argv": ["${plugin_dir}/check.py", "${input}", "${diagnostics}",
+         {"if": "strict", "argv": ["--strict"]}]
+```
 
 | Variable | Value |
 |---|---|
-| `${input}` | `<rundir>/input.graphml`: the active document as CyberiadaML-GraphML 1.0, unsaved edits included |
+| `${input}` | `<rundir>/input.graphml`: the active document as CyberiadaML-GraphML 1.0, unsaved edits included; an empty file for an empty document |
 | `${output}` | `<rundir>/output.graphml`: where a `replace` or `new-document` action writes the document |
 | `${diagnostics}` | `<rundir>/diagnostics.json`: where findings go |
 | `${outdir}` | the value of the action's `outdir` parameter; the run dir when there is none |
@@ -183,16 +194,17 @@ exported secrets.
 | `${param:x}` | the value of the parameter `x`; a bool is `true` or `false` |
 | `${param-file:x}` | a run dir file holding the value of `x`; use it for long texts such as prompts |
 | `${meta:k}` | a document meta value: `platform`, `platformVersion`, `platformLanguage`, `markupLanguage`, `name`, ...; empty when absent |
-| `${selection}` | the ids of the selected elements, comma-separated |
+| `${selection}` | the ids of the selected elements in the document order, comma-separated |
 | `${document}` | the document file on disk; empty when untitled; current only with `save` |
 | `${document_dir}`, `${document_name}` | its directory; its base name without the extension |
 
 An unknown variable makes the run fail before it starts. `$` not followed by `{` is kept
 as is.
 
-The interpreter name is resolved from the editor Preferences, then from `PATH`. The
+The interpreter name is resolved from the editor Preferences, then from `PATH`; on
+Windows `python3` also tries `python` and `py -3`, skipping the Microsoft Store stub. The
 Windows editor carries no Python: a Python plugin there stays disabled with a hint until
-the user sets the interpreter.
+an interpreter is found.
 
 ## request.json
 
@@ -220,16 +232,17 @@ argv contains `${request}`:
 ```
 
 `document.format` is the format the document is saved in (`cyberiada`, `yed-ostranna`,
-`yed-berloga`); the input is always CyberiadaML-GraphML 1.0. Secrets are never in it.
+`yed-berloga`); the input is always CyberiadaML-GraphML 1.0. `meta` holds the document
+metainformation strings except the editor's own view state. Secrets are never in it.
 
 ## Results
 
 | `result` | The plugin writes | The editor |
 |---|---|---|
 | `replace` | the whole changed document to `${output}` | replaces the document as one undo step "Plugin: <label>" |
-| `new-document` | a document to `${output}` | opens it in a new untitled tab |
+| `new-document` | a document to `${output}` | opens it as a modified untitled document: in the active tab when that is an empty untitled one, in a new tab otherwise |
 | `diagnostics` | `${diagnostics}` | shows the findings |
-| `files` | files into `${outdir}` | lists the new and changed files in Output |
+| `files` | files into `${outdir}` (the action's `outdir` parameter) | lists the new and changed files in Output |
 | `log` | stdout, stderr | nothing more |
 
 * The output document may be CyberiadaML-GraphML 1.0 or a yEd dialect the library reads;
@@ -258,15 +271,16 @@ argv contains `${request}`:
 
 | Field | Required | Meaning |
 |---|---|---|
-| `severity` | yes | `error`, `warning` or `info` |
-| `message` | yes | one line for the user |
+| `severity` | yes | `error`, `warning` or `info`; the LSP numbers 1-4 are accepted too |
+| `message` | yes | one line for the user; newlines are shown as spaces |
 | `rule` | no | the rule or requirement id |
 | `element` | no | the id of a node, an edge or a state machine; a click on the entry selects it |
 | `line` | no | a line of `${input}` |
 
-An `element` that is not in the document is shown without a link. The entries turn grey
-once the document changes after the run. The format is a subset of the LSP `Diagnostic`:
-severity 1 is `error`, 2 is `warning`, 3 and 4 are `info`, `code` is `rule`.
+Other fields are ignored; a file that is not such an array fails the run. An `element`
+that is not in the document is shown without a link. The entries turn grey once the
+document changes after the run. The format is a subset of the LSP `Diagnostic`: severity
+1 is `error`, 2 is `warning`, 3 and 4 are `info`, `code` is `rule`.
 
 ## Parameters
 
@@ -305,7 +319,7 @@ Common fields: `id`, `type`, `label`, `default`, `scope` (default `run`), `requi
 
 * The values are kept in the editor settings, never in the diagram.
 * A `default` may use `${document_dir}` and `${document_name}`, so a directory starts
-  next to the diagram.
+  next to the diagram; for an untitled document they are empty, and so is such a default.
 * A secret is resolved at the start of a run — the variable `NAME` of the editor's
   environment, or the first line of the file `PATH` — and exported to your process as the
   `export` variable. It never reaches the argv, `request.json`, the Output or the
@@ -317,10 +331,13 @@ Common fields: `id`, `type`, `label`, `default`, `scope` (default `run`), `requi
   and readable. Anything else fails the run: the user sees the exit code and the end of
   stderr, the document is untouched.
 * Write progress and messages to stdout and errors to stderr, in UTF-8; they appear in
-  the Output tab as the run goes.
-* A timeout or Cancel terminates the process (SIGTERM on Unix) and kills it after a short
-  grace period; on Windows expect the kill. Only your process is stopped: stop the
-  processes you started yourself, such as a local server.
+  the Output tab as the run goes, up to 1 MiB per run. A Python plugin on Windows sets
+  `PYTHONUTF8=1` in `env` to write UTF-8 into a pipe.
+* A timeout or Cancel terminates the process (SIGTERM on Unix) and kills it 3 seconds
+  later; on Windows expect the kill. Only your process is stopped: stop the processes
+  you started yourself, such as a local server.
+* `CYBERIADA_EDITOR_PLUGIN_KEEP=1` in the editor's environment keeps the run directories
+  for debugging.
 
 ## Testing a plugin
 
@@ -340,14 +357,19 @@ CyberiadaEditor --batch --plugin-path . --plugin hsm-maker:draw \
 | Option | Meaning |
 |---|---|
 | `--plugin <id>[:<action>]` | run the action; `:<action>` may be omitted when the plugin has one |
-| `--plugin-param <name>=<value>` | a parameter value, repeatable; `<name>=@<file>` reads it from a file; a secret takes `env:NAME` or `file:PATH` |
-| `--plugin-path <dir>` | look for plugins in `<dir>` only, repeatable |
-| `--list-plugins` | print the plugins found and why a plugin is disabled |
+| `--plugin-param <name>=<value>` | a parameter value, repeatable; `<name>=@<file>` reads it from a file, `@@` stands for a leading `@`; a bool is `true` or `false`; a secret takes `env:NAME` or `file:PATH` |
+| `--plugin-path <dir>` | look for plugins in `<dir>` only, repeatable; relative to the current directory; also in the GUI |
+| `--list-plugins` | print the plugins found, their state and why a plugin is disabled or rejected; needs no document |
+| `--dump-plugin` | print only the `== plugin` and `== diagnostics` sections |
 
 Without a document on the command line the run starts from an empty one, which suits a
-`new-document` action. The findings are printed as a `== diagnostics` section of
-`--dump`. The exit code is 0 for a successful run (findings or not), 1 for a usage error
-(an unknown plugin, a missing required value) and 6 for a failed run.
+`new-document` action. `--dump` adds the `== plugin` section (the action, the state, the
+exit code, your stdout, the files) and the `== diagnostics` section; without a dump your
+stdout goes to the editor's stdout. stderr always goes to the editor's stderr. The
+folders are named by their origin (`plugin-path 1`, `env 1`, `user`, `system`), never by
+a path, so the output is the same on every machine. The exit code is 0 for a successful
+run (findings or not), 1 for a usage error (an unknown plugin, a missing or invalid
+value) and 6 for a failed run.
 
 ## Packaging
 
@@ -359,6 +381,7 @@ Install the plugin directory as is:
 | Linux, user | `~/.local/share/Cyberiada/Cyberiada State Machine Editor/plugins/<id>/` |
 | Windows, the editor zip | `<editor folder>\share\cyberiada-editor\plugins\<id>\` |
 | Windows, user | `%APPDATA%\Cyberiada\Cyberiada State Machine Editor\plugins\<id>\` |
+| macOS, the bundle | `CyberiadaEditor.app/Contents/share/cyberiada-editor/plugins/<id>/` |
 
 * Keep the directory in the tool repository as `editor-plugin/` and install it from the
   tool's package, or from a small separate package (`<tool>-editor-plugin`) when the tool

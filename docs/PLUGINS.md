@@ -1,6 +1,6 @@
 # The Plugin System — Architecture
 
-**Document version:** 0.1 (2026-10-14)
+**Document version:** 0.2 (2026-10-14), not implemented yet
 
 A plugin adds a feature to the editor without rebuilding it: a diagram checker, a code
 generator, a compiler front end, an LLM diagram maker. A plugin is a directory with a
@@ -118,9 +118,9 @@ Output line. The scan runs at start and on Rescan in the plugin manager.
 * **Plugin toolbars** — the actions marked `toolbar` form one small toolbar per plugin in
   the top area, to the right of `mainToolBar`; a narrow window folds them into the `»`
   extension. View > Plugin toolbars shows or hides each one.
-* **A click** — an action with `run` parameters, or with a `document` parameter not yet
-  set for this document, opens its dialog, and its label ends with `...`; any other action
-  runs at once with the stored values.
+* **A click** — an action with `run` parameters, a `document` parameter not yet set for
+  this document, or a required `persistent` parameter without a value opens its dialog,
+  and its label ends with `...`; any other action runs at once with the stored values.
 * **The parameter dialog** — generated from the action's parameters (`QDialog` +
   `QFormLayout`, one widget per type); the plugin draws no window, so the same action runs
   in batch mode. The mockups and the type table are in `PLUGIN-API.md`.
@@ -171,12 +171,13 @@ Output line. The scan runs at start and on Rescan in the plugin manager.
    done, failed, cancelled: unlock the document, remove the run dir
 ```
 
-* The run dir is a `QTemporaryDir`. `input.graphml` is the document encoded as Cyberiada
-  1.0 by `CyberiadaSMModel::writeSnapshotFile`, unsaved edits included — never the file on
-  disk.
-* An action with `save` saves the document first (an untitled one asks for a name, a
-  cancel there cancels the run); `cwd: document` runs it in the document's directory, for
-  tools that read the files next to the diagram.
+* The run dir is a fresh `QTemporaryDir`, removed after the run unless
+  `CYBERIADA_EDITOR_PLUGIN_KEEP=1`. `input.graphml` is the model snapshot (Cyberiada 1.0,
+  unsaved edits included) — never the file on disk; an empty document gives an empty file.
+* An action with `save` (or `cwd: document`) saves a modified or untitled document first:
+  an untitled one asks for a name, and a cancel there cancels the run; in batch mode an
+  untitled document fails the run. `cwd: document` runs the plugin in the document's
+  directory, for tools that read the files next to the diagram.
 * One run per document; runs in different documents may go at the same time.
 * A run belongs to the document it started from (a `QPointer`), not to the active tab.
 * A `replace` run locks its document: no edits, no undo/redo; closing the tab asks, then
@@ -197,18 +198,21 @@ Output line. The scan runs at start and on Rescan in the plugin manager.
 | failed: the document is  |        | replace:      beginUndoStep("Plugin: <label>")   |
 | untouched, the output    |        |               restoreSnapshot(encoded)           |
 | path is logged           |        |               endUndoStep()                      |
-+--------------------------+        | new-document: a new modified untitled tab        |
++--------------------------+        | new-document: a modified untitled document       |
                                     +--------------------------------------------------+
 ```
 
+* A new document takes the active tab when that is an empty untitled one, as Open does
+  (`EDIT-DOC-2`), and a new tab otherwise.
 * The output is decoded before anything is touched: `restoreSnapshot` only warns about a
   bad buffer. `load.reconstruct` lays out a document that comes without geometry (an LLM
   answer); `load.strict` rejects a non-conforming one.
 * An output equal to the input pushes no undo step; Output says "no changes".
 * The document keeps its file path and format; `readOnly()` is checked here, because
   `restoreSnapshot` does not.
-* The session log records `plugin <id>:<action>` (`GestureLog::logAction`), as
-  `reconstructGeometry` does.
+* The session log writes the comment `# plugin <id>:<action>`: a plugin is not a script
+  verb, so after a `replace` or a `new-document` result the log starts a new session from
+  the new document and stays replayable.
 
 ## Settings
 
@@ -216,10 +220,10 @@ Everything goes through `SettingsManager`; nothing is written into the GraphML f
 
 | Key | Holds |
 |---|---|
-| `plugins/<id>/<param>` | a `persistent` parameter value |
-| `plugins/<id>/documents/<path key>/<param>` | a `document` parameter value, by the canonical file path |
+| `plugins/<id>/values/<param>` | a `persistent` parameter value |
+| `plugins/<id>/documents/<sha1>/<param>` | a `document` parameter value; the key is the SHA-1 of the canonical file path |
 | `plugins/<id>/enabled`, `plugins/<id>/toolbar` | the plugin manager switch, the toolbar visibility |
-| `plugins/interpreters/<name>` | an interpreter path set in the Preferences (`python3` → `C:\Python312\python.exe`) |
+| `plugin-interpreters/<name>` | an interpreter path set in the Preferences (`python3` → `C:\Python312\python.exe`) |
 
 A `document` value of an untitled document lives for the session only. A secret value is
 stored as a reference (`env:NAME`, `file:PATH`); the key itself is read at the start of a
@@ -229,12 +233,17 @@ Output, the session log or the settings.
 ## Batch mode and tests
 
 * The plugin stage runs after the script stage, before the dumps, the export and the save:
-  open, script, **plugin**, tabs, dump, text, stack, export, save.
+  open, script, **plugin**, tabs, dump, text, stack, export, save. A run without a
+  document starts from an empty one.
 * No dialog and no stored values: the defaults and `--plugin-param` only.
-* A failed or timed-out run exits 6 (a new code next to `batch_driver.h`); findings do
-  not change the exit code.
-* `--list-plugins` dumps a `== plugins` section; the findings of a run are dumped as a
-  `== diagnostics` section.
+* The runner is asynchronous in both modes; the batch mode waits for it in a local event
+  loop, so the timeout and the kill work as in the GUI.
+* A failed or timed-out run exits 6 (`batchPluginError`); findings do not change the exit
+  code; a usage error (an unknown plugin, a missing or invalid value) exits 1.
+* `--list-plugins` prints a `== plugins` section; `--dump` adds `== plugin` (the run and
+  its stdout) and `== diagnostics`; `--dump-plugin` prints only these two. The plugin's
+  stderr goes to the editor's stderr. The sections name the folders by origin, never by a
+  path.
 * Example plugins live in `tests/plugins/<id>/` and run a small helper built with the
   tests, so the cases need no interpreter and pass on the Windows test zip too. The cases
   use `RunBatchTest.cmake` with new `PLUGIN`, `PLUGIN_PARAMS` and `PLUGIN_PATH` variables.
@@ -265,11 +274,13 @@ Output, the session log or the settings.
  | the search path        |    | timeout, validation    |    | begin, restore, end    |
  +------------------------+    +------------------------+    +------------------------+
   plugin_registry.cpp           plugin_runner.cpp             cyberiadasm_model.cpp
-  QtCore only                   QtCore only
+  plugin_descriptor.cpp         no widgets: QtCore and
+  plugin_values.cpp             libcyberiadamlpp
 ```
 
 The batch mode creates the window too, so `runPlugin()` is the one place that applies a
-result.
+result. The dialogs are `dialogs/plugin_parameter_dialog.cpp` and
+`dialogs/plugin_manager_dialog.cpp`.
 
 ## Level 2 (outline)
 
@@ -305,22 +316,17 @@ left for the level 2 design.
 | SARIF 2.1.0 | the diagnostics subset maps onto it | too heavy for plugin authors |
 | `QPluginLoader`, embedded Python/JS | | a Qt/compiler/ABI lock, a plugin crash is an editor crash, an interpreter in the Windows zip |
 
-## Open questions
+## Decisions of 0.2
 
-For the detailed specification:
+* A `replace` run locks its document; there is no conflict check at apply.
+* A failed run exits 6 in the batch mode.
+* Unknown descriptor fields are ignored within a major and listed as warnings by
+  `--list-plugins`; a minor version is not used.
+* Conditional argv elements `{"if": "<param>", "argv": [...]}` are a part of `api` 1.
+* A `files` action names its `outdir` parameter; the files are written in place and listed
+  by comparing the paths, sizes and times before and after the run.
+* The system folder of a macOS bundle is `Contents/share/cyberiada-editor/plugins`.
 
-1. Conditional arguments (`--strict` only when a bool is true); stdout as the output.
-2. The lock of a replaced document vs a conflict check at apply.
-3. The exit code of a failed run: a new 6 or the script error 4.
-4. The descriptor schema: strict or open within a major; a minor version.
-5. The system folder inside a macOS bundle; `py -3` as a Windows fallback.
-6. `files`: write in place or stage and copy; overwrite confirmation.
-7. Keeping the run dir of a failed run (in the session log folder).
-8. cgmlval: an adapter or a native editor-format option.
-9. A `network` flag and a first-run notice.
-10. Localised labels (`{"en": ..., "ru": ...}`).
-11. A `${sm}` variable for documents with several state machines.
-12. Plugin shortcuts and their collisions; the toolbar positions (the window keeps no
-    `saveState` today).
-13. Element context-menu actions on the selection.
-14. Level 2: the framing (`Content-Length` or one JSON per line), the verb set, MCP.
+Deferred: a `network` flag with a first-run notice, localised labels, a `${sm}` variable
+for documents with several state machines, plugin shortcuts, element context-menu actions,
+the toolbar positions (`saveState`), stdout as the output document, level 2.
