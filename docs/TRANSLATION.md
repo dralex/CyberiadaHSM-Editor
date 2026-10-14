@@ -67,7 +67,7 @@ The terms follow ПНСТ 984-2024 (clause 3); a menu or a tool may use the shor
 | metainformation | метаинформация | | |
 | element / document | элемент / документ | | 3.56 |
 | label, polyline | надпись, ломаная | | |
-| platform (code) language | язык кода | | |
+| platform language (`platformLanguage`) | язык платформы | язык кода (Edit menu) | |
 | markup | разметка | | |
 | inspection mode | режим инспекции | | |
 | Preferences | Настройки | | |
