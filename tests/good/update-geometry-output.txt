@@ -5,15 +5,15 @@ name/ test-geometry-1
 
 transitionOrder/ actionFirst
 
-eventPropagation/ block'}, Composite State: {id: 'node-0', name: 'node 0', geometry: (512.5; 313; 1035; 646), elements: {Composite State: {id: 'node-0-0', name: 'node 0-0', geometry: (-170; -5; 620; 596), elements: {Initial: {id: 'node-0-0-0', name: '', geometry: (0; -278)}, Simple State: {id: 'node-0-0-1', name: 'node 0-0-1', geometry: (0; -173; 300; 150)}, Simple State: {id: 'node-0-0-2', name: 'node 0-0-2', geometry: (0; 158; 300; 200)}}, region: (-140; 0; 320; 576)}, Simple State: {id: 'node-0-1', name: 'node 0-1', geometry: (330; -5; 300; 200)}}, region: (17.5; 0; 980; 626)}, Transition: {id: 'edge-0', type: loc, source: 'node-0-0-1', target: 'node-0-0-1', sp: (150; -10), tp: (150; 10), polyline: [ (160; -10), (160; 10) ]}, Transition: {id: 'edge-1', type: loc, source: 'node-0-0-0', target: 'node-0-0-1', sp: (0; 0), tp: (0; -75)}, Transition: {id: 'edge-2', type: loc, source: 'node-0-0-1', target: 'node-0-0-2', action: {trigger: 'LABEL'}, sp: (90; 75), tp: (90; -100), rect: (133; 263; 76; 36), polyline: [ (90; 263) ]}}}}, bounding rect: (512.5; 313; 1035; 646)}, file: 'diagrams/partial-geometry.graphml', format: cyberiada, format_str: 'Cyberiada-GraphML-1.0'}
+eventPropagation/ block'}, Composite State: {id: 'node-0', name: 'node 0', geometry: (512.5; 313; 1035; 646), elements: {Composite State: {id: 'node-0-0', name: 'node 0-0', geometry: (-170; 5; 620; 596), elements: {Initial: {id: 'node-0-0-0', name: '', geometry: (0; -268)}, Simple State: {id: 'node-0-0-1', name: 'node 0-0-1', geometry: (0; -163; 300; 150)}, Simple State: {id: 'node-0-0-2', name: 'node 0-0-2', geometry: (0; 168; 300; 200)}}, region: (-140; 0; 320; 576)}, Simple State: {id: 'node-0-1', name: 'node 0-1', geometry: (330; 5; 300; 200)}}, region: (17.5; 0; 980; 626)}, Transition: {id: 'edge-0', type: loc, source: 'node-0-0-1', target: 'node-0-0-1', sp: (150; -10), tp: (150; 10), polyline: [ (160; -10), (160; 10) ]}, Transition: {id: 'edge-1', type: loc, source: 'node-0-0-0', target: 'node-0-0-1', sp: (0; 0), tp: (0; -75)}, Transition: {id: 'edge-2', type: loc, source: 'node-0-0-1', target: 'node-0-0-2', action: {trigger: 'LABEL'}, sp: (0; 75), tp: (0; -100), rect: (43; 153; 76; 36), polyline: [ (0; 153) ]}}}}, bounding rect: (512.5; 313; 1035; 646)}, file: 'diagrams/partial-geometry.graphml', format: cyberiada, format_str: 'Cyberiada-GraphML-1.0'}
 == scene
   State Machine: {id: 'G', pos: (0.00; 0.00), rect: (-5.00; -10.00; 1035.00; 646.00)}
     Composite State: {id: 'node-0', pos: (512.50; 313.00), rect: (-517.50; -323.00; 1035.00; 646.00)}
-      Composite State: {id: 'node-0-0', pos: (-170.00; -5.00), rect: (-310.00; -298.00; 620.00; 596.00)}
-        Initial: {id: 'node-0-0-0', pos: (0.00; -278.00), rect: (-10.00; -10.00; 20.00; 20.00)}
-        Simple State: {id: 'node-0-0-1', pos: (0.00; -173.00), rect: (-150.00; -75.00; 300.00; 150.00)}
-        Simple State: {id: 'node-0-0-2', pos: (0.00; 158.00), rect: (-150.00; -100.00; 300.00; 200.00)}
-      Simple State: {id: 'node-0-1', pos: (330.00; -5.00), rect: (-150.00; -100.00; 300.00; 200.00)}
-    Transition: {id: 'edge-0', pos: (0.00; 0.00), rect: (482.50; 115.00; 30.00; 40.00)}
-    Transition: {id: 'edge-1', pos: (0.00; 0.00), rect: (332.50; 20.00; 20.00; 50.00)}
-    Transition: {id: 'edge-2', pos: (0.00; 0.00), rect: (422.50; 200.00; 20.00; 208.00)}
+      Composite State: {id: 'node-0-0', pos: (-170.00; 5.00), rect: (-310.00; -298.00; 620.00; 596.00)}
+        Initial: {id: 'node-0-0-0', pos: (0.00; -268.00), rect: (-10.00; -10.00; 20.00; 20.00)}
+        Simple State: {id: 'node-0-0-1', pos: (0.00; -163.00), rect: (-150.00; -75.00; 300.00; 150.00)}
+        Simple State: {id: 'node-0-0-2', pos: (0.00; 168.00), rect: (-150.00; -100.00; 300.00; 200.00)}
+      Simple State: {id: 'node-0-1', pos: (330.00; 5.00), rect: (-150.00; -100.00; 300.00; 200.00)}
+    Transition: {id: 'edge-0', pos: (0.00; 0.00), rect: (482.50; 135.00; 30.00; 40.00)}
+    Transition: {id: 'edge-1', pos: (0.00; 0.00), rect: (332.50; 40.00; 20.00; 50.00)}
+    Transition: {id: 'edge-2', pos: (0.00; 0.00), rect: (332.50; 220.00; 20.00; 176.00)}
