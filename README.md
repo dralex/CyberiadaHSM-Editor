@@ -50,6 +50,10 @@ Build a Debian package with `cpack -G DEB` from the build directory.
 
 To build on Windows, see [docs/BUILDING-WINDOWS.md](docs/BUILDING-WINDOWS.md).
 
+The editor is extended by plugins, external programs shipped by the tools themselves: see
+`docs/PLUGINS.md` for the plugin system architecture and `docs/PLUGIN-API.md` for writing
+a plugin.
+
 ## Testing
 
 The editor has a console test system based on the batch mode and the Qt
