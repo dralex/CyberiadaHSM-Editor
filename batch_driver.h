@@ -45,12 +45,24 @@ enum BatchExitCode {
 int runGuiMode(CyberiadaSMEditorApplication& app, const QStringList& files = QStringList(),
 			   bool reconstruct = false, bool reconstruct_sm = false, bool strict = false);
 
-int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName, bool dump = false,
-				 const QString& script = QString(), const QString& save = QString(),
-				 const QString& exportImage = QString(), bool reconstruct = false,
-				 bool reconstruct_sm = false, bool strict = false,
-				 Cyberiada::DocumentFormat saveFormat = Cyberiada::formatCyberiada10,
-				 bool dumpTextMetrics = false, bool dumpUndoStack = false, int exportDpi = 96,
-				 const QString& exportFont = QString(), bool dumpTabsLine = false);
+// the options of a batch run, set from the command line (see docs/TESTING.md)
+struct BatchOptions {
+	QString fileName;
+	bool dump = false;
+	QString script;
+	QString save;
+	QString exportImage;
+	bool reconstruct = false;
+	bool reconstruct_sm = false;
+	bool strict = false;
+	Cyberiada::DocumentFormat saveFormat = Cyberiada::formatCyberiada10;
+	bool dumpTextMetrics = false;
+	bool dumpUndoStack = false;
+	int exportDpi = 96;
+	QString exportFont;
+	bool dumpTabsLine = false;
+};
+
+int runBatchMode(CyberiadaSMEditorApplication& app, const BatchOptions& options);
 
 #endif

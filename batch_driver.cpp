@@ -52,11 +52,7 @@ static bool stageFailed(CyberiadaSMEditorApplication& app)
 	return app.errorReported();
 }
 
-int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName, bool dump,
-				 const QString& script, const QString& save, const QString& exportImage,
-				 bool reconstruct, bool reconstruct_sm, bool strict,
-				 Cyberiada::DocumentFormat saveFormat, bool dumpTextMetrics, bool dumpUndoStack,
-				 int exportDpi, const QString& exportFont, bool dumpTabsLine)
+int runBatchMode(CyberiadaSMEditorApplication& app, const BatchOptions& options)
 {
 	CyberiadaSMEditorWindow win;
 	win.show();
@@ -64,16 +60,17 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName, boo
 	QString error;
 	// a from-scratch session has no start document: the script's first verb
 	// (new-sm) bootstraps it
-	if (!fileName.isEmpty() &&
-		!win.openDocument(fileName, &error, reconstruct, reconstruct_sm, strict)) {
-		fprintf(stderr, "cannot load %s\n%s\n", qPrintable(fileName), qPrintable(error));
+	if (!options.fileName.isEmpty() &&
+		!win.openDocument(options.fileName, &error, options.reconstruct, options.reconstruct_sm,
+						  options.strict)) {
+		fprintf(stderr, "cannot load %s\n%s\n", qPrintable(options.fileName), qPrintable(error));
 		return batchLoadError;
 	}
 
-	if (!script.isEmpty()) {
+	if (!options.script.isEmpty()) {
 		// the scene follows the model through its signals
-		if (!runEditScript(&win, script, &error)) {
-			fprintf(stderr, "script %s failed\n%s\n", qPrintable(script), qPrintable(error));
+		if (!runEditScript(&win, options.script, &error)) {
+			fprintf(stderr, "script %s failed\n%s\n", qPrintable(options.script), qPrintable(error));
 			return batchScriptError;
 		}
 	}
@@ -81,12 +78,12 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName, boo
 	// the assertions of every stage are caught by notify(); the flag says so
 	if (stageFailed(app)) return batchInternalError;
 
-	if (dumpTabsLine) {
+	if (options.dumpTabsLine) {
 		std::cout << "== tabs" << std::endl;
 		dumpTabs(&win, std::cout);
 	}
 
-	if (dump) {
+	if (options.dump) {
 		std::cout << "== document" << std::endl;
 		dumpDocument(win.getModel(), std::cout);
 		std::cout << "== scene" << std::endl;
@@ -94,32 +91,35 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const QString& fileName, boo
 		if (stageFailed(app)) return batchInternalError;
 	}
 
-	if (dumpTextMetrics) {
+	if (options.dumpTextMetrics) {
 		std::cout << "== text" << std::endl;
 		dumpText(win.getScene(), win.getModel(), std::cout);
 		if (stageFailed(app)) return batchInternalError;
 	}
 
-	if (dumpUndoStack) {
+	if (options.dumpUndoStack) {
 		std::cout << "== stack" << std::endl;
 		dumpStack(win.getModel(), std::cout);
 	}
 
-	if (!exportImage.isEmpty()) {
+	if (!options.exportImage.isEmpty()) {
 		QString render_error;
-		if (!renderScene(win.getScene(), exportImage, &render_error, exportDpi, exportFont)) {
-			fprintf(stderr, "cannot export %s\n%s\n", qPrintable(exportImage), qPrintable(render_error));
+		if (!renderScene(win.getScene(), options.exportImage, &render_error, options.exportDpi,
+						 options.exportFont)) {
+			fprintf(stderr, "cannot export %s\n%s\n", qPrintable(options.exportImage),
+					qPrintable(render_error));
 			return batchInternalError;
 		}
 		if (stageFailed(app)) return batchInternalError;
 	}
 
-	if (!save.isEmpty()) {
+	if (!options.save.isEmpty()) {
 		try {
 			// rounded geometry keeps the written floats stable for the good files
-			win.getModel()->saveAsDocument(save, saveFormat, true, false, false, false, false);
+			win.getModel()->saveAsDocument(options.save, options.saveFormat, true, false, false,
+										   false, false);
 		} catch (const Cyberiada::Exception& e) {
-			fprintf(stderr, "cannot save %s\n%s\n", qPrintable(save), e.str().c_str());
+			fprintf(stderr, "cannot save %s\n%s\n", qPrintable(options.save), e.str().c_str());
 			return batchInternalError;
 		}
 		if (stageFailed(app)) return batchInternalError;

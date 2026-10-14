@@ -162,25 +162,30 @@ int main(int argc, char *argv[])
 				fprintf(stderr, "batch mode requires one document file, or a --script with no file\n");
 				return batchUsageError;
 			}
-			QString document = args.isEmpty() ? QString() : args.first();
-			Cyberiada::DocumentFormat save_format = Cyberiada::formatCyberiada10;
+			BatchOptions options;
+			options.fileName = args.isEmpty() ? QString() : args.first();
 			QString format_str = parser.value(saveFormatOption);
 			if (format_str == "yed-ostranna") {
-				save_format = Cyberiada::formatLegacyYEDOstranna;
+				options.saveFormat = Cyberiada::formatLegacyYEDOstranna;
 			} else if (format_str == "yed-berloga") {
-				save_format = Cyberiada::formatLegacyYEDBerloga16;
+				options.saveFormat = Cyberiada::formatLegacyYEDBerloga16;
 			} else if (format_str != "cyberiada") {
 				fprintf(stderr, "unknown save format %s\n", qPrintable(format_str));
 				return batchUsageError;
 			}
-			return runBatchMode(app, document, parser.isSet(dumpOption),
-								parser.value(scriptOption), parser.value(saveOption),
-								parser.value(exportOption), parser.isSet(reconstructOption),
-								parser.isSet(reconstructSMOption),
-								parser.isSet(strictOption), save_format,
-								parser.isSet(dumpTextOption), parser.isSet(dumpStackOption),
-								parser.value(dpiOption).toInt(), parser.value(fontOption),
-								parser.isSet(dumpTabsOption));
+			options.dump = parser.isSet(dumpOption);
+			options.script = parser.value(scriptOption);
+			options.save = parser.value(saveOption);
+			options.exportImage = parser.value(exportOption);
+			options.reconstruct = parser.isSet(reconstructOption);
+			options.reconstruct_sm = parser.isSet(reconstructSMOption);
+			options.strict = parser.isSet(strictOption);
+			options.dumpTextMetrics = parser.isSet(dumpTextOption);
+			options.dumpUndoStack = parser.isSet(dumpStackOption);
+			options.exportDpi = parser.value(dpiOption).toInt();
+			options.exportFont = parser.value(fontOption);
+			options.dumpTabsLine = parser.isSet(dumpTabsOption);
+			return runBatchMode(app, options);
 		}
 		return runGuiMode(app, parser.positionalArguments(), parser.isSet(reconstructOption),
 						  parser.isSet(reconstructSMOption), parser.isSet(strictOption));
