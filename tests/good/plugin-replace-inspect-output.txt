@@ -1,0 +1,8 @@
+== plugin
+action: edit:rename
+result: replace
+state: failed
+exit: -
+error: the inspection mode keeps the document read-only
+== diagnostics
+count: 0

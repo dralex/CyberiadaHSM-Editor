@@ -1,0 +1,10 @@
+== plugin
+action: checker:check
+result: diagnostics
+state: done
+exit: 0
+== diagnostics
+count: 3
+warning CGML-6.9-4-4 nMeta line 31: transitionOrder 'transitionFirst' is not admissible
+info CGML-6.4-4-2 G9 (absent): state machine 'G9' contains no initial pseudostate
+error - -: a finding without an element

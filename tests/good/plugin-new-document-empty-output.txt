@@ -1,0 +1,11 @@
+== tabs
+count: 1
+0 untitled* active
+== plugin
+action: maker:make
+result: new-document
+state: done
+exit: 0
+tab: 0
+== diagnostics
+count: 0

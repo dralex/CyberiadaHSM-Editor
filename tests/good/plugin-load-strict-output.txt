@@ -1,0 +1,8 @@
+== plugin
+action: edit:strict
+result: replace
+state: failed
+exit: 0
+error: the output document is not a valid CyberiadaML document
+== diagnostics
+count: 0

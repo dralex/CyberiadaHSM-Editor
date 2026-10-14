@@ -1,0 +1,19 @@
+{
+  "api": 1,
+  "id": "maker",
+  "name": "Maker",
+  "version": "0.1.0",
+  "actions": [
+    {
+      "id": "make",
+      "label": "Make",
+      "result": "new-document",
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "copy",
+        "${plugin_dir}/made.graphml",
+        "${output}"
+      ]
+    }
+  ]
+}

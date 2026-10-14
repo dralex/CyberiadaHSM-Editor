@@ -1,0 +1,12 @@
+== plugin
+action: vars:meta
+result: log
+state: done
+exit: 0
+stdout:
+  arg1: Test document
+  arg2: Berloga
+  arg3: 1.0
+  arg4: 
+== diagnostics
+count: 0

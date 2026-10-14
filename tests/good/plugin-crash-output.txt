@@ -1,0 +1,8 @@
+== plugin
+action: edit:crash
+result: replace
+state: failed
+exit: -
+error: the plugin crashed
+== diagnostics
+count: 0

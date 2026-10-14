@@ -1,0 +1,10 @@
+== plugin
+action: files:make
+result: files
+state: done
+exit: 0
+files:
+  changed README
+  new src/main.c
+== diagnostics
+count: 0

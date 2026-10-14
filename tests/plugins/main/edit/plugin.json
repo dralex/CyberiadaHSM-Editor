@@ -1,0 +1,154 @@
+{
+  "api": 1,
+  "id": "edit",
+  "name": "Edit",
+  "version": "0.1.0",
+  "actions": [
+    {
+      "id": "rename",
+      "label": "Rename",
+      "result": "replace",
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "copy",
+        "${input}",
+        "${output}",
+        "--",
+        "replace",
+        "${output}",
+        ">Parent 0<",
+        ">Renamed<",
+        "--",
+        "print",
+        "renamed"
+      ]
+    },
+    {
+      "id": "same",
+      "label": "Same",
+      "result": "replace",
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "copy",
+        "${input}",
+        "${output}"
+      ]
+    },
+    {
+      "id": "empty",
+      "label": "Empty",
+      "result": "replace",
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "write",
+        "${output}"
+      ]
+    },
+    {
+      "id": "garbage",
+      "label": "Garbage",
+      "result": "replace",
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "write",
+        "${output}",
+        "<graphml><broken"
+      ]
+    },
+    {
+      "id": "missing",
+      "label": "Missing",
+      "result": "replace",
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "print",
+        "nothing written"
+      ]
+    },
+    {
+      "id": "exit3",
+      "label": "Exit 3",
+      "result": "replace",
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "eprint",
+        "failing on purpose",
+        "--",
+        "exit",
+        "3"
+      ]
+    },
+    {
+      "id": "crash",
+      "label": "Crash",
+      "result": "replace",
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "crash"
+      ]
+    },
+    {
+      "id": "slow",
+      "label": "Slow",
+      "result": "replace",
+      "timeout": 1,
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "ignore-term",
+        "--",
+        "sleep",
+        "20000"
+      ]
+    },
+    {
+      "id": "strict",
+      "label": "Strict",
+      "result": "replace",
+      "load": {
+        "strict": true
+      },
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "copy",
+        "${plugin_dir}/lenient.graphml",
+        "${output}"
+      ]
+    },
+    {
+      "id": "lenient",
+      "label": "Lenient",
+      "result": "replace",
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "copy",
+        "${plugin_dir}/lenient.graphml",
+        "${output}"
+      ]
+    },
+    {
+      "id": "repair",
+      "label": "Repair",
+      "result": "replace",
+      "load": {
+        "reconstruct": true
+      },
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "copy",
+        "${plugin_dir}/no-geometry.graphml",
+        "${output}"
+      ]
+    },
+    {
+      "id": "no-repair",
+      "label": "No repair",
+      "result": "replace",
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "copy",
+        "${plugin_dir}/no-geometry.graphml",
+        "${output}"
+      ]
+    }
+  ]
+}

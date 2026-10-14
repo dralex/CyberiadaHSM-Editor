@@ -1,0 +1,8 @@
+== plugin
+action: edit:repair
+result: replace
+state: done
+exit: 0
+changes: yes
+== diagnostics
+count: 0

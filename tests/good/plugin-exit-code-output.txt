@@ -1,0 +1,12 @@
+== plugin
+action: edit:exit3
+result: replace
+state: failed
+exit: 3
+error: the exit code 3 is not a success
+== diagnostics
+count: 0
+== stack
+count: 0
+index: 0
+clean: yes

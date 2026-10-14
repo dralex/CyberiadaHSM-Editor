@@ -1,0 +1,9 @@
+== plugin
+action: echo:say
+result: log
+state: done
+exit: 0
+stdout:
+  echo from shadow
+== diagnostics
+count: 0

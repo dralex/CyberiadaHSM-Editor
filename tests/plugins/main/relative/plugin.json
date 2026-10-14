@@ -1,0 +1,18 @@
+{
+  "api": 1,
+  "id": "relative",
+  "name": "Relative",
+  "version": "0.1.0",
+  "actions": [
+    {
+      "id": "run",
+      "label": "Run",
+      "result": "log",
+      "argv": [
+        "../../bin/plugin-helper",
+        "print",
+        "relative program"
+      ]
+    }
+  ]
+}

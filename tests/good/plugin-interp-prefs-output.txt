@@ -1,0 +1,9 @@
+== plugin
+action: interp:run
+result: log
+state: done
+exit: 0
+stdout:
+  interpreter found
+== diagnostics
+count: 0

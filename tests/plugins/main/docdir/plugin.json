@@ -1,0 +1,22 @@
+{
+  "api": 1,
+  "id": "docdir",
+  "name": "Document directory",
+  "version": "0.1.0",
+  "actions": [
+    {
+      "id": "look",
+      "label": "Look",
+      "result": "log",
+      "cwd": "document",
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "cwd",
+        "--",
+        "contains",
+        "${document}",
+        ">Renamed<"
+      ]
+    }
+  ]
+}

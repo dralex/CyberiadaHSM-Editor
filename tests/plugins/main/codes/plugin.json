@@ -1,0 +1,25 @@
+{
+  "api": 1,
+  "id": "codes",
+  "name": "Codes",
+  "version": "0.1.0",
+  "actions": [
+    {
+      "id": "two",
+      "label": "Two",
+      "result": "log",
+      "exit_ok": [
+        0,
+        2
+      ],
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "print",
+        "two is fine",
+        "--",
+        "exit",
+        "2"
+      ]
+    }
+  ]
+}

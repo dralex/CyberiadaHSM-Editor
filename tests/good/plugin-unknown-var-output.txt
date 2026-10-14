@@ -1,0 +1,8 @@
+== plugin
+action: vars:unknown-var
+result: log
+state: failed
+exit: -
+error: the variable ${nope} is unknown
+== diagnostics
+count: 0

@@ -1,0 +1,37 @@
+{
+  "api": 1,
+  "id": "files",
+  "name": "Files",
+  "version": "0.1.0",
+  "parameters": [
+    {
+      "id": "dir",
+      "type": "dir",
+      "label": "Directory",
+      "scope": "document",
+      "required": true,
+      "create": true
+    }
+  ],
+  "actions": [
+    {
+      "id": "make",
+      "label": "Make...",
+      "result": "files",
+      "outdir": "dir",
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "write",
+        "${outdir}/README",
+        "made by the files plugin\\n",
+        "--",
+        "mkdir",
+        "${outdir}/src",
+        "--",
+        "write",
+        "${outdir}/src/main.c",
+        "int main(void) { return 0; }\\n"
+      ]
+    }
+  ]
+}

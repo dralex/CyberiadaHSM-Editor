@@ -1,0 +1,14 @@
+== plugins
+echo 0.2.0 enabled plugin-path 1
+checker 0.1.0 enabled plugin-path 2
+codes 0.1.0 enabled plugin-path 2
+docdir 0.1.0 enabled plugin-path 2
+echo 0.1.0 shadowed plugin-path 2: shadowed by plugin-path 1
+edit 0.1.0 enabled plugin-path 2
+files 0.1.0 enabled plugin-path 2
+interp 0.1.0 disabled plugin-path 2: the interpreter 'cyb-test-helper' is not found
+maker 0.1.0 enabled plugin-path 2
+nointerp 0.1.0 disabled plugin-path 2: the interpreter 'no-such-interpreter' is not found
+relative 0.1.0 enabled plugin-path 2
+request 0.1.0 enabled plugin-path 2
+vars 0.1.0 enabled plugin-path 2

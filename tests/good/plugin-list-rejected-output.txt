@@ -1,0 +1,12 @@
+== plugins
+api2 - rejected plugin-path 1: the api 2 is not supported
+bad-id - rejected plugin-path 1: the id 'Bad Id' is not valid
+dup-action - rejected plugin-path 1: the action 'run' is duplicated
+extra 0.1.0 enabled plugin-path 1
+  warning: unknown field 'colour'
+  warning: unknown field 'actions/run/hint'
+files-no-outdir - rejected plugin-path 1: the files action 'run' names no outdir
+no-actions - rejected plugin-path 1: the plugin has no actions
+no-argv - rejected plugin-path 1: the action 'run' has no argv
+secret-argv - rejected plugin-path 1: the secret 'key' is used in the argv of 'run'
+syntax - rejected plugin-path 1: invalid JSON at line 3: unterminated object

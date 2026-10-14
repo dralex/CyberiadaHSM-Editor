@@ -1,0 +1,12 @@
+== tabs
+count: 2
+0 hierarchy.graphml
+1 untitled* active
+== plugin
+action: maker:make
+result: new-document
+state: done
+exit: 0
+tab: 1
+== diagnostics
+count: 0

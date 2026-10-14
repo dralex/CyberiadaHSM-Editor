@@ -1,0 +1,40 @@
+{
+  "api": 1,
+  "id": "request",
+  "name": "Request",
+  "version": "0.1.0",
+  "parameters": [
+    {
+      "id": "prompt",
+      "type": "text",
+      "label": "Prompt",
+      "required": true,
+      "language": "markdown"
+    },
+    {
+      "id": "key",
+      "type": "secret",
+      "label": "Key",
+      "export": "PLUGIN_TEST_KEY"
+    }
+  ],
+  "actions": [
+    {
+      "id": "read",
+      "label": "Read...",
+      "result": "log",
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "cat",
+        "${request}",
+        "--",
+        "cat",
+        "${param-file:prompt}",
+        "--",
+        "env",
+        "PLUGIN_TEST_KEY",
+        "s3cr3t"
+      ]
+    }
+  ]
+}

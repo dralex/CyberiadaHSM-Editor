@@ -1,0 +1,106 @@
+{
+  "api": 1,
+  "id": "vars",
+  "name": "Variables",
+  "version": "0.1.0",
+  "parameters": [
+    {
+      "id": "flag",
+      "type": "bool",
+      "label": "Flag"
+    },
+    {
+      "id": "count",
+      "type": "int",
+      "label": "Count",
+      "default": 3,
+      "min": 0,
+      "max": 10
+    },
+    {
+      "id": "mode",
+      "type": "enum",
+      "label": "Mode",
+      "choices": [
+        "fast",
+        "slow"
+      ]
+    },
+    {
+      "id": "name",
+      "type": "string",
+      "label": "Name",
+      "default": "${document_name}-copy"
+    },
+    {
+      "id": "ratio",
+      "type": "double",
+      "label": "Ratio",
+      "default": 0.5
+    }
+  ],
+  "actions": [
+    {
+      "id": "all",
+      "label": "All",
+      "result": "log",
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "args",
+        "${input}",
+        "${output}",
+        "${diagnostics}",
+        "${outdir}",
+        "${rundir}",
+        "${plugin_dir}",
+        "${document}",
+        "${document_dir}",
+        "${document_name}",
+        "${selection}",
+        "${param:flag}",
+        "${param:count}",
+        "${param:mode}",
+        "${param:name}",
+        "${param:ratio}",
+        "${param-file:name}",
+        "$HOME",
+        "${meta:platformLanguage}",
+        {
+          "if": "flag",
+          "argv": [
+            "--flag-is-on"
+          ]
+        },
+        {
+          "if": "name",
+          "argv": [
+            "--name-is-set"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "meta",
+      "label": "Meta",
+      "result": "log",
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "args",
+        "${meta:name}",
+        "${meta:platform}",
+        "${meta:standardVersion}",
+        "${meta:absent}"
+      ]
+    },
+    {
+      "id": "unknown-var",
+      "label": "Unknown",
+      "result": "log",
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "args",
+        "${nope}"
+      ]
+    }
+  ]
+}

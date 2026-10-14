@@ -1,0 +1,8 @@
+== plugin
+action: edit:empty
+result: replace
+state: failed
+exit: 0
+error: the output document is empty
+== diagnostics
+count: 0

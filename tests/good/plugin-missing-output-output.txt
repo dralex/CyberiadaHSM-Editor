@@ -1,0 +1,10 @@
+== plugin
+action: edit:missing
+result: replace
+state: failed
+exit: 0
+error: the output document is missing
+stdout:
+  nothing written
+== diagnostics
+count: 0

@@ -1,0 +1,17 @@
+{
+  "api": 1,
+  "id": "files-no-outdir",
+  "name": "Files",
+  "actions": [
+    {
+      "id": "run",
+      "label": "Run",
+      "result": "files",
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "print",
+        "never"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+== plugin
+action: docdir:look
+result: log
+state: failed
+exit: -
+error: the document is not saved
+== diagnostics
+count: 0

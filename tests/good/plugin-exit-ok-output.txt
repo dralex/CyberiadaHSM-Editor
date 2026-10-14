@@ -1,0 +1,9 @@
+== plugin
+action: codes:two
+result: log
+state: done
+exit: 2
+stdout:
+  two is fine
+== diagnostics
+count: 0

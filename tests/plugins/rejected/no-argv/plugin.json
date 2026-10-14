@@ -1,0 +1,12 @@
+{
+  "api": 1,
+  "id": "no-argv",
+  "name": "No argv",
+  "actions": [
+    {
+      "id": "run",
+      "label": "Run",
+      "result": "log"
+    }
+  ]
+}

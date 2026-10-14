@@ -1,0 +1,12 @@
+== plugin
+action: edit:garbage
+result: replace
+state: failed
+exit: 0
+error: the output document is not well-formed XML
+== diagnostics
+count: 0
+== stack
+count: 0
+index: 0
+clean: yes

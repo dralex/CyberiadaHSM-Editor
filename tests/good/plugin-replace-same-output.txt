@@ -1,0 +1,12 @@
+== plugin
+action: edit:same
+result: replace
+state: done
+exit: 0
+changes: no
+== diagnostics
+count: 0
+== stack
+count: 0
+index: 0
+clean: yes

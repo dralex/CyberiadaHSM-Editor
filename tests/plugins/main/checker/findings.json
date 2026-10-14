@@ -1,0 +1,20 @@
+[
+  {
+    "severity": "warning",
+    "rule": "CGML-6.9-4-4",
+    "element": "nMeta",
+    "line": 31,
+    "message": "transitionOrder 'transitionFirst' is not admissible"
+  },
+  {
+    "severity": 3,
+    "rule": "CGML-6.4-4-2",
+    "element": "G9",
+    "message": "state machine 'G9' contains\nno initial pseudostate",
+    "hint": "ignored"
+  },
+  {
+    "severity": "error",
+    "message": "a finding without an element"
+  }
+]

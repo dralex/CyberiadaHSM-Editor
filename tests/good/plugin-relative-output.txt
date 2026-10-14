@@ -1,0 +1,9 @@
+== plugin
+action: relative:run
+result: log
+state: done
+exit: 0
+stdout:
+  relative program
+== diagnostics
+count: 0

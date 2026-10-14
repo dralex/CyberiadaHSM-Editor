@@ -1,0 +1,8 @@
+== plugin
+action: nointerp:run
+result: log
+state: failed
+exit: -
+error: the interpreter 'no-such-interpreter' is not found
+== diagnostics
+count: 0

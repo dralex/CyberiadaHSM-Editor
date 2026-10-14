@@ -1,0 +1,17 @@
+{
+  "api": 1,
+  "id": "Bad Id",
+  "name": "Bad id",
+  "actions": [
+    {
+      "id": "run",
+      "label": "Run",
+      "result": "log",
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "print",
+        "never"
+      ]
+    }
+  ]
+}

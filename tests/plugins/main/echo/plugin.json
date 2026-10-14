@@ -1,0 +1,22 @@
+{
+  "api": 1,
+  "id": "echo",
+  "name": "Echo",
+  "version": "0.1.0",
+  "description": "prints one line to stdout and one to stderr",
+  "actions": [
+    {
+      "id": "say",
+      "label": "Say",
+      "result": "log",
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "print",
+        "echo from main",
+        "--",
+        "eprint",
+        "echo to stderr"
+      ]
+    }
+  ]
+}

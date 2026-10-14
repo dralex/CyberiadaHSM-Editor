@@ -1,0 +1,30 @@
+{
+  "api": 1,
+  "id": "checker",
+  "name": "Checker",
+  "version": "0.1.0",
+  "actions": [
+    {
+      "id": "check",
+      "label": "Check",
+      "result": "diagnostics",
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "copy",
+        "${plugin_dir}/findings.json",
+        "${diagnostics}"
+      ]
+    },
+    {
+      "id": "bad",
+      "label": "Bad",
+      "result": "diagnostics",
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "write",
+        "${diagnostics}",
+        "{not json"
+      ]
+    }
+  ]
+}

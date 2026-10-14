@@ -1,0 +1,8 @@
+== plugin
+action: checker:bad
+result: diagnostics
+state: failed
+exit: 0
+error: the diagnostics file is not a JSON array
+== diagnostics
+count: 0

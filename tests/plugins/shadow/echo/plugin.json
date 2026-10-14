@@ -1,0 +1,18 @@
+{
+  "api": 1,
+  "id": "echo",
+  "name": "Echo",
+  "version": "0.2.0",
+  "actions": [
+    {
+      "id": "say",
+      "label": "Say",
+      "result": "log",
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "print",
+        "echo from shadow"
+      ]
+    }
+  ]
+}

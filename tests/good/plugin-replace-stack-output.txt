@@ -1,0 +1,14 @@
+== plugin
+action: edit:rename
+result: replace
+state: done
+exit: 0
+changes: yes
+stdout:
+  renamed
+== diagnostics
+count: 0
+== stack
+count: 1
+index: 1
+clean: no

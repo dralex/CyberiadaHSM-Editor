@@ -2,7 +2,20 @@
 # SCRIPT adds an edit script, DUMP_GOOD compares the --dump output (written
 # to OUTPUT), SAVE_OUT/SAVE_GOOD compare the saved document and re-open it;
 # TEXT shows the text elements, DUMP_TEXT dumps their font and layout and
-# DUMP_STACK dumps the undo stack, DUMP_TABS adds the tab line to the dump
+# DUMP_STACK dumps the undo stack, DUMP_TABS adds the tab line to the dump;
+# the plugin cases: PLUGIN_PATH and PLUGIN_PARAMS ('|'-separated), PLUGIN,
+# LIST_PLUGINS, DUMP_PLUGIN, NO_DUMP (stdout without --dump), CLEAN_DIR (a fresh
+# work dir), SEED (src>dst copies before the run), FORBID (absent from the output)
+if(DEFINED CLEAN_DIR)
+  file(REMOVE_RECURSE ${CLEAN_DIR})
+  file(MAKE_DIRECTORY ${CLEAN_DIR})
+endif()
+if(DEFINED SEED)
+  string(REPLACE ">" ";" _seed "${SEED}")
+  list(GET _seed 0 _seed_src)
+  list(GET _seed 1 _seed_dst)
+  configure_file(${_seed_src} ${_seed_dst} COPYONLY)
+endif()
 set(_args --batch --no-text)
 if(DEFINED RECONSTRUCT)
   list(APPEND _args --reconstruct)
@@ -31,6 +44,27 @@ endif()
 if(DEFINED DUMP_TABS)
   list(APPEND _args --dump-tabs)
 endif()
+if(DEFINED LIST_PLUGINS)
+  list(APPEND _args --list-plugins)
+endif()
+if(DEFINED DUMP_PLUGIN)
+  list(APPEND _args --dump-plugin)
+endif()
+if(DEFINED PLUGIN_PATH)
+  string(REPLACE "|" ";" _plugin_paths "${PLUGIN_PATH}")
+  foreach(_p ${_plugin_paths})
+    list(APPEND _args --plugin-path ${_p})
+  endforeach()
+endif()
+if(DEFINED PLUGIN)
+  list(APPEND _args --run-plugin ${PLUGIN})
+endif()
+if(DEFINED PLUGIN_PARAMS)
+  string(REPLACE "|" ";" _plugin_params "${PLUGIN_PARAMS}")
+  foreach(_p ${_plugin_params})
+    list(APPEND _args --plugin-param ${_p})
+  endforeach()
+endif()
 if(DEFINED INPUT)
   list(APPEND _args ${INPUT})
 endif()
@@ -51,14 +85,27 @@ if(DEFINED WORKDIR)
   set(_workdir WORKING_DIRECTORY ${WORKDIR})
 endif()
 if(DEFINED DUMP_GOOD)
-  # the text and the stack cases compare their section alone
-  if(NOT DEFINED DUMP_TEXT AND NOT DEFINED DUMP_STACK)
+  # the text, stack and plugin cases compare their sections alone
+  if(NOT DEFINED DUMP_TEXT AND NOT DEFINED DUMP_STACK AND NOT DEFINED DUMP_PLUGIN AND
+     NOT DEFINED LIST_PLUGINS AND NOT DEFINED NO_DUMP)
     list(APPEND _args --dump)
   endif()
   execute_process(COMMAND ${BATCH_BIN} ${_args}
     ${_workdir}
     OUTPUT_FILE ${OUTPUT}
+    ERROR_VARIABLE _stderr
     RESULT_VARIABLE result)
+  if(DEFINED FORBID)
+    file(READ ${OUTPUT} _stdout)
+    string(FIND "${_stdout}${_stderr}" "${FORBID}" _forbidden)
+    if(NOT _forbidden EQUAL -1)
+      message(FATAL_ERROR "the output contains the forbidden text")
+    endif()
+  endif()
+  # the error output stays visible in the test log
+  if(_stderr)
+    message("${_stderr}")
+  endif()
 else()
   execute_process(COMMAND ${BATCH_BIN} ${_args} ${_workdir} RESULT_VARIABLE result)
 endif()

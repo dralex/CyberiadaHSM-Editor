@@ -1,0 +1,26 @@
+== plugin
+action: vars:all
+result: log
+state: done
+exit: 0
+stdout:
+  arg1: <rundir>/input.graphml
+  arg2: <rundir>/output.graphml
+  arg3: <rundir>/diagnostics.json
+  arg4: <rundir>
+  arg5: <rundir>
+  arg6: <plugin_dir>
+  arg7: 
+  arg8: 
+  arg9: 
+  arg10: 
+  arg11: false
+  arg12: 3
+  arg13: fast
+  arg14: 
+  arg15: 0.5
+  arg16: <rundir>/param-name.txt
+  arg17: $HOME
+  arg18: 
+== diagnostics
+count: 0

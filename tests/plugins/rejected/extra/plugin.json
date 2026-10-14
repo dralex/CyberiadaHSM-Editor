@@ -1,0 +1,20 @@
+{
+  "api": 1,
+  "id": "extra",
+  "name": "Extra",
+  "version": "0.1.0",
+  "colour": "red",
+  "actions": [
+    {
+      "id": "run",
+      "label": "Run",
+      "result": "log",
+      "hint": "ignored",
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "print",
+        "extra"
+      ]
+    }
+  ]
+}
