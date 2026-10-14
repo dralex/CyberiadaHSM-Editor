@@ -135,6 +135,7 @@
     <addaction name="actionPaste"/>
     <addaction name="actionDeleteElement"/>
     <addaction name="actionReconstructGeometry"/>
+    <addaction name="actionUpdateGeometry"/>
     <addaction name="separator"/>
     <addaction name="actionUndo"/>
     <addaction name="actionRedo"/>
@@ -197,6 +198,7 @@
    <addaction name="actionPaste"/>
    <addaction name="actionDeleteElement"/>
    <addaction name="actionReconstructGeometry"/>
+   <addaction name="actionUpdateGeometry"/>
    <addaction name="separator"/>
    <addaction name="actionGridVisibility"/>
    <addaction name="actionSnapMode"/>
@@ -440,6 +442,18 @@
    </property>
    <property name="toolTip">
     <string>Rebuild the whole diagram geometry from scratch</string>
+   </property>
+  </action>
+  <action name="actionUpdateGeometry">
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/reconstruction.png</normaloff>:/Icons/images/reconstruction.png</iconset>
+   </property>
+   <property name="text">
+    <string>Geometry Update</string>
+   </property>
+   <property name="toolTip">
+    <string>Lay out the elements without geometry around the drawn ones, which stay</string>
    </property>
   </action>
   <action name="actionCut">

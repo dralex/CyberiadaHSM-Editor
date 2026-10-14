@@ -61,7 +61,8 @@ Two modes decide whether the geometric requirements are enforced:
 - **Editing mode** (the default): operations mutate the document and the editor's *recovery*
   keeps it spec-compliant — a container grows to fit its content (`EDIT-NODE-2`), a grown or
   reparented element pushes its siblings clear (`EDIT-NODE-6`), and the geometry is
-  reconstructed on request. The `[U]` geometric laws hold after every operation because this
+  reconstructed on request - rebuilt from scratch, or *updated*: the drawn elements keep
+  their places and the geometry-less ones are laid out around them. The `[U]` geometric laws hold after every operation because this
   recovery maintains them.
 - **Inspection mode**: the document is read-only and drawn as faithfully as possible to its
   stored geometry — the recovery is suspended, so a loaded diagram may break the `[U]`

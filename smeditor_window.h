@@ -167,6 +167,7 @@ public slots:
 
     void                    slotDeleteElement();
     void                    slotReconstructGeometry();
+    void                    slotUpdateGeometry();
     void                    slotCopy();
     void                    slotCut();
     void                    slotPaste();

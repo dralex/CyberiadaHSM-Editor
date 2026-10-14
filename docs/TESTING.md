@@ -323,6 +323,12 @@ machines side by side whatever they carried: the `reconstruct-two-sms` L2 case
 runs the `reconstruct` verb on `two-sms.graphml` (one machine with a rect, one
 without) and compares the dump and the saved file.
 
+The `update-geometry` action and batch verb (the model method `updateGeometry`)
+keep the drawn elements and lay out only the geometry-less ones around them,
+also as one undo step; the `update-geometry` L2 case runs it on
+`partial-geometry.graphml` (the `geometry` diagram with two states stripped of
+their geometry) and compares the dump and the saved file.
+
 `--inspect` opens the document read-only, as the GUI does through the open
 dialog: every model mutation is refused, so an edit script fails with exit
 code 4, and the region rectangles are taken from `dRegion` instead of the

@@ -360,6 +360,31 @@ bool CyberiadaSMModel::reconstructGeometry()
 	return true;
 }
 
+bool CyberiadaSMModel::updateGeometry()
+{
+	if (readOnly() || !root) return false;
+	// the drawn elements keep their places, the geometry-less ones are laid
+	// out around them (EDIT-NODE-4); the same border rule as the reconstruction
+	bool reconstruct_sm = false;
+	Cyberiada::StateMachineList sms = root->get_state_machines();
+	if (!sms.empty()) {
+		reconstruct_sm = true;
+		for (Cyberiada::StateMachineList::const_iterator sm = sms.begin(); sm != sms.end(); sm++)
+			if (!(*sm)->has_geometry()) { reconstruct_sm = false; break; }
+	}
+	UndoScope scope(this, tr("geometry update"));
+	beginResetModel();
+	try {
+		root->update_geometry(reconstruct_sm);
+	} catch (const Cyberiada::Exception&) {
+		endResetModel();
+		return false;
+	}
+	endResetModel();
+	GestureLog::instance().logAction("update-geometry");
+	return true;
+}
+
 // the written document declares its geometry (7.1): the editor writes the
 // exact sizes or none at all; the yEd formats carry no metainformation
 void CyberiadaSMModel::declareGeometry(Cyberiada::DocumentFormat f, bool skip_geometry)

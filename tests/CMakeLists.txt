@@ -313,6 +313,7 @@ add_l2_test(edge-points polyline)
 add_l2_test(copy-paste empty)
 add_l2_test(set-color empty)
 add_l2_test(reconstruct-two-sms two-sms)
+add_l2_test(update-geometry partial-geometry)
 add_l2_test(snap-transition polyline)
 add_l2_test(snap-alt polyline)
 

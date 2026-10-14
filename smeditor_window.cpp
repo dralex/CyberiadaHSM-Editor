@@ -100,6 +100,7 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     connect(actionCopy, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotCopy);
     connect(actionPaste, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotPaste);
     connect(actionReconstructGeometry, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotReconstructGeometry);
+    connect(actionUpdateGeometry, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotUpdateGeometry);
     // the undo group speaks for the active document's stack
     connect(undoGroup, &QUndoGroup::canUndoChanged, actionUndo, &QAction::setEnabled);
     connect(undoGroup, &QUndoGroup::canRedoChanged, actionRedo, &QAction::setEnabled);
@@ -375,6 +376,7 @@ void CyberiadaSMEditorWindow::updateEditActions()
     bool docOpen  = (model()->rootDocument() != nullptr);
     bool modified = docOpen && !model()->undoStack()->isClean();
     actionReconstructGeometry->setEnabled(docOpen && !inspector);
+    actionUpdateGeometry->setEnabled(docOpen && !inspector);
     actionSave->setEnabled(docOpen && modified && !inspector);
     actionSaveAs->setEnabled(docOpen);
     actionExport->setEnabled(docOpen);
@@ -918,6 +920,13 @@ void CyberiadaSMEditorWindow::slotReconstructGeometry()
         QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
     if (answer != QMessageBox::Yes) return;
     model()->reconstructGeometry();
+}
+
+void CyberiadaSMEditorWindow::slotUpdateGeometry()
+{
+    // the drawn elements stay, so no confirmation: one undo step restores it
+    if (!model()->rootDocument()) return;
+    model()->updateGeometry();
 }
 
 void CyberiadaSMEditorWindow::slotCopy()
