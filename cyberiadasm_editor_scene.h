@@ -67,6 +67,8 @@ public:
     void  loadScene(bool fit = true);
 
     QMap<Cyberiada::ID, QGraphicsItem*>& getMap() { return elementIdToItemMap; }
+    // the ids of the selected elements in the document order (${selection}, EDIT-PLUG-9)
+    QStringList selectedIds() const;
 
     // the union of the visible items only (unlike itemsBoundingRect, which
     // counts hidden dots and text)

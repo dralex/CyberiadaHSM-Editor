@@ -25,6 +25,7 @@
 #include <QScrollBar>
 
 #include "cyberiadasm_editor_document.h"
+#include "plugin_runner.h"
 
 CyberiadaSMEditorDocument::CyberiadaSMEditorDocument(QObject* parent):
     QObject(parent)
@@ -121,4 +122,14 @@ bool CyberiadaSMEditorDocument::restoreView()
     m_view->applyViewState(pendingViewState);
     pendingViewState.clear();
     return true;
+}
+
+PluginRunner* CyberiadaSMEditorDocument::pluginRun() const
+{
+    return m_pluginRun.data();
+}
+
+void CyberiadaSMEditorDocument::setPluginRun(PluginRunner* run)
+{
+    m_pluginRun = run;
 }

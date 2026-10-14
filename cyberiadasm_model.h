@@ -53,7 +53,7 @@ public:
 	                                                   bool round, bool skip_geometry,
 	                                                   bool check_initial, bool strict_actions,
 	                                                   bool skip_empty_behavior);
-	// the inspected document is never modified
+	// the inspected or the plugin-locked document is never modified
 	bool                                readOnly() const;
 	void                                saveAsDocument(const QString& path, Cyberiada::DocumentFormat f, bool round = false);
 
@@ -249,6 +249,18 @@ public:
 	// drop a scope left open by a lost mouse release, so the next gesture is its own step
 	void                                resetUndoGesture();
 	void                                restoreSnapshot(const std::string& snapshot);
+	// the Cyberiada 1.0 encoding of the document in memory; on failure returns ""
+	// and sets ok to false; an empty document (no root or no state machine)
+	// succeeds with an empty snapshot
+	std::string                         snapshot(bool* ok = nullptr) const;
+	// a plugin result: the document becomes the buffer as one undo step that keeps
+	// the file identity; an equal buffer changes nothing (EDIT-PLUG-12); false when
+	// the document is read-only
+	bool                                replaceDocument(const std::string& buffer, const QString& text,
+	                                                    bool* changed = nullptr);
+	// a replace plugin run locks the document: readOnly() holds until it ends (EDIT-PLUG-22)
+	void                                setLocked(bool value) { locked = value; }
+	bool                                isLocked() const { return locked; }
 	const Cyberiada::Element*           indexToElement(const QModelIndex& index) const;
 	Cyberiada::Element*                 indexToElement(const QModelIndex& index);
 	const Cyberiada::Element*           idToElement(const QString& id) const;
@@ -259,9 +271,6 @@ private:
 	// giving an empty document its first state machine
 	bool                                setDocumentChoice(const QString& key, const QString& value,
 	                                                      const QString& undoText);
-	// on failure returns "" and sets ok to false; an empty document (no root or
-	// no state machine) succeeds with an empty snapshot
-	std::string                         snapshot(bool* ok = nullptr) const;
 	void                                move(Cyberiada::Element* element, Cyberiada::ElementCollection* target_parent);
 	void                                declareGeometry(Cyberiada::DocumentFormat f, bool skip_geometry);
 	
@@ -277,6 +286,7 @@ private:
 	std::string                         undoBefore;
 	bool                                undoBeforeOk;
 	bool                                m_growing = false;   // growToFitChildren re-entrancy guard
+	bool                                locked = false;
 	// the file identity, restored after a snapshot decode
 	QString                             filePath;
 	Cyberiada::DocumentFormat           fileFormat;

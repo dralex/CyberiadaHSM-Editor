@@ -243,7 +243,7 @@ bool CyberiadaSMModel::loadDocument(const QString& path, bool reconstruct, bool 
 
 bool CyberiadaSMModel::readOnly() const
 {
-	return SettingsManager::instance().getInspectorMode();
+	return locked || SettingsManager::instance().getInspectorMode();
 }
 
 // the snapshot is the Cyberiada 1.0 encoding of the document in memory; an
@@ -322,6 +322,20 @@ void CyberiadaSMModel::restoreSnapshot(const std::string& snapshot)
 	// the decode resets the file identity with the rest of the document
 	root->set_file(filePath.toStdString(), fileFormat);
 	endResetModel();
+}
+
+bool CyberiadaSMModel::replaceDocument(const std::string& buffer, const QString& text, bool* changed)
+{
+	if (changed) *changed = false;
+	if (readOnly()) return false;
+	bool ok = true;
+	std::string before = snapshot(&ok);
+	if (ok && before == buffer) return true;
+	beginUndoStep(text);
+	restoreSnapshot(buffer);
+	endUndoStep();
+	if (changed) *changed = true;
+	return true;
 }
 
 // the mutations of one call form one step unless a gesture is open

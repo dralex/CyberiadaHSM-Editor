@@ -27,9 +27,14 @@
 #include <QObject>
 #include <QString>
 
+#include <QMap>
+#include <QPointer>
+
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_editor_scene.h"
 #include "cyberiadasm_editor_view.h"
+
+class PluginRunner;
 
 // One open document of the window (docs/WINDOW.md): the model owns the
 // undo stack and the file identity, the scene draws it, the view is the
@@ -70,6 +75,13 @@ public:
     bool                     restoreView();
     bool                     hasPendingView() const { return !pendingViewState.isEmpty(); }
 
+    // the plugin run of the document, at most one (EDIT-PLUG-21); nullptr when idle
+    PluginRunner*            pluginRun() const;
+    void                     setPluginRun(PluginRunner* run);
+    // the plugin values of an untitled document last for the session (EDIT-PLUG-11),
+    // by "<plugin>/<parameter>"
+    QMap<QString, QString>&  sessionPluginValues() { return m_sessionPluginValues; }
+
 signals:
     void                     titleChanged();
 
@@ -78,6 +90,8 @@ private:
     CyberiadaSMEditorScene*  m_scene;
     CyberiadaSMGraphicsView* m_view;
     QString                  pendingViewState;
+    QPointer<PluginRunner>   m_pluginRun;
+    QMap<QString, QString>   m_sessionPluginValues;
 };
 
 #endif

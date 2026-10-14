@@ -1392,3 +1392,27 @@ void CyberiadaSMEditorScene::drawBackground(QPainter* painter, const QRectF& exp
 	painter->drawLines(lines.data(), lines.size());
 }
 
+
+static void collectSelected(const Cyberiada::Element* element,
+                            const QMap<Cyberiada::ID, QGraphicsItem*>& map, QStringList* ids)
+{
+    QGraphicsItem* item = map.value(element->get_id(), nullptr);
+    if (item && item->isSelected() && element->get_type() != Cyberiada::elementRoot) {
+        ids->append(QString::fromStdString(element->get_id()));
+    }
+    const Cyberiada::ElementCollection* collection =
+        dynamic_cast<const Cyberiada::ElementCollection*>(element);
+    if (!collection) return;
+    Cyberiada::ConstElementList children = collection->get_children();
+    for (Cyberiada::ConstElementList::const_iterator i = children.begin(); i != children.end(); i++) {
+        collectSelected(*i, map, ids);
+    }
+}
+
+QStringList CyberiadaSMEditorScene::selectedIds() const
+{
+    QStringList ids;
+    const Cyberiada::LocalDocument* root = model ? model->rootDocument() : nullptr;
+    if (root) collectSelected(root, elementIdToItemMap, &ids);
+    return ids;
+}

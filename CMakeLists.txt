@@ -92,6 +92,7 @@ add_library(CyberiadaEditorCore STATIC
   plugin_descriptor.h plugin_descriptor.cpp
   plugin_values.h plugin_values.cpp
   plugin_registry.h plugin_registry.cpp
+  plugin_runner.h plugin_runner.cpp
 )
 
 target_include_directories(CyberiadaEditorCore PUBLIC
