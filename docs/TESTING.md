@@ -318,9 +318,10 @@ checkbox.
 
 `--reconstruct` loads the document with the library's geometry reconstruction:
 absent geometry is rebuilt, and node geometry violating the standard (e.g. a
-comment with point instead of rect geometry) is dropped and rebuilt as well.
-Without the option such documents fail with a format error (exit code 2) -
-the strict default. The GUI open dialog exposes the same mode as the
+pseudostate with rect instead of point geometry) is dropped and rebuilt as well.
+Without the option such documents fail with a format error (exit code 2).
+The default mode reads the Arena and Lapki dialects: a point on a state or a
+comment becomes a rect at that point, `--strict` rejects it. The GUI open dialog exposes the same mode as the
 reconstruction checkbox. `--reconstruct-sm` creates the absent state machine
 border as well; the library honours it only together with `--reconstruct`,
 and the dialog enables its checkbox only under the reconstruction one.

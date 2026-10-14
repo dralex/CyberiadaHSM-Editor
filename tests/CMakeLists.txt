@@ -75,10 +75,12 @@ endforeach()
 # broken documents must fail with the load-error code, not hang or crash
 foreach(diagram
     broken-xml
-    broken-format
-    broken-point-comment)
+    broken-format)
   add_l0_test(${diagram} 2)
 endforeach()
+
+# the default mode reads the point of a comment as a loose rect (the Lapki dialect)
+add_l0_test(broken-point-comment 0)
 
 # the strict standard checks reject what the default mode accepts
 function(add_l0_strict_test name expected_code)
@@ -100,6 +102,7 @@ add_l0_strict_test(meta 2)
 # the final PNST 1044 text: an unnamed entry point (8.3.1), defer on a transition (6.8.1)
 add_l0_strict_test(unnamed-point 2)
 add_l0_strict_test(defer-on-transition 2)
+add_l0_strict_test(broken-point-comment 2)
 
 # the reconstruction mode repairs malformed geometry instead
 add_test(NAME l0-point-comment-reconstruct
