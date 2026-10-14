@@ -41,6 +41,7 @@ Q_OBJECT
 
 public:
 	CyberiadaSMPropertiesWidget(QWidget *parent = NULL);
+	~CyberiadaSMPropertiesWidget();
 
 	void                     setModel(CyberiadaSMModel* model);
 	// the scene supplies the graphics item for an element so a geometry edit can

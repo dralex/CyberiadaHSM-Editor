@@ -350,6 +350,19 @@ void CyberiadaSMPropertiesWidget::slotCurrentItemChanged(QtBrowserItem*)
     }
 }
 
+// QtAbstractPropertyBrowser keeps the view -> manager -> factory links in static
+// maps and does not drop them with the view: a later view at the same address
+// would reach the freed factories, so the links go with this one
+CyberiadaSMPropertiesWidget::~CyberiadaSMPropertiesWidget()
+{
+    unsetFactoryForManager(stringManager);
+    unsetFactoryForManager(multilineStringManager);
+    unsetFactoryForManager(enumManager);
+    unsetFactoryForManager(boolManager);
+    unsetFactoryForManager(pointManager->subDoublePropertyManager());
+    unsetFactoryForManager(rectManager->subDoublePropertyManager());
+}
+
 void CyberiadaSMPropertiesWidget::slotInspectorModeChanged(bool on)
 {
     // the inspected properties are displayed but not edited
