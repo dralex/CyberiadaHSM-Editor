@@ -293,7 +293,7 @@ document changes after the run. The format is a subset of the LSP `Diagnostic`: 
   { "id": "dir", "type": "dir", "label": "Package directory", "scope": "document",
     "default": "${document_dir}/ros", "create": true },
   { "id": "key", "type": "secret", "label": "API key", "scope": "persistent",
-    "export": "HSM_MAKER_KEY" }
+    "export": "HSM_MAKER_API_KEY" }
 ]
 ```
 
@@ -492,8 +492,9 @@ diagram names — sets `"cwd": "document"` and takes `${document}` instead of `$
 
 ### An LLM diagram maker
 
-`cybersphere-hsm-maker` makes a new diagram from a description. The description goes
-through a file, the key through an exported variable.
+`cybersphere-hsm-maker` draws a new diagram from a description and changes the open one
+by a description of the change; its `editor-plugin/` holds the descriptor. The texts go
+through files, the key through an exported variable the maker reads.
 
 ```json
 {
@@ -501,30 +502,49 @@ through a file, the key through an exported variable.
   "id": "hsm-maker",
   "name": "HSM Maker",
   "version": "0.1.0",
-  "description": "Draws a new diagram from a description; sends it to an LLM service",
+  "description": "Draws a new diagram from a description or changes the open one with a language model; the description and the diagram are sent to the model server",
   "interpreter": "python3",
+  "env": { "PYTHONUTF8": "1" },
   "parameters": [
     { "id": "prompt", "type": "text", "label": "Description", "scope": "run",
       "required": true, "language": "markdown" },
+    { "id": "change", "type": "text", "label": "What to change", "scope": "run",
+      "required": true, "language": "markdown" },
+    { "id": "layout", "type": "enum", "label": "Layout", "scope": "run",
+      "choices": ["update", "full"], "default": "update" },
     { "id": "model", "type": "string", "label": "Model", "scope": "persistent",
-      "default": "deepseek-flash" },
+      "required": true, "default": "deepseek-flash" },
     { "id": "url", "type": "string", "label": "Server", "scope": "persistent",
-      "default": "https://api.deepseek.com/v1" },
+      "required": true, "default": "https://api.deepseek.com/v1" },
     { "id": "key", "type": "secret", "label": "API key", "scope": "persistent",
-      "default": "env:DEEPSEEK_API_KEY", "export": "HSM_MAKER_KEY" }
+      "default": "env:DEEPSEEK_API_KEY", "export": "HSM_MAKER_API_KEY" }
   ],
   "actions": [
     { "id": "draw", "label": "Draw a new diagram...", "result": "new-document",
-      "toolbar": true, "icon": "icons/draw.svg", "timeout": 300,
+      "toolbar": true, "icon": "icons/draw.svg", "timeout": 600,
+      "load": { "strict": true },
+      "parameters": ["prompt", "model", "url", "key"],
       "argv": ["-m", "hsm_maker", "-f", "${param-file:prompt}", "-o", "${output}",
-               "--model", "${param:model}", "--url", "${param:url}",
-               "--key-env", "HSM_MAKER_KEY"] }
+               "--diagnostics", "${diagnostics}",
+               "--model", "${param:model}", "--url", "${param:url}"] },
+    { "id": "change", "label": "Change the diagram...", "result": "replace",
+      "toolbar": true, "icon": "icons/change.svg", "timeout": 600,
+      "load": { "strict": true },
+      "parameters": ["change", "layout", "model", "url", "key"],
+      "argv": ["-m", "hsm_maker", "--update", "${input}", "-f", "${param-file:change}",
+               "--geometry", "${param:layout}", "-o", "${output}",
+               "--diagnostics", "${diagnostics}",
+               "--model", "${param:model}", "--url", "${param:url}"] }
   ]
 }
 ```
 
-The maker exits 0 when the diagram is made, 1 when it is not, 2 on a usage error and 3 on
-a server error; only 0 is success, and its stderr explains the rest.
+The real descriptor adds the protocol, the language and the rounds as `persistent`
+parameters and a `notation` action (`result` `log`) that prints the open diagram in the
+notation the model reads. `change` keeps the identifiers and the drawing of what it does
+not change, and its diagnostics list every change with the element. The maker exits 0
+when the diagram is made, 1 when it is not, 2 on a usage error and 3 on a server error;
+only 0 is success, and its stderr explains the rest.
 
 ### A server-based compiler
 
