@@ -37,12 +37,15 @@ ARG MXE_REF=build-2022-04-09
 ARG MXE_TARGET=x86_64-w64-mingw32.shared
 
 # clone and build only the generic toolchain we need; drop the downloaded
-# tarballs afterwards to keep the image smaller
+# tarballs afterwards to keep the image smaller. qttools gives the cross lrelease
+# that the editor's find_package(Qt5LinguistTools REQUIRED) needs to compile its
+# .ts; qttranslations installs qtbase_<lang>.qm into qt5/translations so the
+# editor embeds the Qt dialog catalogue (found via the cross qmake query)
 RUN git clone https://github.com/mxe/mxe.git /opt/mxe \
     && cd /opt/mxe \
     && git checkout "${MXE_REF}" \
     && make MXE_TARGETS="${MXE_TARGET}" -j"$(nproc)" JOBS=1 \
-        cc cmake qtbase qtsvg libxml2 pcre2 \
+        cc cmake qtbase qtsvg qttools qttranslations libxml2 pcre2 \
     && rm -rf /opt/mxe/pkg /opt/mxe/.ccache /opt/mxe/log
 
 # the MXE cross tools (x86_64-w64-mingw32.shared-cmake, -gcc, ...) and wine
