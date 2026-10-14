@@ -157,8 +157,11 @@ signals:
 
     void selectionSettingsChanged();
 
-    // the enable switches or the interpreters changed: the plugins rescan
+    // the interpreters changed: the plugins rescan
     void pluginsChanged();
+    // a plugin switch changed: the actions follow, no rescan (the plugin manager
+    // is inside its item handler then)
+    void pluginSwitchesChanged();
 
 private:
     SettingsManager();

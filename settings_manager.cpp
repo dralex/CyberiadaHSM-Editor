@@ -394,7 +394,7 @@ void SettingsManager::setPluginEnabled(const QString& plugin, bool value)
 {
     if (getPluginEnabled(plugin) != value) {
         QSettings().setValue(pluginKey(plugin, "enabled"), value);
-        emit pluginsChanged();
+        emit pluginSwitchesChanged();
     }
 }
 

@@ -115,6 +115,8 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
             this, &CyberiadaSMEditorWindow::slotDiagnosticActivated);
     connect(&SettingsManager::instance(), &SettingsManager::pluginsChanged,
             this, &CyberiadaSMEditorWindow::slotPluginSettingsChanged);
+    connect(&SettingsManager::instance(), &SettingsManager::pluginSwitchesChanged,
+            this, &CyberiadaSMEditorWindow::updatePluginActions);
     PluginRegistry::instance().setInterpreterPaths(SettingsManager::instance().getInterpreterPaths());
     PluginRegistry::instance().scan();
 
