@@ -55,6 +55,8 @@
 #include "code_highlighter.h"
 #include "meta_choice_menu.h"
 #include "plugin_registry.h"
+#include "plugins_menu.h"
+#include "dialogs/plugin_parameter_dialog.h"
 
 
 CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
@@ -93,6 +95,11 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     initializeTools();
 
     // the plugins installed now (EDIT-PLUG-1); the search path comes from main
+    pluginMenu = new PluginsMenu(this, menuHelp, zoomOptionsToolBar, menuView, actionPreferences);
+    connect(pluginMenu, &PluginsMenu::actionTriggered, this, &CyberiadaSMEditorWindow::slotPluginTriggered);
+    connect(pluginMenu, &PluginsMenu::settingsTriggered, this, &CyberiadaSMEditorWindow::slotPluginSettings);
+    connect(&PluginRegistry::instance(), &PluginRegistry::scanned,
+            this, &CyberiadaSMEditorWindow::slotPluginsScanned);
     PluginRegistry::instance().setInterpreterPaths(SettingsManager::instance().getInterpreterPaths());
     PluginRegistry::instance().scan();
 
@@ -389,6 +396,7 @@ void CyberiadaSMEditorWindow::updateEditActions()
     actionSave->setEnabled(docOpen && modified && !inspector);
     actionSaveAs->setEnabled(docOpen);
     actionExport->setEnabled(docOpen);
+    updatePluginActions();
 }
 
 // the documents go while the actions and the undo group are still alive; the
@@ -1150,6 +1158,7 @@ PluginRunner* CyberiadaSMEditorWindow::runPlugin(const QString& pluginId, const 
     connect(run, &PluginRunner::finished, this, &CyberiadaSMEditorWindow::slotPluginFinished);
     emit pluginRunStarted(run);
     run->start();
+    updatePluginActions();
     return run;
 }
 
@@ -1260,4 +1269,122 @@ void CyberiadaSMEditorWindow::applyPluginResult(PluginRunner* run, CyberiadaSMEd
     }
     updateEditActions();
     updateTitle();
+}
+
+void CyberiadaSMEditorWindow::slotPluginsScanned()
+{
+    if (pluginMenu) pluginMenu->rebuild();
+    updatePluginActions();
+}
+
+void CyberiadaSMEditorWindow::updatePluginActions()
+{
+    if (!pluginMenu) return;
+    for (const QPair<QString, QString>& ids: pluginMenu->actionIds()) {
+        QAction* act = pluginMenu->action(ids.first, ids.second);
+        const PluginEntry* entry = PluginRegistry::instance().find(ids.first);
+        const PluginAction* action = entry ? entry->descriptor.action(ids.second) : nullptr;
+        if (!act || !action) continue;
+        QString reason = pluginDisabledReason(*entry, *action, current);
+        act->setEnabled(reason.isEmpty());
+        QString description = action->description.isEmpty() ? entry->descriptor.description
+                                                           : action->description;
+        act->setToolTip(reason.isEmpty() ? description : reason);
+    }
+}
+
+PluginValues CyberiadaSMEditorWindow::pluginValues(const PluginEntry& plugin,
+                                                   const QList<const PluginParameter*>& parameters,
+                                                   CyberiadaSMEditorDocument* doc,
+                                                   bool* needsDialog) const
+{
+    SettingsManager& sm = SettingsManager::instance();
+    PluginDocumentPaths paths = pluginDocumentPaths(
+        doc && doc->hasFile() ? QFileInfo(doc->filePath()).absoluteFilePath() : QString());
+    QString key = paths.untitled() ? QString() : pluginDocumentKey(paths.path);
+    const QString& id = plugin.descriptor.id;
+    PluginValues values;
+    bool dialog = false;
+    for (const PluginParameter* p: parameters) {
+        QString value = pluginDefaultValue(*p, paths);
+        bool found = false;
+        if (p->scope == PluginParameter::scopeRun) {
+            dialog = true;
+        } else if (p->scope == PluginParameter::scopePersistent) {
+            QString stored = sm.getPluginValue(id, p->id, &found);
+            if (found) value = stored;
+        } else if (key.isEmpty()) {
+            // an untitled document keeps its values for the session (EDIT-PLUG-11)
+            QString sessionKey = id + "/" + p->id;
+            found = doc && doc->sessionPluginValues().contains(sessionKey);
+            if (found) value = doc->sessionPluginValues().value(sessionKey);
+            else dialog = true;
+        } else {
+            QString stored = sm.getPluginDocumentValue(id, key, p->id, &found);
+            if (found) value = stored;
+            else dialog = true;
+        }
+        if (p->required && value.isEmpty()) dialog = true;
+        values.insert(p->id, value);
+    }
+    if (needsDialog) *needsDialog = dialog;
+    return values;
+}
+
+void CyberiadaSMEditorWindow::storePluginValues(const PluginEntry& plugin,
+                                                const QList<const PluginParameter*>& parameters,
+                                                CyberiadaSMEditorDocument* doc,
+                                                const PluginValues& values)
+{
+    SettingsManager& sm = SettingsManager::instance();
+    QString path = doc && doc->hasFile() ? QFileInfo(doc->filePath()).absoluteFilePath() : QString();
+    const QString& id = plugin.descriptor.id;
+    for (const PluginParameter* p: parameters) {
+        if (p->scope == PluginParameter::scopePersistent) {
+            sm.setPluginValue(id, p->id, values.value(p->id));
+        } else if (p->scope == PluginParameter::scopeDocument) {
+            if (path.isEmpty()) {
+                if (doc) doc->sessionPluginValues().insert(id + "/" + p->id, values.value(p->id));
+            } else {
+                sm.setPluginDocumentValue(id, pluginDocumentKey(path), p->id, values.value(p->id));
+            }
+        }
+    }
+}
+
+void CyberiadaSMEditorWindow::slotPluginTriggered(const QString& pluginId, const QString& actionId)
+{
+    const PluginEntry* entry = PluginRegistry::instance().find(pluginId);
+    const PluginAction* action = entry ? entry->descriptor.action(actionId) : nullptr;
+    if (!action || !current) return;
+    QList<const PluginParameter*> parameters = entry->descriptor.actionParameters(*action);
+    bool dialog = false;
+    PluginValues values = pluginValues(*entry, parameters, current, &dialog);
+    if (dialog) {
+        QString label = action->label;
+        if (label.endsWith("...")) label.chop(3);
+        PluginParameterDialog dlg(QString("%1 - %2").arg(entry->descriptor.name, label), parameters,
+                                  values, tr("Run"), this);
+        if (dlg.exec() != QDialog::Accepted) return;
+        values = dlg.values();
+        storePluginValues(*entry, parameters, current, values);
+    }
+    QString error;
+    if (!runPlugin(pluginId, actionId, values, &error) && !error.isEmpty()) {
+        QMessageBox::warning(this, entry->descriptor.name, error);
+    }
+}
+
+void CyberiadaSMEditorWindow::slotPluginSettings(const QString& pluginId)
+{
+    const PluginEntry* entry = PluginRegistry::instance().find(pluginId);
+    if (!entry) return;
+    QList<const PluginParameter*> parameters;
+    for (const PluginParameter& p: entry->descriptor.parameters) {
+        if (p.isStored()) parameters.append(&p);
+    }
+    PluginValues values = pluginValues(*entry, parameters, current);
+    PluginParameterDialog dlg(tr("%1 - Settings").arg(entry->descriptor.name), parameters, values,
+                              tr("Save"), this);
+    if (dlg.exec() == QDialog::Accepted) storePluginValues(*entry, parameters, current, dlg.values());
 }

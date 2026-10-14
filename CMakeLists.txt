@@ -93,6 +93,8 @@ add_library(CyberiadaEditorCore STATIC
   plugin_values.h plugin_values.cpp
   plugin_registry.h plugin_registry.cpp
   plugin_runner.h plugin_runner.cpp
+  plugins_menu.h plugins_menu.cpp
+  dialogs/plugin_parameter_dialog.h dialogs/plugin_parameter_dialog.cpp
 )
 
 target_include_directories(CyberiadaEditorCore PUBLIC

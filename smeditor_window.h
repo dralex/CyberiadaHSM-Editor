@@ -39,6 +39,7 @@ class QUndoGroup;
 class QTabBar;
 class QActionGroup;
 class MetaChoiceMenu;
+class PluginsMenu;
 
 // The window holds the documents (docs/WINDOW.md): the menus, the toolbars,
 // the clipboard and the armed tool are global; the structure tree, the
@@ -99,6 +100,15 @@ public:
     // why the action cannot run on the document now; empty when it can
     QString                 pluginDisabledReason(const PluginEntry& plugin, const PluginAction& action,
                                                  CyberiadaSMEditorDocument* doc) const;
+    // the values a GUI run starts from: the defaults, the stored persistent and
+    // document values; needsDialog follows the click rule (EDIT-PLUG-7)
+    PluginValues            pluginValues(const PluginEntry& plugin,
+                                         const QList<const PluginParameter*>& parameters,
+                                         CyberiadaSMEditorDocument* doc, bool* needsDialog = nullptr) const;
+    void                    storePluginValues(const PluginEntry& plugin,
+                                              const QList<const PluginParameter*>& parameters,
+                                              CyberiadaSMEditorDocument* doc, const PluginValues& values);
+    PluginsMenu*            pluginsMenu() const { return pluginMenu; }
 
 signals:
     void                    pluginRunStarted(PluginRunner* run);
@@ -155,6 +165,14 @@ private slots:
     // enable cut/copy/paste/delete only for a fitting selection (and not in inspector mode)
     void                    updateEditActions();
     void                    slotPluginFinished();
+    // the enabled state and the tooltips of the plugin actions (EDIT-PLUG-4)
+    void                    updatePluginActions();
+    void                    slotPluginsScanned();
+
+public slots:
+    // a click on a plugin action: the dialog when needed, then the run
+    void                    slotPluginTriggered(const QString& pluginId, const QString& actionId);
+    void                    slotPluginSettings(const QString& pluginId);
 
 public slots:
 	void                    slotFileNew();
@@ -214,6 +232,7 @@ private:
     QMenu* recentMenu = nullptr;
 
     MetaChoiceMenu* languageChoice = nullptr;
+    PluginsMenu* pluginMenu = nullptr;
     MetaChoiceMenu* markupChoice = nullptr;
 
     // a detached deep clone of the last copied/cut element (nullptr when empty),

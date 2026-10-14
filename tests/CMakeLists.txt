@@ -25,6 +25,9 @@ set(L0_ENVIRONMENT
   "QT_QPA_PLATFORM=offscreen"
   "FONTCONFIG_FILE=${CMAKE_CURRENT_BINARY_DIR}/fonts.conf"
   "XDG_CONFIG_HOME=${CMAKE_CURRENT_BINARY_DIR}/config"
+  # no plugin of the machine reaches a case (EDIT-PLUG-1)
+  "XDG_DATA_HOME=${CMAKE_CURRENT_BINARY_DIR}/data"
+  "CYBERIADA_EDITOR_PLUGIN_PATH="
   "LD_LIBRARY_PATH=${L0_LIBRARY_PATH}")
 if(EXISTS "${QT5_LIB_DIR}/qt5/plugins")
   list(APPEND L0_ENVIRONMENT "QT_PLUGIN_PATH=${QT5_LIB_DIR}/qt5/plugins")
@@ -693,7 +696,10 @@ function(add_plugin_test name)
     if(P_CONFIG AND _entry MATCHES "^XDG_CONFIG_HOME=")
       set(_entry "XDG_CONFIG_HOME=${P_CONFIG}")
     endif()
-    list(APPEND _env "${_entry}")
+    # the case sets the data home and the plugin path below
+    if(NOT _entry MATCHES "^(XDG_DATA_HOME|CYBERIADA_EDITOR_PLUGIN_PATH)=")
+      list(APPEND _env "${_entry}")
+    endif()
   endforeach()
   if(P_DATA)
     list(APPEND _env "XDG_DATA_HOME=${P_DATA}")
