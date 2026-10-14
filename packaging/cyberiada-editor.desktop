@@ -2,8 +2,11 @@
 Type=Application
 Version=1.0
 Name=Cyberiada State Machine Editor
+Name[ru]=Редактор машин состояний Cyberiada
 GenericName=State Machine Editor
+GenericName[ru]=Редактор машин состояний
 Comment=Edit Cyberiada hierarchical state machine diagrams
+Comment[ru]=Редактирование диаграмм иерархических машин состояний Cyberiada
 Exec=CyberiadaEditor %f
 Icon=cyberiada-editor
 Terminal=false
