@@ -8,6 +8,7 @@
 #include <QString>
 #include <QStringList>
 #include <QPointF>
+#include <QMap>
 
 #include "cyberiada_constants.h"
 
@@ -119,6 +120,25 @@ public:
     bool getSelectionInvertText() const { return selectionInvertText; }
     void setSelectionInvertText(bool value);
 
+    // the plugin values and switches (docs/PLUGINS.md, Settings); read and
+    // written through, the plugins come and go with the scans
+    QString getPluginValue(const QString& plugin, const QString& parameter,
+                           bool* found = nullptr) const;
+    void setPluginValue(const QString& plugin, const QString& parameter, const QString& value);
+    // a document value by the document key (pluginDocumentKey)
+    QString getPluginDocumentValue(const QString& plugin, const QString& document,
+                                   const QString& parameter, bool* found = nullptr) const;
+    void setPluginDocumentValue(const QString& plugin, const QString& document,
+                                const QString& parameter, const QString& value);
+    bool getPluginEnabled(const QString& plugin) const;
+    void setPluginEnabled(const QString& plugin, bool value);
+    bool getPluginToolbarVisible(const QString& plugin) const;
+    void setPluginToolbarVisible(const QString& plugin, bool value);
+    // the interpreter paths of the Preferences by logical name
+    QMap<QString, QString> getInterpreterPaths() const;
+    // an empty path removes the entry
+    void setInterpreterPath(const QString& name, const QString& path);
+
 signals:
     void settingsChanged();
     void recentFilesChanged();
@@ -136,6 +156,9 @@ signals:
     void highlightSettingsChanged();
 
     void selectionSettingsChanged();
+
+    // the enable switches or the interpreters changed: the plugins rescan
+    void pluginsChanged();
 
 private:
     SettingsManager();

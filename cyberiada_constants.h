@@ -64,6 +64,20 @@
 // the value removing an optional metainformation parameter
 #define METAINFORMATION_VALUE_NONE        "none"
 
+// Plugin constants (docs/PLUGINS.md, docs/PLUGIN-API.md)
+#define PLUGIN_API_MAJOR        1
+#define PLUGIN_DESCRIPTOR_FILE  "plugin.json"
+#define PLUGIN_SYSTEM_FOLDER    "share/cyberiada-editor/plugins"
+#define PLUGIN_PATH_VARIABLE    "CYBERIADA_EDITOR_PLUGIN_PATH"
+#define PLUGIN_KEEP_VARIABLE    "CYBERIADA_EDITOR_PLUGIN_KEEP"
+// seconds
+#define PLUGIN_TIMEOUT_DEFAULT  60
+#define PLUGIN_KILL_GRACE_MS    3000
+// the captured stdout and stderr of one run, in bytes
+#define PLUGIN_OUTPUT_CAP       (1024 * 1024)
+// the stderr lines reported with a failed run
+#define PLUGIN_STDERR_TAIL      10
+
 // Text constants
 #define FONT_SIZE     12
 #define FONT_SIZE_MIN 6

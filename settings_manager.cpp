@@ -349,3 +349,81 @@ void SettingsManager::setSelectionInvertText(bool value)
         emit selectionSettingsChanged();
     }
 }
+
+static QString pluginKey(const QString& plugin, const QString& rest)
+{
+    return QString("plugins/%1/%2").arg(plugin, rest);
+}
+
+QString SettingsManager::getPluginValue(const QString& plugin, const QString& parameter,
+                                        bool* found) const
+{
+    QSettings s;
+    QString key = pluginKey(plugin, "values/" + parameter);
+    if (found) *found = s.contains(key);
+    return s.value(key).toString();
+}
+
+void SettingsManager::setPluginValue(const QString& plugin, const QString& parameter,
+                                     const QString& value)
+{
+    QSettings().setValue(pluginKey(plugin, "values/" + parameter), value);
+}
+
+QString SettingsManager::getPluginDocumentValue(const QString& plugin, const QString& document,
+                                                const QString& parameter, bool* found) const
+{
+    QSettings s;
+    QString key = pluginKey(plugin, QString("documents/%1/%2").arg(document, parameter));
+    if (found) *found = s.contains(key);
+    return s.value(key).toString();
+}
+
+void SettingsManager::setPluginDocumentValue(const QString& plugin, const QString& document,
+                                             const QString& parameter, const QString& value)
+{
+    QSettings().setValue(pluginKey(plugin, QString("documents/%1/%2").arg(document, parameter)), value);
+}
+
+bool SettingsManager::getPluginEnabled(const QString& plugin) const
+{
+    return QSettings().value(pluginKey(plugin, "enabled"), true).toBool();
+}
+
+void SettingsManager::setPluginEnabled(const QString& plugin, bool value)
+{
+    if (getPluginEnabled(plugin) != value) {
+        QSettings().setValue(pluginKey(plugin, "enabled"), value);
+        emit pluginsChanged();
+    }
+}
+
+bool SettingsManager::getPluginToolbarVisible(const QString& plugin) const
+{
+    return QSettings().value(pluginKey(plugin, "toolbar"), true).toBool();
+}
+
+void SettingsManager::setPluginToolbarVisible(const QString& plugin, bool value)
+{
+    QSettings().setValue(pluginKey(plugin, "toolbar"), value);
+}
+
+QMap<QString, QString> SettingsManager::getInterpreterPaths() const
+{
+    QSettings s;
+    QMap<QString, QString> paths;
+    s.beginGroup("plugin-interpreters");
+    for (const QString& name: s.childKeys()) paths.insert(name, s.value(name).toString());
+    s.endGroup();
+    return paths;
+}
+
+void SettingsManager::setInterpreterPath(const QString& name, const QString& path)
+{
+    QSettings s;
+    QString key = "plugin-interpreters/" + name;
+    if (s.value(key).toString() == path) return;
+    if (path.isEmpty()) s.remove(key);
+    else s.setValue(key, path);
+    emit pluginsChanged();
+}

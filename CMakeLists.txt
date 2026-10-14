@@ -89,6 +89,9 @@ add_library(CyberiadaEditorCore STATIC
   dialogs/preferences_dialog.h dialogs/preferences_dialog.cpp dialogs/preferences_dialog.ui
   settings_manager.h settings_manager.cpp
   gesture_log.h gesture_log.cpp
+  plugin_descriptor.h plugin_descriptor.cpp
+  plugin_values.h plugin_values.cpp
+  plugin_registry.h plugin_registry.cpp
 )
 
 target_include_directories(CyberiadaEditorCore PUBLIC
