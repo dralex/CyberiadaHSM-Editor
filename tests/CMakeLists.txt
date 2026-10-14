@@ -797,3 +797,10 @@ add_l4_test(plugin-core)
 target_compile_definitions(l4-plugin-core PRIVATE
   PLUGIN_HELPER="${PLUGIN_TEST_DIR}/bin/plugin-helper${CMAKE_EXECUTABLE_SUFFIX}")
 add_dependencies(l4-plugin-core plugin-helper)
+
+# the plugin window: the menu, the toolbars, the dialog, the lock and the dock
+add_l4_test(plugins)
+target_compile_definitions(l4-plugins PRIVATE
+  PLUGIN_TEST_DIR="${PLUGIN_TEST_DIR}"
+  PLUGIN_HELPER="${PLUGIN_TEST_DIR}/bin/plugin-helper${CMAKE_EXECUTABLE_SUFFIX}")
+add_dependencies(l4-plugins plugin-helper)

@@ -9,6 +9,7 @@
       "id": "say",
       "label": "Say",
       "result": "log",
+      "toolbar": true,
       "argv": [
         "${plugin_dir}/../../bin/plugin-helper",
         "print",

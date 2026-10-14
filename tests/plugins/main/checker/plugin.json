@@ -8,6 +8,7 @@
       "id": "check",
       "label": "Check",
       "result": "diagnostics",
+      "toolbar": true,
       "argv": [
         "${plugin_dir}/../../bin/plugin-helper",
         "copy",

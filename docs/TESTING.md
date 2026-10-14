@@ -119,7 +119,7 @@ it checks in a comment):
 | META   | `l2 update-meta`, `inspect-reject update-meta`, the `meta` diagram; META-1 (node hidden) via the `l1` scene dump; META-6 (CGML_COMPONENT hidden by default) via `l4-scene test_component_comment_hidden` + the `components` `l1` scene dump; META-5 distinct machine names via `l4-model test_unique_machine_name` (NewSM dedupes the default name) |
 | DOC    | `tabs-*` (the document verbs with the `== tabs` dump, `EDIT-DOC-2/3/5/9`), `l4-tabs` (the tab line, the re-targeting, the prompts, `EDIT-DOC-1..8`) |
 | INSPECT| `inspect-reject-*` (editing refused under `--inspect`, `EDIT-INSPECT-1`); `inspect-render-*` (stored-geometry render vs a good image, `EDIT-INSPECT-2`) |
-| PLUG   | the `plugin-*` cases: discovery and rejection (`EDIT-PLUG-1..4`), variables and secrets (`EDIT-PLUG-8..11`), the results and failures (`EDIT-PLUG-12..20`), save and cwd (`EDIT-PLUG-25`), the batch contract (`EDIT-PLUG-27/28`); `l4-plugin-core`; `l4-plugins` (planned) for the window (`EDIT-PLUG-5..7`, `EDIT-PLUG-15`, `EDIT-PLUG-21..24`, `EDIT-PLUG-29..32`) |
+| PLUG   | the `plugin-*` cases: discovery and rejection (`EDIT-PLUG-1..4`), variables and secrets (`EDIT-PLUG-8..11`), the results and failures (`EDIT-PLUG-12..20`), save and cwd (`EDIT-PLUG-25`), the batch contract (`EDIT-PLUG-27/28`); `l4-plugin-core`; `l4-plugins` for the window (`EDIT-PLUG-5..7`, `EDIT-PLUG-15`, `EDIT-PLUG-21..24`, `EDIT-PLUG-29..32`) |
 
 Requirements with **no dedicated case yet** — the gaps to fill: `SEM-1` (one initial per
 level — only the polygon pseudostate drill and the standing law cover it), `EDGE-6` (the
@@ -155,9 +155,10 @@ parsing and its rejections, the search path and the shadowing, the interpreter
 lookup, the variable expansion with the conditional elements, the values and their
 settings keys, the diagnostics file, and the runner's cancel, run directory and output
 decoding; the selection order is checked on a bare scene, as the window keeps one selected
-element. `l4-plugins` (planned) drives the window: the Plugins menu, the plugin
+element. `l4-plugins` drives the window: the Plugins menu, the plugin
 toolbars, the generated dialog, the document lock, the plugin dock and the plugin
-manager.
+manager; it saves a picture of the window as `build/tests/plugins-window.png` for
+review, compared with nothing.
 
 `l4-text` checks the per-role fonts: the bundled font is found through the
 resources of the core library, every role carries its own point size, the

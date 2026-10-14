@@ -149,6 +149,35 @@
         "${plugin_dir}/no-geometry.graphml",
         "${output}"
       ]
+    },
+    {
+      "id": "wait",
+      "label": "Wait",
+      "result": "replace",
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "sleep",
+        "20000"
+      ]
+    },
+    {
+      "id": "rename-late",
+      "label": "Rename late",
+      "result": "replace",
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "copy",
+        "${input}",
+        "${output}",
+        "--",
+        "replace",
+        "${output}",
+        ">Parent 0<",
+        ">Renamed<",
+        "--",
+        "sleep",
+        "700"
+      ]
     }
   ]
 }
