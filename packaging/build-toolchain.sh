@@ -54,6 +54,8 @@ usage: $0 [options]
   --no-python    skip the python binding package (python3-libcyberiadamlpp)
   --libs-only    build only the distro-independent libraries (htgeom, cyberiadaml, cyberiadamlpp)
   --apps-only    build only the per-release apps (python binding, editor); needs --lib-prefix
+  --python-apps  build only the distro-independent python packages (hsm-dispatcher,
+                 hsm-to-python, cybersphere-hsm-maker, cybersphere-agents) once
   --lib-prefix D extra install prefix holding the once-built libraries (apps mode)
   --distro-tag T version suffix for the app packages, e.g. ubuntu2404 -> 1.0.6~ubuntu2404
   --xml-libs     apps mode: also rebuild cyberiadaml/cyberiadamlpp here (a release
@@ -75,6 +77,7 @@ while [ $# -gt 0 ]; do
         --no-python) PYTHON=0; shift ;;
         --libs-only) MODE=libs; shift ;;
         --apps-only) MODE=apps; shift ;;
+        --python-apps) MODE=pyapps; shift ;;
         --lib-prefix) LIB_PREFIX="$2"; shift 2 ;;
         --distro-tag) DISTRO_TAG="$2"; shift 2 ;;
         --xml-libs) XML_LIBS=1; shift ;;
@@ -243,6 +246,8 @@ build_python() {
     echo "Building $repo..."
     if [ -n "$BUILD_ROOT" ]; then bdir="$BUILD_ROOT/$repo"; else bdir="$dir/build-pkg"; fi
     [ "$CLEAN" -eq 1 ] && rm -rf "$bdir"
+    # the pure-python packages import CyberiadaML from this build dir (see build_pydeb)
+    PY_BINDING_BDIR="$bdir"
     LD_LIBRARY_PATH="$py_ld" cmake -S "$dir" -B "$bdir" \
         -DCMAKE_BUILD_TYPE=Release \
         ${DISTRO_TAG:+-DDISTRO_TAG=$DISTRO_TAG} \
@@ -264,9 +269,74 @@ build_python() {
     if [ -n "$orig_branch" ]; then git -C "$dir" checkout --quiet "$orig_branch"; fi
 }
 
+# build one of the distribution-independent python packages (python3-hsm-dispatcher,
+# python3-hsm-to-python, python3-cybersphere-hsm-maker, python3-cybersphere-agents):
+# a CPack DEB, Architecture: all, no DISTRO_TAG, not installed into the shared prefix.
+# Its ctest imports the CyberiadaML binding (built just before — its build dir is on
+# PYTHONPATH) and, for the dispatcher-dependent ones, the hsmd modules from the
+# dispatcher source. A second arg "pydantic" marks a suite that also needs pydantic-ai
+# (PyPI-only): it is skipped unless the import works (AGENTS_TEST=1 pip-installs it).
+build_pydeb() {
+    repo="$1"; guard="${2:-}"
+    dir="$SOURCES/$repo"
+    [ -d "$dir" ] || die "repository not found: $dir"
+    say "$repo"
+
+    orig_branch=""
+    if [ "$PULL" -eq 1 ]; then
+        echo "Pulling $repo..."
+        [ -z "$(git -C "$dir" status --porcelain --untracked-files=no)" ] \
+            || die "$repo has uncommitted changes; commit them or use --no-pull"
+        orig_branch=$(git -C "$dir" rev-parse --abbrev-ref HEAD)
+        git -C "$dir" fetch --quiet origin
+        git -C "$dir" checkout --quiet "$BRANCH"
+        git -C "$dir" pull --quiet --ff-only origin "$BRANCH"
+    fi
+
+    echo "Building $repo..."
+    if [ -n "$BUILD_ROOT" ]; then bdir="$BUILD_ROOT/$repo"; else bdir="$dir/build-pkg"; fi
+    [ "$CLEAN" -eq 1 ] && rm -rf "$bdir"
+    cmake -S "$dir" -B "$bdir" \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX="$PREFIX" \
+        -DCMAKE_PREFIX_PATH="$prefix_path" \
+        -DCMAKE_MODULE_PATH="$module_path" \
+        ${REDIRECT:+-DCMAKE_PROJECT_INCLUDE="$REDIRECT"} >/dev/null
+    cmake --build "$bdir" -j "$JOBS"
+
+    if [ "$TEST" -eq 1 ]; then
+        # CyberiadaML from the binding build dir + the dispatcher source (hsmd); the
+        # cyberiada .so deps resolve from the lib prefix / the apt-installed libs
+        py_py="${PY_BINDING_BDIR:-}:$SOURCES/hsm-dispatcher-py"
+        py_ld="$PREFIX/lib${LIB_PREFIX:+:$LIB_PREFIX/lib}${QT5:+:$QT5}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+        run_test=1
+        if [ "$guard" = pydantic ]; then
+            if [ "${AGENTS_TEST:-0}" = 1 ]; then
+                echo "AGENTS_TEST=1: installing the pydantic-ai stack for $repo"
+                python3 -m pip install --quiet --user pydantic-ai-slim "pydantic-ai-harness[coder]" || true
+            fi
+            if ! PYTHONPATH="$py_py${PYTHONPATH:+:$PYTHONPATH}" python3 -c 'import pydantic_ai' 2>/dev/null; then
+                echo "note: skipping $repo tests (pydantic-ai not installed; set AGENTS_TEST=1 to add it)"
+                run_test=0
+            fi
+        fi
+        if [ "$run_test" -eq 1 ]; then
+            echo "Testing $repo..."
+            ( cd "$bdir" && PYTHONPATH="$py_py${PYTHONPATH:+:$PYTHONPATH}" \
+                LD_LIBRARY_PATH="$py_ld" ctest --output-on-failure )
+        fi
+    fi
+
+    echo "Packing $repo..."
+    ( cd "$bdir" && cpack -G DEB >/dev/null )
+    cp "$bdir"/*.deb "$OUT"/
+
+    if [ -n "$orig_branch" ]; then git -C "$dir" checkout --quiet "$orig_branch"; fi
+}
+
 # the distro-independent libraries: built once (see --libs-only); their .deb
 # metadata is release-independent, so one set ships for every Ubuntu release
-if [ "$MODE" != apps ]; then
+if [ "$MODE" = all ] || [ "$MODE" = libs ]; then
     build_repo libhtreegeom      "$BRANCH" deb
     build_repo libcyberiadaml    "$BRANCH" deb
     build_repo libcyberiadamlpp  "$BRANCH" deb
@@ -274,7 +344,7 @@ fi
 
 # the per-release apps: rebuilt in each release's container against its Python
 # and Qt5, and version-tagged via --distro-tag (see --apps-only)
-if [ "$MODE" != libs ]; then
+if [ "$MODE" = all ] || [ "$MODE" = apps ]; then
     # a release whose libxml2 soname differs from the once-built set (e.g. 26.04,
     # libxml2.so.16) cannot reuse the libxml2-linked libs: rebuild them here
     if [ "$XML_LIBS" -eq 1 ]; then
@@ -284,6 +354,23 @@ if [ "$MODE" != libs ]; then
     if [ "$PYTHON" -eq 1 ]; then build_python; fi
     build_repo QtPropertyBrowser master    nodeb   # bundled into the editor .deb
     build_repo CyberiadaHSM-Editor "$BRANCH" deb
+fi
+
+# the distribution-independent python packages: built once (see --python-apps),
+# Architecture: all. Their import tests need the CyberiadaML binding, so build it
+# first; the libxml2-linked libs are rebuilt here under --xml-libs (the binding
+# links them). hsm-dispatcher and the maker need only CyberiadaML; hsm-to-python
+# and the agents also need the dispatcher's hsmd (on PYTHONPATH via the source)
+if [ "$MODE" = pyapps ]; then
+    if [ "$XML_LIBS" -eq 1 ]; then
+        build_repo libcyberiadaml    "$BRANCH" deb
+        build_repo libcyberiadamlpp  "$BRANCH" deb
+    fi
+    build_python
+    build_pydeb hsm-dispatcher-py
+    build_pydeb cybersphere-hsm-maker
+    build_pydeb hsm-to-python
+    build_pydeb cybersphere-agents pydantic
 fi
 
 say "packages collected in $OUT"

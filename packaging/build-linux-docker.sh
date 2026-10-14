@@ -95,6 +95,11 @@ pull_repo libcyberiadamlpp    "$BRANCH"
 pull_repo libcyberiadamlpp-py "$BRANCH"
 pull_repo QtPropertyBrowser   master
 pull_repo CyberiadaHSM-Editor "$BRANCH"
+# the distribution-independent python packages (built once, see below)
+pull_repo hsm-dispatcher-py      "$BRANCH"
+pull_repo hsm-to-python          "$BRANCH"
+pull_repo cybersphere-hsm-maker  "$BRANCH"
+pull_repo cybersphere-agents     "$BRANCH"
 
 common_opts="--no-pull --jobs $JOBS"
 if [ "$TEST" -eq 0 ]; then common_opts="$common_opts --no-test"; fi
@@ -158,4 +163,32 @@ exec setpriv --reuid=$uid --regid=$gid --clear-groups \
   /src/CyberiadaHSM-Editor/packaging/build-toolchain.sh $common_opts --build-root $build_root --apps-only \$xmlflag --prefix /tmp/prefix --out /out --distro-tag $distro"
 done
 
-say "done — shared libraries in $libout, per-release apps in $OUT/ubuntu-*"
+# the distribution-independent python packages (python3-hsm-dispatcher,
+# python3-hsm-to-python, python3-cybersphere-hsm-maker, python3-cybersphere-agents)
+# are Architecture: all with no distro tag, so they are built ONCE, in the newest
+# release — its python satisfies the agents' >= 3.10 requirement and matches the
+# binding ABI used by their import tests. Same lib-.deb install preamble as the app
+# tier. Set AGENTS_TEST=1 to pip-install pydantic-ai and run the agents suite too.
+newest=$(printf '%s\n' $RELEASES | sort -V | tail -1)
+pyimage="$IMAGE:$newest"
+pyout="$OUT/pyapps"
+docker image inspect "$pyimage" >/dev/null 2>&1 \
+    || die "image $pyimage not found; build it with ./packaging/build-linux-images.sh --releases \"$newest\""
+mkdir -p "$pyout"
+say "building the distribution-independent python packages once (ubuntu $newest) -> $pyout"
+docker run --rm \
+    -e HOME=/tmp -e AGENTS_TEST="${AGENTS_TEST:-0}" \
+    -v "$SOURCES":/src \
+    -v "$libout":/libdebs:ro \
+    -v "$pyout":/out \
+    "$pyimage" \
+    sh -c "set -e; \
+apt-get update >/dev/null 2>&1 || true; \
+apt-get install -y --no-install-recommends /libdebs/libhtreegeom*.deb; \
+if apt-get install -y --no-install-recommends libxml2 >/dev/null 2>&1 && ldconfig -p | grep -q 'libxml2\\.so\\.2'; then \
+  apt-get install -y --no-install-recommends /libdebs/libcyberiadaml*.deb; xmlflag=; \
+else xmlflag=--xml-libs; fi; \
+exec setpriv --reuid=$uid --regid=$gid --clear-groups \
+  /src/CyberiadaHSM-Editor/packaging/build-toolchain.sh $common_opts --build-root $build_root --python-apps \$xmlflag --prefix /tmp/prefix --out /out"
+
+say "done — shared libraries in $libout, per-release apps in $OUT/ubuntu-*, python packages in $pyout"
