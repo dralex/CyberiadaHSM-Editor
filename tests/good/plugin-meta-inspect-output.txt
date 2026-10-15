@@ -1,0 +1,10 @@
+== plugin
+action: vars:fill
+result: log
+meta: skipped platformLanguage
+state: done
+exit: 0
+stdout:
+  arg1: 
+== diagnostics
+count: 0

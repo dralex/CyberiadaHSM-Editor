@@ -78,6 +78,7 @@ private slots:
     void test_session_log();
     void test_window_grab();
     void test_translated_texts();
+    void test_meta_fill();
 };
 
 static QString documentDump(CyberiadaSMModel* model)
@@ -591,6 +592,33 @@ void TestPlugins::test_translated_texts()
     QVERIFY2(r.stdoutText.contains("arg1: ru\narg2: ru"), qPrintable(r.stdoutText));
     PluginRegistry::instance().setLanguage(QString());
     PluginRegistry::instance().scan();
+}
+
+// the declared platform language fills an absent one, one undo step (EDIT-PLUG-34)
+void TestPlugins::test_meta_fill()
+{
+    CyberiadaSMEditorWindow win;
+    QVERIFY(win.openDocument("diagrams/hierarchy.graphml"));
+    QVERIFY(win.getScene()->codeLanguageName().isEmpty());
+    PluginResult r = win.runPluginAndWait("vars", "fill", PluginValues());
+    QCOMPARE(r.state, PluginResult::stateDone);
+    QCOMPARE(r.metaNotes.size(), 1);
+    QCOMPARE(r.metaNotes.first().kind, PluginMetaNote::metaSet);
+    // the highlighting and Edit > Language follow the new value
+    QCOMPARE(win.getScene()->codeLanguageName(), QString("Python"));
+    QVERIFY(r.stdoutText.contains("arg1: Python"));
+    QUndoStack* stack = win.getModel()->undoStack();
+    QCOMPARE(stack->count(), 1);
+    stack->undo();
+    QVERIFY(win.getScene()->codeLanguageName().isEmpty());
+
+    // another name of the same language is no conflict
+    QVERIFY(win.getModel()->setPlatformLanguage("python3"));
+    int steps = stack->count();
+    r = win.runPluginAndWait("vars", "fill", PluginValues());
+    QCOMPARE(r.state, PluginResult::stateDone);
+    QVERIFY(r.metaNotes.isEmpty());
+    QCOMPARE(stack->count(), steps);
 }
 
 QTEST_MAIN(TestPlugins)

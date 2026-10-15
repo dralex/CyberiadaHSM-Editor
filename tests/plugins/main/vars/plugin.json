@@ -125,6 +125,20 @@
         "CYBERIADA_EDITOR_LANGUAGE",
         "en"
       ]
+    },
+    {
+      "id": "fill",
+      "label": "Fill",
+      "result": "log",
+      "parameters": [],
+      "meta": {
+        "platformLanguage": "Python"
+      },
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "args",
+        "${meta:platformLanguage}"
+      ]
     }
   ]
 }

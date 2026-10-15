@@ -767,6 +767,12 @@ add_plugin_test(unknown-var INPUT diagrams/hierarchy.graphml PLUGIN vars:unknown
   DUMP_PLUGIN EXPECTED 6)
 # the language reaches the plugin, en in the batch mode (EDIT-PLUG-33)
 add_plugin_test(language INPUT diagrams/hierarchy.graphml PLUGIN vars:language DUMP_PLUGIN)
+# the declared metainformation fills an absent key before the run (EDIT-PLUG-34)
+add_plugin_test(meta-set INPUT diagrams/hierarchy.graphml PLUGIN vars:fill DUMP_PLUGIN DUMP_STACK SAVE)
+add_plugin_test(meta-kept INPUT diagrams/code-highlight.graphml PLUGIN vars:fill DUMP_PLUGIN DUMP_STACK)
+add_plugin_test(meta-same INPUT diagrams/markdown-comments.graphml PLUGIN vars:fill DUMP_PLUGIN DUMP_STACK)
+add_plugin_test(meta-empty PLUGIN vars:fill DUMP_PLUGIN DUMP_STACK)
+add_plugin_test(meta-inspect INPUT diagrams/hierarchy.graphml PLUGIN vars:fill DUMP_PLUGIN INSPECT)
 # request.json, the parameter files and the secrets (EDIT-PLUG-9/10)
 add_plugin_test(request INPUT diagrams/hierarchy.graphml PLUGIN request DUMP_PLUGIN
   PARAMS prompt=@plugins/data/prompt.md key=env:PLUGIN_TEST_SECRET
