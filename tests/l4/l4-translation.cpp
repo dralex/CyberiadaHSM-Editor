@@ -62,6 +62,7 @@ private slots:
 	void test_property_browser_labels();
 	void test_default_names();
 	void test_property_lookup();
+	void test_plugin_output_tab();
 
 private:
 	// the visible menu texts by their place in the menu bar
@@ -260,6 +261,12 @@ void TestTranslation::test_property_lookup()
 	QCOMPARE(QString::fromUtf8(element->get_name().c_str()), QString::fromUtf8("Переименовано"));
 	QVERIFY(model.updateTitle(model.elementToIndex(element), "node 0-0-1"));
 	QCOMPARE(m->value(name), QString("node 0-0-1"));
+}
+
+void TestTranslation::test_plugin_output_tab()
+{
+	// the title of a plugin output tab (EDIT-PLUG-17)
+	QCOMPARE(QCoreApplication::translate("PluginDock", "%1 output").arg("Echo"), QString::fromUtf8("Вывод Echo"));
 }
 
 QTEST_MAIN(TestTranslation)
