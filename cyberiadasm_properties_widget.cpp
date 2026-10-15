@@ -71,6 +71,7 @@ CyberiadaSMPropertiesWidget::CyberiadaSMPropertiesWidget(QWidget *parent):
 		{propID,                   propEditorString,            tr("ID", "Property name")},
 		{propMarkup,               propEditorString,            tr("Markup", "Property name")},
 		{propMetaString,           propEditorString,            ""},
+		{propMetaMultilineString,  propEditorMultilineString,   ""},
 		{propMetaEventPropagation, propEditorEventPropagation,  tr("Event Propagation", "Property name")},
 		{propMetaGeometry,         propEditorGeometryDeclaration, tr("Geometry", "Property name")},
 		{propMetaStandardVersion,  propEditorString,            tr("Standard Version", "Property name")},
@@ -264,7 +265,7 @@ static const QVector<QPair<QString, QString>>& knownMetaParameters()
 		{ "author",           QT_TRANSLATE_NOOP("CyberiadaSMPropertiesWidget", "Author") },
 		{ "contact",          QT_TRANSLATE_NOOP("CyberiadaSMPropertiesWidget", "Contact") },
 		{ "createdAt",        QT_TRANSLATE_NOOP("CyberiadaSMPropertiesWidget", "Date") },
-		{ "description",      QT_TRANSLATE_NOOP("CyberiadaSMPropertiesWidget", "Description") },
+		{ METAINFORMATION_KEY_DESCRIPTION, QT_TRANSLATE_NOOP("CyberiadaSMPropertiesWidget", "Description") },
 		{ "markupLanguage",   QT_TRANSLATE_NOOP("CyberiadaSMPropertiesWidget", "Markup Language") },
 		{ "platform",         QT_TRANSLATE_NOOP("CyberiadaSMPropertiesWidget", "Platform Name") },
 		{ "platformLanguage", QT_TRANSLATE_NOOP("CyberiadaSMPropertiesWidget", "Platform Language") },
@@ -398,27 +399,33 @@ void CyberiadaSMPropertiesWidget::editMultilineProperty(QtProperty* property)
     // no dialogs in batch mode: the tests drive the manager value directly
     if (qApp && qApp->property("batchMode").toBool()) return;
 
-    const CyberiadaProperty& cp = findProperty(property);
     // a behaviour and a formal/component comment body are code; an informal body
-    // follows its markup
+    // follows its markup; a free-form metainformation text (the description) is plain
     CodeRole role = codeRoleFormalComment;
-    QString label = cp.propName;
-    if (cp.name == propBody && CyberiadaSMModel::isMarkupBody(element)) {
-        role = codeRoleMarkup;
-    }
     const CodeLanguage* language = NULL;
     CodeMarkup markup = codeMarkupPlain;
-    if (model && model->rootDocument()) {
-        const Cyberiada::DocumentMetainformation& meta = model->rootDocument()->meta();
-        language = CodeStyle::instance().find(
-            QString::fromStdString(meta.get_string(METAINFORMATION_KEY_PLATFORM_LANGUAGE)));
-        if (role == codeRoleMarkup) {
-            const Cyberiada::Comment* comment = static_cast<const Cyberiada::Comment*>(element);
-            // a formal comment has no document default (EDIT-TEXT-11)
-            CodeMarkup document = element->get_type() == Cyberiada::elementComment ?
-                CodeStyle::findMarkup(QString::fromStdString(meta.get_string(METAINFORMATION_KEY_MARKUP_LANGUAGE))) :
-                codeMarkupPlain;
-            markup = CodeStyle::commentMarkup(QString::fromStdString(comment->get_markup()), document);
+    QString label;
+    if (metaStringKeys.contains(property)) {
+        role = codeRoleNone;
+        label = property->propertyName();
+    } else {
+        const CyberiadaProperty& cp = findProperty(property);
+        label = cp.propName;
+        if (cp.name == propBody && CyberiadaSMModel::isMarkupBody(element)) {
+            role = codeRoleMarkup;
+        }
+        if (model && model->rootDocument()) {
+            const Cyberiada::DocumentMetainformation& meta = model->rootDocument()->meta();
+            language = CodeStyle::instance().find(
+                QString::fromStdString(meta.get_string(METAINFORMATION_KEY_PLATFORM_LANGUAGE)));
+            if (role == codeRoleMarkup) {
+                const Cyberiada::Comment* comment = static_cast<const Cyberiada::Comment*>(element);
+                // a formal comment has no document default (EDIT-TEXT-11)
+                CodeMarkup document = element->get_type() == Cyberiada::elementComment ?
+                    CodeStyle::findMarkup(QString::fromStdString(meta.get_string(METAINFORMATION_KEY_MARKUP_LANGUAGE))) :
+                    codeMarkupPlain;
+                markup = CodeStyle::commentMarkup(QString::fromStdString(comment->get_markup()), document);
+            }
         }
     }
     MultilineTextDialog dialog(tr("Edit text"), label,
@@ -817,8 +824,15 @@ void CyberiadaSMPropertiesWidget::newElement(Cyberiada::Element* new_element)
 			 i++) {
 			// the geometry declaration has its own row
 			if (i->first == CYBERIADA_META_GEOMETRY) continue;
-			QtProperty* platform_string_prop = constructProperty(propMetaString, i->first.c_str());
-			stringManager->setValue(platform_string_prop, i->second.c_str());
+			// the description is a multiline text edited through the dialog (EDIT-TEXT-10)
+			bool multiline = (i->first == METAINFORMATION_KEY_DESCRIPTION);
+			QtProperty* platform_string_prop = constructProperty(
+				multiline ? propMetaMultilineString : propMetaString, i->first.c_str());
+			if (multiline) {
+				multilineStringManager->setValue(platform_string_prop, i->second.c_str());
+			} else {
+				stringManager->setValue(platform_string_prop, i->second.c_str());
+			}
 			meta_group_prop->addSubProperty(platform_string_prop);
 			// remember the key so an edit routes to the right parameter
 			metaStringKeys.insert(platform_string_prop, QString(i->first.c_str()));
@@ -1114,7 +1128,12 @@ void CyberiadaSMPropertiesWidget::updateElement()
              i++) {
             if (i->first == CYBERIADA_META_GEOMETRY) continue;
             QtProperty* platform_string_prop = findQtProperty(meta_group_prop, i->first.c_str());
-            stringManager->setValue(platform_string_prop, i->second.c_str());
+            // the description is a multiline row (EDIT-TEXT-10); refresh its own manager
+            if (i->first == METAINFORMATION_KEY_DESCRIPTION) {
+                multilineStringManager->setValue(platform_string_prop, i->second.c_str());
+            } else {
+                stringManager->setValue(platform_string_prop, i->second.c_str());
+            }
         }
 
         QtProperty* transition_order_prop = findQtProperty(meta_group_prop, findPropertyStruct(propMetaTransitionOrder).propName);

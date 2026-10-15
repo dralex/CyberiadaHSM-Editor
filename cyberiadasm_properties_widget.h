@@ -108,6 +108,7 @@ private:
 		propMetaGeometry,
 		propMetaStandardVersion,
 		propMetaString,
+		propMetaMultilineString,
 		propMetaTransitionOrder,
 		propName,
 		propSource,

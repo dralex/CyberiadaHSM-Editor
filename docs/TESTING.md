@@ -112,7 +112,7 @@ it checks in a comment):
 | SEM    | `test_choice_edge_rule`, `test_choice_tip_attach`; endpoint kinds via the transition cases; submachine point rename `test_submachine_point_rename_guarded` (SEM-7/SEM-8: a submachine state's point keeps a non-empty name of the referenced machine) |
 | NODE   | grow `test_move_grows_parent`, `test_nested_state_grows_parent`, `test_grow_cascades_to_ancestors`, `test_grow_skips_rectless_sm`; resize `test_border_resize`, `test_directional_grow`, `test_container_resize_clamp`, `test_comment_border_resize`, `test_resize_holds_children` (NODE-5: a resize holds every child — state, choice, comment — in place), `test_grow_holds_rect_children` (NODE-5/ROBUST-1: a grow counts the same rect children it holds and never fabricates a rect for a geometry-less child — no crash); place `test_new_element_place`; comment name `test_comment_name`; blocks `test_action_layout`; frame `reconstruct-sm-*`; same-parent move re-contains `test_move_within_parent_maintains_containment` (NODE-2: a drag/snapped move grows the parent, no relocation of the dragged child); new submachine state clears siblings `test_new_submachine_state_clears_siblings` (NODE-6) |
 | EDGE   | attach `test_auto_attach`, `test_ctrl_snap_endpoint`, `test_choice_tip_attach`; points `l2 edge-points`, `test_point_edit`, `test_loop_polyline`, `test_double_click_removes_vertex`; rebind `test_retarget_id`, `test_box_transition`; label `test_label_move`, `test_label_drag_tracks`, `label-geometry-*`; snap (`EDIT-EDGE-15/16`) `l2 snap-transition`, `test_snap_border_rule`, `test_snap_endpoint_{drag,corner,exempt,ctrl,release}`, `test_snap_vertex_{small_steps,insert}`, `test_snap_loop_seed`, `test_snap_label_free`, `test_snap_roundtrip` |
-| TEXT   | `test_action_edit`, `test_action_multiline`, `test_double_click_action`, `test_double_click_label`, `l2 text-edit`, `transition-notation`, the `text` metrics layer, `l4-highlight` (`EDIT-TEXT-7/8/11`), `l4-language` (`EDIT-TEXT-9/12`), `l4-properties test_multiline_dialog`/`test_multiline_edit` (`EDIT-TEXT-10`) |
+| TEXT   | `test_action_edit`, `test_action_multiline`, `test_double_click_action`, `test_double_click_label`, `l2 text-edit`, `transition-notation`, the `text` metrics layer, `l4-highlight` (`EDIT-TEXT-7/8/11`), `l4-language` (`EDIT-TEXT-9/12`), `l4-properties test_multiline_dialog`/`test_multiline_edit`/`test_meta_description_multiline` (`EDIT-TEXT-10`) |
 | TOOL   | `test_creation_tools`, `test_creation_tools_arm`, `test_new_{state,choice,comment,sm}_place`, paste `test_paste_state`, `test_paste_transition`, `l2 copy-paste`, drag `test_body_drag`; select overlapping leaf `l4-scene test_select_over_composite` (`EDIT-TOOL-12`); tree drag `l4-model test_tree_drag_flags` (`EDIT-TOOL-13`); snap `test_snap_corner`, `test_resize_snap`, `l4-model test_snap_to_grid` (`EDIT-TOOL-8`), `l2 snap-alt`, `test_snap_alt_suspends` (`EDIT-TOOL-9`), `l2 snap-default`, `l4-log test_snap_state` (`EDIT-TOOL-14`) |
 | HIST   | `undo`/`redo-all` layer, `undo-all`, `test_gesture_recording`, `gestures-undo` |
 | IO     | `save-*`, `l1-*` dumps, `reconstruct-*`, export `test_export_image`, `l3-*` |
@@ -197,7 +197,9 @@ moves or resizes, its title is re-wrapped), the width and the height rows
 refuse what the mouse resize refuses, the label point of a transition is
 shown but disabled (the library cannot set it), the inspected view opens no
 editor and drops a write, a model change refreshes the rows in place without
-adding any, and the name row renames the element and the canvas title while a
+adding any, the document `description` metainformation row opens the multiline
+dialog while a plain parameter keeps the line edit (its newlines round-trip),
+and the name row renames the element and the canvas title while a
 name the model refuses reverts once the row is left.
 
 `l4-dialog` checks the file dialogs. The open dialog: the file browser and the

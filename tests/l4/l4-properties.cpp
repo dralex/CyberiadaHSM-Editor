@@ -55,6 +55,7 @@ private slots:
 	void test_meta_parameters();
 	void test_multiline_dialog();
 	void test_multiline_edit();
+	void test_meta_description_multiline();
 
 private:
 	void select(const char* id);
@@ -430,6 +431,48 @@ void TestProperties::test_multiline_edit()
 	// a model change refreshes the row
 	QVERIFY(model->updateCommentBody(model->elementToIndex(model->idToElement("nComment")), "edited\nbody"));
 	QCOMPARE(cm->value(body), QString(comment->get_body().c_str()));
+}
+
+// the document description meta row carries the multiline dialog button, while a
+// plain parameter keeps the line edit, and a multiline value round-trips (EDIT-TEXT-10)
+void TestProperties::test_meta_description_multiline()
+{
+	SettingsManager::instance().setInspectorMode(false);
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	const Cyberiada::LocalDocument* doc = model->rootDocument();
+	QModelIndex docIndex = model->documentIndex();
+
+	QVERIFY(model->updateMetainformation(docIndex, METAINFORMATION_KEY_DESCRIPTION, "one line"));
+	QVERIFY(model->updateMetainformation(docIndex, "author", "Jane"));
+
+	view->slotElementSelected(docIndex);
+	QList<QtProperty*> strings = rows<QtStringPropertyManager>();
+	QtProperty* description = nullptr;
+	QtProperty* author = nullptr;
+	for (QList<QtProperty*>::const_iterator i = strings.begin(); i != strings.end(); i++) {
+		if ((*i)->propertyName() == METAINFORMATION_KEY_DESCRIPTION) description = *i;
+		if ((*i)->propertyName() == "author") author = *i;
+	}
+	QVERIFY(description);
+	QVERIFY(author);
+
+	// the description row opens the dialog; a plain parameter stays a line edit
+	QVERIFY(dynamic_cast<MultilineEditButton*>(view->createEditor(description, view)));
+	QVERIFY(!dynamic_cast<MultilineEditButton*>(view->createEditor(author, view)));
+
+	QtStringPropertyManager* m = dynamic_cast<QtStringPropertyManager*>(description->propertyManager());
+	QVERIFY(m);
+	QCOMPARE(m->value(description), QString("one line"));
+
+	// a multiline value set through the row reaches the model, newlines kept
+	m->setValue(description, "line one\nline two");
+	QCOMPARE(QString(doc->meta().get_string(METAINFORMATION_KEY_DESCRIPTION).c_str()),
+	         QString("line one\nline two"));
+
+	// a model change refreshes the row in place
+	QVERIFY(model->updateMetainformation(docIndex, METAINFORMATION_KEY_DESCRIPTION, "alpha\nbeta"));
+	QCOMPARE(m->value(description), QString("alpha\nbeta"));
 }
 
 QTEST_MAIN(TestProperties)

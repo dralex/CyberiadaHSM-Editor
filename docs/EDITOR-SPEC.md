@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.26 (2026-10-15)
+**Document version:** 0.27 (2026-10-15)
 
 **Related authorities:**
 
@@ -341,11 +341,12 @@ the third is a derived display value the format does not store):
                                 menu: kept in the menu until the editor exits
   (•) Rust (no highlighting)    an unknown value typed in the properties: shown while current
   ```
-- `EDIT-TEXT-10` SHOULD [A]: a multiline text — a state action's behaviour and a comment body — is
-  editable in the properties view through a multiline editor (a dialog opened from the row), and the
-  newlines are preserved on write-back. The editor highlights the text as `EDIT-TEXT-7` does
-  (behaviour and a formal/component comment body by the document language, an informal body by its
-  markup as `EDIT-TEXT-11` does). *design*
+- `EDIT-TEXT-10` SHOULD [A]: a multiline text — a state action's behaviour, a comment body and the
+  document `description` metainformation parameter — is editable in the properties view through a
+  multiline editor (a dialog opened from the row), and the newlines are preserved on write-back. The
+  editor highlights the text as `EDIT-TEXT-7` does (behaviour and a formal/component comment body by
+  the document language, an informal body by its markup as `EDIT-TEXT-11` does); the `description` is
+  plain text and is not highlighted. *design*
 - `EDIT-TEXT-11` SHOULD [A]: a comment body is highlighted by its markup language. An informal
   comment takes its own `dMarkup`, else the document `markupLanguage`, else `plain` (no
   highlighting). A formal comment has no document default: its own `dMarkup` `markdown` makes it
