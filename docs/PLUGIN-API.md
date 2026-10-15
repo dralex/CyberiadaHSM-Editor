@@ -121,6 +121,7 @@ An action:
 | `save` | `false` | save a modified or untitled document before the run, so `${document}` is current (an untitled one asks for a name) |
 | `cwd` | `"run"` | the working directory: `run` (the run dir) or `document` (the document's directory; implies `save`) |
 | `toolbar` | `false` | put the action on the plugin toolbar |
+| `meta` | none | metainformation the action works with, e.g. `{"platformLanguage": "Python"}`; filled in when the document lacks it (see Metainformation) |
 | `icon` | the plugin icon | the action icon for the toolbar and the menu |
 | `description` | none | the tooltip |
 
@@ -358,6 +359,24 @@ hsm-to-python/
 * The batch mode is English and reads no translation.
 * Your own messages may follow the same language: a run gets it as `${language}`, as
   `CYBERIADA_EDITOR_LANGUAGE` and as `language` in `request.json`.
+
+## Metainformation
+
+An action may declare the metainformation it works with:
+
+```json
+{ "id": "check", "label": "Check the code", "result": "diagnostics", "save": true,
+  "meta": { "platformLanguage": "Python" }, "argv": [ ... ] }
+```
+
+* Before the run, and before the save of a `save` action, the editor fills each key the
+  document lacks, all in one undo step; the run then sees the value (`${meta:k}`, the
+  saved file).
+* A key the document has keeps its value; a different one is noted in the Output tab and
+  the run goes on. The platform language counts as the same under any of its names
+  (`python3`, `Python`).
+* A document without a state machine, or a read-only one, is left as it is.
+* A `replace` or `new-document` result carries its metainformation in the document itself.
 
 ## Exit codes, errors, cancel
 

@@ -177,6 +177,8 @@ plugin's `i18n/<lang>.json` of the interface language and translates the plugin 
 * The run dir is a fresh `QTemporaryDir`, removed after the run unless
   `CYBERIADA_EDITOR_PLUGIN_KEEP=1`. `input.graphml` is the model snapshot (Cyberiada 1.0,
   unsaved edits included) — never the file on disk; an empty document gives an empty file.
+* An action's declared `meta` fills the keys the document lacks first, as one undo step; a
+  present different value is kept and noted (`EDIT-PLUG-34`).
 * An action with `save` (or `cwd: document`) saves a modified or untitled document first:
   an untitled one asks for a name, and a cancel there cancels the run; in batch mode an
   untitled document fails the run. `cwd: document` runs the plugin in the document's
