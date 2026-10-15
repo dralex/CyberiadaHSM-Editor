@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.23 (2026-10-15)
+**Document version:** 0.24 (2026-10-15)
 
 **Related authorities:**
 
@@ -615,6 +615,11 @@ The plugins are external programs run on the active document: the architecture i
 - `EDIT-PLUG-33` MUST [A]: a run gets the interface language as `${language}`, as
   `CYBERIADA_EDITOR_LANGUAGE` in its environment and as `language` in `request.json`; a
   parameter default may use `${language}`; the batch mode gives `en` (`EDIT-UI-2`). *design*
+- `EDIT-PLUG-34` MUST [A]: the metainformation an action declares (`meta`) fills the keys the
+  document lacks before the run — before the save of a `save` action — as one undo step; a
+  present different value is kept and noted (the platform language compared by its
+  aliases); a document without a state machine, or a read-only one, is left as it is.
+  *design*
 
 ### 4.13 Interface language — UI
 

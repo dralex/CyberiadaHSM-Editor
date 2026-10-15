@@ -430,7 +430,9 @@ info CGML-6.4-4-2 G9 (absent) line 28: state machine 'G9' contains no initial ps
   (`enabled`, `disabled`, `shadowed`, `rejected`), the origin of the folder
   (`plugin-path <n>`, `env <n>`, `user`, `system`) and the reason; the warnings
   follow, indented.
-* `== plugin` — `action`, `result`, `state` (`done`, `failed`), `exit` (the plugin's
+* `== plugin` — `action`, `result`, a `meta:` line per declared metainformation key
+  (`set <key> <value>`, `kept <key> <present value>`, `skipped <key>` for a document
+  without a state machine or a read-only one), `state` (`done`, `failed`), `exit` (the plugin's
   exit code, `-` when it never ran), then by the result: `changes: yes|no` for
   `replace`, `tab: <index>` for `new-document`, the `files:` block (`new` or
   `changed` and the path under the outdir) for `files`; `error: <reason>` for a
