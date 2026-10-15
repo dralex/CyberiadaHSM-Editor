@@ -1157,7 +1157,7 @@
 <context>
     <name>PluginDock</name>
     <message>
-        <location filename="../plugin_dock.cpp" line="+55"/>
+        <location filename="../plugin_dock.cpp" line="+64"/>
         <source>error</source>
         <comment>severity</comment>
         <translation type="unfinished">ошибка</translation>
@@ -1205,17 +1205,61 @@
         <translation type="unfinished">Сообщение</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+3"/>
         <source>Diagnostics</source>
         <translation type="unfinished">Замечания</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>Output</source>
-        <translation type="unfinished">Вывод</translation>
+        <translation type="obsolete">Вывод</translation>
     </message>
     <message>
-        <location line="+22"/>
+        <location line="+37"/>
+        <source>%1 output</source>
+        <translation>Вывод %1</translation>
+    </message>
+    <message>
+        <location line="+39"/>
+        <source>Save to File...</source>
+        <translation type="unfinished">Сохранить в файл...</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Clear...</source>
+        <translation type="unfinished">Очистить...</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>Cannot write %1: %2</source>
+        <translation type="unfinished">Не удаётся записать %1: %2</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Clear the output</source>
+        <translation type="unfinished">Очистка вывода</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Clear the %1 output?</source>
+        <translation type="unfinished">Очистить вывод %1?</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Save the %1 output</source>
+        <translation type="unfinished">Сохранение вывода %1</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Text files (*.txt)</source>
+        <translation type="unfinished">Текстовые файлы (*.txt)</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Save the output</source>
+        <translation type="unfinished">Сохранение вывода</translation>
+    </message>
+    <message>
+        <location line="+20"/>
         <source>%1: running</source>
         <translation type="unfinished">%1: выполняется</translation>
     </message>
@@ -1225,7 +1269,7 @@
         <translation type="unfinished">Отменить</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+18"/>
         <source>%1 is set to %2</source>
         <translation type="unfinished">%1: установлено значение %2</translation>
     </message>
@@ -1240,12 +1284,12 @@
         <translation type="unfinished">%1 не установлено: в документе нет машины состояний или он только для чтения</translation>
     </message>
     <message>
-        <location line="+32"/>
+        <location line="+26"/>
         <source>%1: running %2:%3</source>
         <translation type="unfinished">%1: выполняется %2:%3</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+16"/>
         <source>done, exit code %1</source>
         <translation type="unfinished">готово, код выхода %1</translation>
     </message>
@@ -1277,7 +1321,7 @@
         <translation type="unfinished">изменен файл %1</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+15"/>
         <source>%1 (absent)</source>
         <translation type="unfinished">%1 (отсутствует)</translation>
     </message>
