@@ -113,7 +113,7 @@ public:
     PluginDock*             pluginDock() const { return pluginDockWidget; }
 
 signals:
-    void                    pluginRunStarted(PluginRunner* run);
+    void                    pluginRunStarted(PluginRunner* run, CyberiadaSMEditorDocument* doc);
     // emitted after the result is applied; the runner is deleted later
     void                    pluginRunFinished(PluginRunner* run);
 

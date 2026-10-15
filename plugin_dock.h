@@ -2,7 +2,7 @@
  * The Cyberiada State Machine Editor
  * -----------------------------------------------------------------------------
  *
- * The Plugin Dock: the running plugins, the Diagnostics and the Output
+ * The Plugin Dock: the running plugins, the Diagnostics and an output tab per plugin
  *
  * Copyright (C) 2026 Alexey Fedoseev <aleksey@fedoseev.net>
  *
@@ -30,6 +30,7 @@
 #include <QTimer>
 
 class QLabel;
+class QMenu;
 class QPlainTextEdit;
 class QPushButton;
 class QTabWidget;
@@ -41,19 +42,25 @@ class CyberiadaSMEditorDocument;
 
 // under the canvas, hidden until the first run (EDIT-PLUG-32): one row per
 // running plugin with its time and Cancel, the findings of the last run with
-// findings (EDIT-PLUG-15), one Output block per run (EDIT-PLUG-17)
+// findings (EDIT-PLUG-15), an output tab per plugin with one block per run
+// (EDIT-PLUG-17), closable, cleared and saved from its menu (EDIT-PLUG-35)
 class PluginDock : public QDockWidget {
     Q_OBJECT
 
 public:
     PluginDock(QWidget* parent = nullptr);
 
-    void          runStarted(PluginRunner* run);
+    void          runStarted(PluginRunner* run, CyberiadaSMEditorDocument* doc);
     void          runFinished(PluginRunner* run, CyberiadaSMEditorDocument* doc);
 
     QTreeWidget*  diagnostics() const { return diagnosticsList; }
-    QPlainTextEdit* output() const { return outputText; }
+    // the output tab of a plugin; nullptr while it is closed
+    QPlainTextEdit* output(const QString& pluginId) const;
     QTabWidget*   tabs() const { return tabWidget; }
+    // the context menu of an open output tab, else nullptr; the caller owns it
+    QMenu*        createOutputMenu(const QString& pluginId);
+    void          clearOutput(const QString& pluginId);
+    bool          saveOutput(const QString& pluginId, const QString& path, QString* error = nullptr) const;
     // the Cancel button of a running plugin (the tests press it)
     QPushButton*  cancelButton(PluginRunner* run) const;
 
@@ -61,10 +68,11 @@ signals:
     void          diagnosticActivated(CyberiadaSMEditorDocument* doc, const QString& elementId);
 
 private slots:
-    void          slotOutput(const QString& text, bool isError);
     void          slotTick();
     void          slotItemActivated(QTreeWidgetItem* item, int column);
     void          slotDocumentChanged();
+    void          slotTabCloseRequested(int index);
+    void          slotTabMenu(const QPoint& pos);
 
 private:
     struct Row {
@@ -74,13 +82,24 @@ private:
         QString   title;
     };
 
-    void          append(const QString& text, bool isError);
+    struct OutputTab {
+        QPlainTextEdit* text = nullptr;
+        QString   name;
+        // the folder of the document of the last run, empty for an untitled one
+        QString   folder;
+    };
+
+    QPlainTextEdit* outputTab(const QString& pluginId);
+    QString       pluginIdOf(const QWidget* tab) const;
+    void          append(const QString& pluginId, const QString& text, bool isError);
+    void          askClear(const QString& pluginId);
+    void          askSave(const QString& pluginId);
     void          markStale();
 
     QVBoxLayout*  runsLayout;
     QTabWidget*   tabWidget;
     QTreeWidget*  diagnosticsList;
-    QPlainTextEdit* outputText;
+    QMap<QString, OutputTab> outputs;
     QMap<PluginRunner*, Row> rows;
     QTimer        ticker;
     QPointer<CyberiadaSMEditorDocument> diagnosticsDocument;

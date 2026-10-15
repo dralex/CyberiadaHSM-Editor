@@ -275,8 +275,8 @@ void TestPlugins::test_click_runs_at_once()
     win.slotPluginTriggered("echo", "say");
     QVERIFY(finished.wait(RUN_WAIT_MS) || finished.count() > 0);
     QVERIFY(win.pluginDock()->isVisible());
-    QTRY_VERIFY(win.pluginDock()->output()->toPlainText().contains("echo from main"));
-    QVERIFY(win.pluginDock()->output()->toPlainText().contains("echo to stderr"));
+    QTRY_VERIFY(win.pluginDock()->output("echo")->toPlainText().contains("echo from main"));
+    QVERIFY(win.pluginDock()->output("echo")->toPlainText().contains("echo to stderr"));
 }
 
 // a replace result is one undo step, its undo restores the document (EDIT-PLUG-12/13)
@@ -501,7 +501,7 @@ void TestPlugins::test_secret_absent()
     QCOMPARE(r.state, PluginResult::stateDone);
     QVERIFY(r.stdoutText.contains("PLUGIN_TEST_KEY: ok"));
     QVERIFY(!r.stdoutText.contains("s3cr3t"));
-    QVERIFY(!win.pluginDock()->output()->toPlainText().contains("s3cr3t"));
+    QVERIFY(!win.pluginDock()->output("request")->toPlainText().contains("s3cr3t"));
     const PluginEntry* request = PluginRegistry::instance().find("request");
     win.storePluginValues(*request, request->descriptor.actionParameters(*request->descriptor.action("read")),
                           win.currentDocument(), values);

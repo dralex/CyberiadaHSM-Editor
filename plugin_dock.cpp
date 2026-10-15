@@ -22,11 +22,18 @@
  * ----------------------------------------------------------------------------- */
 
 #include <QApplication>
+#include <QDir>
+#include <QFile>
+#include <QFileDialog>
+#include <QFileInfo>
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QLabel>
+#include <QMenu>
+#include <QMessageBox>
 #include <QPlainTextEdit>
 #include <QPushButton>
+#include <QTabBar>
 #include <QTabWidget>
 #include <QTextBlock>
 #include <QTreeWidget>
@@ -39,6 +46,8 @@
 
 #define TICK_MS              1000
 #define OUTPUT_BLOCK_LIMIT   20000
+// the name a saved output gets: <plugin id><suffix>
+#define OUTPUT_FILE_SUFFIX   "-output.txt"
 
 enum DiagnosticColumn {
     columnSeverity = 0,
@@ -75,11 +84,12 @@ PluginDock::PluginDock(QWidget* parent):
                                                    << tr("Line") << tr("Message"));
     diagnosticsList->setRootIsDecorated(false);
     diagnosticsList->header()->setStretchLastSection(true);
-    outputText = new QPlainTextEdit(tabWidget);
-    outputText->setReadOnly(true);
-    outputText->setMaximumBlockCount(OUTPUT_BLOCK_LIMIT);
     tabWidget->addTab(diagnosticsList, tr("Diagnostics"));
-    tabWidget->addTab(outputText, tr("Output"));
+    // the output tabs close, the Diagnostics stays
+    tabWidget->setTabsClosable(true);
+    tabWidget->tabBar()->setTabButton(0, QTabBar::LeftSide, nullptr);
+    tabWidget->tabBar()->setTabButton(0, QTabBar::RightSide, nullptr);
+    tabWidget->tabBar()->setContextMenuPolicy(Qt::CustomContextMenu);
     layout->addWidget(tabWidget);
     setWidget(body);
 
@@ -87,6 +97,116 @@ PluginDock::PluginDock(QWidget* parent):
     connect(&ticker, &QTimer::timeout, this, &PluginDock::slotTick);
     connect(diagnosticsList, &QTreeWidget::itemActivated, this, &PluginDock::slotItemActivated);
     connect(diagnosticsList, &QTreeWidget::itemClicked, this, &PluginDock::slotItemActivated);
+    connect(tabWidget, &QTabWidget::tabCloseRequested, this, &PluginDock::slotTabCloseRequested);
+    connect(tabWidget->tabBar(), &QWidget::customContextMenuRequested, this, &PluginDock::slotTabMenu);
+}
+
+QPlainTextEdit* PluginDock::output(const QString& pluginId) const
+{
+    return outputs.value(pluginId).text;
+}
+
+QPlainTextEdit* PluginDock::outputTab(const QString& pluginId)
+{
+    OutputTab& tab = outputs[pluginId];
+    if (tab.text) return tab.text;
+    // a closed tab comes back empty (EDIT-PLUG-35)
+    tab.text = new QPlainTextEdit(tabWidget);
+    tab.text->setReadOnly(true);
+    tab.text->setMaximumBlockCount(OUTPUT_BLOCK_LIMIT);
+    tab.text->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(tab.text, &QWidget::customContextMenuRequested, this, [this, pluginId](const QPoint& pos) {
+        QMenu* menu = createOutputMenu(pluginId);
+        if (!menu) return;
+        menu->exec(output(pluginId)->viewport()->mapToGlobal(pos));
+        delete menu;
+    });
+    int index = tabWidget->addTab(tab.text, tr("%1 output").arg(tab.name));
+    tabWidget->setTabToolTip(index, pluginId);
+    return tab.text;
+}
+
+QString PluginDock::pluginIdOf(const QWidget* tab) const
+{
+    for (QMap<QString, OutputTab>::const_iterator i = outputs.begin(); i != outputs.end(); i++) {
+        if (tab && i.value().text == tab) return i.key();
+    }
+    return QString();
+}
+
+void PluginDock::slotTabCloseRequested(int index)
+{
+    QString id = pluginIdOf(tabWidget->widget(index));
+    if (id.isEmpty()) return;
+    QPlainTextEdit* text = outputs[id].text;
+    outputs[id].text = nullptr;
+    tabWidget->removeTab(index);
+    text->deleteLater();
+}
+
+void PluginDock::slotTabMenu(const QPoint& pos)
+{
+    QString id = pluginIdOf(tabWidget->widget(tabWidget->tabBar()->tabAt(pos)));
+    if (id.isEmpty()) return;
+    QMenu* menu = createOutputMenu(id);
+    if (!menu) return;
+    menu->exec(tabWidget->tabBar()->mapToGlobal(pos));
+    delete menu;
+}
+
+QMenu* PluginDock::createOutputMenu(const QString& pluginId)
+{
+    QPlainTextEdit* text = output(pluginId);
+    if (!text) return nullptr;
+    QMenu* menu = text->createStandardContextMenu();
+    menu->addSeparator();
+    QAction* save = menu->addAction(tr("Save to File..."));
+    QAction* clear = menu->addAction(tr("Clear..."));
+    bool empty = text->document()->isEmpty();
+    save->setEnabled(!empty);
+    clear->setEnabled(!empty);
+    connect(save, &QAction::triggered, this, [this, pluginId]() { askSave(pluginId); });
+    connect(clear, &QAction::triggered, this, [this, pluginId]() { askClear(pluginId); });
+    return menu;
+}
+
+void PluginDock::clearOutput(const QString& pluginId)
+{
+    if (QPlainTextEdit* text = output(pluginId)) text->clear();
+}
+
+bool PluginDock::saveOutput(const QString& pluginId, const QString& path, QString* error) const
+{
+    QPlainTextEdit* text = output(pluginId);
+    QFile file(path);
+    QByteArray data = text ? text->toPlainText().toUtf8() : QByteArray();
+    if (!data.isEmpty()) data += '\n';
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text) || file.write(data) != data.size()) {
+        if (error) *error = tr("Cannot write %1: %2").arg(QDir::toNativeSeparators(path), file.errorString());
+        return false;
+    }
+    return true;
+}
+
+void PluginDock::askClear(const QString& pluginId)
+{
+    QMessageBox::StandardButton answer =
+        QMessageBox::question(this, tr("Clear the output"),
+                              tr("Clear the %1 output?").arg(outputs.value(pluginId).name),
+                              QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+    if (answer == QMessageBox::Yes) clearOutput(pluginId);
+}
+
+void PluginDock::askSave(const QString& pluginId)
+{
+    const OutputTab& tab = outputs[pluginId];
+    QDir folder(tab.folder.isEmpty() ? QDir::homePath() : tab.folder);
+    QString path = QFileDialog::getSaveFileName(this, tr("Save the %1 output").arg(tab.name),
+                                                folder.filePath(pluginId + OUTPUT_FILE_SUFFIX),
+                                                tr("Text files (*.txt)"));
+    if (path.isEmpty()) return;
+    QString error;
+    if (!saveOutput(pluginId, path, &error)) QMessageBox::warning(this, tr("Save the output"), error);
 }
 
 QPushButton* PluginDock::cancelButton(PluginRunner* run) const
@@ -94,8 +214,13 @@ QPushButton* PluginDock::cancelButton(PluginRunner* run) const
     return rows.contains(run) ? rows.value(run).cancel : nullptr;
 }
 
-void PluginDock::runStarted(PluginRunner* run)
+void PluginDock::runStarted(PluginRunner* run, CyberiadaSMEditorDocument* doc)
 {
+    const PluginDescriptor& plugin = run->plugin().descriptor;
+    QString id = plugin.id;
+    OutputTab& tab = outputs[id];
+    tab.name = plugin.name.isEmpty() ? id : plugin.name;
+    tab.folder = doc && doc->hasFile() ? QFileInfo(doc->filePath()).absolutePath() : QString();
     Row row;
     row.title = QString("%1: %2").arg(run->plugin().descriptor.name, run->action().label);
     row.widget = new QWidget(widget());
@@ -109,19 +234,25 @@ void PluginDock::runStarted(PluginRunner* run)
     rows.insert(run, row);
     QPointer<PluginRunner> guard(run);
     connect(row.cancel, &QPushButton::clicked, this, [guard]() { if (guard) guard->cancel(); });
-    connect(run, &PluginRunner::output, this, &PluginDock::slotOutput);
-    append(QString("== %1").arg(row.title), false);
+    connect(run, &PluginRunner::output, this, [this, id](const QString& text, bool isError) {
+        QString t = text;
+        if (t.endsWith('\n')) t.chop(1);
+        if (!t.isEmpty()) append(id, t, isError);
+    });
+    append(id, doc ? QString("== %1 - %2").arg(row.title, doc->title()) : QString("== %1").arg(row.title),
+           false);
+    tabWidget->setCurrentWidget(output(id));
     for (const PluginMetaNote& note: run->result().metaNotes) {
         switch (note.kind) {
         case PluginMetaNote::metaSet:
-            append(tr("%1 is set to %2").arg(note.key, note.value), false);
+            append(id, tr("%1 is set to %2").arg(note.key, note.value), false);
             break;
         case PluginMetaNote::metaKept:
-            append(tr("%1 is kept as %2; the plugin declares %3").arg(note.key, note.value, note.declared),
+            append(id, tr("%1 is kept as %2; the plugin declares %3").arg(note.key, note.value, note.declared),
                    false);
             break;
         default:
-            append(tr("%1 is not set: the document has no state machine or is read-only").arg(note.key),
+            append(id, tr("%1 is not set: the document has no state machine or is read-only").arg(note.key),
                    false);
             break;
         }
@@ -131,22 +262,16 @@ void PluginDock::runStarted(PluginRunner* run)
     if (!qApp->property("batchMode").toBool()) show();
 }
 
-void PluginDock::slotOutput(const QString& text, bool isError)
+void PluginDock::append(const QString& pluginId, const QString& text, bool isError)
 {
-    QString t = text;
-    if (t.endsWith('\n')) t.chop(1);
-    if (!t.isEmpty()) append(t, isError);
-}
-
-void PluginDock::append(const QString& text, bool isError)
-{
+    QPlainTextEdit* edit = outputTab(pluginId);
     QTextCharFormat format;
     if (isError) format.setForeground(Qt::darkRed);
-    QTextCursor cursor(outputText->document());
+    QTextCursor cursor(edit->document());
     cursor.movePosition(QTextCursor::End);
-    if (!outputText->document()->isEmpty()) cursor.insertBlock();
+    if (!edit->document()->isEmpty()) cursor.insertBlock();
     cursor.insertText(text, format);
-    outputText->ensureCursorVisible();
+    edit->ensureCursorVisible();
 }
 
 void PluginDock::slotTick()
@@ -166,20 +291,22 @@ void PluginDock::runFinished(PluginRunner* run, CyberiadaSMEditorDocument* doc)
     }
     if (rows.isEmpty()) ticker.stop();
     const PluginResult& r = run->result();
+    QString id = run->plugin().descriptor.id;
     switch (r.state) {
     case PluginResult::stateDone:
-        append(r.exitCode >= 0 ? tr("done, exit code %1").arg(r.exitCode) : tr("done"), false);
+        append(id, r.exitCode >= 0 ? tr("done, exit code %1").arg(r.exitCode) : tr("done"), false);
         break;
     case PluginResult::stateCancelled:
-        append(tr("cancelled"), true);
+        append(id, tr("cancelled"), true);
         break;
     default:
-        append(tr("failed: %1").arg(r.error), true);
+        append(id, tr("failed: %1").arg(r.error), true);
         break;
     }
     if (r.state != PluginResult::stateDone) return;
     for (const PluginFileChange& f: r.files) {
-        append((f.isNew ? tr("new %1", "plugin file") : tr("changed %1", "plugin file")).arg(f.path), false);
+        append(id, (f.isNew ? tr("new %1", "plugin file") : tr("changed %1", "plugin file")).arg(f.path),
+               false);
     }
     if (r.diagnostics.isEmpty() && run->action().result != PluginAction::resultDiagnostics) return;
 

@@ -1252,7 +1252,7 @@ PluginRunner* CyberiadaSMEditorWindow::runPlugin(const QString& pluginId, const 
         updateEditActions();
     }
     connect(run, &PluginRunner::finished, this, &CyberiadaSMEditorWindow::slotPluginFinished);
-    emit pluginRunStarted(run);
+    emit pluginRunStarted(run, doc);
     run->start();
     updatePluginActions();
     return run;
