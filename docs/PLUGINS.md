@@ -1,6 +1,6 @@
 # The Plugin System — Architecture
 
-**Document version:** 0.3 (2026-10-14)
+**Document version:** 0.4 (2026-10-15)
 
 A plugin adds a feature to the editor without rebuilding it: a diagram checker, a code
 generator, a compiler front end, an LLM diagram maker. A plugin is a directory with a
@@ -12,12 +12,12 @@ and the Qt JSON classes only: no interpreter, no network library, no plugin ABI.
 
 This document is the editor side. The contract a plugin author follows — the descriptor,
 the variables, the files and the formats — is `PLUGIN-API.md`; the requirements are
-`EDIT-PLUG-1..32` in `EDITOR-SPEC.md` §4.12, the tests the plugin layer of `TESTING.md`.
+`EDIT-PLUG-1..35` in `EDITOR-SPEC.md` §4.12, the tests the plugin layer of `TESTING.md`.
 
 ```
  smeditor_window.cpp, batch_driver.cpp
 +----------------------------------------------------------------------------------------+
-| Plugins menu, plugin toolbars, --run-plugin           plugin dock: Diagnostics, Output |
+| Plugins menu, plugin toolbars, --run-plugin   plugin dock: Diagnostics, plugin outputs |
 +----------------------------------------------------------------------------------------+
        |                                                     ^
        | action, parameter values                            | findings, log, progress
@@ -66,8 +66,8 @@ Both levels use the same descriptor; level 2 adds a `session` block (see the end
                     +--------------------------------+                       |
                     v                                                        v
 +--------------------------------------+         +--------------------------------------+
-| not listed: one Output line with the |         | registry: id -> descriptor, folder,  |
-| path and the reason; the editor      |         | enabled or disabled + the reason;    |
+| not listed: the Plugin Manager shows |         | registry: id -> descriptor, folder,  |
+| the path and the reason; the editor  |         | enabled or disabled + the reason;    |
 | starts normally                      |         | read by the menu, the toolbars, the  |
 |                                      |         | plugin manager and --list-plugins    |
 +--------------------------------------+         +--------------------------------------+
@@ -76,8 +76,8 @@ Both levels use the same descriptor; level 2 adds a `session` block (see the end
 The user folder is `QStandardPaths::writableLocation(AppDataLocation)/plugins`; the
 system folder is `share/cyberiada-editor/plugins` one level above the executable (a
 Debian install) or next to it (the Windows zip). The exact paths are in `PLUGIN-API.md`.
-A user plugin overrides a system plugin with the same id; the shadowed one gets an
-Output line. The scan runs at start and on Rescan in the plugin manager; it also reads the
+A user plugin overrides a system plugin with the same id; the manager lists the shadowed
+one. The scan runs at start and on Rescan in the plugin manager; it also reads the
 plugin's `i18n/<lang>.json` of the interface language and translates the plugin texts
 (`EDIT-UI-4`). A run gets the language as `${language}`, `CYBERIADA_EDITOR_LANGUAGE` and
 `language` in `request.json` — `en` in the batch mode (`EDIT-PLUG-33`).
@@ -95,7 +95,8 @@ plugin's `i18n/<lang>.json` of the interface language and translates the plugin 
 | bar  |                       canvas                          |                       |
 |      |                                                       | properties            |
 +------+-------------------------------------------------------+-----------------------+
-| [Diagnostics 2] [Output]            Lapki compiler: running 00:07          [Cancel]  |
+| Lapki compiler: Compile: running 00:07                                     [Cancel]  |
+| [Diagnostics 2] [Diagram checker output x] [Lapki compiler output x]                 |
 | warning  CGML-6.9-4-4   nMeta   transitionOrder 'transitionFirst' is not admissible  |
 | info     CGML-6.4-4-2   G0      state machine 'G0' contains no initial pseudostate   |
 +--------------------------------------------------------------------------------------+
@@ -127,9 +128,14 @@ plugin's `i18n/<lang>.json` of the interface language and translates the plugin 
 * **The parameter dialog** — generated from the action's parameters (`QDialog` +
   `QFormLayout`, one widget per type); the plugin draws no window, so the same action runs
   in batch mode. The mockups and the type table are in `PLUGIN-API.md`.
-* **Plugin dock** — under the canvas, hidden until the first run: the Diagnostics tab (a
-  click selects and centres the element), the Output tab (one block per run), and the
-  running plugin with its time and Cancel.
+* **Plugin dock** — under the canvas, hidden until the first run: the running plugins with
+  their time and Cancel, the Diagnostics tab (a click selects and centres the element) and
+  an output tab per plugin, "<plugin> output": one block per run headed by the action and
+  the document; a starting run makes its tab current. An output tab closes with its `x`,
+  dropping the text, and comes back empty with the plugin's next output; its context
+  menu (on the text or the tab) adds Save to File... (plain UTF-8 text,
+  `<plugin id>-output.txt` in the document folder) and Clear... (after a confirmation) to
+  Copy and Select All.
 * **Plugin manager** — the plugins found: folder, version, enabled or the reason why not;
   enable/disable, Rescan.
 * **Disabled actions** — a missing interpreter, inspection mode (for `replace`), a run
@@ -155,7 +161,7 @@ plugin's `i18n/<lang>.json` of the interface language and translates the plugin 
    |   running   | -- failed to start, timeout ---------------------------+
    |             | -- cancel: terminate, kill after a grace -> cancelled  |
    +-------------+                                                        |
-          | finished; stdout and stderr streamed to Output                |
+          | finished; stdout and stderr streamed to its output tab        |
           v                                                               |
    +-------------+                                                        |
    |  validate   | -- exit code not in exit_ok, crash, output missing ----+
@@ -189,7 +195,7 @@ plugin's `i18n/<lang>.json` of the interface language and translates the plugin 
   cancels the run. Closing the editor cancels every run.
 * Cancel and timeout terminate the process and kill it after a grace period. Only the
   direct child is killed: an adapter that starts a server stops it itself.
-* The Output text is capped per run; undecodable bytes are shown in the local 8-bit
+* The output text is capped per run; undecodable bytes are shown in the local 8-bit
   encoding.
 
 ## Applying the result
@@ -213,7 +219,8 @@ plugin's `i18n/<lang>.json` of the interface language and translates the plugin 
 * The output is decoded before anything is touched: `restoreSnapshot` only warns about a
   bad buffer. `load.reconstruct` lays out a document that comes without geometry (an LLM
   answer); `load.strict` rejects a non-conforming one.
-* An output equal to the input pushes no undo step; Output says "no changes".
+* An output equal to the input pushes no undo step; the output tab says "no
+  changes".
 * The document keeps its file path and format; `readOnly()` is checked here, because
   `restoreSnapshot` does not.
 * The session log writes the comment `# plugin <id>:<action>`: a plugin is not a script
@@ -234,7 +241,7 @@ Everything goes through `SettingsManager`; nothing is written into the GraphML f
 A `document` value of an untitled document lives for the session only. A secret value is
 stored as a reference (`env:NAME`, `file:PATH`); the key itself is read at the start of a
 run and exported to the child process only — never to the argv, `request.json`, the
-Output, the session log or the settings.
+output tabs, the session log or the settings.
 
 ## Batch mode and tests
 
@@ -260,7 +267,7 @@ Output, the session log or the settings.
   batch_driver.cpp              plugins_menu.cpp              plugin_dock.cpp
  +------------------------+    +------------------------+    +------------------------+
  | the plugin stage after |    | PluginsMenu, plugin    |    | PluginDock             |
- | the script; no dialog; |    | toolbars, the plugin   |    | Diagnostics, Output,   |
+ | the script; no dialog; |    | toolbars, the plugin   |    | Diagnostics, outputs,  |
  | exit 6 on a failed run |    | manager; the generated |    | progress and Cancel    |
  |                        |    | PluginParameterDialog  |    |                        |
  +------------------------+    +------------------------+    +------------------------+

@@ -1,6 +1,6 @@
 # The Plugin Interface
 
-**Document version:** 0.3 (2026-10-14), plugin contract `api` 1. In Russian:
+**Document version:** 0.4 (2026-10-15), plugin contract `api` 1. In Russian:
 `PLUGIN-API-ru.md`.
 
 This is the brief for a plugin author. A plugin gives the Cyberiada HSM Editor a new
@@ -56,8 +56,8 @@ print(os.path.getsize(sys.argv[1]), 'bytes')
 ```
 
 Put `hello/` into the user plugin folder (see Packaging) and restart the editor: the
-Plugins menu gets the entry "Document size"; a click prints the size into the Output tab
-of the plugin dock.
+Plugins menu gets the entry "Document size"; a click prints the size into the "Hello
+output" tab of the plugin dock.
 
 ## The plugin directory
 
@@ -136,8 +136,9 @@ An action:
   for this document, or a required `persistent` parameter without a value, the editor
   opens a dialog generated from them; otherwise the action runs at once with the stored
   values.
-* **The plugin dock** — the Output tab shows stdout and stderr of every run, the
-  Diagnostics tab the findings; the running plugin has a Cancel button.
+* **The plugin dock** — every plugin has its own output tab, "<name> output", with the
+  stdout and stderr of its runs; the user closes it, clears it or saves it to a text
+  file. The Diagnostics tab holds the findings; the running plugin has a Cancel button.
 
 ```
 +--------------------------------------------------+
@@ -246,7 +247,7 @@ metainformation strings except the editor's own view state. Secrets are never in
 | `replace` | the whole changed document to `${output}` | replaces the document as one undo step "Plugin: <label>" |
 | `new-document` | a document to `${output}` | opens it as a modified unsaved document titled by its document name: in the active tab when that is an empty untitled one, in a new tab otherwise |
 | `diagnostics` | `${diagnostics}` | shows the findings |
-| `files` | files into `${outdir}` (the action's `outdir` parameter) | lists the new and changed files in Output |
+| `files` | files into `${outdir}` (the action's `outdir` parameter) | lists the new and changed files in the output tab |
 | `log` | stdout, stderr | nothing more |
 
 * The output document may be CyberiadaML-GraphML 1.0 or a yEd dialect the library reads;
@@ -327,7 +328,7 @@ Common fields: `id`, `type`, `label`, `default`, `scope` (default `run`), `requi
   It may also use `${language}`, so a language option follows the interface.
 * A secret is resolved at the start of a run — the variable `NAME` of the editor's
   environment, or the first line of the file `PATH` — and exported to your process as the
-  `export` variable. It never reaches the argv, `request.json`, the Output or the
+  `export` variable. It never reaches the argv, `request.json`, the output tab or the
   settings. Do not print it.
 
 ## Translation
@@ -372,7 +373,7 @@ An action may declare the metainformation it works with:
 * Before the run, and before the save of a `save` action, the editor fills each key the
   document lacks, all in one undo step; the run then sees the value (`${meta:k}`, the
   saved file).
-* A key the document has keeps its value; a different one is noted in the Output tab and
+* A key the document has keeps its value; a different one is noted in the output tab and
   the run goes on. The platform language counts as the same under any of its names
   (`python3`, `Python`).
 * A document without a state machine, or a read-only one, is left as it is.
@@ -384,8 +385,8 @@ An action may declare the metainformation it works with:
   and readable. Anything else fails the run: the user sees the exit code and the end of
   stderr, the document is untouched.
 * Write progress and messages to stdout and errors to stderr, in UTF-8; they appear in
-  the Output tab as the run goes, up to 1 MiB per run. A Python plugin on Windows sets
-  `PYTHONUTF8=1` in `env` to write UTF-8 into a pipe.
+  the plugin's output tab as the run goes, up to 1 MiB per run. A Python plugin on
+  Windows sets `PYTHONUTF8=1` in `env` to write UTF-8 into a pipe.
 * A timeout or Cancel terminates the process (SIGTERM on Unix) and kills it 3 seconds
   later; on Windows expect the kill. Only your process is stopped: stop the processes
   you started yourself, such as a local server.

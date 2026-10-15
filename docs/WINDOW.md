@@ -1,6 +1,6 @@
 # The Editor Window — Documents and Tabs
 
-**Document version:** 0.3 (2026-10-15)
+**Document version:** 0.4 (2026-10-15)
 
 The window holds several documents at once. The menus, the toolbars, the tab line and the
 right column are one set; each document brings its own model, scene and canvas view. The
@@ -80,7 +80,7 @@ setCurrentDocument(doc)
 | Exit | global | asks for every modified document in turn; a cancel keeps the editor open; running plugins are cancelled after one question (`EDIT-PLUG-23`) |
 | Plugins menu, plugin toolbars | global | an action runs on the active document; its state and tooltip follow it (`EDIT-PLUG-4..7`) |
 | Plugin run | bound to one document | one at a time; a replace run locks the document; the result goes to it after any switch (`EDIT-PLUG-21/22`) |
-| Plugin dock | global | the findings link to the document of their run (`EDIT-PLUG-15/17/32`) |
+| Plugin dock | global | the findings link to the document of their run; one output tab per plugin, not per document, each run headed by its document (`EDIT-PLUG-15/17/32/35`) |
 | Command-line files (GUI) | global | each opens a tab, the last one active (`EDIT-DOC-7`) |
 
 ## Lifetimes and traps
