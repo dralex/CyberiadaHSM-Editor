@@ -1,11 +1,12 @@
 # The Editor Window — Documents and Tabs
 
-**Document version:** 0.4 (2026-10-15)
+**Document version:** 0.5 (2026-10-15)
 
 The window holds several documents at once. The menus, the toolbars, the tab line and the
-right column are one set; each document brings its own model, scene and canvas view. The
-requirements are `EDIT-DOC-1..10` in `EDITOR-SPEC.md` §4.11; the plugin parts follow
-`docs/PLUGINS.md` (`EDIT-PLUG-n`, §4.12).
+docks (the structure tree, the properties, the plugins) are one set; each document brings its
+own model, scene and canvas view. The requirements are `EDIT-DOC-1..10` in `EDITOR-SPEC.md`
+§4.11 and `EDIT-UI-6` for the docks; the plugin parts follow `docs/PLUGINS.md` (`EDIT-PLUG-n`,
+§4.12).
 
 ## Structure
 
@@ -13,19 +14,21 @@ requirements are `EDIT-DOC-1..10` in `EDITOR-SPEC.md` §4.11; the plugin parts f
 CyberiadaSMEditorWindow (QMainWindow)                                   GLOBAL
  | menuBar  mainToolBar (top)  elementToolBar (left)  zoomOptionsToolBar  zoomCombo
  | Plugins menu + plugin toolbars (PluginsMenu, before zoomOptionsToolBar)
- | pluginDock (QDockWidget, bottom, hidden until the first run)   pluginRuns
  | clipboard (a detached element copy)   armed tool (toolGroup)   QUndoGroup
  | documents : QList<CyberiadaSMEditorDocument*>   current
  |
- | central widget (QVBoxLayout)
- |  +-------------------------------------------------------------------+
- |  | documentTabs : QTabBar   [ a.graphml ][ b.graphml* ]   hidden < 2 |
- |  +--------------------------------------+----------------------------+
- |  | documentStack : QStackedWidget       | hSplitter                  |
- |  |   page i = documents[i]->view()      |  SMView (structure tree)   |
- |  |   (CyberiadaSMGraphicsView)          |  propertiesWidget          |
- |  |                                      |  (re-targeted on switch)   |
- |  +--------------- vSplitter ------------+----------------------------+
+ | central widget (QVBoxLayout)              | right dock area (EDIT-UI-6)
+ |  +--------------------------------------+ | +---------------------------------+
+ |  | documentTabs : QTabBar  hidden < 2   | | | treeDock "Structure tree" [_][x]|
+ |  | [ a.graphml ][ b.graphml* ]          | | |   SMView (structure tree)       |
+ |  +--------------------------------------+ | +---------------------------------+
+ |  | documentStack : QStackedWidget       | | | propertiesDock "Properties"[_][x]|
+ |  |   page i = documents[i]->view()      | | |   propertiesWidget              |
+ |  |   (CyberiadaSMGraphicsView)          | | |   (re-targeted on switch)       |
+ |  +--------------------------------------+ | +---------------------------------+
+ |  View > Structure tree / Properties: the docks' toggle actions, kept in the settings
+ +-------------------------------------------+-------------------------------------
+ | pluginDock (QDockWidget, bottom, full width, hidden until the first run)   pluginRuns
  |
  +-- CyberiadaSMEditorDocument (QObject)                                 PER DOCUMENT
        model : CyberiadaSMModel         the document tree, the undo stack, the file path
@@ -72,7 +75,7 @@ setCurrentDocument(doc)
 | Zoom in/out, Fit, Zoom to SM, zoom combo | document | the active view |
 | Edit > Language, code highlighting | document | the checked entry is the active document's `platformLanguage`; each tab is highlighted by its own (`EDIT-TEXT-9`); the list of unknown values met is global |
 | Edit > Markup, comment markup | document | the checked entry is the active document's `markupLanguage` (`EDIT-TEXT-12`); the list of unknown values met is global |
-| Structure tree, properties panel | shared widget | content re-targeted on a switch |
+| Structure tree, properties panel | shared docks | content re-targeted on a switch; shown or hidden by View, the choice kept (`EDIT-UI-6`) |
 | Window title and `[*]` | document | the active one; the tab text carries `*` when modified; an unsaved document is `[document name]` or `untitled` (`EDIT-DOC-10`) |
 | Saved viewport (zoom/pan in the document) | document | restored on the tab's first activation |
 | Gesture-log session | bound to one document | a switch ends it and starts a new one (`EDIT-DOC-8`) |
@@ -87,8 +90,11 @@ setCurrentDocument(doc)
 
 - A `QModelIndex` belongs to one model: the tree and the scene of a background document are never
   linked, and `setRootIndex` follows every `setModel` of the tree.
-- The right column and the undo group are re-targeted before a document is deleted; the properties
-  widget keeps raw model, scene and element pointers.
+- The right docks and the undo group are re-targeted before a document is deleted; the properties
+  widget keeps raw model, scene and element pointers. A hidden dock is re-targeted all the same.
+- The dock toggle actions are unchecked by Qt whenever the docks hide, the main window's own hide
+  included: the shown/hidden choice is stored only from the menu entry and the dock's close
+  button, never from a visibility signal.
 - A hidden stacked page keeps a stale size: the saved viewport is applied to the active document
   only, re-armed by a zero-delay timer on activation and on the window show.
 - The scene fits the loaded diagram against its first view: a new tab is activated before its

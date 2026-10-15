@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.27 (2026-10-15)
+**Document version:** 0.28 (2026-10-15)
 
 **Related authorities:**
 
@@ -647,6 +647,12 @@ The interface translations and their workflow are in `docs/TRANSLATION.md`.
 - `EDIT-UI-5` MUST [A]: the preferences are stored per user under the name `CyberiadaPro`; the
   first start without them adopts once every preference stored under the pre-release name
   *Cyberiada State Machine Editor* and leaves that store unchanged. *design*
+- `EDIT-UI-6` MUST [A]: the structure tree and the properties panel are docks at the right of
+  the canvas (as the plugin dock: a title bar with the float and close buttons, movable), each
+  with a checkable View entry — *Structure tree*, *Properties* — both shown by default; closing a
+  dock unchecks its entry and the entry shows it again; the choice is kept per user between
+  sessions; a hidden tree or panel keeps following the active document and the canvas
+  selection, so showing it again needs no refresh. *design*
 
 ## 5. Coverage
 
