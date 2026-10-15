@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# The Cyberiada State Machine Editor
+# CyberiadaPro, the Cyberiada State Machine Editor
 # -----------------------------------------------------------------------------
 #
 # The test polygon: the standing universal law tests

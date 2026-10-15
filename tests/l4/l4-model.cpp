@@ -1,5 +1,5 @@
 /* -----------------------------------------------------------------------------
- * The Cyberiada State Machine Editor
+ * CyberiadaPro, the Cyberiada State Machine Editor
  * -----------------------------------------------------------------------------
  *
  * The in-process model contract test (see docs/TESTING.md, L4)

@@ -1,5 +1,5 @@
 /* -----------------------------------------------------------------------------
- * The Cyberiada State Machine Editor
+ * CyberiadaPro, the Cyberiada State Machine Editor
  * -----------------------------------------------------------------------------
  * 
  * The State Machine Editor View Implementation

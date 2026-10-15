@@ -1,5 +1,5 @@
 /* -----------------------------------------------------------------------------
- * The Cyberiada State Machine Editor
+ * CyberiadaPro, the Cyberiada State Machine Editor
  * -----------------------------------------------------------------------------
  *
  * The Plugin Registry: the search path, the scan and the interpreters

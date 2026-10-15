@@ -1,5 +1,5 @@
 /* -----------------------------------------------------------------------------
- * The Cyberiada State Machine Editor
+ * CyberiadaPro, the Cyberiada State Machine Editor
  * -----------------------------------------------------------------------------
  *
  * The scene rendering and image comparison for exports and the batch mode

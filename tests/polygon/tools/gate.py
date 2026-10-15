@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -----------------------------------------------------------------------------
-# The Cyberiada HSM Editor test polygon: the corpus adoption gate
+# CyberiadaPro test polygon: the corpus adoption gate
 #
 # Copyright (C) 2026 Alexey Fedoseev <aleksey@fedoseev.net>
 #

@@ -1,6 +1,6 @@
 #!/bin/sh
 # -----------------------------------------------------------------------------
-# Build, test and package the Cyberiada editor as a macOS .app/.dmg, natively,
+# Build, test and package CyberiadaPro as a macOS .app/.dmg, natively,
 # with Homebrew. Run it on the Mac:  ./packaging/build-macos.sh
 #
 # It walks the sibling repositories in dependency order, builds them against

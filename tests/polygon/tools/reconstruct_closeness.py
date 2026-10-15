@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -----------------------------------------------------------------------------
-# The Cyberiada State Machine Editor - polygon tools
+# CyberiadaPro - polygon tools
 #
 # The reconstruction closeness metric (see docs/RECONSTRUCT_CLOSENESS.md): how
 # close a reconstructed layout is to the original arrangement, scale/size free.

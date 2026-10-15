@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -----------------------------------------------------------------------------
-# The Cyberiada State Machine Editor - polygon tools
+# CyberiadaPro - polygon tools
 #
 # The HSM diagram complexity metric (see docs/COMPLEXITY.md).
 #

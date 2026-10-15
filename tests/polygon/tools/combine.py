@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -----------------------------------------------------------------------------
-# The Cyberiada State Machine Editor
+# CyberiadaPro, the Cyberiada State Machine Editor
 # -----------------------------------------------------------------------------
 #
 # The test polygon: the orchestrator-combination diagram generator

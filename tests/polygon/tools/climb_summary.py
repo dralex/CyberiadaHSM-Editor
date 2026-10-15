@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -----------------------------------------------------------------------------
-# The Cyberiada State Machine Editor - polygon tools
+# CyberiadaPro - polygon tools
 #
 # Summarise the complexity-climb sessions: per session the peak diagram
 # complexity C, the peak drawing complexity D, the density and the defects,
