@@ -27,6 +27,7 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QMessageBox>
+#include <QRegExp>
 #include <QToolBar>
 #include <QComboBox>
 #include <QMenu>
@@ -658,6 +659,12 @@ void CyberiadaSMEditorWindow::slotFileSave()
 void CyberiadaSMEditorWindow::slotFileSaveAs()
 {
     SaveFileDialog dlg(this, model()->rootDocument());
+    if (!current->hasFile() && !current->documentName().isEmpty()) {
+        // a named unsaved document proposes its name as the file (EDIT-DOC-10)
+        QString name = current->documentName();
+        name.replace(QRegExp("[/\\\\:]"), "_");
+        dlg.selectFile(name + ".graphml");
+    }
     if (dlg.exec() != QDialog::Accepted) { return; }
 
     QString fileName = dlg.selectedFile();

@@ -34,6 +34,9 @@ CyberiadaSMEditorDocument::CyberiadaSMEditorDocument(QObject* parent):
     m_scene = new CyberiadaSMEditorScene(m_model, this);
     m_view = new CyberiadaSMGraphicsView();
     m_view->setScene(m_scene);
+    connect(m_model, &QAbstractItemModel::dataChanged, this, &CyberiadaSMEditorDocument::refreshTitle);
+    connect(m_model, &QAbstractItemModel::modelReset, this, &CyberiadaSMEditorDocument::refreshTitle);
+    lastTitle = title();
 }
 
 // the view goes first (it paints the scene), the scene before the model
@@ -55,7 +58,7 @@ bool CyberiadaSMEditorDocument::load(const QString& path, QString* error,
         m_scene->loadScene();
     }
     pendingViewState = m_model->editorView();
-    emit titleChanged();
+    announceTitle();
     return true;
 }
 
@@ -87,7 +90,7 @@ bool CyberiadaSMEditorDocument::saveAs(const QString& path, Cyberiada::DocumentF
         if (error) *error = QString(e.str().c_str());
         return false;
     }
-    emit titleChanged();
+    announceTitle();
     return true;
 }
 
@@ -96,7 +99,7 @@ void CyberiadaSMEditorDocument::clear()
     m_model->reset();
     m_model->undoStack()->clear();
     pendingViewState.clear();
-    emit titleChanged();
+    announceTitle();
 }
 
 QString CyberiadaSMEditorDocument::filePath() const
@@ -106,7 +109,26 @@ QString CyberiadaSMEditorDocument::filePath() const
 
 QString CyberiadaSMEditorDocument::title() const
 {
-    return hasFile() ? QFileInfo(filePath()).fileName() : tr("untitled");
+    if (hasFile()) return QFileInfo(filePath()).fileName();
+    QString name = documentName();
+    return name.isEmpty() ? tr("untitled") : "[" + name + "]";
+}
+
+QString CyberiadaSMEditorDocument::documentName() const
+{
+    const Cyberiada::LocalDocument* root = m_model->rootDocument();
+    return root ? QString::fromStdString(root->get_name()) : QString();
+}
+
+void CyberiadaSMEditorDocument::announceTitle()
+{
+    lastTitle = title();
+    emit titleChanged();
+}
+
+void CyberiadaSMEditorDocument::refreshTitle()
+{
+    if (title() != lastTitle) announceTitle();
 }
 
 bool CyberiadaSMEditorDocument::isClean() const

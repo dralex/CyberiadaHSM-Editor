@@ -66,8 +66,10 @@ public:
     // the absolute file path, empty for an untitled document
     QString                  filePath() const;
     bool                     hasFile() const { return !filePath().isEmpty(); }
-    // "untitled" or the file basename (the window title and the tab text)
+    // the file basename, else "[document name]", else "untitled" (EDIT-DOC-10)
     QString                  title() const;
+    // the meta name of the document, empty without one
+    QString                  documentName() const;
     bool                     isClean() const;
     bool                     isUntitled() const { return !hasFile() && isClean(); }
 
@@ -85,7 +87,14 @@ public:
 signals:
     void                     titleChanged();
 
+private slots:
+    // the title of an unsaved document follows its name (a rename, an undo, a reset)
+    void                     refreshTitle();
+
 private:
+    void                     announceTitle();
+
+    QString                  lastTitle;
     CyberiadaSMModel*        m_model;
     CyberiadaSMEditorScene*  m_scene;
     CyberiadaSMGraphicsView* m_view;
