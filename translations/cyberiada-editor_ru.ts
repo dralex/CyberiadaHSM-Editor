@@ -36,7 +36,7 @@
 <context>
     <name>CyberiadaSMEditorDocument</name>
     <message>
-        <location filename="../cyberiadasm_editor_document.cpp" line="+109"/>
+        <location filename="../cyberiadasm_editor_document.cpp" line="+114"/>
         <source>untitled</source>
         <translation type="unfinished">без имени</translation>
     </message>
@@ -139,7 +139,7 @@
 <context>
     <name>CyberiadaSMEditorWindow</name>
     <message>
-        <location filename="../smeditor_window.cpp" line="+109"/>
+        <location filename="../smeditor_window.cpp" line="+110"/>
         <source>Output panel</source>
         <translation type="unfinished">Панель вывода</translation>
     </message>
@@ -253,13 +253,13 @@
     </message>
     <message>
         <location line="+12"/>
-        <location line="+18"/>
+        <location line="+24"/>
         <source>Save State Machine</source>
         <translation type="unfinished">Сохранение машины состояний</translation>
     </message>
     <message>
-        <location line="-17"/>
-        <location line="+18"/>
+        <location line="-23"/>
+        <location line="+24"/>
         <source>Cannot save the document:
 </source>
         <translation type="unfinished">Не удалось сохранить документ:
@@ -321,7 +321,7 @@
         <translation type="unfinished">не удалось сериализовать документ</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+83"/>
         <location line="+9"/>
         <source>the document is not saved</source>
         <translation type="unfinished">документ не сохранен</translation>
@@ -337,12 +337,13 @@
         <translation type="unfinished">у плагина «%1» нет действия «%2»</translation>
     </message>
     <message>
-        <location line="+98"/>
+        <location line="+100"/>
         <source>the document is closed</source>
         <translation type="unfinished">документ закрыт</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="-141"/>
+        <location line="+154"/>
         <source>Plugin: %1</source>
         <translation type="unfinished">Плагин: %1</translation>
     </message>
@@ -1224,7 +1225,22 @@
         <translation type="unfinished">Отменить</translation>
     </message>
     <message>
-        <location line="+36"/>
+        <location line="+12"/>
+        <source>%1 is set to %2</source>
+        <translation type="unfinished">%1: установлено значение %2</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>%1 is kept as %2; the plugin declares %3</source>
+        <translation type="unfinished">%1 оставлено как %2; плагин объявляет %3</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>%1 is not set: the document has no state machine or is read-only</source>
+        <translation type="unfinished">%1 не установлено: в документе нет машины состояний или он только для чтения</translation>
+    </message>
+    <message>
+        <location line="+32"/>
         <source>%1: running %2:%3</source>
         <translation type="unfinished">%1: выполняется %2:%3</translation>
     </message>
@@ -1274,7 +1290,7 @@
 <context>
     <name>PluginManagerDialog</name>
     <message>
-        <location filename="../dialogs/plugin_manager_dialog.cpp" line="+45"/>
+        <location filename="../dialogs/plugin_manager_dialog.cpp" line="+50"/>
         <source>Plugin Manager</source>
         <translation type="unfinished">Менеджер плагинов</translation>
     </message>
@@ -1307,7 +1323,7 @@
 <context>
     <name>PluginParameterDialog</name>
     <message>
-        <location filename="../dialogs/plugin_parameter_dialog.cpp" line="+161"/>
+        <location filename="../dialogs/plugin_parameter_dialog.cpp" line="+194"/>
         <source>env:NAME or file:PATH</source>
         <translation type="unfinished">env:ИМЯ или file:ПУТЬ</translation>
     </message>
@@ -1315,7 +1331,7 @@
 <context>
     <name>PluginRegistry</name>
     <message>
-        <location filename="../plugin_registry.cpp" line="+51"/>
+        <location filename="../plugin_registry.cpp" line="+52"/>
         <source>enabled</source>
         <comment>plugin status</comment>
         <translation type="unfinished">включен</translation>
@@ -1339,12 +1355,12 @@
         <translation type="unfinished">отклонен</translation>
     </message>
     <message>
-        <location line="+110"/>
+        <location line="+117"/>
         <source>cannot read %1</source>
         <translation type="unfinished">не удается прочитать %1</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+9"/>
         <source>shadowed by %1</source>
         <translation type="unfinished">перекрыт плагином из папки «%1»</translation>
     </message>
@@ -1418,7 +1434,7 @@
         <translation type="unfinished">программа «%1» не найдена</translation>
     </message>
     <message>
-        <location line="+20"/>
+        <location line="+22"/>
         <source>the secret &apos;%1&apos; is not set: the variable %2 is absent</source>
         <translation type="unfinished">секрет «%1» не задан: переменная %2 отсутствует</translation>
     </message>
@@ -1438,7 +1454,7 @@
         <translation type="unfinished">выходная папка «%1» не существует</translation>
     </message>
     <message>
-        <location line="+58"/>
+        <location line="+59"/>
         <source>the plugin has no action &apos;%1&apos;</source>
         <translation type="unfinished">у плагина нет действия «%1»</translation>
     </message>
@@ -1458,7 +1474,7 @@
         <translation type="unfinished">документ не сохранен</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+24"/>
         <source>cannot write a parameter file</source>
         <translation type="unfinished">не удается записать файл параметра</translation>
     </message>
@@ -1539,7 +1555,7 @@
 <context>
     <name>PluginValues</name>
     <message>
-        <location filename="../plugin_values.cpp" line="+94"/>
+        <location filename="../plugin_values.cpp" line="+97"/>
         <source>the value &apos;%1&apos; does not fit the %2 parameter &apos;%3&apos;</source>
         <translation type="unfinished">значение «%1» не подходит для параметра «%3» типа %2</translation>
     </message>
