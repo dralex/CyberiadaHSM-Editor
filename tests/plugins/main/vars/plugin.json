@@ -37,6 +37,12 @@
       "type": "double",
       "label": "Ratio",
       "default": 0.5
+    },
+    {
+      "id": "lang",
+      "type": "string",
+      "label": "Language",
+      "default": "${language}"
     }
   ],
   "actions": [
@@ -100,6 +106,24 @@
         "${plugin_dir}/../../bin/plugin-helper",
         "args",
         "${nope}"
+      ]
+    },
+    {
+      "id": "language",
+      "label": "Language",
+      "result": "log",
+      "parameters": [
+        "lang"
+      ],
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "args",
+        "${language}",
+        "${param:lang}",
+        "--",
+        "env",
+        "CYBERIADA_EDITOR_LANGUAGE",
+        "en"
       ]
     }
   ]

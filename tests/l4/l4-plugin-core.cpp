@@ -52,6 +52,7 @@ private slots:
     void test_run_dir();
     void test_output_decoding();
     void test_selected_ids_order();
+    void test_translation();
 
 private:
     // a plugin entry running the helper with the operations of one log action
@@ -420,6 +421,52 @@ void TestPluginCore::test_selected_ids_order()
     scene.getMap().value("node-0-1")->setSelected(true);
     scene.getMap().value("node-0-0-2")->setSelected(true);
     QCOMPARE(scene.selectedIds(), QStringList() << "node-0-0-2" << "node-0-1");
+}
+
+// the texts from i18n/<lang>.json, the values kept, the language in defaults (EDIT-UI-4/PLUG-33)
+void TestPluginCore::test_translation()
+{
+    QTemporaryDir dir;
+    QVERIFY(QDir(dir.path()).mkdir("i18n"));
+    QFile ru(dir.filePath("i18n/ru.json"));
+    QVERIFY(ru.open(QIODevice::WriteOnly));
+    ru.write(u8"{\"Plugin\": \"Плагин\", \"Go\": \"Пуск\", \"Mode\": \"Режим\", \"fast\": \"быстро\", "
+             u8"\"Lang\": 1}");
+    ru.close();
+    QFile de(dir.filePath("i18n/de.json"));
+    QVERIFY(de.open(QIODevice::WriteOnly));
+    de.write("[1, 2]");
+    de.close();
+    QString error;
+    PluginDescriptor d;
+    QVERIFY(PluginDescriptor::parse(R"({"api": 1, "id": "p", "name": "Plugin",
+        "parameters": [{"id": "mode", "type": "enum", "label": "Mode", "choices": ["fast", "slow"]},
+                       {"id": "lang", "type": "string", "label": "Lang", "default": "${language}"}],
+        "actions": [{"id": "go", "label": "Go", "description": "Goes", "result": "log", "argv": ["run"]}]})",
+        dir.path(), &d, &error));
+    PluginDescriptor english = d;
+    d.translate("ru");
+    QCOMPARE(d.name, QString::fromUtf8("Плагин"));
+    QCOMPARE(d.actions.first().label, QString::fromUtf8("Пуск"));
+    // no translation, or a non-string one: the source text stays
+    QCOMPARE(d.actions.first().description, QString("Goes"));
+    QCOMPARE(d.parameter("lang")->label, QString("Lang"));
+    QCOMPARE(d.parameter("mode")->choiceLabels, QStringList() << QString::fromUtf8("быстро") << "slow");
+    QCOMPARE(d.parameter("mode")->choices, QStringList() << "fast" << "slow");
+    QVERIFY(d.warnings.isEmpty());
+    // no file for the language: nothing changes; a broken one is a warning
+    PluginDescriptor french = english;
+    french.translate("fr");
+    QCOMPARE(french.name, QString("Plugin"));
+    PluginDescriptor german = english;
+    german.translate("de");
+    QCOMPARE(german.name, QString("Plugin"));
+    QCOMPARE(german.warnings.size(), 1);
+
+    PluginRegistry::instance().setLanguage("ru");
+    QCOMPARE(pluginDefaultValue(*english.parameter("lang"), PluginDocumentPaths()), QString("ru"));
+    PluginRegistry::instance().setLanguage(QString());
+    QCOMPARE(pluginDefaultValue(*english.parameter("lang"), PluginDocumentPaths()), QString("en"));
 }
 
 QTEST_MAIN(TestPluginCore)

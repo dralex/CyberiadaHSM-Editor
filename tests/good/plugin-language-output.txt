@@ -1,0 +1,11 @@
+== plugin
+action: vars:language
+result: log
+state: done
+exit: 0
+stdout:
+  arg1: en
+  arg2: en
+  CYBERIADA_EDITOR_LANGUAGE: ok
+== diagnostics
+count: 0

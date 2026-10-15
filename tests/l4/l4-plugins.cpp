@@ -77,6 +77,7 @@ private slots:
     void test_untitled_save_cancel();
     void test_session_log();
     void test_window_grab();
+    void test_translated_texts();
 };
 
 static QString documentDump(CyberiadaSMModel* model)
@@ -553,6 +554,43 @@ void TestPlugins::test_window_grab()
     QVERIFY(QTest::qWaitForWindowExposed(&win));
     QTest::qWait(100);
     QVERIFY(win.grab().save(PLUGIN_TEST_DIR "/../plugins-window.png"));
+}
+
+// the plugin texts follow the language, the values and the run get it (EDIT-UI-4/PLUG-33)
+void TestPlugins::test_translated_texts()
+{
+    PluginRegistry::instance().setLanguage("ru");
+    CyberiadaSMEditorWindow win;
+    QAction* all = win.pluginsMenu()->action("vars", "all");
+    QVERIFY(all);
+    QCOMPARE(all->text(), QString::fromUtf8("Все"));
+    bool titled = false;
+    for (QAction* a: win.pluginsMenu()->menu()->actions()) {
+        if (a->menu() && a->text() == QString::fromUtf8("Переменные")) titled = true;
+    }
+    QVERIFY(titled);
+    // an untranslated text stays as written
+    QCOMPARE(win.pluginsMenu()->action("echo", "say")->text(), QString("Say"));
+
+    const PluginEntry* vars = PluginRegistry::instance().find("vars");
+    QList<const PluginParameter*> params = vars->descriptor.actionParameters(*vars->descriptor.action("all"));
+    PluginValues values = pluginDefaultValues(vars->descriptor, *vars->descriptor.action("all"),
+                                              PluginDocumentPaths());
+    PluginParameterDialog dlg("vars", params, values, "Run");
+    QComboBox* mode = qobject_cast<QComboBox*>(dlg.editor("mode"));
+    QVERIFY(mode);
+    QCOMPARE(mode->itemText(0), QString::fromUtf8("быстро"));
+    mode->setCurrentIndex(1);
+    QCOMPARE(dlg.values().value("mode"), QString("slow"));
+
+    // the run and a ${language} default get the language
+    const PluginAction& language = *vars->descriptor.action("language");
+    PluginResult r = win.runPluginAndWait("vars", "language",
+        pluginDefaultValues(vars->descriptor, language, PluginDocumentPaths()));
+    QCOMPARE(r.state, PluginResult::stateDone);
+    QVERIFY2(r.stdoutText.contains("arg1: ru\narg2: ru"), qPrintable(r.stdoutText));
+    PluginRegistry::instance().setLanguage(QString());
+    PluginRegistry::instance().scan();
 }
 
 QTEST_MAIN(TestPlugins)
