@@ -9,13 +9,13 @@
         <location line="+25"/>
         <source>True</source>
         <translatorcomment>a boolean property value</translatorcomment>
-        <translation type="unfinished">Да</translation>
+        <translation>Да</translation>
     </message>
     <message>
         <location line="-25"/>
         <location line="+25"/>
         <source>False</source>
-        <translation type="unfinished">Нет</translation>
+        <translation>Нет</translation>
     </message>
 </context>
 <context>
@@ -24,12 +24,12 @@
         <location filename="../../QtPropertyBrowser/src/qtpropertymanager.cpp" line="+1499"/>
         <source>True</source>
         <translatorcomment>a boolean property value</translatorcomment>
-        <translation type="unfinished">Да</translation>
+        <translation>Да</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>False</source>
-        <translation type="unfinished">Нет</translation>
+        <translation>Нет</translation>
     </message>
 </context>
 <context>
@@ -37,7 +37,7 @@
     <message>
         <location filename="../../QtPropertyBrowser/src/qteditorfactory.cpp" line="+1577"/>
         <source>Clear Char</source>
-        <translation type="unfinished">Очистить символ</translation>
+        <translation>Очистить символ</translation>
     </message>
 </context>
 <context>
@@ -45,7 +45,7 @@
     <message>
         <location line="+605"/>
         <source>...</source>
-        <translation type="unfinished">...</translation>
+        <translation>...</translation>
     </message>
 </context>
 <context>
@@ -53,22 +53,22 @@
     <message>
         <location filename="../../QtPropertyBrowser/src/qtpropertymanager.cpp" line="+4726"/>
         <source>Red</source>
-        <translation type="unfinished">Красный</translation>
+        <translation>Красный</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>Green</source>
-        <translation type="unfinished">Зеленый</translation>
+        <translation>Зеленый</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>Blue</source>
-        <translation type="unfinished">Синий</translation>
+        <translation>Синий</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>Alpha</source>
-        <translation type="unfinished">Альфа</translation>
+        <translation>Альфа-канал</translation>
     </message>
 </context>
 <context>
@@ -76,97 +76,97 @@
     <message>
         <location filename="../../QtPropertyBrowser/src/qtpropertybrowserutils.cpp" line="-230"/>
         <source>Arrow</source>
-        <translation type="unfinished">Стрелка</translation>
+        <translation>Стрелка</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Up Arrow</source>
-        <translation type="unfinished">Стрелка вверх</translation>
+        <translation>Стрелка вверх</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Cross</source>
-        <translation type="unfinished">Перекрестие</translation>
+        <translation>Перекрестие</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Wait</source>
-        <translation type="unfinished">Ожидание</translation>
+        <translation>Ожидание</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>IBeam</source>
-        <translation type="unfinished">Текстовый курсор</translation>
+        <translation>Текстовый курсор</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Size Vertical</source>
-        <translation type="unfinished">Размер по вертикали</translation>
+        <translation>Размер по вертикали</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Size Horizontal</source>
-        <translation type="unfinished">Размер по горизонтали</translation>
+        <translation>Размер по горизонтали</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Size Backslash</source>
-        <translation type="unfinished">Размер по обратной диагонали</translation>
+        <translation>Размер по обратной диагонали</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Size Slash</source>
-        <translation type="unfinished">Размер по диагонали</translation>
+        <translation>Размер по диагонали</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Size All</source>
-        <translation type="unfinished">Размер во все стороны</translation>
+        <translation>Размер во все стороны</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Blank</source>
-        <translation type="unfinished">Пустой</translation>
+        <translation>Пустой</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Split Vertical</source>
-        <translation type="unfinished">Разделение по вертикали</translation>
+        <translation>Разделение по вертикали</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Split Horizontal</source>
-        <translation type="unfinished">Разделение по горизонтали</translation>
+        <translation>Разделение по горизонтали</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Pointing Hand</source>
-        <translation type="unfinished">Указывающая рука</translation>
+        <translation>Указывающая рука</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Forbidden</source>
-        <translation type="unfinished">Запрещено</translation>
+        <translation>Запрещено</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Open Hand</source>
-        <translation type="unfinished">Открытая рука</translation>
+        <translation>Открытая рука</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Closed Hand</source>
-        <translation type="unfinished">Сжатая рука</translation>
+        <translation>Сжатая рука</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>What&apos;s This</source>
-        <translation type="unfinished">Что это?</translation>
+        <translation>Что это</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Busy</source>
-        <translation type="unfinished">Занято</translation>
+        <translation>Занято</translation>
     </message>
 </context>
 <context>
@@ -174,12 +174,12 @@
     <message>
         <location filename="../../QtPropertyBrowser/src/qteditorfactory.cpp" line="+198"/>
         <source>...</source>
-        <translation type="unfinished">...</translation>
+        <translation>...</translation>
     </message>
     <message>
         <location line="+20"/>
         <source>Select Font</source>
-        <translation type="unfinished">Выбор шрифта</translation>
+        <translation>Выбор шрифта</translation>
     </message>
 </context>
 <context>
@@ -187,37 +187,37 @@
     <message>
         <location filename="../../QtPropertyBrowser/src/qtpropertymanager.cpp" line="-351"/>
         <source>Family</source>
-        <translation type="unfinished">Гарнитура</translation>
+        <translation>Гарнитура</translation>
     </message>
     <message>
         <location line="+13"/>
         <source>Point Size</source>
-        <translation type="unfinished">Размер в пунктах</translation>
+        <translation>Размер</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>Bold</source>
-        <translation type="unfinished">Полужирный</translation>
+        <translation>Полужирный</translation>
     </message>
     <message>
         <location line="+7"/>
         <source>Italic</source>
-        <translation type="unfinished">Курсив</translation>
+        <translation>Курсив</translation>
     </message>
     <message>
         <location line="+7"/>
         <source>Underline</source>
-        <translation type="unfinished">Подчеркнутый</translation>
+        <translation>Подчеркнутый</translation>
     </message>
     <message>
         <location line="+7"/>
         <source>Strikeout</source>
-        <translation type="unfinished">Зачеркнутый</translation>
+        <translation>Зачеркнутый</translation>
     </message>
     <message>
         <location line="+7"/>
         <source>Kerning</source>
-        <translation type="unfinished">Кернинг</translation>
+        <translation>Кернинг</translation>
     </message>
 </context>
 <context>
@@ -225,22 +225,22 @@
     <message>
         <location line="-3546"/>
         <source>&lt;Invalid&gt;</source>
-        <translation type="unfinished">&lt;Недопустимо&gt;</translation>
+        <translation>&lt;Недопустимо&gt;</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>%1, %2</source>
-        <translation type="unfinished">%1, %2</translation>
+        <translation>%1, %2</translation>
     </message>
     <message>
         <location line="+50"/>
         <source>Language</source>
-        <translation type="unfinished">Язык</translation>
+        <translation>Язык</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>Country</source>
-        <translation type="unfinished">Страна</translation>
+        <translation>Страна</translation>
     </message>
 </context>
 <context>
@@ -248,17 +248,17 @@
     <message>
         <location line="+411"/>
         <source>(%1, %2)</source>
-        <translation type="unfinished">(%1; %2)</translation>
+        <translation>(%1; %2)</translation>
     </message>
     <message>
         <location line="+71"/>
         <source>X</source>
-        <translation type="unfinished">X</translation>
+        <translation>X</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>Y</source>
-        <translation type="unfinished">Y</translation>
+        <translation>Y</translation>
     </message>
 </context>
 <context>
@@ -266,17 +266,17 @@
     <message>
         <location line="-320"/>
         <source>(%1, %2)</source>
-        <translation type="unfinished">(%1; %2)</translation>
+        <translation>(%1; %2)</translation>
     </message>
     <message>
         <location line="+37"/>
         <source>X</source>
-        <translation type="unfinished">X</translation>
+        <translation>X</translation>
     </message>
     <message>
         <location line="+7"/>
         <source>Y</source>
-        <translation type="unfinished">Y</translation>
+        <translation>Y</translation>
     </message>
 </context>
 <context>
@@ -284,12 +284,12 @@
     <message>
         <location filename="../../QtPropertyBrowser/src/qtpropertybrowserutils.cpp" line="+93"/>
         <source>[%1, %2, %3] (%4)</source>
-        <translation type="unfinished">[%1, %2, %3] (%4)</translation>
+        <translation>[%1, %2, %3] (%4)</translation>
     </message>
     <message>
         <location line="+27"/>
         <source>[%1, %2]</source>
-        <translation type="unfinished">[%1, %2]</translation>
+        <translation>[%1, %2]</translation>
     </message>
 </context>
 <context>
@@ -297,27 +297,27 @@
     <message>
         <location filename="../../QtPropertyBrowser/src/qtpropertymanager.cpp" line="+1706"/>
         <source>[(%1, %2), %3 x %4]</source>
-        <translation type="unfinished">[(%1; %2), %3 x %4]</translation>
+        <translation>[(%1; %2), %3 x %4]</translation>
     </message>
     <message>
         <location line="+156"/>
         <source>X</source>
-        <translation type="unfinished">X</translation>
+        <translation>X</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>Y</source>
-        <translation type="unfinished">Y</translation>
+        <translation>Y</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>Width</source>
-        <translation type="unfinished">Ширина</translation>
+        <translation>Ширина</translation>
     </message>
     <message>
         <location line="+9"/>
         <source>Height</source>
-        <translation type="unfinished">Высота</translation>
+        <translation>Высота</translation>
     </message>
 </context>
 <context>
@@ -325,27 +325,27 @@
     <message>
         <location line="-612"/>
         <source>[(%1, %2), %3 x %4]</source>
-        <translation type="unfinished">[(%1; %2), %3 x %4]</translation>
+        <translation>[(%1; %2), %3 x %4]</translation>
     </message>
     <message>
         <location line="+120"/>
         <source>X</source>
-        <translation type="unfinished">X</translation>
+        <translation>X</translation>
     </message>
     <message>
         <location line="+7"/>
         <source>Y</source>
-        <translation type="unfinished">Y</translation>
+        <translation>Y</translation>
     </message>
     <message>
         <location line="+7"/>
         <source>Width</source>
-        <translation type="unfinished">Ширина</translation>
+        <translation>Ширина</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>Height</source>
-        <translation type="unfinished">Высота</translation>
+        <translation>Высота</translation>
     </message>
 </context>
 <context>
@@ -353,17 +353,17 @@
     <message>
         <location line="-535"/>
         <source>%1 x %2</source>
-        <translation type="unfinished">%1 x %2</translation>
+        <translation>%1 x %2</translation>
     </message>
     <message>
         <location line="+130"/>
         <source>Width</source>
-        <translation type="unfinished">Ширина</translation>
+        <translation>Ширина</translation>
     </message>
     <message>
         <location line="+9"/>
         <source>Height</source>
-        <translation type="unfinished">Высота</translation>
+        <translation>Высота</translation>
     </message>
 </context>
 <context>
@@ -372,32 +372,32 @@
         <location line="+1709"/>
         <location line="+1"/>
         <source>&lt;Invalid&gt;</source>
-        <translation type="unfinished">&lt;Недопустимо&gt;</translation>
+        <translation>&lt;Недопустимо&gt;</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>[%1, %2, %3, %4]</source>
-        <translation type="unfinished">[%1, %2, %3, %4]</translation>
+        <translation>[%1, %2, %3, %4]</translation>
     </message>
     <message>
         <location line="+45"/>
         <source>Horizontal Policy</source>
-        <translation type="unfinished">Горизонтальная политика</translation>
+        <translation>Политика горизонтального размера</translation>
     </message>
     <message>
         <location line="+9"/>
         <source>Vertical Policy</source>
-        <translation type="unfinished">Вертикальная политика</translation>
+        <translation>Политика вертикального размера</translation>
     </message>
     <message>
         <location line="+9"/>
         <source>Horizontal Stretch</source>
-        <translation type="unfinished">Растяжение по горизонтали</translation>
+        <translation>Растяжение по горизонтали</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>Vertical Stretch</source>
-        <translation type="unfinished">Растяжение по вертикали</translation>
+        <translation>Растяжение по вертикали</translation>
     </message>
 </context>
 <context>
@@ -405,17 +405,17 @@
     <message>
         <location line="-2286"/>
         <source>%1 x %2</source>
-        <translation type="unfinished">%1 x %2</translation>
+        <translation>%1 x %2</translation>
     </message>
     <message>
         <location line="+96"/>
         <source>Width</source>
-        <translation type="unfinished">Ширина</translation>
+        <translation>Ширина</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>Height</source>
-        <translation type="unfinished">Высота</translation>
+        <translation>Высота</translation>
     </message>
 </context>
 <context>
@@ -423,12 +423,12 @@
     <message>
         <location filename="../../QtPropertyBrowser/src/qttreepropertybrowser.cpp" line="+434"/>
         <source>Property</source>
-        <translation type="unfinished">Свойство</translation>
+        <translation>Свойство</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Value</source>
-        <translation type="unfinished">Значение</translation>
+        <translation>Значение</translation>
     </message>
 </context>
 </TS>
