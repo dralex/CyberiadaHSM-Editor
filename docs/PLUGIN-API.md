@@ -3,8 +3,8 @@
 **Document version:** 0.4 (2026-10-15), plugin contract `api` 1. In Russian:
 `PLUGIN-API-ru.md`.
 
-This is the brief for a plugin author. A plugin gives the Cyberiada HSM Editor a new
-action — check a diagram, generate code, compile, draw — without changing the editor. The
+This is the brief for a plugin author. A plugin gives CyberiadaPro, the Cyberiada HSM editor, a
+new action — check a diagram, generate code, compile, draw — without changing the editor. The
 plugin is usually written and packaged by the authors of the tool it runs, in the tool's
 own repository; anyone may also package a plugin for a tool they do not own, or put one
 into their user plugin folder. How the editor works inside is in `PLUGINS.md`.
@@ -173,7 +173,7 @@ a program relative to the plugin directory, or found in `PATH`; on Windows a pro
 without a suffix also matches `<name>.exe`, and a `.bat` or `.cmd` file cannot be one.
 There is no shell: each list element is one argument, quoting is never needed, and a
 substituted value is never expanded again. stdin is the null device. The environment is
-the editor's, plus `env`, plus the exported secrets, plus `CYBERIADA_EDITOR_LANGUAGE`: the
+the editor's, plus `env`, plus the exported secrets, plus `CYBERIADA_PRO_LANGUAGE`: the
 interface language.
 
 An argv element may be conditional: `{"if": "<param>", "argv": [...]}` adds its strings
@@ -359,7 +359,7 @@ hsm-to-python/
   ignored, and a file that is not a JSON object is listed as a warning.
 * The batch mode is English and reads no translation.
 * Your own messages may follow the same language: a run gets it as `${language}`, as
-  `CYBERIADA_EDITOR_LANGUAGE` and as `language` in `request.json`.
+  `CYBERIADA_PRO_LANGUAGE` and as `language` in `request.json`.
 
 ## Metainformation
 
@@ -390,7 +390,7 @@ An action may declare the metainformation it works with:
 * A timeout or Cancel terminates the process (SIGTERM on Unix) and kills it 3 seconds
   later; on Windows expect the kill. Only your process is stopped: stop the processes
   you started yourself, such as a local server.
-* `CYBERIADA_EDITOR_PLUGIN_KEEP=1` in the editor's environment keeps the run directories
+* `CYBERIADA_PRO_PLUGIN_KEEP=1` in the editor's environment keeps the run directories
   for debugging.
 
 ## Testing a plugin
@@ -400,10 +400,10 @@ defaults and the `--plugin-param` options.
 
 ```
 # in the tool repository: the folder . holds editor-plugin/plugin.json
-CyberiadaEditor --batch --plugin-path . --list-plugins
-CyberiadaEditor --batch light.graphml --plugin-path . \
+CyberiadaPro --batch --plugin-path . --list-plugins
+CyberiadaPro --batch light.graphml --plugin-path . \
     --run-plugin hsm-ros2:generate --plugin-param dir=/tmp/ros --dump
-CyberiadaEditor --batch --plugin-path . --run-plugin hsm-maker:draw \
+CyberiadaPro --batch --plugin-path . --run-plugin hsm-maker:draw \
     --plugin-param prompt=@light.txt --plugin-param key=env:DEEPSEEK_API_KEY \
     --save light.graphml
 ```
@@ -431,16 +431,17 @@ Install the plugin directory as is, `i18n/` included:
 
 | System | Folder |
 |---|---|
-| Linux, system | `<prefix>/share/cyberiada-editor/plugins/<id>/` — the editor's prefix, `/usr` for the Debian package |
-| Linux, user | `~/.local/share/Cyberiada/Cyberiada State Machine Editor/plugins/<id>/` |
-| Windows, the editor zip | `<editor folder>\share\cyberiada-editor\plugins\<id>\` |
-| Windows, user | `%APPDATA%\Cyberiada\Cyberiada State Machine Editor\plugins\<id>\` |
-| macOS, the bundle | `CyberiadaEditor.app/Contents/share/cyberiada-editor/plugins/<id>/` |
+| Linux, system | `<prefix>/share/cyberiada-pro/plugins/<id>/` — the editor's prefix, `/usr` for the Debian package |
+| Linux, user | `~/.local/share/Cyberiada/CyberiadaPro/plugins/<id>/` |
+| Windows, the editor zip | `<editor folder>\share\cyberiada-pro\plugins\<id>\` |
+| Windows, user | `%APPDATA%\Cyberiada\CyberiadaPro\plugins\<id>\` |
+| macOS, user | `~/Library/Application Support/Cyberiada/CyberiadaPro/plugins/<id>/` |
+| macOS, the bundle | `CyberiadaPro.app/Contents/share/cyberiada-pro/plugins/<id>/` |
 
 * Keep the directory in the tool repository as `editor-plugin/` and install it from the
   tool's package, or from a small separate package (`<tool>-editor-plugin`) when the tool
   should not know about the editor.
-* A Debian package declares `Enhances: cyberiada-editor` and depends on what the plugin
+* A Debian package declares `Enhances: cyberiada-pro` and depends on what the plugin
   runs (`python3`, the tool).
 * A user plugin overrides a system plugin with the same `id`.
 * An upgrade replaces the directory. The stored values survive while the parameter ids

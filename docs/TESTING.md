@@ -17,7 +17,7 @@ to the requirement it holds.
   run-tests.sh  /  ctest
     |   per test: diagram .graphml [+ command script] + good files
     v
-  CyberiadaEditor --batch <file>   (QT_QPA_PLATFORM=offscreen)
+  CyberiadaPro --batch <file>   (QT_QPA_PLATFORM=offscreen)
   +------------------------------------------------------+
   | full application: window + tab line + documents      |
   | batch driver instead of app.exec():                  |
@@ -259,7 +259,7 @@ first.
 
 ## Batch mode contract
 
-`CyberiadaEditor --batch <file.graphml>` opens the document through the same
+`CyberiadaPro --batch <file.graphml>` opens the document through the same
 code path as the GUI (minus the dialogs) and exits. No dialog is ever shown in
 batch mode; all diagnostics go to stderr. The window is the tabbed one of the
 GUI: the file is its first tab, the document verbs (`open`, `new-document`,
@@ -451,7 +451,7 @@ plain C++ with no dependencies) whose arguments are a list of operations, so the
 cases need no interpreter. CMake copies the sets into the build tree next to the
 helper; the descriptors call it as `${plugin_dir}/../../bin/plugin-helper`. The
 settings are isolated (`XDG_CONFIG_HOME`, `XDG_DATA_HOME`) and
-`CYBERIADA_EDITOR_PLUGIN_PATH` is empty, so only `--plugin-path` folders are seen. The
+`CYBERIADA_PRO_PLUGIN_PATH` is empty, so only `--plugin-path` folders are seen. The
 cases compare the dump with `good/plugin-<case>-output.txt` and the saved document
 with `good/plugin-<case>-output.graphml`; a case that must not leak a secret checks
 that the output does not contain it.
@@ -653,7 +653,7 @@ model verbs (`new-sm`, `new-state`, `move`, `rename`, `reparent`, `delete`,
 `label`, `new-action`, `undo`/`redo`, ...). A model edit driven by a mouse
 gesture is suppressed while the gesture is in flight and recorded once as the
 gesture, so a replayed session never applies it twice. To replay a folder:
-`CyberiadaEditor --batch --script <dir>/session.script <dir>/start.graphml`
+`CyberiadaPro --batch --script <dir>/session.script <dir>/start.graphml`
 (drop the file for a from-scratch session).
 
 A plugin run is not a script verb: the log writes it as the comment

@@ -58,7 +58,7 @@ Both levels use the same descriptor; level 2 adds a `session` block (see the end
 +--------------------------------------+         +--------------------------------------+
 | 1  --plugin-path DIR ...             |         | for every <dir>/<name>/plugin.json:  |
 |    (replaces 2..4; tests, batch)     |  dirs   |   parse and check the fields         |
-| 2  $CYBERIADA_EDITOR_PLUGIN_PATH     | ------> |   "api" major supported?             |
+| 2  $CYBERIADA_PRO_PLUGIN_PATH        | ------> |   "api" major supported?             |
 | 3  the user plugin folder            |         |   id seen earlier on the path? skip  |
 | 4  the system plugin folder          |         |   interpreter found? else disabled   |
 +--------------------------------------+         +--------------------------------------+
@@ -74,12 +74,12 @@ Both levels use the same descriptor; level 2 adds a `session` block (see the end
 ```
 
 The user folder is `QStandardPaths::writableLocation(AppDataLocation)/plugins`; the
-system folder is `share/cyberiada-editor/plugins` one level above the executable (a
+system folder is `share/cyberiada-pro/plugins` one level above the executable (a
 Debian install) or next to it (the Windows zip). The exact paths are in `PLUGIN-API.md`.
 A user plugin overrides a system plugin with the same id; the manager lists the shadowed
 one. The scan runs at start and on Rescan in the plugin manager; it also reads the
 plugin's `i18n/<lang>.json` of the interface language and translates the plugin texts
-(`EDIT-UI-4`). A run gets the language as `${language}`, `CYBERIADA_EDITOR_LANGUAGE` and
+(`EDIT-UI-4`). A run gets the language as `${language}`, `CYBERIADA_PRO_LANGUAGE` and
 `language` in `request.json` — `en` in the batch mode (`EDIT-PLUG-33`).
 
 ## The interface
@@ -181,7 +181,7 @@ plugin's `i18n/<lang>.json` of the interface language and translates the plugin 
 ```
 
 * The run dir is a fresh `QTemporaryDir`, removed after the run unless
-  `CYBERIADA_EDITOR_PLUGIN_KEEP=1`. `input.graphml` is the model snapshot (Cyberiada 1.0,
+  `CYBERIADA_PRO_PLUGIN_KEEP=1`. `input.graphml` is the model snapshot (Cyberiada 1.0,
   unsaved edits included) — never the file on disk; an empty document gives an empty file.
 * An action's declared `meta` fills the keys the document lacks first, as one undo step; a
   present different value is kept and noted (`EDIT-PLUG-34`).
@@ -338,7 +338,7 @@ left for the level 2 design.
 * Conditional argv elements `{"if": "<param>", "argv": [...]}` are a part of `api` 1.
 * A `files` action names its `outdir` parameter; the files are written in place and listed
   by comparing the paths, sizes and times before and after the run.
-* The system folder of a macOS bundle is `Contents/share/cyberiada-editor/plugins`.
+* The system folder of a macOS bundle is `Contents/share/cyberiada-pro/plugins`.
 
 Deferred: a `network` flag with a first-run notice, a `${sm}` variable
 for documents with several state machines, plugin shortcuts, element context-menu actions,

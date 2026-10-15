@@ -1,4 +1,4 @@
-# The Cyberiada HSM Editor — Behavioural Specification
+# CyberiadaPro, the Cyberiada HSM Editor — Behavioural Specification
 
 **Overview:** The document contains the requirements for the possible/required
 editor behaviour. This document is used as the root specification for the test systems

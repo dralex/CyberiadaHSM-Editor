@@ -1,4 +1,4 @@
-# The Cyberiada Hierarchical State Machines Editor
+# CyberiadaPro — the Cyberiada Hierarchical State Machines Editor
 
 ![The Cyberiada Logo](images/logo.png)
 
@@ -18,9 +18,9 @@ comments is highlighted by the `platformLanguage` of the document (C, C++, C#,
 Java, JavaScript, Python; the rules are in `syntax/`), chosen in Edit > Language.
 The informal comments in Markdown are highlighted as well (Edit > Markup).
 
-![The Cyberiada HSM Editor. Sample 1](images/gui-sample-1.jpg)
+![CyberiadaPro. Sample 1](images/gui-sample-1.jpg)
 
-![The Cyberiada HSM Editor. Sample 2](images/gui-sample-2.jpg)
+![CyberiadaPro. Sample 2](images/gui-sample-2.jpg)
 
 ## Installation
 

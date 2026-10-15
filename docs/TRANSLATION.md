@@ -11,7 +11,7 @@ the developers who add strings. The requirements are `EDIT-UI-1..4` in `EDITOR-S
  *.cpp *.h *.ui ───────────── lupdate ──┐   cmake --build build --target translations-update
  QtPropertyBrowser/src ────── lupdate ──┤   (-DQTPROPERTYBROWSER_SOURCE_DIR=...)
                                         ▼
-            translations/cyberiada-editor_<lang>.ts      the editor strings
+            translations/cyberiada-pro_<lang>.ts         the editor strings
             translations/qtpropertybrowser_<lang>.ts     the property panel labels
                                         │   Qt Linguist: translate, review, mark done
                                         ▼   every build: lrelease
@@ -32,7 +32,7 @@ Qt's own strings (the standard buttons, the colour and font dialogs) come from
 
 1. `cmake --build build --target translations-update` — refresh the `.ts` files from the
    sources (new strings appear unfinished, removed ones become obsolete);
-2. translate and review in Qt Linguist (`linguist translations/cyberiada-editor_ru.ts`);
+2. translate and review in Qt Linguist (`linguist translations/cyberiada-pro_ru.ts`);
    a reviewed entry is marked *done* (`Ctrl+Return`);
 3. build — `lrelease` compiles the `.ts` into the resources; unfinished entries are
    included too, so a draft shows in the editor before its review.

@@ -3,8 +3,8 @@
 **Версия документа:** 0.4 (2026-10-15), контракт плагинов `api` 1. Оригинал на английском
 языке: `PLUGIN-API.md`.
 
-Документ предназначен для авторов плагинов. Плагин добавляет редактору Cyberiada HSM
-Editor новое действие — проверить диаграмму, сгенерировать код, скомпилировать,
+Документ предназначен для авторов плагинов. Плагин добавляет редактору
+CyberiadaPro новое действие — проверить диаграмму, сгенерировать код, скомпилировать,
 нарисовать — без изменения самого редактора. Обычно плагин пишут и упаковывают авторы
 инструмента, который он запускает, в репозитории этого инструмента; кроме того, любой
 может упаковать плагин для чужого инструмента или положить плагин в свою пользовательскую
@@ -176,7 +176,7 @@ print(os.path.getsize(sys.argv[1]), 'bytes')
 может. Оболочки (shell) нет: каждый элемент списка — один аргумент, кавычки не нужны, а
 подставленное значение повторно не раскрывается. stdin — пустое устройство (null device).
 Окружение — окружение редактора, плюс `env`, плюс экспортированные секреты, плюс
-`CYBERIADA_EDITOR_LANGUAGE` — язык интерфейса.
+`CYBERIADA_PRO_LANGUAGE` — язык интерфейса.
 
 Элемент argv может быть условным: `{"if": "<параметр>", "argv": [...]}` добавляет свои
 строки, когда параметр равен `true` (для bool) или не пуст (для любого другого типа), и
@@ -361,7 +361,7 @@ hsm-to-python/
   не учитывается, а файл, не являющийся объектом JSON, выводится как предупреждение.
 * Пакетный режим — английский и переводы не читает.
 * Собственные сообщения плагина могут следовать тому же языку: запуск получает его как
-  `${language}`, как `CYBERIADA_EDITOR_LANGUAGE` и как `language` в `request.json`.
+  `${language}`, как `CYBERIADA_PRO_LANGUAGE` и как `language` в `request.json`.
 
 ## Метаинформация
 
@@ -392,7 +392,7 @@ hsm-to-python/
 * Тайм-аут или кнопка «Отменить» завершают процесс (SIGTERM в Unix) и через 3 секунды уничтожают
   его; в Windows рассчитывайте на уничтожение. Останавливается только ваш процесс:
   останавливайте сами процессы, которые вы запустили, например локальный сервер.
-* `CYBERIADA_EDITOR_PLUGIN_KEEP=1` в окружении редактора сохраняет каталоги запуска для
+* `CYBERIADA_PRO_PLUGIN_KEEP=1` в окружении редактора сохраняет каталоги запуска для
   отладки.
 
 ## Тестирование плагина
@@ -402,10 +402,10 @@ hsm-to-python/
 
 ```
 # в репозитории инструмента: папка . содержит editor-plugin/plugin.json
-CyberiadaEditor --batch --plugin-path . --list-plugins
-CyberiadaEditor --batch light.graphml --plugin-path . \
+CyberiadaPro --batch --plugin-path . --list-plugins
+CyberiadaPro --batch light.graphml --plugin-path . \
     --run-plugin hsm-ros2:generate --plugin-param dir=/tmp/ros --dump
-CyberiadaEditor --batch --plugin-path . --run-plugin hsm-maker:draw \
+CyberiadaPro --batch --plugin-path . --run-plugin hsm-maker:draw \
     --plugin-param prompt=@light.txt --plugin-param key=env:DEEPSEEK_API_KEY \
     --save light.graphml
 ```
@@ -433,16 +433,17 @@ stdout редактора. stderr всегда идёт в stderr редакто
 
 | Система | Папка |
 |---|---|
-| Linux, системная | `<prefix>/share/cyberiada-editor/plugins/<id>/` — префикс редактора, `/usr` для пакета Debian |
-| Linux, пользовательская | `~/.local/share/Cyberiada/Cyberiada State Machine Editor/plugins/<id>/` |
-| Windows, zip-архив редактора | `<папка редактора>\share\cyberiada-editor\plugins\<id>\` |
-| Windows, пользовательская | `%APPDATA%\Cyberiada\Cyberiada State Machine Editor\plugins\<id>\` |
-| macOS, пакет приложения | `CyberiadaEditor.app/Contents/share/cyberiada-editor/plugins/<id>/` |
+| Linux, системная | `<prefix>/share/cyberiada-pro/plugins/<id>/` — префикс редактора, `/usr` для пакета Debian |
+| Linux, пользовательская | `~/.local/share/Cyberiada/CyberiadaPro/plugins/<id>/` |
+| Windows, zip-архив редактора | `<папка редактора>\share\cyberiada-pro\plugins\<id>\` |
+| Windows, пользовательская | `%APPDATA%\Cyberiada\CyberiadaPro\plugins\<id>\` |
+| macOS, пользовательская | `~/Library/Application Support/Cyberiada/CyberiadaPro/plugins/<id>/` |
+| macOS, пакет приложения | `CyberiadaPro.app/Contents/share/cyberiada-pro/plugins/<id>/` |
 
 * Храните каталог в репозитории инструмента как `editor-plugin/` и устанавливайте его из
   пакета инструмента или из небольшого отдельного пакета (`<инструмент>-editor-plugin`),
   если инструмент не должен знать о редакторе.
-* Пакет Debian объявляет `Enhances: cyberiada-editor` и зависит от того, что запускает
+* Пакет Debian объявляет `Enhances: cyberiada-pro` и зависит от того, что запускает
   плагин (`python3`, сам инструмент).
 * Пользовательский плагин перекрывает системный плагин с тем же `id`.
 * Обновление заменяет каталог. Сохранённые значения сохраняются, пока идентификаторы

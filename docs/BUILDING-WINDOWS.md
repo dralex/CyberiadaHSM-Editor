@@ -46,7 +46,7 @@ cmake -S CyberiadaHSM-Editor -B CyberiadaHSM-Editor\build ^
 cmake --build CyberiadaHSM-Editor\build --config Release
 ```
 
-The editor is `CyberiadaEditor.exe` under `build\Release` (MSVC) or `build`
+The editor is `CyberiadaPro.exe` under `build\Release` (MSVC) or `build`
 (MinGW / single-config generators).
 
 ## Deploying
@@ -54,7 +54,7 @@ The editor is `CyberiadaEditor.exe` under `build\Release` (MSVC) or `build`
 Copy the Qt runtime next to the executable with the tool from your Qt kit:
 
 ```bat
-windeployqt CyberiadaHSM-Editor\build\Release\CyberiadaEditor.exe
+windeployqt CyberiadaHSM-Editor\build\Release\CyberiadaPro.exe
 ```
 
 Then copy the dependency DLLs from the prefix — `cyberiadaml`, `cyberiadamlpp`,

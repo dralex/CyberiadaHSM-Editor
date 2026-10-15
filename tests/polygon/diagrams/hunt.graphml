@@ -139,7 +139,7 @@ profile/ full</data>
     <node id="h_p_hunt">
       <data key="dNote">formal</data>
       <data key="dName">PROMPT hunt</data>
-      <data key="dData">You are testing the Cyberiada HSM editor through its batch commands. The polygon
+      <data key="dData">You are testing CyberiadaPro, the Cyberiada HSM editor, through its batch commands. The polygon
 judges every step with reference-free checks against the editor's specification;
 your goal is to make the editor misbehave: a crash or a hang, a document that
 changes on save and reopen or on undo-all/redo-all, a child drawn outside its
