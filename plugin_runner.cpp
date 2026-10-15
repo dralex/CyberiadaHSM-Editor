@@ -271,6 +271,8 @@ bool PluginRunner::prepareEnvironment(QProcessEnvironment* env, QString* error) 
         value.replace("${plugin_dir}", entry.folder);
         env->insert(e.first, value);
     }
+    // the plugin's own messages may follow the interface language (EDIT-PLUG-33)
+    env->insert(PLUGIN_LANGUAGE_VARIABLE, PluginRegistry::instance().language());
     // a secret reaches the child through its export variable only (EDIT-PLUG-10)
     for (const PluginParameter* p: entry.descriptor.actionParameters(action())) {
         if (p->type != PluginParameter::typeSecret) continue;
@@ -356,6 +358,7 @@ void PluginRunner::writeRequest(const QString& path) const
     request.insert("plugin", entry.descriptor.id);
     request.insert("action", actionId);
     request.insert("editor_version", CYBERIADA_VERSION);
+    request.insert("language", PluginRegistry::instance().language());
     request.insert("input", QDir(runPath).filePath(INPUT_FILE));
     request.insert("document", document);
     request.insert("meta", meta);
@@ -397,6 +400,7 @@ bool PluginRunner::stage(QString* error)
     variables.insert("document_dir", doc.dir);
     variables.insert("document_name", doc.name);
     variables.insert("selection", context.selection.join(','));
+    variables.insert("language", PluginRegistry::instance().language());
 
     PluginExpansion expansion;
     if (!expandArguments(entry.descriptor, a, runValues, variables, context.meta, &expansion, error)) {

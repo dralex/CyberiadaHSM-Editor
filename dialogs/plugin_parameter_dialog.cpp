@@ -154,8 +154,12 @@ QWidget* PluginParameterDialog::createEditor(const PluginParameter* p, const QSt
     }
     case PluginParameter::typeEnum: {
         QComboBox* combo = new QComboBox(this);
-        combo->addItems(p->choices);
-        combo->setCurrentText(value);
+        // the shown label is translated, the value goes to the plugin (EDIT-UI-4)
+        for (int i = 0; i < p->choices.size(); i++) {
+            combo->addItem(p->choiceLabels.value(i, p->choices.at(i)), p->choices.at(i));
+        }
+        int current = combo->findData(value);
+        if (current >= 0) combo->setCurrentIndex(current);
         editor = field = combo;
         break;
     }
@@ -218,7 +222,7 @@ QString PluginParameterDialog::value(const PluginParameter* p) const
     case PluginParameter::typeBool:
         return static_cast<QCheckBox*>(editor)->isChecked() ? "true" : "false";
     case PluginParameter::typeEnum:
-        return static_cast<QComboBox*>(editor)->currentText();
+        return static_cast<QComboBox*>(editor)->currentData().toString();
     default:
         return static_cast<QLineEdit*>(editor)->text();
     }

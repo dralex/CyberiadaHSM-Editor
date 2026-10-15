@@ -14,6 +14,7 @@ stdout:
       },
       "editor_version": "1.0.0",
       "input": "<rundir>/input.graphml",
+      "language": "en",
       "meta": {
           "standardVersion": "1.0"
       },

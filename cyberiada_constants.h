@@ -54,6 +54,10 @@
 #define PLUGIN_SYSTEM_FOLDER    "share/cyberiada-editor/plugins"
 #define PLUGIN_PATH_VARIABLE    "CYBERIADA_EDITOR_PLUGIN_PATH"
 #define PLUGIN_KEEP_VARIABLE    "CYBERIADA_EDITOR_PLUGIN_KEEP"
+// the interface language a run gets in its environment (EDIT-PLUG-33)
+#define PLUGIN_LANGUAGE_VARIABLE "CYBERIADA_EDITOR_LANGUAGE"
+// the translations of a plugin: <plugin>/i18n/<language>.json (EDIT-UI-4)
+#define PLUGIN_I18N_FOLDER      "i18n"
 // seconds
 #define PLUGIN_TIMEOUT_DEFAULT  60
 #define PLUGIN_KILL_GRACE_MS    3000

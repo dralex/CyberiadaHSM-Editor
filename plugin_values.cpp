@@ -27,9 +27,11 @@
 #include <QFileInfo>
 
 #include "plugin_values.h"
+#include "plugin_registry.h"
 
 #define DOCUMENT_DIR_VARIABLE  "${document_dir}"
 #define DOCUMENT_NAME_VARIABLE "${document_name}"
+#define LANGUAGE_VARIABLE      "${language}"
 
 PluginDocumentPaths pluginDocumentPaths(const QString& documentPath)
 {
@@ -45,6 +47,7 @@ PluginDocumentPaths pluginDocumentPaths(const QString& documentPath)
 QString pluginDefaultValue(const PluginParameter& parameter, const PluginDocumentPaths& document)
 {
     QString value = parameter.defaultValue;
+    value.replace(LANGUAGE_VARIABLE, PluginRegistry::instance().language());
     bool usesDocument = value.contains(DOCUMENT_DIR_VARIABLE) || value.contains(DOCUMENT_NAME_VARIABLE);
     if (!usesDocument) return value;
     if (document.untitled()) return QString();

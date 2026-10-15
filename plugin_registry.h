@@ -79,6 +79,10 @@ public:
                                               const QString& userDir);
     // the interpreters set in the Preferences, by logical name
     void setInterpreterPaths(const QMap<QString, QString>& paths);
+    // the language of the plugin texts and runs: the interface language, or the one
+    // set here (the tests); the batch mode has en (EDIT-UI-2)
+    void setLanguage(const QString& code) { languageOverride = code; }
+    QString language() const;
     // the Preferences, then PATH; on Windows python3 falls back to python and py -3
     static bool resolveInterpreter(const QString& name, const QMap<QString, QString>& paths,
                                    QString* program, QStringList* arguments);
@@ -98,6 +102,7 @@ private:
     PluginRegistry& operator=(const PluginRegistry&) = delete;
 
     QStringList customPath;
+    QString languageOverride;
     QMap<QString, QString> interpreterPaths;
     QList<PluginEntry> list;
 };

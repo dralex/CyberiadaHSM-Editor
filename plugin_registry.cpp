@@ -29,6 +29,7 @@
 #include <QStandardPaths>
 
 #include "plugin_registry.h"
+#include "interface_language.h"
 
 QString PluginEntry::name() const
 {
@@ -140,9 +141,16 @@ bool PluginRegistry::resolveInterpreter(const QString& name, const QMap<QString,
     return true;
 }
 
+QString PluginRegistry::language() const
+{
+    return languageOverride.isEmpty() ? currentUiLanguage() : languageOverride;
+}
+
 void PluginRegistry::scan()
 {
     list.clear();
+    // the source texts are English; another language comes from i18n/ (EDIT-UI-4)
+    QString translation = language() == UI_LANGUAGE_SOURCE ? QString() : language();
     QSet<QString> seenFolders;
     QMap<QString, QString> owners;
     for (const PluginFolder& folder: searchPath()) {
@@ -165,19 +173,23 @@ void PluginRegistry::scan()
             } else if (!PluginDescriptor::parse(file.readAll(), pluginDir, &entry.descriptor, &error)) {
                 entry.descriptor = PluginDescriptor();
                 entry.reason = error;
-            } else if (owners.contains(entry.descriptor.id)) {
-                // a rejected descriptor claims no id, so it never shadows (EDIT-PLUG-1)
-                entry.status = PluginEntry::statusShadowed;
-                entry.reason = PluginRegistry::tr("shadowed by %1").arg(owners.value(entry.descriptor.id));
             } else {
-                owners.insert(entry.descriptor.id, entry.origin);
-                entry.status = PluginEntry::statusEnabled;
-                const QString& interpreter = entry.descriptor.interpreter;
-                if (!interpreter.isEmpty() &&
-                    !resolveInterpreter(interpreter, interpreterPaths, &entry.program,
-                                        &entry.programArguments)) {
-                    entry.status = PluginEntry::statusDisabled;
-                    entry.reason = PluginRegistry::tr("the interpreter '%1' is not found").arg(interpreter);
+                entry.descriptor.translate(translation);
+                if (owners.contains(entry.descriptor.id)) {
+                    // a rejected descriptor claims no id, so it never shadows (EDIT-PLUG-1)
+                    entry.status = PluginEntry::statusShadowed;
+                    entry.reason = PluginRegistry::tr("shadowed by %1").arg(owners.value(entry.descriptor.id));
+                } else {
+                    owners.insert(entry.descriptor.id, entry.origin);
+                    entry.status = PluginEntry::statusEnabled;
+                    const QString& interpreter = entry.descriptor.interpreter;
+                    if (!interpreter.isEmpty() &&
+                        !resolveInterpreter(interpreter, interpreterPaths, &entry.program,
+                                            &entry.programArguments)) {
+                        entry.status = PluginEntry::statusDisabled;
+                        entry.reason = PluginRegistry::tr("the interpreter '%1' is not found")
+                            .arg(interpreter);
+                    }
                 }
             }
             list.append(entry);

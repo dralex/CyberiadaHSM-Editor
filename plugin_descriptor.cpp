@@ -22,6 +22,7 @@
  * ----------------------------------------------------------------------------- */
 
 #include <QDir>
+#include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -196,6 +197,7 @@ bool parseParameter(const QJsonValue& value, int index, PluginParameter* p,
             if (!c.isString()) return fail(error, QString("a choice of '%1' is not a string").arg(p->id));
             p->choices.append(c.toString());
         }
+        p->choiceLabels = p->choices;
     }
 
     if (o.contains("default") && !defaultText(o.value("default"), &p->defaultValue)) {
@@ -423,6 +425,37 @@ QString PluginDescriptor::iconPath(const QString& iconName) const
 {
     if (iconName.isEmpty()) return QString();
     return QDir(dir).absoluteFilePath(iconName);
+}
+
+void PluginDescriptor::translate(const QString& language)
+{
+    if (language.isEmpty()) return;
+    QFile file(QDir(dir).filePath(QString("%1/%2.json").arg(PLUGIN_I18N_FOLDER, language)));
+    if (!file.exists()) return;
+    QJsonParseError pe;
+    QJsonDocument doc;
+    if (file.open(QIODevice::ReadOnly)) doc = QJsonDocument::fromJson(file.readAll(), &pe);
+    if (!file.isOpen() || pe.error != QJsonParseError::NoError || !doc.isObject()) {
+        warnings.append(QString("the translation %1/%2.json is not a JSON object")
+                        .arg(PLUGIN_I18N_FOLDER, language));
+        return;
+    }
+    const QJsonObject map = doc.object();
+    auto translated = [&map](QString* text) {
+        QJsonValue v = map.value(*text);
+        if (!text->isEmpty() && v.isString() && !v.toString().isEmpty()) *text = v.toString();
+    };
+    translated(&name);
+    translated(&description);
+    for (PluginAction& a: actions) {
+        translated(&a.label);
+        translated(&a.description);
+    }
+    for (PluginParameter& p: parameters) {
+        translated(&p.label);
+        translated(&p.description);
+        for (QString& label: p.choiceLabels) translated(&label);
+    }
 }
 
 bool PluginDescriptor::parse(const QByteArray& json, const QString& dir,

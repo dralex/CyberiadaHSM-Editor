@@ -65,7 +65,8 @@ struct PluginParameter {
     bool hasMax = false;
     double min = 0.0;
     double max = 0.0;
-    QStringList choices;         // enum
+    QStringList choices;         // enum: the values
+    QStringList choiceLabels;    // enum: the shown labels, translated
     QString filter;              // file
     bool saveFile = false;       // file: choose a new file
     bool create = false;         // dir: make a missing directory
@@ -139,6 +140,9 @@ struct PluginDescriptor {
     bool hasStoredParameters() const;
     // the absolute path of an icon given relative to the plugin directory
     QString iconPath(const QString& icon) const;
+    // the texts in the language from i18n/<language>.json, keyed by the source text;
+    // a text without a translation stays (EDIT-UI-4)
+    void translate(const QString& language);
 
     // false with the reason when the descriptor breaks a rule of the contract
     static bool parse(const QByteArray& json, const QString& dir,
