@@ -117,7 +117,7 @@ it checks in a comment):
 | HIST   | `undo`/`redo-all` layer, `undo-all`, `test_gesture_recording`, `gestures-undo` |
 | IO     | `save-*`, `l1-*` dumps, `reconstruct-*`, export `test_export_image`, `l3-*` |
 | META   | `l2 update-meta`, `inspect-reject update-meta`, the `meta` diagram; META-1 (node hidden) via the `l1` scene dump; META-6 (CGML_COMPONENT hidden by default) via `l4-scene test_component_comment_hidden` + the `components` `l1` scene dump; META-5 distinct machine names via `l4-model test_unique_machine_name` (NewSM dedupes the default name) |
-| DOC    | `tabs-*` (the document verbs with the `== tabs` dump, `EDIT-DOC-2/3/5/9`), `l4-tabs` (the tab line, the re-targeting, the prompts, `EDIT-DOC-1..8`) |
+| DOC    | `tabs-*` (the document verbs with the `== tabs` dump, `EDIT-DOC-2/3/5/9`), `l4-tabs` (the tab line, the re-targeting, the prompts, `EDIT-DOC-1..8,10`) |
 | INSPECT| `inspect-reject-*` (editing refused under `--inspect`, `EDIT-INSPECT-1`); `inspect-render-*` (stored-geometry render vs a good image, `EDIT-INSPECT-2`) |
 | UI     | `l4-translation` (`EDIT-UI-1/3`: the bundled languages, the Preferences selector, the Russian menus, Qt's buttons, the property labels, the default names, the property lookup), `ui-batch-english` (`EDIT-UI-2`) |
 | PLUG   | the `plugin-*` cases: discovery and rejection (`EDIT-PLUG-1..4`), variables and secrets (`EDIT-PLUG-8..11`), the results and failures (`EDIT-PLUG-12..20`), save and cwd (`EDIT-PLUG-25`), the batch contract (`EDIT-PLUG-27/28`); `l4-plugin-core`; `l4-plugins` for the window (`EDIT-PLUG-5..7`, `EDIT-PLUG-15`, `EDIT-PLUG-21..24`, `EDIT-PLUG-29..32`) |
@@ -223,8 +223,9 @@ tab or adds one and activates an already open file, a switch re-targets the tree
 the undo actions, the title, the zoom and the armed tool, the clipboard pastes
 across documents, a modified tab prompts (Cancel keeps it, Discard drops it), the
 last tab gives way to a fresh untitled one, Exit activates the dirty background
-document for its prompt, a tab switch restarts the log session, and the
-command-line files open as tabs with the failures reported.
+document for its prompt, a tab switch restarts the log session, the
+command-line files open as tabs with the failures reported, and an unsaved
+document is titled by its document name in brackets (`EDIT-DOC-10`).
 
 `l4-highlight` checks the code highlighting (`EDIT-TEXT-7/8`): the language
 lookup by name and alias, the code spans of each role, the colours on the
