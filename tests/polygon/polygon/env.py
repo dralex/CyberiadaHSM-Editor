@@ -33,7 +33,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 BINARY_ENV = "POLYGON_INSPECTOR"
-BINARY_NAME = "CyberiadaEditor"
+BINARY_NAME = "CyberiadaPro"
 
 # the shared libraries whose version decides the editor's behaviour; a finding
 # is only comparable across runs that link the same ones

@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(CyberiadaEditor VERSION 1.0.0 LANGUAGES CXX)
+project(CyberiadaPro VERSION 1.0.0 LANGUAGES CXX)
+
+# the package, install folder and translation domain name of the release
+set(CYBERIADA_PACKAGE "cyberiada-pro")
 
 # the system CMake package configs live here on Debian/Ubuntu; on other
 # platforms the Cyberiada dependencies are found through CMAKE_PREFIX_PATH
@@ -56,7 +59,7 @@ set(EDITOR_I18N_DIR ${CMAKE_CURRENT_BINARY_DIR}/i18n)
 set(EDITOR_TS_FILES)
 set(PROPERTYBROWSER_TS_FILES)
 foreach(_lang ${EDITOR_TRANSLATIONS})
-  list(APPEND EDITOR_TS_FILES ${EDITOR_TS_DIR}/cyberiada-editor_${_lang}.ts)
+  list(APPEND EDITOR_TS_FILES ${EDITOR_TS_DIR}/${CYBERIADA_PACKAGE}_${_lang}.ts)
   list(APPEND PROPERTYBROWSER_TS_FILES ${EDITOR_TS_DIR}/qtpropertybrowser_${_lang}.ts)
 endforeach()
 set_source_files_properties(${EDITOR_TS_FILES} ${PROPERTYBROWSER_TS_FILES}
@@ -184,28 +187,28 @@ target_link_libraries(CyberiadaEditorCore PUBLIC
   ${cyberiadamlpp_LIBRARIES}
   )
 
-add_executable(CyberiadaEditor
+add_executable(CyberiadaPro
   main.cpp
 )
-target_link_libraries(CyberiadaEditor CyberiadaEditorCore)
+target_link_libraries(CyberiadaPro CyberiadaEditorCore)
 
 if(WIN32)
   # build as a GUI-subsystem app so no console window opens behind the editor;
   # MinGW passes -mwindows while main() still runs via mainCRTStartup, and batch
   # mode still returns its exit code (the tests launch it with start /wait)
-  set_target_properties(CyberiadaEditor PROPERTIES WIN32_EXECUTABLE ON)
+  set_target_properties(CyberiadaPro PROPERTIES WIN32_EXECUTABLE ON)
   if(TARGET Qt5::WinMain)
-    target_link_libraries(CyberiadaEditor Qt5::WinMain)
+    target_link_libraries(CyberiadaPro Qt5::WinMain)
   endif()
 endif()
 
 if(APPLE)
   # build a .app bundle so macdeployqt can turn it into a self-contained .dmg
-  set_target_properties(CyberiadaEditor PROPERTIES
+  set_target_properties(CyberiadaPro PROPERTIES
     MACOSX_BUNDLE ON
     MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/packaging/macos/Info.plist.in
-    MACOSX_BUNDLE_BUNDLE_NAME "CyberiadaEditor"
-    MACOSX_BUNDLE_GUI_IDENTIFIER "dev.cyberiada.editor"
+    MACOSX_BUNDLE_BUNDLE_NAME "CyberiadaPro"
+    MACOSX_BUNDLE_GUI_IDENTIFIER "dev.cyberiada.pro"
     MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
     MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
     MACOSX_BUNDLE_ICON_FILE "cyberiada.icns")
@@ -214,39 +217,39 @@ if(APPLE)
   set(_cyb_icns ${CMAKE_CURRENT_SOURCE_DIR}/packaging/macos/cyberiada.icns)
   if(EXISTS ${_cyb_icns})
     set_source_files_properties(${_cyb_icns} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
-    target_sources(CyberiadaEditor PRIVATE ${_cyb_icns})
+    target_sources(CyberiadaPro PRIVATE ${_cyb_icns})
   endif()
 endif()
 
 # installation and Debian packaging (mirrors the Cyberiada libraries)
 include(GNUInstallDirs)
-install(TARGETS CyberiadaEditor
+install(TARGETS CyberiadaPro
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT runtime)
 if(UNIX AND NOT APPLE)
-  install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/packaging/cyberiada-editor.desktop
+  install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/packaging/${CYBERIADA_PACKAGE}.desktop
     DESTINATION ${CMAKE_INSTALL_DATADIR}/applications COMPONENT runtime)
   install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/images/cyberiada.png
     DESTINATION ${CMAKE_INSTALL_DATADIR}/pixmaps
-    RENAME cyberiada-editor.png COMPONENT runtime)
+    RENAME ${CYBERIADA_PACKAGE}.png COMPONENT runtime)
   # user-facing docs travel with the package (the editor has no ChangeLog yet)
   install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/README.md
                 ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
-    DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/cyberiada-editor COMPONENT runtime)
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/${CYBERIADA_PACKAGE} COMPONENT runtime)
   # QtPropertyBrowser has no distribution package: bundle it privately and point
   # the installed binary at it through an rpath, so the .deb needs no extra package
   install(FILES ${QTPROPERTYBROWSER_LIBRARY}
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cyberiada-editor COMPONENT runtime)
-  set_target_properties(CyberiadaEditor PROPERTIES
-    INSTALL_RPATH "$ORIGIN/../${CMAKE_INSTALL_LIBDIR}/cyberiada-editor")
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/${CYBERIADA_PACKAGE} COMPONENT runtime)
+  set_target_properties(CyberiadaPro PROPERTIES
+    INSTALL_RPATH "$ORIGIN/../${CMAKE_INSTALL_LIBDIR}/${CYBERIADA_PACKAGE}")
 endif()
 
-set(CPACK_PACKAGE_NAME "cyberiada-editor")
+set(CPACK_PACKAGE_NAME "${CYBERIADA_PACKAGE}")
 # optional per-release suffix (e.g. ubuntu2404) for the package version, so the
 # distro-dependent editor .deb is distinguishable across Ubuntu releases
 set(DISTRO_TAG "" CACHE STRING "distribution suffix appended to the package version")
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/CyberiadaEditorPackOptions.cmake.in"
-               "${CMAKE_CURRENT_BINARY_DIR}/CyberiadaEditorPackOptions.cmake" @ONLY)
-set(CPACK_PROJECT_CONFIG_FILE "${CMAKE_CURRENT_BINARY_DIR}/CyberiadaEditorPackOptions.cmake")
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/CyberiadaProPackOptions.cmake.in"
+               "${CMAKE_CURRENT_BINARY_DIR}/CyberiadaProPackOptions.cmake" @ONLY)
+set(CPACK_PROJECT_CONFIG_FILE "${CMAKE_CURRENT_BINARY_DIR}/CyberiadaProPackOptions.cmake")
 include(CPack)
 
 enable_testing()

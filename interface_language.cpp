@@ -33,7 +33,7 @@
 
 // the compiled translations, see CMakeLists.txt
 #define UI_TRANSLATIONS_PATH  ":/i18n"
-#define UI_TRANSLATION_DOMAIN "cyberiada-editor"
+#define UI_TRANSLATION_DOMAIN "cyberiada-pro"
 
 static QString installedLanguage = UI_LANGUAGE_SOURCE;
 

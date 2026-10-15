@@ -11,7 +11,10 @@ set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
 set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
 set(CPACK_DEBIAN_PACKAGE_SECTION "electronics")
 
-set(CPACK_DEBIAN_RUNTIME_PACKAGE_NAME "cyberiada-editor")
+set(CPACK_DEBIAN_RUNTIME_PACKAGE_NAME "@CYBERIADA_PACKAGE@")
+# the pre-release package of the editor (v1.0-pre) is replaced on upgrade
+set(CPACK_DEBIAN_PACKAGE_CONFLICTS "cyberiada-editor")
+set(CPACK_DEBIAN_PACKAGE_REPLACES "cyberiada-editor")
 set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "The Qt editor for Cyberiada state machine diagrams")
 # the Cyberiada libraries carry no dpkg shlibs, so name them explicitly; the Qt
 # and system libraries are resolved from the binary by dpkg-shlibdeps

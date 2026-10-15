@@ -1,6 +1,6 @@
 @echo off
 rem ---------------------------------------------------------------------------
-rem Run the CyberiadaEditor L0 batch tests on native Windows, without cmake.
+rem Run the CyberiadaPro L0 batch tests on native Windows, without cmake.
 rem Double-click it or run it from a terminal in the unpacked test folder.
 rem
 rem It opens each bundled diagram in batch mode (offscreen) and checks the exit
@@ -17,7 +17,7 @@ rem Copyright (C) 2026 Alexey Fedoseev <aleksey@fedoseev.net>  (GNU LGPL v3+)
 rem ---------------------------------------------------------------------------
 setlocal enabledelayedexpansion
 set "HERE=%~dp0"
-set "EXE=%HERE%CyberiadaEditor.exe"
+set "EXE=%HERE%CyberiadaPro.exe"
 set "DIAG=%HERE%diagrams"
 set "QT_QPA_PLATFORM=offscreen"
 set /a PASS=0

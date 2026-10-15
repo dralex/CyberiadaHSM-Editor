@@ -1,8 +1,8 @@
 #!/bin/sh
 # Convert a CyberiadaML GraphML diagram to an SVG image next to it:
 #   graphml2svg.sh <diagram.graphml> [font-family]
-# CYBERIADA_EDITOR overrides the editor executable (default: the one next to
-# the script, then in build/, then CyberiadaEditor in PATH).
+# CYBERIADA_PRO overrides the editor executable (default: the one next to
+# the script, then in build/, then CyberiadaPro in PATH).
 
 set -e
 
@@ -19,15 +19,15 @@ fi
 
 self=$(readlink -f "$0" 2>/dev/null || echo "$0")
 here=$(cd "$(dirname "$self")" && pwd)
-if [ -z "$CYBERIADA_EDITOR" ]; then
-	for e in "$here/CyberiadaEditor" "$here/build/CyberiadaEditor"; do
+if [ -z "$CYBERIADA_PRO" ]; then
+	for e in "$here/CyberiadaPro" "$here/build/CyberiadaPro"; do
 		if [ -x "$e" ]; then
-			CYBERIADA_EDITOR=$e
+			CYBERIADA_PRO=$e
 			break
 		fi
 	done
 fi
-editor=${CYBERIADA_EDITOR:-CyberiadaEditor}
+editor=${CYBERIADA_PRO:-CyberiadaPro}
 
 dir=$(dirname "$in")
 base=$(basename "$in")

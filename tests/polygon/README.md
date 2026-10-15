@@ -10,7 +10,7 @@ Python 3.11+. The deterministic commands (`fuzz`, `tour`, `drill`, `replay`,
 agent of the cybersphere agents framework and needs `cybersphere-agents`,
 `hsm-dispatcher-py`, `pydantic-ai` and the CyberiadaML binding importable
 (the environment of `cybersphere-agents/README.md`). The editor must be built
-(`build/CyberiadaEditor`); the batch environment is read from the build tree,
+(`build/CyberiadaPro`); the batch environment is read from the build tree,
 so no variables need setting.
 
 ```

@@ -14,7 +14,7 @@
 #   ships for every release.
 # Tier 2 (per release): each container installs that lib .deb set (so the build and
 #   tests run against the real packages), then builds the distribution-dependent apps
-#   python3-libcyberiadamlpp and cyberiada-editor, version-tagged (1.0.6~ubuntu<ver>),
+#   python3-libcyberiadamlpp and cyberiada-pro, version-tagged (1.0.6~ubuntu<ver>),
 #   collected into <out>/ubuntu-<ver>.
 # See build-toolchain.sh --libs-only / --apps-only for the mechanism.
 #

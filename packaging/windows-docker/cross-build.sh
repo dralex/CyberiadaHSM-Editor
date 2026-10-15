@@ -117,11 +117,11 @@ build_repo() {
 # collect the editor and every runtime DLL into one self-contained zip
 pack_editor() {
     bdir="$1"
-    stage="$bdir/dist-stage/CyberiadaEditor"
+    stage="$bdir/dist-stage/CyberiadaPro"
     rm -rf "$bdir/dist-stage"
     mkdir -p "$stage/platforms"
 
-    cp "$bdir/CyberiadaEditor.exe" "$stage/"
+    cp "$bdir/CyberiadaPro.exe" "$stage/"
 
     # Bundle every DLL the editor needs, resolved recursively from its PE imports
     # (objdump). This copies our libs (libcyberiadaml/libcyberiadamlpp/libhtgeom —
@@ -141,7 +141,7 @@ pack_editor() {
         find "$MXE_PREFIX" -name "$1" -type f 2>/dev/null | head -n1
     }
     todo="$stage/.dll-todo"; seen="$stage/.dll-seen"; : > "$todo"; : > "$seen"
-    imports "$stage/CyberiadaEditor.exe" >> "$todo"
+    imports "$stage/CyberiadaPro.exe" >> "$todo"
     while [ -s "$todo" ]; do
         dll=$(sed -n '1p' "$todo"); sed -i '1d' "$todo"
         grep -qxi "$dll" "$seen" && continue
@@ -157,7 +157,7 @@ pack_editor() {
     # check the bundle is complete before zipping: every prefix-resident DLL the
     # editor (and the bundled DLLs) import must be present, else the zip cannot run
     missing=""
-    for f in "$stage/CyberiadaEditor.exe" "$stage"/*.dll; do
+    for f in "$stage/CyberiadaPro.exe" "$stage"/*.dll; do
         [ -f "$f" ] || continue
         for dep in $(imports "$f"); do
             [ -f "$stage/$dep" ] && continue
@@ -191,23 +191,23 @@ pack_editor() {
         fi
     done
 
-    ( cd "$bdir/dist-stage" && zip -qr "$OUT/cyberiada-editor-1.0.0-win64-mingw.zip" CyberiadaEditor )
+    ( cd "$bdir/dist-stage" && zip -qr "$OUT/cyberiada-pro-1.0.0-win64-mingw.zip" CyberiadaPro )
 
     # a second archive to run the editor's L0 batch tests on native Windows without
     # cmake: the same bundle + the offscreen platform plugin (batch mode uses it) +
     # the test diagrams + run-batch-tests.bat
-    teststage="$bdir/dist-stage/CyberiadaEditor-tests"
+    teststage="$bdir/dist-stage/CyberiadaPro-tests"
     rm -rf "$teststage"; mkdir -p "$teststage/diagrams"
     cp -a "$stage/." "$teststage/"
     cp "$QT_PLUGINS/platforms/qoffscreen.dll" "$teststage/platforms/" 2>/dev/null \
         || die "qoffscreen.dll not found under $QT_PLUGINS/platforms (batch tests need the offscreen platform)"
     cp "$SRC/CyberiadaHSM-Editor/tests/diagrams/"*.graphml "$teststage/diagrams/"
     cp "$SRC/CyberiadaHSM-Editor/tests/windows/run-batch-tests.bat" "$teststage/"
-    ( cd "$bdir/dist-stage" && zip -qr "$OUT/cyberiada-editor-tests-1.0.0-win64-mingw.zip" CyberiadaEditor-tests )
+    ( cd "$bdir/dist-stage" && zip -qr "$OUT/cyberiada-pro-tests-1.0.0-win64-mingw.zip" CyberiadaPro-tests )
 
     # optional smoke test: the exe loads under Wine (offscreen, no display)
     if [ "$TEST" = "1" ]; then
-        ( cd "$stage" && QT_QPA_PLATFORM=offscreen "$WINE" ./CyberiadaEditor.exe --help >/dev/null 2>&1 ) \
+        ( cd "$stage" && QT_QPA_PLATFORM=offscreen "$WINE" ./CyberiadaPro.exe --help >/dev/null 2>&1 ) \
             && echo "smoke: editor exe runs under Wine" \
             || echo "warning: editor exe smoke test under Wine did not pass (check manually)"
     fi

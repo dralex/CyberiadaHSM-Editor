@@ -190,19 +190,19 @@ rem ---------------------------------------------------------------------------
 rem :pack_editor  - build a self-contained zip of the editor + all runtime DLLs
 rem ---------------------------------------------------------------------------
 :pack_editor
-set "STAGE=%BDIR%\dist-stage\CyberiadaEditor"
+set "STAGE=%BDIR%\dist-stage\CyberiadaPro"
 if exist "%BDIR%\dist-stage" rmdir /S /Q "%BDIR%\dist-stage"
 mkdir "%STAGE%"
 
 rem the editor exe (MSVC puts it under Release; MinGW directly in the build dir)
-if exist "%BDIR%\Release\CyberiadaEditor.exe" (
-  copy /Y "%BDIR%\Release\CyberiadaEditor.exe" "%STAGE%\" >nul
+if exist "%BDIR%\Release\CyberiadaPro.exe" (
+  copy /Y "%BDIR%\Release\CyberiadaPro.exe" "%STAGE%\" >nul
 ) else (
-  copy /Y "%BDIR%\CyberiadaEditor.exe" "%STAGE%\" >nul
+  copy /Y "%BDIR%\CyberiadaPro.exe" "%STAGE%\" >nul
 )
 
 rem Qt runtime + plugins next to the exe
-"%QTDIR%\bin\windeployqt.exe" --release --no-translations "%STAGE%\CyberiadaEditor.exe" || exit /b 1
+"%QTDIR%\bin\windeployqt.exe" --release --no-translations "%STAGE%\CyberiadaPro.exe" || exit /b 1
 
 rem the toolchain DLLs (cyberiadaml/mlpp in bin, htgeom in lib), QtPropertyBrowser,
 rem and libxml2 + its vcpkg runtime deps
@@ -215,7 +215,7 @@ rem the editor does not embed python: drop the python runtime pulled in by pybin
 del /Q "%STAGE%\python*.dll" >nul 2>&1
 
 rem zip the folder (fonts and icons are compiled into Qt resources)
-powershell -NoProfile -Command "Compress-Archive -Force -Path '%STAGE%' -DestinationPath '%OUT%\cyberiada-editor-1.0.0-win64.zip'" || exit /b 1
+powershell -NoProfile -Command "Compress-Archive -Force -Path '%STAGE%' -DestinationPath '%OUT%\cyberiada-pro-1.0.0-win64.zip'" || exit /b 1
 exit /b 0
 
 rem ---------------------------------------------------------------------------

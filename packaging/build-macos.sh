@@ -121,14 +121,14 @@ if [ "$TEST" -eq 1 ]; then
     ( cd "$bdir" && ctest --output-on-failure -R '^l0' ) || echo "note: some editor l0 tests did not pass (see above)"
 fi
 
-app="$bdir/CyberiadaEditor.app"
+app="$bdir/CyberiadaPro.app"
 [ -d "$app" ] || die "editor .app not found at $app (MACOSX_BUNDLE build expected)"
 
 say "bundling the .app and building the .dmg (macdeployqt)"
-rm -f "$OUT/CyberiadaEditor-1.0.0-macos-x86_64.dmg"
+rm -f "$OUT/CyberiadaPro-1.0.0-macos-x86_64.dmg"
 "$MACDEPLOYQT" "$app" -dmg
-mv "$bdir/CyberiadaEditor.dmg" "$OUT/CyberiadaEditor-1.0.0-macos-x86_64.dmg"
+mv "$bdir/CyberiadaPro.dmg" "$OUT/CyberiadaPro-1.0.0-macos-x86_64.dmg"
 
 say "done"
-echo "  package: $OUT/CyberiadaEditor-1.0.0-macos-x86_64.dmg"
+echo "  package: $OUT/CyberiadaPro-1.0.0-macos-x86_64.dmg"
 echo "  it is unsigned; on another Mac open it via right-click -> Open the first time"

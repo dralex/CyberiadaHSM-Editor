@@ -61,10 +61,10 @@ the host user so nothing in the mounted tree becomes root-owned.
 Per release, into `dist/ubuntu-<ver>/`: the library packages (`libcyberiadaml`,
 `libcyberiadamlpp`, `libhtreegeom` with their `-dev`/`-parser` splits), the python
 binding `python3-libcyberiadamlpp` (built against that release's python 3, a
-separate package — not in the editor), and the `cyberiada-editor` `.deb`, whose
+separate package — not in the editor), and the `cyberiada-pro` `.deb`, whose
 `Depends` name that release's Qt5/libxml2.
 
-Inspect one with `dpkg-deb -I dist/ubuntu-22.04/cyberiada-editor*.deb`.
+Inspect one with `dpkg-deb -I dist/ubuntu-22.04/cyberiada-pro*.deb`.
 
 ## Tests
 
