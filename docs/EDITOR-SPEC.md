@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.21 (2026-10-14)
+**Document version:** 0.22 (2026-10-15)
 
 **Related authorities:**
 
@@ -606,6 +606,9 @@ The plugins are external programs run on the active document: the architecture i
   next scan. *design*
 - `EDIT-PLUG-32` MUST [A]: the plugin dock is hidden until the first run and shows every
   running plugin with its time and Cancel. *design*
+- `EDIT-PLUG-33` MUST [A]: a run gets the interface language as `${language}`, as
+  `CYBERIADA_EDITOR_LANGUAGE` in its environment and as `language` in `request.json`; a
+  parameter default may use `${language}`; the batch mode gives `en` (`EDIT-UI-2`). *design*
 
 ### 4.13 Interface language — UI
 
@@ -621,6 +624,10 @@ The interface translations and their workflow are in `docs/TRANSLATION.md`.
 - `EDIT-UI-3` SHOULD [A]: in the GUI the names of new elements (state machine, state, comment,
   entry/exit point) and the Qt standard dialogs and buttons follow the interface language.
   *design*
+- `EDIT-UI-4` SHOULD [A]: the texts a plugin supplies — its name and description, the labels
+  and descriptions of its actions and parameters, the shown enum choices — follow the
+  interface language through the plugin's `i18n/<lang>.json`; a text without a translation
+  is shown as written, and a choice keeps its value. *design*
 
 ## 5. Coverage
 

@@ -3,7 +3,7 @@
 **Document version:** 0.1 (2026-10-14)
 
 The readers are the translators and the reviewers of the interface; the last section is for
-the developers who add strings. The requirements are `EDIT-UI-1..3` in `EDITOR-SPEC.md` §4.13.
+the developers who add strings. The requirements are `EDIT-UI-1..4` in `EDITOR-SPEC.md` §4.13.
 
 ## Structure
 
@@ -103,3 +103,11 @@ The terms follow ПНСТ 984-2024 (clause 3); a menu or a tool may use the shor
   the plugin protocol, the settings keys, the saved document (except the default names of new
   elements, which follow the interface language in the GUI only);
 - the batch mode and the in-process tests install no translator: their texts are the sources.
+
+## Plugin texts
+
+A plugin translates its own texts (`EDIT-UI-4`): its directory carries `i18n/<lang>.json`, a
+map from the English text of `plugin.json` to the translation, read when the plugins are
+scanned (`docs/PLUGIN-API.md`, Translation). They are not in the editor `.ts` files; the
+plugin's authors keep them with the plugin. The editor tells a run the interface language
+(`EDIT-PLUG-33`), so the plugin's own messages can follow it.
