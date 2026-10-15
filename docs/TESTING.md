@@ -119,7 +119,7 @@ it checks in a comment):
 | META   | `l2 update-meta`, `inspect-reject update-meta`, the `meta` diagram; META-1 (node hidden) via the `l1` scene dump; META-6 (CGML_COMPONENT hidden by default) via `l4-scene test_component_comment_hidden` + the `components` `l1` scene dump; META-5 distinct machine names via `l4-model test_unique_machine_name` (NewSM dedupes the default name) |
 | DOC    | `tabs-*` (the document verbs with the `== tabs` dump, `EDIT-DOC-2/3/5/9`), `l4-tabs` (the tab line, the re-targeting, the prompts, `EDIT-DOC-1..8,10`) |
 | INSPECT| `inspect-reject-*` (editing refused under `--inspect`, `EDIT-INSPECT-1`); `inspect-render-*` (stored-geometry render vs a good image, `EDIT-INSPECT-2`) |
-| UI     | `l4-translation` (`EDIT-UI-1/3`: the bundled languages, the Preferences selector, the Russian menus, Qt's buttons, the property labels, the default names, the property lookup), `ui-batch-english` (`EDIT-UI-2`) |
+| UI     | `l4-translation` (`EDIT-UI-1/3`: the bundled languages, the Preferences selector, the Russian menus, Qt's buttons, the property labels, the default names, the property lookup), `ui-batch-english` (`EDIT-UI-2`), `l4-window test_pane_toggles/test_pane_persist` (`EDIT-UI-6`: the tree and properties docks, their View entries, the close button, the stored choice) |
 | PLUG   | the `plugin-*` cases: discovery and rejection (`EDIT-PLUG-1..4`), variables and secrets (`EDIT-PLUG-8..11`), the results and failures (`EDIT-PLUG-12..20`), save and cwd (`EDIT-PLUG-25`), the batch contract (`EDIT-PLUG-27/28`); `l4-plugin-core`; `l4-plugins` for the window (`EDIT-PLUG-5..7`, `EDIT-PLUG-15`, `EDIT-PLUG-17`, `EDIT-PLUG-21..24`, `EDIT-PLUG-29..32`, `EDIT-PLUG-35`) |
 
 Requirements with **no dedicated case yet** — the gaps to fill: `SEM-1` (one initial per
@@ -188,8 +188,10 @@ nothing, a bracketed gesture is one step, and the clean state follows the save.
 
 `l4-window` drives the main window in process: the undo and redo actions
 follow the stack (enabled state, text, effect), the tree follows a restored
-document, the modified marker follows the clean state, and a clean document
-closes without the unsaved changes prompt.
+document, the modified marker follows the clean state, a clean document
+closes without the unsaved changes prompt, and the tree and properties docks
+follow their View entries and close buttons, the choice reaching the next
+window (`EDIT-UI-6`).
 
 `l4-properties` checks the property view: an edited rect, point, endpoint or
 polyline row writes the model and the scene item in the same call (the state
