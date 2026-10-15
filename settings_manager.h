@@ -31,6 +31,12 @@ public:
     double getGridSpacing() const { return gridSpacing; }
     void setGridSpacing(double value);
 
+    // the structure tree and the properties docks (EDIT-UI-6)
+    bool getShowStructureTree() const { return showStructureTree; }
+    void setShowStructureTree(bool value);
+    bool getShowProperties() const { return showProperties; }
+    void setShowProperties(bool value);
+
     bool getShowTransitionText() const { return showTransitionText; }
     void setShowTransitionText(bool value);
 
@@ -154,6 +160,8 @@ signals:
 
     void gridSettingsChanged();
     void showTransitionTextChanged(bool);
+    void structureTreeChanged(bool);
+    void propertiesChanged(bool);
     void serviceObjectsChanged(bool);
     void componentCommentsChanged(bool);
     void loggingChanged(bool);
@@ -183,6 +191,8 @@ private:
 
     // visualisation
     bool showTransitionText;
+    bool showStructureTree;
+    bool showProperties;
     bool showServiceObjects;
     bool showComponentComments;
     bool loggingEnabled;

@@ -75,6 +75,8 @@ void SettingsManager::load() {
     gridSpacing = s.value("display/gridSpacing", GRID_SPACING_DEFAULT).toInt();
 
     showTransitionText = s.value("display/showTransitionText", true).toBool();
+    showStructureTree = s.value("display/showStructureTree", true).toBool();
+    showProperties = s.value("display/showProperties", true).toBool();
     showServiceObjects = s.value("display/showServiceObjects", false).toBool();
     showComponentComments = s.value("display/showComponentComments", false).toBool();
     loggingEnabled = s.value("logging/enabled", false).toBool();
@@ -113,6 +115,8 @@ void SettingsManager::loadDefaults()
     setGridSpacing(GRID_SPACING_DEFAULT);
 
     setShowTransitionText(true);
+    setShowStructureTree(true);
+    setShowProperties(true);
     setShowServiceObjects(false);
     setShowComponentComments(false);
     setLoggingEnabled(false);
@@ -229,6 +233,22 @@ void SettingsManager::setShowTransitionText(bool value) {
         showTransitionText = value;
         QSettings().setValue("display/showTransitionText", value);
         emit showTransitionTextChanged(value);
+    }
+}
+
+void SettingsManager::setShowStructureTree(bool value) {
+    if (showStructureTree != value) {
+        showStructureTree = value;
+        QSettings().setValue("display/showStructureTree", value);
+        emit structureTreeChanged(value);
+    }
+}
+
+void SettingsManager::setShowProperties(bool value) {
+    if (showProperties != value) {
+        showProperties = value;
+        QSettings().setValue("display/showProperties", value);
+        emit propertiesChanged(value);
     }
 }
 

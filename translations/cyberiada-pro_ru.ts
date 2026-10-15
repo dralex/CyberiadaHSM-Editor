@@ -144,7 +144,7 @@
 <context>
     <name>CyberiadaSMEditorWindow</name>
     <message>
-        <location filename="../smeditor_window.cpp" line="+110"/>
+        <location filename="../smeditor_window.cpp" line="+115"/>
         <source>Output panel</source>
         <translation type="unfinished">Панель вывода</translation>
     </message>
@@ -235,7 +235,7 @@
         <translation type="unfinished">Выполняются плагины. Отменить их и выйти?</translation>
     </message>
     <message>
-        <location line="+83"/>
+        <location line="+111"/>
         <source>Load State Machine</source>
         <translation type="unfinished">Загрузка машины состояний</translation>
     </message>
@@ -623,13 +623,13 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+18"/>
+        <location line="+19"/>
         <source>Geometry</source>
         <comment>Property name</comment>
         <translation type="unfinished">Геометрия</translation>
     </message>
     <message>
-        <location line="-17"/>
+        <location line="-18"/>
         <source>Label Point</source>
         <comment>Property name</comment>
         <translation type="unfinished">Точка надписи</translation>
@@ -714,7 +714,7 @@
         <translation type="unfinished">Разметка</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+3"/>
         <source>Event Propagation</source>
         <comment>Property name</comment>
         <translation type="unfinished">Передача событий</translation>
@@ -1057,7 +1057,7 @@
         <translation type="unfinished">Удалить параметр</translation>
     </message>
     <message>
-        <location line="+116"/>
+        <location line="+122"/>
         <source>Edit text</source>
         <translation type="unfinished">Изменить текст</translation>
     </message>
@@ -1887,7 +1887,17 @@
         <translation type="obsolete">Редактор машин состояний Cyberiada</translation>
     </message>
     <message>
-        <location filename="../smeditor_window.ui" line="+87"/>
+        <location filename="../smeditor_window.ui" line="+47"/>
+        <source>Structure tree</source>
+        <translation type="unfinished">Дерево структуры</translation>
+    </message>
+    <message>
+        <location line="+46"/>
+        <source>Properties</source>
+        <translation type="unfinished">Свойства</translation>
+    </message>
+    <message>
+        <location line="+36"/>
         <source>&amp;File</source>
         <translation type="unfinished">&amp;Файл</translation>
     </message>

@@ -62,15 +62,20 @@
 #include "dialogs/plugin_parameter_dialog.h"
 
 
+// the initial width of the tree and the properties docks
+static const int PANE_DOCK_WIDTH = 300;
+
 CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
 	QMainWindow(parent)
 {
 	setupUi(this);
 
-	// layout: the drawing scene expands, the tree/property panel keeps its width
-	// on the right (the vertical tool toolbar stays docked on the left)
-	vSplitter->setStretchFactor(0, 1);
-	vSplitter->setStretchFactor(1, 0);
+    // the structure tree and the properties are docks at the right (EDIT-UI-6);
+    // the plugin dock keeps the full width at the bottom
+    setCorner(Qt::BottomRightCorner, Qt::BottomDockWidgetArea);
+    resizeDocks(QList<QDockWidget*>() << treeDock << propertiesDock,
+                QList<int>() << PANE_DOCK_WIDTH << PANE_DOCK_WIDTH, Qt::Horizontal);
+    initPaneDocks();
 
     undoGroup = new QUndoGroup(this);
     // the tab line: a plain bar over the document stack and the right column,
@@ -524,20 +529,48 @@ void CyberiadaSMEditorWindow::slotModelReset()
 
 void CyberiadaSMEditorWindow::expandAndWidenTree()
 {
-    // the whole structure is shown, and the right panel grows to fit the deepest
+    // the whole structure is shown, and the tree dock grows to fit the deepest
     // node (grow-only: it never shrinks, and always leaves room for the scene)
     SMView->expandAll();
     SMView->resizeColumnToContents(0);
+    if (treeDock->isHidden() || treeDock->isFloating()) return;
     int treeWidth = SMView->columnWidth(0) + 2 * SMView->frameWidth() +
                     SMView->verticalScrollBar()->sizeHint().width() + 8;
-    QList<int> sizes = vSplitter->sizes();
-    if (sizes.size() == 2 && treeWidth > sizes.at(1)) {
-        int total = sizes.at(0) + sizes.at(1);
-        int right = qMin(treeWidth, total - 100);
-        if (right > sizes.at(1)) {
-            vSplitter->setSizes(QList<int>() << (total - right) << right);
-        }
+    int width = treeDock->width();
+    int right = qMin(treeWidth, width + centralWidget()->width() - 100);
+    if (right > width) {
+        resizeDocks(QList<QDockWidget*>() << treeDock, QList<int>() << right, Qt::Horizontal);
     }
+}
+
+// the View entries of the tree and the properties docks; the shown/hidden
+// choice is stored from the menu entry and the close button only: Qt unchecks
+// the toggle actions on every hide, the main window's own included
+void CyberiadaSMEditorWindow::initPaneDocks()
+{
+    SettingsManager& sm = SettingsManager::instance();
+    actionStructureTree = treeDock->toggleViewAction();
+    actionProperties = propertiesDock->toggleViewAction();
+    menuView->insertAction(actionTransitionText, actionStructureTree);
+    menuView->insertAction(actionTransitionText, actionProperties);
+    menuView->insertSeparator(actionTransitionText);
+    treeDock->setVisible(sm.getShowStructureTree());
+    propertiesDock->setVisible(sm.getShowProperties());
+    treeDock->installEventFilter(this);
+    propertiesDock->installEventFilter(this);
+    connect(actionStructureTree, &QAction::triggered, &sm, &SettingsManager::setShowStructureTree);
+    connect(actionProperties, &QAction::triggered, &sm, &SettingsManager::setShowProperties);
+    connect(&sm, &SettingsManager::structureTreeChanged, treeDock, &QDockWidget::setVisible);
+    connect(&sm, &SettingsManager::propertiesChanged, propertiesDock, &QDockWidget::setVisible);
+}
+
+bool CyberiadaSMEditorWindow::eventFilter(QObject* watched, QEvent* event)
+{
+    if (event->type() == QEvent::Close) {
+        if (watched == treeDock) SettingsManager::instance().setShowStructureTree(false);
+        if (watched == propertiesDock) SettingsManager::instance().setShowProperties(false);
+    }
+    return QMainWindow::eventFilter(watched, event);
 }
 
 void CyberiadaSMEditorWindow::restoreSavedView()

@@ -111,6 +111,9 @@ public:
                                               CyberiadaSMEditorDocument* doc, const PluginValues& values);
     PluginsMenu*            pluginsMenu() const { return pluginMenu; }
     PluginDock*             pluginDock() const { return pluginDockWidget; }
+    // View > Structure tree / Properties: the toggle actions of the docks (EDIT-UI-6)
+    QAction*                actionStructureTree = nullptr;
+    QAction*                actionProperties = nullptr;
 
 signals:
     void                    pluginRunStarted(PluginRunner* run, CyberiadaSMEditorDocument* doc);
@@ -120,6 +123,7 @@ signals:
 protected:
     void                    closeEvent(QCloseEvent* event) override;
     void                    showEvent(QShowEvent* event) override;
+    bool                    eventFilter(QObject* watched, QEvent* event) override;
 
 private:
     CyberiadaSMModel*       model() const { return current ? current->model() : nullptr; }
@@ -127,6 +131,7 @@ private:
 
     void                    initializeTools();
     void                    updateTitle();
+    void                    initPaneDocks();
     // on load: expand the tree fully and widen the right panel to fit its content
     void                    expandAndWidenTree();
     // the File > Open Recent submenu, rebuilt from the stored recent-files list
