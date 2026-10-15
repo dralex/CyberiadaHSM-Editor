@@ -206,7 +206,8 @@ plugin's `i18n/<lang>.json` of the interface language and translates the plugin 
 ```
 
 * A new document takes the active tab when that is an empty untitled one, as Open does
-  (`EDIT-DOC-2`), and a new tab otherwise.
+  (`EDIT-DOC-2`), and a new tab otherwise; its tab is titled by the document name the plugin
+  wrote, `[Name]`, or `untitled` without one (`EDIT-DOC-10`).
 * The output is decoded before anything is touched: `restoreSnapshot` only warns about a
   bad buffer. `load.reconstruct` lays out a document that comes without geometry (an LLM
   answer); `load.strict` rejects a non-conforming one.

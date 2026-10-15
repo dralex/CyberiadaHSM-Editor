@@ -243,7 +243,7 @@ metainformation strings except the editor's own view state. Secrets are never in
 | `result` | The plugin writes | The editor |
 |---|---|---|
 | `replace` | the whole changed document to `${output}` | replaces the document as one undo step "Plugin: <label>" |
-| `new-document` | a document to `${output}` | opens it as a modified untitled document: in the active tab when that is an empty untitled one, in a new tab otherwise |
+| `new-document` | a document to `${output}` | opens it as a modified unsaved document titled by its document name: in the active tab when that is an empty untitled one, in a new tab otherwise |
 | `diagnostics` | `${diagnostics}` | shows the findings |
 | `files` | files into `${outdir}` (the action's `outdir` parameter) | lists the new and changed files in Output |
 | `log` | stdout, stderr | nothing more |

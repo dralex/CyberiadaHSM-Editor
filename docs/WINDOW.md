@@ -1,10 +1,10 @@
 # The Editor Window — Documents and Tabs
 
-**Document version:** 0.2 (2026-10-14)
+**Document version:** 0.3 (2026-10-15)
 
 The window holds several documents at once. The menus, the toolbars, the tab line and the
 right column are one set; each document brings its own model, scene and canvas view. The
-requirements are `EDIT-DOC-1..9` in `EDITOR-SPEC.md` §4.11; the plugin parts follow
+requirements are `EDIT-DOC-1..10` in `EDITOR-SPEC.md` §4.11; the plugin parts follow
 `docs/PLUGINS.md` (`EDIT-PLUG-n`, §4.12).
 
 ## Structure
@@ -33,7 +33,7 @@ CyberiadaSMEditorWindow (QMainWindow)                                   GLOBAL
        view  : CyberiadaSMGraphicsView  the stacked page (zoom, pan)
        pendingViewState                 the saved viewport, applied on the first activation
        pluginRun()                      the running plugin (one); a replace run locks
-       title()                          "untitled" or the file basename
+       title()                          the file basename, else "[document name]", else "untitled"
 ```
 
 ## Switching the active document
@@ -73,7 +73,7 @@ setCurrentDocument(doc)
 | Edit > Language, code highlighting | document | the checked entry is the active document's `platformLanguage`; each tab is highlighted by its own (`EDIT-TEXT-9`); the list of unknown values met is global |
 | Edit > Markup, comment markup | document | the checked entry is the active document's `markupLanguage` (`EDIT-TEXT-12`); the list of unknown values met is global |
 | Structure tree, properties panel | shared widget | content re-targeted on a switch |
-| Window title and `[*]` | document | the active one; the tab text carries `*` when modified |
+| Window title and `[*]` | document | the active one; the tab text carries `*` when modified; an unsaved document is `[document name]` or `untitled` (`EDIT-DOC-10`) |
 | Saved viewport (zoom/pan in the document) | document | restored on the tab's first activation |
 | Gesture-log session | bound to one document | a switch ends it and starts a new one (`EDIT-DOC-8`) |
 | Batch mode | the tab line | `open`, `new-document`, `switch`, `close`; dumps of the active tab (`EDIT-DOC-9`) |

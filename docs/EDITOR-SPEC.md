@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.22 (2026-10-15)
+**Document version:** 0.23 (2026-10-15)
 
 **Related authorities:**
 
@@ -515,6 +515,11 @@ The window holds several documents; the structure is drawn in `docs/WINDOW.md`.
 - `EDIT-DOC-9` MUST [A]: the batch verbs `open`, `new-document`, `switch` and `close` act on the
   tab line as the GUI does; the dumps, the save and the export describe the active document;
   `close` of a modified document is a script error unless it is `close discard`. *design*
+- `EDIT-DOC-10` MUST [A]: a document without a file is titled by its document name (the meta
+  `name`, the Name of the Document element) in square brackets — `[CoffeeMachine]` — in the
+  window title and the tab text, `untitled` when it has no name; the title follows a rename, an
+  undo/redo and a plugin result; a document with a file is titled by the file basename; Save As
+  of a named unsaved document proposes `Name.graphml`. *design*
 
 ### 4.12 Plugins — PLUG
 
@@ -563,7 +568,8 @@ The plugins are external programs run on the active document: the architecture i
   before the run. *design*
 - `EDIT-PLUG-14` MUST [A]: a `new-document` result becomes the active modified untitled
   document — in the active tab when that is an empty untitled one (as `EDIT-DOC-2`), in a new
-  tab otherwise; the source document is untouched. *design*
+  tab otherwise, titled by its document name (`EDIT-DOC-10`); the source document is untouched.
+  *design*
 - `EDIT-PLUG-15` MUST [A]: the findings of a run are shown in Diagnostics; a click selects and
   centres the element, a finding whose element is absent has no link, and the findings turn
   grey once the document changes. *design*
