@@ -33,6 +33,12 @@
 class QDialogButtonBox;
 class QPushButton;
 
+// a plugin dialog is as wide as its content, within this share of the screen (percent)
+#define PLUGIN_DIALOG_SCREEN_SHARE 80
+
+// the wanted width of a dialog, limited by the screen it opens on
+int pluginDialogWidth(const QWidget* dialog, int wanted);
+
 // one widget per parameter type; a text parameter is a large box on top, the
 // accept button waits for every required value (EDIT-PLUG-7)
 class PluginParameterDialog : public QDialog {

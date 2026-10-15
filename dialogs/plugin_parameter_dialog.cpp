@@ -27,12 +27,14 @@
 #include <QDoubleSpinBox>
 #include <QFileDialog>
 #include <QFormLayout>
+#include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QRegularExpressionValidator>
+#include <QScreen>
 #include <QSpinBox>
 #include <QToolButton>
 #include <QVBoxLayout>
@@ -44,6 +46,18 @@
 
 // the lines of a text box before it scrolls
 #define TEXT_BOX_LINES 8
+// the least width of the dialog and the room around a field value, in characters
+#define DIALOG_COLUMNS  72
+#define FIELD_MARGIN_COLUMNS 8
+
+int pluginDialogWidth(const QWidget* dialog, int wanted)
+{
+    const QWidget* anchor = dialog->parentWidget() ? dialog->parentWidget() : dialog;
+    QScreen* screen = QGuiApplication::screenAt(anchor->mapToGlobal(anchor->rect().center()));
+    if (!screen) screen = QGuiApplication::primaryScreen();
+    if (!screen) return wanted;
+    return qMin(wanted, screen->availableGeometry().width() * PLUGIN_DIALOG_SCREEN_SHARE / 100);
+}
 
 PluginParameterDialog::PluginParameterDialog(const QString& title,
                                              const QList<const PluginParameter*>& parameters,
@@ -62,6 +76,8 @@ PluginParameterDialog::PluginParameterDialog(const QString& title,
         layout->addWidget(createEditor(p, values.value(p->id)));
     }
     QFormLayout* form = new QFormLayout();
+    // the fields take the dialog width on every platform style
+    form->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
     for (const PluginParameter* p: parameters) {
         if (p->type == PluginParameter::typeText) continue;
         QWidget* editor = createEditor(p, values.value(p->id));
@@ -78,6 +94,19 @@ PluginParameterDialog::PluginParameterDialog(const QString& title,
     connect(buttons, &QDialogButtonBox::accepted, this, &QDialog::accept);
     connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
     updateAccept();
+
+    // wide enough for the longest label beside the longest value (a path, a server)
+    QFontMetrics fm(font());
+    int labels = 0;
+    for (const QLabel* label: findChildren<QLabel*>()) {
+        labels = qMax(labels, fm.horizontalAdvance(label->text()));
+    }
+    int wanted = fm.averageCharWidth() * DIALOG_COLUMNS;
+    for (const QLineEdit* edit: findChildren<QLineEdit*>()) {
+        wanted = qMax(wanted, labels + fm.horizontalAdvance(edit->text()) +
+                              fm.averageCharWidth() * FIELD_MARGIN_COLUMNS);
+    }
+    resize(pluginDialogWidth(this, qMax(wanted, sizeHint().width())), sizeHint().height());
 }
 
 QWidget* PluginParameterDialog::createEditor(const PluginParameter* p, const QString& value)

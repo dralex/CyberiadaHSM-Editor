@@ -24,12 +24,17 @@
 #include <QDialogButtonBox>
 #include <QHeaderView>
 #include <QPushButton>
+#include <QStyle>
 #include <QTreeWidget>
 #include <QVBoxLayout>
 
 #include "plugin_manager_dialog.h"
+#include "plugin_parameter_dialog.h"
 #include "plugin_registry.h"
 #include "settings_manager.h"
+
+// the least height of the list, in text lines
+#define MANAGER_LINES 16
 
 enum ManagerColumn {
     columnName = 0,
@@ -58,8 +63,15 @@ PluginManagerDialog::PluginManagerDialog(QWidget* parent):
     connect(rescanButton, &QPushButton::clicked, this, &PluginManagerDialog::rescan);
     connect(&PluginRegistry::instance(), &PluginRegistry::scanned, this, &PluginManagerDialog::fill);
     connect(tree, &QTreeWidget::itemChanged, this, &PluginManagerDialog::slotItemChanged);
-    resize(720, 360);
     fill();
+
+    // every column fits its content: the reasons and the folder paths are long
+    tree->resizeColumnToContents(columnFolder);
+    int wanted = tree->frameWidth() * 2 + layout->contentsMargins().left() + layout->contentsMargins().right();
+    for (int c = 0; c < columnsCount; c++) wanted += tree->header()->sectionSize(c);
+    wanted += tree->style()->pixelMetric(QStyle::PM_ScrollBarExtent);
+    int height = qMax(sizeHint().height(), fontMetrics().lineSpacing() * MANAGER_LINES);
+    resize(pluginDialogWidth(this, qMax(wanted, sizeHint().width())), height);
 }
 
 void PluginManagerDialog::rescan()
