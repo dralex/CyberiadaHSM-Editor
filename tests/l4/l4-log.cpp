@@ -33,6 +33,7 @@
 #include "cyberiadasm_editor_scene.h"
 
 #include "smeditor_window.h"
+#include "version.h"
 #include "cyberiadasm_model.h"
 #include "gesture_log.h"
 #include "batch_script.h"
@@ -95,7 +96,7 @@ void TestLog::test_session_from_scratch()
 
 	QString script = readScript(dir);
 	// the header, the empty-document marker and the start/exit lines
-	QVERIFY(script.contains("# Cyberiada State Machine Editor "));
+	QVERIFY(script.contains("# " CYBERIADA_APP_NAME " "));
 	QVERIFY(script.contains("# document (empty)"));
 	QVERIFY(script.contains("\n# start "));
 	QVERIFY(script.contains("\n# exit "));

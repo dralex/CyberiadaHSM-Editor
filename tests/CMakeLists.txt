@@ -27,7 +27,7 @@ set(L0_ENVIRONMENT
   "XDG_CONFIG_HOME=${CMAKE_CURRENT_BINARY_DIR}/config"
   # no plugin of the machine reaches a case (EDIT-PLUG-1)
   "XDG_DATA_HOME=${CMAKE_CURRENT_BINARY_DIR}/data"
-  "CYBERIADA_EDITOR_PLUGIN_PATH="
+  "CYBERIADA_PRO_PLUGIN_PATH="
   "LD_LIBRARY_PATH=${L0_LIBRARY_PATH}")
 if(EXISTS "${QT5_LIB_DIR}/qt5/plugins")
   list(APPEND L0_ENVIRONMENT "QT_PLUGIN_PATH=${QT5_LIB_DIR}/qt5/plugins")
@@ -248,7 +248,7 @@ add_tabs_test(copy-paste hierarchy 0)
 # the batch mode is English whatever the interface language and the locale
 # (EDIT-UI-2): a profile with Russian chosen and a Russian locale change nothing
 set(UI_CONFIG_HOME ${CMAKE_CURRENT_BINARY_DIR}/config-ui)
-file(WRITE "${UI_CONFIG_HOME}/Cyberiada/Cyberiada State Machine Editor.conf"
+file(WRITE "${UI_CONFIG_HOME}/${CYBERIADA_VENDOR}/${CYBERIADA_APP_NAME}.conf"
   "[interface]\nlanguage=ru\n")
 set(UI_ENVIRONMENT ${L0_ENVIRONMENT})
 list(FILTER UI_ENVIRONMENT EXCLUDE REGEX "^XDG_CONFIG_HOME=")
@@ -349,9 +349,9 @@ add_l2_test(snap-alt polyline)
 # a batch run starts with snap off whatever the settings hold (EDIT-TOOL-14):
 # under a profile with snap on, the snap-transition gestures give the snap-alt
 # result, so the case owns no reference file. The settings file is named after
-# CYBERIADA_VENDOR/CYBERIADA_APP_NAME (version.h.in)
+# CYBERIADA_VENDOR/CYBERIADA_APP_NAME (the root CMakeLists.txt)
 set(SNAP_CONFIG_HOME ${CMAKE_CURRENT_BINARY_DIR}/config-snap)
-file(WRITE "${SNAP_CONFIG_HOME}/Cyberiada/Cyberiada State Machine Editor.conf"
+file(WRITE "${SNAP_CONFIG_HOME}/${CYBERIADA_VENDOR}/${CYBERIADA_APP_NAME}.conf"
   "[display]\nsnapMode=true\ngridSpacing=20\n")
 set(SNAP_ENVIRONMENT ${L0_ENVIRONMENT})
 list(FILTER SNAP_ENVIRONMENT EXCLUDE REGEX "^XDG_CONFIG_HOME=")
@@ -646,12 +646,12 @@ foreach(_file ${_plugin_files})
 endforeach()
 # a settings profile naming the interpreter of the interp plugin (EDIT-PLUG-4)
 set(PLUGIN_CONFIG_DIR ${CMAKE_CURRENT_BINARY_DIR}/config-plugins)
-file(WRITE "${PLUGIN_CONFIG_DIR}/Cyberiada/Cyberiada State Machine Editor.conf"
+file(WRITE "${PLUGIN_CONFIG_DIR}/${CYBERIADA_VENDOR}/${CYBERIADA_APP_NAME}.conf"
   "[plugin-interpreters]\ncyb-test-helper=${PLUGIN_TEST_DIR}/bin/plugin-helper${CMAKE_EXECUTABLE_SUFFIX}\n")
 # a user plugin folder for the default search path (EDIT-PLUG-1)
 set(PLUGIN_USER_DATA ${CMAKE_CURRENT_BINARY_DIR}/data-user)
 configure_file(plugins/main/echo/plugin.json
-  "${PLUGIN_USER_DATA}/Cyberiada/Cyberiada State Machine Editor/plugins/echo/plugin.json" COPYONLY)
+  "${PLUGIN_USER_DATA}/${CYBERIADA_VENDOR}/${CYBERIADA_APP_NAME}/plugins/echo/plugin.json" COPYONLY)
 
 # add_plugin_test(<case> [INPUT f] [PLUGIN id[:action]] [PARAMS p...] [PATHS set...]
 #   [SCRIPT f] [EXPECTED n] [FORBID text] [SEED src>dst] [CONFIG dir] [DATA dir]
@@ -705,7 +705,10 @@ function(add_plugin_test name)
     string(REPLACE ">" ";" _seed "${P_SEED}")
     list(GET _seed 0 _src)
     list(GET _seed 1 _dst)
-    list(APPEND _vars "-DSEED=${CMAKE_CURRENT_SOURCE_DIR}/${_src}>${_work}/${_dst}")
+    if(NOT IS_ABSOLUTE "${_src}")
+      set(_src ${CMAKE_CURRENT_SOURCE_DIR}/${_src})
+    endif()
+    list(APPEND _vars "-DSEED=${_src}>${_work}/${_dst}")
   endif()
   if(P_DUMP OR P_DUMP_PLUGIN OR P_DUMP_STACK OR P_DUMP_TABS OR P_LIST OR P_NO_DUMP)
     list(APPEND _vars -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/plugin-${name}.out
@@ -724,7 +727,7 @@ function(add_plugin_test name)
       set(_entry "XDG_CONFIG_HOME=${P_CONFIG}")
     endif()
     # the case sets the data home and the plugin path below
-    if(NOT _entry MATCHES "^(XDG_DATA_HOME|CYBERIADA_EDITOR_PLUGIN_PATH)=")
+    if(NOT _entry MATCHES "^(XDG_DATA_HOME|CYBERIADA_PRO_PLUGIN_PATH)=")
       list(APPEND _env "${_entry}")
     endif()
   endforeach()
@@ -735,12 +738,12 @@ function(add_plugin_test name)
   endif()
   set(_has_path OFF)
   foreach(_entry ${P_ENV})
-    if(_entry MATCHES "^CYBERIADA_EDITOR_PLUGIN_PATH=")
+    if(_entry MATCHES "^CYBERIADA_PRO_PLUGIN_PATH=")
       set(_has_path ON)
     endif()
   endforeach()
   if(NOT _has_path)
-    list(APPEND _env "CYBERIADA_EDITOR_PLUGIN_PATH=")
+    list(APPEND _env "CYBERIADA_PRO_PLUGIN_PATH=")
   endif()
   list(APPEND _env ${P_ENV})
   set_tests_properties(plugin-${name} PROPERTIES TIMEOUT 60 ENVIRONMENT "${_env}")
@@ -751,8 +754,15 @@ add_plugin_test(list-main LIST)
 add_plugin_test(list-rejected LIST PATHS rejected)
 add_plugin_test(list-shadow LIST PATHS shadow main)
 add_plugin_test(list-env-user LIST NOPATH DATA ${PLUGIN_USER_DATA}
-  ENV "CYBERIADA_EDITOR_PLUGIN_PATH=${PLUGIN_TEST_DIR}/shadow")
+  ENV "CYBERIADA_PRO_PLUGIN_PATH=${PLUGIN_TEST_DIR}/shadow")
 add_plugin_test(list-prefs LIST CONFIG ${PLUGIN_CONFIG_DIR})
+# a fresh profile holding only the pre-release store gives the same list (EDIT-UI-5)
+set(LEGACY_SETTINGS ${CMAKE_CURRENT_BINARY_DIR}/legacy-settings.conf)
+file(WRITE ${LEGACY_SETTINGS}
+  "[plugin-interpreters]\ncyb-test-helper=${PLUGIN_TEST_DIR}/bin/plugin-helper${CMAKE_EXECUTABLE_SUFFIX}\n")
+add_plugin_test(list-prefs-adopted LIST
+  SEED "${LEGACY_SETTINGS}>config/${CYBERIADA_VENDOR}/${CYBERIADA_LEGACY_APP_NAME}.conf"
+  CONFIG ${CMAKE_CURRENT_BINARY_DIR}/plugin-work/list-prefs-adopted/config)
 # the run, stdout and the variables (EDIT-PLUG-8/9, EDIT-PLUG-27/28)
 add_plugin_test(log INPUT diagrams/hierarchy.graphml PLUGIN echo DUMP_PLUGIN)
 add_plugin_test(log-empty PLUGIN echo DUMP_PLUGIN)

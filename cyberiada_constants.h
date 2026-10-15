@@ -51,11 +51,11 @@
 // Plugin constants (docs/PLUGINS.md, docs/PLUGIN-API.md)
 #define PLUGIN_API_MAJOR        1
 #define PLUGIN_DESCRIPTOR_FILE  "plugin.json"
-#define PLUGIN_SYSTEM_FOLDER    "share/cyberiada-editor/plugins"
-#define PLUGIN_PATH_VARIABLE    "CYBERIADA_EDITOR_PLUGIN_PATH"
-#define PLUGIN_KEEP_VARIABLE    "CYBERIADA_EDITOR_PLUGIN_KEEP"
+#define PLUGIN_SYSTEM_FOLDER    "share/cyberiada-pro/plugins"
+#define PLUGIN_PATH_VARIABLE    "CYBERIADA_PRO_PLUGIN_PATH"
+#define PLUGIN_KEEP_VARIABLE    "CYBERIADA_PRO_PLUGIN_KEEP"
 // the interface language a run gets in its environment (EDIT-PLUG-33)
-#define PLUGIN_LANGUAGE_VARIABLE "CYBERIADA_EDITOR_LANGUAGE"
+#define PLUGIN_LANGUAGE_VARIABLE "CYBERIADA_PRO_LANGUAGE"
 // the translations of a plugin: <plugin>/i18n/<language>.json (EDIT-UI-4)
 #define PLUGIN_I18N_FOLDER      "i18n"
 // seconds

@@ -328,7 +328,7 @@ build_pydeb() {
     fi
 
     # the .deb (Debian), the .zip (its files, incl. the editor plugin under
-    # share/cyberiada-editor/plugins/<id>, for other platforms) and the pip wheel
+    # share/cyberiada-pro/plugins/<id>, for other platforms) and the pip wheel
     # (arch-independent; carries the console-script shims and the plugin data-files).
     # pip builds in a temp dir, so the mounted source tree is not polluted.
     echo "Packing $repo..."

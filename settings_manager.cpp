@@ -1,3 +1,4 @@
+#include <QCoreApplication>
 #include <QDir>
 
 #include "settings_manager.h"
@@ -22,6 +23,25 @@ static const char* fontSizeKey(FontRole role)
 SettingsManager& SettingsManager::instance() {
     static SettingsManager instance;
     return instance;
+}
+
+bool SettingsManager::adoptSettings(QSettings& legacy, QSettings& current)
+{
+    if (!current.allKeys().isEmpty()) return false;
+    const QStringList keys = legacy.allKeys();
+    if (keys.isEmpty()) return false;
+    for (const QString& key: keys) {
+        current.setValue(key, legacy.value(key));
+    }
+    current.sync();
+    return true;
+}
+
+bool SettingsManager::adoptLegacySettings(const QString& legacyApplication)
+{
+    QSettings legacy(QCoreApplication::organizationName(), legacyApplication);
+    QSettings current;
+    return adoptSettings(legacy, current);
 }
 
 bool snapActive(Qt::KeyboardModifiers mods)

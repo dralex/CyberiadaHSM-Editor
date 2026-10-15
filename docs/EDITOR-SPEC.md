@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.25 (2026-10-15)
+**Document version:** 0.26 (2026-10-15)
 
 **Related authorities:**
 
@@ -527,7 +527,7 @@ The plugins are external programs run on the active document: the architecture i
 `docs/PLUGINS.md`, the contract a plugin follows is `docs/PLUGIN-API.md` (`api` 1).
 
 - `EDIT-PLUG-1` MUST [A]: the plugins are looked up in `--plugin-path` (which replaces the
-  rest), `$CYBERIADA_EDITOR_PLUGIN_PATH`, the user folder and the system folder, in this order;
+  rest), `$CYBERIADA_PRO_PLUGIN_PATH`, the user folder and the system folder, in this order;
   the first folder holding an id wins, a later one with the same id is listed as shadowed.
   *design*
 - `EDIT-PLUG-2` MUST [C]: a descriptor that is not valid JSON, has an unknown `api` major or
@@ -599,7 +599,7 @@ The plugins are external programs run on the active document: the architecture i
   an untitled document fails it; `cwd: document` runs the plugin in the document's directory.
   *design*
 - `EDIT-PLUG-26` MUST [C]: each run has a fresh run directory, removed after the run unless
-  `CYBERIADA_EDITOR_PLUGIN_KEEP=1`. *design*
+  `CYBERIADA_PRO_PLUGIN_KEEP=1`. *design*
 - `EDIT-PLUG-27` MUST [A]: in batch mode the plugin stage runs after the script with the
   defaults and the `--plugin-param` values only; the exit code is 0 for a done run, 1 for a
   usage error and 6 for a failed run. *design*
@@ -614,7 +614,7 @@ The plugins are external programs run on the active document: the architecture i
 - `EDIT-PLUG-32` MUST [A]: the plugin dock is hidden until the first run and shows every
   running plugin with its time and Cancel. *design*
 - `EDIT-PLUG-33` MUST [A]: a run gets the interface language as `${language}`, as
-  `CYBERIADA_EDITOR_LANGUAGE` in its environment and as `language` in `request.json`; a
+  `CYBERIADA_PRO_LANGUAGE` in its environment and as `language` in `request.json`; a
   parameter default may use `${language}`; the batch mode gives `en` (`EDIT-UI-2`). *design*
 - `EDIT-PLUG-34` MUST [A]: the metainformation an action declares (`meta`) fills the keys the
   document lacks before the run — before the save of a `save` action — as one undo step; a
@@ -625,7 +625,7 @@ The plugins are external programs run on the active document: the architecture i
   comes back empty with the plugin's next output; its context menu clears the text after a
   confirmation and saves it to a file as plain UTF-8 text. *design*
 
-### 4.13 Interface language — UI
+### 4.13 Interface language and preferences — UI
 
 The interface translations and their workflow are in `docs/TRANSLATION.md`.
 
@@ -643,6 +643,9 @@ The interface translations and their workflow are in `docs/TRANSLATION.md`.
   and descriptions of its actions and parameters, the shown enum choices — follow the
   interface language through the plugin's `i18n/<lang>.json`; a text without a translation
   is shown as written, and a choice keeps its value. *design*
+- `EDIT-UI-5` MUST [A]: the preferences are stored per user under the name `CyberiadaPro`; the
+  first start without them adopts once every preference stored under the pre-release name
+  *Cyberiada State Machine Editor* and leaves that store unchanged. *design*
 
 ## 5. Coverage
 

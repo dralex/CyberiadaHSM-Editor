@@ -1,0 +1,13 @@
+== plugins
+checker 0.1.0 enabled plugin-path 1
+codes 0.1.0 enabled plugin-path 1
+docdir 0.1.0 enabled plugin-path 1
+echo 0.1.0 enabled plugin-path 1
+edit 0.1.0 enabled plugin-path 1
+files 0.1.0 enabled plugin-path 1
+interp 0.1.0 enabled plugin-path 1
+maker 0.1.0 enabled plugin-path 1
+nointerp 0.1.0 disabled plugin-path 1: the interpreter 'no-such-interpreter' is not found
+relative 0.1.0 enabled plugin-path 1
+request 0.1.0 enabled plugin-path 1
+vars 0.1.0 enabled plugin-path 1

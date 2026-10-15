@@ -182,7 +182,7 @@ pack_editor() {
     # plugin folder (next to the exe); running them still needs a python with the
     # CyberiadaML binding, set as the interpreter in Preferences. The plugin id is
     # the folder name, which differs from the repo name for the maker.
-    plugdir="$stage/share/cyberiada-editor/plugins"
+    plugdir="$stage/share/cyberiada-pro/plugins"
     for spec in "hsm-to-python:hsm-to-python" "cybersphere-hsm-maker:hsm-maker" "cybersphere-agents:cybersphere-agents"; do
         prepo=${spec%%:*}; pid=${spec##*:}
         if [ -d "$SRC/$prepo/editor-plugin" ]; then

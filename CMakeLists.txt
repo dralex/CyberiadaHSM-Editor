@@ -2,8 +2,13 @@ cmake_minimum_required(VERSION 3.10)
 
 project(CyberiadaPro VERSION 1.0.0 LANGUAGES CXX)
 
-# the package, install folder and translation domain name of the release
+# the release names: the package, install folder and translation domain, and
+# the vendor and application names that place the settings and the user data
 set(CYBERIADA_PACKAGE "cyberiada-pro")
+set(CYBERIADA_VENDOR "Cyberiada")
+set(CYBERIADA_APP_NAME "CyberiadaPro")
+# the pre-release name whose settings are adopted once (EDIT-UI-5)
+set(CYBERIADA_LEGACY_APP_NAME "Cyberiada State Machine Editor")
 
 # the system CMake package configs live here on Debian/Ubuntu; on other
 # platforms the Cyberiada dependencies are found through CMAKE_PREFIX_PATH

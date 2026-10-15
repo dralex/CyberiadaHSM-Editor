@@ -63,6 +63,7 @@ private slots:
 	void test_default_names();
 	void test_property_lookup();
 	void test_plugin_output_tab();
+	void test_adopt_settings();
 
 private:
 	// the visible menu texts by their place in the menu bar
@@ -267,6 +268,29 @@ void TestTranslation::test_plugin_output_tab()
 {
 	// the title of a plugin output tab (EDIT-PLUG-17)
 	QCOMPARE(QCoreApplication::translate("PluginDock", "%1 output").arg("Echo"), QString::fromUtf8("Вывод Echo"));
+}
+
+void TestTranslation::test_adopt_settings()
+{
+	// the pre-release store fills an empty one once and stays as it was (EDIT-UI-5)
+	QTemporaryDir dir;
+	QVERIFY(dir.isValid());
+	QSettings legacy(dir.filePath("legacy.ini"), QSettings::IniFormat);
+	QSettings current(dir.filePath("current.ini"), QSettings::IniFormat);
+	QSettings empty(dir.filePath("empty.ini"), QSettings::IniFormat);
+	QVERIFY(!SettingsManager::adoptSettings(empty, current));
+	QVERIFY(current.allKeys().isEmpty());
+	QStringList recent = QStringList() << "a.graphml" << "b.graphml";
+	legacy.setValue("interface/language", "ru");
+	legacy.setValue("files/recentFiles", recent);
+	QVERIFY(SettingsManager::adoptSettings(legacy, current));
+	QCOMPARE(current.value("interface/language").toString(), QString("ru"));
+	QCOMPARE(current.value("files/recentFiles").toStringList(), recent);
+	QCOMPARE(legacy.allKeys().size(), 2);
+	// a filled store is never overwritten
+	legacy.setValue("interface/language", "en");
+	QVERIFY(!SettingsManager::adoptSettings(legacy, current));
+	QCOMPARE(current.value("interface/language").toString(), QString("ru"));
 }
 
 QTEST_MAIN(TestTranslation)

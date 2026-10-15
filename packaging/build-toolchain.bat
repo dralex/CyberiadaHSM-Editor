@@ -256,7 +256,7 @@ rem :build_pydeb  name  branch
 rem a distribution-independent python package (hsm-dispatcher, hsm-to-python,
 rem cybersphere-hsm-maker, cybersphere-agents): LANGUAGES NONE, nothing to compile.
 rem Produces a .zip (its files, incl. the editor plugin under
-rem share/cyberiada-editor/plugins/<id>) and a pip wheel (console-script .exe shims +
+rem share/cyberiada-pro/plugins/<id>) and a pip wheel (console-script .exe shims +
 rem the plugin data-files). Tests run on the Linux tier (they need the binding +
 rem pytest); here we only produce the Windows artifacts.
 rem ---------------------------------------------------------------------------

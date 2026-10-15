@@ -11,8 +11,10 @@
 #ifndef CYBERIADA_VERSION_H
 #define CYBERIADA_VERSION_H
 
-#define CYBERIADA_VENDOR    "Cyberiada"
-#define CYBERIADA_APP_NAME  "Cyberiada State Machine Editor"
+#define CYBERIADA_VENDOR    "@CYBERIADA_VENDOR@"
+#define CYBERIADA_APP_NAME  "@CYBERIADA_APP_NAME@"
+// the pre-release name whose settings are adopted once (EDIT-UI-5)
+#define CYBERIADA_LEGACY_APP_NAME "@CYBERIADA_LEGACY_APP_NAME@"
 #define CYBERIADA_VERSION   "@PROJECT_VERSION@"
 #define CYBERIADA_REVISION  "@CYBERIADA_GIT_REVISION@"
 

@@ -17,6 +17,10 @@ class SettingsManager : public QObject {
 
 public:
     static SettingsManager& instance();
+    // copy every preference of legacy into an empty current store (EDIT-UI-5)
+    static bool adoptSettings(QSettings& legacy, QSettings& current);
+    // adopt the store of the pre-release application name of this vendor once
+    static bool adoptLegacySettings(const QString& legacyApplication);
 
     void load();
     void loadDefaults();

@@ -40,6 +40,8 @@ int main(int argc, char *argv[])
 	QCoreApplication::setOrganizationName(CYBERIADA_VENDOR);
 	QCoreApplication::setApplicationName(CYBERIADA_APP_NAME);
 	QCoreApplication::setApplicationVersion(CYBERIADA_VERSION);
+	// the preferences of the pre-release name move over once (EDIT-UI-5)
+	SettingsManager::adoptLegacySettings(CYBERIADA_LEGACY_APP_NAME);
 	// QApplication adopts the user's locale; keep the printf-family numeric
 	// formatting locale-independent - the graphml writer depends on it
 	setlocale(LC_NUMERIC, "C");

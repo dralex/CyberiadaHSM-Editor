@@ -202,8 +202,8 @@ void TestPluginCore::test_default_folders()
     QStringList origins;
     for (const PluginFolder& f: folders) origins << f.origin;
     QCOMPARE(origins, QStringList() << "env 1" << "env 2" << "user" << "system" << "system");
-    QCOMPARE(folders.at(3).path, QDir("/opt/editor/share/cyberiada-editor/plugins").absolutePath());
-    QCOMPARE(folders.at(4).path, QDir("/opt/editor/bin/share/cyberiada-editor/plugins").absolutePath());
+    QCOMPARE(folders.at(3).path, QDir("/opt/editor/" PLUGIN_SYSTEM_FOLDER).absolutePath());
+    QCOMPARE(folders.at(4).path, QDir("/opt/editor/bin/" PLUGIN_SYSTEM_FOLDER).absolutePath());
 }
 
 // the Preferences path first, then PATH (EDIT-PLUG-4)

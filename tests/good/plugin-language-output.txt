@@ -6,6 +6,6 @@ exit: 0
 stdout:
   arg1: en
   arg2: en
-  CYBERIADA_EDITOR_LANGUAGE: ok
+  CYBERIADA_PRO_LANGUAGE: ok
 == diagnostics
 count: 0
