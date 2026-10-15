@@ -46,6 +46,8 @@ private slots:
 	void test_recent_files();
 	void test_menu_refactor();
 	void test_edit_action_gating();
+	void test_pane_toggles();
+	void test_pane_persist();
 
 private:
 	CyberiadaSMEditorWindow* window;
@@ -312,6 +314,69 @@ void TestWindow::test_edit_action_gating()
 	QCoreApplication::processEvents();
 	QVERIFY(!window->actionCopy->isEnabled());
 	QVERIFY(window->actionDeleteElement->isEnabled());
+}
+
+// EDIT-UI-6: the tree and the properties docks follow their View entries and
+// their close buttons; a hidden tree still relays the canvas selection
+void TestWindow::test_pane_toggles()
+{
+	// an earlier case closed the window: the docks are visible with it only
+	window->show();
+	QVERIFY(QTest::qWaitForWindowExposed(window));
+	QVERIFY(window->treeDock->isVisible());
+	QVERIFY(window->propertiesDock->isVisible());
+	QVERIFY(window->actionStructureTree->isChecked());
+	QVERIFY(window->actionProperties->isChecked());
+	QList<QAction*> view = window->menuView->actions();
+	QVERIFY(view.indexOf(window->actionStructureTree) < view.indexOf(window->actionTransitionText));
+	QVERIFY(view.indexOf(window->actionProperties) < view.indexOf(window->actionTransitionText));
+	SettingsManager& sm = SettingsManager::instance();
+
+	window->actionStructureTree->trigger();
+	QVERIFY(!window->treeDock->isVisible());
+	QVERIFY(!sm.getShowStructureTree());
+	// the canvas selection reaches the hidden tree and the properties panel
+	CyberiadaSMEditorScene* scene = window->getScene();
+	scene->clearSelection();
+	QGraphicsItem* item = scene->getMap().value("node-0");
+	QVERIFY(item);
+	item->setSelected(true);
+	QCoreApplication::processEvents();
+	QVERIFY(window->SMView->selectionModel()->isSelected(window->getModel()->elementToIndex(
+	            window->getModel()->idToElement("node-0"))));
+	QVERIFY(!window->propertiesWidget->properties().isEmpty());
+	window->actionStructureTree->trigger();
+	QVERIFY(window->treeDock->isVisible());
+	QVERIFY(sm.getShowStructureTree());
+
+	// the close button of a dock unchecks its entry and stores the choice
+	window->propertiesDock->close();
+	QVERIFY(!window->propertiesDock->isVisible());
+	QVERIFY(!window->actionProperties->isChecked());
+	QVERIFY(!sm.getShowProperties());
+	window->actionProperties->trigger();
+	QVERIFY(window->propertiesDock->isVisible());
+	QVERIFY(sm.getShowProperties());
+}
+
+// EDIT-UI-6: the stored choice opens the next window the same way
+void TestWindow::test_pane_persist()
+{
+	SettingsManager& sm = SettingsManager::instance();
+	sm.setShowStructureTree(false);
+	sm.setShowProperties(true);
+	{
+		CyberiadaSMEditorWindow second;
+		second.show();
+		QVERIFY(QTest::qWaitForWindowExposed(&second));
+		QVERIFY(second.treeDock->isHidden());
+		QVERIFY(second.propertiesDock->isVisible());
+		QVERIFY(!second.actionStructureTree->isChecked());
+	}
+	// the l4 binaries share one config: the defaults are back for the others
+	sm.setShowStructureTree(true);
+	QVERIFY(sm.getShowStructureTree() && sm.getShowProperties());
+	QVERIFY(window->treeDock->isVisible());
 }
 
 QTEST_MAIN(TestWindow)
