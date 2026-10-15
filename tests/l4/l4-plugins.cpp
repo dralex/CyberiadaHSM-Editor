@@ -27,12 +27,16 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDoubleSpinBox>
+#include <QFileDialog>
 #include <QLineEdit>
+#include <QMenu>
 #include <QMenuBar>
+#include <QMessageBox>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QSettings>
 #include <QSpinBox>
+#include <QTabBar>
 #include <QTabWidget>
 #include <QTemporaryDir>
 #include <QToolBar>
@@ -79,6 +83,9 @@ private slots:
     void test_window_grab();
     void test_translated_texts();
     void test_meta_fill();
+    void test_output_tabs();
+    void test_output_tab_reopens();
+    void test_output_menu();
 };
 
 static QString documentDump(CyberiadaSMModel* model)
@@ -619,6 +626,132 @@ void TestPlugins::test_meta_fill()
     QCOMPARE(r.state, PluginResult::stateDone);
     QVERIFY(r.metaNotes.isEmpty());
     QCOMPARE(stack->count(), steps);
+}
+
+// the close button of a tab, on the side the style puts it
+static QWidget* closeButton(QTabWidget* tabs, int index)
+{
+    QWidget* button = tabs->tabBar()->tabButton(index, QTabBar::RightSide);
+    return button ? button : tabs->tabBar()->tabButton(index, QTabBar::LeftSide);
+}
+
+// an output tab per plugin, titled "<name> output", the run header names the document
+// (EDIT-PLUG-17)
+void TestPlugins::test_output_tabs()
+{
+    CyberiadaSMEditorWindow win;
+    win.show();
+    QVERIFY(win.openDocument("diagrams/hierarchy.graphml"));
+    QCOMPARE(win.runPluginAndWait("echo", "say", PluginValues()).state, PluginResult::stateDone);
+    PluginValues values;
+    values.insert("prompt", "a prompt");
+    QCOMPARE(win.runPluginAndWait("request", "read", values).state, PluginResult::stateDone);
+
+    PluginDock* dock = win.pluginDock();
+    QTabWidget* tabs = dock->tabs();
+    QCOMPARE(tabs->count(), 3);
+    QCOMPARE(tabs->widget(0), static_cast<QWidget*>(dock->diagnostics()));
+    QVERIFY(!closeButton(tabs, 0));
+    int echo = tabs->indexOf(dock->output("echo"));
+    int request = tabs->indexOf(dock->output("request"));
+    QCOMPARE(tabs->tabText(echo), QString("Echo output"));
+    QCOMPARE(tabs->tabText(request), QString("Request output"));
+    QCOMPARE(tabs->tabToolTip(echo), QString("echo"));
+    QVERIFY(closeButton(tabs, echo) && closeButton(tabs, request));
+    // the last run's tab is current; each tab holds its own plugin's lines
+    QCOMPARE(tabs->currentIndex(), request);
+    QString text = dock->output("echo")->toPlainText();
+    QVERIFY(text.startsWith("== Echo: "));
+    QVERIFY(text.contains(" - hierarchy.graphml\n"));
+    QVERIFY(text.contains("echo from main"));
+    QVERIFY(!dock->output("request")->toPlainText().contains("echo from main"));
+    // the rows of the finished runs and their room go with the next event loop
+    QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+    QCoreApplication::sendPostedEvents();
+    QVERIFY(dock->grab().save(PLUGIN_TEST_DIR "/../plugins-dock.png"));
+}
+
+// a closed tab drops its text and comes back empty with the next output (EDIT-PLUG-35)
+void TestPlugins::test_output_tab_reopens()
+{
+    CyberiadaSMEditorWindow win;
+    win.show();
+    for (int i = 0; i < 2; i++) {
+        QCOMPARE(win.runPluginAndWait("echo", "say", PluginValues()).state, PluginResult::stateDone);
+    }
+    PluginDock* dock = win.pluginDock();
+    QCOMPARE(dock->output("echo")->toPlainText().count("== Echo: "), 2);
+    QTabWidget* tabs = dock->tabs();
+    QWidget* button = closeButton(tabs, tabs->indexOf(dock->output("echo")));
+    QVERIFY(button);
+    QTest::mouseClick(button, Qt::LeftButton);
+    QVERIFY(!dock->output("echo"));
+    QCOMPARE(tabs->count(), 1);
+
+    QCOMPARE(win.runPluginAndWait("echo", "say", PluginValues()).state, PluginResult::stateDone);
+    QVERIFY(dock->output("echo"));
+    QCOMPARE(tabs->count(), 2);
+    QString text = dock->output("echo")->toPlainText();
+    QCOMPARE(text.count("== Echo: "), 1);
+    QVERIFY(text.startsWith("== Echo: "));
+    QVERIFY(text.contains("echo from main"));
+}
+
+// the menu of an output tab: Clear asks first, Save to File writes the text (EDIT-PLUG-35)
+void TestPlugins::test_output_menu()
+{
+    CyberiadaSMEditorWindow win;
+    win.show();
+    QVERIFY(win.openDocument("diagrams/hierarchy.graphml"));
+    QCOMPARE(win.runPluginAndWait("echo", "say", PluginValues()).state, PluginResult::stateDone);
+    PluginDock* dock = win.pluginDock();
+    QVERIFY(!dock->createOutputMenu("request"));
+    QScopedPointer<QMenu> menu(dock->createOutputMenu("echo"));
+    QVERIFY(menu);
+    QList<QAction*> actions = menu->actions();
+    QVERIFY(actions.size() > 2);
+    QAction* save = actions.at(actions.size() - 2);
+    QAction* clear = actions.last();
+    QCOMPARE(save->text(), QString("Save to File..."));
+    QCOMPARE(clear->text(), QString("Clear..."));
+    QVERIFY(save->isEnabled() && clear->isEnabled());
+
+    // the save dialog proposes <plugin id>-output.txt in the document folder
+    QString proposed;
+    onModal([&proposed](QWidget* modal) {
+        QFileDialog* dialog = qobject_cast<QFileDialog*>(modal);
+        if (!dialog) return;
+        proposed = dialog->selectedFiles().value(0);
+        dialog->reject();
+    });
+    save->trigger();
+    QCOMPARE(QFileInfo(proposed).fileName(), QString("echo-output.txt"));
+    QCOMPARE(QFileInfo(proposed).absolutePath(), QFileInfo("diagrams/hierarchy.graphml").absolutePath());
+
+    QTemporaryDir dir;
+    QString path = dir.filePath("echo-output.txt");
+    QString text = dock->output("echo")->toPlainText();
+    QVERIFY(dock->saveOutput("echo", path));
+    QFile file(path);
+    QVERIFY(file.open(QIODevice::ReadOnly));
+    QCOMPARE(QString::fromUtf8(file.readAll()), text + "\n");
+    QString error;
+    QVERIFY(!dock->saveOutput("echo", dir.filePath("absent/echo-output.txt"), &error));
+    QVERIFY(error.contains("absent"));
+
+    // No keeps the text, Yes clears it
+    onModal([](QWidget* modal) {
+        QMessageBox* box = qobject_cast<QMessageBox*>(modal);
+        if (box) box->button(QMessageBox::No)->click();
+    });
+    clear->trigger();
+    QCOMPARE(dock->output("echo")->toPlainText(), text);
+    onModal([](QWidget* modal) {
+        QMessageBox* box = qobject_cast<QMessageBox*>(modal);
+        if (box) box->button(QMessageBox::Yes)->click();
+    });
+    clear->trigger();
+    QVERIFY(dock->output("echo")->toPlainText().isEmpty());
 }
 
 QTEST_MAIN(TestPlugins)
