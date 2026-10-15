@@ -61,6 +61,7 @@ private slots:
     void test_menu_structure();
     void test_toolbars();
     void test_dialog_widgets();
+    void test_dialog_widths();
     void test_click_runs_at_once();
     void test_replace_undo();
     void test_lock();
@@ -115,6 +116,8 @@ static void onModal(std::function<void(QWidget*)> handle)
 void TestPlugins::initTestCase()
 {
     PluginRegistry::instance().setSearchPath(QStringList() << PLUGIN_TEST_DIR "/main");
+    // a test run alone has no window that would scan first
+    PluginRegistry::instance().scan();
     QSettings().remove("plugins");
     QSettings().remove("plugin-interpreters");
 }
@@ -215,6 +218,49 @@ void TestPlugins::test_dialog_widgets()
     QVERIFY(dlg.acceptButton()->isEnabled());
     QCOMPARE(dlg.values().value("prompt"), QString("a traffic light"));
     QCOMPARE(dlg.values().value("count"), QString("3"));
+}
+
+// the dialogs are as wide as their content, within the screen
+void TestPlugins::test_dialog_widths()
+{
+    const PluginEntry* files = PluginRegistry::instance().find("files");
+    QVERIFY(files);
+    QList<const PluginParameter*> params = files->descriptor.actionParameters(*files->descriptor.action("make"));
+    PluginValues values;
+    // a path the screen holds is shown whole in its field
+    QString path = "/home/user/light/generated/sources";
+    values.insert("dir", path);
+    PluginParameterDialog dlg("Files - Make", params, values, "Run");
+    dlg.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&dlg));
+    QLineEdit* dir = qobject_cast<QLineEdit*>(dlg.editor("dir"));
+    QVERIFY(dir);
+    QVERIFY(dir->width() > dir->fontMetrics().horizontalAdvance(path));
+    // a longer one widens the dialog up to the screen share, not beyond it
+    values.insert("dir", path + path + path);
+    PluginParameterDialog wide("Files - Make", params, values, "Run");
+    wide.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&wide));
+    QCOMPARE(wide.width(), pluginDialogWidth(&wide, INT_MAX));
+    // pictures for review only
+    QVERIFY(dlg.grab().save(PLUGIN_TEST_DIR "/../plugins-dialog.png"));
+
+    PluginManagerDialog manager;
+    manager.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&manager));
+    QTreeWidget* list = manager.list();
+    int columns = 0;
+    for (int c = 0; c < list->columnCount(); c++) {
+        int needed = 0;
+        for (int i = 0; i < list->topLevelItemCount(); i++) {
+            needed = qMax(needed, list->fontMetrics().horizontalAdvance(list->topLevelItem(i)->text(c)));
+        }
+        // the column shows its longest text
+        QVERIFY2(list->header()->sectionSize(c) >= needed, qPrintable(QString::number(c)));
+        columns += list->header()->sectionSize(c);
+    }
+    QVERIFY(manager.width() >= qMin(columns, pluginDialogWidth(&manager, INT_MAX)));
+    QVERIFY(manager.grab().save(PLUGIN_TEST_DIR "/../plugins-manager.png"));
 }
 
 // an action without run parameters runs at once; the dock comes with the run (EDIT-PLUG-32)

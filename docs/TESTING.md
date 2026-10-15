@@ -158,8 +158,8 @@ settings keys, the diagnostics file, and the runner's cancel, run directory and 
 decoding; the selection order is checked on a bare scene, as the window keeps one selected
 element. `l4-plugins` drives the window: the Plugins menu, the plugin
 toolbars, the generated dialog, the document lock, the plugin dock and the plugin
-manager; it saves a picture of the window as `build/tests/plugins-window.png` for
-review, compared with nothing.
+manager; it saves pictures of the window, the parameter dialog and the plugin manager
+as `build/tests/plugins-{window,dialog,manager}.png` for review, compared with nothing.
 
 `l4-text` checks the per-role fonts: the bundled font is found through the
 resources of the core library, every role carries its own point size, the
