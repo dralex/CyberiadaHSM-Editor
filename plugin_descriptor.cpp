@@ -45,7 +45,7 @@ const QStringList parameterFields = {
 };
 const QStringList actionFields = {
     "id", "label", "description", "icon", "result", "argv", "exit_ok", "timeout",
-    "parameters", "outdir", "load", "save", "cwd", "toolbar"
+    "parameters", "outdir", "load", "save", "cwd", "toolbar", "meta"
 };
 const QStringList loadFields = { "strict", "reconstruct" };
 
@@ -352,6 +352,20 @@ bool parseAction(const QJsonValue& value, int index, PluginAction* a,
         return fail(error, QString("the cwd of '%1' is neither run nor document").arg(a->id));
     }
     a->cwdDocument = cwd == "document";
+    if (o.contains("meta")) {
+        if (!o.value("meta").isObject()) {
+            return fail(error, QString("the field '%1meta' is not an object").arg(where));
+        }
+        QJsonObject meta = o.value("meta").toObject();
+        for (const QString& key: meta.keys()) {
+            if (!validParameterId(key) || !meta.value(key).isString() ||
+                meta.value(key).toString().isEmpty()) {
+                return fail(error, QString("the metainformation '%1' of '%2' is not a name with a value")
+                            .arg(key, a->id));
+            }
+            a->meta.append(qMakePair(key, meta.value(key).toString()));
+        }
+    }
     return true;
 }
 

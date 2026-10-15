@@ -111,6 +111,8 @@ struct PluginAction {
     bool save = false;
     bool cwdDocument = false;
     bool toolbar = false;
+    // the metainformation the action fills in before its run (EDIT-PLUG-34)
+    QList<QPair<QString, QString> > meta;
 
     bool changesDocument() const { return result == resultReplace; }
     // save and cwd: document need the document file to be current

@@ -63,6 +63,21 @@ struct PluginDiagnostic {
     bool linked = true;
 };
 
+// what became of a metainformation key the action declares (EDIT-PLUG-34)
+struct PluginMetaNote {
+    enum Kind {
+        metaSet = 0,
+        metaKept,
+        metaSkipped
+    };
+
+    Kind kind = metaSet;
+    QString key;
+    // set: the declared value; kept: the present one
+    QString value;
+    QString declared;
+};
+
 struct PluginFileChange {
     // relative to the outdir
     QString path;
@@ -83,6 +98,8 @@ struct PluginResult {
     QString error;
     QString stdoutText;
     QStringList stderrTail;
+    // the declared metainformation, filled by the window before the run
+    QList<PluginMetaNote> metaNotes;
     // replace, new-document: the output re-encoded as Cyberiada 1.0
     std::string document;
     QList<PluginDiagnostic> diagnostics;

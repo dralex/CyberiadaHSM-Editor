@@ -256,6 +256,12 @@ void dumpPluginRun(const PluginEntry& plugin, const PluginAction& action,
 	static const char* const states[] = { "done", "failed", "cancelled" };
 	os << "action: " << plugin.descriptor.id.toStdString() << ":" << action.id.toStdString() << std::endl;
 	os << "result: " << PluginDescriptor::resultName(action.result).toStdString() << std::endl;
+	static const char* const metaKinds[] = { "set", "kept", "skipped" };
+	for (const PluginMetaNote& note: result.metaNotes) {
+		os << "meta: " << metaKinds[note.kind] << " " << note.key.toStdString();
+		if (note.kind != PluginMetaNote::metaSkipped) os << " " << note.value.toStdString();
+		os << std::endl;
+	}
 	os << "state: " << states[result.state] << std::endl;
 	os << "exit: ";
 	if (result.exitCode < 0) os << "-";

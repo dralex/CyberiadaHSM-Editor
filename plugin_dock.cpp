@@ -111,6 +111,21 @@ void PluginDock::runStarted(PluginRunner* run)
     connect(row.cancel, &QPushButton::clicked, this, [guard]() { if (guard) guard->cancel(); });
     connect(run, &PluginRunner::output, this, &PluginDock::slotOutput);
     append(QString("== %1").arg(row.title), false);
+    for (const PluginMetaNote& note: run->result().metaNotes) {
+        switch (note.kind) {
+        case PluginMetaNote::metaSet:
+            append(tr("%1 is set to %2").arg(note.key, note.value), false);
+            break;
+        case PluginMetaNote::metaKept:
+            append(tr("%1 is kept as %2; the plugin declares %3").arg(note.key, note.value, note.declared),
+                   false);
+            break;
+        default:
+            append(tr("%1 is not set: the document has no state machine or is read-only").arg(note.key),
+                   false);
+            break;
+        }
+    }
     ticker.start();
     // the dock comes with the first run; the batch mode never shows it
     if (!qApp->property("batchMode").toBool()) show();

@@ -144,6 +144,8 @@ private:
     // the run context of a document (the snapshot, the meta, the selection)
     bool                    pluginContext(CyberiadaSMEditorDocument* doc, PluginRunContext* context,
                                           QString* error) const;
+    // the declared metainformation fills the keys the document lacks (EDIT-PLUG-34)
+    QList<PluginMetaNote>   fillPluginMeta(CyberiadaSMEditorDocument* doc, const PluginAction& action);
     // save, cwd: document need the file to be current (EDIT-PLUG-25)
     bool                    savePluginDocument(CyberiadaSMEditorDocument* doc, QString* error);
     // the document the result went to: the run's own, or the new one

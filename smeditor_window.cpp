@@ -1138,6 +1138,60 @@ bool CyberiadaSMEditorWindow::pluginContext(CyberiadaSMEditorDocument* doc, Plug
     return true;
 }
 
+// the platform language is the same under any of its aliases (python3, py)
+static bool sameMetaValue(const QString& key, const QString& present, const QString& declared)
+{
+    if (key == METAINFORMATION_KEY_PLATFORM_LANGUAGE) {
+        const CodeLanguage* a = CodeStyle::instance().find(present);
+        const CodeLanguage* b = CodeStyle::instance().find(declared);
+        if (a && b) return a == b;
+        return present.compare(declared, Qt::CaseInsensitive) == 0;
+    }
+    return present == declared;
+}
+
+QList<PluginMetaNote> CyberiadaSMEditorWindow::fillPluginMeta(CyberiadaSMEditorDocument* doc,
+                                                              const PluginAction& action)
+{
+    QList<PluginMetaNote> notes;
+    if (action.meta.isEmpty()) return notes;
+    CyberiadaSMModel* m = doc->model();
+    const Cyberiada::LocalDocument* root = m->rootDocument();
+    // nothing to describe, or nothing to change
+    bool usable = root && !root->get_state_machines().empty() && !m->readOnly();
+    QList<QPair<QString, QString> > fills;
+    for (const QPair<QString, QString>& item: action.meta) {
+        PluginMetaNote note;
+        note.key = item.first;
+        note.declared = item.second;
+        if (!usable) {
+            note.kind = PluginMetaNote::metaSkipped;
+            notes.append(note);
+            continue;
+        }
+        QString present = QString::fromStdString(root->meta().get_string(item.first.toStdString()));
+        if (present.isEmpty()) {
+            note.kind = PluginMetaNote::metaSet;
+            note.value = item.second;
+            fills.append(item);
+            notes.append(note);
+        } else if (!sameMetaValue(item.first, present, item.second)) {
+            // the document's own value wins
+            note.kind = PluginMetaNote::metaKept;
+            note.value = present;
+            notes.append(note);
+        }
+    }
+    if (!fills.isEmpty()) {
+        m->beginUndoStep(tr("Plugin: %1").arg(action.label));
+        for (const QPair<QString, QString>& item: fills) {
+            m->updateMetainformation(m->documentIndex(), item.first, item.second);
+        }
+        m->endUndoStep();
+    }
+    return notes;
+}
+
 bool CyberiadaSMEditorWindow::savePluginDocument(CyberiadaSMEditorDocument* doc, QString* error)
 {
     if (doc->hasFile() && doc->isClean()) return true;
@@ -1178,6 +1232,7 @@ PluginRunner* CyberiadaSMEditorWindow::runPlugin(const QString& pluginId, const 
         if (error) *error = reason;
         return nullptr;
     }
+    QList<PluginMetaNote> metaNotes = fillPluginMeta(doc, *action);
     QString saveError;
     if (action->needsSavedDocument() && !savePluginDocument(doc, &saveError)) {
         if (error) *error = saveError;
@@ -1187,6 +1242,7 @@ PluginRunner* CyberiadaSMEditorWindow::runPlugin(const QString& pluginId, const 
     if (!pluginContext(doc, &context, error)) return nullptr;
 
     PluginRunner* run = new PluginRunner(*entry, action->id, values, context, this);
+    run->mutableResult()->metaNotes = metaNotes;
     doc->setPluginRun(run);
     pluginRuns.insert(run, QPointer<CyberiadaSMEditorDocument>(doc));
     if (action->changesDocument()) {
