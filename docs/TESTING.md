@@ -120,7 +120,7 @@ it checks in a comment):
 | DOC    | `tabs-*` (the document verbs with the `== tabs` dump, `EDIT-DOC-2/3/5/9`), `l4-tabs` (the tab line, the re-targeting, the prompts, `EDIT-DOC-1..8,10`) |
 | INSPECT| `inspect-reject-*` (editing refused under `--inspect`, `EDIT-INSPECT-1`); `inspect-render-*` (stored-geometry render vs a good image, `EDIT-INSPECT-2`) |
 | UI     | `l4-translation` (`EDIT-UI-1/3`: the bundled languages, the Preferences selector, the Russian menus, Qt's buttons, the property labels, the default names, the property lookup), `ui-batch-english` (`EDIT-UI-2`) |
-| PLUG   | the `plugin-*` cases: discovery and rejection (`EDIT-PLUG-1..4`), variables and secrets (`EDIT-PLUG-8..11`), the results and failures (`EDIT-PLUG-12..20`), save and cwd (`EDIT-PLUG-25`), the batch contract (`EDIT-PLUG-27/28`); `l4-plugin-core`; `l4-plugins` for the window (`EDIT-PLUG-5..7`, `EDIT-PLUG-15`, `EDIT-PLUG-21..24`, `EDIT-PLUG-29..32`) |
+| PLUG   | the `plugin-*` cases: discovery and rejection (`EDIT-PLUG-1..4`), variables and secrets (`EDIT-PLUG-8..11`), the results and failures (`EDIT-PLUG-12..20`), save and cwd (`EDIT-PLUG-25`), the batch contract (`EDIT-PLUG-27/28`); `l4-plugin-core`; `l4-plugins` for the window (`EDIT-PLUG-5..7`, `EDIT-PLUG-15`, `EDIT-PLUG-17`, `EDIT-PLUG-21..24`, `EDIT-PLUG-29..32`, `EDIT-PLUG-35`) |
 
 Requirements with **no dedicated case yet** — the gaps to fill: `SEM-1` (one initial per
 level — only the polygon pseudostate drill and the standing law cover it), `EDGE-6` (the
@@ -157,9 +157,10 @@ lookup, the variable expansion with the conditional elements, the values and the
 settings keys, the diagnostics file, and the runner's cancel, run directory and output
 decoding; the selection order is checked on a bare scene, as the window keeps one selected
 element. `l4-plugins` drives the window: the Plugins menu, the plugin
-toolbars, the generated dialog, the document lock, the plugin dock and the plugin
-manager; it saves pictures of the window, the parameter dialog and the plugin manager
-as `build/tests/plugins-{window,dialog,manager}.png` for review, compared with nothing.
+toolbars, the generated dialog, the document lock, the plugin dock with its output tab
+per plugin and the plugin manager; it saves pictures of the window, the parameter
+dialog, the plugin manager and the dock as
+`build/tests/plugins-{window,dialog,manager,dock}.png` for review, compared with nothing.
 
 `l4-text` checks the per-role fonts: the bundled font is found through the
 resources of the core library, every role carries its own point size, the

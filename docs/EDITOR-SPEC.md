@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.24 (2026-10-15)
+**Document version:** 0.25 (2026-10-15)
 
 **Related authorities:**
 
@@ -575,8 +575,9 @@ The plugins are external programs run on the active document: the architecture i
   grey once the document changes. *design*
 - `EDIT-PLUG-16` MUST [A]: a `files` result lists the new and changed files under the action's
   outdir in the path order. *design*
-- `EDIT-PLUG-17` MUST [A]: the plugin's stdout and stderr stream into Output during the run, one
-  block per run, capped. *design*
+- `EDIT-PLUG-17` MUST [A]: the plugin's stdout and stderr stream during the run into the
+  plugin's own output tab ("<plugin> output"), one block per run headed by the action and the
+  document, capped per tab; a starting run makes its tab current. *design*
 - `EDIT-PLUG-18` MUST [C]: a failed run — the program does not start, an exit code outside
   `exit_ok`, a crash, a timeout, a missing, empty or unreadable output, a malformed diagnostics
   file — leaves the document untouched and reports the reason, the exit code and the end of
@@ -620,6 +621,9 @@ The plugins are external programs run on the active document: the architecture i
   present different value is kept and noted (the platform language compared by its
   aliases); a document without a state machine, or a read-only one, is left as it is.
   *design*
+- `EDIT-PLUG-35` MUST [A]: a plugin output tab can be closed, which drops its text, and
+  comes back empty with the plugin's next output; its context menu clears the text after a
+  confirmation and saves it to a file as plain UTF-8 text. *design*
 
 ### 4.13 Interface language — UI
 
