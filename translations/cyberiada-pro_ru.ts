@@ -1889,12 +1889,12 @@
     <message>
         <location filename="../smeditor_window.ui" line="+47"/>
         <source>Structure tree</source>
-        <translation>Дерево структуры</translation>
+        <translation>Дерево элементов</translation>
     </message>
     <message>
         <location line="+46"/>
         <source>Properties</source>
-        <translation>Свойства</translation>
+        <translation>Свойства элементов</translation>
     </message>
     <message>
         <location line="+36"/>
