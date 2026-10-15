@@ -50,6 +50,10 @@ AboutDialog::AboutDialog(QWidget* parent):
     name->setAlignment(Qt::AlignCenter);
     layout->addWidget(name);
 
+    QLabel* subtitle = new QLabel(tr("The Cyberiada state machine editor"), this);
+    subtitle->setAlignment(Qt::AlignCenter);
+    layout->addWidget(subtitle);
+
     // the version and the build revision on one line
     QLabel* version = new QLabel(tr("Version %1 (revision %2)")
                                  .arg(CYBERIADA_VERSION).arg(CYBERIADA_REVISION), this);

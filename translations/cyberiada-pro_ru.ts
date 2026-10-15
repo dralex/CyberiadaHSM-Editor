@@ -9,7 +9,12 @@
         <translation type="unfinished">О программе %1</translation>
     </message>
     <message>
-        <location line="+18"/>
+        <location line="+17"/>
+        <source>The Cyberiada state machine editor</source>
+        <translation type="unfinished">Редактор машин состояний Cyberiada</translation>
+    </message>
+    <message>
+        <location line="+5"/>
         <source>Version %1 (revision %2)</source>
         <translation type="unfinished">Версия %1 (ревизия %2)</translation>
     </message>
@@ -1878,12 +1883,11 @@
 <context>
     <name>SMEditorWindow</name>
     <message>
-        <location filename="../smeditor_window.ui" line="+14"/>
         <source>Cyberiada State Machine Editor</source>
-        <translation type="unfinished">Редактор машин состояний Cyberiada</translation>
+        <translation type="obsolete">Редактор машин состояний Cyberiada</translation>
     </message>
     <message>
-        <location line="+73"/>
+        <location filename="../smeditor_window.ui" line="+87"/>
         <source>&amp;File</source>
         <translation type="unfinished">&amp;Файл</translation>
     </message>

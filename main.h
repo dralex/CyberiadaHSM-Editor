@@ -27,6 +27,7 @@
 #include <QApplication>
 #include <QMessageBox>
 #include <cstdio>
+#include "version.h"
 
 class CyberiadaSMEditorApplication: public QApplication {
 Q_OBJECT
@@ -61,7 +62,7 @@ public:
 		if (batch) {
 			fprintf(stderr, "%s\n", qPrintable(text));
 		} else {
-			QMessageBox::critical(0, "Cyberiada State Machine Editor", text);
+			QMessageBox::critical(0, CYBERIADA_APP_NAME, text);
 		}
 	}
 

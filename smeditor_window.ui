@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Cyberiada State Machine Editor</string>
+   <string notr="true">CyberiadaPro</string>
   </property>
   <property name="windowIcon">
    <iconset resource="smeditor.qrc">

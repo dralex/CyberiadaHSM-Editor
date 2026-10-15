@@ -1,8 +1,7 @@
 [Desktop Entry]
 Type=Application
 Version=1.0
-Name=Cyberiada State Machine Editor
-Name[ru]=Редактор машин состояний Cyberiada
+Name=CyberiadaPro
 GenericName=State Machine Editor
 GenericName[ru]=Редактор машин состояний
 Comment=Edit Cyberiada hierarchical state machine diagrams

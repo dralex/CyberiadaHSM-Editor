@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
 	FontManager::instance().loadBundledFont();
 
 	QCommandLineParser parser;
-	parser.setApplicationDescription("Cyberiada State Machine Editor");
+	parser.setApplicationDescription(CYBERIADA_APP_NAME ", the Cyberiada state machine editor");
 	parser.addHelpOption();
 	QCommandLineOption batchOption("batch", "Batch mode: open the document and exit (see docs/TESTING.md).");
 	parser.addOption(batchOption);
