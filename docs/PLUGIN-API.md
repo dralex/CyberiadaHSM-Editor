@@ -171,7 +171,8 @@ a program relative to the plugin directory, or found in `PATH`; on Windows a pro
 without a suffix also matches `<name>.exe`, and a `.bat` or `.cmd` file cannot be one.
 There is no shell: each list element is one argument, quoting is never needed, and a
 substituted value is never expanded again. stdin is the null device. The environment is
-the editor's, plus `env`, plus the exported secrets.
+the editor's, plus `env`, plus the exported secrets, plus `CYBERIADA_EDITOR_LANGUAGE`: the
+interface language.
 
 An argv element may be conditional: `{"if": "<param>", "argv": [...]}` adds its strings
 when the parameter is `true` (a bool) or not empty (any other type), and nothing
@@ -195,6 +196,7 @@ otherwise.
 | `${param-file:x}` | a run dir file holding the value of `x`; use it for long texts such as prompts |
 | `${meta:k}` | a document meta value: `platform`, `platformVersion`, `platformLanguage`, `markupLanguage`, `name`, ...; empty when absent |
 | `${selection}` | the ids of the selected elements in the document order, comma-separated (the editor selects one element at a time) |
+| `${language}` | the interface language of the editor: `en`, `ru`, ...; `en` in the batch mode |
 | `${document}` | the document file on disk; empty when untitled; current only with `save` |
 | `${document_dir}`, `${document_name}` | its directory; its base name without the extension |
 
@@ -217,6 +219,7 @@ argv contains `${request}`:
   "plugin": "hsm-maker",
   "action": "draw",
   "editor_version": "1.0.0",
+  "language": "ru",
   "input": "/tmp/cyberiada-plugin-Xa12/input.graphml",
   "document": { "path": "/home/user/work/light.graphml", "format": "cyberiada",
                 "modified": true },
@@ -320,10 +323,41 @@ Common fields: `id`, `type`, `label`, `default`, `scope` (default `run`), `requi
 * The values are kept in the editor settings, never in the diagram.
 * A `default` may use `${document_dir}` and `${document_name}`, so a directory starts
   next to the diagram; for an untitled document they are empty, and so is such a default.
+  It may also use `${language}`, so a language option follows the interface.
 * A secret is resolved at the start of a run — the variable `NAME` of the editor's
   environment, or the first line of the file `PATH` — and exported to your process as the
   `export` variable. It never reaches the argv, `request.json`, the Output or the
   settings. Do not print it.
+
+## Translation
+
+The texts of `plugin.json` are written in English. A plugin translates them with one file
+per language, `i18n/<lang>.json`: a map from the English text to its translation.
+
+```
+hsm-to-python/
+    plugin.json
+    i18n/ru.json
+```
+
+```json
+{
+  "HSM to Python": "HSM в Python",
+  "Check the code": "Проверить код",
+  "Tick, ms": "Такт, мс",
+  "update": "обновить"
+}
+```
+
+* When it scans the plugins the editor reads the file of its interface language (chosen in
+  the Preferences, applied at start) and translates the name and the description, the
+  labels and the descriptions of the actions and the parameters, and the shown enum
+  choices; a choice keeps its value.
+* A text without a translation is shown as written, a key that matches no text is
+  ignored, and a file that is not a JSON object is listed as a warning.
+* The batch mode is English and reads no translation.
+* Your own messages may follow the same language: a run gets it as `${language}`, as
+  `CYBERIADA_EDITOR_LANGUAGE` and as `language` in `request.json`.
 
 ## Exit codes, errors, cancel
 
@@ -373,7 +407,7 @@ value) and 6 for a failed run.
 
 ## Packaging
 
-Install the plugin directory as is:
+Install the plugin directory as is, `i18n/` included:
 
 | System | Folder |
 |---|---|
@@ -563,3 +597,5 @@ non-zero on a failed build. The platform comes from the document meta
 * Stop every process you started.
 * Never print a secret.
 * Say in `description` when the document leaves the machine.
+* Keep `i18n/<lang>.json` in step with the English texts: a changed text loses its
+  translation until the file follows.

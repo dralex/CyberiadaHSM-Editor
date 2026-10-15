@@ -77,7 +77,10 @@ The user folder is `QStandardPaths::writableLocation(AppDataLocation)/plugins`; 
 system folder is `share/cyberiada-editor/plugins` one level above the executable (a
 Debian install) or next to it (the Windows zip). The exact paths are in `PLUGIN-API.md`.
 A user plugin overrides a system plugin with the same id; the shadowed one gets an
-Output line. The scan runs at start and on Rescan in the plugin manager.
+Output line. The scan runs at start and on Rescan in the plugin manager; it also reads the
+plugin's `i18n/<lang>.json` of the interface language and translates the plugin texts
+(`EDIT-UI-4`). A run gets the language as `${language}`, `CYBERIADA_EDITOR_LANGUAGE` and
+`language` in `request.json` — `en` in the batch mode (`EDIT-PLUG-33`).
 
 ## The interface
 
@@ -327,7 +330,7 @@ left for the level 2 design.
   by comparing the paths, sizes and times before and after the run.
 * The system folder of a macOS bundle is `Contents/share/cyberiada-editor/plugins`.
 
-Deferred: a `network` flag with a first-run notice, localised labels, a `${sm}` variable
+Deferred: a `network` flag with a first-run notice, a `${sm}` variable
 for documents with several state machines, plugin shortcuts, element context-menu actions,
 the toolbar positions (`saveState`), stdout as the output document, a JSON Schema of the
 descriptor, level 2.
