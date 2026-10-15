@@ -1,6 +1,6 @@
 == tabs
 count: 1
-0 untitled* active
+0 [Made]* active
 == plugin
 action: maker:make
 result: new-document

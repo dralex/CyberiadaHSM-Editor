@@ -1,7 +1,7 @@
 == tabs
 count: 2
 0 hierarchy.graphml
-1 untitled* active
+1 [Made]* active
 == plugin
 action: maker:make
 result: new-document

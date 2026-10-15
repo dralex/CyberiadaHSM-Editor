@@ -51,6 +51,7 @@ private slots:
 	void test_exit_activates_dirty();
 	void test_log_session_rebinds();
 	void test_open_files();
+	void test_untitled_named();
 
 private:
 	// answer the pending modal prompt with the button once it is up
@@ -273,6 +274,29 @@ void TestTabs::test_open_files()
 	QVERIFY(!fresh.openFiles(QStringList() << "diagrams/missing.graphml", &error));
 	QVERIFY(error.contains("missing.graphml"));
 	QCOMPARE(fresh.documentCount(), 2);
+}
+
+// EDIT-DOC-10: an unsaved document is titled by its document name in brackets
+void TestTabs::test_untitled_named()
+{
+	CyberiadaSMEditorWindow fresh;
+	CyberiadaSMModel* model = fresh.getModel();
+	QCOMPARE(fresh.currentDocument()->title(), tr("untitled"));
+	// a machine name is not the document name
+	QVERIFY(model->newStateMachine("CoffeeMachine"));
+	QCOMPARE(fresh.currentDocument()->title(), tr("untitled"));
+	QCOMPARE(fresh.tabBar()->tabText(0), tr("untitled") + "*");
+	QVERIFY(model->updateTitle(model->documentIndex(), "CoffeeMachine"));
+	QCOMPARE(fresh.currentDocument()->title(), QString("[CoffeeMachine]"));
+	QVERIFY(fresh.windowTitle().startsWith("[CoffeeMachine]"));
+	QCOMPARE(fresh.tabBar()->tabText(0), QString("[CoffeeMachine]*"));
+	model->undoStack()->undo();
+	QCOMPARE(fresh.currentDocument()->title(), tr("untitled"));
+	model->undoStack()->redo();
+	QCOMPARE(fresh.currentDocument()->title(), QString("[CoffeeMachine]"));
+	// the file wins once the document has one
+	QVERIFY(fresh.openDocument("diagrams/geometry.graphml"));
+	QCOMPARE(fresh.currentDocument()->title(), QString("geometry.graphml"));
 }
 
 QTEST_MAIN(TestTabs)
