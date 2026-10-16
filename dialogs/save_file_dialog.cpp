@@ -69,6 +69,16 @@ SaveFileDialog::SaveFileDialog(QWidget* parent, const Cyberiada::LocalDocument* 
     addFormat(Cyberiada::formatLegacyYEDBerloga16, tr("yEd Berloga 1.6"),
               ":/Icons/images/format-yed.png", yed_reason);
 
+    // lapki-client and lapki-compiler take the platform from the metainformation
+    QString lapki_reason;
+    if (!document) {
+        lapki_reason = tr("the document is not open");
+    } else if (document->meta().get_string("platform").empty()) {
+        lapki_reason = tr("the Lapki format requires the platform name");
+    }
+    addFormat(Cyberiada::formatLapki, tr("Lapki IDE (CyberiadaML-GraphML 1.0)"),
+              ":/Icons/images/format-cyberiada.png", lapki_reason);
+
     connect(ui->formatComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(slotFormatChanged(int)));
     connect(ui->skipGeometryCheckBox, &QCheckBox::toggled, this, &SaveFileDialog::slotSkipGeometryToggled);
     slotFormatChanged(ui->formatComboBox->currentIndex());

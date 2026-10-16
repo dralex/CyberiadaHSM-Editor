@@ -237,7 +237,7 @@ argv contains `${request}`:
 ```
 
 `document.format` is the format the document is saved in (`cyberiada`, `yed-ostranna`,
-`yed-berloga`); the input is always CyberiadaML-GraphML 1.0. `meta` holds the document
+`yed-berloga`, `lapki`); the input is always CyberiadaML-GraphML 1.0. `meta` holds the document
 metainformation strings except the editor's own view state. Secrets are never in it.
 
 ## Results

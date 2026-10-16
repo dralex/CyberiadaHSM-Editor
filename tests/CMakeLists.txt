@@ -523,6 +523,8 @@ endfunction()
 
 add_save_format_test(geometry yed-ostranna)
 add_save_format_test(geometry yed-berloga)
+# the Lapki IDE dialect for lapki-client and lapki-compiler
+add_save_format_test(meta lapki)
 
 # the yEd formats keep a single state machine only
 function(add_save_reject_test diagram format)
@@ -541,6 +543,8 @@ function(add_save_reject_test diagram format)
 endfunction()
 
 add_save_reject_test(two-sms yed-ostranna)
+# the Lapki format needs the platform name
+add_save_reject_test(geometry lapki)
 
 # The L3 render test suite: the exported scene image must match the good
 # image within the comparison tolerance (see docs/TESTING.md)

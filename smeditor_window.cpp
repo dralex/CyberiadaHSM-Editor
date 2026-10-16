@@ -1114,6 +1114,7 @@ static QString documentFormatName(const Cyberiada::LocalDocument* root)
     switch (root->get_file_format()) {
     case Cyberiada::formatLegacyYEDOstranna:  return "yed-ostranna";
     case Cyberiada::formatLegacyYEDBerloga16: return "yed-berloga";
+    case Cyberiada::formatLapki:              return "lapki";
     case Cyberiada::formatLegacyYED:
         return QString::fromStdString(root->get_file_format_str()).contains("Berloga") ?
             "yed-berloga" : "yed-ostranna";

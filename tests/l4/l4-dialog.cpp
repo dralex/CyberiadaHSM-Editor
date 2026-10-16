@@ -125,7 +125,7 @@ void TestDialog::test_save_formats()
 	SaveFileDialog dlg(NULL, model.rootDocument());
 	QComboBox* formats = dlg.findChild<QComboBox*>("formatComboBox");
 	QVERIFY(formats);
-	QCOMPARE(formats->count(), 3);
+	QCOMPARE(formats->count(), 4);
 	QCOMPARE(dlg.selectedFormat(), Cyberiada::formatCyberiada10);
 	QCOMPARE(dlg.acceptMode(), QFileDialog::AcceptSave);
 
@@ -133,6 +133,17 @@ void TestDialog::test_save_formats()
 	QCOMPARE(dlg.selectedFormat(), Cyberiada::formatLegacyYEDOstranna);
 	formats->setCurrentIndex(2);
 	QCOMPARE(dlg.selectedFormat(), Cyberiada::formatLegacyYEDBerloga16);
+	// the Lapki format needs the platform name
+	QVERIFY(!formats->itemData(3, Qt::UserRole + 1).toString().isEmpty());
+
+	CyberiadaSMModel platform_model(this);
+	QVERIFY(platform_model.loadDocument("diagrams/meta.graphml"));
+	SaveFileDialog lapki(NULL, platform_model.rootDocument());
+	QComboBox* lapki_formats = lapki.findChild<QComboBox*>("formatComboBox");
+	QVERIFY(lapki_formats);
+	QVERIFY(lapki_formats->itemData(3, Qt::UserRole + 1).toString().isEmpty());
+	lapki_formats->setCurrentIndex(3);
+	QCOMPARE(lapki.selectedFormat(), Cyberiada::formatLapki);
 }
 
 void TestDialog::test_save_options()
@@ -168,10 +179,12 @@ void TestDialog::test_save_refused_format()
 	SaveFileDialog dlg(NULL, model.rootDocument());
 	QComboBox* formats = dlg.findChild<QComboBox*>("formatComboBox");
 	QVERIFY(formats);
-	QCOMPARE(formats->count(), 3);
+	QCOMPARE(formats->count(), 4);
 	// the format is shown with the reason but cannot be chosen
 	QVERIFY(!formats->model()->flags(formats->model()->index(1, 0)).testFlag(Qt::ItemIsEnabled));
 	QVERIFY(!formats->model()->flags(formats->model()->index(2, 0)).testFlag(Qt::ItemIsEnabled));
+	// no platform name for the Lapki format
+	QVERIFY(!formats->model()->flags(formats->model()->index(3, 0)).testFlag(Qt::ItemIsEnabled));
 	QCOMPARE(dlg.selectedFormat(), Cyberiada::formatCyberiada10);
 }
 

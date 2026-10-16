@@ -45,7 +45,7 @@ struct PluginRunContext {
     std::string input;
     // empty for an untitled document
     QString documentPath;
-    // the saved format: cyberiada, yed-ostranna or yed-berloga
+    // the saved format: cyberiada, yed-ostranna, yed-berloga or lapki
     QString documentFormat;
     bool modified = false;
     QList<QPair<QString, QString> > meta;

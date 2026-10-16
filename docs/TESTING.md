@@ -380,10 +380,13 @@ override of the stored *show component comments* preference and changes nothing
 saved.
 
 `--save-format <format>` chooses the format of the saved document:
-`cyberiada` (the default), `yed-ostranna` or `yed-berloga`. The yEd formats keep
-a single state machine with the geometry and have no shape for the terminate
-pseudostate, so a document they cannot express fails with exit code 3; the GUI
-save dialog disables such a format and shows the reason instead.
+`cyberiada` (the default), `yed-ostranna`, `yed-berloga` or `lapki`. The yEd formats
+keep a single state machine with the geometry and have no shape for the terminate
+pseudostate; the `lapki` format (the dialect read by lapki-client and lapki-compiler)
+needs the `platform` parameter and has no formal comments other than the
+components and no transitions without a trigger. A document a format cannot express
+fails with exit code 3; the GUI save dialog disables such a format and shows the
+reason instead.
 
 A batch run starts with snap-to-grid off and the default grid spacing (25),
 whatever the GUI settings hold (`EDIT-TOOL-14`). `--snap` turns the snap on and

@@ -109,5 +109,8 @@ stop();
         <point x="100.000000" y="30.000000"/>
       </data>
     </edge>
+    <edge id="cX-n0" source="cX" target="n0">
+      <data key="dPivot"/>
+    </edge>
   </graph>
 </graphml>

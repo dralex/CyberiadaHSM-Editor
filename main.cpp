@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
 	parser.addOption(gridOption);
 	QCommandLineOption saveFormatOption("save-format",
 										"The format of the saved document: cyberiada (default), "
-										"yed-ostranna or yed-berloga.", "format", "cyberiada");
+										"yed-ostranna, yed-berloga or lapki.", "format", "cyberiada");
 	parser.addOption(saveFormatOption);
 	QCommandLineOption compareOption("compare", "Compare two image files with tolerance and exit.");
 	parser.addOption(compareOption);
@@ -191,6 +191,8 @@ int main(int argc, char *argv[])
 				options.saveFormat = Cyberiada::formatLegacyYEDOstranna;
 			} else if (format_str == "yed-berloga") {
 				options.saveFormat = Cyberiada::formatLegacyYEDBerloga16;
+			} else if (format_str == "lapki") {
+				options.saveFormat = Cyberiada::formatLapki;
 			} else if (format_str != "cyberiada") {
 				fprintf(stderr, "unknown save format %s\n", qPrintable(format_str));
 				return batchUsageError;

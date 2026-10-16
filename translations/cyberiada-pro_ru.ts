@@ -296,7 +296,7 @@
         <translation>Построить геометрию всей диаграммы заново? Расположение элементов будет изменено; вернуть ее можно отменой действия.</translation>
     </message>
     <message>
-        <location line="+120"/>
+        <location line="+121"/>
         <source>the plugin is %1</source>
         <translation>плагин %1</translation>
     </message>
@@ -2261,11 +2261,12 @@
     </message>
     <message>
         <location line="+3"/>
+        <location line="+13"/>
         <source>the document is not open</source>
         <translation>документ не открыт</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="-10"/>
         <source>CyberiadaML-GraphML 1.0</source>
         <translation>CyberiadaML-GraphML 1.0</translation>
     </message>
@@ -2278,6 +2279,16 @@
         <location line="+2"/>
         <source>yEd Berloga 1.6</source>
         <translation>yEd Berloga 1.6</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>the Lapki format requires the platform name</source>
+        <translation type="unfinished">для формата Lapki требуется имя платформы</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Lapki IDE (CyberiadaML-GraphML 1.0)</source>
+        <translation type="unfinished">Lapki IDE (CyberiadaML-GraphML 1.0)</translation>
     </message>
     <message>
         <location line="+66"/>

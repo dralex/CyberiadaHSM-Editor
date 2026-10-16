@@ -239,7 +239,7 @@ Windows для `python3` пробуются также `python` и `py -3`, а �
 ```
 
 `document.format` — формат, в котором сохраняется документ (`cyberiada`, `yed-ostranna`,
-`yed-berloga`); вход всегда в формате CyberiadaML-GraphML 1.0. `meta` содержит строки
+`yed-berloga`, `lapki`); вход всегда в формате CyberiadaML-GraphML 1.0. `meta` содержит строки
 метаинформации документа, кроме собственного состояния вида редактора. Секретов в файле
 нет никогда.
 
