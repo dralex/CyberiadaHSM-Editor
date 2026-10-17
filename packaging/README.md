@@ -60,6 +60,7 @@ Two steps — the per-release images are stable, the packages are rebuilt regula
 
     ./packaging/build-linux-images.sh            # once: the per-release images
     ./packaging/build-linux-docker.sh            # each build: -> dist/ubuntu-*/
+    ./packaging/test-linux-docker.sh             # install-test them in stock images
 
 See [`linux-docker/README.md`](linux-docker/README.md) for details.
 

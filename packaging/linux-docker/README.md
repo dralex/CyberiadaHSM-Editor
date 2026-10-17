@@ -14,6 +14,8 @@ Covered by default: **20.04, 22.04, 24.04, 26.04**.
 | `Dockerfile` | the deb build environment for one release, parameterized by `ARG UBUNTU_VERSION`. One recipe → one image per release. |
 | `../build-linux-images.sh` | the **image** step (rare): builds the per-release images. |
 | `../build-linux-docker.sh` | the **packages** step (frequent): pulls the release branch and runs `../build-toolchain.sh` inside each existing image. |
+| `../test-linux-docker.sh` | the **package tests**: installs the built set into stock `ubuntu:<ver>` images and smoke-tests it. |
+| `package-tests.sh` | the checks of one release, run inside its container by `../test-linux-docker.sh`. |
 
 There is no per-release build logic — the toolchain uses the same apt packages on
 every release and has no `-Werror`, so only the base-image tag differs.
@@ -72,6 +74,40 @@ The library and editor ctests run inside each container by default (`--no-test`
 skips them). The image generates `ru_RU.UTF-8` so the editor's dual-locale test
 (C + ru_RU.UTF-8) runs, sets `QT_QPA_PLATFORM=offscreen` for the headless GUI
 tests, and ships `valgrind` for the memcheck suites.
+
+## Package tests
+
+The ctests above run in the builder images, which already hold every build
+dependency. `../test-linux-docker.sh` checks the result the way a user gets it: a
+**stock** `ubuntu:<ver>` container installs that release's set from the archive
+alone and runs the packages.
+
+    ./packaging/build-linux-docker.sh && ./packaging/test-linux-docker.sh
+    ./packaging/test-linux-docker.sh --releases "24.04" --no-dev
+
+Per release, `package-tests.sh` (inside the container):
+
+1. **selects** the set by package name: `dist/libs/`, then `dist/ubuntu-<ver>/` (its
+   rebuilt libraries replace the shared ones), then the `Architecture: all` packages
+   of `dist/pyapps/`. A package needing a newer `python3` than the release has (the
+   agents on 20.04) is left out and shown as SKIP;
+2. **installs** it with `apt-get install` after checking our own versioned
+   `Depends` inside the set. If the install fails, a copy with those version
+   constraints stripped is installed so the checks still run, but the release fails;
+3. **checks** as an unprivileged user, headless and offline:
+   - the libraries: `cybparser`, `ldd`, and the binding import and read;
+   - the tools: the dispatcher, `hsm-gencode`/`hsm-check`/`hsm-run`,
+     `hsm-maker --notation/--render` and `cybersphere check/platform`;
+   - the editor: its `--dump`, text, render, export and save goldens (the inputs
+     of `tests/`), a GUI start, and the bundled plugins in `--list-plugins` and
+     `--run-plugin`;
+4. installs the compiler, then **compiles** against the `-dev` packages (gcc and
+   CMake `find_package`; `--no-dev` skips this) and validates the desktop entry;
+5. **purges** the set and looks for leftover files.
+
+Each check prints `PASS`/`FAIL`/`SKIP`/`WARN`. The summary lists every release, and
+the logs are in `dist/test-logs/ubuntu-<ver>.log`. The goldens and the inputs come
+from the source checkout, so test right after building it.
 
 ## Note on 26.04
 
