@@ -60,11 +60,20 @@ the host user so nothing in the mounted tree becomes root-owned.
 
 ## Output
 
-Per release, into `dist/ubuntu-<ver>/`: the library packages (`libcyberiadaml`,
-`libcyberiadamlpp`, `libhtreegeom` with their `-dev`/`-parser` splits), the python
-binding `python3-libcyberiadamlpp` (built against that release's python 3, a
-separate package — not in the editor), and the `cyberiada-pro` `.deb`, whose
-`Depends` name that release's Qt5/libxml2.
+- `dist/libs/`: the library packages (`libhtreegeom`, `libcyberiadaml`,
+  `libcyberiadamlpp` with their `-dev`/`-parser` splits), built once on the oldest
+  release and shared by every release.
+- `dist/ubuntu-<ver>/`, tagged `+ubuntu<ver>`:
+  - the python binding `python3-libcyberiadamlpp`, built against that release's
+    python 3, a separate package (not in the editor);
+  - the python packages tested against that binding and that release's libraries:
+    `python3-hsm-dispatcher`, `python3-hsm-to-python`,
+    `python3-cybersphere-hsm-maker`, and `python3-cybersphere-agents` from
+    python 3.10 on (so not on 20.04);
+  - the `cyberiada-pro` `.deb`, whose `Depends` name that release's Qt5/libxml2;
+  - on 26.04, the libxml2-linked libraries rebuilt for its libxml2.
+- `dist/pyapps/`: the `.zip` and the pip wheels of the python packages (one build,
+  on the newest release, serves every platform).
 
 Inspect one with `dpkg-deb -I dist/ubuntu-22.04/cyberiada-pro*.deb`.
 
@@ -88,9 +97,9 @@ alone and runs the packages.
 Per release, `package-tests.sh` (inside the container):
 
 1. **selects** the set by package name: `dist/libs/`, then `dist/ubuntu-<ver>/` (its
-   rebuilt libraries replace the shared ones), then the `Architecture: all` packages
-   of `dist/pyapps/`. A package needing a newer `python3` than the release has (the
-   agents on 20.04) is left out and shown as SKIP;
+   rebuilt libraries replace the shared ones). A python package whose
+   `requires-python` is above the release's `python3` (the agents on 20.04) is not
+   built there and is shown as SKIP;
 2. **installs** it with `apt-get install` after checking our own versioned
    `Depends` inside the set. If the install fails, a copy with those version
    constraints stripped is installed so the checks still run, but the release fails;

@@ -13,13 +13,18 @@
 #   libhtreegeom, libcyberiadaml, libcyberiadamlpp -> one .deb set in <out>/libs that
 #   ships for every release.
 # Tier 2 (per release): each container installs that lib .deb set (so the build and
-#   tests run against the real packages), then builds the distribution-dependent apps
-#   python3-libcyberiadamlpp and cyberiada-pro, version-tagged (1.0.6~ubuntu<ver>),
-#   collected into <out>/ubuntu-<ver>.
+#   tests run against the real packages), then builds the distribution-dependent apps:
+#   the binding python3-libcyberiadamlpp, the python packages tested against it
+#   (python3-hsm-dispatcher, python3-hsm-to-python, python3-cybersphere-hsm-maker and,
+#   from python 3.10 on, python3-cybersphere-agents) and cyberiada-pro, version-tagged
+#   (1.0.9+ubuntu<ver>), collected into <out>/ubuntu-<ver>. The newest release also
+#   gives the arch-independent .zip and pip wheels of the python packages, <out>/pyapps.
 # See build-toolchain.sh --libs-only / --apps-only for the mechanism.
 #
 # The per-release images are built separately (once) by build-linux-images.sh —
-# they are stable, while the packages are rebuilt regularly.
+# they are stable, while the packages are rebuilt regularly. Test the result with
+# test-linux-docker.sh. Set AGENTS_TEST=1 to pip-install pydantic-ai and run the
+# agents suite too.
 #
 # Copyright (C) 2026 Alexey Fedoseev <aleksey@fedoseev.net>
 #
@@ -129,15 +134,22 @@ docker run --rm \
     "$libimage" \
     sh -c "exec /src/CyberiadaHSM-Editor/packaging/build-toolchain.sh $common_opts --build-root $build_root --libs-only --prefix /tmp/libprefix --out /out"
 
-# the per-release apps (python binding, editor) are rebuilt in each release. htgeom
+# the per-release apps (python binding, python packages, editor) are rebuilt in
+# each release, so each is tested against that release's libraries and python. htgeom
 # is always reused from the once-built set; the libxml2-linked libs (cyberiadaml,
 # cyberiadamlpp) are reused too where the once-built soname (libxml2.so.2) exists
 # (20.04/22.04/24.04) and rebuilt in-place where it does not (26.04 has libxml2.so.16),
-# via --xml-libs. The apps are version-tagged (1.0.6~ubuntu<ver>). apt (as root) installs
+# via --xml-libs. The apps are version-tagged (1.0.9+ubuntu<ver>). apt (as root) installs
 # the lib .debs so their runtime deps are pulled from the repo; the build itself then
 # runs as the invoking user (setpriv), so the build dirs in the mounted source and the
 # produced .debs stay user-owned. Stop at the first failure (set -e).
 uid=$(id -u); gid=$(id -g)
+# the arch-independent .zip and wheels of the python packages: built once, in the
+# newest release (its setuptools builds every wheel); no .deb lands there any more
+newest=$(printf '%s\n' $RELEASES | sort -V | tail -1)
+pyout="$OUT/pyapps"
+mkdir -p "$pyout"
+rm -f "$pyout"/*.deb
 for ver in $RELEASES; do
     tag="$IMAGE:$ver"
     docker image inspect "$tag" >/dev/null 2>&1 \
@@ -146,12 +158,15 @@ for ver in $RELEASES; do
     relout="$OUT/ubuntu-$ver"
     mkdir -p "$relout"
     distro="ubuntu$(printf '%s' "$ver" | tr -d '.')"
+    wheels=""
+    if [ "$ver" = "$newest" ]; then wheels="--wheel-dir /wheels"; fi
     say "building the per-release apps for ubuntu $ver -> $relout"
     docker run --rm \
-        -e HOME=/tmp \
+        -e HOME=/tmp -e AGENTS_TEST="${AGENTS_TEST:-0}" \
         -v "$SOURCES":/src \
         -v "$libout":/libdebs:ro \
         -v "$relout":/out \
+        -v "$pyout":/wheels \
         "$tag" \
         sh -c "set -e; \
 apt-get update >/dev/null 2>&1 || true; \
@@ -160,35 +175,7 @@ if apt-get install -y --no-install-recommends libxml2 >/dev/null 2>&1 && ldconfi
   apt-get install -y --no-install-recommends /libdebs/libcyberiadaml*.deb; xmlflag=; \
 else xmlflag=--xml-libs; fi; \
 exec setpriv --reuid=$uid --regid=$gid --clear-groups \
-  /src/CyberiadaHSM-Editor/packaging/build-toolchain.sh $common_opts --build-root $build_root --apps-only \$xmlflag --prefix /tmp/prefix --out /out --distro-tag $distro"
+  /src/CyberiadaHSM-Editor/packaging/build-toolchain.sh $common_opts --build-root $build_root --apps-only \$xmlflag $wheels --prefix /tmp/prefix --out /out --distro-tag $distro"
 done
 
-# the distribution-independent python packages (python3-hsm-dispatcher,
-# python3-hsm-to-python, python3-cybersphere-hsm-maker, python3-cybersphere-agents)
-# are Architecture: all with no distro tag, so they are built ONCE, in the newest
-# release — its python satisfies the agents' >= 3.10 requirement and matches the
-# binding ABI used by their import tests. Same lib-.deb install preamble as the app
-# tier. Set AGENTS_TEST=1 to pip-install pydantic-ai and run the agents suite too.
-newest=$(printf '%s\n' $RELEASES | sort -V | tail -1)
-pyimage="$IMAGE:$newest"
-pyout="$OUT/pyapps"
-docker image inspect "$pyimage" >/dev/null 2>&1 \
-    || die "image $pyimage not found; build it with ./packaging/build-linux-images.sh --releases \"$newest\""
-mkdir -p "$pyout"
-say "building the distribution-independent python packages once (ubuntu $newest) -> $pyout"
-docker run --rm \
-    -e HOME=/tmp -e AGENTS_TEST="${AGENTS_TEST:-0}" \
-    -v "$SOURCES":/src \
-    -v "$libout":/libdebs:ro \
-    -v "$pyout":/out \
-    "$pyimage" \
-    sh -c "set -e; \
-apt-get update >/dev/null 2>&1 || true; \
-apt-get install -y --no-install-recommends /libdebs/libhtreegeom*.deb; \
-if apt-get install -y --no-install-recommends libxml2 >/dev/null 2>&1 && ldconfig -p | grep -q 'libxml2\\.so\\.2'; then \
-  apt-get install -y --no-install-recommends /libdebs/libcyberiadaml*.deb; xmlflag=; \
-else xmlflag=--xml-libs; fi; \
-exec setpriv --reuid=$uid --regid=$gid --clear-groups \
-  /src/CyberiadaHSM-Editor/packaging/build-toolchain.sh $common_opts --build-root $build_root --python-apps \$xmlflag --prefix /tmp/prefix --out /out"
-
-say "done — shared libraries in $libout, per-release apps in $OUT/ubuntu-*, python packages in $pyout"
+say "done — shared libraries in $libout, per-release apps in $OUT/ubuntu-*, python wheels in $pyout"

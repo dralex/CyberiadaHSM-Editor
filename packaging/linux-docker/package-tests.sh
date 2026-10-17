@@ -6,8 +6,8 @@
 # Phases (CYB_PKGTEST_PHASES, default all):
 #   apt      point apt at the mirror, apt-get update
 #   select   stage this release's set from /dist: libs/, then ubuntu-<ver>/ (its
-#            packages replace the libs/ ones of the same name), then pyapps/
-#            (Architecture: all only); leave out what needs a newer python3
+#            packages replace the libs/ ones of the same name); a python package
+#            needing a newer python3 than the release has is not expected there
 #   install  check our own versioned Depends, install the set from the archive;
 #            if that fails, install a copy with those version constraints
 #            stripped, so the checks still run (the release still fails)
@@ -31,7 +31,7 @@ if [ "${CYB_PKGTEST:-0}" != 1 ]; then
     exit 2
 fi
 
-DIST=${CYB_PKGTEST_DIST:-/dist}           # the build output: libs/ ubuntu-<ver>/ pyapps/
+DIST=${CYB_PKGTEST_DIST:-/dist}           # the build output: libs/ ubuntu-<ver>/
 SRC=${CYB_PKGTEST_SRC:-/src}              # the sibling repos: the test fixtures
 STAGE=${CYB_PKGTEST_STAGE:-/tmp/debs}     # the chosen package set
 W=${CYB_PKGTEST_WORK:-/tmp/pkgtest}       # the work dir of the test user
@@ -41,6 +41,7 @@ MIRROR=${CYB_PKGTEST_MIRROR-ru.archive.ubuntu.com}   # empty: keep the stock sou
 DEV=${CYB_PKGTEST_DEV:-1}
 RECOMMENDS=${CYB_PKGTEST_RECOMMENDS:-0}
 TUID=1500
+PYVER=${CYB_PKGTEST_PYTHON:-}             # the archive's python3 (default: apt-cache)
 
 if [ -n "${CYB_PKGTEST_RELEASE:-}" ]; then
     VER=$CYB_PKGTEST_RELEASE
@@ -54,6 +55,11 @@ LIBS="libhtreegeom libhtreegeom-dev libcyberiadaml libcyberiadaml-dev libcyberia
 APPS="python3-libcyberiadamlpp cyberiada-pro"
 PYAPPS="python3-hsm-dispatcher python3-hsm-to-python python3-cybersphere-hsm-maker
         python3-cybersphere-agents"
+# the python packages and their repos (a requires-python above the release's
+# python3 leaves one out of that release's build)
+PYREPOS="python3-hsm-dispatcher:hsm-dispatcher-py python3-hsm-to-python:hsm-to-python
+         python3-cybersphere-hsm-maker:cybersphere-hsm-maker
+         python3-cybersphere-agents:cybersphere-agents"
 # the tool packages and the id of the editor plugin each one installs
 PLUGINS="python3-hsm-to-python:hsm-to-python python3-cybersphere-hsm-maker:hsm-maker
          python3-cybersphere-agents:cybersphere-agents"
@@ -165,18 +171,13 @@ if phase apt; then
 fi
 
 # --- select ------------------------------------------------------------------
-# add_debs DIR any|all: stage DIR/*.deb as <Package>.deb; a later DIR replaces an
-# earlier one's package of the same name; "all" keeps Architecture: all only
+# add_debs DIR: stage DIR/*.deb as <Package>.deb; a later DIR replaces an earlier
+# one's package of the same name
 add_debs() {
     [ -d "$1" ] || { echo "  no $1"; return 0; }
     seen=" "
     for f in "$1"/*.deb; do
         [ -f "$f" ] || continue
-        arch=$(dpkg-deb -f "$f" Architecture)
-        if [ "$2" = all ] && [ "$arch" != all ]; then
-            echo "  ignored ${f#"$DIST"/} (Architecture: $arch)"
-            continue
-        fi
         pkg=$(dpkg-deb -f "$f" Package); ver=$(dpkg-deb -f "$f" Version)
         case "$seen" in *" $pkg "*) echo "${1#"$DIST"/} holds two $pkg packages" >>"$STAGE/ERRORS" ;; esac
         seen="$seen$pkg "
@@ -193,10 +194,28 @@ add_debs() {
     return 0
 }
 
+# the archive's python3 version (empty when unknown)
+archive_python() {
+    if [ -z "$PYVER" ]; then
+        PYVER=$(apt-cache policy python3 2>/dev/null | sed -n 's/^ *Candidate: //p')
+        [ "$PYVER" != "(none)" ] || PYVER=""
+    fi
+    echo "$PYVER"
+}
+
+# py_floor PKG: the requires-python of a python package's sources (empty if none)
+py_floor() {
+    for e in $PYREPOS; do
+        [ "${e%%:*}" = "$1" ] || continue
+        sed -n 's/^requires-python *= *">= *\([0-9.]*\)".*/\1/p' "$SRC/${e#*:}/pyproject.toml" 2>/dev/null
+    done
+    return 0
+}
+
 # py_gate: move out the packages whose python3 (>= X) the archive cannot satisfy
 py_gate() {
-    py=$(apt-cache policy python3 | sed -n 's/^ *Candidate: //p')
-    [ -n "$py" ] && [ "$py" != "(none)" ] || return 0
+    py=$(archive_python)
+    [ -n "$py" ] || return 0
     for f in "$STAGE"/*.deb; do
         [ -f "$f" ] || continue
         min=$(dpkg-deb -f "$f" Depends | tr ',' '\n' | sed -n 's/^ *python3 *(>= *\([^)]*\)).*/\1/p')
@@ -216,11 +235,17 @@ select_set() {
     rm -rf "$STAGE"
     mkdir -m 755 -p "$STAGE"
     : >"$STAGE/MANIFEST"; : >"$STAGE/ERRORS"; : >"$STAGE/EXCLUDED"
-    add_debs "$DIST/libs" any
-    add_debs "$DIST/ubuntu-$VER" any
-    add_debs "$DIST/pyapps" all
+    add_debs "$DIST/libs"
+    add_debs "$DIST/ubuntu-$VER"
+    py=$(archive_python)
     for p in $LIBS $APPS $PYAPPS; do
-        [ -f "$STAGE/$p.deb" ] || echo "missing $p" >>"$STAGE/ERRORS"
+        [ ! -f "$STAGE/$p.deb" ] || continue
+        min=$(py_floor "$p")
+        if [ -n "$min" ] && [ -n "$py" ] && dpkg --compare-versions "$py" lt "$min"; then
+            echo "$p $min $py" >>"$STAGE/EXCLUDED"     # not built for this release
+        else
+            echo "missing $p" >>"$STAGE/ERRORS"
+        fi
     done
     # the per-release packages carry this release's tag (catches a mis-copied dir)
     grep " ubuntu-$VER\$" "$STAGE/MANIFEST" | while read -r p v _; do
@@ -235,7 +260,7 @@ if phase select; then
     while read -r p v d; do printf '  %-32s %-24s %s\n' "$p" "$v" "$d"; done <"$STAGE/MANIFEST"
     rcheck select - '[ ! -s "$STAGE/ERRORS" ] || { cat "$STAGE/ERRORS"; false; }'
     while read -r p min py; do
-        skip "install-$p" "Depends python3 (>= $min), the archive has $py"
+        skip "install-$p" "needs python3 >= $min, the archive has $py"
     done <"$STAGE/EXCLUDED"
 fi
 

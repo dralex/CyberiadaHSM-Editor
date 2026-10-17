@@ -22,8 +22,12 @@ packaged.
 
 The **python binding** (`libcyberiadamlpp-py`) is built and packaged as its **own**
 package — `python3-libcyberiadamlpp` (`.deb`) or a `.zip` — and is **never** bundled
-into the editor distribution. It needs the python 3 dev headers and `pybind11`; skip
-it with `--no-python`.
+into the editor distribution. It needs the python 3 dev headers and `pybind11`.
+Right after it, the **python packages** (`hsm-dispatcher-py`, `hsm-to-python`,
+`cybersphere-hsm-maker`, `cybersphere-agents`) are built and tested against it, each
+skipped when the python 3 is older than its `requires-python`; `--wheel-dir DIR`
+adds their `.zip` and pip wheels. Skip the binding and the packages with
+`--no-python`.
 
 The paths are resolved from the **script's own location**, so it can be run from
 anywhere — the working directory does not matter:
@@ -43,7 +47,8 @@ through an rpath), so it needs no separate QtPropertyBrowser package.
       --branch NAME  branch to build (default: main)
       --no-pull      build the current checkout, do not switch/pull
       --no-test      skip ctest
-      --no-python    skip the python binding package
+      --no-python    skip the python binding and the python packages
+      --wheel-dir D  also the .zip and the pip wheels of the python packages
       --jobs N       parallel build jobs
 
 The editor tests run under both the `C` and `ru_RU.UTF-8` locales. Building `main`

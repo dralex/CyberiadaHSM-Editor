@@ -8,15 +8,16 @@
 # is collected into one output directory. The editor is the endpoint: a .deb with
 # the proper dependencies (QtPropertyBrowser is bundled inside it).
 #
-# Order: libhtreegeom -> libcyberiadaml -> libcyberiadamlpp -> (libcyberiadamlpp-py)
-#        -> QtPropertyBrowser -> CyberiadaHSM-Editor
+# Order: libhtreegeom -> libcyberiadaml -> libcyberiadamlpp -> (libcyberiadamlpp-py
+#        -> the python packages) -> QtPropertyBrowser -> CyberiadaHSM-Editor
 # The python binding is a separate .deb (python3-libcyberiadamlpp), not bundled
-# into the editor; skip it with --no-python.
+# into the editor; the python packages (hsm-dispatcher, hsm-to-python, the maker,
+# the agents) are tested against it; skip them all with --no-python.
 #
 # Two tiers (see build-linux-docker.sh): the libraries are distribution-independent
-# and built once with --libs-only; the python binding and editor are per-release and
-# built with --apps-only --lib-prefix <once-built libs> --distro-tag ubuntu<ver>.
-# With no mode flag the script builds everything, as before.
+# and built once with --libs-only; the python binding, the python packages and the
+# editor are per-release and built with --apps-only --lib-prefix <once-built libs>
+# --distro-tag ubuntu<ver>. With no mode flag the script builds everything.
 #
 # Copyright (C) 2026 Alexey Fedoseev <aleksey@fedoseev.net>
 #
@@ -34,14 +35,15 @@ OUT="$SOURCES/dist"
 BRANCH="main"                 # the release branch (QtPropertyBrowser uses master)
 PULL=1                        # 0 = build whatever is checked out
 TEST=1
-PYTHON=1                      # also build+package the python binding (a separate .deb)
+PYTHON=1                      # also the python binding and the python packages
 JOBS=$(nproc 2>/dev/null || echo 2)
-MODE="all"                    # all | libs | apps  (see --libs-only / --apps-only)
+MODE="all"                    # all | libs | apps | pyapps  (see the mode options)
 LIB_PREFIX=""                 # apps mode: extra prefix holding the once-built libraries
 DISTRO_TAG=""                 # per-release version suffix for the app packages (e.g. ubuntu2404)
 XML_LIBS=0                    # apps mode: also rebuild the libxml2-linked libs here
 CLEAN=0                       # remove each repo's build dir before building it
 BUILD_ROOT=""                 # if set, build out-of-source under here (not in the sources)
+WHEEL_DIR=""                  # if set, also the .zip and the pip wheel of each python package
 
 usage() {
     cat <<EOF
@@ -51,13 +53,16 @@ usage: $0 [options]
   --branch NAME  branch to build (default: main; QtPropertyBrowser: master)
   --no-pull      build the current checkout, do not switch/pull a branch
   --no-test      skip ctest
-  --no-python    skip the python binding package (python3-libcyberiadamlpp)
+  --no-python    skip the python binding and the python packages
   --libs-only    build only the distro-independent libraries (htgeom, cyberiadaml, cyberiadamlpp)
-  --apps-only    build only the per-release apps (python binding, editor); needs --lib-prefix
-  --python-apps  build only the distro-independent python packages (hsm-dispatcher,
-                 hsm-to-python, cybersphere-hsm-maker, cybersphere-agents) once
+  --apps-only    build only the per-release apps (python binding, python packages,
+                 editor); needs --lib-prefix
+  --python-apps  build only the python binding and the python packages (hsm-dispatcher,
+                 hsm-to-python, cybersphere-hsm-maker, cybersphere-agents), with
+                 their .zip and wheels (--wheel-dir defaults to --out)
+  --wheel-dir D  also put the .zip and the pip wheel of each python package into D
   --lib-prefix D extra install prefix holding the once-built libraries (apps mode)
-  --distro-tag T version suffix for the app packages, e.g. ubuntu2404 -> 1.0.6~ubuntu2404
+  --distro-tag T version suffix for the app packages, e.g. ubuntu2404 -> 1.0.9+ubuntu2404
   --xml-libs     apps mode: also rebuild cyberiadaml/cyberiadamlpp here (a release
                  whose libxml2 soname differs from the once-built set, e.g. 26.04)
   --clean        remove each repo's build dir before building (from scratch)
@@ -83,6 +88,7 @@ while [ $# -gt 0 ]; do
         --xml-libs) XML_LIBS=1; shift ;;
         --clean) CLEAN=1; shift ;;
         --build-root) BUILD_ROOT="$2"; shift 2 ;;
+        --wheel-dir) WHEEL_DIR="$2"; shift 2 ;;
         --jobs) JOBS="$2"; shift 2 ;;
         -h|--help) usage; exit 0 ;;
         *) echo "unknown option: $1" >&2; usage; exit 2 ;;
@@ -91,6 +97,8 @@ done
 
 # the library tier needs no python at all
 if [ "$MODE" = libs ]; then PYTHON=0; fi
+# the python tier on its own also gives the .zip and the wheels
+if [ "$MODE" = pyapps ] && [ -z "$WHEEL_DIR" ]; then WHEEL_DIR="$OUT"; fi
 
 say() { printf '\n\033[1;34m== %s\033[0m\n' "$*"; }
 die() { printf '\033[1;31merror: %s\033[0m\n' "$*" >&2; exit 1; }
@@ -269,13 +277,15 @@ build_python() {
     if [ -n "$orig_branch" ]; then git -C "$dir" checkout --quiet "$orig_branch"; fi
 }
 
-# build one of the distribution-independent python packages (python3-hsm-dispatcher,
-# python3-hsm-to-python, python3-cybersphere-hsm-maker, python3-cybersphere-agents):
-# a CPack DEB, Architecture: all, no DISTRO_TAG, not installed into the shared prefix.
-# Its ctest imports the CyberiadaML binding (built just before — its build dir is on
-# PYTHONPATH) and, for the dispatcher-dependent ones, the hsmd modules from the
-# dispatcher source. A second arg "pydantic" marks a suite that also needs pydantic-ai
-# (PyPI-only): it is skipped unless the import works (AGENTS_TEST=1 pip-installs it).
+# build one of the python packages (python3-hsm-dispatcher, python3-hsm-to-python,
+# python3-cybersphere-hsm-maker, python3-cybersphere-agents): a CPack DEB,
+# Architecture: all, tagged with DISTRO_TAG, not installed into the shared prefix.
+# A package whose requires-python this python does not meet is skipped (the agents
+# need 3.10, so not on 20.04). Its ctest imports the CyberiadaML binding of this
+# release (built just before — its build dir is on PYTHONPATH) and, for the
+# dispatcher-dependent ones, the hsmd modules from the dispatcher source. A second
+# arg "pydantic" marks a suite that also needs pydantic-ai (PyPI-only): it is skipped
+# unless the import works (AGENTS_TEST=1 pip-installs it).
 build_pydeb() {
     repo="$1"; guard="${2:-}"
     dir="$SOURCES/$repo"
@@ -293,11 +303,20 @@ build_pydeb() {
         git -C "$dir" pull --quiet --ff-only origin "$BRANCH"
     fi
 
+    floor=$(sed -n 's/^requires-python *= *">= *\([0-9.]*\)".*/\1/p' "$dir/pyproject.toml")
+    have=$(python3 -c 'import sys; print("%d.%d" % sys.version_info[:2])')
+    if [ -n "$floor" ] && ! python3 -c "import sys; sys.exit(sys.version_info[:2] < tuple(map(int, '$floor'.split('.'))))"; then
+        echo "note: skipping $repo (requires python >= $floor, this python is $have)"
+        if [ -n "$orig_branch" ]; then git -C "$dir" checkout --quiet "$orig_branch"; fi
+        return 0
+    fi
+
     echo "Building $repo..."
     if [ -n "$BUILD_ROOT" ]; then bdir="$BUILD_ROOT/$repo"; else bdir="$dir/build-pkg"; fi
     [ "$CLEAN" -eq 1 ] && rm -rf "$bdir"
     cmake -S "$dir" -B "$bdir" \
         -DCMAKE_BUILD_TYPE=Release \
+        ${DISTRO_TAG:+-DDISTRO_TAG=$DISTRO_TAG} \
         -DCMAKE_INSTALL_PREFIX="$PREFIX" \
         -DCMAKE_PREFIX_PATH="$prefix_path" \
         -DCMAKE_MODULE_PATH="$module_path" \
@@ -327,16 +346,22 @@ build_pydeb() {
         fi
     fi
 
-    # the .deb (Debian), the .zip (its files, incl. the editor plugin under
-    # share/cyberiada-pro/plugins/<id>, for other platforms) and the pip wheel
-    # (arch-independent; carries the console-script shims and the plugin data-files).
-    # pip builds in a temp dir, so the mounted source tree is not polluted.
+    # the .deb (Debian); with --wheel-dir also the .zip (its files, incl. the editor
+    # plugin under share/cyberiada-pro/plugins/<id>, for other platforms) and the pip
+    # wheel (arch-independent; carries the console-script shims and the plugin
+    # data-files): one build of those serves every platform. pip builds in a temp
+    # dir, so the mounted source tree is not polluted.
     echo "Packing $repo..."
+    rm -f "$bdir"/*.deb "$bdir"/*.zip
     ( cd "$bdir" && cpack -G DEB >/dev/null )
-    ( cd "$bdir" && cpack -G ZIP >/dev/null )
-    cp "$bdir"/*.deb "$bdir"/*.zip "$OUT"/
-    echo "Building the wheel for $repo..."
-    python3 -m pip wheel --no-build-isolation --no-deps --wheel-dir "$OUT" "$dir" >/dev/null
+    cp "$bdir"/*.deb "$OUT"/
+    if [ -n "$WHEEL_DIR" ]; then
+        mkdir -p "$WHEEL_DIR"
+        ( cd "$bdir" && cpack -G ZIP >/dev/null )
+        cp "$bdir"/*.zip "$WHEEL_DIR"/
+        echo "Building the wheel for $repo..."
+        python3 -m pip wheel --no-build-isolation --no-deps --wheel-dir "$WHEEL_DIR" "$dir" >/dev/null
+    fi
 
     if [ -n "$orig_branch" ]; then git -C "$dir" checkout --quiet "$orig_branch"; fi
 }
@@ -349,6 +374,16 @@ if [ "$MODE" = all ] || [ "$MODE" = libs ]; then
     build_repo libcyberiadamlpp  "$BRANCH" deb
 fi
 
+# the python packages, right after the binding their tests import: hsm-dispatcher
+# and the maker need only CyberiadaML; hsm-to-python and the agents also need the
+# dispatcher's hsmd (on PYTHONPATH via the source)
+build_pyapps() {
+    build_pydeb hsm-dispatcher-py
+    build_pydeb cybersphere-hsm-maker
+    build_pydeb hsm-to-python
+    build_pydeb cybersphere-agents pydantic
+}
+
 # the per-release apps: rebuilt in each release's container against its Python
 # and Qt5, and version-tagged via --distro-tag (see --apps-only)
 if [ "$MODE" = all ] || [ "$MODE" = apps ]; then
@@ -358,26 +393,24 @@ if [ "$MODE" = all ] || [ "$MODE" = apps ]; then
         build_repo libcyberiadaml    "$BRANCH" deb
         build_repo libcyberiadamlpp  "$BRANCH" deb
     fi
-    if [ "$PYTHON" -eq 1 ]; then build_python; fi
+    if [ "$PYTHON" -eq 1 ]; then
+        build_python
+        build_pyapps
+    fi
     build_repo QtPropertyBrowser master    nodeb   # bundled into the editor .deb
     build_repo CyberiadaHSM-Editor "$BRANCH" deb
 fi
 
-# the distribution-independent python packages: built once (see --python-apps),
-# Architecture: all. Their import tests need the CyberiadaML binding, so build it
-# first; the libxml2-linked libs are rebuilt here under --xml-libs (the binding
-# links them). hsm-dispatcher and the maker need only CyberiadaML; hsm-to-python
-# and the agents also need the dispatcher's hsmd (on PYTHONPATH via the source)
+# the python binding and packages alone (see --python-apps), with their .zip and
+# wheels; the libxml2-linked libs are rebuilt here under --xml-libs (the binding
+# links them)
 if [ "$MODE" = pyapps ]; then
     if [ "$XML_LIBS" -eq 1 ]; then
         build_repo libcyberiadaml    "$BRANCH" deb
         build_repo libcyberiadamlpp  "$BRANCH" deb
     fi
     build_python
-    build_pydeb hsm-dispatcher-py
-    build_pydeb cybersphere-hsm-maker
-    build_pydeb hsm-to-python
-    build_pydeb cybersphere-agents pydantic
+    build_pyapps
 fi
 
 say "packages collected in $OUT"

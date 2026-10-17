@@ -7,10 +7,10 @@
 # the plugins it runs) and the python tools — then purges it. The checks run
 # inside the container, see linux-docker/package-tests.sh.
 #
-# The build output is read from <out>: libs/ (the shared libraries), ubuntu-<ver>/
-# (the per-release apps and, on 26.04, the rebuilt libraries) and pyapps/ (the
-# Architecture: all python packages). The test inputs and goldens come from the
-# sibling repos, so run it right after the build, on the same checkout.
+# The build output is read from <out>: libs/ (the shared libraries) and
+# ubuntu-<ver>/ (the per-release apps: the binding, the python packages and the
+# editor, and on 26.04 the rebuilt libraries). The test inputs and goldens come
+# from the sibling repos, so run it right after the build, on the same checkout.
 #
 # Releases are tested independently; the summary lists each one, and the exit
 # code is 0 only when every release passes. The logs go to <log-dir>/ubuntu-<ver>.log.
