@@ -1,0 +1,152 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: CyberiadaPro
+Upstream-Contact: Alexey Fedoseev <aleksey@fedoseev.net>
+Source: https://github.com/dralex/CyberiadaHSM-Editor
+Comment: The source files carry the GNU Lesser General Public License version 3
+ or later notices recorded here; the README and the LICENSE file of the
+ source tree name the GNU General Public License version 3 for the program.
+
+Files: *
+Copyright: 2024-2026 Alexey Fedoseev <aleksey@fedoseev.net>
+License: LGPL-3+
+
+Files: cyberiadasm_editor_choice_item.*
+ cyberiadasm_editor_comment_item.*
+ cyberiadasm_editor_sm_item.*
+ cyberiadasm_editor_state_item.*
+ cyberiadasm_editor_transition_item.*
+ cyberiadasm_editor_vertex_item.*
+ dotsignal.*
+ editable_text_item.*
+ fontmanager.h
+Copyright: 2025 Anastasia Viktorova <viktorovaa.04@gmail.com>
+License: LGPL-3+
+
+Files: dialogs/stateactiondialog.*
+ fontmanager.cpp
+Copyright: 2025 Anastasia Viktorova <viktorovaa.04@gmail.com>
+           2026 Alexey Fedoseev <aleksey@fedoseev.net>
+License: LGPL-3+
+
+Files: cyberiadasm_editor_scene.*
+ cyberiadasm_editor_view.*
+Copyright: 2024 Alexey Fedoseev <aleksey@fedoseev.net>
+           2016-2021 Ars L. Masiuk's <ars.masiuk@gmail.com>
+License: LGPL-3+
+
+Files: fonts/*
+Copyright: 2003 Bitstream, Inc.
+License: Bitstream-Vera
+Comment: Cyberiada Mono is DejaVu Sans Mono from the DejaVu fonts 2.37
+ (https://dejavu-fonts.github.io/), renamed as the license requires for
+ modified copies; the DejaVu changes are in the public domain. Bitstream
+ Vera is a trademark of Bitstream, Inc. The fonts are compiled into the
+ program as Qt resources.
+
+Files: QtPropertyBrowser/*
+Copyright: 2015 The Qt Company Ltd.
+           2010 Nokia Corporation and/or its subsidiary(-ies).
+License: LGPL-2.1 with Qt-1.1 exception or LGPL-3 with Qt-1.1 exception
+Comment: The QtPropertyBrowser library (https://github.com/greenjava/QtPropertyBrowser),
+ built from its own repository and bundled as
+ /usr/lib/cyberiada-pro/libQtPropertyBrowser.so. The Qt Company also
+ offers it under a commercial license.
+
+License: LGPL-3+
+ This program is free software; you can redistribute it and/or modify it
+ under the terms of the GNU Lesser General Public License as published by
+ the Free Software Foundation; either version 3 of the License, or (at your
+ option) any later version.
+ .
+ This program is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License
+ for more details.
+ .
+ On Debian systems, the complete text of the GNU Lesser General Public
+ License version 3 can be found in "/usr/share/common-licenses/LGPL-3", and
+ the GNU General Public License version 3 it supplements in
+ "/usr/share/common-licenses/GPL-3".
+
+License: Bitstream-Vera
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of the fonts accompanying this license ("Fonts") and associated
+ documentation files (the "Font Software"), to reproduce and distribute the
+ Font Software, including without limitation the rights to use, copy, merge,
+ publish, distribute, and/or sell copies of the Font Software, and to permit
+ persons to whom the Font Software is furnished to do so, subject to the
+ following conditions:
+ .
+ The above copyright and trademark notices and this permission notice shall
+ be included in all copies of one or more of the Font Software typefaces.
+ .
+ The Font Software may be modified, altered, or added to, and in particular
+ the designs of glyphs or characters in the Fonts may be modified and
+ additional glyphs or characters may be added to the Fonts, only if the fonts
+ are renamed to names not containing either the words "Bitstream" or the word
+ "Vera".
+ .
+ This License becomes null and void to the extent applicable to Fonts or Font
+ Software that has been modified and is distributed under the "Bitstream
+ Vera" names.
+ .
+ The Font Software may be sold as part of a larger software package but no
+ copy of one or more of the Font Software typefaces may be sold by itself.
+ .
+ THE FONT SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF COPYRIGHT, PATENT,
+ TRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL BITSTREAM OR THE GNOME
+ FOUNDATION BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, INCLUDING
+ ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES,
+ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
+ THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM OTHER DEALINGS IN THE
+ FONT SOFTWARE.
+ .
+ Except as contained in this notice, the names of Gnome, the Gnome
+ Foundation, and Bitstream Inc., shall not be used in advertising or
+ otherwise to promote the sale, use or other dealings in this Font Software
+ without prior written authorization from the Gnome Foundation or Bitstream
+ Inc., respectively. For further information, contact: fonts at gnome dot
+ org.
+
+License: LGPL-2.1 with Qt-1.1 exception
+ This library is free software; you can redistribute it and/or modify it
+ under the terms of the GNU Lesser General Public License version 2.1 as
+ published by the Free Software Foundation, with the additional rights of
+ The Qt Company LGPL Exception version 1.1 below.
+ .
+ On Debian systems, the complete text of the GNU Lesser General Public
+ License version 2.1 can be found in "/usr/share/common-licenses/LGPL-2.1".
+ .
+ The Qt Company LGPL Exception version 1.1
+ .
+ As an additional permission to the GNU Lesser General Public License version
+ 2.1, the object code form of a "work that uses the Library" may incorporate
+ material from a header file that is part of the Library.  You may distribute
+ such object code under terms of your choice, provided that:
+    (i)   the header files of the Library have not been modified; and
+    (ii)  the incorporated material is limited to numerical parameters, data
+          structure layouts, accessors, macros, inline functions and
+          templates; and
+    (iii) you comply with the terms of Section 6 of the GNU Lesser General
+          Public License version 2.1.
+ .
+ Moreover, you may apply this exception to a modified version of the Library,
+ provided that such modification does not involve copying material from the
+ Library into the modified Library's header files unless such material is
+ limited to (i) numerical parameters; (ii) data structure layouts;
+ (iii) accessors; and (iv) small macros, templates and inline functions of
+ five lines or less in length.
+ .
+ Furthermore, you are not required to apply this additional permission to a
+ modified version of the Library.
+
+License: LGPL-3 with Qt-1.1 exception
+ This library is free software; you can redistribute it and/or modify it
+ under the terms of the GNU Lesser General Public License version 3 as
+ published by the Free Software Foundation, with the additional rights of
+ The Qt Company LGPL Exception version 1.1 (see the LGPL-2.1 paragraph).
+ .
+ On Debian systems, the complete text of the GNU Lesser General Public
+ License version 3 can be found in "/usr/share/common-licenses/LGPL-3".

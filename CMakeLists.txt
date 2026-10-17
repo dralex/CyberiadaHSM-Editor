@@ -240,6 +240,10 @@ if(UNIX AND NOT APPLE)
   install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/README.md
                 ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
     DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/${CYBERIADA_PACKAGE} COMPONENT runtime)
+
+  # the machine-readable (DEP-5) copyright, where the Debian policy wants it
+  install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/debian-copyright
+      DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/${CYBERIADA_PACKAGE} RENAME copyright COMPONENT runtime)
   # QtPropertyBrowser has no distribution package: bundle it privately and point
   # the installed binary at it through an rpath, so the .deb needs no extra package
   install(FILES ${QTPROPERTYBROWSER_LIBRARY}
