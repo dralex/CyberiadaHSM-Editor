@@ -17,7 +17,7 @@
 #   the binding python3-libcyberiadamlpp, the python packages tested against it
 #   (python3-hsm-dispatcher, python3-hsm-to-python, python3-cybersphere-hsm-maker and,
 #   from python 3.10 on, python3-cybersphere-agents) and cyberiada-pro, version-tagged
-#   (1.0.9+ubuntu<ver>), collected into <out>/ubuntu-<ver>. The newest release also
+#   (1.0.8+ubuntu<ver>), collected into <out>/ubuntu-<ver>. The newest release also
 #   gives the arch-independent .zip and pip wheels of the python packages, <out>/pyapps.
 # See build-toolchain.sh --libs-only / --apps-only for the mechanism.
 #
@@ -139,7 +139,7 @@ docker run --rm \
 # is always reused from the once-built set; the libxml2-linked libs (cyberiadaml,
 # cyberiadamlpp) are reused too where the once-built soname (libxml2.so.2) exists
 # (20.04/22.04/24.04) and rebuilt in-place where it does not (26.04 has libxml2.so.16),
-# via --xml-libs. The apps are version-tagged (1.0.9+ubuntu<ver>). apt (as root) installs
+# via --xml-libs. The apps are version-tagged (1.0.8+ubuntu<ver>). apt (as root) installs
 # the lib .debs so their runtime deps are pulled from the repo; the build itself then
 # runs as the invoking user (setpriv), so the build dirs in the mounted source and the
 # produced .debs stay user-owned. Stop at the first failure (set -e).

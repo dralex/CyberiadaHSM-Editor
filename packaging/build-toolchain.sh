@@ -62,7 +62,7 @@ usage: $0 [options]
                  their .zip and wheels (--wheel-dir defaults to --out)
   --wheel-dir D  also put the .zip and the pip wheel of each python package into D
   --lib-prefix D extra install prefix holding the once-built libraries (apps mode)
-  --distro-tag T version suffix for the app packages, e.g. ubuntu2404 -> 1.0.9+ubuntu2404
+  --distro-tag T version suffix for the app packages, e.g. ubuntu2404 -> 1.0.8+ubuntu2404
   --xml-libs     apps mode: also rebuild cyberiadaml/cyberiadamlpp here (a release
                  whose libxml2 soname differs from the once-built set, e.g. 26.04)
   --clean        remove each repo's build dir before building (from scratch)
