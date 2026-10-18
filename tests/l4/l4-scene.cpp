@@ -22,6 +22,7 @@
  * ----------------------------------------------------------------------------- */
 
 #include <QtTest>
+#include <QPointer>
 #include <QGraphicsView>
 #include <QTextCursor>
 #include <QTextCharFormat>
@@ -1243,6 +1244,9 @@ void TestScene::test_undo_gesture()
 	CyberiadaSMEditorStateItem* state =
 		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0-1"));
 	QVERIFY(state);
+	// the rebuild frees the item, and the new one may get its address: the
+	// guarded pointer tells a destroyed item from a reused address
+	QPointer<CyberiadaSMEditorStateItem> old(state);
 	QUndoStack* stack = model->undoStack();
 	int steps = stack->count();
 	Cyberiada::Rect before = static_cast<const Cyberiada::State*>(
@@ -1263,7 +1267,7 @@ void TestScene::test_undo_gesture()
 		model->idToElement("node-0-1"))->get_geometry_rect().x, before.x);
 	QGraphicsItem* rebuilt = scene->getMap().value("node-0-1");
 	QVERIFY(rebuilt);
-	QVERIFY(rebuilt != state);
+	QVERIFY(old.isNull());
 	QVERIFY(rebuilt->isSelected());
 	QVERIFY(scene->items().contains(rebuilt));
 	stack->redo();
