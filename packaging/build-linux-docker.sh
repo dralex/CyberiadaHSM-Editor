@@ -142,7 +142,9 @@ docker run --rm \
 # cyberiadamlpp) are reused too where the once-built soname (libxml2.so.2) exists
 # (20.04/22.04/24.04) and rebuilt in-place where it does not (26.04 has libxml2.so.16),
 # via --xml-libs. The apps are version-tagged (1.0.8+ubuntu<ver>). apt (as root) installs
-# the lib .debs so their runtime deps are pulled from the repo; the build itself then
+# the lib .debs so their runtime deps are pulled from the repo, and the python build
+# tools an image built before them may lack (pydantic for cyberiadaml-py, its wheel
+# backend poetry-core; see linux-docker/Dockerfile); the build itself then
 # runs as the invoking user (setpriv), so the build dirs in the mounted source and the
 # produced .debs stay user-owned. Stop at the first failure (set -e).
 uid=$(id -u); gid=$(id -g)
@@ -173,6 +175,9 @@ for ver in $RELEASES; do
         sh -c "set -e; \
 apt-get update >/dev/null 2>&1 || true; \
 apt-get install -y --no-install-recommends /libdebs/libhtreegeom*.deb; \
+apt-get install -y --no-install-recommends python3-pydantic >/dev/null 2>&1 || true; \
+if apt-cache show python3-poetry-core >/dev/null 2>&1; then \
+  apt-get install -y --no-install-recommends python3-poetry-core >/dev/null 2>&1 || true; fi; \
 if apt-get install -y --no-install-recommends libxml2 >/dev/null 2>&1 && ldconfig -p | grep -q 'libxml2\\.so\\.2'; then \
   apt-get install -y --no-install-recommends /libdebs/libcyberiadaml*.deb; xmlflag=; \
 else xmlflag=--xml-libs; fi; \
