@@ -10,10 +10,14 @@ rem endpoint: a self-contained .zip with Qt (via windeployqt) and every toolchai
 rem DLL bundled next to the executable.
 rem
 rem Order: libhtreegeom -> libcyberiadaml -> libcyberiadamlpp -> (libcyberiadamlpp-py
-rem        + the four python packages) -> QtPropertyBrowser -> CyberiadaHSM-Editor
-rem The python binding is a self-contained .zip and the four python packages are
-rem .zip + pip wheel, all separate from the editor; QtPropertyBrowser is bundled
-rem into the editor. Skip the whole python set with --no-python.
+rem        + cyberiadaml-py + the four python packages) -> QtPropertyBrowser
+rem        -> CyberiadaHSM-Editor
+rem cyberiadaml-py and the four python packages are .zip + pip wheel; on Windows the
+rem packages read the diagrams with the pure-Python cyberiadaml-py, which pip
+rem installs with them, so they need no binary module. The python binding is an
+rem optional self-contained .zip for the Python it is built against. All of them
+rem are separate from the editor; QtPropertyBrowser is bundled into the editor.
+rem Skip the whole python set with --no-python.
 rem
 rem Prerequisites: Visual Studio (MSVC), CMake, Git, vcpkg (VCPKG_ROOT set), and a
 rem Qt 5 installation (Widgets, Svg) whose bin dir holds windeployqt.
@@ -116,10 +120,12 @@ rem --- build each repo -------------------------------------------------------
 call :build_repo libhtreegeom      %BRANCH% zip   || exit /b 1
 call :build_repo libcyberiadaml    %BRANCH% zip   || exit /b 1
 call :build_repo libcyberiadamlpp  %BRANCH% zip   || exit /b 1
-rem the python binding (self-contained zip: CyberiadaML.pyd + its dep DLLs) and the
+rem the python binding (self-contained zip: CyberiadaML.pyd + its dep DLLs), the
+rem pure-Python cyberiadaml-py the packages use on Windows, and the
 rem distribution-independent python packages (zip + pip wheel), all separate from the editor
 if "%PYTHON%"=="1" (
   call :build_repo libcyberiadamlpp-py %BRANCH% python || exit /b 1
+  call :build_pydeb cyberiadaml-py        %BRANCH% || exit /b 1
   call :build_pydeb hsm-dispatcher-py     %BRANCH% || exit /b 1
   call :build_pydeb cybersphere-hsm-maker %BRANCH% || exit /b 1
   call :build_pydeb hsm-to-python         %BRANCH% || exit /b 1
@@ -253,12 +259,13 @@ exit /b 0
 
 rem ---------------------------------------------------------------------------
 rem :build_pydeb  name  branch
-rem a distribution-independent python package (hsm-dispatcher, hsm-to-python,
-rem cybersphere-hsm-maker, cybersphere-agents): LANGUAGES NONE, nothing to compile.
-rem Produces a .zip (its files, incl. the editor plugin under
+rem a distribution-independent python package (cyberiadaml-py, hsm-dispatcher,
+rem hsm-to-python, cybersphere-hsm-maker, cybersphere-agents): LANGUAGES NONE,
+rem nothing to compile. Produces a .zip (its files, incl. the editor plugin under
 rem share/cyberiada-pro/plugins/<id>) and a pip wheel (console-script .exe shims +
-rem the plugin data-files). Tests run on the Linux tier (they need the binding +
-rem pytest); here we only produce the Windows artifacts.
+rem the plugin data-files). The wheel of cyberiadaml-py needs Python 3.10+, and pip
+rem fetches its build backend (poetry-core). Tests run on the Linux tier (they need
+rem the binding + pytest); here we only produce the Windows artifacts.
 rem ---------------------------------------------------------------------------
 :build_pydeb
 set "REPO=%~1"

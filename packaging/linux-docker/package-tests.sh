@@ -42,6 +42,7 @@ DEV=${CYB_PKGTEST_DEV:-1}
 RECOMMENDS=${CYB_PKGTEST_RECOMMENDS:-0}
 TUID=1500
 PYVER=${CYB_PKGTEST_PYTHON:-}             # the archive's python3 (default: apt-cache)
+PYDANTIC=${CYB_PKGTEST_PYDANTIC:-}        # the archive's python3-pydantic (default: apt-cache)
 
 if [ -n "${CYB_PKGTEST_RELEASE:-}" ]; then
     VER=$CYB_PKGTEST_RELEASE
@@ -53,13 +54,16 @@ TAG="ubuntu$(printf '%s' "$VER" | tr -d .)"
 LIBS="libhtreegeom libhtreegeom-dev libcyberiadaml libcyberiadaml-dev libcyberiadaml-parser
       libcyberiadamlpp libcyberiadamlpp-dev"
 APPS="python3-libcyberiadamlpp cyberiada-pro"
-PYAPPS="python3-hsm-dispatcher python3-hsm-to-python python3-cybersphere-hsm-maker
-        python3-cybersphere-agents"
-# the python packages and their repos (a requires-python above the release's
-# python3 leaves one out of that release's build)
-PYREPOS="python3-hsm-dispatcher:hsm-dispatcher-py python3-hsm-to-python:hsm-to-python
+PYAPPS="python3-cyberiadaml python3-hsm-dispatcher python3-hsm-to-python
+        python3-cybersphere-hsm-maker python3-cybersphere-agents"
+# the python packages and their repos (a python floor above the release's python3
+# leaves one out of that release's build)
+PYREPOS="python3-cyberiadaml:cyberiadaml-py
+         python3-hsm-dispatcher:hsm-dispatcher-py python3-hsm-to-python:hsm-to-python
          python3-cybersphere-hsm-maker:cybersphere-hsm-maker
          python3-cybersphere-agents:cybersphere-agents"
+# the packages that need pydantic 2.6+: not built where the release ships pydantic 1
+PYDANTIC2="python3-cyberiadaml"
 # the tool packages and the id of the editor plugin each one installs
 PLUGINS="python3-hsm-to-python:hsm-to-python python3-cybersphere-hsm-maker:hsm-maker
          python3-cybersphere-agents:cybersphere-agents"
@@ -203,11 +207,23 @@ archive_python() {
     echo "$PYVER"
 }
 
-# py_floor PKG: the requires-python of a python package's sources (empty if none)
+# the archive's python3-pydantic version (empty when unknown)
+archive_pydantic() {
+    if [ -z "$PYDANTIC" ]; then
+        PYDANTIC=$(apt-cache policy python3-pydantic 2>/dev/null | sed -n 's/^ *Candidate: //p')
+        [ "$PYDANTIC" != "(none)" ] || PYDANTIC=""
+    fi
+    echo "$PYDANTIC"
+}
+
+# py_floor PKG: the python floor of a python package's sources: requires-python,
+# or the python of a Poetry project (empty if none)
 py_floor() {
     for e in $PYREPOS; do
         [ "${e%%:*}" = "$1" ] || continue
-        sed -n 's/^requires-python *= *">= *\([0-9.]*\)".*/\1/p' "$SRC/${e#*:}/pyproject.toml" 2>/dev/null
+        sed -n -e 's/^requires-python *= *">= *\([0-9.]*\)".*/\1/p' \
+               -e 's/^python *= *">= *\([0-9.]*\).*/\1/p' "$SRC/${e#*:}/pyproject.toml" 2>/dev/null |
+            head -n 1
     done
     return 0
 }
@@ -226,7 +242,7 @@ py_gate() {
         mv "$f" "$STAGE/out/"
         grep -v "^$p " "$STAGE/MANIFEST" >"$STAGE/MANIFEST.new" || true
         mv "$STAGE/MANIFEST.new" "$STAGE/MANIFEST"
-        echo "$p $min $py" >>"$STAGE/EXCLUDED"
+        echo "$p needs python3 >= $min, the archive has $py" >>"$STAGE/EXCLUDED"
     done
     return 0
 }
@@ -238,11 +254,16 @@ select_set() {
     add_debs "$DIST/libs"
     add_debs "$DIST/ubuntu-$VER"
     py=$(archive_python)
+    pd=$(archive_pydantic)
     for p in $LIBS $APPS $PYAPPS; do
         [ ! -f "$STAGE/$p.deb" ] || continue
         min=$(py_floor "$p")
+        # not built for this release: its python, or its pydantic, is too old
         if [ -n "$min" ] && [ -n "$py" ] && dpkg --compare-versions "$py" lt "$min"; then
-            echo "$p $min $py" >>"$STAGE/EXCLUDED"     # not built for this release
+            echo "$p needs python3 >= $min, the archive has $py" >>"$STAGE/EXCLUDED"
+        elif case " $(echo $PYDANTIC2) " in *" $p "*) true ;; *) false ;; esac &&
+             { [ -z "$pd" ] || dpkg --compare-versions "$pd" lt 2.6; }; then
+            echo "$p needs python3-pydantic >= 2.6, the archive has ${pd:-none}" >>"$STAGE/EXCLUDED"
         else
             echo "missing $p" >>"$STAGE/ERRORS"
         fi
@@ -259,8 +280,8 @@ if phase select; then
     select_set
     while read -r p v d; do printf '  %-32s %-24s %s\n' "$p" "$v" "$d"; done <"$STAGE/MANIFEST"
     rcheck select - '[ ! -s "$STAGE/ERRORS" ] || { cat "$STAGE/ERRORS"; false; }'
-    while read -r p min py; do
-        skip "install-$p" "needs python3 >= $min, the archive has $py"
+    while read -r p reason; do
+        skip "install-$p" "$reason"
     done <"$STAGE/EXCLUDED"
 fi
 
@@ -388,6 +409,9 @@ prepare_workdir() {
     fixture CyberiadaHSM-Editor/tests/diagrams                     editor/diagrams
     fixture CyberiadaHSM-Editor/tests/good                         editor/good
     fixture CyberiadaHSM-Editor/fonts                              fonts
+    # first on PYTHONPATH it hides the binding, as on a machine without it (Windows)
+    mkdir -p "$W/noml"
+    echo "raise ImportError('the CyberiadaML binding is blocked by the test')" >"$W/noml/CyberiadaML.py"
     # the golden comparisons see the bundled fonts only, as the editor ctest does
     cat >"$W/fonts.conf" <<EOF
 <?xml version="1.0"?>
@@ -501,6 +525,35 @@ assert d.finished()" py/01-flat.graphml'
     check agents-platform $AGENTS \
         'cybersphere platform agents/develop.graphml >out/platform.txt &&
          grep -qF "signals: PASSED(), FAILED(code)" out/platform.txt'
+
+    # the pure-Python CyberiadaML interface, and the tools on it with the binding
+    # blocked: the configuration of a machine without the binding (Windows)
+    CML=python3-cyberiadaml
+    NOML='env PYTHONPATH="$W/noml${PYTHONPATH:+:$PYTHONPATH}"'
+    check cml-read $CML \
+        'python3 -c "import sys
+from cyberiadaml_py import cml as C
+d = C.LocalDocument()
+d.open(sys.argv[1], C.formatCyberiada10, C.geometryFormatQt, False)
+assert d.get_state_machines()[0].get_name() == \"SM\"" py/read-meta.graphml'
+    check cml-hsmd "$CML python3-hsm-dispatcher" \
+        "$NOML python3 -c \"import sys, hsmd, hsmd_reader
+assert hsmd_reader.CyberiadaML.__name__ == 'cyberiadaml_py.cml', hsmd_reader.CyberiadaML
+d = hsmd.Dispatcher(sys.argv[1])
+d.start()
+assert d.states() == ['a'], d.states()
+assert d.send('GO').status == 'fired'\" py/01-flat.graphml"
+    check cml-hsm-gencode "$CML $H2P" \
+        "cd h2p/graphs && $NOML hsm-gencode vacuum.graphml \"\$W/out/vacuum-cml.py\" &&
+         cd \"\$W/out\" && timeout 60 python3 vacuum-cml.py >vacuum-cml.txt &&
+         diff -u \"\$W/h2p/graphs/vacuum.txt\" vacuum-cml.txt"
+    check cml-maker "$CML $MAKER" \
+        "$NOML hsm-maker --notation maker/lift.hsm -o out/lift-cml.graphml &&
+         $NOML hsm-maker --render out/lift-cml.graphml >out/lift-cml.txt &&
+         grep -q 'machine Lift' out/lift-cml.txt"
+    check cml-agents "$CML $AGENTS" \
+        "$NOML cybersphere check agents/develop.graphml --json out/develop-cml.json &&
+         python3 -c 'import json, sys; assert json.load(open(sys.argv[1])) == []' out/develop-cml.json"
 
     # the editor: the batch interface, the goldens of its ctest suites
     check editor-help $ED 'CyberiadaPro --help >out/help.txt && grep -q -- --batch out/help.txt'

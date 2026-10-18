@@ -86,6 +86,24 @@ Requires Visual Studio, CMake, Git, vcpkg (`VCPKG_ROOT`), and a Qt 5 install.
 it as a symlink (Windows cannot use it). The python binding is a separate `.zip`, not
 part of the editor zip.
 
+### The python tools on Windows
+
+The python packages (`hsm-dispatcher-py`, `hsm-to-python`, `cybersphere-hsm-maker`,
+`cybersphere-agents`) read the diagrams with `cyberiadaml-py`, the pure-Python
+CyberiadaML interface, when the binding is not installed, so on Windows they need no
+binary module and no Python of a particular version, only Python 3.10+. Their wheels
+are built by this script or, the same files, on Linux in `dist/pyapps/`; pip takes
+`cyberiadaml-py` and the dispatcher from that folder and `pydantic` from PyPI:
+
+    py -3 -m pip install --find-links dist\pyapps hsm-to-python cybersphere-hsm-maker cybersphere-agents
+    hsm-run --install-editor-plugin
+    hsm-maker --install-editor-plugin
+    cybersphere --install-editor-plugin
+
+The plugins then appear in CyberiadaPro (either Windows build). The binding `.zip` is
+optional: it is faster and reads the legacy yEd diagrams too, for the Python it was
+built against.
+
 ## Windows without Windows — `build-windows-docker.sh` (Docker + MinGW)
 
 Cross-compile the Windows `.zip` packages on any Linux host (or Windows with

@@ -277,15 +277,17 @@ build_python() {
     if [ -n "$orig_branch" ]; then git -C "$dir" checkout --quiet "$orig_branch"; fi
 }
 
-# build one of the python packages (python3-hsm-dispatcher, python3-hsm-to-python,
-# python3-cybersphere-hsm-maker, python3-cybersphere-agents): a CPack DEB,
-# Architecture: all, tagged with DISTRO_TAG, not installed into the shared prefix.
-# A package whose requires-python this python does not meet is skipped (the agents
-# need 3.10, so not on 20.04). Its ctest imports the CyberiadaML binding of this
-# release (built just before — its build dir is on PYTHONPATH) and, for the
-# dispatcher-dependent ones, the hsmd modules from the dispatcher source. A second
-# arg "pydantic" marks a suite that also needs pydantic-ai (PyPI-only): it is skipped
-# unless the import works (AGENTS_TEST=1 pip-installs it).
+# build one of the python packages (python3-cyberiadaml, python3-hsm-dispatcher,
+# python3-hsm-to-python, python3-cybersphere-hsm-maker, python3-cybersphere-agents):
+# a CPack DEB, Architecture: all, tagged with DISTRO_TAG, not installed into the
+# shared prefix. A package whose python floor (requires-python, or the python of
+# a Poetry project) this python does not meet is skipped (the agents need 3.10, so
+# not on 20.04). Its ctest imports the CyberiadaML binding of this release (built
+# just before — its build dir is on PYTHONPATH) and, for the dispatcher-dependent
+# ones, the hsmd modules from the dispatcher source. A second arg "pydantic" marks a
+# suite that also needs pydantic-ai (PyPI-only): it is skipped unless the import
+# works (AGENTS_TEST=1 pip-installs it); "pydantic2" marks a package that needs
+# pydantic 2.6+ (cyberiadaml-py): it is skipped where the release ships pydantic 1.
 build_pydeb() {
     repo="$1"; guard="${2:-}"
     dir="$SOURCES/$repo"
@@ -303,10 +305,17 @@ build_pydeb() {
         git -C "$dir" pull --quiet --ff-only origin "$BRANCH"
     fi
 
-    floor=$(sed -n 's/^requires-python *= *">= *\([0-9.]*\)".*/\1/p' "$dir/pyproject.toml")
+    floor=$(sed -n -e 's/^requires-python *= *">= *\([0-9.]*\)".*/\1/p' \
+                   -e 's/^python *= *">= *\([0-9.]*\).*/\1/p' "$dir/pyproject.toml" | head -n 1)
     have=$(python3 -c 'import sys; print("%d.%d" % sys.version_info[:2])')
     if [ -n "$floor" ] && ! python3 -c "import sys; sys.exit(sys.version_info[:2] < tuple(map(int, '$floor'.split('.'))))"; then
         echo "note: skipping $repo (requires python >= $floor, this python is $have)"
+        if [ -n "$orig_branch" ]; then git -C "$dir" checkout --quiet "$orig_branch"; fi
+        return 0
+    fi
+    # its Depends python3-pydantic (>= 2.6) is neither testable nor installable here
+    if [ "$guard" = pydantic2 ] && ! python3 -c "import pydantic, sys; sys.exit(tuple(map(int, pydantic.VERSION.split('.')[:2])) < (2, 6))" 2>/dev/null; then
+        echo "note: skipping $repo (requires pydantic >= 2.6, this python has $(python3 -c 'import pydantic; print(pydantic.VERSION)' 2>/dev/null || echo none))"
         if [ -n "$orig_branch" ]; then git -C "$dir" checkout --quiet "$orig_branch"; fi
         return 0
     fi
@@ -374,10 +383,13 @@ if [ "$MODE" = all ] || [ "$MODE" = libs ]; then
     build_repo libcyberiadamlpp  "$BRANCH" deb
 fi
 
-# the python packages, right after the binding their tests import: hsm-dispatcher
-# and the maker need only CyberiadaML; hsm-to-python and the agents also need the
-# dispatcher's hsmd (on PYTHONPATH via the source)
+# the python packages, right after the binding their tests import: cyberiadaml-py
+# (the pure-Python CyberiadaML interface, the tools' CyberiadaML where the binding
+# is not installed, e.g. on Windows); hsm-dispatcher and the maker need only
+# CyberiadaML; hsm-to-python and the agents also need the dispatcher's hsmd (on
+# PYTHONPATH via the source)
 build_pyapps() {
+    build_pydeb cyberiadaml-py pydantic2
     build_pydeb hsm-dispatcher-py
     build_pydeb cybersphere-hsm-maker
     build_pydeb hsm-to-python

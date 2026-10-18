@@ -179,9 +179,10 @@ pack_editor() {
     cp "$SRC/CyberiadaHSM-Editor/README.md" "$SRC/CyberiadaHSM-Editor/LICENSE" "$stage/" 2>/dev/null || true
 
     # bundle the python tool plugins so the editor lists them under its system
-    # plugin folder (next to the exe); running them still needs a python with the
-    # CyberiadaML binding, set as the interpreter in Preferences. The plugin id is
-    # the folder name, which differs from the repo name for the maker.
+    # plugin folder (next to the exe); running them needs a Python 3.10+ with the
+    # tool wheels (dist/pyapps), which read the diagrams with the pure-Python
+    # cyberiadaml-py, so no binary module is needed. The plugin id is the folder
+    # name, which differs from the repo name for the maker.
     plugdir="$stage/share/cyberiada-pro/plugins"
     for spec in "hsm-to-python:hsm-to-python" "cybersphere-hsm-maker:hsm-maker" "cybersphere-agents:cybersphere-agents"; do
         prepo=${spec%%:*}; pid=${spec##*:}

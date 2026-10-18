@@ -15,8 +15,9 @@
 # Tier 2 (per release): each container installs that lib .deb set (so the build and
 #   tests run against the real packages), then builds the distribution-dependent apps:
 #   the binding python3-libcyberiadamlpp, the python packages tested against it
-#   (python3-hsm-dispatcher, python3-hsm-to-python, python3-cybersphere-hsm-maker and,
-#   from python 3.10 on, python3-cybersphere-agents) and cyberiada-pro, version-tagged
+#   (python3-hsm-dispatcher, python3-hsm-to-python, python3-cybersphere-hsm-maker,
+#   from python 3.10 on python3-cybersphere-agents, and where the release ships
+#   pydantic 2.6+ the pure-Python python3-cyberiadaml) and cyberiada-pro, version-tagged
 #   (1.0.8+ubuntu<ver>), collected into <out>/ubuntu-<ver>. The newest release also
 #   gives the arch-independent .zip and pip wheels of the python packages, <out>/pyapps.
 # See build-toolchain.sh --libs-only / --apps-only for the mechanism.
@@ -101,6 +102,7 @@ pull_repo libcyberiadamlpp-py "$BRANCH"
 pull_repo QtPropertyBrowser   master
 pull_repo CyberiadaHSM-Editor "$BRANCH"
 # the distribution-independent python packages (built once, see below)
+pull_repo cyberiadaml-py         "$BRANCH"
 pull_repo hsm-dispatcher-py      "$BRANCH"
 pull_repo hsm-to-python          "$BRANCH"
 pull_repo cybersphere-hsm-maker  "$BRANCH"
