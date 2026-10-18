@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- the document type the desktop entry declares (MimeType=): GraphML, which the
+     editor opens in the CyberiadaML-GraphML format and the legacy yEd dialect -->
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-cyberiada-graphml+xml">
+    <comment>CyberiadaML state machine diagram</comment>
+    <comment xml:lang="ru">Диаграмма машины состояний CyberiadaML</comment>
+    <sub-class-of type="application/xml"/>
+    <glob pattern="*.graphml"/>
+    <root-XML namespaceURI="http://graphml.graphdrawing.org/xmlns" localName="graphml"/>
+  </mime-type>
+</mime-info>

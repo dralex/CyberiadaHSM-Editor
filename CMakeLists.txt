@@ -233,6 +233,10 @@ install(TARGETS CyberiadaPro
 if(UNIX AND NOT APPLE)
   install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/packaging/${CYBERIADA_PACKAGE}.desktop
     DESTINATION ${CMAKE_INSTALL_DATADIR}/applications COMPONENT runtime)
+  # the MIME type of the desktop entry (shared-mime-info's trigger registers it)
+  install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/packaging/${CYBERIADA_PACKAGE}-mime.xml
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/mime/packages
+    RENAME ${CYBERIADA_PACKAGE}.xml COMPONENT runtime)
   install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/images/cyberiada.png
     DESTINATION ${CMAKE_INSTALL_DATADIR}/pixmaps
     RENAME ${CYBERIADA_PACKAGE}.png COMPONENT runtime)
