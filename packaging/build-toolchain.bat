@@ -10,9 +10,11 @@ rem endpoint: a self-contained .zip with Qt (via windeployqt) and every toolchai
 rem DLL bundled next to the executable.
 rem
 rem Order: libhtreegeom -> libcyberiadaml -> libcyberiadamlpp -> (libcyberiadamlpp-py
-rem        + cyberiadaml-py + the four python packages) -> QtPropertyBrowser
+rem        + cyberiadaml-py + the python packages) -> QtPropertyBrowser
 rem        -> CyberiadaHSM-Editor
-rem cyberiadaml-py and the four python packages are .zip + pip wheel; on Windows the
+rem The python packages are hsm-dispatcher, hsm-to-python and cybersphere-hsm-maker
+rem (cybersphere-agents is not in the Windows release); they and cyberiadaml-py
+rem are .zip + pip wheel; on Windows the
 rem packages read the diagrams with the pure-Python cyberiadaml-py, which pip
 rem installs with them, so they need no binary module. The python binding is an
 rem optional self-contained .zip for the Python it is built against. All of them
@@ -129,7 +131,6 @@ if "%PYTHON%"=="1" (
   call :build_pydeb hsm-dispatcher-py     %BRANCH% || exit /b 1
   call :build_pydeb cybersphere-hsm-maker %BRANCH% || exit /b 1
   call :build_pydeb hsm-to-python         %BRANCH% || exit /b 1
-  call :build_pydeb cybersphere-agents    %BRANCH% || exit /b 1
 )
 call :build_repo QtPropertyBrowser master   nozip || exit /b 1
 call :build_repo CyberiadaHSM-Editor %BRANCH% editor || exit /b 1
@@ -260,7 +261,7 @@ exit /b 0
 rem ---------------------------------------------------------------------------
 rem :build_pydeb  name  branch
 rem a distribution-independent python package (cyberiadaml-py, hsm-dispatcher,
-rem hsm-to-python, cybersphere-hsm-maker, cybersphere-agents): LANGUAGES NONE,
+rem hsm-to-python, cybersphere-hsm-maker): LANGUAGES NONE,
 rem nothing to compile. Produces a .zip (its files, incl. the editor plugin under
 rem share/cyberiada-pro/plugins/<id>) and a pip wheel (console-script .exe shims +
 rem the plugin data-files). The wheel of cyberiadaml-py needs Python 3.10+, and pip
