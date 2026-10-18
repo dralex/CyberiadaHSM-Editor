@@ -5,9 +5,10 @@ rem Double-click it or run it from a terminal in the unpacked test folder.
 rem
 rem It opens each bundled diagram in batch mode (offscreen) and checks the exit
 rem code: valid documents must load (0), broken ones must fail with the load
-rem error (2), the strict check rejects meta.graphml, reconstruction repairs the
-rem broken point comment, a missing file is a usage error (1), and a valid
-rem document survives a save -> reopen round trip.
+rem error (2), the default mode reads a point comment as a loose rect (the Lapki
+rem dialect) while the strict check rejects it and the other non-standard
+rem documents, reconstruction repairs the point comment, a missing file is a
+rem usage error (1), and a valid document survives a save -> reopen round trip.
 rem
 rem The editor is a GUI-subsystem app, so it is launched with "start /wait" to
 rem wait for it and read its exit code. The list mirrors the l0 tier of
@@ -24,12 +25,14 @@ set /a PASS=0
 set /a FAIL=0
 
 rem valid documents open cleanly (exit 0)
-for %%D in (choice comment-transition cyb-geometry empty-actions geometry hierarchy label-geometry lift meta multiline-actions polyline sources two-sms) do call :run 0 "%%D" ""
+for %%D in (choice comment-transition components cyb-geometry empty-actions geometry hierarchy label-geometry lift meta multiline-actions overlap polyline resize-hold sources submachine-points two-sm-bordered two-sms) do call :run 0 "%%D" ""
 rem broken documents fail with the load-error code (exit 2)
-for %%D in (broken-xml broken-format broken-point-comment) do call :run 2 "%%D" ""
+for %%D in (broken-xml broken-format) do call :run 2 "%%D" ""
+rem the default mode reads the point of a comment as a loose rect (the Lapki dialect)
+call :run 0 "broken-point-comment" ""
 rem the strict standard checks reject what the default mode accepts
 call :run 0 "hierarchy" "--strict"
-call :run 2 "meta" "--strict"
+for %%D in (meta unnamed-point defer-on-transition broken-point-comment) do call :run 2 "%%D" "--strict"
 rem the reconstruction mode repairs the malformed geometry instead
 call :run 0 "broken-point-comment" "--reconstruct"
 rem a missing file argument is a usage error (exit 1)
