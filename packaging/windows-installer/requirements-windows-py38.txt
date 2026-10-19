@@ -1,0 +1,15 @@
+# The third-party wheels of the Windows 7-8.1 path of the installer: pydantic 2 and
+# its dependencies for cyberiadaml-py on Python 3.8, pinned with their hashes.
+# pydantic-core 2.18.2 is the last whose Windows build imports nothing newer than
+# Windows 7 (2.18.4 and later, built with Rust 1.78+, import ProcessPrng and
+# WaitOnAddress); pydantic 2.7.1 is the release of that core. make-installer.sh
+# checks the import table of the downloaded core and stops on a newer one.
+
+annotated-types==0.7.0 \
+    --hash=sha256:1f02e8b43a8fbbc3f3e0d4f0f4bfc8131bcb4eebe8849b8e5c773f3a1c582a53
+pydantic==2.7.1 \
+    --hash=sha256:e029badca45266732a9a79898a15ae2e8b14840b1eabbb25844be28f0b33f3d5
+pydantic-core==2.18.2 \
+    --hash=sha256:d91cb5ea8b11607cc757675051f61b3d93f15eca3cefb3e6c704a5d6e8440f4e
+typing-extensions==4.13.2 \
+    --hash=sha256:a439e7c04b49fec3e5d3e2beaa21755cadbbdc391694e28ccdd36ca4a1408f8c

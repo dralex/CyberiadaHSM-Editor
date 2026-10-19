@@ -44,17 +44,9 @@ import sys
 import tempfile
 
 PLUGINS = ('hsm-to-python', 'hsm-maker')
-# the diagram reader of the plugins: the pure-Python cyberiadaml-py (pydantic) on
-# Python 3.10+, the C++ binding (the .pth of the installer) on the Python 3.8 of
-# Windows 7-8.1
-BINDING = sys.version_info[:2] < (3, 10)
-if BINDING:
-    MODULES = ('CyberiadaML', 'hsmd', 'gencode', 'hsm_maker')
-    DISTRIBUTIONS = ('hsm-dispatcher-py', 'hsm-to-python', 'cybersphere-hsm-maker')
-else:
-    MODULES = ('cyberiadaml_py.cml', 'pydantic', 'hsmd', 'gencode', 'hsm_maker')
-    DISTRIBUTIONS = ('cyberiadaml-py', 'pydantic', 'hsm-dispatcher-py', 'hsm-to-python',
-                     'cybersphere-hsm-maker')
+MODULES = ('cyberiadaml_py.cml', 'pydantic', 'hsmd', 'gencode', 'hsm_maker')
+DISTRIBUTIONS = ('cyberiadaml-py', 'pydantic', 'pydantic-core', 'hsm-dispatcher-py',
+                 'hsm-to-python', 'cybersphere-hsm-maker')
 TIMEOUT = 120
 
 TEXTS = {
@@ -62,10 +54,9 @@ TEXTS = {
         'imports': 'the python packages import',
         'imports-hint': 'the packages are not installed into {python}; install CyberiadaPro '
                         'again (Repair) and see logs\\pip.log in the CyberiadaPro folder',
-        'binding-hint': 'the C++ binding does not load into {python} ({detail}); check that '
-                        '{folder} holds CyberiadaML.pyd with its DLLs (msvcp140.dll among them) '
-                        'and, on Windows 7, that the update KB2533623 is installed; then '
-                        'install CyberiadaPro again (Repair)',
+        'core-hint': 'pydantic-core does not load into {python} ({detail}); on Windows 7 '
+                     'install Service Pack 1 and the update KB2533623, then install '
+                     'CyberiadaPro again (Repair)',
         'editor': 'the editor starts',
         'editor-hint': 'the editor did not start ({detail}); check that {editor} exists and '
                        'that an antivirus does not block it',
@@ -85,10 +76,9 @@ TEXTS = {
         'imports': 'пакеты Python импортируются',
         'imports-hint': 'пакеты не установлены в {python}; запустите установку CyberiadaPro '
                         'ещё раз (Восстановить) и посмотрите logs\\pip.log в папке CyberiadaPro',
-        'binding-hint': 'C++-привязка не загружается в {python} ({detail}); проверьте, что в '
-                        '{folder} есть CyberiadaML.pyd с его DLL (среди них msvcp140.dll), а в '
-                        'Windows 7 — что установлено обновление KB2533623; затем запустите '
-                        'установку CyberiadaPro ещё раз (Восстановить)',
+        'core-hint': 'pydantic-core не загружается в {python} ({detail}); в Windows 7 '
+                     'установите пакет обновления 1 и обновление KB2533623, затем запустите '
+                     'установку CyberiadaPro ещё раз (Восстановить)',
         'editor': 'редактор запускается',
         'editor-hint': 'редактор не запустился ({detail}); проверьте, что {editor} на месте и '
                        'что его не блокирует антивирус',
@@ -176,30 +166,25 @@ def listed_plugins(output):
     return plugins
 
 
-def check_imports(check, editor):
+def check_imports(check):
     """The packages the plugins import, in this Python."""
     problems = []
-    found = []             # the versions found (and the binding file), for the log
-    binding = None         # why the binding did not load
+    core = None            # why pydantic-core (a binary module) did not load
     for module in MODULES:
         try:
-            loaded = importlib.import_module(module)
+            importlib.import_module(module)
         except Exception as e:  # pylint: disable=broad-except
             problems.append('{}: {}'.format(module, e))
-            if module == 'CyberiadaML':
-                binding = str(e)
-        else:
-            if module == 'CyberiadaML':
-                found.append('CyberiadaML {} {}'.format(getattr(loaded, '__version__', '?'),
-                                                         loaded.__file__))
+            if core is None and 'DLL load failed' in str(e):
+                core = str(e)
+    found = []
     for dist in DISTRIBUTIONS:
         try:
             found.append('{} {}'.format(dist, importlib.metadata.version(dist)))
         except importlib.metadata.PackageNotFoundError:
             found.append('{} -'.format(dist))
-    if binding is not None:
-        folder = os.path.join(os.path.dirname(os.path.abspath(editor)), 'python', 'binding')
-        hint = check.say('binding-hint', python=sys.executable, detail=binding, folder=folder)
+    if core is not None:
+        hint = check.say('core-hint', python=sys.executable, detail=core)
     else:
         hint = check.say('imports-hint', python=sys.executable)
     return check.result(not problems, check.say('imports'), hint, '\n'.join(problems + found))
@@ -288,7 +273,7 @@ def main(argv=None):
     check = Check(args.language, log)
     try:
         env = editor_environment(args.editor)
-        imported = check_imports(check, args.editor)
+        imported = check_imports(check)
         if check_listed(check, args.editor, env) and imported:
             with tempfile.TemporaryDirectory() as work:
                 check_run(check, args.editor, env,

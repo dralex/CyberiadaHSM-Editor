@@ -1,7 +1,8 @@
-# The third-party wheels of the Windows installer: pydantic 2 and its dependencies
-# for cyberiadaml-py, pinned with the hashes of every wheel (pydantic-core has one
-# per CPython, 3.10-3.14 win_amd64). build-windows-installer.sh downloads them with
-# pip download --only-binary=:all: --platform win_amd64 --require-hashes.
+# The third-party wheels of the Windows 10+ path of the installer: pydantic 2 and its
+# dependencies for cyberiadaml-py, pinned with the hashes of every wheel (pydantic-core
+# has one per CPython, 3.10-3.14 win_amd64). make-installer.sh downloads them with
+# pip download --only-binary=:all: --platform win_amd64 --require-hashes; the
+# Windows 7-8.1 path takes requirements-windows-py38.txt.
 
 annotated-types==0.8.0 \
     --hash=sha256:f072f4d804ea359e4eaf198b1af7a8b0943881a87f31bb764f8bf219bb9419e0

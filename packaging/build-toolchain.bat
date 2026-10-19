@@ -399,7 +399,7 @@ rem a distribution-independent python package (cyberiadaml-py, hsm-dispatcher,
 rem hsm-to-python, cybersphere-hsm-maker): LANGUAGES NONE,
 rem nothing to compile. Produces a .zip (its files, incl. the editor plugin under
 rem share/cyberiada-pro/plugins/<id>) and a pip wheel (console-script .exe shims +
-rem the plugin data-files). The wheel of cyberiadaml-py needs Python 3.10+, and pip
+rem the plugin data-files). The wheel of cyberiadaml-py needs Python 3.8.1+, and pip
 rem fetches its build backend (poetry-core). Tests run on the Linux tier (they need
 rem the binding + pytest); here we only produce the Windows artifacts.
 rem ---------------------------------------------------------------------------

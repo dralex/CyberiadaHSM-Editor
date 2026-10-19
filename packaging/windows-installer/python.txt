@@ -1,6 +1,6 @@
 # The Pythons the installer installs when no suitable one is found (python.org,
-# 64-bit). Windows 10 and newer: a Python of the pure-Python plugins; Windows 7 SP1,
-# 8 and 8.1 (legacy.*): Python 3.8, the last one for them, with the C++ binding.
+# 64-bit). Windows 10 and newer: a current Python; Windows 7 SP1, 8 and 8.1
+# (legacy.*): Python 3.8, the last one for them (requirements-windows-py38.txt).
 # The SHA-256 is the one python.org publishes on the release page; it lists only
 # the MD5 for 3.8.10 (62cf1a12a5276b0259e8761d4cf4fe42), checked for the file below.
 version=3.13.16

@@ -2,16 +2,15 @@
 # -----------------------------------------------------------------------------
 # Make the CyberiadaPro Windows installer from the editor zip built before (run by
 # ../build-windows-installer.sh in the Linux builder image, as the invoking user):
-# the wheels of the python plugins, the pinned pydantic wheels for Windows
-# (requirements-windows.txt), the python.org installers (python.txt), the C++
-# binding of the Windows 7-8.1 path when given, the plugin check with its samples,
-# the icon, then makensis over cyberiada-pro.nsi.
+# the wheels of the python plugins, the pinned pydantic wheels for Windows 10+
+# (requirements-windows.txt) and for the Python 3.8 of Windows 7-8.1
+# (requirements-windows-py38.txt, its core checked to load there), the python.org
+# installers (python.txt), the plugin check with its samples, the icon, then
+# makensis over cyberiada-pro.nsi.
 #
 # Environment: VERSION (the editor version), SRC (the sibling repos, only read),
 # OUT (the output folder; the Python installers are cached in OUT/cache), ZIP (the
-# editor zip), BINDING (the binding zip for Python 3.8 made by build-toolchain.bat
-# --python; empty: the installer has no plugins for Windows 7-8.1), WORK (a scratch
-# folder, emptied first).
+# editor zip), WORK (a scratch folder, emptied first).
 #
 # Copyright (C) 2026 Alexey Fedoseev <aleksey@fedoseev.net>
 #
@@ -23,12 +22,11 @@ set -eu
 SRC=${SRC:-/src}
 OUT=${OUT:-/out}
 ZIP=${ZIP:-/in/editor.zip}
-BINDING=${BINDING:-}
 WORK=${WORK:-/tmp/winst}
 : "${VERSION:?set VERSION, the editor version}"
 HERE="$SRC/CyberiadaHSM-Editor/packaging/windows-installer"
-# the CPythons of the pinned pydantic-core wheels; keep in sync with CheckPython
-# and FindPython of cyberiada-pro.nsi
+# the CPythons of the pinned pydantic-core wheels of Windows 10+ (Windows 7-8.1 take
+# 3.8); keep in sync with CheckPython and FindPython of cyberiada-pro.nsi
 PYTHONS="3.10 3.11 3.12 3.13 3.14"
 # the python packages of the Windows release (not cybersphere-agents)
 REPOS="cyberiadaml-py hsm-dispatcher-py hsm-to-python cybersphere-hsm-maker"
@@ -71,10 +69,10 @@ EOF
 
 command -v makensis >/dev/null 2>&1 || die "makensis not found (apt-get install nsis)"
 [ -f "$ZIP" ] || die "no editor zip: $ZIP"
-[ -z "$BINDING" ] || [ -f "$BINDING" ] || die "no binding zip: $BINDING"
 
 rm -rf "$WORK"
-mkdir -p "$WORK/stage" "$WORK/wheels" "$WORK/tools/samples" "$WORK/src" "$OUT/cache"
+mkdir -p "$WORK/stage" "$WORK/wheels" "$WORK/wheels-py310" "$WORK/wheels-py38" \
+    "$WORK/tools/samples" "$WORK/src" "$OUT/cache"
 
 say "the editor: $ZIP"
 python3 -c "import sys, zipfile; zipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])" \
@@ -95,39 +93,28 @@ for repo in $REPOS; do
         --wheel-dir "$WORK/wheels" "$WORK/src/$repo"
 done
 
-say "the pinned pydantic wheels for Windows (Python $PYTHONS)"
+say "the pinned pydantic wheels for Windows 10+ (Python $PYTHONS)"
 for v in $PYTHONS; do
     python3 -m pip download --quiet --disable-pip-version-check --only-binary=:all: \
         --platform win_amd64 --implementation cp --python-version "$v" --require-hashes \
-        -r "$HERE/requirements-windows.txt" -d "$WORK/wheels"
+        -r "$HERE/requirements-windows.txt" -d "$WORK/wheels-py310"
 done
-ls -1 "$WORK/wheels"
+ls -1 "$WORK/wheels" "$WORK/wheels-py310"
 
-say "the Python installer (Windows 10 and newer)"
-pyver=$(field version)
-installer="$OUT/cache/python-$pyver-amd64.exe"
-fetch_python ""
+say "the pinned pydantic wheels for Windows 7-8.1 (Python 3.8)"
+python3 -m pip download --quiet --disable-pip-version-check --only-binary=:all: \
+    --platform win_amd64 --implementation cp --python-version 3.8 --require-hashes \
+    -r "$HERE/requirements-windows-py38.txt" -d "$WORK/wheels-py38"
+ls -1 "$WORK/wheels-py38"
+# a pydantic-core built with Rust 1.78+ imports functions Windows 7 lacks and does
+# not load there: its import table must have none of them
+python3 - "$WORK/wheels-py38" <<'EOF'
+import glob, os, struct, sys, zipfile
+NEWER = {'ProcessPrng', 'WaitOnAddress', 'WakeByAddressSingle', 'WakeByAddressAll',
+         'GetSystemTimePreciseAsFileTime'}
 
-legacy=""
-if [ -n "$BINDING" ]; then
-    say "the C++ binding of the Windows 7-8.1 path: $BINDING"
-    legacy_ver=$(field legacy.version)
-    legacy_installer="$OUT/cache/python-$legacy_ver-amd64.exe"
-    # python38.dll for 3.8.10: the Python the module must be built against
-    python3 - "$BINDING" "$WORK/binding" \
-        "python$(echo "$legacy_ver" | cut -d. -f1,2 | tr -d .).dll" <<'EOF'
-import os, shutil, struct, sys, zipfile
-zip_path, dst, python_dll = sys.argv[1:]
-# the DLLs of Windows itself (and of the Python), not expected in the zip
-SYSTEM = {'kernel32', 'user32', 'gdi32', 'advapi32', 'shell32', 'ole32', 'oleaut32',
-          'ws2_32', 'bcrypt', 'crypt32', 'secur32', 'shlwapi', 'rpcrt4', 'ntdll',
-          'msvcrt', 'ucrtbase', 'version', 'winmm', 'iphlpapi', 'userenv', 'dbghelp',
-          'psapi', 'normaliz', 'wldap32', 'imm32', 'comdlg32', 'comctl32', 'setupapi',
-          'cfgmgr32', 'powrprof', 'mpr', 'netapi32', 'wintrust'}
-
-def imports(path):
-    """The DLL names a 64-bit PE module imports (lower case)."""
-    data = open(path, 'rb').read()
+def imports(data):
+    """The functions a 64-bit PE module imports, as dll!function (ordinals #n)."""
     pe = struct.unpack_from('<I', data, 0x3c)[0] if data[:2] == b'MZ' else 0
     if data[pe:pe + 4] != b'PE\0\0':
         raise ValueError('not a PE module')
@@ -146,71 +133,52 @@ def imports(path):
             if vaddr <= rva < vaddr + vsize:
                 return rva - vaddr + rawptr
         raise ValueError('a broken import table')
+    def text(position):
+        return data[position:data.index(b'\0', position)].decode('ascii')
     # the import directory, entry 1 of the PE32+ data directories
-    rva = struct.unpack_from('<I', data, optional + 112 + 8)[0]
+    position = offset(struct.unpack_from('<I', data, optional + 112 + 8)[0])
     names = []
-    position = offset(rva) if rva else None
-    while position is not None:
+    while True:
         descriptor = struct.unpack_from('<5I', data, position)
         if not any(descriptor):
             break
-        start = offset(descriptor[3])
-        names.append(data[start:data.index(b'\0', start)].decode('ascii').lower())
+        dll = text(offset(descriptor[3])).lower()
+        thunk = offset(descriptor[0] or descriptor[4])
+        while True:
+            entry = struct.unpack_from('<Q', data, thunk)[0]
+            if not entry:
+                break
+            names.append('{}!{}'.format(dll, '#{}'.format(entry & 0xffff) if entry >> 63
+                                        else text(offset(entry & 0x7fffffff) + 2)))
+            thunk += 8
         position += 20
     return names
 
-# the folder of CyberiadaML.pyd, flat (PowerShell 5 zips have \ in the names)
-with zipfile.ZipFile(zip_path) as archive:
-    entries = [(info, info.filename.replace('\\', '/')) for info in archive.infolist()]
-    pyds = [name for _, name in entries if name.lower().rsplit('/', 1)[-1] == 'cyberiadaml.pyd']
-    if len(pyds) != 1:
-        sys.exit('error: {} holds {} CyberiadaML.pyd, expected one'.format(zip_path, len(pyds)))
-    folder = pyds[0].rpartition('/')[0]
-    os.makedirs(dst)
-    for info, name in entries:
-        if name.endswith('/') or name.rpartition('/')[0] != folder:
-            continue
-        with archive.open(info) as source, \
-                open(os.path.join(dst, name.rpartition('/')[2]), 'wb') as target:
-            shutil.copyfileobj(source, target)
-
-present = {name.lower() for name in os.listdir(dst)}
-pyd = os.path.join(dst, next(n for n in os.listdir(dst) if n.lower() == 'cyberiadaml.pyd'))
-try:
-    linked = imports(pyd)
-except ValueError as e:
-    sys.exit('error: CyberiadaML.pyd: {}'.format(e))
-if python_dll not in linked:
-    found = [n for n in linked if n.startswith('python')] or ['no python DLL']
-    sys.exit('error: CyberiadaML.pyd links {}, the Windows 7-8.1 path needs {}: build it with '
-             'build-toolchain.bat --python <python.exe of that version>'.format(
-                 ', '.join(found), python_dll))
-missing = set()
-for name in sorted(os.listdir(dst)):
-    if name.lower().endswith(('.dll', '.pyd')):
-        for dll in imports(os.path.join(dst, name)):
-            if not (dll in present or dll == python_dll or dll.startswith(('api-ms-win-', 'ext-ms-'))
-                    or dll[:-4] in SYSTEM):
-                missing.add('{} (of {})'.format(dll, name))
-if missing:
-    sys.exit('error: the binding zip lacks {}: build it with the current build-toolchain.bat '
-             '(it bundles the MSVC runtime)'.format(', '.join(sorted(missing))))
-print('CyberiadaML.pyd links {}; {} files'.format(python_dll, len(present)))
-info = os.path.join(dst, 'build-info.txt')
-if os.path.exists(info):
-    print(open(info, encoding='utf-8', errors='replace').read().rstrip())
+wheels = glob.glob(os.path.join(sys.argv[1], 'pydantic_core-*.whl'))
+if not wheels:
+    sys.exit('error: no pydantic_core wheel in {}'.format(sys.argv[1]))
+for wheel in wheels:
+    with zipfile.ZipFile(wheel) as archive:
+        for name in archive.namelist():
+            if name.endswith('.pyd'):
+                newer = [f for f in imports(archive.read(name)) if f.split('!')[1] in NEWER]
+                if newer:
+                    sys.exit('error: {} imports {}, which Windows 7 lacks: pin a pydantic-core '
+                             'built before Rust 1.78 in requirements-windows-py38.txt'.format(
+                                 os.path.basename(wheel), ', '.join(newer)))
+                print(os.path.basename(wheel), name, 'imports nothing newer than Windows 7')
 EOF
-    say "the Python installer (Windows 7 SP1, 8, 8.1)"
-    fetch_python "legacy."
-    legacy="-DLEGACY_BINDING=$WORK/binding -DLEGACY_PYTHON_INSTALLER=$legacy_installer \
--DLEGACY_PYTHON_VERSION=$legacy_ver"
-else
-    echo
-    echo "note: no binding zip: on Windows 7-8.1 the installer sets up the editor only"
-fi
+
+say "the Python installers (Windows 10+; Windows 7 SP1, 8, 8.1)"
+pyver=$(field version)
+installer="$OUT/cache/python-$pyver-amd64.exe"
+fetch_python ""
+legacy_ver=$(field legacy.version)
+legacy_installer="$OUT/cache/python-$legacy_ver-amd64.exe"
+fetch_python "legacy."
 
 say "the plugin check and its samples"
-cp "$HERE/check-plugins.py" "$HERE/site-path.py" "$WORK/tools/"
+cp "$HERE/check-plugins.py" "$WORK/tools/"
 cp "$SRC/hsm-to-python/test/graphs/code_layout.graphml" \
    "$SRC/cybersphere-hsm-maker/tests/good/lift.graphml" "$WORK/tools/samples/"
 
@@ -228,10 +196,10 @@ EOF
 
 say "makensis"
 setup="$OUT/CyberiadaPro-$VERSION-win64-setup.exe"
-# $legacy: the defines of the Windows 7-8.1 path (no spaces in the scratch paths)
-# shellcheck disable=SC2086
 makensis -V2 -DVERSION="$VERSION" -DSTAGE="$stage" -DWHEELS="$WORK/wheels" \
+    -DWHEELS_PY310="$WORK/wheels-py310" -DWHEELS_PY38="$WORK/wheels-py38" \
     -DTOOLS="$WORK/tools" -DPYTHON_INSTALLER="$installer" -DPYTHON_VERSION="$pyver" \
-    $legacy -DICON="$WORK/cyberiada-pro.ico" -DOUTFILE="$setup" "$HERE/cyberiada-pro.nsi"
+    -DLEGACY_PYTHON_INSTALLER="$legacy_installer" -DLEGACY_PYTHON_VERSION="$legacy_ver" \
+    -DICON="$WORK/cyberiada-pro.ico" -DOUTFILE="$setup" "$HERE/cyberiada-pro.nsi"
 ls -l "$setup"
 sha256sum "$setup"

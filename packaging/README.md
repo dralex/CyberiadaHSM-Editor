@@ -101,9 +101,8 @@ The python binding is a separate `.zip`, not part of the editor zip:
 (`cp38`, `cp312`, ...). It holds `CyberiadaML.pyd`, its DLLs (the libraries, libxml2
 with iconv and zlib), the MSVC C++ runtime
 (`msvcp140.dll` and the rest, which a clean Windows lacks) and `build-info.txt` (the
-Python and the git revisions). The Windows 7-8.1 path of the installer needs the one
-for Python 3.8 (64-bit, e.g. the python.org 3.8.10 installer, which the installer
-build caches in `dist/cache`):
+Python and the git revisions). The Windows installer does not use it: its plugins run on
+the pure-Python `cyberiadaml-py`. A binding for another Python, without the editor:
 
     packaging\build-toolchain.bat --python C:\Python38\python.exe --no-editor
 
@@ -113,9 +112,12 @@ The python packages of the Windows release (`hsm-dispatcher-py`, `hsm-to-python`
 `cybersphere-hsm-maker`; `cybersphere-agents` is not in it) read the diagrams with
 `cyberiadaml-py`, the pure-Python
 CyberiadaML interface, when the binding is not installed, so on Windows they need no
-binary module and no Python of a particular version, only Python 3.10+. Their wheels
-are built by this script or, the same files, on Linux in `dist/pyapps/`; pip takes
-`cyberiadaml-py` and the dispatcher from that folder and `pydantic` from PyPI:
+binary module of ours and no Python of a particular version, only Python 3.8.1+. On
+Python 3.10+ pip takes the current pydantic, which needs Windows 10; on an older Windows
+Python pip leaves `cyberiadaml-py` out (the installer brings a pydantic for Windows 7,
+below). Their wheels are built by this script or, the same files, on
+Linux in `dist/pyapps/`; pip takes `cyberiadaml-py` and the dispatcher from that
+folder and `pydantic` from PyPI:
 
     py -3 -m pip install --find-links dist\pyapps hsm-to-python cybersphere-hsm-maker
     hsm-run --install-editor-plugin
@@ -157,30 +159,27 @@ The installer:
 
    | Windows | Python | the plugins read the diagrams with |
    |---|---|---|
-   | 10, 11 | a 64-bit 3.10-3.14 found, else the bundled 3.13 | the pure-Python `cyberiadaml-py` (pydantic) |
-   | 7 SP1, 8, 8.1 | a 64-bit 3.8 found, else the bundled 3.8.10 | the C++ binding for Python 3.8 |
+   | Windows | Python | pydantic |
+   |---|---|---|
+   | 10, 11 | a 64-bit 3.10-3.14 found, else the bundled 3.13 | 2.13 (`requirements-windows.txt`) |
+   | 7 SP1, 8, 8.1 | a 64-bit 3.8 found, else the bundled 3.8.10 | 2.7.1 with pydantic-core 2.18.2 (`requirements-windows-py38.txt`) |
 
-   pydantic-core is built with Rust, whose programs run on Windows 10 and newer;
-   Python 3.8 is the last one for Windows 7. The Pythons are found in the PEP 514
-   registry; the bundled ones are the python.org installers of
-   `windows-installer/python.txt`, installed for all users;
+   pydantic-core is a Rust module: built with Rust 1.78 or newer (pydantic-core 2.18.4
+   on) it imports functions Windows 7 lacks, so the older Windows take the last core
+   built before; the build checks its import table. Python 3.8 is the last one for
+   Windows 7. The Pythons are found in the PEP 514 registry; the bundled ones are the
+   python.org installers of `windows-installer/python.txt`, installed for all users;
 3. installs the python plugins hsm-to-python and hsm-maker (not cybersphere-agents)
-   into that Python from the bundled wheels, offline: the plugin packages, and on
-   Windows 10+ the pure-Python `cyberiadaml-py` with the pinned pydantic wheels
-   (`windows-installer/requirements-windows.txt`); on Windows 7-8.1 the binding goes
-   into `python\binding`, put on the `sys.path` of that Python by a `.pth` file
-   (`windows-installer/site-path.py`). Then it binds the plugins of the editor folder
-   to that Python for every user (`--install-editor-plugin`);
+   into that Python from the bundled wheels, offline: the plugin packages, the
+   pure-Python `cyberiadaml-py` and the pinned pydantic wheels of that Windows. Then
+   it binds the plugins of the editor folder to that Python for every user
+   (`--install-editor-plugin`);
 4. checks that the editor runs them (`windows-installer/check-plugins.py`) and shows
    the result: every failure with what to check. The check runs again from the
    Start menu (CyberiadaPro, Check plugins).
 
-The build takes the editor zip made before (`--editor-zip` picks another one) and
-the binding zip for Python 3.8 made on Windows (`--binding-zip`; by default
-`dist/cyberiada-mlpp-binding-cp38-win64.zip` when it is there). It stops when the
-binding links another Python or lacks a DLL it needs, and shows its `build-info.txt`.
-Without a binding the installer sets up only the editor on Windows 7-8.1 and says
-why. The build runs in the Linux builder image of the newest release (`--release`);
-it needs network access for the pinned wheels and the Python installers (cached in
-`dist/cache`), all checked against their SHA-256. The uninstaller removes the editor,
-its python packages and the `.pth` of the binding; Python and pydantic stay.
+The build takes the editor zip made before (`--editor-zip` picks another one); no
+Windows machine takes part. It runs in the Linux builder image of the newest release
+(`--release`) and needs network access for the pinned wheels and the Python
+installers (cached in `dist/cache`), all checked against their SHA-256. The
+uninstaller removes the editor and its python packages; Python and pydantic stay.
