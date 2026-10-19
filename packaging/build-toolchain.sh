@@ -358,8 +358,7 @@ build_pydeb() {
     # the .deb (Debian); with --wheel-dir also the .zip (its files, incl. the editor
     # plugin under share/cyberiada-pro/plugins/<id>, for other platforms) and the pip
     # wheel (arch-independent; carries the console-script shims and the plugin
-    # data-files): one build of those serves every platform. pip builds in a temp
-    # dir, so the mounted source tree is not polluted.
+    # data-files): one build of those serves every platform.
     echo "Packing $repo..."
     rm -f "$bdir"/*.deb "$bdir"/*.zip
     ( cd "$bdir" && cpack -G DEB >/dev/null )
@@ -369,7 +368,12 @@ build_pydeb() {
         ( cd "$bdir" && cpack -G ZIP >/dev/null )
         cp "$bdir"/*.zip "$WHEEL_DIR"/
         echo "Building the wheel for $repo..."
-        python3 -m pip wheel --no-build-isolation --no-deps --wheel-dir "$WHEEL_DIR" "$dir" >/dev/null
+        # setuptools builds in the tree it is given (build/, *.egg-info): a copy
+        # keeps the sources clean
+        wsrc=$(mktemp -d)
+        tar -C "$dir" --exclude=./.git --exclude='./build*' -cf - . | tar -C "$wsrc" -xf -
+        python3 -m pip wheel --no-build-isolation --no-deps --wheel-dir "$WHEEL_DIR" "$wsrc" >/dev/null
+        rm -rf "$wsrc"
     fi
 
     if [ -n "$orig_branch" ]; then git -C "$dir" checkout --quiet "$orig_branch"; fi
