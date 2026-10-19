@@ -2,14 +2,18 @@
 ; CyberiadaPro, the Cyberiada State Machine Editor
 ;
 ; The Windows installer: the editor, Python 3 when no suitable one is found, the
-; python plugins (hsm-to-python, hsm-maker) on the pure-Python cyberiadaml-py,
-; and a check that the editor runs them. Everything is in the installer, nothing
-; is downloaded. Built on Linux by packaging/build-windows-installer.sh:
+; python plugins (hsm-to-python, hsm-maker) and a check that the editor runs them.
+; Windows 10 and newer: Python 3.10-3.14, the plugins on the pure-Python
+; cyberiadaml-py; Windows 7 SP1, 8, 8.1: Python 3.8 with the C++ binding (the
+; LEGACY_* defines; without them the editor only). Everything is in the installer,
+; nothing is downloaded. Built on Linux by packaging/build-windows-installer.sh:
 ;
 ;   makensis -DVERSION=1.0.0 -DSTAGE=<the unpacked editor zip> -DWHEELS=<wheels>
-;            -DTOOLS=<check-plugins.py + samples/> -DPYTHON_INSTALLER=<python.org exe>
-;            -DPYTHON_VERSION=3.14.8 -DICON=<cyberiada-pro.ico> -DOUTFILE=<setup.exe>
-;            cyberiada-pro.nsi
+;            -DTOOLS=<check-plugins.py, site-path.py, samples/>
+;            -DPYTHON_INSTALLER=<python.org exe> -DPYTHON_VERSION=3.13.16
+;            [-DLEGACY_BINDING=<CyberiadaML.pyd + DLLs for Python 3.8>
+;             -DLEGACY_PYTHON_INSTALLER=<python.org exe> -DLEGACY_PYTHON_VERSION=3.8.10]
+;            -DICON=<cyberiada-pro.ico> -DOUTFILE=<setup.exe> cyberiada-pro.nsi
 ;
 ; Copyright (C) 2026 Alexey Fedoseev <aleksey@fedoseev.net>
 ;
@@ -21,6 +25,8 @@ Unicode true
 ; a 64-bit installer: Program Files and the registry without the WOW64 redirection
 Target amd64-unicode
 ManifestDPIAware true
+; Windows reports its own version (WinVer.nsh) only to the programs that know it
+ManifestSupportedOS all
 SetCompressor /SOLID lzma
 RequestExecutionLevel admin
 
@@ -30,15 +36,22 @@ RequestExecutionLevel admin
 !include "Sections.nsh"
 !include "FileFunc.nsh"
 !include "WinMessages.nsh"
+!include "WinVer.nsh"
 
 !ifndef VERSION | STAGE | WHEELS | TOOLS | PYTHON_INSTALLER | PYTHON_VERSION | ICON | OUTFILE
   !error "define VERSION, STAGE, WHEELS, TOOLS, PYTHON_INSTALLER, PYTHON_VERSION, ICON, OUTFILE"
+!endif
+!ifdef LEGACY_BINDING
+  !ifndef LEGACY_PYTHON_INSTALLER | LEGACY_PYTHON_VERSION
+    !error "LEGACY_BINDING needs LEGACY_PYTHON_INSTALLER and LEGACY_PYTHON_VERSION"
+  !endif
 !endif
 
 !define UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\CyberiadaPro"
 !define PLUGINS_DIR "share\cyberiada-pro\plugins"
 !define PROGID "CyberiadaPro.graphml"
-; what pip installs (the dispatcher, cyberiadaml-py and pydantic come with them)
+; what pip installs (the dispatcher, and on Python 3.10+ cyberiadaml-py and
+; pydantic, come with them)
 !define PIP_PACKAGES "hsm-to-python cybersphere-hsm-maker"
 ; what the uninstaller removes (pydantic may serve other programs: it stays)
 !define OUR_PACKAGES "hsm-to-python cybersphere-hsm-maker hsm-dispatcher-py cyberiadaml-py"
@@ -54,6 +67,13 @@ Var PythonVersion
 Var Problems           ; what went wrong during the install, for the check page
 Var CheckCode          ; the exit code of check-plugins.py, empty when it did not run
 Var LangCode           ; en or ru, for check-plugins.py
+Var Legacy             ; 1 on Windows 7-8.1: Python 3.8 and the C++ binding
+Var WantVersion        ; the bundled Python of this Windows
+Var WantRange          ; the Pythons the plugins take here, for the texts
+Var PyMin              ; the same as tuples for CheckPython
+Var PyMax
+Var PythonHint         ; what the Python installer needs here, for PythonFailed
+Var ToolsDesc          ; the description of the python plugins component
 
 ; --- pages --------------------------------------------------------------------
 
@@ -93,8 +113,10 @@ LangString SecEditorDesc ${LANG_ENGLISH} "The state machine editor."
 LangString SecEditorDesc ${LANG_RUSSIAN} "Редактор машин состояний."
 LangString SecToolsName ${LANG_ENGLISH} "Python plugins"
 LangString SecToolsName ${LANG_RUSSIAN} "Модули на Python"
-LangString SecToolsDesc ${LANG_ENGLISH} "hsm-to-python (the Python program of a diagram) and hsm-maker (diagrams drawn from a description); installs Python ${PYTHON_VERSION} when no Python 3.10-3.14 (64-bit) is found."
-LangString SecToolsDesc ${LANG_RUSSIAN} "hsm-to-python (программа на Python по диаграмме) и hsm-maker (диаграммы по описанию); устанавливает Python ${PYTHON_VERSION}, если не найден Python 3.10-3.14 (64-бит)."
+LangString SecToolsDesc ${LANG_ENGLISH} "hsm-to-python (the Python program of a diagram) and hsm-maker (diagrams drawn from a description); installs Python $WantVersion when no Python $WantRange (64-bit) is found."
+LangString SecToolsDesc ${LANG_RUSSIAN} "hsm-to-python (программа на Python по диаграмме) и hsm-maker (диаграммы по описанию); устанавливает Python $WantVersion, если не найден Python $WantRange (64-бит)."
+LangString SecToolsNoLegacy ${LANG_ENGLISH} "The python plugins of this installer need Windows 10 or newer: it has no C++ binding for Windows 7-8.1."
+LangString SecToolsNoLegacy ${LANG_RUSSIAN} "Модулям на Python этой установки нужна Windows 10 или новее: в ней нет C++-привязки для Windows 7-8.1."
 LangString SecAssocName ${LANG_ENGLISH} "Open .graphml files with CyberiadaPro"
 LangString SecAssocName ${LANG_RUSSIAN} "Открывать файлы .graphml в CyberiadaPro"
 LangString SecAssocDesc ${LANG_ENGLISH} "Makes CyberiadaPro the program of the .graphml files."
@@ -106,11 +128,19 @@ LangString PythonSubtitle ${LANG_ENGLISH} "The Python the plugins run with"
 LangString PythonSubtitle ${LANG_RUSSIAN} "Python, на котором работают модули"
 LangString PythonFound ${LANG_ENGLISH} "The plugins will use Python $PythonVersion:$\r$\n$\r$\n$PythonExe$\r$\n$\r$\nTheir packages are installed into it."
 LangString PythonFound ${LANG_RUSSIAN} "Модули будут использовать Python $PythonVersion:$\r$\n$\r$\n$PythonExe$\r$\n$\r$\nИх пакеты будут установлены в него."
-LangString PythonInstall ${LANG_ENGLISH} "No Python 3.10-3.14 (64-bit) was found. Python ${PYTHON_VERSION} will be installed for all users, and the plugins will use it."
-LangString PythonInstall ${LANG_RUSSIAN} "Python 3.10-3.14 (64-бит) не найден. Будет установлен Python ${PYTHON_VERSION} для всех пользователей, модули будут использовать его."
+LangString PythonInstall ${LANG_ENGLISH} "No Python $WantRange (64-bit) was found. Python $WantVersion will be installed for all users, and the plugins will use it."
+LangString PythonInstall ${LANG_RUSSIAN} "Python $WantRange (64-бит) не найден. Будет установлен Python $WantVersion для всех пользователей, модули будут использовать его."
+LangString PythonLegacy ${LANG_ENGLISH} "This Windows is older than Windows 10: the plugins run on Python 3.8 with the C++ CyberiadaML binding."
+LangString PythonLegacy ${LANG_RUSSIAN} "Эта Windows старше Windows 10: модули работают на Python 3.8 с C++-привязкой CyberiadaML."
+LangString NeedWin7 ${LANG_ENGLISH} "CyberiadaPro needs Windows 7 Service Pack 1 or newer."
+LangString NeedWin7 ${LANG_RUSSIAN} "Для CyberiadaPro нужна Windows 7 с пакетом обновления 1 (SP1) или новее."
+LangString Win7Updates ${LANG_ENGLISH} "On Windows 7 Python needs Service Pack 1 and the update KB2533623 (Windows Update)."
+LangString Win7Updates ${LANG_RUSSIAN} "В Windows 7 для Python нужны пакет обновления 1 и обновление KB2533623 (Центр обновления Windows)."
 
-LangString InstallingPython ${LANG_ENGLISH} "Installing Python ${PYTHON_VERSION}..."
-LangString InstallingPython ${LANG_RUSSIAN} "Установка Python ${PYTHON_VERSION}..."
+LangString InstallingPython ${LANG_ENGLISH} "Installing Python $WantVersion..."
+LangString InstallingPython ${LANG_RUSSIAN} "Установка Python $WantVersion..."
+LangString AddingBinding ${LANG_ENGLISH} "Adding the C++ binding to the Python..."
+LangString AddingBinding ${LANG_RUSSIAN} "Подключение C++-привязки к Python..."
 LangString InstallingPackages ${LANG_ENGLISH} "Installing the python packages of the plugins..."
 LangString InstallingPackages ${LANG_RUSSIAN} "Установка пакетов Python для модулей..."
 LangString PinningPlugins ${LANG_ENGLISH} "Binding the plugins to the Python..."
@@ -118,14 +148,16 @@ LangString PinningPlugins ${LANG_RUSSIAN} "Привязка модулей к Py
 LangString Checking ${LANG_ENGLISH} "Checking the plugins..."
 LangString Checking ${LANG_RUSSIAN} "Проверка модулей..."
 
-LangString PythonFailed ${LANG_ENGLISH} "Python ${PYTHON_VERSION} could not be installed (exit $0; see logs\python-install.log). Install Python 3.10-3.14 (64-bit) from python.org, then run this setup again."
-LangString PythonFailed ${LANG_RUSSIAN} "Не удалось установить Python ${PYTHON_VERSION} (код $0; см. logs\python-install.log). Установите Python 3.10-3.14 (64-бит) с python.org и запустите эту установку ещё раз."
+LangString PythonFailed ${LANG_ENGLISH} "Python $WantVersion could not be installed (exit $0; see logs\python-install.log). Install Python $WantRange (64-bit) from python.org, then run this setup again. $PythonHint"
+LangString PythonFailed ${LANG_RUSSIAN} "Не удалось установить Python $WantVersion (код $0; см. logs\python-install.log). Установите Python $WantRange (64-бит) с python.org и запустите эту установку ещё раз. $PythonHint"
 LangString PipMissing ${LANG_ENGLISH} "pip is missing from $PythonExe and could not be added (ensurepip, exit $0). Repair that Python installation, then run this setup again."
 LangString PipMissing ${LANG_RUSSIAN} "В $PythonExe нет pip, и его не удалось добавить (ensurepip, код $0). Восстановите эту установку Python и запустите эту установку ещё раз."
 LangString PipFailed ${LANG_ENGLISH} "The python packages could not be installed into $PythonExe (exit $0; see logs\pip.log)."
 LangString PipFailed ${LANG_RUSSIAN} "Не удалось установить пакеты Python в $PythonExe (код $0; см. logs\pip.log)."
 LangString PinFailed ${LANG_ENGLISH} "The plugin $1 could not be bound to $PythonExe (exit $0)."
 LangString PinFailed ${LANG_RUSSIAN} "Не удалось привязать модуль $1 к $PythonExe (код $0)."
+LangString BindingFailed ${LANG_ENGLISH} "The C++ binding could not be added to $PythonExe (exit $0)."
+LangString BindingFailed ${LANG_RUSSIAN} "Не удалось подключить C++-привязку к $PythonExe (код $0)."
 
 LangString CheckTitle ${LANG_ENGLISH} "Plugin check"
 LangString CheckTitle ${LANG_RUSSIAN} "Проверка модулей"
@@ -159,17 +191,31 @@ Section "$(SecToolsName)" SecTools
   File "${WHEELS}/*.whl"
   SetOutPath "$INSTDIR\tools"
   File "${TOOLS}/check-plugins.py"
+  File "${TOOLS}/site-path.py"
   SetOutPath "$INSTDIR\tools\samples"
   File "${TOOLS}/samples/*.graphml"
+!ifdef LEGACY_BINDING
+  ${If} $Legacy == 1
+    ; CyberiadaML.pyd for Python 3.8, its DLLs and the MSVC runtime
+    SetOutPath "$INSTDIR\python\binding"
+    File /r "${LEGACY_BINDING}/*"
+  ${EndIf}
+!endif
   ; python -m puts the working folder first on sys.path: a folder of no modules
   SetOutPath "$PLUGINSDIR"
 
   ${If} $PythonExe == ""
     DetailPrint "$(InstallingPython)"
-    File "/oname=python-${PYTHON_VERSION}-amd64.exe" "${PYTHON_INSTALLER}"
-    nsExec::ExecToLog '"$PLUGINSDIR\python-${PYTHON_VERSION}-amd64.exe" /quiet InstallAllUsers=1 PrependPath=1 Include_launcher=1 Include_test=0 /log "$INSTDIR\logs\python-install.log"'
+    ${If} $Legacy == 1
+!ifdef LEGACY_BINDING
+      File "/oname=python-${LEGACY_PYTHON_VERSION}-amd64.exe" "${LEGACY_PYTHON_INSTALLER}"
+!endif
+    ${Else}
+      File "/oname=python-${PYTHON_VERSION}-amd64.exe" "${PYTHON_INSTALLER}"
+    ${EndIf}
+    nsExec::ExecToLog '"$PLUGINSDIR\python-$WantVersion-amd64.exe" /quiet InstallAllUsers=1 PrependPath=1 Include_launcher=1 Include_test=0 /log "$INSTDIR\logs\python-install.log"'
     Pop $0
-    DetailPrint "python-${PYTHON_VERSION}-amd64.exe: $0"
+    DetailPrint "python-$WantVersion-amd64.exe: $0"
     Call FindPython
     ${If} $PythonExe == ""
       StrCpy $Problems "$(PythonFailed)"
@@ -196,6 +242,19 @@ Section "$(SecToolsName)" SecTools
     StrCpy $Problems "$(PipFailed)"
     Goto done
   ${EndIf}
+
+!ifdef LEGACY_BINDING
+  ; Python 3.8 reads the diagrams with the binding: its folder on sys.path (a .pth)
+  ${If} $Legacy == 1
+    DetailPrint "$(AddingBinding)"
+    nsExec::ExecToLog '"$PythonExe" "$INSTDIR\tools\site-path.py" add "$INSTDIR\python\binding"'
+    Pop $0
+    ${If} $0 != 0
+      StrCpy $Problems "$(BindingFailed)"
+      Goto done
+    ${EndIf}
+  ${EndIf}
+!endif
 
   ; the plugins of the editor folder, bound to this Python for every user (each
   ; command imports the whole stack first: a broken install fails here)
@@ -254,7 +313,7 @@ SectionEnd
 
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
   !insertmacro MUI_DESCRIPTION_TEXT ${SecEditor} "$(SecEditorDesc)"
-  !insertmacro MUI_DESCRIPTION_TEXT ${SecTools} "$(SecToolsDesc)"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SecTools} "$ToolsDesc"
   !insertmacro MUI_DESCRIPTION_TEXT ${SecAssoc} "$(SecAssocDesc)"
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
@@ -269,14 +328,54 @@ Function .onInit
   ${Else}
     StrCpy $LangCode "en"
   ${EndIf}
+
+  ; the editor and Python 3.8 need Windows 7 SP1
+  ${IfNot} ${AtLeastWin7}
+    MessageBox MB_ICONSTOP "$(NeedWin7)" /SD IDOK
+    Abort
+  ${EndIf}
+  ${IfNot} ${AtLeastWin8}
+  ${AndIfNot} ${AtLeastServicePack} 1
+    MessageBox MB_ICONSTOP "$(NeedWin7)" /SD IDOK
+    Abort
+  ${EndIf}
+
+  ; the pure-Python plugins load pydantic-core (Rust, which runs on Windows 10 and
+  ; newer); older Windows run them on Python 3.8 with the C++ binding
+  ${If} ${AtLeastWin10}
+    StrCpy $Legacy 0
+    StrCpy $WantVersion "${PYTHON_VERSION}"
+    StrCpy $WantRange "3.10-3.14"
+    StrCpy $PyMin "(3, 10)"
+    StrCpy $PyMax "(3, 14)"
+    StrCpy $PythonHint ""
+  ${Else}
+    StrCpy $Legacy 1
+!ifdef LEGACY_BINDING
+    StrCpy $WantVersion "${LEGACY_PYTHON_VERSION}"
+!endif
+    StrCpy $WantRange "3.8"
+    StrCpy $PyMin "(3, 8)"
+    StrCpy $PyMax "(3, 8)"
+    StrCpy $PythonHint "$(Win7Updates)"
+  ${EndIf}
+  StrCpy $ToolsDesc "$(SecToolsDesc)"
+!ifndef LEGACY_BINDING
+  ${If} $Legacy == 1
+    !insertmacro UnselectSection ${SecTools}
+    !insertmacro SetSectionFlag ${SecTools} ${SF_RO}
+    StrCpy $ToolsDesc "$(SecToolsNoLegacy)"
+  ${EndIf}
+!endif
   Call FindPython
 FunctionEnd
 
-; CheckPython: the python.exe on the stack; $R1 = "ok" when it is a 64-bit
-; CPython 3.10-3.14 (the bundled pydantic-core wheels) outside the Store
+; CheckPython: the python.exe on the stack; $R1 = "ok" when it is a 64-bit CPython
+; of $PyMin-$PyMax (3.10-3.14: the bundled pydantic-core wheels; 3.8: the binding)
+; outside the Store
 Function CheckPython
   Exch $R2
-  nsExec::ExecToStack `"$R2" -c "import sys, struct; print('ok' if (3, 10) <= sys.version_info[:2] <= (3, 14) and struct.calcsize('P') == 8 and 'WindowsApps' not in sys.executable else 'no')"`
+  nsExec::ExecToStack `"$R2" -c "import sys, struct; print('ok' if $PyMin <= sys.version_info[:2] <= $PyMax and struct.calcsize('P') == 8 and 'WindowsApps' not in sys.executable else 'no')"`
   Pop $R3
   Pop $R1
   StrCpy $R1 $R1 2
@@ -314,16 +413,21 @@ FunctionEnd
 Function FindPython
   StrCpy $PythonExe ""
   StrCpy $PythonVersion ""
-  !insertmacro TryPython HKLM "3.14"
-  !insertmacro TryPython HKLM "3.13"
-  !insertmacro TryPython HKLM "3.12"
-  !insertmacro TryPython HKLM "3.11"
-  !insertmacro TryPython HKLM "3.10"
-  !insertmacro TryPython HKCU "3.14"
-  !insertmacro TryPython HKCU "3.13"
-  !insertmacro TryPython HKCU "3.12"
-  !insertmacro TryPython HKCU "3.11"
-  !insertmacro TryPython HKCU "3.10"
+  ${If} $Legacy == 1
+    !insertmacro TryPython HKLM "3.8"
+    !insertmacro TryPython HKCU "3.8"
+  ${Else}
+    !insertmacro TryPython HKLM "3.14"
+    !insertmacro TryPython HKLM "3.13"
+    !insertmacro TryPython HKLM "3.12"
+    !insertmacro TryPython HKLM "3.11"
+    !insertmacro TryPython HKLM "3.10"
+    !insertmacro TryPython HKCU "3.14"
+    !insertmacro TryPython HKCU "3.13"
+    !insertmacro TryPython HKCU "3.12"
+    !insertmacro TryPython HKCU "3.11"
+    !insertmacro TryPython HKCU "3.10"
+  ${EndIf}
   ${If} $PythonExe != ""
     nsExec::ExecToStack '"$PythonExe" -c "import sys; print(sys.version.split()[0])"'
     Pop $R3
@@ -346,6 +450,10 @@ Function PythonPageShow
     ${NSD_CreateLabel} 0 0 100% 80u "$(PythonInstall)"
   ${EndIf}
   Pop $0
+  ${If} $Legacy == 1
+    ${NSD_CreateLabel} 0 86u 100% 30u "$(PythonLegacy)"
+    Pop $0
+  ${EndIf}
   nsDialogs::Show
 FunctionEnd
 
@@ -397,6 +505,11 @@ Section "Uninstall"
   ${If} $0 != ""
   ${AndIf} ${FileExists} "$0"
     SetOutPath "$TEMP"
+    ; the .pth of the C++ binding (Windows 7-8.1), when there
+    ${If} ${FileExists} "$INSTDIR\tools\site-path.py"
+      nsExec::ExecToLog '"$0" "$INSTDIR\tools\site-path.py" remove'
+      Pop $1
+    ${EndIf}
     nsExec::ExecToLog '"$0" -m pip uninstall --yes --disable-pip-version-check ${OUR_PACKAGES}'
     Pop $1
   ${EndIf}

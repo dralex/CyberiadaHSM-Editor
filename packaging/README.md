@@ -146,20 +146,35 @@ The installer:
 
 1. installs the editor into `Program Files\CyberiadaPro` (for all users, with the
    Start-menu entries and an uninstaller); `.graphml` files can be associated with
-   it (an optional component);
-2. finds a 64-bit Python 3.10-3.14 (the PEP 514 registry) or installs the bundled
-   python.org Python (`windows-installer/python.txt`) for all users;
+   it (an optional component); it needs Windows 7 SP1 or newer;
+2. picks the path of the python plugins by the Windows version:
+
+   | Windows | Python | the plugins read the diagrams with |
+   |---|---|---|
+   | 10, 11 | a 64-bit 3.10-3.14 found, else the bundled 3.13 | the pure-Python `cyberiadaml-py` (pydantic) |
+   | 7 SP1, 8, 8.1 | a 64-bit 3.8 found, else the bundled 3.8.10 | the C++ binding for Python 3.8 |
+
+   pydantic-core is built with Rust, whose programs run on Windows 10 and newer;
+   Python 3.8 is the last one for Windows 7. The Pythons are found in the PEP 514
+   registry; the bundled ones are the python.org installers of
+   `windows-installer/python.txt`, installed for all users;
 3. installs the python plugins hsm-to-python and hsm-maker (not cybersphere-agents)
-   into that Python from the bundled wheels, offline: the plugin packages, the
-   pure-Python `cyberiadaml-py` and the pinned pydantic wheels
-   (`windows-installer/requirements-windows.txt`), and binds the plugins of the
-   editor folder to that Python for every user (`--install-editor-plugin`);
+   into that Python from the bundled wheels, offline: the plugin packages, and on
+   Windows 10+ the pure-Python `cyberiadaml-py` with the pinned pydantic wheels
+   (`windows-installer/requirements-windows.txt`); on Windows 7-8.1 the binding goes
+   into `python\binding`, put on the `sys.path` of that Python by a `.pth` file
+   (`windows-installer/site-path.py`). Then it binds the plugins of the editor folder
+   to that Python for every user (`--install-editor-plugin`);
 4. checks that the editor runs them (`windows-installer/check-plugins.py`) and shows
    the result: every failure with what to check. The check runs again from the
    Start menu (CyberiadaPro, Check plugins).
 
 The build takes the editor zip made before (`--editor-zip` picks another one) and
-runs in the Linux builder image of the newest release (`--release`); it needs network
-access for the pinned wheels and the Python installer (cached in `dist/cache`), both
-checked against their SHA-256. The uninstaller removes the editor and its python
-packages; Python and pydantic stay.
+the binding zip for Python 3.8 made on Windows (`--binding-zip`; by default
+`dist/cyberiada-mlpp-binding-cp38-win64.zip` when it is there). It stops when the
+binding links another Python or lacks a DLL it needs, and shows its `build-info.txt`.
+Without a binding the installer sets up only the editor on Windows 7-8.1 and says
+why. The build runs in the Linux builder image of the newest release (`--release`);
+it needs network access for the pinned wheels and the Python installers (cached in
+`dist/cache`), all checked against their SHA-256. The uninstaller removes the editor,
+its python packages and the `.pth` of the binding; Python and pydantic stay.

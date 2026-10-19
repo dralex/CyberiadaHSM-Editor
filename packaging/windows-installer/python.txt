@@ -1,5 +1,11 @@
-# The Python the installer installs when no suitable one is found (python.org, 64-bit);
-# the SHA-256 is the one python.org publishes on the release page
-version=3.14.8
-url=https://www.python.org/ftp/python/3.14.8/python-3.14.8-amd64.exe
-sha256=759be887b96e736a3ca886daf8d575f18fcae1a09efab6902f42d59e8999f8ef
+# The Pythons the installer installs when no suitable one is found (python.org,
+# 64-bit). Windows 10 and newer: a Python of the pure-Python plugins; Windows 7 SP1,
+# 8 and 8.1 (legacy.*): Python 3.8, the last one for them, with the C++ binding.
+# The SHA-256 is the one python.org publishes on the release page; it lists only
+# the MD5 for 3.8.10 (62cf1a12a5276b0259e8761d4cf4fe42), checked for the file below.
+version=3.13.16
+url=https://www.python.org/ftp/python/3.13.16/python-3.13.16-amd64.exe
+sha256=fb4f9f5d438b2396da0086dc70b935c530cb578e37adc6d354f7ad2037fee83b
+legacy.version=3.8.10
+legacy.url=https://www.python.org/ftp/python/3.8.10/python-3.8.10-amd64.exe
+legacy.sha256=7628244cb53408b50639d2c1287c659f4e29d3dfdb9084b11aed5870c0c6a48a
