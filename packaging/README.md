@@ -79,12 +79,27 @@ Requires Visual Studio, CMake, Git, vcpkg (`VCPKG_ROOT`), and a Qt 5 install.
     packaging\build-toolchain.bat --qtdir C:\Qt\5.15.2\msvc2019_64 [options]
       --prefix DIR   shared install prefix (default: C:\cyberiada)
       --out DIR      collect all packages here (default: <sources>\dist)
+      --qtdir DIR    the Qt install (default: QTDIR, else the Qt of vcpkg)
+      --python EXE   the 64-bit python.exe the binding is built against
+                     (default: the one CMake finds)
+      --no-editor    the libraries and the python set only (no Qt needed)
       --branch NAME / --no-pull / --no-test / --no-python / --vcpkg DIR
 
 `libxml2` is provided by vcpkg (`vcpkg install libxml2`); the python binding pulls
-`pybind11` the same way. `homog2d.hpp` is copied from `homog2d/` if the checkout has
-it as a symlink (Windows cannot use it). The python binding is a separate `.zip`, not
-part of the editor zip.
+`pybind11` the same way. Qt can come from vcpkg too (`vcpkg install qt5-base qt5-svg
+qt5-tools`): without QTDIR or `--qtdir` the script takes it from
+`installed\x64-windows\tools\qt5` (qmake, windeployqt) when it is there. `homog2d.hpp`
+is copied from `homog2d/` if the checkout has it as a symlink (Windows cannot use it).
+
+The python binding is a separate `.zip`, not part of the editor zip:
+`cyberiada-mlpp-binding-<tag>-win64.zip`, the tag of the Python it is built against
+(`cp38`, `cp312`, ...). It holds `CyberiadaML.pyd`, its DLLs, the MSVC C++ runtime
+(`msvcp140.dll` and the rest, which a clean Windows lacks) and `build-info.txt` (the
+Python and the git revisions). The Windows 7-8.1 path of the installer needs the one
+for Python 3.8 (64-bit, e.g. the python.org 3.8.10 installer, which the installer
+build caches in `dist/cache`):
+
+    packaging\build-toolchain.bat --python C:\Python38\python.exe --no-editor
 
 ### The python tools on Windows
 

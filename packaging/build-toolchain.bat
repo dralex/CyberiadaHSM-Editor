@@ -17,12 +17,14 @@ rem (cybersphere-agents is not in the Windows release); they and cyberiadaml-py
 rem are .zip + pip wheel; on Windows the
 rem packages read the diagrams with the pure-Python cyberiadaml-py, which pip
 rem installs with them, so they need no binary module. The python binding is an
-rem optional self-contained .zip for the Python it is built against. All of them
+rem optional self-contained .zip for the Python it is built against (--python picks
+rem it; the Windows 7-8.1 installer path needs one for Python 3.8). All of them
 rem are separate from the editor; QtPropertyBrowser is bundled into the editor.
-rem Skip the whole python set with --no-python.
+rem Skip the whole python set with --no-python, the editor with --no-editor.
 rem
-rem Prerequisites: Visual Studio (MSVC), CMake, Git, vcpkg (VCPKG_ROOT set), and a
-rem Qt 5 installation (Widgets, Svg) whose bin dir holds windeployqt.
+rem Prerequisites: Visual Studio (MSVC), CMake, Git, vcpkg (VCPKG_ROOT set), and Qt 5
+rem (Widgets, Svg, LinguistTools) with windeployqt: a Qt install (QTDIR, --qtdir) or
+rem the Qt of vcpkg (qt5-base qt5-svg qt5-tools), used when QTDIR is not set.
 rem
 rem Copyright (C) 2026 Alexey Fedoseev <aleksey@fedoseev.net>
 rem GNU LGPL v3 or later.
@@ -40,6 +42,8 @@ set "PULL=1"
 set "TEST=1"
 set "DOCKER=0"
 set "PYTHON=1"
+set "PYEXE="
+set "EDITOR=1"
 set "TRIPLET=x64-windows"
 if "%QTDIR%"=="" set "QTDIR="
 if "%VCPKG_ROOT%"=="" set "VCPKG_ROOT="
@@ -54,6 +58,8 @@ if /I "%~1"=="--vcpkg"  ( set "VCPKG_ROOT=%~2" & shift & shift & goto parse )
 if /I "%~1"=="--no-pull" ( set "PULL=0" & shift & goto parse )
 if /I "%~1"=="--no-test" ( set "TEST=0" & shift & goto parse )
 if /I "%~1"=="--no-python" ( set "PYTHON=0" & shift & goto parse )
+if /I "%~1"=="--python" ( set "PYEXE=%~2" & shift & shift & goto parse )
+if /I "%~1"=="--no-editor" ( set "EDITOR=0" & shift & goto parse )
 if /I "%~1"=="--docker" ( set "DOCKER=1" & shift & goto parse )
 if /I "%~1"=="-h" goto help
 if /I "%~1"=="--help" goto help
@@ -62,8 +68,13 @@ echo unknown option: %~1 & goto help
 :help
 echo usage: %~nx0 [--prefix DIR] [--out DIR] [--branch NAME] [--qtdir DIR]
 echo              [--vcpkg DIR] [--no-pull] [--no-test] [--no-python] [--docker]
+echo              [--python EXE] [--no-editor]
 echo.
 echo   default backend: native MSVC + vcpkg (needs Visual Studio, vcpkg, Qt)
+echo   --qtdir DIR    : the Qt install; default QTDIR, else the Qt of vcpkg
+echo   --python EXE   : the 64-bit python.exe the binding is built against
+echo                    (default: the one CMake finds)
+echo   --no-editor    : the libraries and the python set only, no Qt needed
 echo   --docker       : containerized MinGW-w64 cross build (needs Docker; no
 echo                    Visual Studio / vcpkg / Qt install required; build the
 echo                    toolchain image once first with build-windows-image.sh)
@@ -93,11 +104,30 @@ where ctest >nul 2>&1 || ( echo error: ctest not found & exit /b 1 )
 where git   >nul 2>&1 || ( echo error: git not found & exit /b 1 )
 if "%VCPKG_ROOT%"=="" ( echo error: set VCPKG_ROOT or pass --vcpkg & exit /b 1 )
 if not exist "%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake" ( echo error: vcpkg toolchain not found under %VCPKG_ROOT% & exit /b 1 )
-if "%QTDIR%"=="" ( echo error: set QTDIR to your Qt install or pass --qtdir & exit /b 1 )
-if not exist "%QTDIR%\bin\windeployqt.exe" ( echo error: windeployqt not found under %QTDIR%\bin & exit /b 1 )
-
 set "VCPKG_INST=%VCPKG_ROOT%\installed\%TRIPLET%"
 set "TOOLCHAIN=%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake"
+
+if "%EDITOR%"=="0" goto qt_checked
+rem no Qt install given: the Qt of vcpkg (its CMake packages come with the toolchain,
+rem its DLLs from installed\<triplet>\bin, qmake and windeployqt from tools\qt5\bin)
+if "%QTDIR%"=="" if exist "%VCPKG_INST%\tools\qt5\bin\windeployqt.exe" (
+  set "QTDIR=%VCPKG_INST%\tools\qt5"
+  set "QT_PLUGIN_PATH=%VCPKG_INST%\plugins"
+)
+if "%QTDIR%"=="" ( echo error: set QTDIR to your Qt install, pass --qtdir, or install the Qt of vcpkg ^(vcpkg install qt5-base qt5-svg qt5-tools^) & exit /b 1 )
+if not exist "%QTDIR%\bin\windeployqt.exe" ( echo error: windeployqt not found under %QTDIR%\bin & exit /b 1 )
+echo == Qt: %QTDIR%
+:qt_checked
+
+if not defined PYEXE goto python_checked
+if "%PYTHON%"=="0" ( echo error: --python and --no-python exclude each other & exit /b 1 )
+if not exist "%PYEXE%" ( echo error: --python: %PYEXE% not found & exit /b 1 )
+"%PYEXE%" -c "import struct, sys; sys.exit(struct.calcsize('P') != 8)" || ( echo error: %PYEXE% is not a 64-bit Python & exit /b 1 )
+for %%I in ("%PYEXE%") do set "PYEXE=%%~fI"
+for %%I in ("%PYEXE%") do set "PYROOT=%%~dpI"
+set "PYROOT=%PYROOT:~0,-1%"
+echo == the binding is built against %PYEXE%
+:python_checked
 
 echo == installing libxml2 via vcpkg
 call "%VCPKG_ROOT%\vcpkg.exe" install "libxml2:%TRIPLET%" || ( echo error: vcpkg install libxml2 failed & exit /b 1 )
@@ -132,8 +162,10 @@ if "%PYTHON%"=="1" (
   call :build_pydeb cybersphere-hsm-maker %BRANCH% || exit /b 1
   call :build_pydeb hsm-to-python         %BRANCH% || exit /b 1
 )
+if "%EDITOR%"=="0" goto editor_done
 call :build_repo QtPropertyBrowser master   nozip || exit /b 1
 call :build_repo CyberiadaHSM-Editor %BRANCH% editor || exit /b 1
+:editor_done
 
 echo.
 echo == packages collected in %OUT%
@@ -160,7 +192,14 @@ if "%PULL%"=="1" (
 )
 
 set "BDIR=%DIR%\build-win"
-cmake -S "%DIR%" -B "%BDIR%" ^
+rem the binding against the --python interpreter (a fresh cache: FindPython and
+rem pybind11 keep the artifacts of the Python configured before)
+set "PYARGS="
+if "%PACK%"=="python" if defined PYEXE (
+  if exist "%BDIR%\CMakeCache.txt" del /Q "%BDIR%\CMakeCache.txt"
+  set PYARGS=-DPython3_EXECUTABLE="%PYEXE%" -DPython3_ROOT_DIR="%PYROOT%"
+)
+cmake -S "%DIR%" -B "%BDIR%" %PYARGS% ^
   -DCMAKE_POLICY_VERSION_MINIMUM=3.5 ^
   -DCMAKE_TOOLCHAIN_FILE="%TOOLCHAIN%" ^
   -DVCPKG_TARGET_TRIPLET=%TRIPLET% ^
@@ -208,7 +247,8 @@ if exist "%BDIR%\Release\CyberiadaPro.exe" (
   copy /Y "%BDIR%\CyberiadaPro.exe" "%STAGE%\" >nul
 )
 
-rem Qt runtime + plugins next to the exe
+rem Qt runtime + plugins next to the exe (windeployqt asks the qmake on PATH)
+set "PATH=%QTDIR%\bin;%PATH%"
 "%QTDIR%\bin\windeployqt.exe" --release --no-translations "%STAGE%\CyberiadaPro.exe" || exit /b 1
 
 rem the toolchain DLLs (cyberiadaml/mlpp in bin, htgeom in lib), QtPropertyBrowser,
@@ -227,9 +267,10 @@ exit /b 0
 
 rem ---------------------------------------------------------------------------
 rem :pack_python  - a self-contained zip of the CyberiadaML binding: the .pyd plus
-rem its dependency DLLs, so it imports on a matching Windows Python without a
-rem separate install. The Python itself is the user's (the .pyd is ABI-bound to the
-rem Python it was built against here); see docs/BUILDING-WINDOWS.md.
+rem its dependency DLLs and the MSVC C++ runtime, so it imports on a matching Windows
+rem Python without a separate install. The Python itself is the user's (the .pyd is
+rem ABI-bound to the Python it was built against here, its tag names the zip:
+rem cyberiada-mlpp-binding-cp38-win64.zip); see docs/BUILDING-WINDOWS.md.
 rem ---------------------------------------------------------------------------
 :pack_python
 set "PYSTAGE=%BDIR%\dist-stage\CyberiadaML"
@@ -252,10 +293,48 @@ for %%D in (cyberiadaml cyberiadamlpp htgeom) do (
 copy /Y "%VCPKG_INST%\bin\*.dll" "%PYSTAGE%\" >nul
 del /Q "%PYSTAGE%\python*.dll" >nul 2>&1
 
+rem the MSVC C++ runtime, app-local: Python ships vcruntime140.dll only, and a clean
+rem Windows has no msvcp140.dll (the redist folder of the developer prompt, else of
+rem the newest Visual Studio)
+set "CRT="
+set "CRTFILE="
+if defined VCToolsRedistDir for /d %%C in ("%VCToolsRedistDir%x64\Microsoft.VC*.CRT") do set "CRT=%%~fC"
+set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
+if exist "%BDIR%\crt-file.txt" del /Q "%BDIR%\crt-file.txt"
+if not defined CRT if exist "%VSWHERE%" "%VSWHERE%" -latest -products * -find "VC\Redist\MSVC\*\x64\Microsoft.VC*.CRT\msvcp140.dll" > "%BDIR%\crt-file.txt" 2>nul
+if not defined CRT if exist "%BDIR%\crt-file.txt" set /p CRTFILE=<"%BDIR%\crt-file.txt"
+if defined CRTFILE for %%F in ("%CRTFILE%\..") do set "CRT=%%~fF"
+if defined CRT (
+  copy /Y "%CRT%\*.dll" "%PYSTAGE%\" >nul
+) else (
+  echo warning: the MSVC C++ runtime is not found: the binding needs the Visual C++ Redistributable
+)
+
 if exist "%SOURCES%\libcyberiadamlpp-py\README.md" copy /Y "%SOURCES%\libcyberiadamlpp-py\README.md" "%PYSTAGE%\" >nul
 if exist "%SOURCES%\libcyberiadamlpp-py\LICENSE" copy /Y "%SOURCES%\libcyberiadamlpp-py\LICENSE" "%PYSTAGE%\" >nul
 
-powershell -NoProfile -Command "Compress-Archive -Force -Path '%PYSTAGE%' -DestinationPath '%OUT%\cyberiada-mlpp-binding-win64.zip'" || exit /b 1
+rem the Python the module is built against and its tag: the --python one, else the
+rem one FindPython chose (cached as _Python3_EXECUTABLE)
+set "BUILT_PY="
+for /f "tokens=1,* delims==" %%A in ('findstr /b /c:"Python3_EXECUTABLE:" "%BDIR%\CMakeCache.txt"') do set "BUILT_PY=%%B"
+if not defined BUILT_PY for /f "tokens=1,* delims==" %%A in ('findstr /b /c:"_Python3_EXECUTABLE:" "%BDIR%\CMakeCache.txt"') do set "BUILT_PY=%%B"
+if not defined BUILT_PY ( echo error: no Python3_EXECUTABLE in %BDIR%\CMakeCache.txt & exit /b 1 )
+set "BUILT_PY=%BUILT_PY:/=\%"
+"%BUILT_PY%" -c "import sys; print('cp{}{}'.format(*sys.version_info[:2]))" > "%BDIR%\python-tag.txt" || exit /b 1
+set /p PYTAG=<"%BDIR%\python-tag.txt"
+
+rem what it is built from, for the installer build to show
+(
+  echo CyberiadaML binding %PYTAG%-win64
+  "%BUILT_PY%" -c "import sys; print('python', sys.version.split()[0], sys.executable)"
+  for %%R in (libhtreegeom libcyberiadaml libcyberiadamlpp libcyberiadamlpp-py) do (
+    for /f %%H in ('git -C "%SOURCES%\%%R" rev-parse --short HEAD') do echo %%R %%H
+  )
+) > "%PYSTAGE%\build-info.txt"
+rem outside the block: the path may hold the parentheses of (x86)
+if defined CRT >>"%PYSTAGE%\build-info.txt" echo msvc-runtime %CRT%
+
+powershell -NoProfile -Command "Compress-Archive -Force -Path '%PYSTAGE%' -DestinationPath '%OUT%\cyberiada-mlpp-binding-%PYTAG%-win64.zip'" || exit /b 1
 exit /b 0
 
 rem ---------------------------------------------------------------------------
