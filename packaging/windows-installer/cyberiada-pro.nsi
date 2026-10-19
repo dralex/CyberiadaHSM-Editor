@@ -50,9 +50,11 @@ RequestExecutionLevel admin
 !define UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\CyberiadaPro"
 !define PLUGINS_DIR "share\cyberiada-pro\plugins"
 !define PROGID "CyberiadaPro.graphml"
-; what pip installs (the dispatcher, and on Python 3.10+ cyberiadaml-py and
-; pydantic, come with them)
+; what pip installs (the dispatcher, cyberiadaml-py and pydantic come with them)
 !define PIP_PACKAGES "hsm-to-python cybersphere-hsm-maker"
+; on Windows 7-8.1 without the dependencies: the C++ binding stands in for
+; cyberiadaml-py, whose pydantic-core needs Windows 10
+!define LEGACY_PIP_PACKAGES "hsm-to-python cybersphere-hsm-maker hsm-dispatcher-py"
 ; what the uninstaller removes (pydantic may serve other programs: it stays)
 !define OUR_PACKAGES "hsm-to-python cybersphere-hsm-maker hsm-dispatcher-py cyberiadaml-py"
 
@@ -236,7 +238,11 @@ Section "$(SecToolsName)" SecTools
   ${EndIf}
 
   DetailPrint "$(InstallingPackages)"
-  nsExec::ExecToLog '"$PythonExe" -m pip install --disable-pip-version-check --no-index --find-links "$INSTDIR\python\wheels" --upgrade --force-reinstall --log "$INSTDIR\logs\pip.log" ${PIP_PACKAGES}'
+  ${If} $Legacy == 1
+    nsExec::ExecToLog '"$PythonExe" -m pip install --disable-pip-version-check --no-index --find-links "$INSTDIR\python\wheels" --upgrade --force-reinstall --no-deps --log "$INSTDIR\logs\pip.log" ${LEGACY_PIP_PACKAGES}'
+  ${Else}
+    nsExec::ExecToLog '"$PythonExe" -m pip install --disable-pip-version-check --no-index --find-links "$INSTDIR\python\wheels" --upgrade --force-reinstall --log "$INSTDIR\logs\pip.log" ${PIP_PACKAGES}'
+  ${EndIf}
   Pop $0
   ${If} $0 != 0
     StrCpy $Problems "$(PipFailed)"
