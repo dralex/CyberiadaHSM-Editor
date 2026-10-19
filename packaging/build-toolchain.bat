@@ -130,7 +130,10 @@ for /d %%T in ("%VCPKG_ROOT%\installed\*") do if exist "%%~fT\share\cmake\Qt5Cor
 exit /b 1
 :qt_vcpkg_found
 if not exist "%VCPKG_INST%\share\cmake\Qt5Svg\Qt5SvgConfig.cmake" ( echo error: the Qt of vcpkg has no Qt5Svg: vcpkg install qt5-svg:%TRIPLET% & exit /b 1 )
-if not exist "%VCPKG_INST%\share\cmake\Qt5LinguistTools\Qt5LinguistToolsConfig.cmake" ( echo error: the Qt of vcpkg has no Qt5LinguistTools: vcpkg install qt5-tools:%TRIPLET% & exit /b 1 )
+rem Qt5LinguistTools (qt5-tools) loads only with its lrelease/lupdate/lconvert, which
+rem vcpkg puts into tools\qt5-tools\bin
+if not exist "%VCPKG_INST%\share\cmake\Qt5LinguistTools\Qt5LinguistToolsConfig.cmake" goto qt_no_linguist
+if not exist "%VCPKG_INST%\tools\qt5-tools\bin\lrelease.exe" goto qt_no_linguist
 set "QTDIR=%VCPKG_INST%\tools\qt5"
 set "QT_PLUGINS=%VCPKG_INST%\plugins"
 rem the editor tests take the offscreen platform from there (vcpkg deploys qwindows only)
@@ -139,6 +142,19 @@ if exist "%VCPKG_INST%\tools\qt5-tools\bin\windeployqt.exe" set "WINDEPLOYQT=%VC
 if exist "%VCPKG_INST%\tools\qt5\bin\windeployqt.exe" set "WINDEPLOYQT=%VCPKG_INST%\tools\qt5\bin\windeployqt.exe"
 if defined WINDEPLOYQT echo == Qt: vcpkg %VCPKG_INST%, %WINDEPLOYQT%
 if not defined WINDEPLOYQT echo == Qt: vcpkg %VCPKG_INST%, deployed by vcpkg ^(no windeployqt^)
+goto qt_checked
+
+rem what vcpkg has of qt5-tools: the packages and, when installed, its Linguist files
+:qt_no_linguist
+echo error: the Qt of vcpkg has no Qt5LinguistTools for %TRIPLET% ^(share\cmake\Qt5LinguistTools,
+echo        tools\qt5-tools\bin\lrelease.exe^); vcpkg lists:
+"%VCPKG_ROOT%\vcpkg.exe" list qt5
+set "QT5TOOLS_LIST="
+for %%L in ("%VCPKG_ROOT%\installed\vcpkg\info\qt5-tools_*_%TRIPLET%.list") do set "QT5TOOLS_LIST=%%~fL"
+if not defined QT5TOOLS_LIST echo        qt5-tools is not installed for %TRIPLET%: vcpkg install qt5-tools:%TRIPLET% ^(its build may have failed: see its output^)
+if defined QT5TOOLS_LIST echo        qt5-tools is installed for %TRIPLET%, its Linguist files ^(%QT5TOOLS_LIST%^):
+if defined QT5TOOLS_LIST findstr /i "LinguistTools lrelease windeployqt" "%QT5TOOLS_LIST%"
+exit /b 1
 :qt_checked
 
 if not defined PYEXE goto python_checked
