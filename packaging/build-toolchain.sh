@@ -103,6 +103,15 @@ if [ "$MODE" = pyapps ] && [ -z "$WHEEL_DIR" ]; then WHEEL_DIR="$OUT"; fi
 say() { printf '\n\033[1;34m== %s\033[0m\n' "$*"; }
 die() { printf '\033[1;31merror: %s\033[0m\n' "$*" >&2; exit 1; }
 
+# copy_tree SRC DST: a source tree without its VCS, virtual environments and build
+# output (Python copies it: the tar of a newer image fails with ENOSYS on an older
+# Docker host's seccomp profile)
+copy_tree() {
+    python3 -c "import shutil, sys
+shutil.copytree(sys.argv[1], sys.argv[2], symlinks=True, ignore=shutil.ignore_patterns(
+    '.git', '.venv', 'venv', 'build', 'build-*', 'dist', '__pycache__', '*.egg-info'))" "$1" "$2"
+}
+
 # --- dependency check --------------------------------------------------------
 say "checking build dependencies"
 need() { command -v "$1" >/dev/null 2>&1 || die "missing required tool: $1"; }
@@ -371,8 +380,8 @@ build_pydeb() {
         # setuptools builds in the tree it is given (build/, *.egg-info): a copy
         # keeps the sources clean
         wsrc=$(mktemp -d)
-        tar -C "$dir" --exclude=./.git --exclude='./build*' -cf - . | tar -C "$wsrc" -xf -
-        python3 -m pip wheel --no-build-isolation --no-deps --wheel-dir "$WHEEL_DIR" "$wsrc" >/dev/null
+        copy_tree "$dir" "$wsrc/src"
+        python3 -m pip wheel --no-build-isolation --no-deps --wheel-dir "$WHEEL_DIR" "$wsrc/src" >/dev/null
         rm -rf "$wsrc"
     fi
 

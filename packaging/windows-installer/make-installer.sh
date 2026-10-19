@@ -32,6 +32,15 @@ REPOS="cyberiadaml-py hsm-dispatcher-py hsm-to-python cybersphere-hsm-maker"
 say() { printf '\n\033[1;34m== %s\033[0m\n' "$*"; }
 die() { printf '\033[1;31merror: %s\033[0m\n' "$*" >&2; exit 1; }
 
+# copy_tree SRC DST: a source tree without its VCS, virtual environments and build
+# output (Python copies it: the tar of a newer image fails with ENOSYS on an older
+# Docker host's seccomp profile)
+copy_tree() {
+    python3 -c "import shutil, sys
+shutil.copytree(sys.argv[1], sys.argv[2], symlinks=True, ignore=shutil.ignore_patterns(
+    '.git', '.venv', 'venv', 'build', 'build-*', 'dist', '__pycache__', '*.egg-info'))" "$1" "$2"
+}
+
 command -v makensis >/dev/null 2>&1 || die "makensis not found (apt-get install nsis)"
 [ -f "$ZIP" ] || die "no editor zip: $ZIP"
 
@@ -52,8 +61,7 @@ fi
 say "the wheels of the python plugins"
 for repo in $REPOS; do
     # setuptools builds in the tree it is given: a copy keeps the sources clean
-    mkdir -p "$WORK/src/$repo"
-    tar -C "$SRC/$repo" --exclude=./.git --exclude='./build*' -cf - . | tar -C "$WORK/src/$repo" -xf -
+    copy_tree "$SRC/$repo" "$WORK/src/$repo"
     python3 -m pip wheel --quiet --disable-pip-version-check --no-build-isolation --no-deps \
         --wheel-dir "$WORK/wheels" "$WORK/src/$repo"
 done
