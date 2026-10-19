@@ -79,21 +79,27 @@ Requires Visual Studio, CMake, Git, vcpkg (`VCPKG_ROOT`), and a Qt 5 install.
     packaging\build-toolchain.bat --qtdir C:\Qt\5.15.2\msvc2019_64 [options]
       --prefix DIR   shared install prefix (default: C:\cyberiada)
       --out DIR      collect all packages here (default: <sources>\dist)
-      --qtdir DIR    the Qt install (default: QTDIR, else the Qt of vcpkg)
+      --qtdir DIR    the Qt install (default: QTDIR, else the Qt of vcpkg;
+                     --qtdir vcpkg: the Qt of vcpkg even when QTDIR is set)
       --python EXE   the 64-bit python.exe the binding is built against
                      (default: the one CMake finds)
       --no-editor    the libraries and the python set only (no Qt needed)
       --branch NAME / --no-pull / --no-test / --no-python / --vcpkg DIR
 
 `libxml2` is provided by vcpkg (`vcpkg install libxml2`); the python binding pulls
-`pybind11` the same way. Qt can come from vcpkg too (`vcpkg install qt5-base qt5-svg
-qt5-tools`): without QTDIR or `--qtdir` the script takes it from
-`installed\x64-windows\tools\qt5` (qmake, windeployqt) when it is there. `homog2d.hpp`
-is copied from `homog2d/` if the checkout has it as a symlink (Windows cannot use it).
+`pybind11` the same way. Qt can come from vcpkg too (`vcpkg install qt5-base:x64-windows
+qt5-svg:x64-windows qt5-tools:x64-windows`): without QTDIR or `--qtdir` (or with
+`--qtdir vcpkg`) the script finds it by its CMake packages in
+`installed\x64-windows\share\cmake`. vcpkg itself copies the Qt DLLs and plugins next to
+the built editor, so the zip is made from those (plus `qoffscreen.dll`); `windeployqt`
+is used only when `qt5-tools` has built it. The Qt DLLs of vcpkg never go into the zip
+of a Qt install, nor into the binding zip. `homog2d.hpp` is copied from `homog2d/` if the
+checkout has it as a symlink (Windows cannot use it).
 
 The python binding is a separate `.zip`, not part of the editor zip:
 `cyberiada-mlpp-binding-<tag>-win64.zip`, the tag of the Python it is built against
-(`cp38`, `cp312`, ...). It holds `CyberiadaML.pyd`, its DLLs, the MSVC C++ runtime
+(`cp38`, `cp312`, ...). It holds `CyberiadaML.pyd`, its DLLs (the libraries, libxml2
+with iconv and zlib), the MSVC C++ runtime
 (`msvcp140.dll` and the rest, which a clean Windows lacks) and `build-info.txt` (the
 Python and the git revisions). The Windows 7-8.1 path of the installer needs the one
 for Python 3.8 (64-bit, e.g. the python.org 3.8.10 installer, which the installer

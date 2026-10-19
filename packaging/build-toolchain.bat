@@ -23,8 +23,9 @@ rem are separate from the editor; QtPropertyBrowser is bundled into the editor.
 rem Skip the whole python set with --no-python, the editor with --no-editor.
 rem
 rem Prerequisites: Visual Studio (MSVC), CMake, Git, vcpkg (VCPKG_ROOT set), and Qt 5
-rem (Widgets, Svg, LinguistTools) with windeployqt: a Qt install (QTDIR, --qtdir) or
-rem the Qt of vcpkg (qt5-base qt5-svg qt5-tools), used when QTDIR is not set.
+rem (Widgets, Svg, LinguistTools): a Qt install with windeployqt (QTDIR, --qtdir) or
+rem the Qt of vcpkg (qt5-base qt5-svg qt5-tools), used when QTDIR is not set or with
+rem --qtdir vcpkg; vcpkg deploys it next to the build, windeployqt is not needed.
 rem
 rem Copyright (C) 2026 Alexey Fedoseev <aleksey@fedoseev.net>
 rem GNU LGPL v3 or later.
@@ -72,6 +73,7 @@ echo              [--python EXE] [--no-editor]
 echo.
 echo   default backend: native MSVC + vcpkg (needs Visual Studio, vcpkg, Qt)
 echo   --qtdir DIR    : the Qt install; default QTDIR, else the Qt of vcpkg
+echo                    ^(--qtdir vcpkg: the Qt of vcpkg even when QTDIR is set^)
 echo   --python EXE   : the 64-bit python.exe the binding is built against
 echo                    (default: the one CMake finds)
 echo   --no-editor    : the libraries and the python set only, no Qt needed
@@ -108,15 +110,35 @@ set "VCPKG_INST=%VCPKG_ROOT%\installed\%TRIPLET%"
 set "TOOLCHAIN=%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake"
 
 if "%EDITOR%"=="0" goto qt_checked
-rem no Qt install given: the Qt of vcpkg (its CMake packages come with the toolchain,
-rem its DLLs from installed\<triplet>\bin, qmake and windeployqt from tools\qt5\bin)
-if "%QTDIR%"=="" if exist "%VCPKG_INST%\tools\qt5\bin\windeployqt.exe" (
-  set "QTDIR=%VCPKG_INST%\tools\qt5"
-  set "QT_PLUGIN_PATH=%VCPKG_INST%\plugins"
-)
-if "%QTDIR%"=="" ( echo error: set QTDIR to your Qt install, pass --qtdir, or install the Qt of vcpkg ^(vcpkg install qt5-base qt5-svg qt5-tools^) & exit /b 1 )
-if not exist "%QTDIR%\bin\windeployqt.exe" ( echo error: windeployqt not found under %QTDIR%\bin & exit /b 1 )
+if /I "%QTDIR%"=="vcpkg" set "QTDIR="
+set "WINDEPLOYQT="
+if "%QTDIR%"=="" goto qt_vcpkg
+if not exist "%QTDIR%\bin\windeployqt.exe" ( echo error: windeployqt not found under %QTDIR%\bin ^(--qtdir vcpkg takes the Qt of vcpkg^) & exit /b 1 )
+set "WINDEPLOYQT=%QTDIR%\bin\windeployqt.exe"
+set "QT_PLUGINS=%QTDIR%\plugins"
 echo == Qt: %QTDIR%
+goto qt_checked
+
+rem the Qt of vcpkg: its CMake packages (share\cmake) come with the toolchain, vcpkg
+rem deploys its DLLs, qt.conf and plugins next to the built exe; qmake is in
+rem tools\qt5\bin, windeployqt only when qt5-tools has built it
+:qt_vcpkg
+if exist "%VCPKG_INST%\share\cmake\Qt5Core\Qt5CoreConfig.cmake" goto qt_vcpkg_found
+echo error: no Qt: set QTDIR to your Qt install, pass --qtdir, or install the Qt of vcpkg:
+echo        vcpkg install qt5-base:%TRIPLET% qt5-svg:%TRIPLET% qt5-tools:%TRIPLET%
+for /d %%T in ("%VCPKG_ROOT%\installed\*") do if exist "%%~fT\share\cmake\Qt5Core\Qt5CoreConfig.cmake" echo        vcpkg has the Qt of %%~nxT, the build needs %TRIPLET%
+exit /b 1
+:qt_vcpkg_found
+if not exist "%VCPKG_INST%\share\cmake\Qt5Svg\Qt5SvgConfig.cmake" ( echo error: the Qt of vcpkg has no Qt5Svg: vcpkg install qt5-svg:%TRIPLET% & exit /b 1 )
+if not exist "%VCPKG_INST%\share\cmake\Qt5LinguistTools\Qt5LinguistToolsConfig.cmake" ( echo error: the Qt of vcpkg has no Qt5LinguistTools: vcpkg install qt5-tools:%TRIPLET% & exit /b 1 )
+set "QTDIR=%VCPKG_INST%\tools\qt5"
+set "QT_PLUGINS=%VCPKG_INST%\plugins"
+rem the editor tests take the offscreen platform from there (vcpkg deploys qwindows only)
+set "QT_PLUGIN_PATH=%QT_PLUGINS%"
+if exist "%VCPKG_INST%\tools\qt5-tools\bin\windeployqt.exe" set "WINDEPLOYQT=%VCPKG_INST%\tools\qt5-tools\bin\windeployqt.exe"
+if exist "%VCPKG_INST%\tools\qt5\bin\windeployqt.exe" set "WINDEPLOYQT=%VCPKG_INST%\tools\qt5\bin\windeployqt.exe"
+if defined WINDEPLOYQT echo == Qt: vcpkg %VCPKG_INST%, %WINDEPLOYQT%
+if not defined WINDEPLOYQT echo == Qt: vcpkg %VCPKG_INST%, deployed by vcpkg ^(no windeployqt^)
 :qt_checked
 
 if not defined PYEXE goto python_checked
@@ -247,17 +269,32 @@ if exist "%BDIR%\Release\CyberiadaPro.exe" (
   copy /Y "%BDIR%\CyberiadaPro.exe" "%STAGE%\" >nul
 )
 
-rem Qt runtime + plugins next to the exe (windeployqt asks the qmake on PATH)
+rem Qt runtime + plugins next to the exe: windeployqt (it asks the qmake on PATH), else
+rem what vcpkg deployed next to the build (the Qt of vcpkg: its DLLs and plugins\,
+rem flattened to the windeployqt layout, Qt also looks for plugins next to the exe)
+if not defined WINDEPLOYQT goto qt_vcpkg_deployed
 set "PATH=%QTDIR%\bin;%PATH%"
-"%QTDIR%\bin\windeployqt.exe" --release --no-translations "%STAGE%\CyberiadaPro.exe" || exit /b 1
+"%WINDEPLOYQT%" --release --no-translations "%STAGE%\CyberiadaPro.exe" || exit /b 1
+goto qt_deployed
+:qt_vcpkg_deployed
+if not exist "%BDIR%\Release\plugins\platforms\qwindows.dll" ( echo error: vcpkg deployed no Qt next to %BDIR%\Release\CyberiadaPro.exe ^(is VCPKG_APPLOCAL_DEPS off?^) & exit /b 1 )
+copy /Y "%BDIR%\Release\*.dll" "%STAGE%\" >nul
+for /d %%P in ("%BDIR%\Release\plugins\*") do xcopy /E /I /Y /Q "%%~fP" "%STAGE%\%%~nxP" >nul
+:qt_deployed
+rem the offscreen platform: the plugin check of the installer runs the editor headless
+if exist "%QT_PLUGINS%\platforms\qoffscreen.dll" copy /Y "%QT_PLUGINS%\platforms\qoffscreen.dll" "%STAGE%\platforms\" >nul
 
 rem the toolchain DLLs (cyberiadaml/mlpp in bin, htgeom in lib), QtPropertyBrowser,
-rem and libxml2 + its vcpkg runtime deps
+rem and libxml2 + its vcpkg runtime deps; not the Qt DLLs of vcpkg (they would
+rem replace the deployed ones)
 for %%D in (cyberiadaml cyberiadamlpp htgeom QtPropertyBrowser) do (
   if exist "%PREFIX%\bin\%%D.dll" copy /Y "%PREFIX%\bin\%%D.dll" "%STAGE%\" >nul
   if exist "%PREFIX%\lib\%%D.dll" copy /Y "%PREFIX%\lib\%%D.dll" "%STAGE%\" >nul
 )
-copy /Y "%VCPKG_INST%\bin\*.dll" "%STAGE%\" >nul
+for %%F in ("%VCPKG_INST%\bin\*.dll") do (
+  set "DLL=%%~nxF"
+  if /I not "!DLL:~0,3!"=="Qt5" copy /Y "%%~fF" "%STAGE%\" >nul
+)
 rem the editor does not embed python: drop the python runtime pulled in by pybind11
 del /Q "%STAGE%\python*.dll" >nul 2>&1
 
@@ -284,14 +321,17 @@ if exist "%BDIR%\Release\CyberiadaML.pyd" (
   copy /Y "%BDIR%\CyberiadaML.pyd" "%PYSTAGE%\" >nul
 )
 
-rem its dependency DLLs (cyberiadaml/mlpp in bin, htgeom in lib) + libxml2 and the
-rem vcpkg runtime deps; NOT python*.dll (the user's Python provides that)
+rem its dependency DLLs (cyberiadaml/mlpp in bin, htgeom in lib) + libxml2 and its
+rem vcpkg runtime (iconv, zlib; lzma in older ports), not the rest of vcpkg (Qt...):
+rem the installer build checks that nothing is missing. NOT python*.dll (the user's
+rem Python provides that)
 for %%D in (cyberiadaml cyberiadamlpp htgeom) do (
   if exist "%PREFIX%\bin\%%D.dll" copy /Y "%PREFIX%\bin\%%D.dll" "%PYSTAGE%\" >nul
   if exist "%PREFIX%\lib\%%D.dll" copy /Y "%PREFIX%\lib\%%D.dll" "%PYSTAGE%\" >nul
 )
-copy /Y "%VCPKG_INST%\bin\*.dll" "%PYSTAGE%\" >nul
-del /Q "%PYSTAGE%\python*.dll" >nul 2>&1
+for %%D in (libxml2 zlib1 iconv-2 charset-1 liblzma) do (
+  if exist "%VCPKG_INST%\bin\%%D.dll" copy /Y "%VCPKG_INST%\bin\%%D.dll" "%PYSTAGE%\" >nul
+)
 
 rem the MSVC C++ runtime, app-local: Python ships vcruntime140.dll only, and a clean
 rem Windows has no msvcp140.dll (the redist folder of the developer prompt, else of
