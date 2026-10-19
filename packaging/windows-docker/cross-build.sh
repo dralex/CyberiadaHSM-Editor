@@ -169,6 +169,10 @@ pack_editor() {
     # editor) so its absence aborts; image formats and styles are nice to have
     cp "$QT_PLUGINS/platforms/qwindows.dll" "$stage/platforms/" 2>/dev/null \
         || die "qwindows.dll not found under $QT_PLUGINS/platforms"
+    # the offscreen platform runs the batch mode without a window: the batch tests
+    # and the plugin check of the installer use it
+    cp "$QT_PLUGINS/platforms/qoffscreen.dll" "$stage/platforms/" 2>/dev/null \
+        || die "qoffscreen.dll not found under $QT_PLUGINS/platforms"
     for grp in imageformats styles; do
         if [ -d "$QT_PLUGINS/$grp" ]; then
             mkdir -p "$stage/$grp"
@@ -196,13 +200,11 @@ pack_editor() {
     ( cd "$bdir/dist-stage" && zip -qr "$OUT/cyberiada-pro-1.0.0-win64-mingw.zip" CyberiadaPro )
 
     # a second archive to run the editor's L0 batch tests on native Windows without
-    # cmake: the same bundle + the offscreen platform plugin (batch mode uses it) +
-    # the test diagrams + run-batch-tests.bat
+    # cmake: the same bundle (with the offscreen platform plugin the batch mode uses)
+    # + the test diagrams + run-batch-tests.bat
     teststage="$bdir/dist-stage/CyberiadaPro-tests"
     rm -rf "$teststage"; mkdir -p "$teststage/diagrams"
     cp -a "$stage/." "$teststage/"
-    cp "$QT_PLUGINS/platforms/qoffscreen.dll" "$teststage/platforms/" 2>/dev/null \
-        || die "qoffscreen.dll not found under $QT_PLUGINS/platforms (batch tests need the offscreen platform)"
     cp "$SRC/CyberiadaHSM-Editor/tests/diagrams/"*.graphml "$teststage/diagrams/"
     cp "$SRC/CyberiadaHSM-Editor/tests/windows/run-batch-tests.bat" "$teststage/"
     ( cd "$bdir/dist-stage" && zip -qr "$OUT/cyberiada-pro-tests-1.0.0-win64-mingw.zip" CyberiadaPro-tests )

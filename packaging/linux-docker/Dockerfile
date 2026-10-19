@@ -27,8 +27,8 @@ ARG APT_MIRROR_HOST=ru.archive.ubuntu.com
 # libxml2 + Qt5 (Widgets/Svg/Test), python3-dev + pybind11 for the python binding,
 # pydantic for cyberiadaml-py (2.6+ only on the newest releases; the build skips it
 # elsewhere) and poetry-core for its wheel where the release has it, fontconfig for
-# the editor's text-metric tests, valgrind for the memcheck tests, and locales to
-# generate ru_RU.UTF-8
+# the editor's text-metric tests, valgrind for the memcheck tests, locales to
+# generate ru_RU.UTF-8, and nsis for the Windows installer (build-windows-installer.sh)
 RUN for f in /etc/apt/sources.list /etc/apt/sources.list.d/ubuntu.sources; do \
         if [ -f "$f" ]; then \
             sed -i -E "s@https?://(archive|security|ports)\.ubuntu\.com@http://${APT_MIRROR_HOST}@g" "$f"; \
@@ -43,7 +43,7 @@ RUN for f in /etc/apt/sources.list /etc/apt/sources.list.d/ubuntu.sources; do \
         python3-pytest pylint \
         python3-pip python3-setuptools python3-wheel python3-pydantic \
         fontconfig valgrind \
-        locales ca-certificates \
+        locales ca-certificates nsis \
     && if apt-cache show python3-poetry-core >/dev/null 2>&1; then \
            apt-get install -y --no-install-recommends python3-poetry-core; \
        fi \

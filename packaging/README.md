@@ -102,7 +102,7 @@ are built by this script or, the same files, on Linux in `dist/pyapps/`; pip tak
 
 The plugins then appear in CyberiadaPro (either Windows build). The binding `.zip` is
 optional: it is faster and reads the legacy yEd diagrams too, for the Python it was
-built against.
+built against. The Windows installer (below) does all of this for the users.
 
 ## Windows without Windows — `build-windows-docker.sh` (Docker + MinGW)
 
@@ -118,3 +118,33 @@ Two steps — the image is stable, the packages are rebuilt regularly:
 On Windows the same package step is reachable as `build-toolchain.bat --docker`
 (build the image first). See [`windows-docker/README.md`](windows-docker/README.md)
 for details.
+
+## The Windows installer — `build-windows-installer.sh` (NSIS)
+
+One `CyberiadaPro-<version>-win64-setup.exe` for the users: it needs nothing else and
+downloads nothing at install time.
+
+    ./packaging/build-windows-docker.sh            # the editor zip
+    ./packaging/build-windows-installer.sh         # -> dist/CyberiadaPro-<version>-win64-setup.exe
+
+The installer:
+
+1. installs the editor into `Program Files\CyberiadaPro` (for all users, with the
+   Start-menu entries and an uninstaller); `.graphml` files can be associated with
+   it (an optional component);
+2. finds a 64-bit Python 3.10-3.14 (the PEP 514 registry) or installs the bundled
+   python.org Python (`windows-installer/python.txt`) for all users;
+3. installs the python plugins hsm-to-python and hsm-maker (not cybersphere-agents)
+   into that Python from the bundled wheels, offline: the plugin packages, the
+   pure-Python `cyberiadaml-py` and the pinned pydantic wheels
+   (`windows-installer/requirements-windows.txt`), and binds the plugins of the
+   editor folder to that Python for every user (`--install-editor-plugin`);
+4. checks that the editor runs them (`windows-installer/check-plugins.py`) and shows
+   the result: every failure with what to check. The check runs again from the
+   Start menu (CyberiadaPro, Check plugins).
+
+The build takes the editor zip made before (`--editor-zip` picks another one) and
+runs in the Linux builder image of the newest release (`--release`); it needs network
+access for the pinned wheels and the Python installer (cached in `dist/cache`), both
+checked against their SHA-256. The uninstaller removes the editor and its python
+packages; Python and pydantic stay.
