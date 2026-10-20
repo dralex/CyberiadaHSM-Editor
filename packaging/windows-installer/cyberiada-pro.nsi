@@ -80,6 +80,19 @@ Var PydanticWheels     ; the folder of the pydantic wheels of this Windows
 !define MUI_ICON "${ICON}"
 !define MUI_UNICON "${ICON}"
 !define MUI_ABORTWARNING
+; the pictures of CyberiadaPro (make-images.py draws them from the logo; -D
+; WELCOME_BITMAP / HEADER_BITMAP put others): the Welcome and Finish pages, 164x314,
+; and the header of the other pages, 150x57
+!ifndef WELCOME_BITMAP
+  !define WELCOME_BITMAP "${__FILEDIR__}/welcome.bmp"
+!endif
+!ifndef HEADER_BITMAP
+  !define HEADER_BITMAP "${__FILEDIR__}/header.bmp"
+!endif
+!define MUI_WELCOMEFINISHPAGE_BITMAP "${WELCOME_BITMAP}"
+!define MUI_HEADERIMAGE
+!define MUI_HEADERIMAGE_RIGHT
+!define MUI_HEADERIMAGE_BITMAP "${HEADER_BITMAP}"
 
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE "${STAGE}/LICENSE"

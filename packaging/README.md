@@ -178,6 +178,11 @@ The installer:
    the result: every failure with what to check. The check runs again from the
    Start menu (CyberiadaPro, Check plugins).
 
+Its pictures, `windows-installer/welcome.bmp` (the Welcome and Finish pages, 164x314) and
+`windows-installer/header.bmp` (the header of the other pages, 150x57), are drawn from the
+editor logo by `windows-installer/make-images.py` (Pillow, run by hand when the logo
+changes); a 24-bit BMP of the same size replaces either.
+
 The build takes the editor zip made before (`--editor-zip` picks another one); no
 Windows machine takes part. It runs in the Linux builder image of the newest release
 (`--release`) and needs network access for the pinned wheels and the Python
