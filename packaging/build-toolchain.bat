@@ -20,7 +20,8 @@ rem installs with them, so they need no binary module. The python binding is an
 rem optional self-contained .zip for the Python it is built against (--python picks
 rem it; the Windows 7-8.1 installer path needs one for Python 3.8). All of them
 rem are separate from the editor; QtPropertyBrowser is bundled into the editor.
-rem Skip the whole python set with --no-python, the editor with --no-editor.
+rem Skip the whole python set with --no-python, the editor with --no-editor; build
+rem only the editor, on the libraries a former run installed, with --editor-only.
 rem
 rem Prerequisites: Visual Studio (MSVC), CMake, Git, vcpkg (VCPKG_ROOT set), and Qt 5
 rem (Widgets, Svg, LinguistTools): a Qt install with windeployqt (QTDIR, --qtdir) or
@@ -45,6 +46,7 @@ set "DOCKER=0"
 set "PYTHON=1"
 set "PYEXE="
 set "EDITOR=1"
+set "ONLY_EDITOR=0"
 set "TRIPLET=x64-windows"
 if "%QTDIR%"=="" set "QTDIR="
 if "%VCPKG_ROOT%"=="" set "VCPKG_ROOT="
@@ -61,6 +63,7 @@ if /I "%~1"=="--no-test" ( set "TEST=0" & shift & goto parse )
 if /I "%~1"=="--no-python" ( set "PYTHON=0" & shift & goto parse )
 if /I "%~1"=="--python" ( set "PYEXE=%~2" & shift & shift & goto parse )
 if /I "%~1"=="--no-editor" ( set "EDITOR=0" & shift & goto parse )
+if /I "%~1"=="--editor-only" ( set "ONLY_EDITOR=1" & shift & goto parse )
 if /I "%~1"=="--docker" ( set "DOCKER=1" & shift & goto parse )
 if /I "%~1"=="-h" goto help
 if /I "%~1"=="--help" goto help
@@ -69,7 +72,7 @@ echo unknown option: %~1 & goto help
 :help
 echo usage: %~nx0 [--prefix DIR] [--out DIR] [--branch NAME] [--qtdir DIR]
 echo              [--vcpkg DIR] [--no-pull] [--no-test] [--no-python] [--docker]
-echo              [--python EXE] [--no-editor]
+echo              [--python EXE] [--no-editor] [--editor-only]
 echo.
 echo   default backend: native MSVC + vcpkg (needs Visual Studio, vcpkg, Qt)
 echo   --qtdir DIR    : the Qt install; default QTDIR, else the Qt of vcpkg
@@ -77,6 +80,8 @@ echo                    ^(--qtdir vcpkg: the Qt of vcpkg even when QTDIR is set^
 echo   --python EXE   : the 64-bit python.exe the binding is built against
 echo                    (default: the one CMake finds)
 echo   --no-editor    : the libraries and the python set only, no Qt needed
+echo   --editor-only  : the editor only, on the libraries and QtPropertyBrowser
+echo                    a former run installed into the prefix
 echo   --docker       : containerized MinGW-w64 cross build (needs Docker; no
 echo                    Visual Studio / vcpkg / Qt install required; build the
 echo                    toolchain image once first with build-windows-image.sh)
@@ -108,6 +113,15 @@ if "%VCPKG_ROOT%"=="" ( echo error: set VCPKG_ROOT or pass --vcpkg & exit /b 1 )
 if not exist "%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake" ( echo error: vcpkg toolchain not found under %VCPKG_ROOT% & exit /b 1 )
 set "VCPKG_INST=%VCPKG_ROOT%\installed\%TRIPLET%"
 set "TOOLCHAIN=%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake"
+
+rem --editor-only: the libraries and QtPropertyBrowser of a former run, in the prefix
+if not "%ONLY_EDITOR%"=="1" goto only_checked
+if "%EDITOR%"=="0" ( echo error: --editor-only and --no-editor exclude each other & exit /b 1 )
+if defined PYEXE ( echo error: --editor-only builds no python binding: drop --python & exit /b 1 )
+set "PYTHON=0"
+if not exist "%PREFIX%\lib\cmake\cyberiadamlpp\cyberiadamlpp-config.cmake" ( echo error: no libraries in %PREFIX%: run the full build once before --editor-only & exit /b 1 )
+if not exist "%PREFIX%\FindQtPropertyBrowser.cmake" ( echo error: no QtPropertyBrowser in %PREFIX%: run the full build once before --editor-only & exit /b 1 )
+:only_checked
 
 if "%EDITOR%"=="0" goto qt_checked
 if /I "%QTDIR%"=="vcpkg" set "QTDIR="
@@ -182,7 +196,8 @@ if not exist "%SOURCES%\libhtreegeom\homog2d.hpp" (
 )
 
 if not exist "%OUT%" mkdir "%OUT%"
-del /Q "%OUT%\*.zip" >nul 2>&1
+rem --editor-only keeps the library and binding zips of the former run
+if not "%ONLY_EDITOR%"=="1" del /Q "%OUT%\*.zip" >nul 2>&1
 
 rem the paths CMake gets have forward slashes: CMake writes CMAKE_MODULE_PATH into its
 rem try_compile projects as a quoted string, where C:\cyberiada is an invalid escape (\c)
@@ -193,6 +208,7 @@ if defined QTDIR set "QTDIR_CM=%QTDIR:\=/%"
 set "PREFIX_PATH=%PREFIX_CM%;%QTDIR_CM%"
 
 rem --- build each repo -------------------------------------------------------
+if "%ONLY_EDITOR%"=="1" goto editor_only
 call :build_repo libhtreegeom      %BRANCH% zip   || exit /b 1
 call :build_repo libcyberiadaml    %BRANCH% zip   || exit /b 1
 call :build_repo libcyberiadamlpp  %BRANCH% zip   || exit /b 1
@@ -208,6 +224,7 @@ if "%PYTHON%"=="1" (
 )
 if "%EDITOR%"=="0" goto editor_done
 call :build_repo QtPropertyBrowser master   nozip || exit /b 1
+:editor_only
 call :build_repo CyberiadaHSM-Editor %BRANCH% editor || exit /b 1
 :editor_done
 

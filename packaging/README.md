@@ -84,6 +84,8 @@ Requires Visual Studio, CMake, Git, vcpkg (`VCPKG_ROOT`), and a Qt 5 install.
       --python EXE   the 64-bit python.exe the binding is built against
                      (default: the one CMake finds)
       --no-editor    the libraries and the python set only (no Qt needed)
+      --editor-only  the editor only, on the libraries and QtPropertyBrowser a
+                     former run installed into the prefix (its zips stay in --out)
       --branch NAME / --no-pull / --no-test / --no-python / --vcpkg DIR
 
 `libxml2` is provided by vcpkg (`vcpkg install libxml2`); the python binding pulls
