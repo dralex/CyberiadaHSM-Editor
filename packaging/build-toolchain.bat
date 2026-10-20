@@ -184,7 +184,13 @@ if not exist "%SOURCES%\libhtreegeom\homog2d.hpp" (
 if not exist "%OUT%" mkdir "%OUT%"
 del /Q "%OUT%\*.zip" >nul 2>&1
 
-set "PREFIX_PATH=%PREFIX%;%QTDIR%"
+rem the paths CMake gets have forward slashes: CMake writes CMAKE_MODULE_PATH into its
+rem try_compile projects as a quoted string, where C:\cyberiada is an invalid escape (\c)
+set "PREFIX_CM=%PREFIX:\=/%"
+set "TOOLCHAIN_CM=%TOOLCHAIN:\=/%"
+set "QTDIR_CM="
+if defined QTDIR set "QTDIR_CM=%QTDIR:\=/%"
+set "PREFIX_PATH=%PREFIX_CM%;%QTDIR_CM%"
 
 rem --- build each repo -------------------------------------------------------
 call :build_repo libhtreegeom      %BRANCH% zip   || exit /b 1
@@ -235,15 +241,15 @@ rem pybind11 keep the artifacts of the Python configured before)
 set "PYARGS="
 if "%PACK%"=="python" if defined PYEXE (
   if exist "%BDIR%\CMakeCache.txt" del /Q "%BDIR%\CMakeCache.txt"
-  set PYARGS=-DPython3_EXECUTABLE="%PYEXE%" -DPython3_ROOT_DIR="%PYROOT%"
+  set PYARGS=-DPython3_EXECUTABLE="%PYEXE:\=/%" -DPython3_ROOT_DIR="%PYROOT:\=/%"
 )
 cmake -S "%DIR%" -B "%BDIR%" %PYARGS% ^
   -DCMAKE_POLICY_VERSION_MINIMUM=3.5 ^
-  -DCMAKE_TOOLCHAIN_FILE="%TOOLCHAIN%" ^
+  -DCMAKE_TOOLCHAIN_FILE="%TOOLCHAIN_CM%" ^
   -DVCPKG_TARGET_TRIPLET=%TRIPLET% ^
-  -DCMAKE_INSTALL_PREFIX="%PREFIX%" ^
+  -DCMAKE_INSTALL_PREFIX="%PREFIX_CM%" ^
   -DCMAKE_PREFIX_PATH="%PREFIX_PATH%" ^
-  -DCMAKE_MODULE_PATH="%PREFIX%;%PREFIX%\lib\cmake" || exit /b 1
+  -DCMAKE_MODULE_PATH="%PREFIX_CM%;%PREFIX_CM%/lib/cmake" || exit /b 1
 cmake --build "%BDIR%" --config Release || exit /b 1
 
 if "%TEST%"=="1" (
@@ -418,7 +424,7 @@ if "%PULL%"=="1" (
 )
 
 set "BDIR=%DIR%\build-win"
-cmake -S "%DIR%" -B "%BDIR%" -DCMAKE_INSTALL_PREFIX="%PREFIX%" || exit /b 1
+cmake -S "%DIR%" -B "%BDIR%" -DCMAKE_INSTALL_PREFIX="%PREFIX_CM%" || exit /b 1
 pushd "%BDIR%"
 cpack -G ZIP || ( popd & exit /b 1 )
 popd
