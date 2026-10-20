@@ -197,6 +197,8 @@ pack_editor() {
         fi
     done
 
+    # a fresh archive: zip -r into an existing one keeps the entries of a former build
+    rm -f "$OUT/cyberiada-pro-1.0.0-win64-mingw.zip"
     ( cd "$bdir/dist-stage" && zip -qr "$OUT/cyberiada-pro-1.0.0-win64-mingw.zip" CyberiadaPro )
 
     # a second archive to run the editor's L0 batch tests on native Windows without
@@ -207,6 +209,7 @@ pack_editor() {
     cp -a "$stage/." "$teststage/"
     cp "$SRC/CyberiadaHSM-Editor/tests/diagrams/"*.graphml "$teststage/diagrams/"
     cp "$SRC/CyberiadaHSM-Editor/tests/windows/run-batch-tests.bat" "$teststage/"
+    rm -f "$OUT/cyberiada-pro-tests-1.0.0-win64-mingw.zip"
     ( cd "$bdir/dist-stage" && zip -qr "$OUT/cyberiada-pro-tests-1.0.0-win64-mingw.zip" CyberiadaPro-tests )
 
     # optional smoke test: the exe loads under Wine (offscreen, no display)

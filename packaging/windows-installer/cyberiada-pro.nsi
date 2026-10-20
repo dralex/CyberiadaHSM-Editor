@@ -171,6 +171,8 @@ LangString PythonKept ${LANG_RUSSIAN} "Python остаётся установл�
 
 Section "$(SecEditorName)" SecEditor
   SectionIn RO
+  ; the plugin folder is the installer's: a reinstall drops the plugins of a former setup
+  RMDir /r "$INSTDIR\${PLUGINS_DIR}"
   SetOutPath "$INSTDIR"
   File /r "${STAGE}/*"
   File "/oname=cyberiada-pro.ico" "${ICON}"

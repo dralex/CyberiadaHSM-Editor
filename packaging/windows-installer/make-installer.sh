@@ -30,6 +30,8 @@ HERE="$SRC/CyberiadaHSM-Editor/packaging/windows-installer"
 PYTHONS="3.10 3.11 3.12 3.13 3.14"
 # the python packages of the Windows release (not cybersphere-agents)
 REPOS="cyberiadaml-py hsm-dispatcher-py hsm-to-python cybersphere-hsm-maker"
+# the editor plugins the installer pins (keep in sync with cyberiada-pro.nsi)
+PLUGINS="hsm-to-python hsm-maker"
 
 say() { printf '\n\033[1;34m== %s\033[0m\n' "$*"; }
 die() { printf '\033[1;31merror: %s\033[0m\n' "$*" >&2; exit 1; }
@@ -84,6 +86,18 @@ if [ ! -f "$stage/platforms/qoffscreen.dll" ]; then
     echo "note: the zip has no platforms/qoffscreen.dll (built before it was bundled):"
     echo "      the plugin check of the installer shows the editor window briefly"
 fi
+# only the plugins of the release: a zip updated by an older cross-build.sh keeps
+# the folders of former builds (cybersphere-agents)
+for dir in "$stage/share/cyberiada-pro/plugins"/*/; do
+    [ -d "$dir" ] || continue
+    id=$(basename "$dir")
+    case " $PLUGINS " in
+        *" $id "*) ;;
+        *) echo "note: the zip has the plugin $id, not in the Windows release: dropped" \
+                "(rebuild the zip with build-windows-docker.sh)"
+           rm -rf "$dir" ;;
+    esac
+done
 
 say "the wheels of the python plugins"
 for repo in $REPOS; do
