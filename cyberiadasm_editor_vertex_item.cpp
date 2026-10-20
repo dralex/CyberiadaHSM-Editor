@@ -26,6 +26,7 @@
 #include <QColor>
 #include <QFontMetricsF>
 #include <QTextCursor>
+#include <QtMath>
 #include <math.h>
 
 #include "myassert.h"
