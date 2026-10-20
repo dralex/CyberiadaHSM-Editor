@@ -344,14 +344,15 @@ if exist "%BDIR%\Release\CyberiadaML.pyd" (
 )
 
 rem its dependency DLLs (cyberiadaml/mlpp in bin, htgeom in lib) + libxml2 and its
-rem vcpkg runtime (iconv, zlib; lzma in older ports), not the rest of vcpkg (Qt...):
+rem vcpkg runtime (iconv, zlib; lzma in older ports) and the PCRE2 POSIX wrapper of the
+rem regular expressions of libcyberiadaml, not the rest of vcpkg (Qt...):
 rem the installer build checks that nothing is missing. NOT python*.dll (the user's
 rem Python provides that)
 for %%D in (cyberiadaml cyberiadamlpp htgeom) do (
   if exist "%PREFIX%\bin\%%D.dll" copy /Y "%PREFIX%\bin\%%D.dll" "%PYSTAGE%\" >nul
   if exist "%PREFIX%\lib\%%D.dll" copy /Y "%PREFIX%\lib\%%D.dll" "%PYSTAGE%\" >nul
 )
-for %%D in (libxml2 zlib1 iconv-2 charset-1 liblzma) do (
+for %%D in (libxml2 zlib1 iconv-2 charset-1 liblzma pcre2-posix pcre2-8) do (
   if exist "%VCPKG_INST%\bin\%%D.dll" copy /Y "%VCPKG_INST%\bin\%%D.dll" "%PYSTAGE%\" >nul
 )
 
