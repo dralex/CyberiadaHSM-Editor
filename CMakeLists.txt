@@ -42,6 +42,12 @@ find_package(QtPropertyBrowser REQUIRED)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# the sources are UTF-8: MSVC reads a file without a BOM in the code page of the
+# system, which garbles QStringLiteral("…") and the u8 literals of the tests
+if(MSVC)
+  add_compile_options(/utf-8)
+endif()
+
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
