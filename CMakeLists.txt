@@ -179,13 +179,20 @@ add_library(CyberiadaEditorCore STATIC
   plugin_dock.h plugin_dock.cpp
 )
 
+# the forms are compiled into the core, so its generated headers must be reachable
+# by everything that links it; a multi-config generator (Visual Studio) writes them
+# into include_<config>
+get_property(CORE_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+if(CORE_MULTI_CONFIG)
+  set(CORE_FORMS_INCLUDE ${CMAKE_CURRENT_BINARY_DIR}/CyberiadaEditorCore_autogen/include_$<CONFIG>)
+else()
+  set(CORE_FORMS_INCLUDE ${CMAKE_CURRENT_BINARY_DIR}/CyberiadaEditorCore_autogen/include)
+endif()
 target_include_directories(CyberiadaEditorCore PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}
   # the generated version.h lives in the build dir
   ${CMAKE_CURRENT_BINARY_DIR}
-  # the forms are compiled into the core, so its generated headers must be
-  # reachable by everything that links it
-  ${CMAKE_CURRENT_BINARY_DIR}/CyberiadaEditorCore_autogen/include
+  ${CORE_FORMS_INCLUDE}
   ${QTPROPERTYBROWSER_INCLUDE_DIR}
   ${cyberiadaml_INCLUDE_DIRS}
   ${cyberiadamlpp_INCLUDE_DIRS}
