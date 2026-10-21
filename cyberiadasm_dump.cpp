@@ -25,6 +25,7 @@
 #include <string>
 #include <vector>
 
+#include <QDir>
 #include <QString>
 #include <QUndoStack>
 
@@ -243,6 +244,11 @@ static QString normalizePaths(QString text, const PluginResult& result)
 	if (!result.runDir.isEmpty()) names.append(qMakePair(result.runDir, QString("<rundir>")));
 	if (!result.pluginDir.isEmpty()) names.append(qMakePair(result.pluginDir, QString("<plugin_dir>")));
 	if (!result.documentDir.isEmpty()) names.append(qMakePair(result.documentDir, QString("<document_dir>")));
+	// a Windows program prints them with its own separators too
+	for (int i = 0, n = names.size(); i < n; i++) {
+		QString native = QDir::toNativeSeparators(names.at(i).first);
+		if (native != names.at(i).first) names.append(qMakePair(native, names.at(i).second));
+	}
 	std::sort(names.begin(), names.end(), [](const QPair<QString, QString>& a, const QPair<QString, QString>& b) {
 		return a.first.size() > b.first.size();
 	});

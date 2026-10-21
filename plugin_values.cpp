@@ -130,8 +130,9 @@ bool pluginParseValues(const PluginDescriptor& plugin, const PluginAction& actio
         if (value.startsWith("@@")) {
             value = value.mid(1);
         } else if (value.startsWith('@')) {
+            // a text file: its line ends become \n, as a file saved on Windows has \r\n
             QFile f(value.mid(1));
-            if (!f.open(QIODevice::ReadOnly)) {
+            if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
                 if (error) *error = QCoreApplication::translate("PluginValues", "cannot read the value of '%1' from %2").arg(name, value.mid(1));
                 return false;
             }
