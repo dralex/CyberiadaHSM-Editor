@@ -154,6 +154,9 @@ public:
     // the diagnostics file (docs/PLUGIN-API.md); false when it is malformed
     static bool          readDiagnostics(const QByteArray& json, QList<PluginDiagnostic>* out,
                                          QString* error);
+    // the \r\n line ends of a chunk of output as \n; a \r closing the chunk waits in
+    // pendingCr for the next one, which may start with its \n
+    static QString       lineFeeds(QString text, bool* pendingCr);
 
 signals:
     void                 output(const QString& text, bool isError);
@@ -196,6 +199,8 @@ private:
     QElapsedTimer        clock;
     QTextDecoder*        stdoutDecoder = nullptr;
     QTextDecoder*        stderrDecoder = nullptr;
+    bool                 stdoutCr = false;
+    bool                 stderrCr = false;
     QString              stderrText;
     qint64               outputBytes = 0;
     bool                 capped = false;

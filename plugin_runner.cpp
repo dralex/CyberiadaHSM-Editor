@@ -485,13 +485,28 @@ QString PluginRunner::decode(const QByteArray& bytes, QTextDecoder** decoder)
     return text;
 }
 
+// Windows programs end their lines with \r\n: the output keeps \n on every system, as
+// the dumps, the logs and the output tab expect (a \r left at the end is dropped)
+QString PluginRunner::lineFeeds(QString text, bool* pendingCr)
+{
+    if (*pendingCr) {
+        text.prepend(QLatin1Char('\r'));
+        *pendingCr = false;
+    }
+    if (text.endsWith(QLatin1Char('\r'))) {
+        text.chop(1);
+        *pendingCr = true;
+    }
+    return text.replace(QLatin1String("\r\n"), QLatin1String("\n"));
+}
+
 void PluginRunner::slotStdout()
 {
     if (!process) return;
     QByteArray bytes = process->readAllStandardOutput();
     if (bytes.isEmpty() || capped) return;
     outputBytes += bytes.size();
-    QString text = decode(bytes, &stdoutDecoder);
+    QString text = lineFeeds(decode(bytes, &stdoutDecoder), &stdoutCr);
     if (outputBytes > PLUGIN_OUTPUT_CAP) {
         capped = true;
         text += "\n[the output is cut at the limit]\n";
@@ -506,7 +521,7 @@ void PluginRunner::slotStderr()
     QByteArray bytes = process->readAllStandardError();
     if (bytes.isEmpty() || capped) return;
     outputBytes += bytes.size();
-    QString text = decode(bytes, &stderrDecoder);
+    QString text = lineFeeds(decode(bytes, &stderrDecoder), &stderrCr);
     if (outputBytes > PLUGIN_OUTPUT_CAP) {
         capped = true;
         text += "\n[the output is cut at the limit]\n";

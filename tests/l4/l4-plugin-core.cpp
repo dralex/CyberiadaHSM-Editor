@@ -301,9 +301,10 @@ void TestPluginCore::test_values()
                        {"id": "t", "type": "text"}],
         "actions": [{"id": "a", "label": "A", "result": "log", "argv": ["run"]}]})");
     const PluginAction& a = *d.action("a");
-    PluginDocumentPaths doc = pluginDocumentPaths("/work/light.graphml");
+    // a rooted path: Windows gives the drive of the root to both sides
+    PluginDocumentPaths doc = pluginDocumentPaths(QDir::rootPath() + "work/light.graphml");
     QCOMPARE(doc.name, QString("light"));
-    QCOMPARE(pluginDefaultValue(*d.parameter("dir"), doc), QDir("/work").absolutePath() + "/out");
+    QCOMPARE(pluginDefaultValue(*d.parameter("dir"), doc), QDir(QDir::rootPath() + "work").absolutePath() + "/out");
     // an untitled document has no directory: such a default is empty
     QCOMPARE(pluginDefaultValue(*d.parameter("dir"), PluginDocumentPaths()), QString());
 
@@ -434,6 +435,13 @@ void TestPluginCore::test_output_decoding()
     QCOMPARE(r.state, PluginResult::stateDone);
     QVERIFY(r.stdoutText.contains("[the output is cut at the limit]"));
     QVERIFY(r.stdoutText.size() < PLUGIN_OUTPUT_CAP * 2);
+
+    // the \r\n of a Windows program as \n, a pair split between two chunks too
+    bool cr = false;
+    QCOMPARE(PluginRunner::lineFeeds("a\r\nb\r", &cr), QString("a\nb"));
+    QVERIFY(cr);
+    QCOMPARE(PluginRunner::lineFeeds("\nc\r\n", &cr), QString("\nc\n"));
+    QVERIFY(!cr);
 }
 
 // ${selection} follows the document order, not the selection order (EDIT-PLUG-9);
