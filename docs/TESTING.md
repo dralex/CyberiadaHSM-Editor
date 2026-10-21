@@ -865,3 +865,9 @@ not enough there: it does not cover the transitive Qt dependencies nor the
 dlopen'ed platform plugin). With a relocated Qt the *build* still needs
 `LD_LIBRARY_PATH` pointing at its libraries, since the moc/uic code
 generators run during compilation.
+
+On Windows (the MSVC build of `packaging\build-toolchain.bat`) one L4 test runs under a
+debugger with the same environment through `tests\windows\debug-l4.bat <test> [function]
+[--build] [--cdb]`: `--build` makes it RelWithDebInfo (with symbols), `--cdb` writes the
+call stack of every C++ exception to `build-win\tests\l4-<test>-exceptions.log`, and
+without it Visual Studio opens the test (`devenv /debugexe`).

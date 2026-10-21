@@ -733,7 +733,8 @@ void TestPlugins::test_output_menu()
     QString text = dock->output("echo")->toPlainText();
     QVERIFY(dock->saveOutput("echo", path));
     QFile file(path);
-    QVERIFY(file.open(QIODevice::ReadOnly));
+    // a text file: \r\n on Windows
+    QVERIFY(file.open(QIODevice::ReadOnly | QIODevice::Text));
     QCOMPARE(QString::fromUtf8(file.readAll()), text + "\n");
     QString error;
     QVERIFY(!dock->saveOutput("echo", dir.filePath("absent/echo-output.txt"), &error));
