@@ -316,7 +316,8 @@ rem what vcpkg deployed next to the build (the Qt of vcpkg: its DLLs and plugins
 rem flattened to the windeployqt layout, Qt also looks for plugins next to the exe)
 if not defined WINDEPLOYQT goto qt_vcpkg_deployed
 set "PATH=%QTDIR%\bin;%PATH%"
-"%WINDEPLOYQT%" --release --no-translations "%STAGE%\CyberiadaPro.exe" || exit /b 1
+rem no OpenGL in the editor: no ANGLE (libGLESv2, not in the Qt of vcpkg) nor opengl32sw
+"%WINDEPLOYQT%" --release --no-translations --no-angle --no-opengl-sw "%STAGE%\CyberiadaPro.exe" || exit /b 1
 goto qt_deployed
 :qt_vcpkg_deployed
 if not exist "%BDIR%\Release\plugins\platforms\qwindows.dll" ( echo error: vcpkg deployed no Qt next to %BDIR%\Release\CyberiadaPro.exe ^(is VCPKG_APPLOCAL_DEPS off?^) & exit /b 1 )

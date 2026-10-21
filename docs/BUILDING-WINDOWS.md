@@ -54,8 +54,11 @@ The editor is `CyberiadaPro.exe` under `build\Release` (MSVC) or `build`
 Copy the Qt runtime next to the executable with the tool from your Qt kit:
 
 ```bat
-windeployqt CyberiadaHSM-Editor\build\Release\CyberiadaPro.exe
+windeployqt --no-angle --no-opengl-sw CyberiadaHSM-Editor\build\Release\CyberiadaPro.exe
 ```
+
+The editor draws without OpenGL, so the ANGLE (`libEGL`, `libGLESv2`) and software OpenGL
+DLLs are left out; the Qt of vcpkg has no ANGLE, and windeployqt fails asking for it.
 
 Then copy the dependency DLLs from the prefix — `cyberiadaml`, `cyberiadamlpp`,
 `htreegeom`, `QtPropertyBrowser` and `libxml2` — into the same folder. The
