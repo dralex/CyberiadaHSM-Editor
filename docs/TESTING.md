@@ -870,4 +870,5 @@ On Windows (the MSVC build of `packaging\build-toolchain.bat`) one L4 test runs 
 debugger with the same environment through `tests\windows\debug-l4.bat <test> [function]
 [--build] [--cdb]`: `--build` makes it RelWithDebInfo (with symbols), `--cdb` writes the
 call stack of every C++ exception to `build-win\tests\l4-<test>-exceptions.log`, and
-without it Visual Studio opens the test (`devenv /debugexe`).
+without it Visual Studio opens the test (`devenv /debugexe`). The prefix, vcpkg and Qt
+folders come from `build-win\CMakeCache.txt`, as the build used them.

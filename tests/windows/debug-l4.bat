@@ -18,7 +18,7 @@ rem C++ Exceptions (or std::bad_alloc under it), then F5 stops where it is throw
 rem the test does not find its diagrams, set Project > Properties > Debugging >
 rem Working Directory to the tests folder it prints
 rem
-rem PREFIX (default C:\cyberiada), VCPKG_ROOT and QTDIR as for build-toolchain.bat.
+rem The prefix, vcpkg and Qt folders are the ones of the build (build-win\CMakeCache.txt).
 rem
 rem Copyright (C) 2026 Alexey Fedoseev <aleksey@fedoseev.net>  (GNU LGPL v3+)
 rem ---------------------------------------------------------------------------
@@ -26,7 +26,6 @@ setlocal enabledelayedexpansion
 set "HERE=%~dp0"
 for %%I in ("%HERE%..\..") do set "SRC=%%~fI"
 set "BUILD=%SRC%\build-win"
-if "%PREFIX%"=="" set "PREFIX=C:\cyberiada"
 set "TEST="
 set "FUNC="
 set "BUILD_IT=0"
@@ -44,6 +43,20 @@ exit /b 2
 if not defined TEST ( echo usage: %~nx0 ^<test^> [function] [--build] [--cdb] & exit /b 2 )
 set "NAME=l4-%TEST%"
 
+rem the folders the build was configured with (CMakeCache.txt: NAME:TYPE=value)
+set "CACHE=%BUILD%\CMakeCache.txt"
+if not exist "%CACHE%" ( echo error: no %CACHE%: run packaging\build-toolchain.bat first & exit /b 1 )
+for /f "tokens=1,2,* delims=:=" %%A in ('findstr /b /c:"CMAKE_INSTALL_PREFIX:" /c:"VCPKG_INSTALLED_DIR:" /c:"_VCPKG_INSTALLED_DIR:" /c:"VCPKG_TARGET_TRIPLET:" /c:"Qt5Core_DIR:" "%CACHE%"') do set "CACHE_%%A=%%C"
+if not defined CACHE_VCPKG_INSTALLED_DIR set "CACHE_VCPKG_INSTALLED_DIR=%CACHE__VCPKG_INSTALLED_DIR%"
+for %%V in (CMAKE_INSTALL_PREFIX VCPKG_INSTALLED_DIR VCPKG_TARGET_TRIPLET Qt5Core_DIR) do (
+  if not defined CACHE_%%V ( echo error: %%V is not in %CACHE% & exit /b 1 )
+)
+set "PREFIX=%CACHE_CMAKE_INSTALL_PREFIX:/=\%"
+set "VCPKG_INST=%CACHE_VCPKG_INSTALLED_DIR:/=\%\%CACHE_VCPKG_TARGET_TRIPLET%"
+rem Qt5Core_DIR is <Qt>\lib\cmake\Qt5Core (a Qt install) or <triplet>\share\cmake\Qt5Core
+rem (vcpkg): either way <Qt> holds bin and plugins
+for %%I in ("%CACHE_Qt5Core_DIR:/=\%\..\..\..") do set "QTROOT=%%~fI"
+
 if "%BUILD_IT%"=="0" goto built
 echo == building %NAME% RelWithDebInfo
 cmake --build "%BUILD%" --config RelWithDebInfo --target %NAME% || exit /b 1
@@ -59,21 +72,16 @@ set "QT_QPA_FONTDIR=%SRC%\fonts"
 set "CYBERIADA_PRO_CONFIG_HOME=%BUILD%\tests\config"
 set "CYBERIADA_PRO_DATA_HOME=%BUILD%\tests\data"
 set "CYBERIADA_PRO_PLUGIN_PATH="
+rem the DLLs as build-toolchain.bat runs the tests; the offscreen platform is not
+rem deployed next to the test, it comes from the Qt folder
+set "PATH=%PREFIX%\bin;%PREFIX%\lib;%VCPKG_INST%\bin;%QTROOT%\bin;%PATH%"
+set "QT_PLUGIN_PATH=%QTROOT%\plugins"
 
-rem the DLLs and the Qt plugins as build-toolchain.bat runs the tests: the Qt of
-rem vcpkg is deployed next to the test without its offscreen platform, a Qt install
-rem has both in QTDIR
-set "VCPKG_INST="
-if not "%VCPKG_ROOT%"=="" set "VCPKG_INST=%VCPKG_ROOT%\installed\x64-windows"
-set "PATH=%PREFIX%\bin;%PREFIX%\lib;%VCPKG_INST%\bin;%PATH%"
-if exist "%EXEDIR%plugins\platforms\qwindows.dll" goto qt_vcpkg
-if not defined QTDIR goto qt_set
-set "QT_PLUGIN_PATH=%QTDIR%\plugins"
-set "PATH=%QTDIR%\bin;%PATH%"
-goto qt_set
-:qt_vcpkg
-set "QT_PLUGIN_PATH=%VCPKG_INST%\plugins"
-:qt_set
+rem a DLL Windows cannot find stops the test before it starts: silently under cdb
+for %%D in (QtPropertyBrowser.dll cyberiadamlpp.dll cyberiadaml.dll htgeom.dll libxml2.dll) do (
+  where /q %%D || ( echo error: %%D is found neither in %PREFIX% nor in %VCPKG_INST%\bin & exit /b 1 )
+)
+if not exist "%QT_PLUGIN_PATH%\platforms\qoffscreen.dll" ( echo error: no offscreen platform in %QT_PLUGIN_PATH%\platforms & exit /b 1 )
 
 cd /d "%SRC%\tests"
 echo == %NAME% %FUNC%
@@ -85,8 +93,10 @@ set "CDB=%ProgramFiles(x86)%\Windows Kits\10\Debuggers\x64\cdb.exe"
 if not exist "%CDB%" ( echo error: no cdb.exe: install the Debugging Tools for Windows of the Windows SDK, or run without --cdb & exit /b 1 )
 set "LOG=%BUILD%\tests\%NAME%-exceptions.log"
 echo    the C++ exceptions and their call stacks go to %LOG%
-rem each C++ exception (eh) prints its stack and goes on to the program's own handler
-"%CDB%" -G -y "%EXEDIR%;%VCPKG_INST%\bin;%PREFIX%\bin;%PREFIX%\lib" -c "sxe -c \"kn 60; gn\" eh; g; q" "%EXE%" %FUNC% > "%LOG%" 2>&1 < nul
+rem each C++ exception (eh) prints its stack and goes on to the program's own handler;
+rem no "q" after "g": cdb would run it at the first exception; -G ends at the exit
+"%CDB%" -G -lines -y "%EXEDIR%;%PREFIX%\bin;%PREFIX%\lib;%VCPKG_INST%\bin" -c "sxe -c \"kn 60; gn\" eh; g" "%EXE%" %FUNC% > "%LOG%" 2>&1 < nul
+findstr /c:"Totals:" "%LOG%" || echo warning: the test printed no result: see %LOG%
 echo == done: %LOG%
 exit /b 0
 
