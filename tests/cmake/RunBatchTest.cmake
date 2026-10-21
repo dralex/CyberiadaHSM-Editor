@@ -42,6 +42,13 @@ function(show_difference good out)
   endwhile()
 endfunction()
 
+# the line ends never decide a comparison: Git for Windows checks the good files out
+# with CRLF, the library writes LF (compare_files --ignore-eol is CMake 3.14+)
+set(_eol)
+if(NOT CMAKE_VERSION VERSION_LESS 3.14)
+  set(_eol --ignore-eol)
+endif()
+
 if(DEFINED CLEAN_DIR)
   file(REMOVE_RECURSE ${CLEAN_DIR})
   file(MAKE_DIRECTORY ${CLEAN_DIR})
@@ -149,7 +156,7 @@ if(NOT result EQUAL EXPECTED)
   message(FATAL_ERROR "exit code ${result}, expected ${EXPECTED}")
 endif()
 if(DEFINED DUMP_GOOD)
-  execute_process(COMMAND ${CMAKE_COMMAND} -E compare_files ${OUTPUT} ${DUMP_GOOD}
+  execute_process(COMMAND ${CMAKE_COMMAND} -E compare_files ${_eol} ${OUTPUT} ${DUMP_GOOD}
     RESULT_VARIABLE diff)
   if(NOT diff EQUAL 0)
     show_difference(${DUMP_GOOD} ${OUTPUT})
@@ -164,7 +171,7 @@ if(DEFINED IMAGE_GOOD)
   endif()
 endif()
 if(DEFINED SVG_GOOD)
-  execute_process(COMMAND ${CMAKE_COMMAND} -E compare_files ${IMAGE_OUT} ${SVG_GOOD}
+  execute_process(COMMAND ${CMAKE_COMMAND} -E compare_files ${_eol} ${IMAGE_OUT} ${SVG_GOOD}
     RESULT_VARIABLE svgdiff)
   if(NOT svgdiff EQUAL 0)
     show_difference(${SVG_GOOD} ${IMAGE_OUT})
@@ -183,7 +190,7 @@ if(DEFINED PDF_MAGIC)
   endif()
 endif()
 if(DEFINED SAVE_GOOD)
-  execute_process(COMMAND ${CMAKE_COMMAND} -E compare_files ${SAVE_OUT} ${SAVE_GOOD}
+  execute_process(COMMAND ${CMAKE_COMMAND} -E compare_files ${_eol} ${SAVE_OUT} ${SAVE_GOOD}
     RESULT_VARIABLE diff)
   if(NOT diff EQUAL 0)
     show_difference(${SAVE_GOOD} ${SAVE_OUT})
