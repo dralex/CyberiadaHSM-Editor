@@ -99,9 +99,10 @@ QMap<QString, QString> TestTranslation::menuTexts(QMainWindow* window)
 
 void TestTranslation::initTestCase()
 {
-	// the stored language must not reach the profile the other cases share
+	// the stored language must not reach the profile the other cases share (the
+	// ini file of CYBERIADA_PRO_CONFIG_HOME: the registry of Windows takes no path)
 	QVERIFY(settings.isValid());
-	QSettings::setPath(QSettings::NativeFormat, QSettings::UserScope, settings.path());
+	QSettings::setPath(QSettings::defaultFormat(), QSettings::UserScope, settings.path());
 	SettingsManager::instance().setInterfaceLanguage(QString());
 }
 

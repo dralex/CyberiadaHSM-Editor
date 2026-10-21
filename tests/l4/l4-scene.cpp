@@ -1944,18 +1944,23 @@ void TestScene::test_grow_skips_rectless_sm()
 {
 	// a rect-less state machine must not be given a stored rect: growing it
 	// would read its uninitialised geometry and persist garbage (P-9, P-14)
-	QVERIFY(model->loadDocument("diagrams/polyline.graphml"));
-	scene->loadScene();
-	Cyberiada::Element* sm = model->idToElement("G0");
-	Cyberiada::Element* n0 = model->idToElement("n0");   // a top-level state, child of G0
-	QVERIFY(sm && n0);
-	QVERIFY(!sm->has_geometry());                        // the SM starts rect-less
+	try {
+		QVERIFY(model->loadDocument("diagrams/polyline.graphml"));
+		scene->loadScene();
+		Cyberiada::Element* sm = model->idToElement("G0");
+		Cyberiada::Element* n0 = model->idToElement("n0");   // a top-level state, child of G0
+		QVERIFY(sm && n0);
+		QVERIFY(!sm->has_geometry());                        // the SM starts rect-less
 
-	QVERIFY(model->updateGeometry(model->elementToIndex(n0), Cyberiada::Rect(0, 0, 900, 700)));
-	model->growToFitChildren(n0);
+		QVERIFY(model->updateGeometry(model->elementToIndex(n0), Cyberiada::Rect(0, 0, 900, 700)));
+		model->growToFitChildren(n0);
 
-	// the SM was skipped: still rect-less, no garbage rect written
-	QVERIFY(!sm->has_geometry());
+		// the SM was skipped: still rect-less, no garbage rect written
+		QVERIFY(!sm->has_geometry());
+	} catch (const std::exception& e) {
+		// QtTest names no exception: the MSVC build throws here (the Windows run)
+		QFAIL(qPrintable(QString("exception: %1").arg(QString::fromUtf8(e.what()))));
+	}
 }
 
 void TestScene::test_grow_cascades_to_ancestors()
