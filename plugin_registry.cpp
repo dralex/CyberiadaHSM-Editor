@@ -82,6 +82,20 @@ QList<PluginFolder> PluginRegistry::defaultFolders(const QString& appDir, const 
     return folders;
 }
 
+// the user data folder: <CYBERIADA_PRO_DATA_HOME>/<organization>/<application> as
+// XDG_DATA_HOME lays it out, else the standard one of the system
+static QString userDataFolder()
+{
+    QString home = qEnvironmentVariable(DATA_HOME_VARIABLE);
+    if (home.isEmpty()) return QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    const QStringList parts = QStringList() << QCoreApplication::organizationName()
+                                            << QCoreApplication::applicationName();
+    for (const QString& part: parts) {
+        if (!part.isEmpty()) home += "/" + part;
+    }
+    return QDir::cleanPath(home);
+}
+
 QList<PluginFolder> PluginRegistry::searchPath() const
 {
     if (!customPath.isEmpty()) {
@@ -92,7 +106,7 @@ QList<PluginFolder> PluginRegistry::searchPath() const
         }
         return folders;
     }
-    QString user = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QString user = userDataFolder();
     if (!user.isEmpty()) user += "/plugins";
     return defaultFolders(QCoreApplication::applicationDirPath(),
                           QString::fromLocal8Bit(qgetenv(PLUGIN_PATH_VARIABLE)), user);

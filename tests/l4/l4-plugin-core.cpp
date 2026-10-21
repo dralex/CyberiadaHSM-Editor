@@ -43,6 +43,7 @@ private slots:
     void test_parse_rejections();
     void test_parse_warnings();
     void test_default_folders();
+    void test_config_data_home();
     void test_resolve_interpreter();
     void test_expand_arguments();
     void test_values();
@@ -198,12 +199,38 @@ void TestPluginCore::test_parse_warnings()
 void TestPluginCore::test_default_folders()
 {
     QString variable = QString("/a") + QDir::listSeparator() + QDir::listSeparator() + "/b";
-    QList<PluginFolder> folders = PluginRegistry::defaultFolders("/opt/editor/bin", variable, "/home/u/plugins");
+    // a rooted path: Windows gives the drive of the root to both sides
+    const QString opt = QDir::rootPath() + "opt/editor/";
+    QList<PluginFolder> folders = PluginRegistry::defaultFolders(opt + "bin", variable, "/home/u/plugins");
     QStringList origins;
     for (const PluginFolder& f: folders) origins << f.origin;
     QCOMPARE(origins, QStringList() << "env 1" << "env 2" << "user" << "system" << "system");
-    QCOMPARE(folders.at(3).path, QDir("/opt/editor/" PLUGIN_SYSTEM_FOLDER).absolutePath());
-    QCOMPARE(folders.at(4).path, QDir("/opt/editor/bin/" PLUGIN_SYSTEM_FOLDER).absolutePath());
+    QCOMPARE(folders.at(3).path, QDir(opt + PLUGIN_SYSTEM_FOLDER).absolutePath());
+    QCOMPARE(folders.at(4).path, QDir(opt + "bin/" PLUGIN_SYSTEM_FOLDER).absolutePath());
+}
+
+// a separate configuration, the same on every system (EDIT-UI-7): the preferences in an
+// ini file under CYBERIADA_PRO_CONFIG_HOME, the user plugins under CYBERIADA_PRO_DATA_HOME
+void TestPluginCore::test_config_data_home()
+{
+    const QString config = qEnvironmentVariable(CONFIG_HOME_VARIABLE);
+    if (config.isEmpty()) QSKIP("run by ctest, which sets " CONFIG_HOME_VARIABLE);
+    QCOMPARE(QSettings::defaultFormat(), QSettings::IniFormat);
+    const QString file = QDir::cleanPath(QSettings().fileName());
+    QVERIFY2(file.startsWith(QDir::cleanPath(config) + "/") && file.endsWith(".ini"), qPrintable(file));
+
+    QTemporaryDir data;
+    QVERIFY(data.isValid());
+    const QByteArray kept = qgetenv(DATA_HOME_VARIABLE);
+    qputenv(DATA_HOME_VARIABLE, data.path().toUtf8());
+    PluginRegistry::instance().setSearchPath(QStringList());
+    QString user;
+    for (const PluginFolder& f: PluginRegistry::instance().searchPath()) {
+        if (f.origin == "user") user = f.path;
+    }
+    qputenv(DATA_HOME_VARIABLE, kept);
+    QVERIFY2(user.startsWith(QDir(data.path()).absolutePath() + "/") && user.endsWith("/plugins"),
+             qPrintable(user));
 }
 
 // the Preferences path first, then PATH (EDIT-PLUG-4)

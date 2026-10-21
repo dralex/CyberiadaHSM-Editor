@@ -50,6 +50,13 @@
 // the value removing an optional metainformation parameter
 #define METAINFORMATION_VALUE_NONE        "none"
 
+// A separate configuration (docs/EDITOR-SPEC.md): the preferences in an ini file under
+// <config home>/<organization>/<application>.ini, the user data (plugins) under
+// <data home>/<organization>/<application>, as XDG_CONFIG_HOME and XDG_DATA_HOME lay
+// them out, on every system; the tests set both
+#define CONFIG_HOME_VARIABLE    "CYBERIADA_PRO_CONFIG_HOME"
+#define DATA_HOME_VARIABLE      "CYBERIADA_PRO_DATA_HOME"
+
 // Plugin constants (docs/PLUGINS.md, docs/PLUGIN-API.md)
 #define PLUGIN_API_MAJOR        1
 #define PLUGIN_DESCRIPTOR_FILE  "plugin.json"

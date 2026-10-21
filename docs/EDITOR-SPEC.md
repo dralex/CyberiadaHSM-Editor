@@ -528,7 +528,8 @@ The plugins are external programs run on the active document: the architecture i
 `docs/PLUGINS.md`, the contract a plugin follows is `docs/PLUGIN-API.md` (`api` 1).
 
 - `EDIT-PLUG-1` MUST [A]: the plugins are looked up in `--plugin-path` (which replaces the
-  rest), `$CYBERIADA_PRO_PLUGIN_PATH`, the user folder and the system folder, in this order;
+  rest), `$CYBERIADA_PRO_PLUGIN_PATH`, the user folder (moved by `$CYBERIADA_PRO_DATA_HOME`,
+  `EDIT-UI-7`) and the system folder, in this order;
   the first folder holding an id wins, a later one with the same id is listed as shadowed.
   *design*
 - `EDIT-PLUG-2` MUST [C]: a descriptor that is not valid JSON, has an unknown `api` major or
@@ -653,6 +654,11 @@ The interface translations and their workflow are in `docs/TRANSLATION.md`.
   dock unchecks its entry and the entry shows it again; the choice is kept per user between
   sessions; a hidden tree or panel keeps following the active document and the canvas
   selection, so showing it again needs no refresh. *design*
+- `EDIT-UI-7` MUST [A]: `CYBERIADA_PRO_CONFIG_HOME` keeps the preferences in the ini file
+  `<folder>/Cyberiada/CyberiadaPro.ini` and `CYBERIADA_PRO_DATA_HOME` the user data, the user
+  plugin folder `<folder>/Cyberiada/CyberiadaPro/plugins`, instead of the places of the system
+  (the registry and `%APPDATA%` on Windows, `~/.config` and `~/.local/share` on Linux): a
+  separate, portable configuration, the same on every system; the tests set both. *design*
 
 ## 5. Coverage
 

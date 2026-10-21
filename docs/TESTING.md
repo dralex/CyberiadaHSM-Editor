@@ -119,7 +119,7 @@ it checks in a comment):
 | META   | `l2 update-meta`, `inspect-reject update-meta`, the `meta` diagram; META-1 (node hidden) via the `l1` scene dump; META-6 (CGML_COMPONENT hidden by default) via `l4-scene test_component_comment_hidden` + the `components` `l1` scene dump; META-5 distinct machine names via `l4-model test_unique_machine_name` (NewSM dedupes the default name) |
 | DOC    | `tabs-*` (the document verbs with the `== tabs` dump, `EDIT-DOC-2/3/5/9`), `l4-tabs` (the tab line, the re-targeting, the prompts, `EDIT-DOC-1..8,10`) |
 | INSPECT| `inspect-reject-*` (editing refused under `--inspect`, `EDIT-INSPECT-1`); `inspect-render-*` (stored-geometry render vs a good image, `EDIT-INSPECT-2`) |
-| UI     | `l4-translation` (`EDIT-UI-1/3`: the bundled languages, the Preferences selector, the Russian menus, Qt's buttons, the property labels, the default names, the property lookup), `ui-batch-english` (`EDIT-UI-2`), `l4-window test_pane_toggles/test_pane_persist` (`EDIT-UI-6`: the tree and properties docks, their View entries, the close button, the stored choice) |
+| UI     | `l4-translation` (`EDIT-UI-1/3`: the bundled languages, the Preferences selector, the Russian menus, Qt's buttons, the property labels, the default names, the property lookup), `ui-batch-english` (`EDIT-UI-2`), `l4-window test_pane_toggles/test_pane_persist` (`EDIT-UI-6`: the tree and properties docks, their View entries, the close button, the stored choice), `l4-plugin-core test_config_data_home` (`EDIT-UI-7`: the ini file under `CYBERIADA_PRO_CONFIG_HOME`, the user plugin folder under `CYBERIADA_PRO_DATA_HOME`) |
 | PLUG   | the `plugin-*` cases: discovery and rejection (`EDIT-PLUG-1..4`), variables and secrets (`EDIT-PLUG-8..11`), the results and failures (`EDIT-PLUG-12..20`), save and cwd (`EDIT-PLUG-25`), the batch contract (`EDIT-PLUG-27/28`); `l4-plugin-core`; `l4-plugins` for the window (`EDIT-PLUG-5..7`, `EDIT-PLUG-15`, `EDIT-PLUG-17`, `EDIT-PLUG-21..24`, `EDIT-PLUG-29..32`, `EDIT-PLUG-35`) |
 
 Requirements with **no dedicated case yet** — the gaps to fill: `SEM-1` (one initial per
@@ -457,7 +457,8 @@ The plugin layer (`plugin-<case>`) runs the example plugins of
 plain C++ with no dependencies) whose arguments are a list of operations, so the
 cases need no interpreter. CMake copies the sets into the build tree next to the
 helper; the descriptors call it as `${plugin_dir}/../../bin/plugin-helper`. The
-settings are isolated (`XDG_CONFIG_HOME`, `XDG_DATA_HOME`) and
+settings are isolated (`CYBERIADA_PRO_CONFIG_HOME`, `CYBERIADA_PRO_DATA_HOME`, which work on
+Windows too; `XDG_CONFIG_HOME`, `XDG_DATA_HOME` as well) and
 `CYBERIADA_PRO_PLUGIN_PATH` is empty, so only `--plugin-path` folders are seen. The
 cases compare the dump with `good/plugin-<case>-output.txt` and the saved document
 with `good/plugin-<case>-output.graphml`; a case that must not leak a secret checks
@@ -852,10 +853,12 @@ and a local-changes marker, via `tests/cmake/PrintRevision.cmake`), so a saved
 test log identifies the exact version it exercised.
 
 Each test carries its full environment, baked in at configure time: the
-offscreen platform, a hermetic `XDG_CONFIG_HOME` inside the build directory,
-a private fontconfig (`FONTCONFIG_FILE` generated from `tests/fonts.conf.in`)
-that exposes only the bundled `fonts/` directory, so no system font ever
-enters a match, and the library/plugin paths of the Qt actually found by
+offscreen platform, hermetic preferences and user plugins inside the build directory
+(`CYBERIADA_PRO_CONFIG_HOME` and `CYBERIADA_PRO_DATA_HOME`, `EDIT-UI-7`: the registry and
+`%APPDATA%` of Windows take no `XDG_*` variable), a private fontconfig
+(`FONTCONFIG_FILE` generated from `tests/fonts.conf.in`) that exposes only the bundled
+`fonts/` directory, so no system font ever enters a match (on Windows `QT_QPA_FONTDIR`
+names the same folder), and the library/plugin paths of the Qt actually found by
 CMake. Plain `ctest`
 therefore works even when Qt lives outside the system paths (RUNPATH alone is
 not enough there: it does not cover the transitive Qt dependencies nor the

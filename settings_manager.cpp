@@ -37,9 +37,23 @@ bool SettingsManager::adoptSettings(QSettings& legacy, QSettings& current)
     return true;
 }
 
+// CYBERIADA_PRO_CONFIG_HOME moves the preferences into an ini file under that folder,
+// on every system (no variable moves the registry of Windows); applied as the
+// application object is created, before any setting is read
+static void applyConfigHome()
+{
+    const QString home = qEnvironmentVariable(CONFIG_HOME_VARIABLE);
+    if (home.isEmpty()) return;
+    QSettings::setDefaultFormat(QSettings::IniFormat);
+    QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, home);
+}
+Q_COREAPP_STARTUP_FUNCTION(applyConfigHome)
+
 bool SettingsManager::adoptLegacySettings(const QString& legacyApplication)
 {
-    QSettings legacy(QCoreApplication::organizationName(), legacyApplication);
+    // the store of the preferences, the ini file of CYBERIADA_PRO_CONFIG_HOME included
+    QSettings legacy(QSettings::defaultFormat(), QSettings::UserScope,
+                     QCoreApplication::organizationName(), legacyApplication);
     QSettings current;
     return adoptSettings(legacy, current);
 }
