@@ -95,6 +95,7 @@ private slots:
 	void test_move_grows_parent();
 	void test_batch_action_guard();
 	void test_grow_skips_rectless_sm();
+	void test_reset_discards_edit();
 	void test_grow_cascades_to_ancestors();
 	void test_grow_pushes_siblings();
 	void test_reparent_into_descendant();
@@ -1944,27 +1945,46 @@ void TestScene::test_grow_skips_rectless_sm()
 {
 	// a rect-less state machine must not be given a stored rect: growing it
 	// would read its uninitialised geometry and persist garbage (P-9, P-14)
-	const char* step = "loadDocument";   // names the step that throws on MSVC
-	try {
-		QVERIFY(model->loadDocument("diagrams/polyline.graphml"));
-		step = "loadScene";
-		scene->loadScene();
-		Cyberiada::Element* sm = model->idToElement("G0");
-		Cyberiada::Element* n0 = model->idToElement("n0");   // a top-level state, child of G0
-		QVERIFY(sm && n0);
-		QVERIFY(!sm->has_geometry());                        // the SM starts rect-less
+	QVERIFY(model->loadDocument("diagrams/polyline.graphml"));
+	scene->loadScene();
+	Cyberiada::Element* sm = model->idToElement("G0");
+	Cyberiada::Element* n0 = model->idToElement("n0");   // a top-level state, child of G0
+	QVERIFY(sm && n0);
+	QVERIFY(!sm->has_geometry());                        // the SM starts rect-less
 
-		step = "updateGeometry";
-		QVERIFY(model->updateGeometry(model->elementToIndex(n0), Cyberiada::Rect(0, 0, 900, 700)));
-		step = "growToFitChildren";
-		model->growToFitChildren(n0);
+	QVERIFY(model->updateGeometry(model->elementToIndex(n0), Cyberiada::Rect(0, 0, 900, 700)));
+	model->growToFitChildren(n0);
 
-		// the SM was skipped: still rect-less, no garbage rect written
-		QVERIFY(!sm->has_geometry());
-	} catch (const std::exception& e) {
-		// QtTest names no exception: the MSVC build throws here (the Windows run)
-		QFAIL(qPrintable(QString("exception in %1: %2").arg(step, QString::fromUtf8(e.what()))));
-	}
+	// the SM was skipped: still rect-less, no garbage rect written
+	QVERIFY(!sm->has_geometry());
+}
+
+void TestScene::test_reset_discards_edit()
+{
+	// a model reset (here the snapshot restore of an undo) frees the document under
+	// a title being edited: the edit is discarded before that, not committed through
+	// the freed element (EDIT-TEXT-13; a bad_alloc on Windows, a crash on Linux)
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+	CyberiadaSMEditorStateItem* st =
+		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0-0-1"));
+	QVERIFY(st);
+	StateTitle* title = stateTitle(st);
+	QVERIFY(title);
+	const QString name = st->name();
+
+	title->setTextInteractionFlags(Qt::TextEditorInteraction);
+	title->setFocus();
+	title->setPlainText("Unfinished");
+	QVERIFY(scene->focusItem() == title);
+	const int steps = model->undoStack()->count();
+
+	model->restoreSnapshot(model->snapshot());
+	QVERIFY(scene->focusItem() == nullptr);
+	QCOMPARE(QString(model->idToElement("node-0-0-1")->get_name().c_str()), name);
+	QCOMPARE(model->undoStack()->count(), steps);
 }
 
 void TestScene::test_grow_cascades_to_ancestors()

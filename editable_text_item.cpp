@@ -116,6 +116,7 @@ void EditableTextItem::focusOutEvent(QFocusEvent *event) {
     isEdit = false;
     setPlainText(toPlainText().trimmed());
     QGraphicsTextItem::focusOutEvent(event);
+    if (CyberiadaSMEditorScene::discardsEdits(this)) return;
     emit editingFinished();
 }
 

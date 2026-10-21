@@ -81,6 +81,10 @@ public:
     // convert any point labels to rect labels before an interactive save (edit mode)
     void migrateLabelsToRect();
 
+    // true while a model reset takes the editing focus: the focus-out of a text
+    // item discards its unfinished edit (the document is about to be freed)
+    static bool discardsEdits(const QGraphicsItem* item);
+
     void  setCurrentTool(ToolType tool);
     ToolType getCurrentTool() { return currentTool; }
     // a tool for one gesture: the select tool is back with the mouse release
@@ -192,6 +196,7 @@ private:
     void  createByTool(ToolType tool, const QRectF& sceneRect);
     // the selection to bring back after a snapshot restore
     QList<Cyberiada::ID> selectedBeforeReset;
+    bool discardingEdits = false;
 
     // the session logger: a left-button gesture is recorded as press/drag/
     // release, its intermediate moves decimated to a few pixels

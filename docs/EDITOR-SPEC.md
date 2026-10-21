@@ -376,6 +376,9 @@ the third is a derived display value the format does not store):
   parameter (a `plain` value checks it too), *Markdown* writes `markdown`, an unknown value shows as
   an extra entry kept for the session, the check follows the active document, and the menu is
   disabled in inspection mode. A comment's own `dMarkup` still overrides the document value. *design*
+- `EDIT-TEXT-13` MUST [A]: a model reset (a document load, an undo/redo, the geometry
+  reconstruction or update) discards an unfinished canvas text edit before the old document is
+  freed: nothing is committed and no undo step is added. *design*
 
 ### 4.6 Tools and interaction — TOOL
 

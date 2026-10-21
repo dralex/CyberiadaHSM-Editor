@@ -760,7 +760,10 @@ void StateTitle::focusOutEvent(QFocusEvent *event)
 
     // works for any titled item (a state or a state machine border)
     CyberiadaSMEditorAbstractItem* owner = dynamic_cast<CyberiadaSMEditorAbstractItem*>(parentItem());
-    if (owner == nullptr) { QGraphicsTextItem::focusOutEvent(event); return; }
+    if (owner == nullptr || CyberiadaSMEditorScene::discardsEdits(this)) {
+        QGraphicsTextItem::focusOutEvent(event);
+        return;
+    }
     QString current = QString(owner->getElement()->get_name().c_str());
     QString newName = toPlainText().trimmed();
     QGraphicsTextItem::focusOutEvent(event);
@@ -1142,6 +1145,7 @@ void StateAction::focusOutEvent(QFocusEvent *event)
     setTextInteractionFlags(Qt::NoTextInteraction);
     isEdit = false;
     QGraphicsTextItem::focusOutEvent(event);
+    if (CyberiadaSMEditorScene::discardsEdits(this)) return;
     emit actionUpdated(this);
 }
 

@@ -117,6 +117,19 @@ void CyberiadaSMEditorScene::slotModelAboutToBeReset()
         CyberiadaSMEditorAbstractItem* cItem = dynamic_cast<CyberiadaSMEditorAbstractItem*>(item);
         if (cItem) selectedBeforeReset.append(cItem->getId());
     }
+    // the document is freed before modelReset: drop the grab and the focus now,
+    // while the items read live elements, without committing an unfinished edit
+    discardingEdits = true;
+    if (QGraphicsItem* grabber = mouseGrabberItem()) grabber->ungrabMouse();
+    if (QGraphicsItem* focus = focusItem()) focus->clearFocus();
+    discardingEdits = false;
+}
+
+bool CyberiadaSMEditorScene::discardsEdits(const QGraphicsItem* item)
+{
+    const CyberiadaSMEditorScene* sc =
+        item ? dynamic_cast<const CyberiadaSMEditorScene*>(item->scene()) : nullptr;
+    return sc && sc->discardingEdits;
 }
 
 void CyberiadaSMEditorScene::slotModelReset()

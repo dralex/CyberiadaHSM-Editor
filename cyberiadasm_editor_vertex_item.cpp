@@ -342,7 +342,7 @@ void VertexTitle::focusOutEvent(QFocusEvent *event)
     CyberiadaSMEditorAbstractItem* owner = dynamic_cast<CyberiadaSMEditorAbstractItem*>(parentItem());
     QString newName = toPlainText().trimmed();
     QGraphicsTextItem::focusOutEvent(event);
-    if (!owner) return;
+    if (!owner || CyberiadaSMEditorScene::discardsEdits(this)) return;
 
     QString current = QString(owner->getElement()->get_name().c_str());
     if (newName != current) {

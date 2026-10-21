@@ -1616,7 +1616,7 @@ void TransitionAction::focusOutEvent(QFocusEvent *event)
     QGraphicsTextItem::focusOutEvent(event);
 
     CyberiadaSMEditorTransitionItem* transition = dynamic_cast<CyberiadaSMEditorTransitionItem*>(parentItem());
-    if (!transition) return;
+    if (!transition || CyberiadaSMEditorScene::discardsEdits(this)) return;
 
     QModelIndex idx = transition->model->elementToIndex(transition->element);
     // an emptied label removes the action and its stored box (a bare edge stays)
