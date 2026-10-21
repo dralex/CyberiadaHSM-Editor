@@ -90,7 +90,8 @@ Requires Visual Studio, CMake, Git, vcpkg (`VCPKG_ROOT`), and a Qt 5 install.
 
 `libxml2` is provided by vcpkg (`vcpkg install libxml2`); the python binding pulls
 `pybind11` the same way. Qt can come from vcpkg too (`vcpkg install qt5-base:x64-windows
-qt5-svg:x64-windows qt5-tools:x64-windows`): without QTDIR or `--qtdir` (or with
+qt5-svg:x64-windows qt5-tools:x64-windows qt5-translations:x64-windows`, the last for the
+Russian dialogs of Qt itself): without QTDIR or `--qtdir` (or with
 `--qtdir vcpkg`) the script finds it by its CMake packages in
 `installed\x64-windows\share\cmake`. vcpkg itself copies the Qt DLLs and plugins next to
 the built editor, so the zip is made from those (plus `qoffscreen.dll`); `windeployqt`

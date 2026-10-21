@@ -25,8 +25,9 @@ rem only the editor, on the libraries a former run installed, with --editor-only
 rem
 rem Prerequisites: Visual Studio (MSVC), CMake, Git, vcpkg (VCPKG_ROOT set), and Qt 5
 rem (Widgets, Svg, LinguistTools): a Qt install with windeployqt (QTDIR, --qtdir) or
-rem the Qt of vcpkg (qt5-base qt5-svg qt5-tools), used when QTDIR is not set or with
-rem --qtdir vcpkg; vcpkg deploys it next to the build, windeployqt is not needed.
+rem the Qt of vcpkg (qt5-base qt5-svg qt5-tools qt5-translations), used when QTDIR is
+rem not set or with --qtdir vcpkg; vcpkg deploys it next to the build, windeployqt is
+rem not needed.
 rem
 rem Copyright (C) 2026 Alexey Fedoseev <aleksey@fedoseev.net>
 rem GNU LGPL v3 or later.
@@ -139,7 +140,7 @@ rem tools\qt5\bin, windeployqt only when qt5-tools has built it
 :qt_vcpkg
 if exist "%VCPKG_INST%\share\cmake\Qt5Core\Qt5CoreConfig.cmake" goto qt_vcpkg_found
 echo error: no Qt: set QTDIR to your Qt install, pass --qtdir, or install the Qt of vcpkg:
-echo        vcpkg install qt5-base:%TRIPLET% qt5-svg:%TRIPLET% qt5-tools:%TRIPLET%
+echo        vcpkg install qt5-base:%TRIPLET% qt5-svg:%TRIPLET% qt5-tools:%TRIPLET% qt5-translations:%TRIPLET%
 for /d %%T in ("%VCPKG_ROOT%\installed\*") do if exist "%%~fT\share\cmake\Qt5Core\Qt5CoreConfig.cmake" echo        vcpkg has the Qt of %%~nxT, the build needs %TRIPLET%
 exit /b 1
 :qt_vcpkg_found
@@ -148,6 +149,8 @@ rem Qt5LinguistTools (qt5-tools) loads only with its lrelease/lupdate/lconvert, 
 rem vcpkg puts into tools\qt5-tools\bin
 if not exist "%VCPKG_INST%\share\cmake\Qt5LinguistTools\Qt5LinguistToolsConfig.cmake" goto qt_no_linguist
 if not exist "%VCPKG_INST%\tools\qt5-tools\bin\lrelease.exe" goto qt_no_linguist
+rem Qt's own catalogues (the standard buttons and dialogs in Russian, EDIT-UI-3)
+if not exist "%VCPKG_INST%\share\qt5\translations\qtbase_ru.qm" ( echo error: the Qt of vcpkg has no translations of its own, its dialogs would stay English: vcpkg install qt5-translations:%TRIPLET% & exit /b 1 )
 set "QTDIR=%VCPKG_INST%\tools\qt5"
 set "QT_PLUGINS=%VCPKG_INST%\plugins"
 rem the editor tests take the offscreen platform from there (vcpkg deploys qwindows only)
