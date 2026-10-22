@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.29 (2026-10-22)
+**Document version:** 0.30 (2026-10-22)
 
 **Related authorities:**
 
@@ -132,8 +132,8 @@ over those rows; nothing more than the existing dump is needed.
   a fragment of a target's name, or to a fragment of its data. *PNST 984*
 - `EDIT-STRUCT-9` MUST [U]: deleting an element strips every subject that referenced it
   (the link goes, the comment stays); a copy or a reparent rebinds the subject to the
-  moved or copied element. The link itself is drawn as a line ending in a black box
-  (`EDIT-EDGE-6`). *design*
+  moved or copied element. The link itself is drawn by `EDIT-EDGE-6` and `EDIT-EDGE-17..20`.
+  *design*
 - `EDIT-SEM-1` MUST [U]: at most one initial pseudostate per region (per level);
   a second is refused. *PNST 984*
 - `EDIT-SEM-2` MUST [U]: transition endpoints follow the rules — a source is a state,
@@ -158,6 +158,11 @@ over those rows; nothing more than the existing dump is needed.
 - `EDIT-STRUCT-11` MUST [A]: a state machine with no geometry is not drawn on the scene; the
   element tree marks it — its name is shown in square brackets and its icon greyed — while the
   inline-rename value stays the plain name. *design*
+- `EDIT-STRUCT-12` MUST [U]: a subject's target is an element of the comment's state machine —
+  a state, a pseudostate, a choice, another comment or a transition — never the state machine
+  itself nor the comment itself; a name or data fragment is non-empty and occurs in the target's
+  text. A link or a retarget breaking these rules is refused and the subject stays as it was.
+  *PNST 1044 6.7*
 - `EDIT-SEM-7` MUST [U]: an entry point and an exit point carry a non-empty name; a new point
   gets a unique default name. *PNST 1044 8.3.1*
 - `EDIT-SEM-8` MUST [U]: a submachine state never references the state machine that contains it;
@@ -263,7 +268,9 @@ the third is a derived display value the format does not store):
 - `EDIT-EDGE-4` MUST [U]: an endpoint of a choice element lies on vertexes of the
   rhombus. *design*
 - `EDIT-EDGE-5` MUST [U]: a transition line finishes with an arrow. *PNST 984* 
-- `EDIT-EDGE-6` MUST [U]: a comment link line finishes with a black box. *PNST 984* 
+- `EDIT-EDGE-6` MUST [U]: a comment link is a dashed line from the comment to its subject; a
+  link to an element (a node or a transition) finishes with a small black box at the target, a
+  link to a fragment has no box. *PNST 984 7.2.7*
 - `EDIT-EDGE-7` MUST [A]: a rebind moves the endpoint to the new node; the
   transition then connects the new pair. The identity of endpoints, not the id,
   which may be renamed). *design*
@@ -294,6 +301,20 @@ the third is a derived display value the format does not store):
   lies on a grid crossing in scene coordinates, whatever the size of the drag steps. A seeded
   self-loop has its endpoints snapped by `EDIT-EDGE-15`, its out-levels on grid lines past the
   border and its segments orthogonal. The label box is not snapped. *design*
+- `EDIT-EDGE-17` MUST [U]: a comment link starts on the comment border and ends on the target
+  border by `EDIT-EDGE-1..4`, or on the transition path for a transition target; an end without
+  a stored point attaches toward the other end at display time. *PNST 1044 9.1.1*
+- `EDIT-EDGE-18` MUST [U]: a link drawn in the editor stores its source point and, unless it
+  points at a fragment, its target point, so a saved document has a source point on every link;
+  the geometry reconstruction computes the link points and the geometry update fills only the
+  missing ones. *PNST 1044 9.1.2*
+- `EDIT-EDGE-19` MUST [U]: a link is drawn only while both the comment and the target are drawn,
+  and follows the moves and resizes of both ends as a transition does (`EDIT-EDGE-1`).
+  *PNST 1044 9.1.2*
+- `EDIT-EDGE-20` MUST [A]: a selected link shows a source handle sliding along the comment
+  border and a target handle sliding along the target border; dropping the target handle on
+  another element retargets the subject under `EDIT-STRUCT-12`. Delete or the link context menu
+  removes the subject, never the comment. *design*
 
 ### 4.5 Text of names, actions, and labels — TEXT
 
@@ -426,6 +447,10 @@ the third is a derived display value the format does not store):
   the GUI settings hold; `--snap`, `--grid <n>` and the script verbs `snap on|off` and `grid <n>`
   set them for the run only, never persisted. A gesture log records a non-default snap state at its
   start and every change during the session, so a replay snaps as the recording did. *design*
+- `EDIT-TOOL-15` MUST [A]: the transition tool started on a comment (a body drag or one of its
+  boxes) draws a comment link: a release over an accepted target (`EDIT-STRUCT-12`) adds an
+  element subject with the points of `EDIT-EDGE-18`, a release anywhere else creates nothing,
+  and the tool reverts to select after one use. *design*
 
 ### 4.7 History — HIST
 
