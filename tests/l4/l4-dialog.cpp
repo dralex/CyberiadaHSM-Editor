@@ -26,6 +26,7 @@
 #include <QComboBox>
 #include <QFontComboBox>
 #include <QGridLayout>
+#include <QFileInfo>
 #include "cyberiadasm_model.h"
 #include "dialogs/open_file_dialog.h"
 #include "dialogs/save_file_dialog.h"
@@ -47,6 +48,7 @@ private slots:
 	void test_save_options();
 	void test_save_refused_format();
 	void test_export_image();
+	void test_export_default_name();
 	void test_action_dialog();
 	void test_transition_dialog();
 	void test_about_dialog();
@@ -214,6 +216,17 @@ void TestDialog::test_export_image()
 	QCOMPARE(fontCombo->fontFilters(), QFontComboBox::FontFilters(QFontComboBox::MonospacedFonts));
 	QVERIFY(!dlg.fontFamily().isEmpty());
 	QCOMPARE(dlg.fontFamily(), fontCombo->currentFont().family());
+}
+
+void TestDialog::test_export_default_name()
+{
+	// export proposes the diagram's base name (window slotFileExport): the dialog
+	// keeps it and its default suffix supplies the extension
+	ExportImageDialog dlg;
+	QString base = QFileInfo("diagrams/geometry.graphml").completeBaseName();
+	QCOMPARE(base, QString("geometry"));
+	dlg.selectFile(base);
+	QCOMPARE(QFileInfo(dlg.selectedFile()).completeBaseName(), QString("geometry"));
 }
 
 QTEST_MAIN(TestDialog)

@@ -718,6 +718,11 @@ void CyberiadaSMEditorWindow::slotFileSaveAs()
 void CyberiadaSMEditorWindow::slotFileExport()
 {
     ExportImageDialog dlg(this);
+    // propose the diagram's base name; the dialog's default suffix / filter adds
+    // the image extension (mirrors slotFileSaveAs)
+    if (current && current->hasFile()) {
+        dlg.selectFile(QFileInfo(current->filePath()).completeBaseName());
+    }
     if (dlg.exec() != QDialog::Accepted) { return; }
 
     QString fileName = dlg.selectedFile();
