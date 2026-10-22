@@ -172,8 +172,13 @@ private:
                                 const QPointF& start, const QPointF& end,
                                 bool* hasIntersections,
                                 Qt::KeyboardModifiers mods, LockedAxis locked) const;
+    // re-base a centre-relative endpoint after its source/target was resized:
+    // keep its absolute scene position, then re-attach it to the new border
     void updateCoordinates(CyberiadaSMEditorAbstractItem::CornerFlags side,
-                           QPointF& point, qreal d);
+                           QPointF& point, qreal d, const CyberiadaSMEditorAbstractItem* item);
+    // put a centre-relative point exactly on the border of a rect of the given
+    // half-extents (clamp inside, then snap to the nearest edge)
+    static void clampOntoBorder(QPointF& p, qreal hw, qreal hh);
     void movePolyline(QPointF delta);
 
     const Cyberiada::Transition* transition;

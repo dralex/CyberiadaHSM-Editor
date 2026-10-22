@@ -681,20 +681,39 @@ QPointF CyberiadaSMEditorTransitionItem::findIntersectionWithItem(const Cyberiad
     }
 }
 
-void CyberiadaSMEditorTransitionItem::updateCoordinates(CornerFlags side, QPointF& point, qreal d)
+void CyberiadaSMEditorTransitionItem::updateCoordinates(CornerFlags side, QPointF& point,
+                                                        qreal d, const CyberiadaSMEditorAbstractItem* item)
 {
-    if (point.x() < 0 && (side & CyberiadaSMEditorAbstractItem::CornerFlags::Right) == CyberiadaSMEditorAbstractItem::CornerFlags::Right) {
-        point -= QPointF(d, 0);
+    if (!item) return;
+    // 'd' is the CENTRE displacement on the flagged axis (not the edge delta, and
+    // it does not say which edge moved). Keeping the endpoint's ABSOLUTE scene
+    // position is rel -= centreDelta (abs = old_centre + rel; new_centre =
+    // old_centre + d). The handle path sends Right/Bottom with signed d; the
+    // containment-grow paths send the real side (incl. Left/Top) with positive d.
+    qreal cx = 0.0, cy = 0.0;
+    if (side & CyberiadaSMEditorAbstractItem::CornerFlags::Right)  cx += d;
+    if (side & CyberiadaSMEditorAbstractItem::CornerFlags::Left)   cx -= d;
+    if (side & CyberiadaSMEditorAbstractItem::CornerFlags::Bottom) cy += d;
+    if (side & CyberiadaSMEditorAbstractItem::CornerFlags::Top)    cy -= d;
+    point.rx() -= cx;
+    point.ry() -= cy;
+    // re-attach to the NEW border: a point on an unmoved (e.g. perpendicular)
+    // border keeps its place, while a point whose edge moved away is pulled back
+    QRectF r = item->sceneBoundingRect();   // already the new size at emit time
+    clampOntoBorder(point, r.width() / 2.0, r.height() / 2.0);
+}
+
+void CyberiadaSMEditorTransitionItem::clampOntoBorder(QPointF& p, qreal hw, qreal hh)
+{
+    if (hw <= 0.0 || hh <= 0.0) return;
+    qreal x = qBound(-hw, p.x(), hw);
+    qreal y = qBound(-hh, p.y(), hh);
+    if ((hh - qAbs(y)) <= (hw - qAbs(x))) {   // nearer the top/bottom edge -> snap y
+        y = (y >= 0.0) ? hh : -hh;
+    } else {                                  // nearer a side edge -> snap x
+        x = (x >= 0.0) ? hw : -hw;
     }
-    if (point.x() > 0 && (side & CyberiadaSMEditorAbstractItem::CornerFlags::Right) == CyberiadaSMEditorAbstractItem::CornerFlags::Right) {
-        point += QPointF(d, 0);
-    }
-    if (point.y() < 0 && (side & CyberiadaSMEditorAbstractItem::CornerFlags::Bottom) == CyberiadaSMEditorAbstractItem::CornerFlags::Bottom) {
-        point -= QPointF(0, d);
-    }
-    if (point.y() > 0 && (side & CyberiadaSMEditorAbstractItem::CornerFlags::Bottom) == CyberiadaSMEditorAbstractItem::CornerFlags::Bottom) {
-        point += QPointF(0, d);
-    }
+    p = QPointF(x, y);
 }
 
 void CyberiadaSMEditorTransitionItem::movePolyline(QPointF delta)
@@ -831,16 +850,20 @@ void CyberiadaSMEditorTransitionItem::onTargetGeomertyChanged()
 void CyberiadaSMEditorTransitionItem::onSourceSizeChanged(CyberiadaSMEditorAbstractItem::CornerFlags side, qreal d)
 {
     prepareGeometryChange();
+    // an auto-placed endpoint (no stored point) is recomputed every repaint by
+    // sourcePoint(), so it needs no rebasing and must not be materialised here
+    if (!transition->has_geometry_source_point()) return;
     QPointF newPosition = sourcePoint();
-    updateCoordinates(side, newPosition, d);
+    updateCoordinates(side, newPosition, d, source());
     setSourcePoint(newPosition);
 }
 
 void CyberiadaSMEditorTransitionItem::onTargetSizeChanged(CyberiadaSMEditorAbstractItem::CornerFlags side, qreal d)
 {
     prepareGeometryChange();
+    if (!transition->has_geometry_target_point()) return;
     QPointF newPosition = targetPoint();
-    updateCoordinates(side, newPosition, d);
+    updateCoordinates(side, newPosition, d, target());
     setTargetPoint(newPosition);
 }
 

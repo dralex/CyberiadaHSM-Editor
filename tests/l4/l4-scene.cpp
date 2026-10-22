@@ -144,6 +144,7 @@ private slots:
 	void test_component_comment_hidden();
 	void test_select_over_composite();
 	void test_resize_holds_children();
+	void test_resize_holds_source_points();
 	void test_clear_border_holds_content();
 	void test_snap_border_rule();
 	void test_snap_endpoint_drag();
@@ -674,6 +675,71 @@ void TestScene::test_border_resize()
 	QCOMPARE(element->get_geometry_rect().width, before.width + 27);
 	QCOMPARE(element->get_geometry_rect().height, after.height);
 	QVERIFY(model->deleteAction(index, 0));
+}
+
+void TestScene::test_resize_holds_source_points()
+{
+	// resizing a state holds an outgoing transition's source point in place while
+	// it is still on the (new) border, instead of sliding it along
+	SettingsManager::instance().setSnapMode(false);
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+
+	CyberiadaSMEditorStateItem* src =
+		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0-0-1"));
+	QVERIFY(src);
+	const Cyberiada::Transition* e2 =
+		static_cast<const Cyberiada::Transition*>(model->idToElement("edge-2"));
+	QVERIFY(e2);
+	QModelIndex e2idx = model->elementToIndex(model->idToElement("edge-2"));
+
+	// a point on the TOP border of the source, at the horizontal centre
+	QRectF box0 = src->sceneBoundingRect();
+	qreal halfH = box0.height() / 2.0;
+	Cyberiada::Point tgt = e2->has_geometry_target_point() ? e2->get_target_point() : Cyberiada::Point();
+	QVERIFY(model->updateGeometry(e2idx, Cyberiada::Point(0, -halfH), tgt));
+	QPointF oldAbs = box0.center() + QPointF(0, -halfH);
+	QVERIFY(onBorder(box0, oldAbs));
+
+	// widen the source by dragging its right border (its centre moves right)
+	scene->clearSelection();
+	QPointF onRight(box0.right() - 3, box0.center().y());
+	mouse(QEvent::GraphicsSceneMousePress, onRight, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, onRight + QPointF(40, 0), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, onRight + QPointF(40, 0), Qt::NoButton);
+
+	// the top-border point (a perpendicular border, unmoved) keeps its absolute
+	// position and stays on the new border
+	QRectF box1 = src->sceneBoundingRect();
+	QVERIFY(box1.width() > box0.width());
+	QPointF newAbs = box1.center() + QPointF(e2->get_source_point().x, e2->get_source_point().y);
+	QVERIFY(QLineF(oldAbs, newAbs).length() < 2.0);
+	QVERIFY(onBorder(box1, newAbs));
+
+	// a point on the RIGHT border stays attached to the new border after the drag
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	QApplication::sendEvent(scene, &activate);
+	src = dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0-0-1"));
+	QVERIFY(src);
+	e2 = static_cast<const Cyberiada::Transition*>(model->idToElement("edge-2"));
+	e2idx = model->elementToIndex(model->idToElement("edge-2"));
+	box0 = src->sceneBoundingRect();
+	qreal halfW = box0.width() / 2.0;
+	tgt = e2->has_geometry_target_point() ? e2->get_target_point() : Cyberiada::Point();
+	QVERIFY(model->updateGeometry(e2idx, Cyberiada::Point(halfW, 0), tgt));
+
+	scene->clearSelection();
+	onRight = QPointF(box0.right() - 3, box0.center().y());
+	mouse(QEvent::GraphicsSceneMousePress, onRight, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, onRight + QPointF(40, 0), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, onRight + QPointF(40, 0), Qt::NoButton);
+
+	box1 = src->sceneBoundingRect();
+	newAbs = box1.center() + QPointF(e2->get_source_point().x, e2->get_source_point().y);
+	QVERIFY(onBorder(box1, newAbs));   // still attached to the resized border
 }
 
 void TestScene::test_resize_snap()
