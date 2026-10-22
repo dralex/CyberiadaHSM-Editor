@@ -46,6 +46,7 @@ private slots:
 	void test_recent_files();
 	void test_menu_refactor();
 	void test_edit_action_gating();
+	void test_delete_component_formal_from_tree();
 	void test_pane_toggles();
 	void test_pane_persist();
 
@@ -314,6 +315,40 @@ void TestWindow::test_edit_action_gating()
 	QCoreApplication::processEvents();
 	QVERIFY(!window->actionCopy->isEnabled());
 	QVERIFY(window->actionDeleteElement->isEnabled());
+}
+
+void TestWindow::test_delete_component_formal_from_tree()
+{
+	// a CGML_COMPONENT formal comment without geometry has no scene item, yet it
+	// is shown in the tree and must be deletable there with Del (the window slot
+	// falls back to the tree's current index)
+	QVERIFY(window->openDocument("diagrams/geometry.graphml"));
+	CyberiadaSMEditorScene* scene = window->getScene();
+	scene->clearSelection();
+
+	Cyberiada::Element* smEl = model->indexToElement(model->firstSMIndex());
+	Cyberiada::ElementCollection* sm = dynamic_cast<Cyberiada::ElementCollection*>(smEl);
+	QVERIFY(sm);
+	Cyberiada::Comment* comp = model->newFormalComment(sm, "c1/ Motor");
+	QVERIFY(comp);
+	comp->set_name("CGML_COMPONENT c1");            // a component descriptor, no geometry
+	QVERIFY(CyberiadaSMModel::isComponentComment(comp));
+	QVERIFY(!comp->has_geometry());
+	Cyberiada::ID id = comp->get_id();
+
+	// it is hidden from the scene: no graphics item exists for it
+	QVERIFY(!scene->getMap().value(id));
+
+	// selecting it in the tree enables Delete even with no scene selection
+	window->SMView->setCurrentIndex(model->elementToIndex(comp));
+	QCoreApplication::processEvents();
+	QVERIFY(scene->selectedItems().isEmpty());
+	QVERIFY(window->actionDeleteElement->isEnabled());
+
+	// Del removes it from the model
+	window->actionDeleteElement->trigger();
+	QCoreApplication::processEvents();
+	QVERIFY(!model->idToElement(QString::fromStdString(id)));
 }
 
 // EDIT-UI-6: the tree and the properties docks follow their View entries and

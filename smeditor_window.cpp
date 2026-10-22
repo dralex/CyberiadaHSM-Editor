@@ -136,6 +136,9 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     connect(actionCut, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotCut);
     connect(actionCopy, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotCopy);
     connect(actionPaste, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotPaste);
+    // a tree selection refreshes the edit actions too: an element shown in the
+    // tree but not on the scene (a component formal comment) still drives Delete
+    connect(SMView, &CyberiadaSMView::currentIndexActivated, this, &CyberiadaSMEditorWindow::updateEditActions);
     connect(actionReconstructGeometry, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotReconstructGeometry);
     connect(actionUpdateGeometry, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotUpdateGeometry);
     // the undo group speaks for the active document's stack
@@ -397,10 +400,18 @@ void CyberiadaSMEditorWindow::updateEditActions()
     // a document locked by a plugin run is read-only like an inspected one (EDIT-PLUG-22)
     bool inspector = SettingsManager::instance().getInspectorMode() || model()->isLocked();
     bool hasElement = (el != nullptr);
+    // the Delete action also reaches an element shown in the tree but not on the
+    // scene (a component formal comment, possibly without geometry): fall back to
+    // the tree's current element when the scene has no selection
+    Cyberiada::Element* del = el;
+    if (!del && SMView->currentIndex().isValid()) {
+        del = model()->indexToElement(SMView->currentIndex());
+    }
+    bool deletable = del && dynamic_cast<Cyberiada::ElementCollection*>(del->get_parent());
     bool copyable = hasElement && el->get_type() != Cyberiada::elementSM;   // an SM is not copyable
     actionCut->setEnabled(copyable && !inspector);
     actionCopy->setEnabled(copyable && !inspector);
-    actionDeleteElement->setEnabled(hasElement && !inspector);
+    actionDeleteElement->setEnabled(deletable && !inspector);
     actionPaste->setEnabled(clipboardElement != nullptr && !inspector);
 
     // an entry/exit point needs a container with a border to lie on: an explicit
@@ -986,7 +997,20 @@ void CyberiadaSMEditorWindow::slotNewChoise() {}
 
 void CyberiadaSMEditorWindow::slotDeleteElement()
 {
-    if (scene()->selectedItems().isEmpty()) return;
+    if (scene()->selectedItems().isEmpty()) {
+        // an element shown in the tree but not on the scene (a component formal
+        // comment, possibly without geometry) is deleted by its tree index, with
+        // the same semantics as the scene path (an SM clears only its border)
+        QModelIndex idx = SMView->currentIndex();
+        Cyberiada::Element* el = idx.isValid() ? model()->indexToElement(idx) : nullptr;
+        if (!el || !dynamic_cast<Cyberiada::ElementCollection*>(el->get_parent())) return;
+        if (el->get_type() == Cyberiada::elementSM) {
+            model()->clearStateMachineBorder(idx);
+            return;
+        }
+        model()->deleteElement(idx);
+        return;
+    }
     CyberiadaSMEditorAbstractItem* itemToDelete = dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene()->selectedItems().first());
     if (itemToDelete) {
         Cyberiada::Element* el = itemToDelete->getElement();
