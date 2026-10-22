@@ -1628,7 +1628,7 @@ void TransitionAction::focusOutEvent(QFocusEvent *event)
     // commit the action text first (it re-syncs the label from the model), then
     // store the label box sized from that text, so a freshly typed label is a rect
     transition->model->updateAction(idx, 0, getTrigger(), getGuard(), getBehaviour());
-    persistLabelPosition();
+    persistLabelPosition(true);   // re-fit the box to the edited text
 }
 
 void TransitionAction::mousePressEvent(QGraphicsSceneMouseEvent *event)
@@ -1669,7 +1669,7 @@ void TransitionAction::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
     EditableTextItem::mouseReleaseEvent(event);
 }
 
-void TransitionAction::persistLabelPosition()
+void TransitionAction::persistLabelPosition(bool refitWidth)
 {
     CyberiadaSMEditorTransitionItem* t = dynamic_cast<CyberiadaSMEditorTransitionItem*>(parentItem());
     if (!t || !t->model) return;
@@ -1680,10 +1680,19 @@ void TransitionAction::persistLabelPosition()
         return;
     }
     // the label is a box: its centre relative to the source centre (the origin
-    // updateActionPosition reads back), the current width (natural on the first
-    // migration from a point), and the wrapped height. A point label becomes a
-    // rect the first time it is moved or edited.
-    qreal w = (textWidth() > 0) ? textWidth() : boundingRect().width();
+    // updateActionPosition reads back), the width, and the wrapped height. A point
+    // label becomes a rect the first time it is moved or edited.
+    qreal w;
+    if (refitWidth) {
+        // an in-place text edit re-fits the box to the new text: measure the
+        // natural (unwrapped) width so the box shrinks when the text shrinks and
+        // grows when it grows. updateActionPosition re-pinned textWidth() to the
+        // OLD stored width during the model sync, so textWidth() cannot be reused.
+        setTextWidth(-1);
+        w = boundingRect().width();
+    } else {
+        w = (textWidth() > 0) ? textWidth() : boundingRect().width();   // a drag keeps the width
+    }
     QPointF centre = pos() + boundingRect().center() - t->sourceCenter();
     t->model->updateLabel(index, Cyberiada::Rect(centre.x(), centre.y(), w, boundingRect().height()));
 }

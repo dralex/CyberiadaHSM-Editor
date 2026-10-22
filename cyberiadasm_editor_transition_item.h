@@ -256,7 +256,7 @@ protected:
     void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
 
 private:
-    void persistLabelPosition();
+    void persistLabelPosition(bool refitWidth = false);
     QPointF dragLast;
     bool dragging = false;
 };

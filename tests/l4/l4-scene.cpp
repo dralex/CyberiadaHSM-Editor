@@ -133,6 +133,7 @@ private slots:
 	void test_title_drag_through();
 	void test_vertex_name();
 	void test_label_rect();
+	void test_label_shrinks_on_edit();
 	void test_meta_locked();
 	void test_comment_relayout();
 	void test_history();
@@ -1004,6 +1005,49 @@ void TestScene::test_label_rect()
 	scene->migrateLabelsToRect();
 	QVERIFY(e2->has_geometry_label_rect());
 	QVERIFY(!e2->has_geometry_label_point());
+}
+
+void TestScene::test_label_shrinks_on_edit()
+{
+	// editing a label re-fits its box to the new text: a shorter text shrinks the
+	// stored width (it used to stick at the old width), a longer text grows it
+	QVERIFY(model->loadDocument("diagrams/label-geometry.graphml"));
+	scene->loadScene();
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+
+	QModelIndex idx = model->elementToIndex(model->idToElement("n0-n1"));
+	// start from a deliberately wide box
+	QVERIFY(model->updateLabel(idx, Cyberiada::Rect(0, 0, 300, 27)));
+	const Cyberiada::Transition* t =
+		static_cast<const Cyberiada::Transition*>(model->idToElement("n0-n1"));
+	QVERIFY(t->has_geometry_label_rect());
+	QCOMPARE(t->get_label_rect().width, 300.0);
+
+	CyberiadaSMEditorTransitionItem* tr =
+		dynamic_cast<CyberiadaSMEditorTransitionItem*>(scene->getMap().value("n0-n1"));
+	QVERIFY(tr);
+	EditableTextItem* label = nullptr;
+	for (QGraphicsItem* c : tr->childItems())
+		if ((label = dynamic_cast<EditableTextItem*>(c))) break;
+	QVERIFY(label);
+
+	// a short text: the box shrinks to fit (well below the old 300 px)
+	label->startEditing();
+	label->setPlainText("A");
+	label->clearFocus();
+	QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+	QVERIFY(t->has_geometry_label_rect());
+	qreal widthShort = t->get_label_rect().width;
+	QVERIFY(widthShort > 0.0);
+	QVERIFY(widthShort < 300.0);
+
+	// a longer text grows the box again (the width tracks the text)
+	label->startEditing();
+	label->setPlainText("LONGEVENT / doSomethingQuiteLong()");
+	label->clearFocus();
+	QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+	QVERIFY(t->get_label_rect().width > widthShort);
 }
 
 void TestScene::test_comment_relayout()
