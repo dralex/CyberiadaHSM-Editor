@@ -925,6 +925,7 @@ void CyberiadaSMEditorScene::addSMItem(Cyberiada::ElementType type)
 
     CyberiadaSMEditorAbstractItem* parentCItem = nullptr;
     Cyberiada::ElementCollection* parentColl = nullptr;
+    bool createdBorderlessSM = false;
     if (selectedItems().size() > 0) {
         QGraphicsItem* item = selectedItems().first();
         if (item) {
@@ -944,6 +945,7 @@ void CyberiadaSMEditorScene::addSMItem(Cyberiada::ElementType type)
             Cyberiada::Element* element = model->newStateMachine(tr("New State Machine").toStdString());
             if (!element) return;
             currentSM = static_cast<Cyberiada::StateMachine*>(element);
+            createdBorderlessSM = true;
             // the row insert already built and mapped the SM item; reuse it
             parentCItem = dynamic_cast<CyberiadaSMEditorAbstractItem*>(elementIdToItemMap.value(element->get_id()));
             parentColl = static_cast<Cyberiada::ElementCollection*>(element);
@@ -965,7 +967,14 @@ void CyberiadaSMEditorScene::addSMItem(Cyberiada::ElementType type)
     }
 
     QPointF center;
-    if (parentCItem) {
+    if (createdBorderlessSM) {
+        // empty canvas: the first element lands in the centre of what the user
+        // sees, not at the scene origin. Map the viewport centre into the new
+        // (origin) machine's frame, as createByTool does for a drawn element
+        QGraphicsItem* gp = graphicsParentFor(parentColl);
+        QPointF vc = viewportCentre();
+        center = gp ? gp->mapFromScene(vc) : vc;
+    } else if (parentCItem) {
         center = freePlace(parentColl, QSizeF(200, 100));
     } else {
         center = sceneRect().center();
@@ -1224,6 +1233,16 @@ void CyberiadaSMEditorScene::extendStateMachineForChild(CyberiadaSMEditorAbstrac
         // the centre is kept, so the existing children do not move
         model->updateGeometry(smItem->getIndex(), Cyberiada::Rect(border.x, border.y, newW, newH));
     }
+}
+
+QPointF CyberiadaSMEditorScene::viewportCentre() const
+{
+    const QList<QGraphicsView*> vs = views();
+    if (!vs.isEmpty() && vs.first() && vs.first()->viewport()) {
+        QGraphicsView* v = vs.first();
+        return v->mapToScene(v->viewport()->rect().center());
+    }
+    return sceneRect().center();   // batch / headless: the old behaviour (origin)
 }
 
 // the first slot of the parent (the origin, then to the right, then the

@@ -147,6 +147,9 @@ private:
     QGraphicsItem* addElementItem(Cyberiada::Element* element, QGraphicsItem* parent_item);
     QGraphicsItem* graphicsParentFor(const Cyberiada::Element* parent);
     QPointF freePlace(const Cyberiada::ElementCollection* parent, const QSizeF& size);
+    // the centre of the attached view's viewport in scene coordinates, or the
+    // scene-rect centre when no view is attached (batch/headless)
+    QPointF viewportCentre() const;
     // a centre for a new state-machine border that overlaps no existing machine
     QPointF freeStateMachinePlace(const QSizeF& size);
     // grow a bordered state machine (symmetrically, keeping its centre) so a

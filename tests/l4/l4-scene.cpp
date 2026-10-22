@@ -68,6 +68,7 @@ private slots:
 	void test_box_transition();
 	void test_auto_attach();
 	void test_new_element_place();
+	void test_new_state_empty_canvas_centres();
 	void test_undo_gesture();
 	void test_sm_border();
 	void test_new_state();
@@ -1234,6 +1235,47 @@ void TestScene::test_new_element_place()
 		Cyberiada::Element* e = dynamic_cast<CyberiadaSMEditorAbstractItem*>(item)->getElement();
 		QVERIFY(model->deleteElement(model->elementToIndex(e)));
 	}
+}
+
+void TestScene::test_new_state_empty_canvas_centres()
+{
+	// a state created on an empty canvas is centred in the current viewport, not
+	// at the scene origin (which rendered in the top-left of the view)
+	CyberiadaSMModel m(this);
+	CyberiadaSMEditorScene sc(&m, this);   // empty document: no state machine yet
+
+	QGraphicsView view(&sc);
+	view.resize(1200, 800);
+	view.show();
+	QVERIFY(QTest::qWaitForWindowExposed(&view));
+	view.setTransform(QTransform());
+	view.centerOn(600, 400);   // look away from the origin
+
+	QPointF vc = view.mapToScene(view.viewport()->rect().center());
+	QList<Cyberiada::ID> before = sc.getMap().keys();
+	sc.addSMItem(Cyberiada::elementSimpleState);
+
+	QGraphicsItem* fresh = nullptr;
+	for (const Cyberiada::ID& id : sc.getMap().keys()) {
+		QGraphicsItem* it = sc.getMap().value(id);
+		if (!before.contains(id) && dynamic_cast<CyberiadaSMEditorStateItem*>(it)) { fresh = it; break; }
+	}
+	QVERIFY(fresh);
+	QVERIFY(QLineF(fresh->sceneBoundingRect().center(), vc).length() < 5.0);
+
+	// headless (no view): the placement falls back to the scene-rect centre
+	CyberiadaSMModel m2(this);
+	CyberiadaSMEditorScene sc2(&m2, this);
+	QPointF fallback = sc2.sceneRect().center();
+	QList<Cyberiada::ID> before2 = sc2.getMap().keys();
+	sc2.addSMItem(Cyberiada::elementSimpleState);
+	QGraphicsItem* fresh2 = nullptr;
+	for (const Cyberiada::ID& id : sc2.getMap().keys()) {
+		QGraphicsItem* it = sc2.getMap().value(id);
+		if (!before2.contains(id) && dynamic_cast<CyberiadaSMEditorStateItem*>(it)) { fresh2 = it; break; }
+	}
+	QVERIFY(fresh2);
+	QVERIFY(QLineF(fresh2->sceneBoundingRect().center(), fallback).length() < 5.0);
 }
 
 void TestScene::test_undo_gesture()
