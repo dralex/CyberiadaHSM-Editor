@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.28 (2026-10-15)
+**Document version:** 0.29 (2026-10-22)
 
 **Related authorities:**
 
@@ -251,7 +251,10 @@ the third is a derived display value the format does not store):
 
 - `EDIT-EDGE-1` MUST [U]: an endpoint of a rect elements (a state, a comment) lies on the
   elements border. An endpoint without a stored point lies on the border of its node
-  toward the other end (a vertex at its centre), within tolerance. *design*
+  toward the other end (a vertex at its centre), within tolerance. Resizing a node holds each
+  attached endpoint at its absolute position while its border did not move (a point on a
+  perpendicular border stays put), and keeps an endpoint whose edge moved attached to the new
+  border. *design*
 - `EDIT-EDGE-2` MUST [U]: an endpoint of a point-based circle elements (initial
   pseudostate, final state, history pseudostate, or entry/exit point) lies on the border of the
   drawn element, not the center. *design*
@@ -276,7 +279,9 @@ the third is a derived display value the format does not store):
 - `EDIT-EDGE-12` SHOULD [U]: a transition's label sits near its path by default.
 - `EDIT-EDGE-13` SHOULD [A]: the label position and size can be changed — dragged to move,
   resized by the corner handles under the selection tool, edited in the properties view, and
-  driven by the `label <x y w h>` verb. *design*
+  driven by the `label <x y w h>` verb. An in-place text edit re-fits the box to the new text's
+  natural width (it shrinks as well as grows); a manual corner-handle width is superseded by the
+  next text edit. *design*
 - `EDIT-EDGE-14` MUST [U]: a transition with a colour draws its line and arrow in it; the
   selection highlight overrides it while selected. *design*
 - `EDIT-EDGE-15` MUST [A]: with snap on, an endpoint placed by a drag or a release bind on a
@@ -384,7 +389,8 @@ the third is a derived display value the format does not store):
 
 - `EDIT-TOOL-1` MUST [A]: a creation tool click creates exactly one element of
   its kind, parented to the element under the press point (a state or a state machine).
-  *design*
+  The first element created on an empty canvas is centred in the current viewport (the
+  scene centre when no view is attached), not at the scene origin. *design*
 - `EDIT-TOOL-2` MUST [A]: a rect tool draws a rubber-band rect or places a
   default size on a bare click. *design*
 - `EDIT-TOOL-3` MUST [A]: a creation tool reverts to select after one use.
@@ -437,8 +443,8 @@ the third is a derived display value the format does not store):
 - `EDIT-IO-1` MUST [I]: save then reopen yields the same model and geometry, within the
   format's expressiveness. *PNST 1044.* Note: the format does not distinguish local and
   external transitions, so the transition type is excluded from the identity.
-- `EDIT-IO-2` MUST [C]: export to PNG and SVG succeeds for any valid document.
-  *design*
+- `EDIT-IO-2` MUST [C]: export to PNG and SVG succeeds for any valid document. The export
+  dialog proposes the open diagram's file base name as the default image name. *design*
 - `EDIT-IO-3` MUST [I]: geometry round-trips losslessly *design.*
 - `EDIT-IO-4` MUST [I]: an element's colour is a persisted attribute and round-trips
   through save and reopen. *PNST 1044.*
@@ -472,8 +478,9 @@ the third is a derived display value the format does not store):
 - `EDIT-META-6` MUST [A]: a `CGML_COMPONENT` formal comment is a machine-readable component
   descriptor; it is not drawn on the scene by default — even when it carries geometry (the geometry
   reconstruction lays one out) — and is drawn only while the *show component comments* preference is
-  on. It is always present in the element tree and editable through the properties. A sibling of
-  `EDIT-META-1`, which keeps the `CGML_META` node off the scene unconditionally. *design*
+  on. It is always present in the element tree and editable through the properties; it is also
+  deletable from the tree with Del even when it has no scene item (no geometry, or hidden). A
+  sibling of `EDIT-META-1`, which keeps the `CGML_META` node off the scene unconditionally. *design*
 
 ### 4.10 Inspection mode — INSPECT
 
