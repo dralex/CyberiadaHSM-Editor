@@ -132,13 +132,32 @@ def no_dangling(dump):                                   # EDIT-STRUCT-5 / 9
                                 % (e.id, to))
 
 
+def _fragment_fields(target, kind):
+    """The fields a name or data fragment may lie in (EDIT-STRUCT-12): a transition's
+    label either way, else the name, a comment's body or the actions' fields."""
+    if target.kind == D.KIND_TRANSITION:
+        a = target.action
+        fields = [a.trigger, a.guard, a.behavior] if a else []
+    elif kind == "name":
+        fields = [target.name]
+    elif target.kind in D.COMMENT_KINDS:
+        fields = [target.body]
+    else:
+        fields = []
+        for a in target.actions:
+            if a.type == D.ACTION_TRANSITION:
+                fields += [a.trigger, a.guard]
+            fields.append(a.behavior)
+    return [f for f in fields if f]
+
+
 def subject_targets(dump):                               # EDIT-STRUCT-12
     doc = dump.document
     if doc is None:
         return
     ids = doc.by_id()
     for e in doc.walk():
-        for _type, to, _frag in e.subjects:
+        for type_, to, frag in e.subjects:
             target = ids.get(to)
             if target is None:
                 continue                                     # no_dangling reports it
@@ -148,6 +167,10 @@ def subject_targets(dump):                               # EDIT-STRUCT-12
                 yield Violation("STRUCT-12", "comment %s comments the state machine %s" % (e.id, to))
             elif _machine_of(target) is not _machine_of(e):
                 yield Violation("STRUCT-12", "comment %s comments %s of another machine" % (e.id, to))
+            elif type_ in ("name", "data") and not any(
+                    frag and frag in f for f in _fragment_fields(target, type_)):
+                yield Violation("STRUCT-12", "comment %s: the %s fragment '%s' lies in no field of %s"
+                                % (e.id, type_, frag, to))
 
 
 def link_starts_on_comment(dump):                        # EDIT-EDGE-17
@@ -163,6 +186,33 @@ def link_starts_on_comment(dump):                        # EDIT-EDGE-17
             if not (inside and on_edge):
                 yield Violation("EDGE-17", "link %d of comment %s starts off its border at (%g; %g)"
                                 % (link.index, item.id, px, py))
+
+
+def fragment_on_underline(dump):                         # EDIT-EDGE-21
+    """A drawn fragment link ends at the middle of its first underline segment,
+    and with the == text boxes every segment lies in a text box of its target."""
+    items = dump.scene_items()
+    for item in items.values():
+        for link in item.links:
+            if not link.underline:
+                continue
+            x1, y, x2 = link.underline[0]
+            ex, ey = link.end
+            if abs(ex - (x1 + x2) / 2.0) > TOL or abs(ey - y) > TOL:
+                yield Violation("EDGE-21", "link %d of comment %s ends at (%g; %g), off its underline"
+                                % (link.index, item.id, ex, ey))
+            target = items.get(link.target)
+            boxes = []
+            if target is not None:
+                ox, oy = target.origin
+                boxes = [(ox + t.pos[0], oy + t.pos[1], t.size[0], t.size[1])
+                         for t in dump.texts if t.id == link.target]
+            if not boxes:
+                continue
+            for a, sy, b in link.underline:
+                if not any(_inside((min(a, b), sy, abs(b - a), 0.0), box, tol=1.5) for box in boxes):
+                    yield Violation("EDGE-21", "link %d of comment %s underlines (%g..%g; %g) outside "
+                                    "the text of %s" % (link.index, item.id, a, b, sy, link.target))
 
 
 def one_initial_per_parent(dump):                        # EDIT-SEM-1
@@ -437,7 +487,7 @@ def machine_names(dump):                                 # EDIT-META-5
 # hard laws run always-on and register as defects; gated laws are implemented
 # and tested but not yet registered (pending an EDITOR-SPEC decision)
 HARD = [unique_ids, no_cycle, endpoints_same_machine, composite_by_children,
-        no_dangling, subject_targets, link_starts_on_comment, one_initial_per_parent, one_history_per_kind, endpoint_kinds, submachine_children,
+        no_dangling, subject_targets, link_starts_on_comment, fragment_on_underline, one_initial_per_parent, one_history_per_kind, endpoint_kinds, submachine_children,
         meta_hidden, containment, no_overlap, points_named, submachine_reference,
         single_behaviour_blocks, event_names, event_handling, machine_names,
         endpoint_on_border]

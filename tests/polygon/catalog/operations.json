@@ -524,6 +524,14 @@
       "family": "gesture"
     },
     {
+      "verb": "comment-selection",
+      "args": "[<comment>]",
+      "effect": "end the edit and link the comment, or a new one beside the element, to the fragment selected in one field of the edited text",
+      "targets": [],
+      "form": "gesture",
+      "family": "gesture"
+    },
+    {
       "verb": "drag-state",
       "args": "",
       "effect": "a state dragged by its body: press inside, drag, release",

@@ -42,7 +42,8 @@ CLIP = {"copy", "cut", "paste"}
 HIST = {"undo", "redo"}
 EDGE = {"new-transition", "polyline", "label"}            # semantic transition work
 GEST = {"press", "drag", "release", "click", "double-click", "tool",
-        "delete-selected", "edit", "edit-text", "type", "key", "select-all", "commit"}
+        "delete-selected", "edit", "edit-text", "type", "key", "select-all", "commit",
+        "comment-selection"}
 MODEL = CREATE | REFINE | RESTRUCT | CLIP | HIST | EDGE   # everything not a gesture
 
 

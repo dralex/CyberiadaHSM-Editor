@@ -114,6 +114,56 @@ class LawTest(unittest.TestCase):
         note.subjects = [("element", "w0", "")]
         self.assertEqual(reqs(d), ["STRUCT-12"])
 
+    def test_fragment_in_one_field(self):
+        # STRUCT-12: a fragment lies inside one field of its target
+        note = node(D.KIND_COMMENT, "c0")
+        state = node(D.KIND_SIMPLE, "s0", "Moving")
+        state.actions = [D.Action(D.ACTION_ENTRY, behavior="motor.on()"),
+                         D.Action(D.ACTION_TRANSITION, "TIMEOUT", "count > 3", "stop()")]
+        d = wrap([state, note])
+        for kind, frag in (("name", "Mov"), ("data", "count"), ("data", "stop()"), ("data", "motor")):
+            note.subjects = [(kind, "s0", frag)]
+            self.assertEqual(reqs(d), [], frag)
+        for kind, frag in (("name", "motor"), ("data", "TIMEOUT [count"), ("data", "entry/"),
+                           ("data", "Moving")):
+            note.subjects = [(kind, "s0", frag)]
+            self.assertEqual(reqs(d), ["STRUCT-12"], frag)
+        # a transition has no name: both kinds look into its label
+        t = D.Element(kind=D.KIND_TRANSITION, id="t0", source="s0", target="s0",
+                      action=D.Action(D.ACTION_TRANSITION, "EV", "g", "go()"))
+        d.document.root.children[0].children.append(t)
+        t.parent = d.document.root.children[0]
+        note.subjects = [("name", "t0", "EV"), ("data", "t0", "go()")]
+        self.assertEqual(reqs(d), [])
+        note.subjects = [("data", "t0", "EV [g")]
+        self.assertEqual(reqs(d), ["STRUCT-12"])
+
+    def test_fragment_on_underline(self):
+        # EDGE-21: a drawn fragment link ends at the middle of its first underline
+        # segment, which lies in a text box of its target
+        d = D.parse_dump((GOOD / "subject-fragment-output.txt").read_text())
+        self.assertEqual(reqs(d), [])
+        link = next(l for l in d.scene_items()["n2"].links if l.fragment == "stop()")
+        x1, y, x2 = link.underline[0]
+        # the dump rounds the ends and the segment to 2 decimals
+        self.assertAlmostEqual(link.end[0], (x1 + x2) / 2.0, delta=0.01)
+        self.assertEqual(link.end[1], y)
+        link.end = (x1, y)
+        self.assertEqual(reqs(d), ["EDGE-21"])
+        link.end = ((x1 + x2) / 2.0, y)
+        # a text box of the target holds the underline, a box elsewhere does not
+        for other in d.scene_items()["n2"].links:
+            if other is not link:
+                other.underline = []
+        ox, oy = d.scene_items()["n0"].origin
+        box = D.TextItem(kind="Simple State", id="n0", role="action", family="", points=10,
+                         bold=False, pos=(x1 - ox - 2, y - oy - 10), abs=(0.0, 0.0),
+                         size=(x2 - x1 + 4, 14), text="stop()")
+        d.texts = [box]
+        self.assertEqual(reqs(d), [])
+        box.pos = (box.pos[0] + 300, box.pos[1])
+        self.assertEqual(reqs(d), ["EDGE-21"])
+
     def test_link_starts_on_comment(self):
         # EDGE-17: a drawn link starts on the border of its comment
         d = D.parse_dump((GOOD / "comment-transition-output.txt").read_text())

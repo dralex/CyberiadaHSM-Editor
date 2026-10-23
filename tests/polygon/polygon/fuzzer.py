@@ -284,6 +284,18 @@ class Fuzzer:
         role = "action 0" if want == "action" else want
         return ["edit-text %s %s %s" % (t.id, role, value)], "transition" if want == "label" else "state"
 
+    def gen_comment_selection(self, dump):
+        """A state title or a comment body opened, selected whole and commented
+        by a new comment beside its element (EDIT-TOOL-17)."""
+        options = [t for t in dump.texts
+                   if (t.fact_role == "title" and t.kind in D.STATE_KINDS) or
+                   (t.fact_role == "body" and t.kind in D.COMMENT_KINDS)]
+        t = self.pick(options)
+        if t is None or not t.plain().strip():
+            return None
+        role = "title" if t.fact_role == "title" else "body"
+        return ["edit %s %s" % (t.id, role), "select-all", "comment-selection"], "comment"
+
     # --- the gesture forms -------------------------------------------------
 
     def gen_gesture(self, verb, dump):
@@ -338,7 +350,7 @@ class Fuzzer:
     MANIPULATIONS = ("drag-state", "resize-state", "resize-comment", "click-delete", "double-click-action",
                      "edit-title", "edit-action", "edit-label", "edit-body",
                      "add-point", "move-point", "remove-point", "move-endpoint",
-                     "copy-paste", "cut-paste", "undo", "redo")
+                     "copy-paste", "cut-paste", "undo", "redo", "comment-selection")
 
     def actions(self):
         """The names the fuzzer chooses among: the creation tools, the
@@ -359,6 +371,8 @@ class Fuzzer:
             return self.emit_creation(tool, dump)
         if name in ("edit-title", "edit-action", "edit-label", "edit-body"):
             return self.gen_text(name, dump)
+        if name == "comment-selection":
+            return self.gen_comment_selection(dump)
         if name in ("add-point", "move-point", "remove-point", "move-endpoint"):
             return self.gen_edge(name, dump)
         if name in ("undo", "redo"):
