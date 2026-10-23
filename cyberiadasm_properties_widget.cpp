@@ -39,6 +39,7 @@
 #include "code_highlighter.h"
 #include "dialogs/multilinetextdialog.h"
 #include "subject_fragment.h"
+#include "dialogs/fragmentdialog.h"
 
 CyberiadaSMPropertiesWidget::CyberiadaSMPropertiesWidget(QWidget *parent):
 	QtTreePropertyBrowser(parent), model(NULL), element(NULL)
@@ -49,7 +50,7 @@ CyberiadaSMPropertiesWidget::CyberiadaSMPropertiesWidget(QWidget *parent):
 		{propBody,                 propEditorMultilineString,   tr("Body", "Property name")},
 		{propColor,                propEditorColor,             tr("Color", "Property name")},
 		{propFormat,               propEditorFormatType,        tr("Format", "Property name")},
-		{propFragment,             propEditorString,            tr("Fragment", "Property name")},
+		{propFragment,             propEditorMultilineString,   tr("Fragment", "Property name")},
 		{propGroupAction,          propEditorGroup,             tr("Action", "Property name")},
 		{propGroupActions,         propEditorGroup,             tr("Actions", "Property name")},
 		{propGroupComment,         propEditorGroup,             tr("Comment", "Property name")},
@@ -429,6 +430,14 @@ void CyberiadaSMPropertiesWidget::editMultilineProperty(QtProperty* property)
     const CodeLanguage* language = NULL;
     CodeMarkup markup = codeMarkupPlain;
     QString label;
+    if (model && model->rootDocument()) {
+        language = CodeStyle::instance().find(QString::fromStdString(
+            model->rootDocument()->meta().get_string(METAINFORMATION_KEY_PLATFORM_LANGUAGE)));
+    }
+    if (!metaStringKeys.contains(property) && findProperty(property).name == propFragment) {
+        editFragmentProperty(property, language);
+        return;
+    }
     if (metaStringKeys.contains(property)) {
         role = codeRoleNone;
         label = property->propertyName();
@@ -440,8 +449,6 @@ void CyberiadaSMPropertiesWidget::editMultilineProperty(QtProperty* property)
         }
         if (model && model->rootDocument()) {
             const Cyberiada::DocumentMetainformation& meta = model->rootDocument()->meta();
-            language = CodeStyle::instance().find(
-                QString::fromStdString(meta.get_string(METAINFORMATION_KEY_PLATFORM_LANGUAGE)));
             if (role == codeRoleMarkup) {
                 const Cyberiada::Comment* comment = static_cast<const Cyberiada::Comment*>(element);
                 // a formal comment has no document default (EDIT-TEXT-11)
@@ -456,6 +463,26 @@ void CyberiadaSMPropertiesWidget::editMultilineProperty(QtProperty* property)
                                multilineStringManager->value(property), role, language, this, markup);
     if (dialog.exec() == QDialog::Accepted) {
         multilineStringManager->setValue(property, dialog.text());
+    }
+}
+
+void CyberiadaSMPropertiesWidget::editFragmentProperty(QtProperty* property, const CodeLanguage* language)
+{
+    // the subject's fragment and type are picked in its target's text (EDIT-TOOL-16)
+    if (!element || !Cyberiada::element_is_comment(element)) return;
+    const Cyberiada::Comment* comment = static_cast<const Cyberiada::Comment*>(element);
+    QtProperty* subject_prop = getPropertyParent(property);
+    int subject_index = subject_prop ? getPropertyIndex(subject_prop) : -1;
+    if (subject_index < 0 || size_t(subject_index) >= comment->get_subjects().size()) return;
+    const Cyberiada::CommentSubject& cs = comment->get_subjects().at(size_t(subject_index));
+    Cyberiada::Element* target = const_cast<Cyberiada::Element*>(cs.get_element());
+    if (!target) return;
+    QModelIndex index = model->elementToIndex(element);
+    FragmentDialog dialog(target, cs.get_type(), QString::fromStdString(cs.get_fragment()), language, this);
+    if (dialog.exec() != QDialog::Accepted) return;
+    // a refused subject (EDIT-STRUCT-12) shows again as it is
+    if (!model->updateCommentSubject(index, subject_index, target, dialog.subjectType(), dialog.fragment())) {
+        scheduleRebuild();
     }
 }
 
@@ -1029,7 +1056,7 @@ void CyberiadaSMPropertiesWidget::newElement(Cyberiada::Element* new_element)
 
 						if (cs.get_type() != Cyberiada::commentSubjectElement) {
 							QtProperty* fragment_prop = constructProperty(propFragment);
-							stringManager->setValue(fragment_prop, cs.get_fragment().c_str());
+							multilineStringManager->setValue(fragment_prop, cs.get_fragment().c_str());
 							subject_prop->addSubProperty(fragment_prop);
 						}
 
@@ -1373,7 +1400,7 @@ void CyberiadaSMPropertiesWidget::updateElement()
                                 fragment_prop = constructProperty(propFragment);
                                 subject_prop->addSubProperty(fragment_prop);
                             }
-                            stringManager->setValue(fragment_prop, cs.get_fragment().c_str());
+                            multilineStringManager->setValue(fragment_prop, cs.get_fragment().c_str());
                         }
 
                         if (cs.has_geometry()) {

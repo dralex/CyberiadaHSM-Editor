@@ -32,6 +32,10 @@
 #include <QTextCursor>
 #include <QTextCharFormat>
 #include <QDebug>
+#include <QMenu>
+#include <QClipboard>
+#include <QApplication>
+#include <QGraphicsSceneContextMenuEvent>
 
 #include "editable_text_item.h"
 #include "cyberiadasm_editor_items.h"
@@ -39,6 +43,7 @@
 #include "cyberiadasm_editor_scene.h"
 #include "cyberiada_constants.h"
 #include "settings_manager.h"
+#include "gesture_log.h"
 
 
 EditableTextItem::EditableTextItem(QGraphicsItem *parent):
@@ -121,6 +126,52 @@ void EditableTextItem::focusOutEvent(QFocusEvent *event) {
     if (CyberiadaSMEditorScene* sc = dynamic_cast<CyberiadaSMEditorScene*>(scene())) sc->updateSubjectLinks();
     if (CyberiadaSMEditorScene::discardsEdits(this)) return;
     emit editingFinished();
+}
+
+void EditableTextItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event) {
+    CyberiadaSMEditorScene* sc = dynamic_cast<CyberiadaSMEditorScene*>(scene());
+    if (!isEdit || !sc) {
+        QGraphicsTextItem::contextMenuEvent(event);
+        return;
+    }
+    // the menu takes the focus, which ends the edit and may rebuild this item: the
+    // selection is read now and nothing of the item is used after the menu
+    QString selected = textCursor().selectedText();
+    selected.replace(QChar::ParagraphSeparator, '\n').replace(QChar::LineSeparator, '\n');
+    Cyberiada::Element* target = nullptr;
+    Cyberiada::CommentSubjectType type = Cyberiada::commentSubjectElement;
+    QString fragment;
+    bool commentable = !SettingsManager::instance().getInspectorMode() &&
+        sc->selectionFragment(this, &target, &type, &fragment);
+    QMenu menu;
+    QAction* copy = menu.addAction(tr("Copy"));
+    copy->setEnabled(!selected.isEmpty());
+    menu.addSeparator();
+    QMenu* comments = menu.addMenu(tr("Comment the Selection"));
+    comments->setEnabled(commentable);
+    QMap<QAction*, Cyberiada::ID> choices;
+    choices.insert(comments->addAction(tr("New Comment")), Cyberiada::ID());
+    QList<Cyberiada::Comment*> existing = sc->selectionComments(this);
+    if (!existing.isEmpty()) comments->addSeparator();
+    for (Cyberiada::Comment* c : existing) {
+        // a comment reads by its name or the first line of its body
+        QString label = c->has_name() && !c->get_name().empty() ? QString::fromStdString(c->get_name()) :
+            QString::fromStdString(c->get_body()).section('\n', 0, 0);
+        if (label.length() > 32) label = label.left(31) + QStringLiteral("…");
+        choices.insert(comments->addAction(QString("%1 (%2)").arg(label, QString::fromStdString(c->get_id()))),
+                       c->get_id());
+    }
+    // the commit the focus change makes is replayed by the verb logged below
+    GestureLog::instance().enterGesture();
+    QAction* chosen = menu.exec(event->screenPos());
+    GestureLog::instance().leaveGesture();
+    event->accept();
+    if (chosen && choices.contains(chosen)) {
+        sc->commentFragment(target, type, fragment, choices.value(chosen));
+        return;
+    }
+    if (chosen == copy) QApplication::clipboard()->setText(selected);
+    GestureLog::instance().logGesture("commit");
 }
 
 void EditableTextItem::hoverEnterEvent(QGraphicsSceneHoverEvent *event) {

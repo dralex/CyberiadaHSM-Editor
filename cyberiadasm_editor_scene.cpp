@@ -55,6 +55,10 @@
 #include "myassert.h"
 #include "code_highlighter.h"
 #include "fontmanager.h"
+#include "editable_text_item.h"
+#include "subject_fragment.h"
+#include <functional>
+#include <QTextCursor>
 
 static double DEFAULT_SCENE_X = -500;
 static double DEFAULT_SCENE_Y = -500;
@@ -1399,6 +1403,111 @@ QPointF CyberiadaSMEditorScene::freeStateMachinePlace(const QSizeF& size)
         }
     }
     return QPointF(0, 0);
+}
+
+bool CyberiadaSMEditorScene::selectionFragment(const EditableTextItem* text, Cyberiada::Element** target,
+                                               Cyberiada::CommentSubjectType* type, QString* fragment) const
+{
+    if (!text || !text->isEditing() || !model || !model->rootDocument()) return false;
+    QTextCursor cursor = text->textCursor();
+    if (!cursor.hasSelection()) return false;
+    CyberiadaSMEditorAbstractItem* owner = dynamic_cast<CyberiadaSMEditorAbstractItem*>(text->parentItem());
+    Cyberiada::Element* element = owner ? owner->getElement() : nullptr;
+    if (!element || element->get_type() == Cyberiada::elementSM) return false;
+    int from = cursor.selectionStart(), to = cursor.selectionEnd();
+    QString drawn = text->toPlainText();
+    bool transition = element->get_type() == Cyberiada::elementTransition;
+    for (Cyberiada::CommentSubjectType t : { Cyberiada::commentSubjectName, Cyberiada::commentSubjectData }) {
+        // the label fields of a transition come with the data
+        if (transition && t == Cyberiada::commentSubjectName) continue;
+        for (const SubjectFragment::Field& f : SubjectFragment::fields(element, t)) {
+            int start = -1;
+            if (owner->fieldText(f, &start) != text || start < 0) continue;
+            // a field the edit changed is no longer the model's
+            if (drawn.mid(start, f.text.length()) != f.text) continue;
+            if (from < start || to > start + f.text.length()) continue;
+            QString selected = drawn.mid(from, to - from).trimmed();
+            if (selected.isEmpty()) return false;
+            *target = element;
+            *type = t;
+            *fragment = selected;
+            return true;
+        }
+    }
+    return false;
+}
+
+QList<Cyberiada::Comment*> CyberiadaSMEditorScene::selectionComments(const EditableTextItem* text) const
+{
+    QList<Cyberiada::Comment*> comments;
+    CyberiadaSMEditorAbstractItem* owner = text ? dynamic_cast<CyberiadaSMEditorAbstractItem*>(text->parentItem()) : nullptr;
+    Cyberiada::Element* element = owner ? owner->getElement() : nullptr;
+    if (!element || !model || !model->rootDocument()) return comments;
+    Cyberiada::StateMachine* sm = model->rootDocument()->get_parent_sm(element);
+    std::function<void(Cyberiada::Element*)> walk = [&](Cyberiada::Element* e) {
+        // a comment does not comment itself; the reserved ones are not drawn
+        if (Cyberiada::element_is_comment(e) && e != element && elementIdToItemMap.value(e->get_id()) &&
+            !CyberiadaSMModel::isReservedComment(e)) {
+            comments.append(static_cast<Cyberiada::Comment*>(e));
+        }
+        if (e->has_children()) {
+            for (Cyberiada::Element* child : static_cast<Cyberiada::ElementCollection*>(e)->get_children()) walk(child);
+        }
+    };
+    if (sm) walk(sm);
+    return comments;
+}
+
+bool CyberiadaSMEditorScene::commentSelection(EditableTextItem* text, const Cyberiada::ID& comment)
+{
+    Cyberiada::Element* target = nullptr;
+    Cyberiada::CommentSubjectType type = Cyberiada::commentSubjectElement;
+    QString fragment;
+    if (!selectionFragment(text, &target, &type, &fragment)) return false;
+    // the edit ends first, as the focus going to the menu ends it in the GUI; the
+    // text item may be rebuilt by the commit
+    text->clearFocus();
+    return commentFragment(target, type, fragment, comment);
+}
+
+bool CyberiadaSMEditorScene::commentFragment(Cyberiada::Element* target, Cyberiada::CommentSubjectType type,
+                                             const QString& fragment, const Cyberiada::ID& commentId)
+{
+    if (!model || model->readOnly() || !target || !model->rootDocument()) return false;
+    // the commit may have dropped the fragment
+    if (!SubjectFragment::locate(target, type, fragment).found()) return false;
+    Cyberiada::Comment* comment = nullptr;
+    if (!commentId.empty()) {
+        Cyberiada::Element* e = model->idToElement(QString::fromStdString(commentId));
+        if (!e || !Cyberiada::element_is_comment(e)) return false;
+        comment = static_cast<Cyberiada::Comment*>(e);
+        if (!model->subjectAllowed(comment, target, type, fragment)) return false;
+    }
+    GestureLog::instance().logGesture("comment-selection" +
+                                      (commentId.empty() ? QString() : " " + QString::fromStdString(commentId)));
+    GestureLog::instance().enterGesture();
+    model->beginUndoStep(tr("comment the selection"));
+    if (!comment) {
+        // a new comment beside the target, in its parent (a transition's in its machine)
+        Cyberiada::ElementCollection* parent = target->get_type() == Cyberiada::elementTransition ?
+            model->rootDocument()->get_parent_sm(target) :
+            dynamic_cast<Cyberiada::ElementCollection*>(target->get_parent());
+        QGraphicsItem* item = elementIdToItemMap.value(target->get_id());
+        QRectF box = item ? item->sceneBoundingRect() : QRectF();
+        QGraphicsItem* gp = parent ? graphicsParentFor(parent) : nullptr;
+        QPointF preferred(box.right() + 40 + 100, box.center().y());
+        QPointF c = gp ? gp->mapFromScene(preferred) : preferred;
+        if (parent) {
+            Cyberiada::Point free = model->freeChildCentre(parent, nullptr, 200, 100, Cyberiada::Point(c.x(), c.y()));
+            comment = model->newComment(parent, tr("New comment").toStdString(),
+                                        Cyberiada::Rect(free.x, free.y, 200, 100));
+        }
+        if (comment) model->growToFitChildren(comment);
+    }
+    bool ok = comment && model->newCommentSubject(model->elementToIndex(comment), target, type, fragment);
+    model->endUndoStep();
+    GestureLog::instance().leaveGesture();
+    return ok;
 }
 
 QPointF CyberiadaSMEditorScene::freePlace(const Cyberiada::ElementCollection* parent, const QSizeF& size)

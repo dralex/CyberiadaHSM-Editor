@@ -25,6 +25,7 @@
 #include <QPainterPathStroker>
 #include <QGraphicsSceneContextMenuEvent>
 #include <QMenu>
+#include <QApplication>
 
 #include "cyberiadasm_editor_subject_item.h"
 #include "cyberiadasm_editor_transition_item.h"
@@ -34,6 +35,7 @@
 #include "editable_text_item.h"
 #include "settings_manager.h"
 #include "subject_fragment.h"
+#include "dialogs/fragmentdialog.h"
 
 // the comment point square (PNST 984 7.2.7) and the part of the end segments of a
 // commented transition kept free of an unstored link foot (as libhtreegeom does)
@@ -452,13 +454,51 @@ bool CyberiadaSMEditorSubjectItem::deleteSubject()
     return model->deleteCommentSubject(commentIndex(), index);
 }
 
+bool CyberiadaSMEditorSubjectItem::editFragment(QWidget* parent)
+{
+    // no dialogs in batch mode: the scripts use the subject verbs
+    if (!hasSubject() || (qApp && qApp->property("batchMode").toBool())) return false;
+    const Cyberiada::CommentSubject& s = subject();
+    Cyberiada::Element* target = const_cast<Cyberiada::Element*>(s.get_element());
+    if (!target) return false;
+    QModelIndex ci = commentIndex();
+    int i = index;
+    FragmentDialog dialog(target, s.get_type(), QString::fromStdString(s.get_fragment()),
+                          EditableTextItem::sceneCodeLanguage(scene()), parent);
+    if (dialog.exec() != QDialog::Accepted) return false;
+    // the item may be rebuilt by the change: nothing of it is read after the call
+    return model->updateCommentSubject(ci, i, target, dialog.subjectType(), dialog.fragment());
+}
+
 void CyberiadaSMEditorSubjectItem::contextMenuEvent(QGraphicsSceneContextMenuEvent* event)
 {
+    if (!hasSubject()) return;
+    bool editable = model && !model->readOnly() && !SettingsManager::instance().getInspectorMode();
+    const Cyberiada::CommentSubject& s = subject();
     QMenu menu;
     QAction* remove = menu.addAction(tr("Delete Link"));
-    remove->setEnabled(model && !model->readOnly() && !SettingsManager::instance().getInspectorMode());
+    remove->setEnabled(editable);
+    menu.addSeparator();
+    // a fragment of the target's text, or the target whole (EDIT-TOOL-16)
+    QAction* fragment = menu.addAction(tr("Comment a Fragment…"));
+    fragment->setEnabled(editable &&
+                         (!SubjectFragment::fields(s.get_element(), Cyberiada::commentSubjectName).isEmpty() ||
+                          !SubjectFragment::fields(s.get_element(), Cyberiada::commentSubjectData).isEmpty()));
+    QAction* whole = menu.addAction(tr("Comment the Element"));
+    whole->setEnabled(editable && s.has_fragment());
+    Cyberiada::Element* target = const_cast<Cyberiada::Element*>(s.get_element());
+    QModelIndex ci = commentIndex();
+    int i = index;
+    QWidget* parent = event->widget() ? event->widget()->window() : nullptr;
+    event->accept();
     // the subject goes, the comment stays (EDIT-EDGE-20); the item may be rebuilt
     // by the model change, so nothing of it is read after the call
-    if (menu.exec(event->screenPos()) == remove) deleteSubject();
-    event->accept();
+    QAction* chosen = menu.exec(event->screenPos());
+    if (chosen == remove) {
+        deleteSubject();
+    } else if (chosen == fragment) {
+        editFragment(parent);
+    } else if (chosen == whole) {
+        model->updateCommentSubject(ci, i, target, Cyberiada::commentSubjectElement, QString());
+    }
 }

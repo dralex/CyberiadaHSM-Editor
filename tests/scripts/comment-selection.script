@@ -1,0 +1,20 @@
+# Comment the Selection in the canvas editor: the selected behaviour gets a new
+# comment beside the state, the selected part of the name the note n2 (EDIT-TOOL-17)
+new-action n0 TIMEOUT [count > 3] / stop()
+edit n0 action 0
+key end
+key left shift
+key left shift
+key left shift
+key left shift
+key left shift
+key left shift
+comment-selection
+edit n0 title
+key home
+key right shift
+key right shift
+key right shift
+key right shift
+key right shift
+comment-selection n2

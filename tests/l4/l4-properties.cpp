@@ -524,6 +524,17 @@ void TestProperties::test_subject_edit()
 	QCOMPARE(c->get_subjects().at(1).get_fragment(), std::string("First state"));
 	QCoreApplication::sendPostedEvents();
 	QCOMPARE(named("Fragment").size(), 1);
+	// the Fragment row opens the fragment dialog (EDIT-TOOL-16); its value is the fragment
+	QtStringPropertyManager* fm = dynamic_cast<QtStringPropertyManager*>(named("Fragment").at(0)->propertyManager());
+	QVERIFY(fm);
+	fm->setValue(named("Fragment").at(0), "First");
+	QCOMPARE(c->get_subjects().at(1).get_fragment(), std::string("First"));
+	QCoreApplication::sendPostedEvents();
+	// a fragment outside the name is refused and the row shows the subject again
+	fm->setValue(named("Fragment").at(0), "nowhere");
+	QCOMPARE(c->get_subjects().at(1).get_fragment(), std::string("First"));
+	QCoreApplication::sendPostedEvents();
+	QCOMPARE(fm->value(named("Fragment").at(0)), QString("First"));
 
 	// a refused target (the comment itself) leaves the subject as it was
 	targets = named("Subject Target");

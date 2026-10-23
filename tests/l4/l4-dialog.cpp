@@ -33,6 +33,8 @@
 #include "dialogs/export_image_dialog.h"
 #include "dialogs/stateactiondialog.h"
 #include "dialogs/about_dialog.h"
+#include "dialogs/fragmentdialog.h"
+#include <QPushButton>
 #include "version.h"
 #include <QPlainTextEdit>
 #include <QLabel>
@@ -52,6 +54,8 @@ private slots:
 	void test_action_dialog();
 	void test_transition_dialog();
 	void test_about_dialog();
+	void test_fragment_dialog();
+	void test_fragment_dialog_transition();
 };
 
 void TestDialog::test_options_injected()
@@ -300,3 +304,92 @@ void TestDialog::test_about_dialog()
 }
 
 #include "l4-dialog.moc"
+
+// select [from, from + length) in a box as a drag would
+static void selectIn(QPlainTextEdit* box, int from, int length)
+{
+	QTextCursor c = box->textCursor();
+	c.setPosition(from);
+	c.setPosition(from + length, QTextCursor::KeepAnchor);
+	box->setTextCursor(c);
+}
+
+void TestDialog::test_fragment_dialog()
+{
+	// one read-only box per field in the search order; a selection in one box
+	// fills the fragment and the type, the underlined occurrence is marked, a
+	// fragment outside one field is refused (EDIT-TOOL-16)
+	CyberiadaSMModel model(this);
+	QVERIFY(model.loadDocument("diagrams/geometry.graphml"));
+	Cyberiada::Element* state = model.idToElement("node-0-0-2");
+	QModelIndex si = model.elementToIndex(state);
+	QVERIFY(model.updateTitle(si, "Moving"));
+	QVERIFY(model.newAction(si, Cyberiada::actionEntry, QString(), QString(), "motor.on()"));
+	QVERIFY(model.newAction(si, Cyberiada::actionTransition, "TIMEOUT", "count > 3", "stop()"));
+	QVERIFY(model.newAction(si, Cyberiada::actionExit, QString(), QString(), "stop(); log()"));
+
+	FragmentDialog dlg(state, Cyberiada::commentSubjectElement, QString());
+	QCOMPARE(dlg.fieldCount(), 6);
+	QCOMPARE(dlg.field(0).kind, SubjectFragment::fieldName);
+	QCOMPARE(dlg.fieldBox(0)->toPlainText(), QString("Moving"));
+	QCOMPARE(dlg.field(1).kind, SubjectFragment::fieldBehaviour);
+	QCOMPARE(dlg.field(2).kind, SubjectFragment::fieldTrigger);
+	QCOMPARE(dlg.field(3).kind, SubjectFragment::fieldGuard);
+	QCOMPARE(dlg.field(4).kind, SubjectFragment::fieldBehaviour);
+	QCOMPARE(dlg.field(5).kind, SubjectFragment::fieldBehaviour);
+	for (int i = 0; i < dlg.fieldCount(); i++) QVERIFY(dlg.fieldBox(i)->isReadOnly());
+	// an element subject starts empty
+	QVERIFY(!dlg.acceptable());
+	QCOMPARE(dlg.subjectType(), Cyberiada::commentSubjectData);
+
+	// a guard selection gives a data fragment, marked in its own box
+	selectIn(dlg.fieldBox(3), 0, 5);
+	QCOMPARE(dlg.fragment(), QString("count"));
+	QCOMPARE(dlg.subjectType(), Cyberiada::commentSubjectData);
+	QVERIFY(dlg.acceptable());
+	QCOMPARE(dlg.markedBox(), 3);
+	// the name box gives a name fragment and clears the other selection
+	selectIn(dlg.fieldBox(0), 0, 3);
+	QCOMPARE(dlg.fragment(), QString("Mov"));
+	QCOMPARE(dlg.subjectType(), Cyberiada::commentSubjectName);
+	QVERIFY(!dlg.fieldBox(3)->textCursor().hasSelection());
+	QCOMPARE(dlg.markedBox(), 0);
+	// a later occurrence: the first one is marked and the note says so
+	selectIn(dlg.fieldBox(5), 0, 6);
+	QCOMPARE(dlg.fragment(), QString("stop()"));
+	QCOMPARE(dlg.markedBox(), 4);
+	QVERIFY(dlg.acceptable());
+	QVERIFY(dlg.note().contains("first occurrence"));
+	// a typed fragment spanning two fields is refused
+	dlg.fragmentEditor()->setPlainText("TIMEOUT [count");
+	QVERIFY(!dlg.acceptable());
+	QCOMPARE(dlg.markedBox(), -1);
+	dlg.fragmentEditor()->setPlainText("log()");
+	QVERIFY(dlg.acceptable());
+	QCOMPARE(dlg.markedBox(), 5);
+
+	// an existing fragment comes selected where it is underlined
+	FragmentDialog again(state, Cyberiada::commentSubjectData, "count > 3");
+	QCOMPARE(again.markedBox(), 3);
+	QVERIFY(again.fieldBox(3)->textCursor().hasSelection());
+	QCOMPARE(again.fragment(), QString("count > 3"));
+	QVERIFY(again.acceptable());
+}
+
+void TestDialog::test_fragment_dialog_transition()
+{
+	// a transition shows its label fields; a selection keeps the kind
+	CyberiadaSMModel model(this);
+	QVERIFY(model.loadDocument("diagrams/comment-transition.graphml"));
+	Cyberiada::Element* t = model.idToElement("t0");
+	FragmentDialog dlg(t, Cyberiada::commentSubjectName, "EVENT");
+	QCOMPARE(dlg.fieldCount(), 2);
+	QCOMPARE(dlg.field(0).kind, SubjectFragment::fieldTrigger);
+	QCOMPARE(dlg.field(1).kind, SubjectFragment::fieldBehaviour);
+	QCOMPARE(dlg.subjectType(), Cyberiada::commentSubjectName);
+	selectIn(dlg.fieldBox(1), 0, 4);
+	QCOMPARE(dlg.fragment(), QString("go()"));
+	QCOMPARE(dlg.subjectType(), Cyberiada::commentSubjectName);
+	QVERIFY(dlg.acceptable());
+}
+

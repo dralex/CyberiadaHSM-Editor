@@ -525,7 +525,7 @@ static bool isGesture(const QString& cmd)
 	return cmd == "press" || cmd == "drag" || cmd == "release" ||
 		cmd == "click" || cmd == "double-click" || cmd == "tool" ||
 		cmd == "type" || cmd == "key" || cmd == "select-all" || cmd == "commit" ||
-		cmd == "edit-text" || cmd == "edit";
+		cmd == "edit-text" || cmd == "edit" || cmd == "comment-selection";
 }
 
 static bool parseModifiers(const QStringList& tokens, int from,
@@ -643,6 +643,18 @@ static bool runTextVerb(CyberiadaSMEditorScene* scene, const QStringList& tokens
 		text->clearFocus();
 		return true;
 	}
+	if (cmd == "comment-selection") {
+		// the context-menu action of the text being edited (EDIT-TOOL-17)
+		EditableTextItem* text = editingItem(scene);
+		if (!text) { *error = "no text is being edited"; return false; }
+		if (tokens.size() > 2) { *error = "comment-selection takes one comment id at most"; return false; }
+		Cyberiada::ID comment = tokens.size() == 2 ? tokens.at(1).toStdString() : Cyberiada::ID();
+		if (!scene->commentSelection(text, comment)) {
+			*error = "the selection does not lie in one field of a commentable text";
+			return false;
+		}
+		return true;
+	}
 	if (cmd == "edit" || cmd == "edit-text") {
 		int from;
 		EditableTextItem* text = openTextItem(scene, tokens, &from, error);
@@ -717,7 +729,7 @@ static bool runGesture(CyberiadaSMEditorScene* scene, const QStringList& tokens,
 		state->activated = true;
 	}
 	if (cmd == "type" || cmd == "key" || cmd == "select-all" || cmd == "commit" ||
-		cmd == "edit-text" || cmd == "edit") {
+		cmd == "edit-text" || cmd == "edit" || cmd == "comment-selection") {
 		return runTextVerb(scene, tokens, error);
 	}
 	if (cmd == "tool") {

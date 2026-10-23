@@ -49,7 +49,7 @@
 <context>
     <name>CyberiadaSMEditorScene</name>
     <message>
-        <location filename="../cyberiadasm_editor_scene.cpp" line="+1034"/>
+        <location filename="../cyberiadasm_editor_scene.cpp" line="+1044"/>
         <location line="+35"/>
         <location line="+161"/>
         <source>New State Machine</source>
@@ -64,14 +64,14 @@
         <location line="+1"/>
         <location line="+116"/>
         <location line="+155"/>
-        <location line="+129"/>
+        <location line="+234"/>
         <source>Parameters error:
 </source>
         <translation>Ошибка параметров:
 </translation>
     </message>
     <message>
-        <location line="-331"/>
+        <location line="-436"/>
         <location line="+160"/>
         <source>New state</source>
         <translation>Новое состояние</translation>
@@ -79,11 +79,12 @@
     <message>
         <location line="-126"/>
         <location line="+134"/>
+        <location line="+210"/>
         <source>New comment</source>
         <translation>Новый комментарий</translation>
     </message>
     <message>
-        <location line="-130"/>
+        <location line="-340"/>
         <location line="+133"/>
         <source>New formal comment</source>
         <translation>Новый формальный комментарий</translation>
@@ -95,7 +96,12 @@
         <translation>Создание элемента</translation>
     </message>
     <message>
-        <location line="+129"/>
+        <location line="+164"/>
+        <source>comment the selection</source>
+        <translation type="unfinished">комментарий к выделенному</translation>
+    </message>
+    <message>
+        <location line="+70"/>
         <source>Create new transition</source>
         <translation>Создание перехода</translation>
     </message>
@@ -103,7 +109,7 @@
 <context>
     <name>CyberiadaSMEditorStateItem</name>
     <message>
-        <location filename="../cyberiadasm_editor_state_item.cpp" line="+687"/>
+        <location filename="../cyberiadasm_editor_state_item.cpp" line="+704"/>
         <source>Delete</source>
         <translation>Удалить</translation>
     </message>
@@ -136,15 +142,25 @@
 <context>
     <name>CyberiadaSMEditorSubjectItem</name>
     <message>
-        <location filename="../cyberiadasm_editor_subject_item.cpp" line="+419"/>
+        <location filename="../cyberiadasm_editor_subject_item.cpp" line="+479"/>
         <source>Delete Link</source>
         <translation>Удалить связь с предметом комментирования</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Comment a Fragment…</source>
+        <translation type="unfinished">Комментировать фрагмент…</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Comment the Element</source>
+        <translation type="unfinished">Комментировать элемент</translation>
     </message>
 </context>
 <context>
     <name>CyberiadaSMEditorTransitionItem</name>
     <message>
-        <location filename="../cyberiadasm_editor_transition_item.cpp" line="+1130"/>
+        <location filename="../cyberiadasm_editor_transition_item.cpp" line="+1121"/>
         <source>Delete point</source>
         <translation>Удалить точку</translation>
     </message>
@@ -384,7 +400,7 @@
 <context>
     <name>CyberiadaSMModel</name>
     <message>
-        <location filename="../cyberiadasm_model.cpp" line="+218"/>
+        <location filename="../cyberiadasm_model.cpp" line="+219"/>
         <source>XML graphml error:
 </source>
         <translation>Ошибка XML в файле graphml:
@@ -405,7 +421,7 @@
 </translation>
     </message>
     <message>
-        <location line="+68"/>
+        <location line="+73"/>
         <source>edit</source>
         <translation>правка</translation>
     </message>
@@ -430,7 +446,7 @@
         <translation>переименование</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+27"/>
         <source>submachine reference</source>
         <translation>ссылка на вложенную машину состояний</translation>
     </message>
@@ -441,15 +457,15 @@
     </message>
     <message>
         <location line="+83"/>
-        <location line="+67"/>
+        <location line="+68"/>
         <location line="+51"/>
         <source>action</source>
         <translation>действие</translation>
     </message>
     <message>
-        <location line="+30"/>
+        <location line="+31"/>
         <location line="+19"/>
-        <location line="+86"/>
+        <location line="+100"/>
         <location line="+14"/>
         <location line="+21"/>
         <source>geometry</source>
@@ -468,17 +484,17 @@
     </message>
     <message>
         <location line="+201"/>
-        <location line="+1468"/>
+        <location line="+1592"/>
         <source>reparent</source>
         <translation>смена родителя</translation>
     </message>
     <message>
-        <location line="-1413"/>
+        <location line="-1537"/>
         <source>comment</source>
         <translation>комментарий</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+17"/>
         <location line="+45"/>
         <source>metainformation</source>
         <translation>метаинформация</translation>
@@ -545,7 +561,7 @@
         <translation>новый комментарий</translation>
     </message>
     <message>
-        <location line="+72"/>
+        <location line="+50"/>
         <location line="+40"/>
         <location line="+26"/>
         <location line="+15"/>
@@ -553,12 +569,12 @@
         <translation>предмет комментирования</translation>
     </message>
     <message>
-        <location line="+31"/>
+        <location line="+58"/>
         <source>delete</source>
         <translation>удаление</translation>
     </message>
     <message>
-        <location line="+579"/>
+        <location line="+695"/>
         <source>paste</source>
         <translation>вставка</translation>
     </message>
@@ -566,7 +582,7 @@
 <context>
     <name>CyberiadaSMPropertiesWidget</name>
     <message>
-        <location filename="../cyberiadasm_properties_widget.cpp" line="+47"/>
+        <location filename="../cyberiadasm_properties_widget.cpp" line="+48"/>
         <source>Action Type</source>
         <comment>Property name</comment>
         <translation>Тип действия</translation>
@@ -1006,7 +1022,7 @@
         <translation>Переход</translation>
     </message>
     <message>
-        <location line="+45"/>
+        <location line="+68"/>
         <source>Author</source>
         <translation>Автор</translation>
     </message>
@@ -1067,9 +1083,27 @@
         <translation>Удалить параметр</translation>
     </message>
     <message>
-        <location line="+122"/>
+        <location line="+128"/>
         <source>Edit text</source>
         <translation>Редакториовать текст</translation>
+    </message>
+</context>
+<context>
+    <name>EditableTextItem</name>
+    <message>
+        <location filename="../editable_text_item.cpp" line="+147"/>
+        <source>Copy</source>
+        <translation type="unfinished">Копировать</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Comment the Selection</source>
+        <translation type="unfinished">Комментировать выделенное</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>New Comment</source>
+        <translation type="unfinished">Новый комментарий</translation>
     </message>
 </context>
 <context>
@@ -1093,6 +1127,115 @@
         <location line="+10"/>
         <source>Font:</source>
         <translation>Шрифт:</translation>
+    </message>
+</context>
+<context>
+    <name>FragmentDialog</name>
+    <message>
+        <location filename="../dialogs/fragmentdialog.cpp" line="+47"/>
+        <source>Comment a Fragment</source>
+        <translation type="unfinished">Комментировать фрагмент</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>transition</source>
+        <translation type="unfinished">переход</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>comment</source>
+        <translation type="unfinished">комментарий</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>state</source>
+        <translation type="unfinished">состояние</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>pseudostate</source>
+        <translation type="unfinished">псевдосостояние</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Target: %1 (%2)</source>
+        <translation type="unfinished">Цель: %1 (%2)</translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <location line="+37"/>
+        <source>Name</source>
+        <translation type="unfinished">Имя</translation>
+    </message>
+    <message>
+        <location line="-36"/>
+        <source>Body</source>
+        <translation type="unfinished">Текст</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Label</source>
+        <translation type="unfinished">Метка</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Reaction</source>
+        <translation type="unfinished">Реакция</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>event</source>
+        <translation type="unfinished">событие</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>guard</source>
+        <translation type="unfinished">условие</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>behaviour</source>
+        <translation type="unfinished">поведение</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>The target has no text to comment.</source>
+        <translation type="unfinished">У цели нет текста для комментария.</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Fragment</source>
+        <translation type="unfinished">Фрагмент</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Type</source>
+        <translation type="unfinished">Тип</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Data</source>
+        <translation type="unfinished">Данные</translation>
+    </message>
+    <message>
+        <location line="+167"/>
+        <source>Select the commented text in one field.</source>
+        <translation type="unfinished">Выделите комментируемый текст в одном поле.</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>The fragment does not lie in one field of the target.</source>
+        <translation type="unfinished">Фрагмент не лежит в одном поле цели.</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>The first occurrence (%1) will be underlined; extend the selection to make it unique.</source>
+        <translation type="unfinished">Будет подчёркнуто первое вхождение (%1); расширьте выделение, чтобы оно стало единственным.</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Underlined in: %1.</source>
+        <translation type="unfinished">Подчёркнуто в: %1.</translation>
     </message>
 </context>
 <context>
@@ -1871,7 +2014,7 @@
         <translation>Предупреждение</translation>
     </message>
     <message>
-        <location filename="../cyberiadasm_editor_transition_item.cpp" line="+461"/>
+        <location filename="../cyberiadasm_editor_transition_item.cpp" line="+465"/>
         <source>Reset label position</source>
         <translation>Сбросить положение подписи</translation>
     </message>
@@ -2381,7 +2524,7 @@
 <context>
     <name>StateAction</name>
     <message>
-        <location filename="../cyberiadasm_editor_state_item.cpp" line="+376"/>
+        <location filename="../cyberiadasm_editor_state_item.cpp" line="+348"/>
         <source>Delete</source>
         <translation>Удалить</translation>
     </message>
@@ -2429,7 +2572,7 @@
 <context>
     <name>StateTitle</name>
     <message>
-        <location filename="../cyberiadasm_editor_state_item.cpp" line="-345"/>
+        <location filename="../cyberiadasm_editor_state_item.cpp" line="-317"/>
         <source>The name &quot;%1&quot; already exists at this hierarchy level.</source>
         <translation>Имя «%1» уже есть на этом уровне иерархии.</translation>
     </message>

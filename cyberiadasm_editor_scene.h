@@ -46,6 +46,7 @@
 #include "code_highlighter.h"
 
 class CyberiadaSMEditorSubjectItem;
+class EditableTextItem;
 
 class CyberiadaSMEditorScene: public QGraphicsScene {
 Q_OBJECT
@@ -74,6 +75,19 @@ public:
     QList<CyberiadaSMEditorSubjectItem*> subjectLinks(const Cyberiada::ID& comment) const;
     // the ids of the selected elements in the document order (${selection}, EDIT-PLUG-9)
     QStringList selectedIds() const;
+
+    // Comment the Selection (EDIT-TOOL-17): the fragment the selection of a text being
+    // edited comments - the target, the kind and the text - when it lies in one field
+    bool  selectionFragment(const EditableTextItem* text, Cyberiada::Element** target,
+                            Cyberiada::CommentSubjectType* type, QString* fragment) const;
+    // the drawn comments of the text's machine that may comment it
+    QList<Cyberiada::Comment*> selectionComments(const EditableTextItem* text) const;
+    // end the edit and link the comment, or a new one placed beside the target (an
+    // empty id), to the selected fragment in one undo step
+    bool  commentSelection(EditableTextItem* text, const Cyberiada::ID& comment);
+    // the same once the selection is read: the menu reads it before the edit ends
+    bool  commentFragment(Cyberiada::Element* target, Cyberiada::CommentSubjectType type,
+                          const QString& fragment, const Cyberiada::ID& comment);
 
     // the union of the visible items only (unlike itemsBoundingRect, which
     // counts hidden dots and text)

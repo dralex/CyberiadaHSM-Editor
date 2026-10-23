@@ -163,6 +163,7 @@ add_library(CyberiadaEditorCore STATIC
   meta_choice_menu.h meta_choice_menu.cpp
   dialogs/stateactiondialog.h dialogs/stateactiondialog.cpp
   dialogs/multilinetextdialog.h dialogs/multilinetextdialog.cpp
+  dialogs/fragmentdialog.h dialogs/fragmentdialog.cpp
   dialogs/about_dialog.h dialogs/about_dialog.cpp
   dialogs/export_image_dialog.h dialogs/export_image_dialog.cpp
   dialogs/file_dialog.h dialogs/file_dialog.cpp

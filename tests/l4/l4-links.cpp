@@ -61,6 +61,7 @@ private slots:
 	void test_fragment_fallback();
 	void test_fragment_wrapped();
 	void test_fragment_reconciled();
+	void test_comment_selection();
 
 private:
 	CyberiadaSMModel* model = nullptr;
@@ -589,3 +590,85 @@ void TestLinks::test_fragment_reconciled()
 }
 
 #include "l4-links.moc"
+
+void TestLinks::test_comment_selection()
+{
+	// a selection in one field of a text being edited links a new comment beside
+	// the element, or an existing one, in one undo step; a selection across the
+	// fields is refused (EDIT-TOOL-17)
+	load("diagrams/comment-transition.graphml");
+	addFragmentActions();
+	SubjectFragment::Field internal;
+	internal.kind = SubjectFragment::fieldBehaviour;
+	internal.action = 1;
+	CyberiadaSMEditorAbstractItem* state = dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene->getMap().value("n0"));
+	int start = -1;
+	EditableTextItem* text = state->fieldText(internal, &start);
+	QVERIFY(text);
+	QCOMPARE(text->toPlainText(), QString("TIMEOUT [count > 3] / stop()"));
+	text->startEditing();
+	QTextCursor c = text->textCursor();
+	c.setPosition(0);
+	c.setPosition(text->toPlainText().length(), QTextCursor::KeepAnchor);
+	text->setTextCursor(c);
+	Cyberiada::Element* target = nullptr;
+	Cyberiada::CommentSubjectType type;
+	QString fragment;
+	QVERIFY(!scene->selectionFragment(text, &target, &type, &fragment));
+	c.setPosition(start);
+	c.setPosition(start + 6, QTextCursor::KeepAnchor);
+	text->setTextCursor(c);
+	QVERIFY(scene->selectionFragment(text, &target, &type, &fragment));
+	QCOMPARE(fragment, QString("stop()"));
+	QCOMPARE(type, Cyberiada::commentSubjectData);
+	QVERIFY(scene->selectionComments(text).size() == 1);   // the note n2
+
+	int steps = model->undoStack()->count();
+	int elements = int(scene->getMap().size());
+	QVERIFY(scene->commentSelection(text, Cyberiada::ID()));
+	QCOMPARE(model->undoStack()->count(), steps + 1);
+	QCOMPARE(int(scene->getMap().size()), elements + 1);
+	// the new comment sits beside the state, clear of it, and is linked
+	Cyberiada::Comment* fresh = nullptr;
+	for (Cyberiada::Element* e : static_cast<Cyberiada::ElementCollection*>(model->idToElement("G0"))->get_children()) {
+		if (Cyberiada::element_is_comment(e) && e->get_id() != "n2" && e->get_id() != "nMeta") fresh = static_cast<Cyberiada::Comment*>(e);
+	}
+	QVERIFY(fresh && fresh->has_subjects());
+	QCOMPARE(QString::fromStdString(fresh->get_subjects().at(0).get_fragment()), QString("stop()"));
+	QRectF stateBox = scene->getMap().value("n0")->sceneBoundingRect();
+	QRectF freshBox = scene->getMap().value(fresh->get_id())->sceneBoundingRect();
+	QVERIFY(!stateBox.intersects(freshBox));
+	QVERIFY(!link(fresh->get_id(), 0)->underline().isEmpty());
+	// the undo takes the comment and its link away together
+	model->undoStack()->undo();
+	QCOMPARE(int(scene->getMap().size()), elements);
+
+	// an existing comment of the machine; the edit has ended
+	state = dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene->getMap().value("n0"));
+	SubjectFragment::Field name;
+	text = state->fieldText(name, &start);
+	QVERIFY(text);
+	text->startEditing();
+	c = text->textCursor();
+	c.setPosition(0);
+	c.setPosition(5, QTextCursor::KeepAnchor);
+	text->setTextCursor(c);
+	QVERIFY(scene->commentSelection(text, "n2"));
+	QCOMPARE(subjects("n2"), 2);
+	const Cyberiada::Comment* note = static_cast<const Cyberiada::Comment*>(model->idToElement("n2"));
+	QCOMPARE(note->get_subjects().at(1).get_type(), Cyberiada::commentSubjectName);
+	QCOMPARE(QString::fromStdString(note->get_subjects().at(1).get_fragment()), QString("First"));
+	QVERIFY(scene->focusItem() == nullptr || !dynamic_cast<EditableTextItem*>(scene->focusItem()) ||
+			!dynamic_cast<EditableTextItem*>(scene->focusItem())->isEditing());
+
+	// a comment's own body is not offered to itself
+	CyberiadaSMEditorAbstractItem* noteItem = dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene->getMap().value("n2"));
+	SubjectFragment::Field body;
+	body.kind = SubjectFragment::fieldBody;
+	text = noteItem->fieldText(body, &start);
+	QVERIFY(text);
+	text->startEditing();
+	QVERIFY(scene->selectionComments(text).isEmpty());
+	text->clearFocus();
+}
+

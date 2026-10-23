@@ -1579,6 +1579,8 @@ void TransitionAction::persistLabelPosition(bool refitWidth)
 
 void TransitionAction::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 {
+    // the text being edited has the edit menu (EDIT-TOOL-17)
+    if (isEdit) { EditableTextItem::contextMenuEvent(event); return; }
     if (SettingsManager::instance().getInspectorMode()) { return; }
     QMenu menu;
     QAction* reset = menu.addAction(QObject::tr("Reset label position"));

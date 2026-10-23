@@ -35,6 +35,7 @@
 
 class CyberiadaSMEditorScene;
 class MultilineEditorFactory;
+struct CodeLanguage;
 
 class CyberiadaSMPropertiesWidget: public QtTreePropertyBrowser {
 Q_OBJECT
@@ -51,6 +52,8 @@ public:
 	// open the multiline editor for a behaviour or a comment body row and write
 	// the result back to the model through the row's manager (EDIT-TEXT-10)
 	void                     editMultilineProperty(QtProperty* property);
+	// open the fragment dialog for a subject's Fragment row (EDIT-TOOL-16)
+	void                     editFragmentProperty(QtProperty* property, const CodeLanguage* language);
 
 public slots:
 	void                     slotElementSelected(const QModelIndex& index);

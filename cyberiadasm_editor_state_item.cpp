@@ -1105,6 +1105,8 @@ void StateAction::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) {
 }
 
 void StateAction::contextMenuEvent(QGraphicsSceneContextMenuEvent *event) {
+    // the text being edited has the edit menu (EDIT-TOOL-17)
+    if (isEdit) { EditableTextItem::contextMenuEvent(event); return; }
     if (SettingsManager::instance().getInspectorMode()) { return; }
 
     QMenu menu;
