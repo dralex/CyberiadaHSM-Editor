@@ -230,6 +230,7 @@ void CyberiadaSMPropertiesWidget::setModel(CyberiadaSMModel* model)
 
     connect(model, &CyberiadaSMModel::dataChanged, this, &CyberiadaSMPropertiesWidget::slotModelDataChanged, Qt::UniqueConnection);
     connect(model, &CyberiadaSMModel::modelAboutToBeReset, this, &CyberiadaSMPropertiesWidget::slotModelAboutToBeReset, Qt::UniqueConnection);
+    connect(model, &CyberiadaSMModel::rowsAboutToBeRemoved, this, &CyberiadaSMPropertiesWidget::slotRowsAboutToBeRemoved, Qt::UniqueConnection);
 }
 
 // the element goes away with the restored document
@@ -237,6 +238,21 @@ void CyberiadaSMPropertiesWidget::slotModelAboutToBeReset()
 {
 	clearProperties();
 	element = NULL;
+}
+
+void CyberiadaSMPropertiesWidget::slotRowsAboutToBeRemoved(const QModelIndex& parent, int first, int last)
+{
+	if (!element || !model) return;
+	for (int row = first; row <= last; row++) {
+		const Cyberiada::Element* removed = model->indexToElement(model->index(row, 0, parent));
+		for (const Cyberiada::Element* e = element; e && removed; e = e->get_parent()) {
+			if (e == removed) {
+				clearProperties();
+				element = NULL;
+				return;
+			}
+		}
+	}
 }
 
 void CyberiadaSMPropertiesWidget::clearProperties()

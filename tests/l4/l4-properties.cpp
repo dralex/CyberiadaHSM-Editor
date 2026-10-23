@@ -57,6 +57,7 @@ private slots:
 	void test_multiline_edit();
 	void test_meta_description_multiline();
 	void test_subject_edit();
+	void test_removed_element();
 
 private:
 	void select(const char* id);
@@ -541,6 +542,23 @@ void TestProperties::test_subject_edit()
 		}
 		if (under_subject) QVERIFY(!g->isEnabled());
 	}
+}
+
+void TestProperties::test_removed_element()
+{
+	// the element shown goes with its row: the view empties and a rebuild queued
+	// earlier (a reshaped subject list) finds nothing to read
+	QVERIFY(model->loadDocument("diagrams/comment-transition.graphml"));
+	scene->loadScene();
+	select("n2");
+	QVERIFY(model->newCommentSubject(model->elementToIndex(model->idToElement("n2")), model->idToElement("n1"),
+									 Cyberiada::commentSubjectElement, QString()));
+	select("n1");
+	QVERIFY(rowCount() > 0);
+	QVERIFY(model->deleteElement(model->elementToIndex(model->idToElement("n1"))));
+	QCOMPARE(rowCount(), 0);
+	QCoreApplication::sendPostedEvents();
+	QCOMPARE(rowCount(), 0);
 }
 
 QTEST_MAIN(TestProperties)

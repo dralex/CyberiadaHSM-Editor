@@ -56,6 +56,8 @@ public slots:
 	void                     slotElementSelected(const QModelIndex& index);
     void                     slotModelDataChanged(const QModelIndex & topLeft, const QModelIndex & bottomRight);
 	void slotModelAboutToBeReset();
+	// the element of the view goes with a removed subtree: the view is emptied
+	void slotRowsAboutToBeRemoved(const QModelIndex& parent, int first, int last);
 	void                     slotPropertyChanged(QtProperty* property);
 	void                     slotInspectorModeChanged(bool on);
 	void                     slotCurrentItemChanged(QtBrowserItem* item);
