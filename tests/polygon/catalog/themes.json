@@ -64,6 +64,15 @@
       ]
     },
     {
+      "name": "transition ends under restructuring",
+      "start": "corpus",
+      "hint": "take states that are linked by transitions and restructure them: unlink a linked state from its parent, reparent one into another, add entry and exit actions to them, resize and move them through their borders - the transition ends must stay on the state borders, never hanging inside or outside",
+      "budget": [
+        14,
+        24
+      ]
+    },
+    {
       "name": "gestures on a crowded diagram",
       "start": "corpus",
       "hint": "drag, resize and draw loops on states that overlap or touch, then delete by click",

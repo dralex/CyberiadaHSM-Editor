@@ -164,6 +164,7 @@ DRILL_CLASSES = {
     "transition-points": DRILLF.TransitionPointDrill, "rebind": DRILLF.RebindDrill,
     "choice": DRILLF.ChoiceDrill, "action": DRILLF.ActionDrill,
     "resize": DRILLF.ResizeDrill, "copy-paste": DRILLF.CopyPasteDrill,
+    "transition-stress": DRILLF.TransitionStressDrill,
     "submachine": DRILLF.SubmachineDrill,
     "compound": DRILLC.CompoundDrill,
 }

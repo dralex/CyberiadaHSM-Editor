@@ -236,6 +236,68 @@ class CopyPasteDrill(Drill):
         return (["click %d %d" % (round(cx), round(cy)), "copy", "paste"], "state", "")
 
 
+class TransitionStressDrill(Drill):
+    """A transition between two nested states, then the restructuring that tends
+    to leave it "hanging in the air": add actions to an endpoint state, unlink an
+    endpoint state from its parent, and move+resize an endpoint state through the
+    model. The transition is drawn with the TOOL so its endpoints are stored (the
+    model new-transition leaves them auto, which the border law exempts). The
+    standing EDGE-1 law checks after every step that each stored endpoint still
+    lies on its state's border; the drill asserts the endpoints keep their pair."""
+
+    name = "transition-stress"
+
+    def emit(self, dump):
+        doc = dump.document
+        m = self.machine(doc)
+        if m is None:
+            return None
+        states = _states(doc)
+        existing = doc.transitions()
+        if not existing:
+            # two sibling states under an outer composite, then a tool-drawn edge
+            tops = [s for s in states if s.parent and s.parent.id == m.id]
+            if not tops:
+                return ["new-state %s 80 80 360 260 Outer" % m.id], "state", ""
+            outer = tops[0]
+            kids = [s for s in states if s.parent and s.parent.id == outer.id]
+            if len(kids) < 2:
+                return (["new-state %s %d 40 130 90 %s" % (outer.id, 30 + 170 * len(kids), self.fresh("S"))],
+                        "state", "")
+            ia, ib = dump.scene_items().get(kids[0].id), dump.scene_items().get(kids[1].id)
+            if ia is None or ib is None:
+                return None
+            ax, ay, aw, ah = ia.abs_rect
+            bx, by, bw, bh = ib.abs_rect
+            return (["tool transition",
+                     "press %d %d" % (round(ax + aw - 8), round(ay + ah / 2.0)),
+                     "drag %d %d" % (round(bx + 8), round(by + bh / 2.0)),
+                     "release %d %d" % (round(bx + 8), round(by + bh / 2.0))], "transition", "")
+        # stress the endpoint state that carries a STORED point (the tool stores
+        # the target): its border is what a resize/grow moves under the endpoint
+        t = existing[0]
+        hold = "transition %s %s" % (t.source, t.target)
+        h = dump.transition_handles(t.id)
+        victim = t.target if (h and h["target"] is not None) else t.source
+        vs = doc.find(victim)
+        if vs is None:
+            return None
+        g = vs.geometry if (vs.geometry and len(vs.geometry) >= 4) else None
+        step = self.step % 4
+        if step == 0:                                    # add an action
+            return (["new-action %s entry/ act_%d()" % (victim, self.step)], "state", hold)
+        if step == 1 and g:                              # shrink through the model
+            return (["move %s %d %d %d %d" % (victim, round(g[0]), round(g[1]),
+                                              max(40, round(g[2] - 30)), max(30, round(g[3] - 20)))],
+                    "state", hold)
+        if step == 2 and vs.parent and vs.parent.id != m.id:   # unlink to the machine
+            return (["reparent %s %s" % (victim, m.id)], "state", hold)
+        if g:                                            # grow through the model
+            return (["move %s %d %d %d %d" % (victim, round(g[0]), round(g[1]),
+                                              round(g[2] + 50), round(g[3] + 30))], "state", hold)
+        return (["new-action %s TICK_%d/ x()" % (victim, self.step)], "state", hold)
+
+
 class SubmachineDrill(Drill):
     """A submachine state referencing an external machine, its entry/exit
     connectors, standalone entry/exit points in the machine, and a valid
