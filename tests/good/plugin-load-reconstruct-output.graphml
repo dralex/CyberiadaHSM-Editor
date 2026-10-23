@@ -111,6 +111,12 @@ stop();
     </edge>
     <edge id="cX-n0" source="cX" target="n0">
       <data key="dPivot"/>
+      <data key="dSourcePoint">
+        <point x="0.000000" y="5.714300"/>
+      </data>
+      <data key="dTargetPoint">
+        <point x="97.727300" y="60.000000"/>
+      </data>
     </edge>
   </graph>
 </graphml>
