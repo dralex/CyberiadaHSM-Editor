@@ -60,6 +60,7 @@ private slots:
 	void test_undo_reset();
 	void test_reconstruct_geometry();
 	void test_recover_loose_endpoint();
+	void test_resize_parent_holds_children();
 	void test_sm_not_drawn_mark();
 	void test_tree_drag_flags();
 	void test_grow_holds_rect_children();
@@ -398,6 +399,32 @@ void TestModel::test_recover_loose_endpoint()
 	const Cyberiada::Transition* it = static_cast<const Cyberiada::Transition*>(inspected.idToElement("edge-2"));
 	QVERIFY(it && qAbs(it->get_source_point().x - 300.0) < 0.01);
 	SettingsManager::instance().setInspectorMode(false);
+}
+
+void TestModel::test_resize_parent_holds_children()
+{
+	// a composite resized through the model (the move verb) may not shrink below its
+	// children; it grows back to contain them, never leaving one outside (EDIT-NODE-1)
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	Cyberiada::ElementCollection* parent =
+		static_cast<Cyberiada::ElementCollection*>(model->idToElement("node-0-0"));
+	QVERIFY(parent);
+	// shrink node-0-0 (600x150-ish, holding node-0-0-2 out at x=225) to a tiny box
+	Cyberiada::Rect pr = parent->get_geometry_rect();
+	QVERIFY(model->updateGeometry(model->elementToIndex(parent), Cyberiada::Rect(pr.x, pr.y, 40, 40)));
+
+	Cyberiada::Rect grown = parent->get_geometry_rect();
+	QVERIFY(grown.width > 40.0 && grown.height > 40.0);          // grew back
+	// every child sits inside the (grown) parent half-extents
+	const Cyberiada::ElementList& kids = parent->get_children();
+	for (Cyberiada::ElementList::const_iterator i = kids.begin(); i != kids.end(); ++i) {
+		Cyberiada::ElementCollection* cc = dynamic_cast<Cyberiada::ElementCollection*>(*i);
+		if (!cc || !cc->has_rect_geometry()) continue;
+		Cyberiada::Rect cr = cc->get_geometry_rect();
+		if (!cr.valid) continue;
+		QVERIFY(qAbs(cr.x) + cr.width / 2.0 <= grown.width / 2.0 + 1.5);
+		QVERIFY(qAbs(cr.y) + cr.height / 2.0 <= grown.height / 2.0 + 1.5);
+	}
 }
 
 void TestModel::test_undo_redo()

@@ -952,6 +952,13 @@ bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada:
 	if (reattach && current.valid && rect.valid) {
 		reattachTransitions(element, current, rect);
 		reattachCommentLinks(element, current, rect);
+		// a state may not shrink below its children: the interactive drag clamps the
+		// border to the content, so a model-driven resize (the move verb) re-contains
+		// them too, or a child is left drawn outside the shrunk parent (EDIT-NODE-1)
+		Cyberiada::ElementCollection* coll = dynamic_cast<Cyberiada::ElementCollection*>(element);
+		if (coll && !coll->get_children().empty()) {
+			growToFitChildren(coll->get_children().front());
+		}
 	}
 	return true;
 }
