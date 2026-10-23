@@ -175,6 +175,9 @@ private:
     void  clearSubjectLinks();
     void  addSubjectLinks(Cyberiada::Element* element);
     void  updateSubjectLinks();
+    // the links of a comment no longer match its drawable subjects (a subject added,
+    // removed or an end gone): a retarget or a point change keeps the items
+    bool  subjectLinksStale(const Cyberiada::Comment* comment) const;
 
 
     CyberiadaSMModel*              model;

@@ -513,6 +513,9 @@ void CyberiadaSMEditorAbstractItem::applyBorderRect(QRectF borderScene)
         model->updateGeometry(model->elementToIndex(element),
             Cyberiada::Rect(old.x + delta.x(), old.y + delta.y(),
                             borderScene.width(), borderScene.height()));
+        // the comment links hold their stored ends (EDIT-EDGE-19)
+        if (delta.x() != 0.0) emit sizeChanged(CornerFlags::Right, delta.x());
+        if (delta.y() != 0.0) emit sizeChanged(CornerFlags::Bottom, delta.y());
         return;
     }
     // clamp each edge so the content stays inside the inset region (children may

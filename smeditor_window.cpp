@@ -43,6 +43,7 @@
 
 #include "smeditor_window.h"
 #include "cyberiadasm_editor_view.h"
+#include "cyberiadasm_editor_subject_item.h"
 #include "myassert.h"
 #include "fontmanager.h"
 #include "dialogs/preferences_dialog.h"
@@ -408,6 +409,11 @@ void CyberiadaSMEditorWindow::updateEditActions()
         del = model()->indexToElement(SMView->currentIndex());
     }
     bool deletable = del && dynamic_cast<Cyberiada::ElementCollection*>(del->get_parent());
+    // a selected link is deleted on its own (its subject); it is not copied
+    if (!scene()->selectedItems().isEmpty() &&
+        dynamic_cast<CyberiadaSMEditorSubjectItem*>(scene()->selectedItems().first())) {
+        deletable = true;
+    }
     bool copyable = hasElement && el->get_type() != Cyberiada::elementSM;   // an SM is not copyable
     actionCut->setEnabled(copyable && !inspector);
     actionCopy->setEnabled(copyable && !inspector);
@@ -1009,6 +1015,12 @@ void CyberiadaSMEditorWindow::slotDeleteElement()
             return;
         }
         model()->deleteElement(idx);
+        return;
+    }
+    // a selected comment link removes its subject, never the comment (EDIT-EDGE-20)
+    if (CyberiadaSMEditorSubjectItem* link =
+            dynamic_cast<CyberiadaSMEditorSubjectItem*>(scene()->selectedItems().first())) {
+        link->deleteSubject();
         return;
     }
     CyberiadaSMEditorAbstractItem* itemToDelete = dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene()->selectedItems().first());

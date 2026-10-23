@@ -71,6 +71,7 @@ private:
 	CyberiadaSMModel*        model;
 	CyberiadaSMEditorScene*  scene = nullptr;
 	Cyberiada::Element*      element;
+	QString                     builtSubjectsShape;
     bool                     updating;
     // the free-form metainformation rows, mapped to their canonical parameter key
     QMap<QtProperty*, QString> metaStringKeys;
@@ -197,6 +198,8 @@ private:
 	CyberiadaProperty&          findPropertyStruct(const QString& propName, const QString& alt_name = "");
     CyberiadaProperty&          findProperty(const QtProperty*);
     QtProperty*                 findQtProperty(QtProperty* root, const QString& prop_name, int index = 0);
+    // the rows the subjects of a comment take: a change of it rebuilds the view
+    static QString              subjectsShape(const Cyberiada::Comment* comment);
     QtProperty*                 getPropertyParent(QtProperty* property);
     int                         getPropertyIndex(QtProperty* property);
 	Cyberiada::ConstElementList getAllElements(ElementListKind kind) const;

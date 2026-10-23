@@ -1,0 +1,4 @@
+# a click on a comment link selects it, the delete action removes its subject and
+# keeps the comment (EDIT-EDGE-20)
+click 300 150
+delete-selected

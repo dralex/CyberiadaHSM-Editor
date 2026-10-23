@@ -572,36 +572,12 @@ QPointF CyberiadaSMEditorTransitionItem::findIntersectionWithItem(const Cyberiad
 void CyberiadaSMEditorTransitionItem::updateCoordinates(CornerFlags side, QPointF& point,
                                                         qreal d, const CyberiadaSMEditorAbstractItem* item)
 {
-    if (!item) return;
-    // 'd' is the CENTRE displacement on the flagged axis (not the edge delta, and
-    // it does not say which edge moved). Keeping the endpoint's ABSOLUTE scene
-    // position is rel -= centreDelta (abs = old_centre + rel; new_centre =
-    // old_centre + d). The handle path sends Right/Bottom with signed d; the
-    // containment-grow paths send the real side (incl. Left/Top) with positive d.
-    qreal cx = 0.0, cy = 0.0;
-    if (side & CyberiadaSMEditorAbstractItem::CornerFlags::Right)  cx += d;
-    if (side & CyberiadaSMEditorAbstractItem::CornerFlags::Left)   cx -= d;
-    if (side & CyberiadaSMEditorAbstractItem::CornerFlags::Bottom) cy += d;
-    if (side & CyberiadaSMEditorAbstractItem::CornerFlags::Top)    cy -= d;
-    point.rx() -= cx;
-    point.ry() -= cy;
-    // re-attach to the NEW border: a point on an unmoved (e.g. perpendicular)
-    // border keeps its place, while a point whose edge moved away is pulled back
-    QRectF r = item->sceneBoundingRect();   // already the new size at emit time
-    clampOntoBorder(point, r.width() / 2.0, r.height() / 2.0);
+    EdgeGeometry::rebaseOnResize(side, point, d, item);
 }
 
 void CyberiadaSMEditorTransitionItem::clampOntoBorder(QPointF& p, qreal hw, qreal hh)
 {
-    if (hw <= 0.0 || hh <= 0.0) return;
-    qreal x = qBound(-hw, p.x(), hw);
-    qreal y = qBound(-hh, p.y(), hh);
-    if ((hh - qAbs(y)) <= (hw - qAbs(x))) {   // nearer the top/bottom edge -> snap y
-        y = (y >= 0.0) ? hh : -hh;
-    } else {                                  // nearer a side edge -> snap x
-        x = (x >= 0.0) ? hw : -hw;
-    }
-    p = QPointF(x, y);
+    EdgeGeometry::clampOntoBorder(p, hw, hh);
 }
 
 void CyberiadaSMEditorTransitionItem::movePolyline(QPointF delta)

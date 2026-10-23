@@ -46,6 +46,18 @@ QPointF findIntersectionWithItem(const CyberiadaSMEditorAbstractItem* item,
 // point, relative to the node centre
 QPointF attachedPoint(const CyberiadaSMEditorAbstractItem* item, const QPointF& toward);
 
+// put a centre-relative point exactly on the border of a rect of the given
+// half-extents (clamp inside, then snap to the nearest edge)
+void clampOntoBorder(QPointF& p, qreal hw, qreal hh);
+
+// re-base a centre-relative end after its node was resized: side and d tell the
+// centre displacement; the absolute place is kept and the end put back on the new border
+void rebaseOnResize(int side, QPointF& point, qreal d, const CyberiadaSMEditorAbstractItem* item);
+
+// the border point of a node nearest to a scene point: a rect node clamps it onto
+// its border, a vertex or a choice attaches toward it
+QPointF borderNearest(const CyberiadaSMEditorAbstractItem* item, const QPointF& p);
+
 // the point of a path nearest to p; endMargin of the first and the last segment
 // and the avoided rect stay free (a link foot keeps off the arrow and the label,
 // as libhtreegeom places it)

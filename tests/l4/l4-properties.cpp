@@ -56,6 +56,7 @@ private slots:
 	void test_multiline_dialog();
 	void test_multiline_edit();
 	void test_meta_description_multiline();
+	void test_subject_edit();
 
 private:
 	void select(const char* id);
@@ -66,6 +67,8 @@ private:
 	double getDouble(QtProperty* row);
 	QGraphicsItem* item(const char* id);
 	StateTitle* title(const char* id);
+	// the rows of a name, in the view order
+	QList<QtProperty*> named(const QString& name);
 	CyberiadaSMModel* model;
 	CyberiadaSMEditorScene* scene;
 	PropertiesProbe* view;
@@ -111,6 +114,15 @@ void TestProperties::setDouble(QtProperty* row, double value)
 double TestProperties::getDouble(QtProperty* row)
 {
 	return dynamic_cast<QtDoublePropertyManager*>(row->propertyManager())->value(row);
+}
+
+QList<QtProperty*> TestProperties::named(const QString& name)
+{
+	QList<QtProperty*> found;
+	for (QtProperty* p : rows<QtAbstractPropertyManager>()) {
+		if (p->propertyName() == name) found << p;
+	}
+	return found;
 }
 
 QGraphicsItem* TestProperties::item(const char* id)
@@ -473,6 +485,62 @@ void TestProperties::test_meta_description_multiline()
 	// a model change refreshes the row in place
 	QVERIFY(model->updateMetainformation(docIndex, METAINFORMATION_KEY_DESCRIPTION, "alpha\nbeta"));
 	QCOMPARE(m->value(description), QString("alpha\nbeta"));
+}
+
+void TestProperties::test_subject_edit()
+{
+	// the subject rows of a comment: the target and the type are edited in place, each
+	// subject row follows its own subject, the link geometry is shown, not edited
+	QVERIFY(model->loadDocument("diagrams/comment-transition.graphml"));
+	scene->loadScene();
+	Cyberiada::Element* note = model->idToElement("n2");
+	QVERIFY(model->newCommentSubject(model->elementToIndex(note), model->idToElement("n1"),
+									 Cyberiada::commentSubjectElement, QString(),
+									 Cyberiada::Point(100, 0), Cyberiada::Point(-100, 0)));
+	select("n2");
+	QList<QtProperty*> targets = named("Subject Target");
+	QCOMPARE(targets.size(), 2);
+	QtEnumPropertyManager* m = dynamic_cast<QtEnumPropertyManager*>(targets.at(1)->propertyManager());
+	QVERIFY(m);
+	QStringList names = m->enumNames(targets.at(1));
+	QCOMPARE(names.at(m->value(targets.at(0))), QString("[t0]"));
+	QCOMPARE(names.at(m->value(targets.at(1))), QString("Second state"));
+
+	// the second subject retargeted to the first state, the first one untouched
+	m->setValue(targets.at(1), names.indexOf("First state"));
+	const Cyberiada::Comment* c = static_cast<const Cyberiada::Comment*>(model->idToElement("n2"));
+	QCOMPARE(c->get_subjects().at(1).get_element()->get_id(), std::string("n0"));
+	QCOMPARE(c->get_subjects().at(0).get_element()->get_id(), std::string("t0"));
+	QCoreApplication::sendPostedEvents();
+	targets = named("Subject Target");
+	QCOMPARE(names.at(m->value(targets.at(1))), QString("First state"));
+
+	// the type set to a name fragment starts with the whole name
+	QList<QtProperty*> types = named("Subject Type");
+	QCOMPARE(types.size(), 2);
+	m->setValue(types.at(1), int(Cyberiada::commentSubjectName));
+	QCOMPARE(int(c->get_subjects().at(1).get_type()), int(Cyberiada::commentSubjectName));
+	QCOMPARE(c->get_subjects().at(1).get_fragment(), std::string("First state"));
+	QCoreApplication::sendPostedEvents();
+	QCOMPARE(named("Fragment").size(), 1);
+
+	// a refused target (the comment itself) leaves the subject as it was
+	targets = named("Subject Target");
+	int self = m->enumNames(targets.at(0)).indexOf("[n2]");
+	if (self >= 0) {
+		m->setValue(targets.at(0), self);
+		QCOMPARE(c->get_subjects().at(0).get_element()->get_id(), std::string("t0"));
+		QCoreApplication::sendPostedEvents();
+	}
+
+	// the link geometry rows are disabled
+	for (QtProperty* g : named("Geometry")) {
+		bool under_subject = false;
+		for (QtProperty* s : named("Subject")) {
+			if (s->subProperties().contains(g)) under_subject = true;
+		}
+		if (under_subject) QVERIFY(!g->isEnabled());
+	}
 }
 
 QTEST_MAIN(TestProperties)

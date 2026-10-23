@@ -21,6 +21,7 @@
  *
  * ----------------------------------------------------------------------------- */
 
+#include <QTimer>
 #include <QDebug>
 #include <QMenu>
 #include <QAction>
@@ -676,57 +677,38 @@ void CyberiadaSMPropertiesWidget::slotPropertyChanged(QtProperty* p)
 //                 stringManager->setValue(markup_prop, QString(comment->get_markup().c_str()));
 //                 comment_group_prop->addSubProperty(markup_prop);
 
-                if (comment->has_subjects()) {
-                   // TODO
-//                    const std::vector<Cyberiada::CommentSubject>& subjects = comment->get_subjects();
-//                     for (std::vector<Cyberiada::CommentSubject>::const_iterator i = subjects.begin(); i != subjects.end(); i++) {
-//                         const Cyberiada::CommentSubject& cs = *i;
-
-//                         QtProperty* subject_prop = constructProperty(propGroupSubject);
-//                         subjects_group_prop->addSubProperty(subject_prop);
-
-//                         QtProperty* cs_type_prop = constructProperty(propSubjectType);
-//                         enumManager->setValue(cs_type_prop, cs.get_type());
-//                         subject_prop->addSubProperty(cs_type_prop);
-
-//                         QtProperty* cs_target_prop = constructProperty(propTarget);
-//                         enumManager->setValue(cs_target_prop, getElementNumber(listSubject, cs.get_element()));
-//                         subject_prop->addSubProperty(cs_target_prop);
-
-//                         if (cs.get_type() != Cyberiada::commentSubjectElement) {
-//                             QtProperty* fragment_prop = constructProperty(propFragment);
-//                             stringManager->setValue(fragment_prop, cs.get_fragment().c_str());
-//                             subject_prop->addSubProperty(fragment_prop);
-//                         }
-
-//                         if (cs.has_geometry()) {
-//                             QtProperty* geom_group_prop = constructProperty(propGroupGeometry);
-//                             subject_prop->addSubProperty(geom_group_prop);
-
-//                             if (cs.has_geometry_source_point()) {
-//                                 QtProperty* spoint_group_prop = constructProperty(propGroupSourcePoint);
-//                                 geom_group_prop->addSubProperty(spoint_group_prop);
-//                                 pointManager->setValue(spoint_group_prop, QPointF(cs.get_geometry_source_point().x,
-//                                                                                   cs.get_geometry_source_point().y));
-//                             }
-//                             if (cs.has_geometry_target_point()) {
-//                                 QtProperty* tpoint_group_prop = constructProperty(propGroupTargetPoint);
-//                                 geom_group_prop->addSubProperty(tpoint_group_prop);
-//                                 pointManager->setValue(tpoint_group_prop, QPointF(cs.get_geometry_target_point().x,
-//                                                                                   cs.get_geometry_target_point().y));
-//                             }
-//                             if (cs.has_polyline()) {
-//                                 QtProperty* poly_group_prop = constructProperty(propGroupPolyline);
-//                                 geom_group_prop->addSubProperty(poly_group_prop);
-//                                 const Cyberiada::Polyline& pl = cs.get_geometry_polyline();
-//                                 for (Cyberiada::Polyline::const_iterator i = pl.begin(); i != pl.end(); i++) {
-//                                     QtProperty* point_prop = constructProperty(propGroupPoint);
-//                                     poly_group_prop->addSubProperty(point_prop);
-//                                     pointManager->setValue(point_prop, QPointF(i->x, i->y));
-//                                 }
-//                             }
-//                         }
-//                     }
+                if (comment->has_subjects() && (cp.name == propSubjectType || cp.name == propSubjectTarget ||
+                                                cp.name == propFragment)) {
+                    QtProperty* subject_prop = getPropertyParent(p);
+                    int subject_index = subject_prop ? getPropertyIndex(subject_prop) : -1;
+                    const std::vector<Cyberiada::CommentSubject>& subjects = comment->get_subjects();
+                    if (subject_index >= 0 && size_t(subject_index) < subjects.size()) {
+                        const Cyberiada::CommentSubject& cs = subjects.at(size_t(subject_index));
+                        Cyberiada::Element* target = const_cast<Cyberiada::Element*>(cs.get_element());
+                        Cyberiada::CommentSubjectType stype = cs.get_type();
+                        QString fragment = QString::fromStdString(cs.get_fragment());
+                        if (cp.name == propSubjectTarget) {
+                            Cyberiada::ConstElementList list = getAllElements(listSubject);
+                            int n = enumManager->value(p);
+                            if (n >= 0 && size_t(n) < list.size()) target = const_cast<Cyberiada::Element*>(list.at(size_t(n)));
+                        }
+                        if (cp.name == propSubjectType) stype = Cyberiada::CommentSubjectType(enumManager->value(p));
+                        if (cp.name == propFragment) fragment = propertyString(p);
+                        // a new name/data subject starts with the whole name or the first line of the text
+                        if (stype == Cyberiada::commentSubjectElement) {
+                            fragment.clear();
+                        } else if (fragment.isEmpty() && target) {
+                            fragment = stype == Cyberiada::commentSubjectName && target->has_name() ?
+                                QString::fromStdString(target->get_name()) : QString();
+                            if (fragment.isEmpty() && target->get_type() == Cyberiada::elementTransition) {
+                                fragment = QString::fromStdString(static_cast<const Cyberiada::Transition*>(target)->get_action().get_trigger());
+                            }
+                        }
+                        // a refused subject (EDIT-STRUCT-12) shows again as it is
+                        if (!model->updateCommentSubject(i, subject_index, target, stype, fragment)) {
+                            QTimer::singleShot(0, this, &CyberiadaSMPropertiesWidget::rebuildProperties);
+                        }
+                    }
                 }
             }
 
@@ -771,6 +753,18 @@ void CyberiadaSMPropertiesWidget::slotPropertyChanged(QtProperty* p)
 }
 
 // the row and its sub-rows are shown but never edited
+QString CyberiadaSMPropertiesWidget::subjectsShape(const Cyberiada::Comment* comment)
+{
+	QString shape;
+	for (const Cyberiada::CommentSubject& cs : comment->get_subjects()) {
+		shape += cs.get_type() == Cyberiada::commentSubjectElement ? "e" : "f";
+		if (cs.has_geometry_source_point()) shape += "s";
+		if (cs.has_geometry_target_point()) shape += "t";
+		shape += QString::number(cs.get_geometry_polyline().size()) + ";";
+	}
+	return shape;
+}
+
 static void disableRow(QtProperty* row)
 {
 	row->setEnabled(false);
@@ -993,6 +987,7 @@ void CyberiadaSMPropertiesWidget::newElement(Cyberiada::Element* new_element)
 				stringManager->setValue(markup_prop, QString(comment->get_markup().c_str()));    
 				comment_group_prop->addSubProperty(markup_prop);
 
+				builtSubjectsShape = subjectsShape(comment);
 				if (comment->has_subjects()) {
 					QtProperty* subjects_group_prop = constructProperty(propGroupSubjects);
 					addProperty(subjects_group_prop);	
@@ -1043,6 +1038,8 @@ void CyberiadaSMPropertiesWidget::newElement(Cyberiada::Element* new_element)
 									pointManager->setValue(point_prop, QPointF(i->x, i->y));
 								}
 							}
+							// the link ends are edited on the canvas (EDIT-EDGE-20)
+							disableRow(geom_group_prop);
 						}
 					}
 				}
@@ -1312,17 +1309,24 @@ void CyberiadaSMPropertiesWidget::updateElement()
                 QtProperty* markup_prop = findQtProperty(comment_group_prop, findPropertyStruct(propMarkup).propName);
                 stringManager->setValue(markup_prop, QString(comment->get_markup().c_str()));
 
-                if (comment->has_subjects()) {
+                // a subject added, removed or reshaped takes other rows: the view is
+                // rebuilt after the change that reported it (its row may be the sender)
+                if (subjectsShape(comment) != builtSubjectsShape) {
+                    builtSubjectsShape = subjectsShape(comment);
+                    QTimer::singleShot(0, this, &CyberiadaSMPropertiesWidget::rebuildProperties);
+                } else if (comment->has_subjects()) {
                     QtProperty* subjects_group_prop = findQtProperty(nullptr, findPropertyStruct(propGroupSubjects).propName);
                     if (subjects_group_prop == nullptr) {
                         subjects_group_prop = constructProperty(propGroupSubjects);
                         addProperty(subjects_group_prop);
                     }
                     const std::vector<Cyberiada::CommentSubject>& subjects = comment->get_subjects();
-                    for (std::vector<Cyberiada::CommentSubject>::const_iterator i = subjects.begin(); i != subjects.end(); i++) {
+                    int subject_index = 0;
+                    for (std::vector<Cyberiada::CommentSubject>::const_iterator i = subjects.begin(); i != subjects.end(); i++, subject_index++) {
                         const Cyberiada::CommentSubject& cs = *i;
 
-                        QtProperty* subject_prop = findQtProperty(subjects_group_prop, findPropertyStruct(propGroupSubject).propName);
+                        QtProperty* subject_prop = findQtProperty(subjects_group_prop, findPropertyStruct(propGroupSubject).propName,
+                                                                  subject_index);
                         if (subject_prop == nullptr) {
                             subject_prop = constructProperty(propGroupSubject);
                             subjects_group_prop->addSubProperty(subject_prop);

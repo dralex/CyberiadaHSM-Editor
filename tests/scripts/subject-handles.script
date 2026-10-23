@@ -1,0 +1,12 @@
+# the handles of a selected comment link (EDIT-EDGE-20): the target handle dropped
+# on the first state retargets the subject there, the source handle slides along
+# the comment border
+click 300 150
+press 300 50
+drag 200 60
+drag 110 60
+release 110 60
+press 300 200
+drag 340 200
+drag 380 205
+release 380 205

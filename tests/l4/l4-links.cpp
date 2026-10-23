@@ -29,6 +29,7 @@
 #include "cyberiadasm_editor_scene.h"
 #include "cyberiadasm_editor_transition_item.h"
 #include "cyberiadasm_editor_subject_item.h"
+#include "dotsignal.h"
 
 class TestLinks: public QObject {
 	Q_OBJECT
@@ -45,6 +46,11 @@ private slots:
 	void test_link_draw_to_transition();
 	void test_link_draw_refused();
 	void test_press_without_drag();
+	void test_link_handles_shown();
+	void test_link_selects_comment();
+	void test_link_retarget_by_handle();
+	void test_link_delete();
+	void test_link_rebased_on_resize();
 
 private:
 	CyberiadaSMModel* model = nullptr;
@@ -311,6 +317,101 @@ void TestLinks::test_press_without_drag()
 	scene->setCurrentTool(ToolType::Select);
 	drag(ToolType::Select, c, centre("n1"));
 	QCOMPARE(subjects("n2"), 1);
+}
+
+void TestLinks::test_link_handles_shown()
+{
+	// the handles of a selected link show under the selection tool only (EDIT-EDGE-20)
+	load("diagrams/comment-transition.graphml");
+	CyberiadaSMEditorSubjectItem* l = link("n2");
+	QVERIFY(l);
+	scene->setCurrentTool(ToolType::Select);
+	QVERIFY(!l->sourceDot()->isVisible() && !l->targetDot()->isVisible());
+	l->setSelected(true);
+	QVERIFY(l->sourceDot()->isVisible() && l->targetDot()->isVisible());
+	QCOMPARE(l->sourceDot()->scenePos(), l->sourceEnd());
+	QCOMPARE(l->targetDot()->scenePos(), l->targetEnd());
+	scene->setCurrentTool(ToolType::Transition);
+	QVERIFY(!l->sourceDot()->isVisible() && !l->targetDot()->isVisible());
+	scene->setCurrentTool(ToolType::Select);
+	QVERIFY(l->sourceDot()->isVisible());
+}
+
+void TestLinks::test_link_selects_comment()
+{
+	// a selected link reports its comment to the tree; the tree echo keeps the link
+	load("diagrams/comment-transition.graphml");
+	CyberiadaSMEditorSubjectItem* l = link("n2");
+	QVERIFY(l);
+	scene->clearSelection();
+	QSignalSpy spy(scene, &CyberiadaSMEditorScene::elementSelected);
+	l->setSelected(true);
+	QVERIFY(spy.count() >= 1);
+	QModelIndex reported = spy.last().at(0).value<QModelIndex>();
+	QCOMPARE(model->indexToElement(reported), model->idToElement("n2"));
+	scene->slotElementSelected(reported);
+	QVERIFY(l->isSelected());
+	QVERIFY(!scene->getMap().value("n2")->isSelected());
+}
+
+void TestLinks::test_link_retarget_by_handle()
+{
+	// the target handle dropped on a state retargets the subject there, the foot on
+	// its border; the link item stays (EDIT-EDGE-20)
+	load("diagrams/comment-transition.graphml");
+	CyberiadaSMEditorSubjectItem* l = link("n2");
+	QVERIFY(l);
+	scene->setCurrentTool(ToolType::Select);
+	l->setSelected(true);
+	QPointF from = l->targetDot()->scenePos();
+	QPointF to = centre("n0") + QPointF(10, 10);
+	drag(ToolType::Select, from, to);
+	const Cyberiada::Comment* note = static_cast<const Cyberiada::Comment*>(model->idToElement("n2"));
+	QCOMPARE(note->get_subjects().size(), size_t(1));
+	QCOMPARE(note->get_subjects().at(0).get_element()->get_id(), std::string("n0"));
+	QVERIFY(note->get_subjects().at(0).has_geometry_target_point());
+	QCOMPARE(link("n2"), l);
+	QVERIFY(onBorder(scene->getMap().value("n0")->sceneBoundingRect(), l->targetEnd()));
+	// the undo restores a snapshot: the elements are new
+	model->undoStack()->undo();
+	note = static_cast<const Cyberiada::Comment*>(model->idToElement("n2"));
+	QVERIFY(note);
+	QCOMPARE(note->get_subjects().at(0).get_element()->get_id(), std::string("t0"));
+}
+
+void TestLinks::test_link_delete()
+{
+	// deleting a link removes its subject, the comment stays; undo brings it back
+	load("diagrams/comment-transition.graphml");
+	CyberiadaSMEditorSubjectItem* l = link("n2");
+	QVERIFY(l);
+	QVERIFY(l->deleteSubject());
+	QCOMPARE(subjects("n2"), 0);
+	QCOMPARE(scene->subjectLinks("n2").size(), 0);
+	QVERIFY(scene->getMap().value("n2"));
+	QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+	model->undoStack()->undo();
+	QCOMPARE(subjects("n2"), 1);
+	QCOMPARE(scene->subjectLinks("n2").size(), 1);
+}
+
+void TestLinks::test_link_rebased_on_resize()
+{
+	// a stored source point keeps its place when the comment grows to the right, and
+	// stays on the border (EDIT-EDGE-19)
+	load("diagrams/comment-transition.graphml");
+	CyberiadaSMEditorSubjectItem* l = link("n2");
+	QVERIFY(l);
+	QPointF before = l->sourceEnd();
+	QRectF box = scene->getMap().value("n2")->sceneBoundingRect();
+	QPointF at(box.right() - 3, box.center().y() + 20);
+	scene->clearSelection();
+	drag(ToolType::Select, at, at + QPointF(40, 0));
+	QVERIFY(scene->getMap().value("n2")->sceneBoundingRect().width() > box.width());
+	l = link("n2");
+	QVERIFY(l);
+	QVERIFY(QLineF(l->sourceEnd(), before).length() < 0.5);
+	QVERIFY(onBorder(scene->getMap().value("n2")->sceneBoundingRect(), l->sourceEnd()));
 }
 
 QTEST_MAIN(TestLinks)

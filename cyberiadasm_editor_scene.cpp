@@ -185,7 +185,16 @@ void CyberiadaSMEditorScene::slotSelectionChanged() {
                 currItem = cItem;
             }
         }
-        if (currItem == nullptr) return;
+        if (currItem == nullptr) {
+            // a selected link shows its comment in the tree and the properties
+            for (QGraphicsItem* item : selectedItems()) {
+                if (auto link = dynamic_cast<CyberiadaSMEditorSubjectItem*>(item)) {
+                    emit elementSelected(model->elementToIndex(link->getComment()));
+                    return;
+                }
+            }
+            return;
+        }
         Cyberiada::ID item_id = elementIdToItemMap.key(currItem);
         const Cyberiada::Element* element = model->idToElement(QString::fromStdString(item_id));
 
@@ -202,6 +211,12 @@ void CyberiadaSMEditorScene::slotElementSelected(const QModelIndex& index)
         Cyberiada::Element* element = model->indexToElement(index);
         const Cyberiada::ID element_id = element->get_id().c_str();
         MY_ASSERT(element);
+
+        // the tree echo of a selected link names its comment: the link stays selected
+        for (QGraphicsItem* item : selectedItems()) {
+            CyberiadaSMEditorSubjectItem* link = dynamic_cast<CyberiadaSMEditorSubjectItem*>(item);
+            if (link && link->getComment() == element) return;
+        }
 
         blockSignals(true);
         clearSelection();
@@ -408,7 +423,8 @@ void CyberiadaSMEditorScene::slotModelDataChanged(const QModelIndex &topLeft, co
         applyItemZ(current_item, element->get_type());
     }
     // a comment may have changed its subjects; any other change may move a link end
-    if (Cyberiada::element_is_comment(element)) {
+    if (Cyberiada::element_is_comment(element) &&
+        subjectLinksStale(static_cast<Cyberiada::Comment*>(element))) {
         rebuildSubjectLinks();
     } else {
         updateSubjectLinks();
@@ -426,12 +442,26 @@ QList<CyberiadaSMEditorSubjectItem*> CyberiadaSMEditorScene::subjectLinks(const 
     return links;
 }
 
+bool CyberiadaSMEditorScene::subjectLinksStale(const Cyberiada::Comment* comment) const
+{
+    QList<int> drawn;
+    for (const CyberiadaSMEditorSubjectItem* link : subjectLinks(comment->get_id())) drawn.append(link->getIndex());
+    QList<int> expected;
+    const std::vector<Cyberiada::CommentSubject>& subjects = comment->get_subjects();
+    for (size_t i = 0; i < subjects.size(); i++) {
+        if (CyberiadaSMEditorSubjectItem::drawable(comment, subjects[i], elementIdToItemMap)) expected.append(int(i));
+    }
+    return drawn != expected;
+}
+
 void CyberiadaSMEditorScene::clearSubjectLinks()
 {
+    // a link may be the one whose handler changed the model: it leaves the scene at
+    // once and is freed later
     for (CyberiadaSMEditorSubjectItem* link : subjectItems) {
         releaseInputFor(link);
         removeItem(link);
-        delete link;
+        link->deleteLater();
     }
     subjectItems.clear();
 }
@@ -777,6 +807,8 @@ void CyberiadaSMEditorScene::refreshToolDecorations()
             ci->refreshTransitionDots();
         }
     }
+    // the link handles show under the selection tool only
+    for (CyberiadaSMEditorSubjectItem* link : subjectItems) link->refreshDots();
 }
 
 // the session log coordinates and the keyboard modifiers, in the batch script

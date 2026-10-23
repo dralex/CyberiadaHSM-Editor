@@ -49,29 +49,29 @@
 <context>
     <name>CyberiadaSMEditorScene</name>
     <message>
-        <location filename="../cyberiadasm_editor_scene.cpp" line="+897"/>
-        <location line="+34"/>
-        <location line="+153"/>
+        <location filename="../cyberiadasm_editor_scene.cpp" line="+1034"/>
+        <location line="+35"/>
+        <location line="+161"/>
         <source>New State Machine</source>
         <translation>Новая машина состояний</translation>
     </message>
     <message>
-        <location line="-177"/>
+        <location line="-186"/>
         <source>Create new state machine</source>
         <translation>Создание машины состояний</translation>
     </message>
     <message>
         <location line="+1"/>
-        <location line="+107"/>
+        <location line="+116"/>
         <location line="+155"/>
-        <location line="+119"/>
+        <location line="+129"/>
         <source>Parameters error:
 </source>
         <translation>Ошибка параметров:
 </translation>
     </message>
     <message>
-        <location line="-321"/>
+        <location line="-331"/>
         <location line="+160"/>
         <source>New state</source>
         <translation>Новое состояние</translation>
@@ -95,7 +95,7 @@
         <translation>Создание элемента</translation>
     </message>
     <message>
-        <location line="+119"/>
+        <location line="+129"/>
         <source>Create new transition</source>
         <translation>Создание перехода</translation>
     </message>
@@ -134,9 +134,17 @@
     </message>
 </context>
 <context>
+    <name>CyberiadaSMEditorSubjectItem</name>
+    <message>
+        <location filename="../cyberiadasm_editor_subject_item.cpp" line="+419"/>
+        <source>Delete Link</source>
+        <translation>Удалить связь с предметом комментирования</translation>
+    </message>
+</context>
+<context>
     <name>CyberiadaSMEditorTransitionItem</name>
     <message>
-        <location filename="../cyberiadasm_editor_transition_item.cpp" line="+1243"/>
+        <location filename="../cyberiadasm_editor_transition_item.cpp" line="+1130"/>
         <source>Delete point</source>
         <translation>Удалить точку</translation>
     </message>
@@ -144,7 +152,7 @@
 <context>
     <name>CyberiadaSMEditorWindow</name>
     <message>
-        <location filename="../smeditor_window.cpp" line="+115"/>
+        <location filename="../smeditor_window.cpp" line="+116"/>
         <source>Output panel</source>
         <translation>Панель вывода</translation>
     </message>
@@ -154,7 +162,7 @@
         <translation>Менеджер плагинов...</translation>
     </message>
     <message>
-        <location line="+107"/>
+        <location line="+110"/>
         <source>Close</source>
         <translation>Закрыть</translation>
     </message>
@@ -188,7 +196,7 @@
         <translation>Markdown</translation>
     </message>
     <message>
-        <location line="+85"/>
+        <location line="+98"/>
         <source>Undo</source>
         <translation>Отменить</translation>
     </message>
@@ -271,7 +279,7 @@
 </translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+20"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
@@ -286,7 +294,7 @@
         <translation>Недавние файлы</translation>
     </message>
     <message>
-        <location line="+206"/>
+        <location line="+225"/>
         <source>Geometry reconstruction</source>
         <translation>Восстановление геометрии</translation>
     </message>
@@ -460,12 +468,12 @@
     </message>
     <message>
         <location line="+201"/>
-        <location line="+1362"/>
+        <location line="+1468"/>
         <source>reparent</source>
         <translation>смена родителя</translation>
     </message>
     <message>
-        <location line="-1307"/>
+        <location line="-1413"/>
         <source>comment</source>
         <translation>комментарий</translation>
     </message>
@@ -537,8 +545,10 @@
         <translation>новый комментарий</translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location line="+72"/>
+        <location line="+40"/>
         <location line="+26"/>
+        <location line="+15"/>
         <source>subject</source>
         <translation>предмет комментирования</translation>
     </message>
@@ -556,7 +566,7 @@
 <context>
     <name>CyberiadaSMPropertiesWidget</name>
     <message>
-        <location filename="../cyberiadasm_properties_widget.cpp" line="+46"/>
+        <location filename="../cyberiadasm_properties_widget.cpp" line="+47"/>
         <source>Action Type</source>
         <comment>Property name</comment>
         <translation>Тип действия</translation>
@@ -1404,7 +1414,7 @@
         <translation>отклонен</translation>
     </message>
     <message>
-        <location line="+117"/>
+        <location line="+131"/>
         <source>cannot read %1</source>
         <translation>не удается прочитать %1</translation>
     </message>
@@ -1530,7 +1540,7 @@
     <message>
         <location line="+44"/>
         <location line="+16"/>
-        <location line="+78"/>
+        <location line="+93"/>
         <source>cancelled</source>
         <translation>отменено</translation>
     </message>
@@ -1619,7 +1629,7 @@
         <translation>у действия «%1» нет параметра «%2»</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+9"/>
         <source>cannot read the value of &apos;%1&apos; from %2</source>
         <translation>не удается прочитать значение «%1» из %2</translation>
     </message>
@@ -1861,7 +1871,7 @@
         <translation>Предупреждение</translation>
     </message>
     <message>
-        <location filename="../cyberiadasm_editor_transition_item.cpp" line="+452"/>
+        <location filename="../cyberiadasm_editor_transition_item.cpp" line="+461"/>
         <source>Reset label position</source>
         <translation>Сбросить положение подписи</translation>
     </message>
@@ -2137,9 +2147,13 @@
     </message>
     <message>
         <location line="+12"/>
-        <location line="+3"/>
         <source>Transition Tool</source>
         <translation>Новый переход</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Transition Tool: a transition from a state or a pseudostate, a comment link from a comment</source>
+        <translation>Новый переход: переход из состояния или псевдосостояния, связь с предметом комментирования из комментария</translation>
     </message>
     <message>
         <location line="+9"/>
@@ -2367,7 +2381,7 @@
 <context>
     <name>StateAction</name>
     <message>
-        <location filename="../cyberiadasm_editor_state_item.cpp" line="+373"/>
+        <location filename="../cyberiadasm_editor_state_item.cpp" line="+376"/>
         <source>Delete</source>
         <translation>Удалить</translation>
     </message>
