@@ -51,6 +51,7 @@ private slots:
 	void test_link_retarget_by_handle();
 	void test_link_delete();
 	void test_link_rebased_on_resize();
+	void test_link_rebased_on_model_resize();
 
 private:
 	CyberiadaSMModel* model = nullptr;
@@ -411,6 +412,23 @@ void TestLinks::test_link_rebased_on_resize()
 	l = link("n2");
 	QVERIFY(l);
 	QVERIFY(QLineF(l->sourceEnd(), before).length() < 0.5);
+	QVERIFY(onBorder(scene->getMap().value("n2")->sceneBoundingRect(), l->sourceEnd()));
+}
+
+void TestLinks::test_link_rebased_on_model_resize()
+{
+	// a stored source point stays on the comment border when the comment is resized
+	// THROUGH THE MODEL (the move verb), not only by an interactive drag (EDIT-EDGE-19)
+	load("diagrams/comment-transition.graphml");
+	CyberiadaSMEditorSubjectItem* l = link("n2");
+	QVERIFY(l);
+	Cyberiada::Element* note = model->idToElement("n2");
+	Cyberiada::Rect r = static_cast<Cyberiada::Comment*>(note)->get_geometry_rect();
+	// grow the comment taller: the top-border source point would otherwise fall inside
+	QVERIFY(model->updateGeometry(model->elementToIndex(note),
+	        Cyberiada::Rect(r.x, r.y, r.width, r.height + 120)));
+	l = link("n2");
+	QVERIFY(l);
 	QVERIFY(onBorder(scene->getMap().value("n2")->sceneBoundingRect(), l->sourceEnd()));
 }
 

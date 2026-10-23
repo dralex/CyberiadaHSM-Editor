@@ -510,10 +510,11 @@ void CyberiadaSMEditorAbstractItem::applyBorderRect(QRectF borderScene)
         prepareGeometryChange();
         Cyberiada::Rect old = cmt->get_geometry_rect();
         QPointF delta = borderScene.center() - scenePos();
+        // reattach=false: the sizeChanged below re-clamps the comment links in the
+        // item layer, holding their stored ends (EDIT-EDGE-19)
         model->updateGeometry(model->elementToIndex(element),
             Cyberiada::Rect(old.x + delta.x(), old.y + delta.y(),
-                            borderScene.width(), borderScene.height()));
-        // the comment links hold their stored ends (EDIT-EDGE-19)
+                            borderScene.width(), borderScene.height()), true, false);
         if (delta.x() != 0.0) emit sizeChanged(CornerFlags::Right, delta.x());
         if (delta.y() != 0.0) emit sizeChanged(CornerFlags::Bottom, delta.y());
         return;

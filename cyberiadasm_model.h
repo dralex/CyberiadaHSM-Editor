@@ -146,6 +146,12 @@ public:
     void                                reattachTransitions(Cyberiada::Element* node,
                                                             const Cyberiada::Rect& oldRect,
                                                             const Cyberiada::Rect& newRect);
+    // the same for the comment-link ends (EDIT-EDGE-19): on a model-driven resize
+    // snap each link's source point onto the resized comment's border and each
+    // link's target point onto the resized subject element's border
+    void                                reattachCommentLinks(Cyberiada::Element* node,
+                                                             const Cyberiada::Rect& oldRect,
+                                                             const Cyberiada::Rect& newRect);
     // a centre in pc's child frame where a (w x h) box clears every existing child
     // (skipping `skip` and transitions); keeps `preferred` when it is already free,
     // else the nearest free slot (paste/reparent place the incoming child clear of

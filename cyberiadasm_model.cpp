@@ -946,6 +946,7 @@ bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada:
 	// passes reattach=false and re-clamps in the item layer instead (EDIT-EDGE-1).
 	if (reattach && current.valid && rect.valid) {
 		reattachTransitions(element, current, rect);
+		reattachCommentLinks(element, current, rect);
 	}
 	return true;
 }
@@ -2745,6 +2746,42 @@ void CyberiadaSMModel::reattachTransitions(Cyberiada::Element* node,
         if (onSrc) sp = clampPointOntoBorder(sp.x, sp.y, hw, hh);
         if (onTgt) tp = clampPointOntoBorder(tp.x, tp.y, hw, hh);
         updateGeometry(elementToIndex(tr), sp, tp);
+    }
+}
+
+void CyberiadaSMModel::reattachCommentLinks(Cyberiada::Element* node,
+                                            const Cyberiada::Rect& oldRect,
+                                            const Cyberiada::Rect& newRect)
+{
+    if (!root || !node) return;
+    // a pure move keeps the size, so the centre-relative link ends follow it
+    if (qAbs(newRect.width - oldRect.width) < 0.01 && qAbs(newRect.height - oldRect.height) < 0.01) return;
+    double hw = newRect.width / 2.0, hh = newRect.height / 2.0;
+    if (hw <= 0.0 || hh <= 0.0) return;
+    Cyberiada::StateMachine* sm = root->get_parent_sm(node);
+    if (!sm) return;
+    // a link's source point sits on its comment's border, its target point on the
+    // subject element's border; snap whichever end attaches to the resized node
+    Cyberiada::ElementList comments = sm->find_elements_by_type(Cyberiada::elementComment);
+    Cyberiada::ElementList formal = sm->find_elements_by_type(Cyberiada::elementFormalComment);
+    comments.insert(comments.end(), formal.begin(), formal.end());
+    for (Cyberiada::Element* e : comments) {
+        Cyberiada::Comment* c = static_cast<Cyberiada::Comment*>(e);
+        bool selfResized = (c == node);
+        const std::vector<Cyberiada::CommentSubject>& subs = c->get_subjects();
+        for (size_t i = 0; i < subs.size(); i++) {
+            const Cyberiada::CommentSubject& s = subs[i];
+            bool fixSrc = selfResized && s.has_geometry_source_point();
+            bool fixTgt = (s.get_element() == node) && s.has_geometry_target_point();
+            if (!fixSrc && !fixTgt) continue;
+            Cyberiada::Point sp = s.has_geometry_source_point() ? s.get_geometry_source_point() : Cyberiada::Point();
+            Cyberiada::Point tp = s.has_geometry_target_point() ? s.get_geometry_target_point() : Cyberiada::Point();
+            Cyberiada::Polyline pl = s.get_geometry_polyline();
+            if (fixSrc) sp = clampPointOntoBorder(sp.x, sp.y, hw, hh);
+            if (fixTgt) tp = clampPointOntoBorder(tp.x, tp.y, hw, hh);
+            c->update_subject_geometry(i, sp, tp, pl);
+            emit dataChanged(elementToIndex(c), elementToIndex(c));
+        }
     }
 }
 
