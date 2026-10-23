@@ -191,8 +191,9 @@ the third is a derived display value the format does not store):
   margin. The parent's rect should consider the actual region rect available for children
   (the whole rect minus a header, other blocks, etc.) *design*
 - `EDIT-NODE-2` MUST [U]: when an operation would leave a child outside its parent, the
-  editor grows the parent to fit; a parent never shrinks below its content. Adding new
-  content (by `move` or `new-state`) grow the parent (see also `EDIT-NODE-5`). A drag that
+  editor grows the parent to fit; a parent never shrinks below its content — a resize through
+  the model (the `move` verb) re-contains the children just as the interactive border drag does.
+  Adding new content (by `move` or `new-state`) grow the parent (see also `EDIT-NODE-5`). A drag that
   moves a child within its own parent grows the parent to keep it inside the same way
   (snap-to-grid included); a dragged element is never relocated away from where it is
   dropped. *design*
@@ -261,7 +262,9 @@ the third is a derived display value the format does not store):
   perpendicular border stays put), and keeps an endpoint whose edge moved attached to the new
   border. This holds however the node geometry changes — an interactive border drag, a move or
   resize through the model, a grow to fit the children, a reparent — so a transition never hangs
-  off a state that was moved, resized or reparented. *design*
+  off a state that was moved, resized or reparented. A loaded document is recovered the same way:
+  an endpoint stored off its border is snapped onto it on load (inspect mode shows it as stored,
+  `EDIT-INSPECT-*`). *design*
 - `EDIT-EDGE-2` MUST [U]: an endpoint of a point-based circle elements (initial
   pseudostate, final state, history pseudostate, or entry/exit point) lies on the border of the
   drawn element, not the center. *design*

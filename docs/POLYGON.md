@@ -498,7 +498,8 @@ traces to the specification and, like a drill invariant, reproduces minimally an
 skips minimisation. Reference-free like tier 1 — a property, not a prediction. The
 hard laws (unique ids, one-parent, endpoints in one machine, composite⇔children,
 no dangling reference, the subject targets of `STRUCT-12`, a drawn comment link
-starting on its comment border (`EDGE-17`, from the `Subject Link` scene lines), a
+starting on its comment border (`EDGE-17`, from the `Subject Link` scene lines, which the dump
+emits in the same frame as the element rects so a nested comment's link is not falsely off-border), a
 stored transition endpoint lying on its state's border (`EDGE-1`, from the
 `transition_handles` source/target points — an auto endpoint is exempt), one
 initial per level, endpoint kinds, containment, sibling no-overlap, the hidden
