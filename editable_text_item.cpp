@@ -103,6 +103,8 @@ void EditableTextItem::startEditing() {
     setTextInteractionFlags(Qt::TextEditorInteraction);
     setFocus();
     isEdit = true;
+    // a fragment underlined in this text gives way while it is edited (EDIT-EDGE-21)
+    if (CyberiadaSMEditorScene* sc = dynamic_cast<CyberiadaSMEditorScene*>(scene())) sc->updateSubjectLinks();
 }
 
 void EditableTextItem::keyPressEvent(QKeyEvent *event) {
@@ -116,6 +118,7 @@ void EditableTextItem::focusOutEvent(QFocusEvent *event) {
     isEdit = false;
     setPlainText(toPlainText().trimmed());
     QGraphicsTextItem::focusOutEvent(event);
+    if (CyberiadaSMEditorScene* sc = dynamic_cast<CyberiadaSMEditorScene*>(scene())) sc->updateSubjectLinks();
     if (CyberiadaSMEditorScene::discardsEdits(this)) return;
     emit editingFinished();
 }

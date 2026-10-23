@@ -25,6 +25,12 @@
 #include <QPainterPath>
 #include <QPolygonF>
 #include <QRectF>
+#include <QFontMetricsF>
+#include <QGraphicsTextItem>
+#include <QTextBlock>
+#include <QTextDocument>
+#include <QTextLayout>
+#include <QAbstractTextDocumentLayout>
 
 #include "edge_geometry.h"
 #include "cyberiadasm_editor_items.h"
@@ -263,4 +269,35 @@ QPointF EdgeGeometry::borderNearest(const CyberiadaSMEditorAbstractItem* item, c
     QPointF rel = p - r.center();
     clampOntoBorder(rel, r.width() / 2.0, r.height() / 2.0);
     return rel + r.center();
+}
+
+QVector<QLineF> EdgeGeometry::textRangeLines(const QGraphicsTextItem* item, int from, int to)
+{
+    QVector<QLineF> lines;
+    if (!item || from >= to) return lines;
+    QTextDocument* doc = item->document();
+    // the underline sits where the font draws its own, below the baseline
+    qreal under = QFontMetricsF(item->font()).underlinePos();
+    for (QTextBlock block = doc->findBlock(from); block.isValid() && block.position() < to; block = block.next()) {
+        // the block bounding rect lays the block out first
+        doc->documentLayout()->blockBoundingRect(block);
+        QTextLayout* layout = block.layout();
+        if (!layout) continue;
+        QPointF origin = layout->position();
+        int bp = block.position();
+        for (int i = 0; i < layout->lineCount(); i++) {
+            QTextLine line = layout->lineAt(i);
+            int a = qMax(from, bp + line.textStart());
+            int b = qMin(to, bp + line.textStart() + line.textLength());
+            if (a >= b) continue;
+            qreal x1 = line.cursorToX(a - bp);
+            qreal x2 = line.cursorToX(b - bp);
+            // a range holding only a line break or a wrap space draws nothing
+            if (x2 - x1 < 0.5) continue;
+            qreal y = line.y() + line.ascent() + under;
+            lines.append(QLineF(item->mapToScene(origin + QPointF(x1, y)),
+                                item->mapToScene(origin + QPointF(x2, y))));
+        }
+    }
+    return lines;
 }

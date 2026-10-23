@@ -30,6 +30,8 @@
 #include <QList>
 #include <QPointer>
 #include <QPainterPath>
+#include <QVector>
+#include <QLineF>
 
 #include <cyberiada/cyberiadamlpp.h>
 
@@ -68,6 +70,9 @@ public:
     QPointF sourceEnd() const;
     QPointF targetEnd() const;
     QPainterPath path() const;
+    // the underline of a fragment in the drawn target text, a segment per line, in
+    // scene coordinates; empty when the fragment is not drawn (EDIT-EDGE-21)
+    QVector<QLineF> underline() const;
 
     // a link is drawn only while both its ends are (EDIT-EDGE-19)
     static bool drawable(const Cyberiada::Comment* comment, const Cyberiada::CommentSubject& subject,
@@ -108,6 +113,8 @@ private:
     // centre is the frame of the target point (PNST 1044 9.1.1)
     CyberiadaSMEditorAbstractItem* targetNode() const;
     CyberiadaSMEditorTransitionItem* targetTransition() const;
+    // the item of the target itself: the node or the transition
+    CyberiadaSMEditorAbstractItem* targetItem() const;
     QPointF frameCentre() const;
     QPointF commentCentre() const;
     // follow the comment, the target node (the frame of a transition target) and the

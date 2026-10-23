@@ -31,7 +31,9 @@
 #include "cyberiadasm_editor_scene.h"
 #include "dotsignal.h"
 #include "edge_geometry.h"
+#include "editable_text_item.h"
 #include "settings_manager.h"
+#include "subject_fragment.h"
 
 // the comment point square (PNST 984 7.2.7) and the part of the end segments of a
 // commented transition kept free of an unstored link foot (as libhtreegeom does)
@@ -156,6 +158,32 @@ CyberiadaSMEditorAbstractItem* CyberiadaSMEditorSubjectItem::targetNode() const
     return dynamic_cast<CyberiadaSMEditorAbstractItem*>(elementIdToItemMap.value(target->get_id()));
 }
 
+CyberiadaSMEditorAbstractItem* CyberiadaSMEditorSubjectItem::targetItem() const
+{
+    if (!hasSubject()) return nullptr;
+    const Cyberiada::Element* target = subject().get_element();
+    if (!target) return nullptr;
+    return dynamic_cast<CyberiadaSMEditorAbstractItem*>(elementIdToItemMap.value(target->get_id()));
+}
+
+QVector<QLineF> CyberiadaSMEditorSubjectItem::underline() const
+{
+    if (!hasSubject() || !subject().has_fragment()) return QVector<QLineF>();
+    const Cyberiada::CommentSubject& s = subject();
+    QString fragment = QString::fromStdString(s.get_fragment());
+    // the first occurrence in the search order is the commented one (EDIT-STRUCT-12)
+    SubjectFragment::Place place = SubjectFragment::locate(s.get_element(), s.get_type(), fragment);
+    CyberiadaSMEditorAbstractItem* owner = targetItem();
+    int start = -1;
+    EditableTextItem* text = place.found() && owner ? owner->fieldText(place.field, &start) : nullptr;
+    // a hidden text, or one being edited, leaves the end on the border
+    if (!text || start < 0 || !text->isVisible() || text->isEditing()) return QVector<QLineF>();
+    int from = start + place.offset;
+    // the drawn text lags the model until its owner syncs
+    if (text->toPlainText().mid(from, fragment.length()) != fragment) return QVector<QLineF>();
+    return EdgeGeometry::textRangeLines(text, from, from + fragment.length());
+}
+
 QPointF CyberiadaSMEditorSubjectItem::commentCentre() const
 {
     CyberiadaSMEditorAbstractItem* c = commentItem();
@@ -178,6 +206,11 @@ QPointF CyberiadaSMEditorSubjectItem::targetEnd() const
     if (dragging == 1) return dragPoint;
     if (!hasSubject()) return QPointF();
     const Cyberiada::CommentSubject& s = subject();
+    if (s.has_fragment()) {
+        // the end lies at the middle of the first underline segment (EDIT-EDGE-21)
+        QVector<QLineF> lines = underline();
+        if (!lines.isEmpty()) return lines.first().center();
+    }
     const Cyberiada::Polyline& pl = s.get_geometry_polyline();
     QPointF toward = !pl.empty() ? toQPoint(pl.back()) + commentCentre() :
         (s.has_geometry_source_point() ? toQPoint(s.get_geometry_source_point()) + commentCentre() :
@@ -225,7 +258,9 @@ QPainterPath CyberiadaSMEditorSubjectItem::path() const
 QRectF CyberiadaSMEditorSubjectItem::boundingRect() const
 {
     qreal m = SUBJECT_POINT_SIZE + SettingsManager::instance().getSelectionBorderWidth();
-    return path().boundingRect().adjusted(-m, -m, m, m);
+    QRectF r = path().boundingRect();
+    for (const QLineF& l : underline()) r |= QRectF(l.p1(), l.p2()).normalized();
+    return r.adjusted(-m, -m, m, m);
 }
 
 QPainterPath CyberiadaSMEditorSubjectItem::shape() const
@@ -250,7 +285,11 @@ void CyberiadaSMEditorSubjectItem::paint(QPainter* painter, const QStyleOptionGr
     painter->setBrush(Qt::NoBrush);
     painter->drawPath(path());
     // a link to an element shows its comment point; a fragment is underlined instead
-    if (!subject().has_fragment()) {
+    if (subject().has_fragment()) {
+        QPen under(pen.color(), pen.widthF(), Qt::SolidLine);
+        painter->setPen(under);
+        for (const QLineF& l : underline()) painter->drawLine(l);
+    } else {
         QPointF end = targetEnd();
         qreal h = SUBJECT_POINT_SIZE / 2.0;
         painter->setPen(Qt::NoPen);

@@ -600,6 +600,13 @@ QString CyberiadaSMEditorTransitionItem::actionText() const
     return SubjectFragment::transitionLabel(transition->get_action()).text;
 }
 
+EditableTextItem* CyberiadaSMEditorTransitionItem::fieldText(const SubjectFragment::Field& field, int* start) const
+{
+    if (!actionItem || !transition->has_action()) return nullptr;
+    *start = SubjectFragment::transitionLabel(transition->get_action()).start(field.kind);
+    return *start >= 0 ? actionItem : nullptr;
+}
+
 void CyberiadaSMEditorTransitionItem::updateAction()
 {
     actionItem->setPlainText(actionText());
@@ -1523,6 +1530,8 @@ void TransitionAction::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
         setPos(pos() + event->scenePos() - dragLast);
         dragLast = event->scenePos();
         dragging = true;
+        // a fragment underlined in the label moves with it (EDIT-EDGE-21)
+        if (CyberiadaSMEditorScene* sc = dynamic_cast<CyberiadaSMEditorScene*>(scene())) sc->updateSubjectLinks();
         event->accept();
         return;
     }

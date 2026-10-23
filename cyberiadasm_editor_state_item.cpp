@@ -347,6 +347,20 @@ void CyberiadaSMEditorStateItem::syncFromModel()
     CyberiadaSMEditorAbstractItem::syncFromModel();
 }
 
+EditableTextItem* CyberiadaSMEditorStateItem::fieldText(const SubjectFragment::Field& field, int* start) const
+{
+    if (field.kind == SubjectFragment::fieldName) {
+        *start = 0;
+        return title;
+    }
+    // the action items follow the model actions one to one
+    const std::vector<Cyberiada::Action>& model_actions = state->get_actions();
+    if (field.action < 0 || size_t(field.action) >= actions.size() ||
+        size_t(field.action) >= model_actions.size()) return nullptr;
+    *start = SubjectFragment::stateAction(model_actions[size_t(field.action)]).start(field.kind);
+    return *start >= 0 ? actions[size_t(field.action)] : nullptr;
+}
+
 void CyberiadaSMEditorStateItem::initializeActions()
 {
     // the rebuild runs from the model change signal, which may originate in

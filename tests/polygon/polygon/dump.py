@@ -368,10 +368,19 @@ SCENE_LINE = re.compile(
     r"^( *)(.+?): \{id: '(.*?)', pos: \(([^;]+); ([^)]+)\), "
     r"rect: \(([^;]+); ([^;]+); ([^;]+); ([^)]+)\)(?:, color: '[^']*')?\}$")
 # a drawn comment link, under its comment (EDIT-EDGE-6/17): the subject index, the
-# target and the scene ends
+# target and the scene ends; a fragment link adds its fragment (escaped) and, while
+# drawn, its underline segments in the target frame (EDIT-EDGE-21)
 SUBJECT_LINE = re.compile(
     r"^( *)Subject Link: \{index: (\d+), target: '(.*?)', "
-    r"from: \(([^;]+); ([^)]+)\), to: \(([^;]+); ([^)]+)\)\}$")
+    r"from: \(([^;]+); ([^)]+)\), to: \(([^;]+); ([^)]+)\)"
+    r"(?:, fragment: '((?:[^'\\]|\\.)*)')?"
+    r"(?:, underline: \[([^\]]*)\])?\}$")
+UNDERLINE_SEGMENT = re.compile(r"\(([^;]+); ([^;]+); ([^)]+)\)")
+
+
+def _unescape(text):
+    """The dump escapes a newline, a backslash and a quote."""
+    return re.sub(r"\\(.)", lambda m: "\n" if m.group(1) == "n" else m.group(1), text)
 
 
 @dataclass
@@ -380,6 +389,9 @@ class SubjectLink:
     target: str
     start: tuple
     end: tuple
+    fragment: str = None
+    # (x1, y, x2) per underlined line
+    underline: list = field(default_factory=list)
 
 
 @dataclass
@@ -423,13 +435,17 @@ def parse_scene(text):
             continue
         link = SUBJECT_LINE.match(line)
         if link:
-            indent, index, target, fx, fy, tx, ty = link.groups()
+            indent, index, target, fx, fy, tx, ty, frag, under = link.groups()
             owner = [i for i in stack if i.depth == len(indent) // 2 - 1]
             if not owner:
                 raise DumpError("a subject link outside a comment: %s" % line)
+            segments = [(float(a), float(b), float(c))
+                        for a, b, c in UNDERLINE_SEGMENT.findall(under or "")]
             owner[-1].links.append(SubjectLink(index=int(index), target=target,
                                                start=(float(fx), float(fy)),
-                                               end=(float(tx), float(ty))))
+                                               end=(float(tx), float(ty)),
+                                               fragment=None if frag is None else _unescape(frag),
+                                               underline=segments))
             continue
         match = SCENE_LINE.match(line)
         if not match:

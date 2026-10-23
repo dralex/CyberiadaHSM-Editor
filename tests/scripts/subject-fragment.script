@@ -1,0 +1,13 @@
+# the fragment links with the text shown: a behaviour, a guard, a name, a label
+# and a wrapped behaviour are underlined; a rename dropping a name fragment makes
+# an element subject (EDIT-EDGE-21, EDIT-STRUCT-13)
+new-action n0 entry/ motor.on()
+new-action n0 TIMEOUT [count > 3] / stop()
+new-action n0 TICK / alpha beta gamma delta epsilon zeta eta theta iota kappa
+new-subject n2 n0 data stop()
+new-subject n2 n0 data count
+new-subject n2 n1 name Second
+new-subject n2 t0 data go()
+new-subject n2 n0 data gamma delta epsilon zeta eta theta
+new-subject n2 n1 name state
+rename n1 Other place

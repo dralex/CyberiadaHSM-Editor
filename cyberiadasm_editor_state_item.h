@@ -97,6 +97,8 @@ public:
     qreal minSpanHeight() const override;
 
     void syncFromModel() override;
+    // the title draws the name, an action item its action (EDIT-EDGE-21)
+    EditableTextItem* fieldText(const SubjectFragment::Field& field, int* start) const override;
 
     void setTextPosition();
 

@@ -136,6 +136,11 @@ void CyberiadaSMEditorAbstractItem::setHighlighted(bool on)
     }
 }
 
+EditableTextItem* CyberiadaSMEditorAbstractItem::fieldText(const SubjectFragment::Field&, int*) const
+{
+    return nullptr;
+}
+
 void CyberiadaSMEditorAbstractItem::syncFromModel()
 {
     setDotsPosition();

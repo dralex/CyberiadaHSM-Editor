@@ -63,6 +63,7 @@ public:
     void setTextMargin(double newTextMargin);
     // enter edit mode programmatically (a double click on the owner, say)
     void startEditing();
+    bool isEditing() const { return isEdit; }
     // the leading characters an edit may not touch (the action type)
     virtual int protectedLength() const { return 0; }
     // re-apply per-character formatting (a bold prefix) after the font changes or

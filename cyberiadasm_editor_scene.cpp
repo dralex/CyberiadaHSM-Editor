@@ -54,6 +54,7 @@
 #include "gesture_log.h"
 #include "myassert.h"
 #include "code_highlighter.h"
+#include "fontmanager.h"
 
 static double DEFAULT_SCENE_X = -500;
 static double DEFAULT_SCENE_Y = -500;
@@ -104,6 +105,11 @@ CyberiadaSMEditorScene::CyberiadaSMEditorScene(CyberiadaSMModel* _model, QObject
     connect(&SettingsManager::instance(), &SettingsManager::gridSettingsChanged, this, &CyberiadaSMEditorScene::slotGridSettingsChanged);
     connect(&SettingsManager::instance(), &SettingsManager::serviceObjectsChanged, this, &CyberiadaSMEditorScene::slotServiceObjectsChanged);
     connect(&SettingsManager::instance(), &SettingsManager::componentCommentsChanged, this, &CyberiadaSMEditorScene::slotComponentCommentsChanged);
+    // the underlines follow the texts once the items have taken the change (EDIT-EDGE-21)
+    connect(&SettingsManager::instance(), &SettingsManager::showTransitionTextChanged,
+            this, &CyberiadaSMEditorScene::updateSubjectLinks, Qt::QueuedConnection);
+    connect(&FontManager::instance(), &FontManager::fontsChanged,
+            this, &CyberiadaSMEditorScene::updateSubjectLinks, Qt::QueuedConnection);
 
 	setBackgroundBrush(Qt::white);
     connect(this, &QGraphicsScene::selectionChanged, this, &CyberiadaSMEditorScene::slotSelectionChanged);

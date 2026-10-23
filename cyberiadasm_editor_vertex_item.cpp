@@ -75,6 +75,12 @@ void CyberiadaSMEditorVertexItem::setTitlePosition()
     title->setPos(-tb.width() / 2.0, VERTEX_POINT_RADIUS + 2);
 }
 
+EditableTextItem* CyberiadaSMEditorVertexItem::fieldText(const SubjectFragment::Field& field, int* start) const
+{
+    *start = 0;
+    return field.kind == SubjectFragment::fieldName ? title : nullptr;
+}
+
 void CyberiadaSMEditorVertexItem::syncFromModel()
 {
     Cyberiada::Rect r = element->get_bound_rect(*(model->rootDocument()));

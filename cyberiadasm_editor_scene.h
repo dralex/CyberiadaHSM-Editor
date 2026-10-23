@@ -137,6 +137,9 @@ public slots:
     void  slotSelectionChanged();
     void  slotModelAboutToBeReset();
     void  slotModelReset();
+    // re-path the links: a geometry change or a change of a drawn text (a fragment
+    // underline, EDIT-EDGE-21)
+    void  updateSubjectLinks();
 
 protected:
     void  drawBackground(QPainter *painter, const QRectF &);
@@ -174,7 +177,6 @@ private:
     void  rebuildSubjectLinks();
     void  clearSubjectLinks();
     void  addSubjectLinks(Cyberiada::Element* element);
-    void  updateSubjectLinks();
     // the links of a comment no longer match its drawable subjects (a subject added,
     // removed or an end gone): a retarget or a point change keeps the items
     bool  subjectLinksStale(const Cyberiada::Comment* comment) const;

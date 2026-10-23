@@ -29,7 +29,12 @@
 #include "cyberiadasm_editor_scene.h"
 #include "cyberiadasm_editor_transition_item.h"
 #include "cyberiadasm_editor_subject_item.h"
+#include "editable_text_item.h"
+#include "settings_manager.h"
+#include "subject_fragment.h"
 #include "dotsignal.h"
+#include <QAbstractTextDocumentLayout>
+#include <QTextDocument>
 
 class TestLinks: public QObject {
 	Q_OBJECT
@@ -52,6 +57,10 @@ private slots:
 	void test_link_delete();
 	void test_link_rebased_on_resize();
 	void test_link_rebased_on_model_resize();
+	void test_fragment_underlined();
+	void test_fragment_fallback();
+	void test_fragment_wrapped();
+	void test_fragment_reconciled();
 
 private:
 	CyberiadaSMModel* model = nullptr;
@@ -62,6 +71,12 @@ private:
 	void drag(ToolType tool, const QPointF& from, const QPointF& to);
 	int subjects(const Cyberiada::ID& comment);
 	QPointF centre(const Cyberiada::ID& id);
+	// the fragment fixture on comment-transition: n0 gets entry/ motor.on() and
+	// TIMEOUT [count > 3] / stop(); returns the text item drawing a subject's fragment
+	void addFragmentActions();
+	EditableTextItem* fragmentText(const Cyberiada::ID& comment, int index, int* from);
+	// every underline segment lies on the glyphs of the fragment
+	void checkUnderline(CyberiadaSMEditorSubjectItem* l, EditableTextItem* text, int from, int to);
 };
 
 static void sceneMouse(CyberiadaSMEditorScene* sc, QEvent::Type type, const QPointF& scenePos,
@@ -433,4 +448,144 @@ void TestLinks::test_link_rebased_on_model_resize()
 }
 
 QTEST_MAIN(TestLinks)
+
+void TestLinks::addFragmentActions()
+{
+	QModelIndex si = model->elementToIndex(model->idToElement("n0"));
+	QVERIFY(model->newAction(si, Cyberiada::actionEntry, QString(), QString(), "motor.on()"));
+	QVERIFY(model->newAction(si, Cyberiada::actionTransition, "TIMEOUT", "count > 3", "stop()"));
+}
+
+EditableTextItem* TestLinks::fragmentText(const Cyberiada::ID& comment, int index, int* from)
+{
+	const Cyberiada::Comment* c = static_cast<const Cyberiada::Comment*>(model->idToElement(QString::fromStdString(comment)));
+	if (!c || size_t(index) >= c->get_subjects().size()) return nullptr;
+	const Cyberiada::CommentSubject& s = c->get_subjects().at(size_t(index));
+	SubjectFragment::Place place = SubjectFragment::locate(s.get_element(), s.get_type(),
+														   QString::fromStdString(s.get_fragment()));
+	CyberiadaSMEditorAbstractItem* owner =
+		dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene->getMap().value(s.get_element()->get_id()));
+	int start = -1;
+	EditableTextItem* text = place.found() && owner ? owner->fieldText(place.field, &start) : nullptr;
+	*from = start + place.offset;
+	return text;
+}
+
+void TestLinks::checkUnderline(CyberiadaSMEditorSubjectItem* l, EditableTextItem* text, int from, int to)
+{
+	QVector<QLineF> lines = l->underline();
+	QVERIFY(!lines.isEmpty());
+	QRectF box = text->sceneBoundingRect().adjusted(-1, -1, 1, 1);
+	qreal ascent = QFontMetricsF(text->font()).ascent();
+	for (const QLineF& line : lines) {
+		QVERIFY(box.contains(line.p1()) && box.contains(line.p2()));
+		QCOMPARE(line.p1().y(), line.p2().y());
+		// the glyphs over the segment ends and middle belong to the fragment
+		for (qreal t : { 0.1, 0.5, 0.9 }) {
+			QPointF p = text->mapFromScene(line.pointAt(t) - QPointF(0, ascent / 2));
+			int pos = text->document()->documentLayout()->hitTest(p, Qt::FuzzyHit);
+			QVERIFY2(pos >= from && pos <= to, qPrintable(QString("%1 not in [%2, %3]").arg(pos).arg(from).arg(to)));
+		}
+	}
+	QCOMPARE(l->targetEnd(), lines.first().center());
+}
+
+void TestLinks::test_fragment_underlined()
+{
+	// a fragment of a behaviour, a guard, a name and a transition label is
+	// underlined in its text and the link ends at the middle (EDIT-EDGE-21)
+	load("diagrams/comment-transition.graphml");
+	addFragmentActions();
+	QModelIndex ni = model->elementToIndex(model->idToElement("n2"));
+	QVERIFY(model->newCommentSubject(ni, model->idToElement("n0"), Cyberiada::commentSubjectData, "stop()"));
+	QVERIFY(model->newCommentSubject(ni, model->idToElement("n0"), Cyberiada::commentSubjectData, "count"));
+	QVERIFY(model->newCommentSubject(ni, model->idToElement("n1"), Cyberiada::commentSubjectName, "Second"));
+	QVERIFY(model->newCommentSubject(ni, model->idToElement("t0"), Cyberiada::commentSubjectData, "go()"));
+	const char* fragments[] = { "stop()", "count", "Second", "go()" };
+	for (int i = 1; i <= 4; i++) {
+		CyberiadaSMEditorSubjectItem* l = link("n2", i);
+		QVERIFY(l);
+		int from = -1;
+		EditableTextItem* text = fragmentText("n2", i, &from);
+		QVERIFY(text);
+		QCOMPARE(text->toPlainText().mid(from, int(strlen(fragments[i - 1]))), QString(fragments[i - 1]));
+		checkUnderline(l, text, from, from + int(strlen(fragments[i - 1])));
+		QCOMPARE(l->underline().size(), 1);
+	}
+	// an element link has no underline
+	QVERIFY(link("n2", 0)->underline().isEmpty());
+}
+
+void TestLinks::test_fragment_fallback()
+{
+	// a text being edited or hidden leaves the end on the border (EDIT-EDGE-21)
+	load("diagrams/comment-transition.graphml");
+	addFragmentActions();
+	QModelIndex ni = model->elementToIndex(model->idToElement("n2"));
+	QVERIFY(model->newCommentSubject(ni, model->idToElement("n0"), Cyberiada::commentSubjectData, "stop()"));
+	QVERIFY(model->newCommentSubject(ni, model->idToElement("t0"), Cyberiada::commentSubjectData, "go()"));
+	int from = -1;
+	EditableTextItem* text = fragmentText("n2", 1, &from);
+	QVERIFY(text && !link("n2", 1)->underline().isEmpty());
+	text->startEditing();
+	QVERIFY(link("n2", 1)->underline().isEmpty());
+	QVERIFY(onBorder(scene->getMap().value("n0")->sceneBoundingRect(), link("n2", 1)->targetEnd()));
+	text->clearFocus();
+	QVERIFY(!link("n2", 1)->underline().isEmpty());
+	// the transition text toggled off: the end goes back onto the path
+	SettingsManager::instance().setShowTransitionText(false);
+	QCoreApplication::sendPostedEvents();
+	CyberiadaSMEditorSubjectItem* l = link("n2", 2);
+	QVERIFY(l && l->underline().isEmpty());
+	CyberiadaSMEditorTransitionItem* t = dynamic_cast<CyberiadaSMEditorTransitionItem*>(scene->getMap().value("t0"));
+	QVERIFY(offPath(t->mapToScene(t->path()), l->targetEnd()) < 0.5);
+	SettingsManager::instance().setShowTransitionText(true);
+	QCoreApplication::sendPostedEvents();
+	QVERIFY(!link("n2", 2)->underline().isEmpty());
+	// no text drawn at all
+	SettingsManager::instance().setShowText(false);
+	scene->loadScene();
+	QVERIFY(link("n2", 1)->underline().isEmpty());
+	QVERIFY(onBorder(scene->getMap().value("n0")->sceneBoundingRect(), link("n2", 1)->targetEnd()));
+	SettingsManager::instance().setShowText(true);
+	scene->loadScene();
+	QVERIFY(!link("n2", 1)->underline().isEmpty());
+}
+
+void TestLinks::test_fragment_wrapped()
+{
+	// a fragment wrapped over the lines of its text is underlined on each
+	load("diagrams/comment-transition.graphml");
+	QString longText = "alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu";
+	QModelIndex si = model->elementToIndex(model->idToElement("n0"));
+	QVERIFY(model->newAction(si, Cyberiada::actionEntry, QString(), QString(), longText));
+	QModelIndex ni = model->elementToIndex(model->idToElement("n2"));
+	QVERIFY(model->newCommentSubject(ni, model->idToElement("n0"), Cyberiada::commentSubjectData, longText));
+	CyberiadaSMEditorSubjectItem* l = link("n2", 1);
+	int from = -1;
+	EditableTextItem* text = fragmentText("n2", 1, &from);
+	QVERIFY(l && text);
+	QVERIFY(l->underline().size() >= 2);
+	checkUnderline(l, text, from, from + longText.length());
+}
+
+void TestLinks::test_fragment_reconciled()
+{
+	// a rename dropping a name fragment draws an element link with its box; the
+	// undo brings the underline back (EDIT-STRUCT-13)
+	load("diagrams/comment-transition.graphml");
+	QModelIndex ni = model->elementToIndex(model->idToElement("n2"));
+	QVERIFY(model->newCommentSubject(ni, model->idToElement("n1"), Cyberiada::commentSubjectName, "Second"));
+	QVERIFY(!link("n2", 1)->underline().isEmpty());
+	QVERIFY(model->updateTitle(model->elementToIndex(model->idToElement("n1")), "Other state"));
+	CyberiadaSMEditorSubjectItem* l = link("n2", 1);
+	QVERIFY(l && !l->subject().has_fragment());
+	QVERIFY(l->underline().isEmpty());
+	QVERIFY(onBorder(scene->getMap().value("n1")->sceneBoundingRect(), l->targetEnd()));
+	model->undoStack()->undo();
+	l = link("n2", 1);
+	QVERIFY(l && l->subject().has_fragment());
+	QVERIFY(!l->underline().isEmpty());
+}
+
 #include "l4-links.moc"

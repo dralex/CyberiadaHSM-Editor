@@ -196,6 +196,13 @@ void CyberiadaSMEditorCommentItem::applyBodyRole()
     }
 }
 
+EditableTextItem* CyberiadaSMEditorCommentItem::fieldText(const SubjectFragment::Field& field, int* start) const
+{
+    *start = 0;
+    if (field.kind == SubjectFragment::fieldName) return title;
+    return field.kind == SubjectFragment::fieldBody ? body : nullptr;
+}
+
 void CyberiadaSMEditorCommentItem::syncFromModel()
 {
     prepareGeometryChange();

@@ -27,8 +27,10 @@
 #include <QLineF>
 #include <QPointF>
 #include <QPainterPath>
+#include <QVector>
 
 class CyberiadaSMEditorAbstractItem;
+class QGraphicsTextItem;
 
 namespace EdgeGeometry {
 
@@ -63,6 +65,10 @@ QPointF borderNearest(const CyberiadaSMEditorAbstractItem* item, const QPointF& 
 // as libhtreegeom places it)
 QPointF nearestOnPath(const QPainterPath& path, const QPointF& p, qreal endMargin = 0.0,
                       const QRectF& avoid = QRectF());
+
+// the underline of the characters [from, to) of a text item in scene coordinates,
+// one segment per laid-out line the range covers (a fragment, EDIT-EDGE-21)
+QVector<QLineF> textRangeLines(const QGraphicsTextItem* item, int from, int to);
 
 }
 

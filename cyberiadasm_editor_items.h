@@ -32,6 +32,9 @@
 
 #include "cyberiadasm_model.h"
 #include "dotsignal.h"
+#include "subject_fragment.h"
+
+class EditableTextItem;
 
 /* -----------------------------------------------------------------------------
  * Abstract Item
@@ -110,6 +113,10 @@ public:
 
     virtual void syncFromModel();
     virtual void updateSizeToFitChildren(CyberiadaSMEditorAbstractItem* child);
+
+    // the drawn text item of a field of the element's text and the start of the field
+    // in it, or null when the element does not draw the field (EDIT-EDGE-21)
+    virtual EditableTextItem* fieldText(const SubjectFragment::Field& field, int* start) const;
 
     // the offset (item origin - cursor) captured at press, so a body drag can
     // place the item at the cursor in SCENE space each move - immune to the

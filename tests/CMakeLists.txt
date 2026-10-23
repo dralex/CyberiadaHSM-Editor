@@ -411,6 +411,7 @@ function(add_l2_text_test case diagram)
 endfunction()
 
 add_l2_text_test(text-edit geometry)
+add_l2_text_test(subject-fragment comment-transition)
 
 # The undo test suite: a script edits and undoes (or redoes) through the
 # batch verbs, and the dump must equal an EXISTING good file - the untouched

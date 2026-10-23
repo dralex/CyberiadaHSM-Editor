@@ -119,6 +119,8 @@ public:
     void setActionVisibility(bool visible);
 
     void syncFromModel() override;
+    // the label draws the action fields (EDIT-EDGE-21)
+    EditableTextItem* fieldText(const SubjectFragment::Field& field, int* start) const override;
 
 signals:
     // void clicked(CyberiadaSMEditorTransitionItem *rect);
@@ -248,7 +250,6 @@ public:
     QString getGuard() const;
     QString getBehaviour() const;
     bool isDragging() const { return dragging; }
-    bool isEditing() const { return isEdit; }
     // the event name is bold when a guard or behaviour follows it (a lonely event
     // stays normal), behind the transition event-name preference
     void applyRichFormat() override;

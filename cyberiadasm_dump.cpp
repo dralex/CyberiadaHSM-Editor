@@ -28,6 +28,8 @@
 #include <QDir>
 #include <QString>
 #include <QUndoStack>
+#include <QStringList>
+#include <QLineF>
 
 #include "cyberiadasm_dump.h"
 #include "cyberiadasm_editor_subject_item.h"
@@ -104,7 +106,10 @@ static QPointF inDumpFrame(CyberiadaSMEditorScene* scene, const Cyberiada::Eleme
 	return p - (it->scenePos() - dumpSceneOrigin(scene, owner));
 }
 
-// the drawn links of a comment: their target and ends (EDIT-EDGE-6/17)
+static QString escapeText(const QString& text);
+
+// the drawn links of a comment: their target and ends (EDIT-EDGE-6/17), a fragment
+// with its underline in the frame of the target (EDIT-EDGE-21)
 static void dumpSubjectLinks(CyberiadaSMEditorScene* scene, const Cyberiada::Element* comment,
 							 int depth, std::ostream& os)
 {
@@ -113,12 +118,23 @@ static void dumpSubjectLinks(CyberiadaSMEditorScene* scene, const Cyberiada::Ele
 		const Cyberiada::Element* target = link->subject().get_element();
 		QPointF from = inDumpFrame(scene, comment, link->sourceEnd());
 		QPointF to = inDumpFrame(scene, target, link->targetEnd());
+		QString fragment;
+		if (link->subject().has_fragment()) {
+			QString f = escapeText(QString::fromStdString(link->subject().get_fragment()));
+			fragment = QString(", fragment: '%1'").arg(f.replace("'", "\\'"));
+			QStringList lines;
+			for (const QLineF& l : link->underline()) {
+				QPointF a = inDumpFrame(scene, target, l.p1()), b = inDumpFrame(scene, target, l.p2());
+				lines << QString("(%1; %2; %3)").arg(sceneNumber(a.x()), sceneNumber(a.y()), sceneNumber(b.x()));
+			}
+			if (!lines.isEmpty()) fragment += ", underline: [" + lines.join(", ") + "]";
+		}
 		os << std::string(size_t(depth) * 2, ' ') << "Subject Link: {index: " << link->getIndex()
 		   << ", target: '" << (target ? target->get_id() : std::string()) << "', "
 		   << QString("from: (%1; %2), to: (%3; %4)")
 			  .arg(sceneNumber(from.x()), sceneNumber(from.y()), sceneNumber(to.x()), sceneNumber(to.y()))
 			  .toStdString()
-		   << "}" << std::endl;
+		   << fragment.toStdString() << "}" << std::endl;
 	}
 }
 
