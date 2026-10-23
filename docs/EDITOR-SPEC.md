@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.31 (2026-10-23)
+**Document version:** 0.32 (2026-10-23)
 
 **Related authorities:**
 
@@ -132,7 +132,7 @@ over those rows; nothing more than the existing dump is needed.
   a fragment of a target's name, or to a fragment of its data. *PNST 984*
 - `EDIT-STRUCT-9` MUST [U]: deleting an element strips every subject that referenced it
   (the link goes, the comment stays); a copy or a reparent rebinds the subject to the
-  moved or copied element. The link itself is drawn by `EDIT-EDGE-6` and `EDIT-EDGE-17..20`.
+  moved or copied element. The link itself is drawn by `EDIT-EDGE-6` and `EDIT-EDGE-17..21`.
   *design*
 - `EDIT-SEM-1` MUST [U]: at most one initial pseudostate per region (per level);
   a second is refused. *PNST 984*
@@ -160,9 +160,24 @@ over those rows; nothing more than the existing dump is needed.
   inline-rename value stays the plain name. *design*
 - `EDIT-STRUCT-12` MUST [U]: a subject's target is an element of the comment's state machine —
   a state, a pseudostate, a choice, another comment or a transition — never the state machine
-  itself nor the comment itself; a name or data fragment is non-empty and occurs in the target's
-  text. A link or a retarget breaking these rules is refused and the subject stays as it was.
-  *PNST 1044 6.7*
+  itself nor the comment itself; a name or data fragment is non-empty and lies inside one field
+  of the target's text, searched in this order (the first occurrence is the commented one):
+
+  ```
+  target                     name fragment               data fragment
+  state                      the name                    each action in turn: the event,
+                                                         the guard, the behaviour
+  transition (no name)       the event, the guard, the behaviour of its action
+  comment                    the name                    the body
+  pseudostate, choice        the name                    -
+  ```
+
+  A fragment spanning two fields or holding a keyword or a separator (`entry/`, `[`, `/`) is
+  refused, as the strict reading of PNST 1044 does. A link or a retarget breaking these rules
+  is refused and the subject stays as it was. *PNST 1044 6.7*
+- `EDIT-STRUCT-13` MUST [U]: an edit of the target's text that leaves no field holding a
+  fragment turns that subject into an element subject of the same target in the same undo
+  step; the link keeps its source point and gets the box of `EDIT-EDGE-6`. *PNST 1044 6.7*
 - `EDIT-SEM-7` MUST [U]: an entry point and an exit point carry a non-empty name; a new point
   gets a unique default name. *PNST 1044 8.3.1*
 - `EDIT-SEM-8` MUST [U]: a submachine state never references the state machine that contains it;
@@ -275,7 +290,8 @@ the third is a derived display value the format does not store):
 - `EDIT-EDGE-5` MUST [U]: a transition line finishes with an arrow. *PNST 984* 
 - `EDIT-EDGE-6` MUST [U]: a comment link is a dashed line from the comment to its subject; a
   link to an element (a node or a transition) finishes with a small black box at the target, a
-  link to a fragment has no box. *PNST 984 7.2.7*
+  link to a fragment has no box: the fragment is underlined instead (`EDIT-EDGE-21`).
+  *PNST 984 7.2.7*
 - `EDIT-EDGE-7` MUST [A]: a rebind moves the endpoint to the new node; the
   transition then connects the new pair. The identity of endpoints, not the id,
   which may be renamed). *design*
@@ -320,6 +336,20 @@ the third is a derived display value the format does not store):
   border and a target handle sliding along the target border; dropping the target handle on
   another element retargets the subject under `EDIT-STRUCT-12`. Delete or the link context menu
   removes the subject, never the comment. *design*
+- `EDIT-EDGE-21` MUST [U]: a fragment link underlines the commented occurrence
+  (`EDIT-STRUCT-12`) in the drawn text of its target — every line of a wrapped fragment — and
+  ends at the middle of the first underline segment. While that text is hidden or edited in
+  place, on a choice and for a fragment not drawn, the link ends on the target border by
+  `EDIT-EDGE-17`, still without the box. *PNST 984 7.2.7, PNST 1044 9.1.1*
+
+```
+   ┌────────────────────────────┐
+   │          Moving            │
+   │ entry/ motor.on()          │        ┌───────────────┐
+   │ TIMEOUT [count > 3] / stop()│- - - -│ Stops the     │
+   │                       ‾‾‾‾‾‾       │ motor safely  │
+   └────────────────────────────┘        └───────────────┘
+```
 
 ### 4.5 Text of names, actions, and labels — TEXT
 
@@ -456,6 +486,31 @@ the third is a derived display value the format does not store):
   boxes) draws a comment link: a release over an accepted target (`EDIT-STRUCT-12`) adds an
   element subject with the points of `EDIT-EDGE-18`, a release anywhere else creates nothing,
   and the tool reverts to select after one use. *design*
+- `EDIT-TOOL-16` MUST [A]: the fragment dialog — *Comment a Fragment…* of the link context menu
+  or the `…` of the Fragment row in the properties — shows the target's text one read-only box
+  per field of `EDIT-STRUCT-12`; a selection in one box clears the others, fills the fragment and
+  the type (the name box gives a name fragment, the others data), both editable and checked by
+  `EDIT-STRUCT-12`; the occurrence that will be underlined is marked, and OK retargets the subject
+  in one undo step. *Comment the Element* of the link menu turns a fragment subject into an element
+  one; a type switched in the properties takes the first non-empty field as its fragment. *design*
+
+```
+ ┌ Comment a Fragment ──────────────────────────────────────────────┐
+ │ Target: Moving (state)                                           │
+ │ Name     [Moving                                               ] │
+ │ entry    [motor.on()                                           ] │
+ │ TIMEOUT  [TIMEOUT      ] [ count > 3      ] [ stop()            ] │
+ │ exit     [▒stop()▒; log("out")                                 ] │
+ │ Fragment [stop()                         ]  Type [Data ▾]        │
+ │ The first occurrence (TIMEOUT, behaviour) will be underlined.    │
+ │                                               [Cancel]  [OK]     │
+ └──────────────────────────────────────────────────────────────────┘
+```
+- `EDIT-TOOL-17` MUST [A]: a selection in a text edited in place — a name, an action, a label,
+  a comment body — offers *Comment the Selection* in its context menu: *New Comment* places a
+  comment beside the element, an existing comment of the machine is picked by its name; either
+  gets a fragment subject of the selection in one undo step. A selection outside one field
+  (`EDIT-STRUCT-12`) disables the entry; the comment's own body is not offered to itself. *design*
 
 ### 4.7 History — HIST
 

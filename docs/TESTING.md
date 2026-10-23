@@ -536,6 +536,7 @@ takes the path of the GUI: the item handlers, the tools, the border zones.
 | `commit` | end the edit: the focus-out writes the text to the model |
 | `edit <id> <role> [<i>]` | open the inline editor of a canvas text (role `title`, `action <i>`, `label`, `body`) and leave it open for the keystroke verbs |
 | `edit-text <id> <role> [<i>] <text>` | open the editor, replace the editable text and commit, in one line (the `entry / ` prefix of an action and a transition label are re-parsed) |
+| `comment-selection [<comment>]` | *Comment the Selection* of the text being edited (`EDIT-TOOL-17`): link the comment, or a new one placed beside the element, to the selected fragment; refused outside one field |
 
 The document verbs work the tab line of the window as the GUI does
 (`EDIT-DOC-9`); they open no undo step, and the commands after them address the
@@ -609,8 +610,10 @@ bare `new-subject` form makes an element-type subject; `name`/`data` with a
 fragment reference a part of the target's title or body (a transition has no
 title: both kinds look into its label). The target is an element of the
 comment's machine except the machine itself and the comment, and a fragment
-occurs in the target's text (`EDIT-STRUCT-12`); a refused subject fails the
-command. Subjects are addressed by their 0-based position in the comment's
+lies inside one field of the target's text - the name, an event, a guard, a
+behaviour or a body (`EDIT-STRUCT-12`); a refused subject fails the command.
+A text edit that removes a fragment turns its subject into an element one
+(`EDIT-STRUCT-13`). Subjects are addressed by their 0-based position in the comment's
 subject list. The points are in the model frame (Qt): the source point and
 the bends from the comment centre, the target point from the target centre or,
 on a transition, from the centre of its source (PNST 1044 9.1.1). Deleting
@@ -761,7 +764,10 @@ sections:
   (x; y), to: (x; y)}` - the subject index, the target and the scene ends; a
   link is drawn only while the comment has geometry and its target is drawn,
   and a link to a transition ends on its path off the arrow and the shown
-  label (the cases run with `--no-text`, so the label is hidden). A transition
+  label (the cases run with `--no-text`, so the label is hidden). A fragment
+  link adds `fragment: '<text>'` and, while the fragment is drawn
+  (`EDIT-EDGE-21`), `underline: (x1; y; x2)` per underlined line, the end
+  lying at the middle of the first one. A transition
   follows its polyline point by point, a self-transition included; only a
   loop without a polyline is drawn as an arc between its endpoints, which
   is why its rect is not integral. An endpoint without a stored point is
