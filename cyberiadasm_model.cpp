@@ -236,6 +236,11 @@ bool CyberiadaSMModel::loadDocument(const QString& path, bool reconstruct, bool 
 	root = new_doc;
 	filePath = QString(root->get_file_path().c_str());
 	fileFormat = root->get_file_format();
+	// recover loose transition endpoints onto their borders (EDIT-EDGE-1); inspect
+	// mode shows the stored geometry as-is, so it is exempt
+	if (!SettingsManager::instance().getInspectorMode()) {
+		recoverTransitionEndpoints();
+	}
 	endResetModel();
 	undo->clear();
 	return true;
@@ -2746,6 +2751,43 @@ void CyberiadaSMModel::reattachTransitions(Cyberiada::Element* node,
         if (onSrc) sp = clampPointOntoBorder(sp.x, sp.y, hw, hh);
         if (onTgt) tp = clampPointOntoBorder(tp.x, tp.y, hw, hh);
         updateGeometry(elementToIndex(tr), sp, tp);
+    }
+}
+
+// clamp a stored endpoint onto nodeId's border when it is a rect state; returns
+// whether it moved (an on-border point and a non-rect/point node are left alone)
+static bool recoverEndpoint(Cyberiada::Document* root, const Cyberiada::ID& nodeId, Cyberiada::Point& p)
+{
+    if (!p.valid || !root) return false;
+    Cyberiada::Element* n = root->find_element_by_id(nodeId);
+    if (!n) return false;
+    Cyberiada::ElementType t = n->get_type();
+    if (t != Cyberiada::elementSimpleState && t != Cyberiada::elementCompositeState &&
+        t != Cyberiada::elementSubmachineState) return false;
+    Cyberiada::ElementCollection* c = dynamic_cast<Cyberiada::ElementCollection*>(n);
+    if (!c) return false;
+    Cyberiada::Rect r = c->get_geometry_rect();
+    if (!r.valid || r.width <= 0.0 || r.height <= 0.0) return false;
+    Cyberiada::Point q = clampPointOntoBorder(p.x, p.y, r.width / 2.0, r.height / 2.0);
+    if (logPt(q) == logPt(p)) return false;    // already on the border: no change
+    p = q;
+    return true;
+}
+
+void CyberiadaSMModel::recoverTransitionEndpoints()
+{
+    if (!root) return;
+    Cyberiada::StateMachineList sms = root->get_state_machines();
+    for (Cyberiada::StateMachineList::iterator s = sms.begin(); s != sms.end(); ++s) {
+        std::vector<Cyberiada::Transition*> trans = (*s)->get_transitions();
+        for (size_t i = 0; i < trans.size(); i++) {
+            Cyberiada::Transition* t = trans[i];
+            Cyberiada::Point sp = t->has_geometry_source_point() ? t->get_source_point() : Cyberiada::Point();
+            Cyberiada::Point tp = t->has_geometry_target_point() ? t->get_target_point() : Cyberiada::Point();
+            bool a = recoverEndpoint(root, t->source_element_id(), sp);
+            bool b = recoverEndpoint(root, t->target_element_id(), tp);
+            if (a || b) t->update(sp, tp);
+        }
     }
 }
 

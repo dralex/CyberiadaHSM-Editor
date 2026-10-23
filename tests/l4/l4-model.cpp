@@ -59,6 +59,7 @@ private slots:
 	void test_snap_to_grid();
 	void test_undo_reset();
 	void test_reconstruct_geometry();
+	void test_recover_loose_endpoint();
 	void test_sm_not_drawn_mark();
 	void test_tree_drag_flags();
 	void test_grow_holds_rect_children();
@@ -365,6 +366,38 @@ void TestModel::test_geometry_declaration()
 	QVERIFY(model->updateMetainformation(doc, CYBERIADA_META_GEOMETRY, ""));
 	QCOMPARE(meta.get_geometry(), Cyberiada::geometryDeclarationAbsent);
 	QVERIFY(meta.get_string(CYBERIADA_META_GEOMETRY).empty());
+}
+
+void TestModel::test_recover_loose_endpoint()
+{
+	// a loaded transition endpoint that sits off its state's border is snapped back
+	// onto it (EDIT-EDGE-1 recovery on load); inspect mode keeps the stored geometry
+	QTemporaryDir dir; QVERIFY(dir.isValid());
+	QString path = dir.filePath("loose.graphml");
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	// node-0-0-1 is 300x150 (half-extents 150x75); shove edge-2's source point far
+	// past the right border, save it loose, then reload
+	QModelIndex e2 = model->elementToIndex(model->idToElement("edge-2"));
+	const Cyberiada::Transition* t = static_cast<const Cyberiada::Transition*>(model->idToElement("edge-2"));
+	Cyberiada::Point tp = t->has_geometry_target_point() ? t->get_target_point() : Cyberiada::Point();
+	QVERIFY(model->updateGeometry(e2, Cyberiada::Point(300, 0), tp));
+	model->saveAsDocument(path, Cyberiada::formatCyberiada10, true);
+
+	CyberiadaSMModel reloaded(this);
+	QVERIFY(reloaded.loadDocument(path));
+	const Cyberiada::Transition* rt = static_cast<const Cyberiada::Transition*>(reloaded.idToElement("edge-2"));
+	QVERIFY(rt && rt->has_geometry_source_point());
+	Cyberiada::Point sp = rt->get_source_point();
+	QVERIFY(qAbs(sp.x) <= 150.0 + 0.01 && qAbs(sp.y) <= 75.0 + 0.01);                 // inside the half-extents
+	QVERIFY(qAbs(qAbs(sp.x) - 150.0) < 0.01 || qAbs(qAbs(sp.y) - 75.0) < 0.01);       // and on an edge
+
+	// inspect mode is exempt: the loose point is shown as stored
+	SettingsManager::instance().setInspectorMode(true);
+	CyberiadaSMModel inspected(this);
+	QVERIFY(inspected.loadDocument(path));
+	const Cyberiada::Transition* it = static_cast<const Cyberiada::Transition*>(inspected.idToElement("edge-2"));
+	QVERIFY(it && qAbs(it->get_source_point().x - 300.0) < 0.01);
+	SettingsManager::instance().setInspectorMode(false);
 }
 
 void TestModel::test_undo_redo()

@@ -126,7 +126,7 @@ eventPropagation/ block</data>
     <edge id="n2-n4" source="n2" target="n4">
       <data key="dData">ВЕРНУЛАСЬ/</data>
       <data key="dSourcePoint">
-        <point x="558.088400" y="374.676500"/>
+        <point x="558.088400" y="374.871000"/>
       </data>
       <data key="dTargetPoint">
         <point x="1.088400" y="-9.940600"/>
@@ -179,7 +179,7 @@ eventPropagation/ block</data>
     <edge id="n5-n3" source="n5" target="n3">
       <data key="dData">У ХОЗЯИНА В РУКАХ МЯЧ/</data>
       <data key="dSourcePoint">
-        <point x="197.793200" y="4.000000"/>
+        <point x="200.000000" y="4.000000"/>
       </data>
       <data key="dTargetPoint">
         <point x="0.000000" y="27.988700"/>
@@ -194,7 +194,7 @@ eventPropagation/ block</data>
         <point x="0.000000" y="77.467100"/>
       </data>
       <data key="dTargetPoint">
-        <point x="198.357400" y="51.163200"/>
+        <point x="200.000000" y="51.163200"/>
       </data>
       <data key="dLabelGeometry">
         <rect x="-133.500000" y="60.441298" width="80.000000" height="46.000000"/>

@@ -152,6 +152,10 @@ public:
     void                                reattachCommentLinks(Cyberiada::Element* node,
                                                              const Cyberiada::Rect& oldRect,
                                                              const Cyberiada::Rect& newRect);
+    // on load, snap any stored transition endpoint that sits off its state's border
+    // back onto it — the EDIT-EDGE-1 recovery applied to a freshly opened document
+    // (a loaded diagram may carry a loose endpoint; inspect mode is exempt)
+    void                                recoverTransitionEndpoints();
     // a centre in pc's child frame where a (w x h) box clears every existing child
     // (skipping `skip` and transitions); keeps `preferred` when it is already free,
     // else the nearest free slot (paste/reparent place the incoming child clear of
