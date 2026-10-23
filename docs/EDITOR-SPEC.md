@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.30 (2026-10-22)
+**Document version:** 0.31 (2026-10-23)
 
 **Related authorities:**
 
@@ -259,7 +259,9 @@ the third is a derived display value the format does not store):
   toward the other end (a vertex at its centre), within tolerance. Resizing a node holds each
   attached endpoint at its absolute position while its border did not move (a point on a
   perpendicular border stays put), and keeps an endpoint whose edge moved attached to the new
-  border. *design*
+  border. This holds however the node geometry changes — an interactive border drag, a move or
+  resize through the model, a grow to fit the children, a reparent — so a transition never hangs
+  off a state that was moved, resized or reparented. *design*
 - `EDIT-EDGE-2` MUST [U]: an endpoint of a point-based circle elements (initial
   pseudostate, final state, history pseudostate, or entry/exit point) lies on the border of the
   drawn element, not the center. *design*

@@ -311,8 +311,11 @@ endpoint across states; the transition connects the new pair, asserted by endpoi
 renamed id); **choice** (a choice and escalating guarded branches); **action** (escalate a
 state's action list; add-then-delete restores it); **resize** (border resize and grow-to-fit
 when a child is dragged past the border); **copy-paste** (build a subtree and duplicate it);
-**submachine** (a submachine state, its entry/exit connectors and standalone entry/exit
-points, then a transition whose direction follows the connector/standalone role).
+**transition-stress** (a tool-drawn transition with a stored endpoint, then the restructuring
+that tends to strand it — add actions to an endpoint state, unlink it from its parent, resize and
+grow it through the model; the endpoint stays on the border by `EDIT-EDGE-1`); **submachine** (a
+submachine state, its entry/exit connectors and standalone entry/exit points, then a transition
+whose direction follows the connector/standalone role).
 
 Deterministic drills are the primary, guaranteed-coverage form, run with `drill --which
 <name|all>` and no LLM. An agent drill is an optional realism variant. A reversibility step
@@ -495,7 +498,9 @@ traces to the specification and, like a drill invariant, reproduces minimally an
 skips minimisation. Reference-free like tier 1 — a property, not a prediction. The
 hard laws (unique ids, one-parent, endpoints in one machine, composite⇔children,
 no dangling reference, the subject targets of `STRUCT-12`, a drawn comment link
-starting on its comment border (`EDGE-17`, from the `Subject Link` scene lines), one
+starting on its comment border (`EDGE-17`, from the `Subject Link` scene lines), a
+stored transition endpoint lying on its state's border (`EDGE-1`, from the
+`transition_handles` source/target points — an auto endpoint is exempt), one
 initial per level, endpoint kinds, containment, sibling no-overlap, the hidden
 metainformation node) register as defects and are silent on the good corpus. The
 fuzzer draws comment links too (`draw-link`: the transition tool from a comment).
