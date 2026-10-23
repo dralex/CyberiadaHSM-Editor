@@ -198,6 +198,18 @@ class LawTest(unittest.TestCase):
         child.pos = (child.pos[0] + 5000, child.pos[1] + 5000)   # shove it out
         self.assertIn("NODE-1", reqs(d))
 
+    def test_endpoint_on_border(self):
+        # EDGE-1: a stored transition endpoint on a state lies on its border; a
+        # stale one left inside or outside the border "hangs in the air"
+        d = D.parse_dump((GOOD / "geometry-output.txt").read_text())
+        self.assertNotIn("EDGE-1", reqs(d, gated=True))      # clean to start
+        t = d.document.find("edge-2")                        # a state->state edge
+        held = t.sp
+        t.sp = (held[0] + 150.0, held[1])                    # 150px past the right border
+        self.assertIn("EDGE-1", reqs(d, gated=True))
+        t.sp = None                                          # an auto endpoint is exempt
+        self.assertNotIn("EDGE-1", reqs(d, gated=True))
+
 
 if __name__ == "__main__":
     unittest.main()

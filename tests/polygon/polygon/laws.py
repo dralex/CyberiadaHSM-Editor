@@ -291,6 +291,40 @@ def no_overlap(dump):                                    # EDIT-NODE-6
                     yield Violation("NODE-6", "siblings %s and %s overlap" % (a.id, b.id))
 
 
+def endpoint_on_border(dump):                            # EDIT-EDGE-1
+    # a STORED transition endpoint on a rect element (a state) lies on its border.
+    # An endpoint with no stored point is recomputed on the border every paint
+    # (transition_handles reports it as None), so it is exempt. A point-based
+    # element (a vertex, a connection point) keeps its endpoint at the centre by
+    # convention and attaches on the drawn circle/rhombus, which the document
+    # geometry does not carry - those kinds (EDGE-2/3/4) are out of this law. So a
+    # violation here is a stored rect endpoint left inside or outside the border
+    # after a move, reparent or action change - a transition "hanging in the air".
+    doc = dump.document
+    if doc is None:
+        return
+    items = dump.scene_items()
+    for t in doc.transitions():
+        h = dump.transition_handles(t.id)
+        if h is None:
+            continue
+        for role, end_id in (("source", t.source), ("target", t.target)):
+            p = h[role]
+            if p is None:                                # auto endpoint
+                continue
+            item = items.get(end_id)
+            if item is None or item.kind not in D.STATE_KINDS or _degenerate(item.rect):
+                continue
+            x, y, w, ht = item.abs_rect
+            px, py = p
+            inside = x - TOL <= px <= x + w + TOL and y - TOL <= py <= y + ht + TOL
+            on_edge = (abs(px - x) <= TOL or abs(px - x - w) <= TOL or
+                       abs(py - y) <= TOL or abs(py - y - ht) <= TOL)
+            if not (inside and on_edge):
+                yield Violation("EDGE-1", "the %s endpoint of %s hangs off the border of %s at (%g; %g)"
+                                % (role, t.id, end_id, px, py))
+
+
 RESERVED_EVENT_NAMES = ("entry", "exit", "do", "propagate", "block", "defer", "else")
 
 
@@ -405,7 +439,8 @@ def machine_names(dump):                                 # EDIT-META-5
 HARD = [unique_ids, no_cycle, endpoints_same_machine, composite_by_children,
         no_dangling, subject_targets, link_starts_on_comment, one_initial_per_parent, one_history_per_kind, endpoint_kinds, submachine_children,
         meta_hidden, containment, no_overlap, points_named, submachine_reference,
-        single_behaviour_blocks, event_names, event_handling, machine_names]
+        single_behaviour_blocks, event_names, event_handling, machine_names,
+        endpoint_on_border]
 GATED = []
 
 
