@@ -894,7 +894,7 @@ bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada:
 	return true;
 }
 
-bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada::Rect& rect, bool record)
+bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada::Rect& rect, bool record, bool reattach)
 {
 	if (readOnly()) return false;
 	UndoScope scope(this, tr("geometry"));
@@ -940,6 +940,12 @@ bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada:
 	if (current.valid && rect.valid &&
 		(rect.width > current.width + 0.01 || rect.height > current.height + 0.01)) {
 		pushSiblingsClear(element, current, rect);
+	}
+	// a model-driven size change moved the border out from under the attached
+	// transition endpoints; snap them back onto it. The interactive border drag
+	// passes reattach=false and re-clamps in the item layer instead (EDIT-EDGE-1).
+	if (reattach && current.valid && rect.valid) {
+		reattachTransitions(element, current, rect);
 	}
 	return true;
 }
@@ -2696,6 +2702,49 @@ static void shiftTransition(Cyberiada::Transition* t, double dx, double dy)
     } else if (t->has_geometry_label_rect()) {
         Cyberiada::Rect lr = t->get_label_rect();
         t->update_label(Cyberiada::Rect(lr.x + dx, lr.y + dy, lr.width, lr.height));
+    }
+}
+
+// snap a centre-relative point onto the nearest edge of a (2hw x 2hh) border box
+static Cyberiada::Point clampPointOntoBorder(double x, double y, double hw, double hh)
+{
+    double cx = qBound(-hw, x, hw);
+    double cy = qBound(-hh, y, hh);
+    if ((hh - qAbs(cy)) <= (hw - qAbs(cx)))   // nearer top/bottom -> snap y
+        cy = (cy >= 0.0) ? hh : -hh;
+    else                                      // nearer a side -> snap x
+        cx = (cx >= 0.0) ? hw : -hw;
+    return Cyberiada::Point(cx, cy);
+}
+
+void CyberiadaSMModel::reattachTransitions(Cyberiada::Element* node,
+                                           const Cyberiada::Rect& oldRect,
+                                           const Cyberiada::Rect& newRect)
+{
+    if (!root || !node) return;
+    // only a rect state carries border-attached endpoints; a vertex or a choice
+    // keeps its endpoint at the centre by convention (EDIT-EDGE-2/3/4)
+    Cyberiada::ElementType t = node->get_type();
+    if (t != Cyberiada::elementSimpleState && t != Cyberiada::elementCompositeState &&
+        t != Cyberiada::elementSubmachineState) return;
+    // a pure move keeps the size, so the centre-relative endpoints follow it
+    if (qAbs(newRect.width - oldRect.width) < 0.01 && qAbs(newRect.height - oldRect.height) < 0.01) return;
+    double hw = newRect.width / 2.0, hh = newRect.height / 2.0;
+    if (hw <= 0.0 || hh <= 0.0) return;
+    Cyberiada::StateMachine* sm = root->get_parent_sm(node);
+    if (!sm) return;
+    const Cyberiada::ID& id = node->get_id();
+    std::vector<Cyberiada::Transition*> trans = sm->get_transitions();
+    for (size_t i = 0; i < trans.size(); i++) {
+        Cyberiada::Transition* tr = trans[i];
+        bool onSrc = tr->source_element_id() == id && tr->has_geometry_source_point();
+        bool onTgt = tr->target_element_id() == id && tr->has_geometry_target_point();
+        if (!onSrc && !onTgt) continue;
+        Cyberiada::Point sp = tr->has_geometry_source_point() ? tr->get_source_point() : Cyberiada::Point();
+        Cyberiada::Point tp = tr->has_geometry_target_point() ? tr->get_target_point() : Cyberiada::Point();
+        if (onSrc) sp = clampPointOntoBorder(sp.x, sp.y, hw, hh);
+        if (onTgt) tp = clampPointOntoBorder(tp.x, tp.y, hw, hh);
+        updateGeometry(elementToIndex(tr), sp, tp);
     }
 }
 

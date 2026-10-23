@@ -86,7 +86,7 @@ public:
 												  const QString& behaviour = QString());
 	bool                                deleteAction(const QModelIndex& index, int action_index = -1);
 	bool                                updateGeometry(const QModelIndex& index, const Cyberiada::Point& point, bool record = true);
-	bool                                updateGeometry(const QModelIndex& index, const Cyberiada::Rect& rect, bool record = true);
+	bool                                updateGeometry(const QModelIndex& index, const Cyberiada::Rect& rect, bool record = true, bool reattach = true);
 	bool                                updateGeometry(const QModelIndex& index, const Cyberiada::Point& source, const Cyberiada::Point& target);
     bool                                updateGeometry(const QModelIndex& index, const Cyberiada::Polyline& pl);
     bool                                updateGeometry(const QModelIndex& index, const Cyberiada::ID& source, const Cyberiada::ID& target);
@@ -138,6 +138,14 @@ public:
     void                                pushSiblingsClear(Cyberiada::Element* pc,
                                                           const Cyberiada::Rect& oldRect,
                                                           const Cyberiada::Rect& newRect);
+    // after a state node's rect changed through the model (a move verb, a grow to
+    // fit children, a reparent), snap each incident stored transition endpoint back
+    // onto the new border so the transition never hangs off it (EDIT-EDGE-1). A
+    // pure move leaves the size alone and is a no-op (centre-relative endpoints
+    // follow); the interactive border drag re-clamps in the item layer instead.
+    void                                reattachTransitions(Cyberiada::Element* node,
+                                                            const Cyberiada::Rect& oldRect,
+                                                            const Cyberiada::Rect& newRect);
     // a centre in pc's child frame where a (w x h) box clears every existing child
     // (skipping `skip` and transitions); keeps `preferred` when it is already free,
     // else the nearest free slot (paste/reparent place the incoming child clear of

@@ -145,6 +145,7 @@ private slots:
 	void test_select_over_composite();
 	void test_resize_holds_children();
 	void test_resize_holds_source_points();
+	void test_model_resize_holds_endpoints();
 	void test_clear_border_holds_content();
 	void test_snap_border_rule();
 	void test_snap_endpoint_drag();
@@ -740,6 +741,42 @@ void TestScene::test_resize_holds_source_points()
 	box1 = src->sceneBoundingRect();
 	newAbs = box1.center() + QPointF(e2->get_source_point().x, e2->get_source_point().y);
 	QVERIFY(onBorder(box1, newAbs));   // still attached to the resized border
+}
+
+void TestScene::test_model_resize_holds_endpoints()
+{
+	// a state resized THROUGH THE MODEL (the batch `move id x y w h` path, not an
+	// interactive drag) re-clamps its incident transition endpoints onto the new
+	// border, so a transition never hangs off it (EDIT-EDGE-1)
+	SettingsManager::instance().setSnapMode(false);
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+
+	CyberiadaSMEditorStateItem* src =
+		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0-0-1"));
+	QVERIFY(src);
+	const Cyberiada::Transition* e2 =
+		static_cast<const Cyberiada::Transition*>(model->idToElement("edge-2"));
+	QVERIFY(e2);
+	QModelIndex e2idx = model->elementToIndex(model->idToElement("edge-2"));
+	QModelIndex nidx = model->elementToIndex(model->idToElement("node-0-0-1"));
+
+	// put the source endpoint on the right border
+	QRectF box0 = src->sceneBoundingRect();
+	Cyberiada::Point tgt = e2->has_geometry_target_point() ? e2->get_target_point() : Cyberiada::Point();
+	QVERIFY(model->updateGeometry(e2idx, Cyberiada::Point(box0.width() / 2.0, 0), tgt));
+	QVERIFY(e2->has_geometry_source_point());
+
+	// shrink the state through the model (centre-based rect, same centre)
+	Cyberiada::Rect r = static_cast<const Cyberiada::ElementCollection*>(
+		model->idToElement("node-0-0-1"))->get_geometry_rect();
+	QVERIFY(model->updateGeometry(nidx, Cyberiada::Rect(r.x, r.y, r.width - 80, r.height - 40)));
+
+	// the stored endpoint now sits on the new (narrower) border, not off it
+	QRectF box1 = src->sceneBoundingRect();
+	QVERIFY(box1.width() < box0.width());
+	QPointF abs = box1.center() + QPointF(e2->get_source_point().x, e2->get_source_point().y);
+	QVERIFY(onBorder(box1, abs));
 }
 
 void TestScene::test_resize_snap()

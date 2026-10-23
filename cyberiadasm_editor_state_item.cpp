@@ -453,7 +453,9 @@ void CyberiadaSMEditorStateItem::updateSizeToFitChildren(CyberiadaSMEditorAbstra
 
     if (!sideX && !sideY) return;
 
-    model->updateGeometry(model->elementToIndex(element), r);
+    // reattach=false: the sizeChanged below re-clamps the incident transition
+    // endpoints in the item layer (EDIT-EDGE-1)
+    model->updateGeometry(model->elementToIndex(element), r, true, false);
     if (sideX) emit sizeChanged(sideX, dX);
     if (sideY) emit sizeChanged(sideY, dY);
 

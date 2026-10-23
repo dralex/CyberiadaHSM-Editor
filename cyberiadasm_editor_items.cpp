@@ -544,8 +544,10 @@ void CyberiadaSMEditorAbstractItem::applyBorderRect(QRectF borderScene)
     // so re-base the children by that delta to hold their absolute places
     Cyberiada::Rect old = coll->get_geometry_rect();
     QPointF delta = borderScene.center() - scenePos();
+    // reattach=false: this interactive resize re-clamps the incident transition
+    // endpoints below through sizeChanged, holding their absolute place (EDIT-EDGE-1)
     model->updateGeometry(model->elementToIndex(element),
-        Cyberiada::Rect(old.x + delta.x(), old.y + delta.y(), borderScene.width(), borderScene.height()));
+        Cyberiada::Rect(old.x + delta.x(), old.y + delta.y(), borderScene.width(), borderScene.height()), true, false);
     if (delta.x() != 0.0) emit sizeChanged(CornerFlags::Right, delta.x());
     if (delta.y() != 0.0) emit sizeChanged(CornerFlags::Bottom, delta.y());
 }
