@@ -24,6 +24,7 @@
  *
  * ----------------------------------------------------------------------------- */
 
+#include <algorithm>
 #include <QDebug>
 #include <QPainter>
 #include <QGraphicsView>
@@ -45,6 +46,7 @@
 #include "cyberiadasm_editor_vertex_item.h"
 #include "cyberiadasm_editor_transition_item.h"
 #include "cyberiadasm_editor_comment_item.h"
+#include "cyberiadasm_editor_subject_item.h"
 #include "cyberiadasm_editor_choice_item.h"
 #include "cyberiada_constants.h"
 #include "settings_manager.h"
@@ -60,6 +62,10 @@ static double DEFAULT_SCENE_DELTA = 0.2;
 static double DEFAULT_SCENE_BORDER_MARGIN = 50;
 // padding around the content so the view always has a scroll range to pan/wheel into
 static double DEFAULT_SCENE_PAN_MARGIN = 2000;
+
+// the comment links stack just above the transitions: the comment point beside a
+// transition label is never hidden by it
+static const double SUBJECT_LINK_Z = 1.0e7 + 1.0;
 
 // smaller items stack on top, so an overlapping leaf or a smaller state wins the
 // click, and a nested child (a graphics child of its parent region) stays above
@@ -103,6 +109,7 @@ CyberiadaSMEditorScene::CyberiadaSMEditorScene(CyberiadaSMModel* _model, QObject
     connect(model, &CyberiadaSMModel::dataChanged, this, &CyberiadaSMEditorScene::slotModelDataChanged);
     connect(model, &CyberiadaSMModel::rowsInserted, this, &CyberiadaSMEditorScene::slotRowsInserted);
     connect(model, &CyberiadaSMModel::rowsAboutToBeRemoved, this, &CyberiadaSMEditorScene::slotRowsAboutToBeRemoved);
+    connect(model, &CyberiadaSMModel::rowsRemoved, this, &CyberiadaSMEditorScene::slotRowsRemoved);
     connect(model, &CyberiadaSMModel::modelAboutToBeReset, this, &CyberiadaSMEditorScene::slotModelAboutToBeReset);
     connect(model, &CyberiadaSMModel::modelReset, this, &CyberiadaSMEditorScene::slotModelReset);
     reset();
@@ -139,6 +146,7 @@ void CyberiadaSMEditorScene::slotModelReset()
         loadScene(false);
     } else {
         elementIdToItemMap.clear();
+        subjectItems.clear();
         clear();
         currentSM = NULL;
     }
@@ -159,6 +167,7 @@ CyberiadaSMEditorScene::~CyberiadaSMEditorScene()
 
 void CyberiadaSMEditorScene::reset()
 {
+	subjectItems.clear();
 	clear();
 	setSceneRect(DEFAULT_SCENE_X,
 				 DEFAULT_SCENE_Y,
@@ -343,6 +352,7 @@ void CyberiadaSMEditorScene::slotRowsInserted(const QModelIndex& parent, int fir
         }
     }
     noteModified(parent);
+    rebuildSubjectLinks();
     // the new items may sit outside the current scene rect (a from-scratch build):
     // grow it so they stay reachable and zoom can frame them
     updateSceneRect();
@@ -351,8 +361,10 @@ void CyberiadaSMEditorScene::slotRowsInserted(const QModelIndex& parent, int fir
 
 void CyberiadaSMEditorScene::slotRowsAboutToBeRemoved(const QModelIndex& parent, int first, int last)
 {
-    // the indexes are still valid here, before the model frees the elements
+    // the indexes are still valid here, before the model frees the elements;
+    // the links go first, their ends may be among them
     noteModified(parent);
+    clearSubjectLinks();
     for (int row = first; row <= last; row++) {
         Cyberiada::Element* element = model->indexToElement(model->index(row, 0, parent));
         if (element) {
@@ -360,6 +372,11 @@ void CyberiadaSMEditorScene::slotRowsAboutToBeRemoved(const QModelIndex& parent,
         }
     }
     update();
+}
+
+void CyberiadaSMEditorScene::slotRowsRemoved(const QModelIndex&, int, int)
+{
+    rebuildSubjectLinks();
 }
 
 void CyberiadaSMEditorScene::slotModelDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight)
@@ -389,7 +406,78 @@ void CyberiadaSMEditorScene::slotModelDataChanged(const QModelIndex &topLeft, co
         // stacking order so the smallest item still wins the click (EDIT-TOOL-12)
         applyItemZ(current_item, element->get_type());
     }
+    // a comment may have changed its subjects; any other change may move a link end
+    if (Cyberiada::element_is_comment(element)) {
+        rebuildSubjectLinks();
+    } else {
+        updateSubjectLinks();
+    }
     update();
+}
+
+QList<CyberiadaSMEditorSubjectItem*> CyberiadaSMEditorScene::subjectLinks(const Cyberiada::ID& comment) const
+{
+    QList<CyberiadaSMEditorSubjectItem*> links = subjectItems.values(comment);
+    std::sort(links.begin(), links.end(),
+              [](const CyberiadaSMEditorSubjectItem* a, const CyberiadaSMEditorSubjectItem* b) {
+                  return a->getIndex() < b->getIndex();
+              });
+    return links;
+}
+
+void CyberiadaSMEditorScene::clearSubjectLinks()
+{
+    for (CyberiadaSMEditorSubjectItem* link : subjectItems) {
+        releaseInputFor(link);
+        removeItem(link);
+        delete link;
+    }
+    subjectItems.clear();
+}
+
+void CyberiadaSMEditorScene::addSubjectLinks(Cyberiada::Element* element)
+{
+    if (Cyberiada::element_is_comment(element)) {
+        Cyberiada::Comment* comment = static_cast<Cyberiada::Comment*>(element);
+        const std::vector<Cyberiada::CommentSubject>& subjects = comment->get_subjects();
+        for (size_t i = 0; i < subjects.size(); i++) {
+            if (!CyberiadaSMEditorSubjectItem::drawable(comment, subjects[i], elementIdToItemMap)) continue;
+            CyberiadaSMEditorSubjectItem* link =
+                new CyberiadaSMEditorSubjectItem(model, comment, int(i), elementIdToItemMap);
+            link->setZValue(SUBJECT_LINK_Z);
+            addItem(link);
+            subjectItems.insert(comment->get_id(), link);
+        }
+    }
+    if (element->has_children()) {
+        const Cyberiada::ElementList& children = static_cast<Cyberiada::ElementCollection*>(element)->get_children();
+        for (Cyberiada::ElementList::const_iterator i = children.begin(); i != children.end(); i++) {
+            addSubjectLinks(*i);
+        }
+    }
+}
+
+void CyberiadaSMEditorScene::rebuildSubjectLinks()
+{
+    QList<QPair<Cyberiada::ID, int>> selected;
+    for (CyberiadaSMEditorSubjectItem* link : subjectItems) {
+        if (link->isSelected()) selected.append(qMakePair(link->getComment()->get_id(), link->getIndex()));
+    }
+    clearSubjectLinks();
+    if (!model || !model->rootDocument()) return;
+    addSubjectLinks(model->rootDocument());
+    for (const QPair<Cyberiada::ID, int>& s : selected) {
+        for (CyberiadaSMEditorSubjectItem* link : subjectItems.values(s.first)) {
+            if (link->getIndex() == s.second) link->setSelected(true);
+        }
+    }
+}
+
+void CyberiadaSMEditorScene::updateSubjectLinks()
+{
+    for (CyberiadaSMEditorSubjectItem* link : subjectItems) {
+        link->updatePath();
+    }
 }
 
 void CyberiadaSMEditorScene::slotSMSizeChanged(CyberiadaSMEditorAbstractItem::CornerFlags side, qreal d)
@@ -428,6 +516,7 @@ void CyberiadaSMEditorScene::slotComponentCommentsChanged(bool show)
             }
         }
     }
+    rebuildSubjectLinks();
     updateSceneRect();
     update();
 }
@@ -590,6 +679,7 @@ void CyberiadaSMEditorScene::loadScene(bool fit)
 {
     updateTextLanguages();
     elementIdToItemMap.clear();
+    subjectItems.clear();
 
     // clear() frees every item; release the grab and focus first so a pending
     // gesture is not delivered to a freed item
@@ -607,6 +697,7 @@ void CyberiadaSMEditorScene::loadScene(bool fit)
     for (std::vector<Cyberiada::StateMachine*>::iterator i = sms.begin(); i != sms.end(); i++) {
         addItemsRecursively(NULL, *i);
     }
+    addSubjectLinks(model->rootDocument());
     for (auto item : items()) {
         if (auto smItem = dynamic_cast<CyberiadaSMEditorSMItem*>(item)) {
             connect(smItem, &CyberiadaSMEditorAbstractItem::sizeChanged, this, &CyberiadaSMEditorScene::slotSMSizeChanged);

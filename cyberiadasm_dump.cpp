@@ -30,6 +30,7 @@
 #include <QUndoStack>
 
 #include "cyberiadasm_dump.h"
+#include "cyberiadasm_editor_subject_item.h"
 #include "plugin_runner.h"
 #include <algorithm>
 #include "smeditor_window.h"
@@ -71,6 +72,30 @@ static const char* elementTypeName(Cyberiada::ElementType t)
 	}
 }
 
+// a fixed 2-decimal coordinate, locale-independent, without -0.00
+static QString sceneNumber(double v)
+{
+	if (v == 0.0) v = 0.0;
+	return QString::number(v, 'f', 2);
+}
+
+// the drawn links of a comment: their target and ends (EDIT-EDGE-6/17)
+static void dumpSubjectLinks(CyberiadaSMEditorScene* scene, const Cyberiada::Element* comment,
+							 int depth, std::ostream& os)
+{
+	QList<CyberiadaSMEditorSubjectItem*> links = scene->subjectLinks(comment->get_id());
+	for (CyberiadaSMEditorSubjectItem* link : links) {
+		QPointF from = link->sourceEnd(), to = link->targetEnd();
+		const Cyberiada::Element* target = link->subject().get_element();
+		os << std::string(size_t(depth) * 2, ' ') << "Subject Link: {index: " << link->getIndex()
+		   << ", target: '" << (target ? target->get_id() : std::string()) << "', "
+		   << QString("from: (%1; %2), to: (%3; %4)")
+			  .arg(sceneNumber(from.x()), sceneNumber(from.y()), sceneNumber(to.x()), sceneNumber(to.y()))
+			  .toStdString()
+		   << "}" << std::endl;
+	}
+}
+
 static void dumpSceneElement(CyberiadaSMEditorScene* scene, Cyberiada::Element* element,
 							 int depth, std::ostream& os)
 {
@@ -96,6 +121,9 @@ static void dumpSceneElement(CyberiadaSMEditorScene* scene, Cyberiada::Element* 
 		os << std::string(size_t(depth) * 2, ' ')
 		   << elementTypeName(element->get_type())
 		   << ": {id: '" << id << "', " << geometry.toStdString() << color << "}" << std::endl;
+		if (Cyberiada::element_is_comment(element)) {
+			dumpSubjectLinks(scene, element, depth + 1, os);
+		}
 	}
 	Cyberiada::ElementCollection* collection = dynamic_cast<Cyberiada::ElementCollection*>(element);
 	if (collection) {

@@ -110,6 +110,9 @@ public:
 
     DotSignal* getDot(int index);
 
+    // the scene rect of the shown label, null when hidden (a comment link foot keeps off it)
+    QRectF labelSceneRect() const;
+
     QString actionText() const;
     void updateAction();
     void updateActionPosition();

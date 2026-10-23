@@ -34,6 +34,7 @@
 #include <QByteArrayList>
 #include <QList>
 #include <QGraphicsItem>
+#include <QMultiMap>
 #include <QDebug>
 #include <string>
 
@@ -43,6 +44,8 @@
 #include "cyberiadasm_editor_transition_item.h"
 #include "cyberiada_constants.h"
 #include "code_highlighter.h"
+
+class CyberiadaSMEditorSubjectItem;
 
 class CyberiadaSMEditorScene: public QGraphicsScene {
 Q_OBJECT
@@ -67,6 +70,8 @@ public:
     void  loadScene(bool fit = true);
 
     QMap<Cyberiada::ID, QGraphicsItem*>& getMap() { return elementIdToItemMap; }
+    // the drawn comment links of a comment in the subject order (EDIT-EDGE-6/17-20)
+    QList<CyberiadaSMEditorSubjectItem*> subjectLinks(const Cyberiada::ID& comment) const;
     // the ids of the selected elements in the document order (${selection}, EDIT-PLUG-9)
     QStringList selectedIds() const;
 
@@ -120,6 +125,7 @@ public slots:
     void  slotModelDataChanged(const QModelIndex & topLeft, const QModelIndex & bottomRight);
     void  slotRowsInserted(const QModelIndex& parent, int first, int last);
     void  slotRowsAboutToBeRemoved(const QModelIndex& parent, int first, int last);
+    void  slotRowsRemoved(const QModelIndex& parent, int first, int last);
     void  slotSMSizeChanged(CyberiadaSMEditorAbstractItem::CornerFlags side, qreal d);
 	
     // void  enableGrid(bool on = true);
@@ -163,6 +169,12 @@ private:
     // freed object (a use-after-free crash on a mid-gesture model reset)
     void  releaseInputFor(QGraphicsItem* item);
     void  updateItemsRecursively(CyberiadaSMEditorAbstractItem* parent, Cyberiada::ElementCollection* element);
+    // the links are few: any structural change rebuilds them all after the element
+    // items, a geometry change only re-paths them; the selected links stay selected
+    void  rebuildSubjectLinks();
+    void  clearSubjectLinks();
+    void  addSubjectLinks(Cyberiada::Element* element);
+    void  updateSubjectLinks();
 
 
     CyberiadaSMModel*              model;
@@ -171,6 +183,7 @@ private:
     const CodeLanguage*            codeLanguagePtr = nullptr;
     QString                        markupLanguageValue;
     QMap<Cyberiada::ID, QGraphicsItem*> elementIdToItemMap;
+    QMultiMap<Cyberiada::ID, CyberiadaSMEditorSubjectItem*> subjectItems;
 	
     // int                            gridSize;
     // bool                           gridEnabled;

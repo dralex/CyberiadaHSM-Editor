@@ -108,10 +108,10 @@ it checks in a comment):
 | Area   | Cases (examples) |
 |--------|------------------|
 | ROBUST | `l0-*` smoke, `l4 test_crash_marker`, `test_batch_action_guard`, `test_edit_action_gating`, the `inspect-reject-*` cases |
-| STRUCT | `l1-*` / `l4 test_item_hierarchy`, `test_load_scene`; names `test_name_edit`, `test_default_name_unique`, `test_name_only_state`; delete `l2 delete` + `test_delete`; subjects `l2 subjects`, `transition-subjects`, `test_move_subjects`; not-drawn SM tree mark `l4-model test_sm_not_drawn_mark` (`EDIT-STRUCT-11`); same-machine transition on retarget `l4-model test_retarget_refuses_cross_machine` (`EDIT-STRUCT-4`); clear-border content+origin `l4-scene test_clear_border_holds_content` (`EDIT-STRUCT-5`) |
+| STRUCT | `l1-*` / `l4 test_item_hierarchy`, `test_load_scene`; names `test_name_edit`, `test_default_name_unique`, `test_name_only_state`; delete `l2 delete` + `test_delete`; subjects `l2 subjects`, `transition-subjects`, `test_move_subjects`, a link gone with its target `l4-links test_link_gone_with_target` (`EDIT-STRUCT-9`); not-drawn SM tree mark `l4-model test_sm_not_drawn_mark` (`EDIT-STRUCT-11`); same-machine transition on retarget `l4-model test_retarget_refuses_cross_machine` (`EDIT-STRUCT-4`); clear-border content+origin `l4-scene test_clear_border_holds_content` (`EDIT-STRUCT-5`) |
 | SEM    | `test_choice_edge_rule`, `test_choice_tip_attach`; endpoint kinds via the transition cases; submachine point rename `test_submachine_point_rename_guarded` (SEM-7/SEM-8: a submachine state's point keeps a non-empty name of the referenced machine) |
 | NODE   | grow `test_move_grows_parent`, `test_nested_state_grows_parent`, `test_grow_cascades_to_ancestors`, `test_grow_skips_rectless_sm`; resize `test_border_resize`, `test_directional_grow`, `test_container_resize_clamp`, `test_comment_border_resize`, `test_resize_holds_children` (NODE-5: a resize holds every child — state, choice, comment — in place), `test_grow_holds_rect_children` (NODE-5/ROBUST-1: a grow counts the same rect children it holds and never fabricates a rect for a geometry-less child — no crash); place `test_new_element_place`; comment name `test_comment_name`; blocks `test_action_layout`; frame `reconstruct-sm-*`; same-parent move re-contains `test_move_within_parent_maintains_containment` (NODE-2: a drag/snapped move grows the parent, no relocation of the dragged child); new submachine state clears siblings `test_new_submachine_state_clears_siblings` (NODE-6) |
-| EDGE   | attach `test_auto_attach`, `test_ctrl_snap_endpoint`, `test_choice_tip_attach`; points `l2 edge-points`, `test_point_edit`, `test_loop_polyline`, `test_double_click_removes_vertex`; rebind `test_retarget_id`, `test_box_transition`; label `test_label_move`, `test_label_drag_tracks`, `label-geometry-*`, `test_label_shrinks_on_edit` (`EDIT-EDGE-13`: an edit re-fits the box width); endpoints held on a source/target resize `test_resize_holds_source_points` (`EDIT-EDGE-1`); snap (`EDIT-EDGE-15/16`) `l2 snap-transition`, `test_snap_border_rule`, `test_snap_endpoint_{drag,corner,exempt,ctrl,release}`, `test_snap_vertex_{small_steps,insert}`, `test_snap_loop_seed`, `test_snap_label_free`, `test_snap_roundtrip` |
+| EDGE   | attach `test_auto_attach`, `test_ctrl_snap_endpoint`, `test_choice_tip_attach`; points `l2 edge-points`, `test_point_edit`, `test_loop_polyline`, `test_double_click_removes_vertex`; rebind `test_retarget_id`, `test_box_transition`; label `test_label_move`, `test_label_drag_tracks`, `label-geometry-*`, `test_label_shrinks_on_edit` (`EDIT-EDGE-13`: an edit re-fits the box width); endpoints held on a source/target resize `test_resize_holds_source_points` (`EDIT-EDGE-1`); snap (`EDIT-EDGE-15/16`) `l2 snap-transition`, `test_snap_border_rule`, `test_snap_endpoint_{drag,corner,exempt,ctrl,release}`, `test_snap_vertex_{small_steps,insert}`, `test_snap_loop_seed`, `test_snap_label_free`, `test_snap_roundtrip`; comment links (`EDIT-EDGE-6/17/19`) `l4-links test_link_drawn`, `test_link_follows_move`, `test_link_rebuilt`, `test_link_not_drawn_without_geometry`, the `Subject Link` lines of the `comment-transition` scene dumps, `l3-comment-transition` |
 | TEXT   | `test_action_edit`, `test_action_multiline`, `test_reset_discards_edit` (`EDIT-TEXT-13`), `test_double_click_action`, `test_double_click_label`, `l2 text-edit`, `transition-notation`, the `text` metrics layer, `l4-highlight` (`EDIT-TEXT-7/8/11`), `l4-language` (`EDIT-TEXT-9/12`), `l4-properties test_multiline_dialog`/`test_multiline_edit`/`test_meta_description_multiline` (`EDIT-TEXT-10`) |
 | TOOL   | `test_creation_tools`, `test_creation_tools_arm`, `test_new_{state,choice,comment,sm}_place`, empty-canvas centring `l4-scene test_new_state_empty_canvas_centres` (`EDIT-TOOL-1`), paste `test_paste_state`, `test_paste_transition`, `l2 copy-paste`, drag `test_body_drag`; select overlapping leaf `l4-scene test_select_over_composite` (`EDIT-TOOL-12`); tree drag `l4-model test_tree_drag_flags` (`EDIT-TOOL-13`); snap `test_snap_corner`, `test_resize_snap`, `l4-model test_snap_to_grid` (`EDIT-TOOL-8`), `l2 snap-alt`, `test_snap_alt_suspends` (`EDIT-TOOL-9`), `l2 snap-default`, `l4-log test_snap_state` (`EDIT-TOOL-14`) |
 | HIST   | `undo`/`redo-all` layer, `undo-all`, `test_gesture_recording`, `gestures-undo` |
@@ -123,9 +123,8 @@ it checks in a comment):
 | PLUG   | the `plugin-*` cases: discovery and rejection (`EDIT-PLUG-1..4`), variables and secrets (`EDIT-PLUG-8..11`), the results and failures (`EDIT-PLUG-12..20`), save and cwd (`EDIT-PLUG-25`), the batch contract (`EDIT-PLUG-27/28`); `l4-plugin-core`; `l4-plugins` for the window (`EDIT-PLUG-5..7`, `EDIT-PLUG-15`, `EDIT-PLUG-17`, `EDIT-PLUG-21..24`, `EDIT-PLUG-29..32`, `EDIT-PLUG-35`) |
 
 Requirements with **no dedicated case yet** — the gaps to fill: `SEM-1` (one initial per
-level — only the polygon pseudostate drill and the standing law cover it), `EDGE-6` (the
-comment-subject link is not drawn yet), `TOOL-7` (pan/zoom not drivable in batch). The first is
-held by the polygon; the last two await the editor additions. `NODE-6` (sibling no-overlap) is now
+level — only the polygon pseudostate drill and the standing law cover it), `TOOL-7` (pan/zoom
+not drivable in batch). The first is held by the polygon; the last awaits the editor additions. `NODE-6` (sibling no-overlap) is now
 held by `l4-model test_reparent_free_slot` and `l4-scene test_grow_pushes_siblings` beside the
 polygon standing law. Colour (`IO-4`/`IO-5`/`NODE-10`/`EDGE-14`) is covered by `l2 set-color`.
 
@@ -185,6 +184,11 @@ around the state title, so switching the mode re-derives it. `test_undo_redo`
 checks the undo stack: every mutation is one step that brings the exact
 document dump back (the file identity included), a refused mutation pushes
 nothing, a bracketed gesture is one step, and the clean state follows the save.
+
+`l4-links` checks the comment links (`EDIT-EDGE-6/17-20`): the link items live
+beside the element map, keyed by their comment and subject index, are rebuilt
+after any structural change and re-pathed on a move; a link to a transition
+ends on its path, off the arrow and the label, and stacks above it.
 
 `l4-window` drives the main window in process: the undo and redo actions
 follow the stack (enabled state, text, effect), the tree follows a restored
@@ -740,9 +744,12 @@ sections:
   dump records what the scene actually builds. Every element is drawn except
   a formal comment without geometry (the document metainformation node): a
   choice gets a diamond and an informal comment without geometry gets a
-  default sized item, both centred on the parent origin. The link between a
-  comment and its subject is not drawn yet, so a comment attached to a
-  transition looks like any other comment in the scene dump. A transition
+  default sized item, both centred on the parent origin. The drawn links of a
+  comment follow its line as `Subject Link: {index: i, target: 'id', from:
+  (x; y), to: (x; y)}` - the subject index, the target and the scene ends; a
+  link is drawn only while the comment has geometry and its target is drawn,
+  and a link to a transition ends on its path off the arrow and the shown
+  label (the cases run with `--no-text`, so the label is hidden). A transition
   follows its polyline point by point, a self-transition included; only a
   loop without a polyline is drawn as an arc between its endpoints, which
   is why its rect is not integral. An endpoint without a stored point is

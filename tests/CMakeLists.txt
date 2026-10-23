@@ -617,6 +617,7 @@ add_l3_test(geometry)
 add_l3_test(sources)
 add_l3_test(choice)
 add_l3_test(polyline)
+add_l3_test(comment-transition)
 
 # The L4 in-process test suite: QtTest binaries linked against the core
 # library, checking the model contract and the scene structure directly
@@ -633,6 +634,7 @@ endfunction()
 
 add_l4_test(model)
 add_l4_test(scene)
+add_l4_test(links)
 add_l4_test(dialog)
 add_l4_test(text)
 add_l4_test(properties)

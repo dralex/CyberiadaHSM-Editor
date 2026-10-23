@@ -39,16 +39,9 @@
 #include "cyberiada_constants.h"
 #include "cyberiadasm_editor_scene.h"
 #include "settings_manager.h"
+#include "edge_geometry.h"
 
-// QLineF::intersect was deprecated in favour of intersects in Qt 5.14
-static QLineF::IntersectType lineIntersect(const QLineF& a, const QLineF& b, QPointF* point)
-{
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-    return a.intersects(b, point);
-#else
-    return a.intersect(b, point);
-#endif
-}
+using EdgeGeometry::lineIntersect;
 
 /* -----------------------------------------------------------------------------
  * Transition Item
@@ -179,12 +172,7 @@ void CyberiadaSMEditorTransitionItem::setSource(CyberiadaSMEditorAbstractItem *n
 QPointF CyberiadaSMEditorTransitionItem::attachedPoint(const CyberiadaSMEditorAbstractItem* item,
                                                        const QPointF& toward) const
 {
-    if (!item) return QPointF();
-    QPointF centre = item->sceneBoundingRect().center();
-    if (toward == centre) return QPointF();
-    bool has = false;
-    QPointF p = findIntersectionWithItem(item, centre, toward, &has, true);
-    return has ? p - centre : QPointF();
+    return EdgeGeometry::attachedPoint(item, toward);
 }
 
 QPointF CyberiadaSMEditorTransitionItem::sourcePoint() const
@@ -392,6 +380,12 @@ void CyberiadaSMEditorTransitionItem::seedDefaultLoop(const QPointF& startDir, c
     model->updateGeometry(index, pl);   // sets has_polyline last
 }
 
+QRectF CyberiadaSMEditorTransitionItem::labelSceneRect() const
+{
+    if (!actionItem || !actionItem->isVisible() || actionText().isEmpty()) return QRectF();
+    return actionItem->sceneBoundingRect();
+}
+
 QPainterPath CyberiadaSMEditorTransitionItem::path() const
 {
     MY_ASSERT(model);
@@ -572,113 +566,7 @@ QPointF CyberiadaSMEditorTransitionItem::findIntersectionWithItem(const Cyberiad
                                                                   bool* hasIntersections,
                                                                   bool forwardOnly) const
 {
-    if (!item) return QPointF();
-
-    int margin = 60;
-    QRectF adjustedRect = item->sceneBoundingRect().adjusted(-margin, -margin, margin, margin);
-
-    if (!adjustedRect.contains(start)) {
-        *hasIntersections = false;
-        return QPointF();
-    }
-
-    QPointF dir = end - start;
-    if (dir.isNull()) {
-        return QPointF();
-    }
-
-    // a pseudostate (initial/final/terminate) is a circle: attach on its border,
-    // on the side facing the other endpoint, not at the centre
-    if (item->type() == CyberiadaSMEditorAbstractItem::VertexItem) {
-        QPointF c = item->sceneBoundingRect().center();
-        // the connected element is the ray end farther from the centre (the
-        // caller passes either centre->toward or an external point->centre)
-        QPointF ext = QLineF(start, c).length() >= QLineF(end, c).length() ? start : end;
-        QPointF facing = ext - c;
-        *hasIntersections = true;
-        qreal len = QLineF(QPointF(0, 0), facing).length();
-        if (len == 0) return c;
-        return c + facing / len * VERTEX_POINT_RADIUS;
-    }
-
-    // a choice is drawn as a rhombus inscribed in its rect; a transition binds
-    // to the tip (a rect-edge midpoint) that faces its other end, whatever the
-    // rect proportions are
-    if (item->type() == CyberiadaSMEditorAbstractItem::ChoiceItem) {
-        QRectF r = item->sceneBoundingRect();
-        QPointF c = r.center();
-        const QPointF tips[4] = {
-            QPointF(c.x(), r.top()),      // top
-            QPointF(r.right(), c.y()),    // right
-            QPointF(c.x(), r.bottom()),   // bottom
-            QPointF(r.left(), c.y())      // left
-        };
-        // the connected element is the ray end farther from the centre: the
-        // caller passes either centre->toward or an external point->centre
-        QPointF ext = QLineF(start, c).length() >= QLineF(end, c).length() ? start : end;
-        QPointF facing = ext - c;
-        if (facing.isNull()) {
-            *hasIntersections = true;
-            return c;
-        }
-        int best = 0;
-        qreal bestDot = -std::numeric_limits<qreal>::max();
-        for (int i = 0; i < 4; ++i) {
-            QPointF td = tips[i] - c;
-            qreal len = QLineF(c, tips[i]).length();
-            if (len == 0) continue;
-            qreal dot = QPointF::dotProduct(td, facing) / len;
-            if (dot > bestDot) {
-                bestDot = dot;
-                best = i;
-            }
-        }
-        *hasIntersections = true;
-        return tips[best];
-    }
-
-    QLineF rayForward(start, start + dir * 1e5);
-    QLineF rayBackward(start, start - dir * 1e5);
-
-    QPainterPath shape = item->shape();
-    QPainterPath sceneShape = item->sceneTransform().map(shape);
-    QPolygonF polygon = sceneShape.toFillPolygon();
-
-    QPointF closestIntersection;
-    qreal minDist = std::numeric_limits<qreal>::max();
-
-    for (int i = 0; i < polygon.size(); ++i) {
-        QPointF p1 = polygon[i];
-        QPointF p2 = polygon[(i + 1) % polygon.size()];
-
-        QLineF edge(p1, p2);
-        QPointF intersectionPoint;
-
-        // find closest intersection to start point
-        if (lineIntersect(rayForward, edge, &intersectionPoint) == QLineF::BoundedIntersection) {
-            qreal dist = QLineF(start, intersectionPoint).length();
-            if (dist < minDist) {
-                minDist = dist;
-                closestIntersection = intersectionPoint;
-            }
-        }
-        if (!forwardOnly &&
-            lineIntersect(rayBackward, edge, &intersectionPoint) == QLineF::BoundedIntersection) {
-            qreal dist = QLineF(start, intersectionPoint).length();
-            if (dist < minDist) {
-                minDist = dist;
-                closestIntersection = intersectionPoint;
-            }
-        }
-    }
-
-    if (minDist < std::numeric_limits<qreal>::max()) {
-        *hasIntersections = true;
-        return closestIntersection;
-    } else {
-        *hasIntersections = false;
-        return QPointF();
-    }
+    return EdgeGeometry::findIntersectionWithItem(item, start, end, hasIntersections, forwardOnly);
 }
 
 void CyberiadaSMEditorTransitionItem::updateCoordinates(CornerFlags side, QPointF& point,
