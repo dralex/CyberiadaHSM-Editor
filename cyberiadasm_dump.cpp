@@ -79,14 +79,40 @@ static QString sceneNumber(double v)
 	return QString::number(v, 'f', 2);
 }
 
+// the == scene accumulation the dump reader applies: the sum of item->pos() over the
+// element and its model ancestors. The children of a composite live in its StateRegion,
+// a non-model item offset below the title, which the reader does not see - so a nested
+// element's reconstructed origin omits that title-band offset.
+static QPointF dumpSceneOrigin(CyberiadaSMEditorScene* scene, const Cyberiada::Element* element)
+{
+	QPointF o;
+	for (const Cyberiada::Element* e = element; e != NULL; e = e->get_parent()) {
+		QGraphicsItem* it = scene->getMap().value(e->get_id(), NULL);
+		if (it) o += it->pos();
+	}
+	return o;
+}
+
+// a link end comes back in true scene coordinates; the dumped element rects omit the
+// StateRegion title-band offset of a nested owner, so bring the end into the same frame
+// (subtract that offset) and it lies on the dumped comment/target border (EDIT-EDGE-17/19)
+static QPointF inDumpFrame(CyberiadaSMEditorScene* scene, const Cyberiada::Element* owner, const QPointF& p)
+{
+	if (!owner) return p;
+	QGraphicsItem* it = scene->getMap().value(owner->get_id(), NULL);
+	if (!it) return p;
+	return p - (it->scenePos() - dumpSceneOrigin(scene, owner));
+}
+
 // the drawn links of a comment: their target and ends (EDIT-EDGE-6/17)
 static void dumpSubjectLinks(CyberiadaSMEditorScene* scene, const Cyberiada::Element* comment,
 							 int depth, std::ostream& os)
 {
 	QList<CyberiadaSMEditorSubjectItem*> links = scene->subjectLinks(comment->get_id());
 	for (CyberiadaSMEditorSubjectItem* link : links) {
-		QPointF from = link->sourceEnd(), to = link->targetEnd();
 		const Cyberiada::Element* target = link->subject().get_element();
+		QPointF from = inDumpFrame(scene, comment, link->sourceEnd());
+		QPointF to = inDumpFrame(scene, target, link->targetEnd());
 		os << std::string(size_t(depth) * 2, ' ') << "Subject Link: {index: " << link->getIndex()
 		   << ", target: '" << (target ? target->get_id() : std::string()) << "', "
 		   << QString("from: (%1; %2), to: (%3; %4)")

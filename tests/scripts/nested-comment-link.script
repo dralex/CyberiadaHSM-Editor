@@ -1,0 +1,9 @@
+# a formal comment nested inside a composite state, linked to a sibling state:
+# its link start must lie on the comment border in the == scene dump (EDIT-EDGE-17),
+# i.e. the dump must account for the composite StateRegion title-band offset
+tool new-formal-comment
+click 684 131
+tool transition
+press 684 131
+drag 801 265
+release 801 265
