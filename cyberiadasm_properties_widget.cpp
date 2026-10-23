@@ -21,7 +21,6 @@
  *
  * ----------------------------------------------------------------------------- */
 
-#include <QTimer>
 #include <QDebug>
 #include <QMenu>
 #include <QAction>
@@ -265,6 +264,13 @@ void CyberiadaSMPropertiesWidget::clearProperties()
 	rectManager->clear();
 	dateManager->clear();
 	boolManager->clear();
+}
+
+// a posted call, not a zero QTimer: Qt 5.12 runs QTimer::singleShot(0) on a member as a
+// real timer that only an event loop fires, a posted call is sent with the posted events
+void CyberiadaSMPropertiesWidget::scheduleRebuild()
+{
+	QMetaObject::invokeMethod(this, &CyberiadaSMPropertiesWidget::rebuildProperties, Qt::QueuedConnection);
 }
 
 void CyberiadaSMPropertiesWidget::rebuildProperties()
@@ -722,7 +728,7 @@ void CyberiadaSMPropertiesWidget::slotPropertyChanged(QtProperty* p)
                         }
                         // a refused subject (EDIT-STRUCT-12) shows again as it is
                         if (!model->updateCommentSubject(i, subject_index, target, stype, fragment)) {
-                            QTimer::singleShot(0, this, &CyberiadaSMPropertiesWidget::rebuildProperties);
+                            scheduleRebuild();
                         }
                     }
                 }
@@ -1329,7 +1335,7 @@ void CyberiadaSMPropertiesWidget::updateElement()
                 // rebuilt after the change that reported it (its row may be the sender)
                 if (subjectsShape(comment) != builtSubjectsShape) {
                     builtSubjectsShape = subjectsShape(comment);
-                    QTimer::singleShot(0, this, &CyberiadaSMPropertiesWidget::rebuildProperties);
+                    scheduleRebuild();
                 } else if (comment->has_subjects()) {
                     QtProperty* subjects_group_prop = findQtProperty(nullptr, findPropertyStruct(propGroupSubjects).propName);
                     if (subjects_group_prop == nullptr) {

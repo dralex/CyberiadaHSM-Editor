@@ -69,6 +69,8 @@ protected:
 private:
 	// clear and rebuild the property tree for the current element (row set changed)
 	void                     rebuildProperties();
+	// the rebuild after the change in hand: the changed row may be the sender
+	void                     scheduleRebuild();
 
 	CyberiadaSMModel*        model;
 	CyberiadaSMEditorScene*  scene = nullptr;
