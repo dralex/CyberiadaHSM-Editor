@@ -1,0 +1,7 @@
+# a comment link drawn with the transition tool from the note to the second state
+# (EDIT-TOOL-15): both ends stored on the borders, the tool back to select
+tool transition
+press 300 240
+drag 400 150
+drag 500 60
+release 500 60

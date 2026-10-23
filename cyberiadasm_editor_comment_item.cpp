@@ -82,6 +82,10 @@ CyberiadaSMEditorCommentItem::CyberiadaSMEditorCommentItem(QObject *parent_objec
     initializeDots();
     setDotsPosition();
     hideDots();
+    // the transition tool draws a comment link from any of its 8 border boxes (EDIT-TOOL-15)
+    enableTransitionSourceDots(QList<int>() << GrabberTop << GrabberBottom << GrabberLeft
+                               << GrabberRight << GrabberTopLeft << GrabberTopRight
+                               << GrabberBottomLeft << GrabberBottomRight);
 }
 
 

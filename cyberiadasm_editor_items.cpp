@@ -330,6 +330,8 @@ void CyberiadaSMEditorAbstractItem::mouseMoveEvent(QGraphicsSceneMouseEvent *eve
 
 void CyberiadaSMEditorAbstractItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
+    // a transition-tool press without a drag must not start one on a later drag
+    creatingOfTrans = false;
     if (!isEditable()) {
         event->ignore();
         return;

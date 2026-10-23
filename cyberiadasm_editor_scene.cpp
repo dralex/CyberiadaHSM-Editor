@@ -47,6 +47,7 @@
 #include "cyberiadasm_editor_transition_item.h"
 #include "cyberiadasm_editor_comment_item.h"
 #include "cyberiadasm_editor_subject_item.h"
+#include "edge_geometry.h"
 #include "cyberiadasm_editor_choice_item.h"
 #include "cyberiada_constants.h"
 #include "settings_manager.h"
@@ -1438,6 +1439,13 @@ void CyberiadaSMEditorScene::finishTransitionDraw(const QPointF& scenePos, Qt::K
     }
     transitionSource = nullptr;
 
+    if (src && Cyberiada::element_is_comment(src->getElement())) {
+        finishSubjectDraw(src, scenePos);
+        setCurrentTool(ToolType::Select);
+        emit toolChanged(ToolType::Select);
+        return;
+    }
+
     // a valid target under the release point
     CyberiadaSMEditorAbstractItem* target = nullptr;
     for (QGraphicsItem* gi : items(scenePos)) {
@@ -1476,6 +1484,42 @@ void CyberiadaSMEditorScene::finishTransitionDraw(const QPointF& scenePos, Qt::K
     // the transition tool is one-shot
     setCurrentTool(ToolType::Select);
     emit toolChanged(ToolType::Select);
+}
+
+void CyberiadaSMEditorScene::finishSubjectDraw(CyberiadaSMEditorAbstractItem* src, const QPointF& scenePos)
+{
+    // the element under the release: a node or a comment, or a transition by its line
+    // or its label; never the machine or the comment itself
+    CyberiadaSMEditorAbstractItem* target = nullptr;
+    for (QGraphicsItem* gi : items(scenePos)) {
+        if (TransitionAction* label = dynamic_cast<TransitionAction*>(gi)) gi = label->parentItem();
+        CyberiadaSMEditorAbstractItem* ci = dynamic_cast<CyberiadaSMEditorAbstractItem*>(gi);
+        if (!ci || ci == src || ci->type() == CyberiadaSMEditorAbstractItem::SMItem) continue;
+        target = ci;
+        break;
+    }
+    if (!target) return;
+    Cyberiada::Element* element = target->getElement();
+    Cyberiada::Comment* comment = static_cast<Cyberiada::Comment*>(src->getElement());
+    if (!model->subjectAllowed(comment, element, Cyberiada::commentSubjectElement, QString())) return;
+
+    // the ends in the model frame: the source from the comment centre, the target from
+    // the target centre or, on a transition, from the centre of its source (PNST 1044 9.1.1)
+    QPointF centre = src->sceneBoundingRect().center();
+    QPointF frame, end;
+    if (CyberiadaSMEditorTransitionItem* t = dynamic_cast<CyberiadaSMEditorTransitionItem*>(target)) {
+        if (!t->source()) return;
+        frame = t->source()->sceneBoundingRect().center();
+        end = EdgeGeometry::nearestOnPath(t->mapToScene(t->path()), scenePos, 0.0, t->labelSceneRect());
+    } else {
+        if (!element->has_geometry()) return;
+        frame = target->sceneBoundingRect().center();
+        end = EdgeGeometry::attachedPoint(target, centre) + frame;
+    }
+    QPointF start = EdgeGeometry::attachedPoint(src, end) + centre;
+    model->newCommentSubject(model->elementToIndex(comment), element, Cyberiada::commentSubjectElement, QString(),
+                             Cyberiada::Point(start.x() - centre.x(), start.y() - centre.y()),
+                             Cyberiada::Point(end.x() - frame.x(), end.y() - frame.y()));
 }
 
 void CyberiadaSMEditorScene::drawBackground(QPainter* painter, const QRectF& exposed)

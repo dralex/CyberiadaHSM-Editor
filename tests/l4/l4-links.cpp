@@ -41,13 +41,32 @@ private slots:
 	void test_link_rebuilt();
 	void test_link_gone_with_target();
 	void test_link_not_drawn_without_geometry();
+	void test_link_draw_tool();
+	void test_link_draw_to_transition();
+	void test_link_draw_refused();
+	void test_press_without_drag();
 
 private:
 	CyberiadaSMModel* model = nullptr;
 	CyberiadaSMEditorScene* scene = nullptr;
 	void load(const QString& path);
 	CyberiadaSMEditorSubjectItem* link(const Cyberiada::ID& comment, int index = 0);
+	// a press, two moves and a release under the given tool, as a view would send them
+	void drag(ToolType tool, const QPointF& from, const QPointF& to);
+	int subjects(const Cyberiada::ID& comment);
+	QPointF centre(const Cyberiada::ID& id);
 };
+
+static void sceneMouse(CyberiadaSMEditorScene* sc, QEvent::Type type, const QPointF& scenePos,
+					   Qt::MouseButtons buttons)
+{
+	QGraphicsSceneMouseEvent event(type);
+	event.setScenePos(scenePos);
+	event.setScreenPos(scenePos.toPoint());
+	event.setButton(Qt::LeftButton);
+	event.setButtons(buttons);
+	QApplication::sendEvent(sc, &event);
+}
 
 // the distance of a point from a drawn path
 static qreal offPath(const QPainterPath& path, const QPointF& p)
@@ -182,6 +201,116 @@ void TestLinks::test_link_not_drawn_without_geometry()
 	QVERIFY(model->newCommentSubject(model->elementToIndex(note), model->idToElement("n0"),
 									 Cyberiada::commentSubjectElement, QString()));
 	QCOMPARE(scene->subjectLinks(note->get_id()).size(), 0);
+}
+
+void TestLinks::drag(ToolType tool, const QPointF& from, const QPointF& to)
+{
+	QEvent activate(QEvent::WindowActivate);
+	scene->setCurrentTool(tool);
+	QApplication::sendEvent(scene, &activate);
+	sceneMouse(scene, QEvent::GraphicsSceneMousePress, from, Qt::LeftButton);
+	sceneMouse(scene, QEvent::GraphicsSceneMouseMove, (from + to) / 2, Qt::LeftButton);
+	sceneMouse(scene, QEvent::GraphicsSceneMouseMove, to, Qt::LeftButton);
+	sceneMouse(scene, QEvent::GraphicsSceneMouseRelease, to, Qt::NoButton);
+}
+
+int TestLinks::subjects(const Cyberiada::ID& comment)
+{
+	const Cyberiada::Element* e = model->idToElement(QString::fromStdString(comment));
+	return e ? int(static_cast<const Cyberiada::Comment*>(e)->get_subjects().size()) : -1;
+}
+
+QPointF TestLinks::centre(const Cyberiada::ID& id)
+{
+	QGraphicsItem* item = scene->getMap().value(id);
+	return item ? item->sceneBoundingRect().center() : QPointF();
+}
+
+void TestLinks::test_link_draw_tool()
+{
+	// the transition tool dragged from a comment to a state adds an element subject
+	// with both ends stored on the borders; one-shot, undoable (EDIT-TOOL-15, EDGE-18)
+	load("diagrams/comment-transition.graphml");
+	QCOMPARE(subjects("n2"), 1);
+	drag(ToolType::Transition, centre("n2"), centre("n1"));
+	QCOMPARE(subjects("n2"), 2);
+	QCOMPARE(int(scene->getCurrentTool()), int(ToolType::Select));
+	const Cyberiada::Comment* note = static_cast<const Cyberiada::Comment*>(model->idToElement("n2"));
+	const Cyberiada::CommentSubject& s = note->get_subjects().at(1);
+	QCOMPARE(s.get_element()->get_id(), std::string("n1"));
+	QVERIFY(s.has_geometry_source_point() && s.has_geometry_target_point());
+	CyberiadaSMEditorSubjectItem* l = link("n2", 1);
+	QVERIFY(l);
+	QVERIFY(onBorder(scene->getMap().value("n2")->sceneBoundingRect(), l->sourceEnd()));
+	QVERIFY(onBorder(scene->getMap().value("n1")->sceneBoundingRect(), l->targetEnd()));
+	model->undoStack()->undo();
+	QCOMPARE(subjects("n2"), 1);
+	QCOMPARE(scene->subjectLinks("n2").size(), 1);
+}
+
+void TestLinks::test_link_draw_to_transition()
+{
+	// a release on the transition line links to the transition: the foot stays where
+	// the line was hit, stored from the centre of the transition source
+	load("diagrams/comment-transition.graphml");
+	CyberiadaSMEditorTransitionItem* t =
+		dynamic_cast<CyberiadaSMEditorTransitionItem*>(scene->getMap().value("t0"));
+	QVERIFY(t);
+	QPainterPath path = t->mapToScene(t->path());
+	QPointF hit = path.pointAtPercent(0.05);
+	drag(ToolType::Transition, centre("n2"), hit);
+	QCOMPARE(subjects("n2"), 2);
+	const Cyberiada::Comment* note = static_cast<const Cyberiada::Comment*>(model->idToElement("n2"));
+	const Cyberiada::CommentSubject& s = note->get_subjects().at(1);
+	QCOMPARE(s.get_element()->get_id(), std::string("t0"));
+	QVERIFY(s.has_geometry_target_point());
+	QPointF stored = QPointF(s.get_geometry_target_point().x, s.get_geometry_target_point().y) + centre("n0");
+	QVERIFY(QLineF(stored, hit).length() < 1.0);
+	CyberiadaSMEditorSubjectItem* l = link("n2", 1);
+	QVERIFY(l && offPath(path, l->targetEnd()) < 0.5);
+}
+
+void TestLinks::test_link_draw_refused()
+{
+	// the comment itself, the empty canvas and an element of another machine are no
+	// subjects: nothing is created and the tool still reverts (EDIT-STRUCT-12)
+	load("diagrams/comment-transition.graphml");
+	drag(ToolType::Transition, centre("n2"), centre("n2") + QPointF(10, 10));
+	QCOMPARE(subjects("n2"), 1);
+	QCOMPARE(int(scene->getCurrentTool()), int(ToolType::Select));
+	drag(ToolType::Transition, centre("n2"), centre("n2") + QPointF(0, 400));
+	QCOMPARE(subjects("n2"), 1);
+	QCOMPARE(int(scene->getCurrentTool()), int(ToolType::Select));
+
+	load("diagrams/two-sm-bordered.graphml");
+	Cyberiada::ElementCollection* m = static_cast<Cyberiada::ElementCollection*>(model->idToElement("M"));
+	QVERIFY(m);
+	Cyberiada::Comment* note = model->newComment(m, "a note", Cyberiada::Rect(0, 100, 100, 40));
+	QVERIFY(note && scene->getMap().value(note->get_id()));
+	drag(ToolType::Transition, centre(note->get_id()), centre("wS"));
+	QCOMPARE(subjects(note->get_id()), 0);
+	QCOMPARE(int(scene->getCurrentTool()), int(ToolType::Select));
+	// within its own machine the same gesture links
+	drag(ToolType::Transition, centre(note->get_id()), centre("mS"));
+	QCOMPARE(subjects(note->get_id()), 1);
+}
+
+void TestLinks::test_press_without_drag()
+{
+	// a transition-tool click on a comment arms nothing for a later drag: a select
+	// drag onto a state draws no link
+	load("diagrams/comment-transition.graphml");
+	QEvent activate(QEvent::WindowActivate);
+	scene->setCurrentTool(ToolType::Transition);
+	QApplication::sendEvent(scene, &activate);
+	// an empty corner of the note: no text over it, off the border zones
+	QRectF box = scene->getMap().value("n2")->sceneBoundingRect();
+	QPointF c = box.bottomRight() - QPointF(20, 15);
+	sceneMouse(scene, QEvent::GraphicsSceneMousePress, c, Qt::LeftButton);
+	sceneMouse(scene, QEvent::GraphicsSceneMouseRelease, c, Qt::NoButton);
+	scene->setCurrentTool(ToolType::Select);
+	drag(ToolType::Select, c, centre("n1"));
+	QCOMPARE(subjects("n2"), 1);
 }
 
 QTEST_MAIN(TestLinks)

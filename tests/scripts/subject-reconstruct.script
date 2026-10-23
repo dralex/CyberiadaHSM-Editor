@@ -1,0 +1,5 @@
+# a link without ends and the drawn ones: the update fills only the missing ends,
+# the reconstruction attaches every link (EDIT-EDGE-18)
+new-subject n2 n1
+update-geometry
+reconstruct

@@ -1964,29 +1964,135 @@ Cyberiada::Comment *CyberiadaSMModel::newFormalComment(Cyberiada::ElementCollect
     return element;
 }
 
+// the text a fragment subject points into: the name, or the actions of a state or a
+// transition, or the body of a comment; a transition has no name of its own, so both
+// kinds look into its label (the event, the guard or the action, PNST 1044 6.7)
+static QString subjectText(const Cyberiada::Element* target, Cyberiada::CommentSubjectType type)
+{
+	if (type == Cyberiada::commentSubjectName && target->get_type() != Cyberiada::elementTransition) {
+		return target->has_name() ? QString::fromStdString(target->get_name()) : QString();
+	}
+	QString text;
+	if (target->get_type() == Cyberiada::elementSimpleState ||
+		target->get_type() == Cyberiada::elementCompositeState ||
+		target->get_type() == Cyberiada::elementSubmachineState) {
+		const Cyberiada::State* state = static_cast<const Cyberiada::State*>(target);
+		for (const Cyberiada::Action& a : state->get_actions()) text += logActionText(a) + "\n";
+	} else if (target->get_type() == Cyberiada::elementTransition) {
+		const Cyberiada::Transition* t = static_cast<const Cyberiada::Transition*>(target);
+		if (t->has_action()) text = logActionText(t->get_action());
+	} else if (Cyberiada::element_is_comment(target)) {
+		text = QString::fromStdString(static_cast<const Cyberiada::Comment*>(target)->get_body());
+	}
+	return text;
+}
+
+bool CyberiadaSMModel::subjectAllowed(const Cyberiada::Comment* comment, const Cyberiada::Element* target,
+									  Cyberiada::CommentSubjectType type, const QString& fragment) const
+{
+	if (!root || !comment || !target || target == comment) return false;
+	if (target->get_type() == Cyberiada::elementRoot || target->get_type() == Cyberiada::elementSM) return false;
+	const Cyberiada::StateMachine* machine = root->get_parent_sm(comment);
+	if (!machine || machine != root->get_parent_sm(target)) return false;
+	if (type == Cyberiada::commentSubjectElement) return true;
+	return !fragment.isEmpty() && subjectText(target, type).contains(fragment);
+}
+
+static Cyberiada::Comment* commentOf(Cyberiada::Element* element)
+{
+	return element && Cyberiada::element_is_comment(element) ? static_cast<Cyberiada::Comment*>(element) : nullptr;
+}
+
+static QString logSubjectKind(Cyberiada::CommentSubjectType type, const QString& fragment)
+{
+	if (type == Cyberiada::commentSubjectName) return " name " + logEsc(fragment);
+	if (type == Cyberiada::commentSubjectData) return " data " + logEsc(fragment);
+	return QString();
+}
+
 bool CyberiadaSMModel::newCommentSubject(const QModelIndex& index, Cyberiada::Element* target,
-                                         Cyberiada::CommentSubjectType type, const QString& fragment)
+                                         Cyberiada::CommentSubjectType type, const QString& fragment,
+                                         const Cyberiada::Point& source, const Cyberiada::Point& targetPoint)
 {
 	if (readOnly()) return false;
+    Cyberiada::Comment* comment = commentOf(indexToElement(index));
+    if (!subjectAllowed(comment, target, type, fragment)) return false;
+	// a fragment subject has no target point (PNST 1044 9.1.1)
+	Cyberiada::Point tp = type == Cyberiada::commentSubjectElement ? targetPoint : Cyberiada::Point();
 	UndoScope scope(this, tr("subject"));
-    Cyberiada::Element* element = indexToElement(index);
-    if (!element) return false;
-    if (element->get_type() != Cyberiada::elementComment &&
-        element->get_type() != Cyberiada::elementFormalComment) return false;
-    Cyberiada::Comment* comment = static_cast<Cyberiada::Comment*>(element);
-    if (type == Cyberiada::commentSubjectElement) {
-        root->add_comment_to_element(comment, target);
-    } else if (type == Cyberiada::commentSubjectName) {
-        root->add_comment_to_element_name(comment, target, fragment.toStdString());
-    } else {
-        root->add_comment_to_element_body(comment, target, fragment.toStdString());
-    }
+	try {
+		if (type == Cyberiada::commentSubjectElement) {
+			root->add_comment_to_element(comment, target, source, tp);
+		} else if (type == Cyberiada::commentSubjectName) {
+			root->add_comment_to_element_name(comment, target, fragment.toStdString(), source, tp);
+		} else {
+			root->add_comment_to_element_body(comment, target, fragment.toStdString(), source, tp);
+		}
+	} catch (const Cyberiada::Exception&) {
+		return false;
+	}
     {
-        QString verb = "new-subject " + qid(element) + " " + qid(target);
-        if (type == Cyberiada::commentSubjectName) verb += " name " + logEsc(fragment);
-        else if (type == Cyberiada::commentSubjectData) verb += " data " + logEsc(fragment);
+        QString verb = "new-subject " + qid(comment) + " " + qid(target);
+        if (source.valid) {
+            verb += " at " + logPt(source);
+            if (tp.valid) verb += " " + logPt(tp);
+        }
+        GestureLog::instance().logAction(verb + logSubjectKind(type, fragment));
+    }
+    emit dataChanged(index, index);
+    return true;
+}
+
+bool CyberiadaSMModel::updateSubjectGeometry(const QModelIndex& index, int subject_index,
+                                             const Cyberiada::Point& source, const Cyberiada::Point& targetPoint,
+                                             const Cyberiada::Polyline& pl)
+{
+	if (readOnly()) return false;
+    Cyberiada::Comment* comment = commentOf(indexToElement(index));
+    if (!comment || subject_index < 0 || (size_t)subject_index >= comment->get_subjects().size()) return false;
+    const Cyberiada::CommentSubject& old = comment->get_subjects().at(size_t(subject_index));
+    if (old.has_fragment() && targetPoint.valid) return false;
+    bool points = !(old.get_geometry_source_point().valid == source.valid &&
+                    (!source.valid || logPt(old.get_geometry_source_point()) == logPt(source)) &&
+                    old.get_geometry_target_point().valid == targetPoint.valid &&
+                    (!targetPoint.valid || logPt(old.get_geometry_target_point()) == logPt(targetPoint)));
+    QString oldBends, newBends;
+    for (const Cyberiada::Point& p : old.get_geometry_polyline()) oldBends += " " + logPt(p);
+    for (const Cyberiada::Point& p : pl) newBends += " " + logPt(p);
+	UndoScope scope(this, tr("subject"));
+    comment->update_subject_geometry(size_t(subject_index), source, targetPoint, pl);
+    if (points) {
+        QString verb = "subject-points " + qid(comment) + " " + QString::number(subject_index);
+        if (source.valid) {
+            verb += " " + logPt(source);
+            if (targetPoint.valid) verb += " " + logPt(targetPoint);
+        }
         GestureLog::instance().logAction(verb);
     }
+    if (oldBends != newBends) {
+        GestureLog::instance().logAction("subject-polyline " + qid(comment) + " " +
+                                         QString::number(subject_index) + newBends);
+    }
+    emit dataChanged(index, index);
+    return true;
+}
+
+bool CyberiadaSMModel::updateCommentSubject(const QModelIndex& index, int subject_index,
+                                            Cyberiada::Element* target,
+                                            Cyberiada::CommentSubjectType type, const QString& fragment)
+{
+	if (readOnly()) return false;
+    Cyberiada::Comment* comment = commentOf(indexToElement(index));
+    if (!comment || subject_index < 0 || (size_t)subject_index >= comment->get_subjects().size()) return false;
+    if (!subjectAllowed(comment, target, type, fragment)) return false;
+	UndoScope scope(this, tr("subject"));
+	try {
+		root->update_comment_subject(comment, size_t(subject_index), target, type, fragment.toStdString());
+	} catch (const Cyberiada::Exception&) {
+		return false;
+	}
+    GestureLog::instance().logAction("retarget-subject " + qid(comment) + " " + QString::number(subject_index) +
+                                     " " + qid(target) + logSubjectKind(type, fragment));
     emit dataChanged(index, index);
     return true;
 }

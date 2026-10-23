@@ -204,6 +204,9 @@ private:
     QGraphicsLineItem* transitionDrawLine = nullptr;
     CyberiadaSMEditorAbstractItem* transitionSource = nullptr;
     void  finishTransitionDraw(const QPointF& scenePos, Qt::KeyboardModifiers mods);
+    // the transition tool drawn from a comment links it to the node, the comment or
+    // the transition line under the release, the ends stored (EDIT-TOOL-15, EDIT-EDGE-18)
+    void  finishSubjectDraw(CyberiadaSMEditorAbstractItem* comment, const QPointF& scenePos);
     bool  handleCreationPress(QGraphicsSceneMouseEvent* event);
     void  handleCreationMove(QGraphicsSceneMouseEvent* event);
     void  handleCreationRelease(QGraphicsSceneMouseEvent* event);

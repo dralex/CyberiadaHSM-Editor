@@ -268,7 +268,8 @@ static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QStri
 		cmd != "new-action" && cmd != "update-action" && cmd != "delete-action" &&
 		cmd != "update-comment" && cmd != "update-id" && cmd != "polyline" &&
 		cmd != "label" && cmd != "set-color" &&
-		cmd != "new-subject" && cmd != "delete-subject") {
+		cmd != "new-subject" && cmd != "delete-subject" && cmd != "subject-points" &&
+		cmd != "subject-polyline" && cmd != "retarget-subject") {
 		*error = "unknown command '" + cmd + "'";
 		return false;
 	}
@@ -359,43 +360,94 @@ static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QStri
 			pl.push_back(Cyberiada::Point(v[0], v[1]));
 		}
 		return model->updateGeometry(index, pl);
-	} else if (cmd == "new-subject" || cmd == "delete-subject") {
+	} else if (cmd == "new-subject" || cmd == "delete-subject" || cmd == "subject-points" ||
+			   cmd == "subject-polyline" || cmd == "retarget-subject") {
 		if (element->get_type() != Cyberiada::elementComment &&
 			element->get_type() != Cyberiada::elementFormalComment) {
 			*error = "element '" + tokens.at(1) + "' is not a comment";
 			return false;
 		}
-		if (cmd == "delete-subject") {
+		const Cyberiada::Comment* comment = static_cast<const Cyberiada::Comment*>(element);
+		int pos = 2;
+		int subject_index = 0;
+		if (cmd != "new-subject") {
+			// the subject addressed by its 0-based position in the comment's list
 			bool index_ok = false;
-			int subject_index = 0;
-			if (tokens.size() > 2) subject_index = tokens.at(2).toInt(&index_ok);
-			if (!index_ok) { *error = "delete-subject requires a subject index"; return false; }
-			const Cyberiada::Comment* comment = static_cast<const Cyberiada::Comment*>(element);
-			if (subject_index < 0 ||
-				(size_t)subject_index >= comment->get_subjects().size()) {
+			if (tokens.size() > pos) subject_index = tokens.at(pos).toInt(&index_ok);
+			if (!index_ok) { *error = cmd + " requires a subject index"; return false; }
+			if (subject_index < 0 || (size_t)subject_index >= comment->get_subjects().size()) {
 				*error = QString("subject index %1 out of range").arg(subject_index);
 				return false;
 			}
+			pos++;
+		}
+		if (cmd == "delete-subject") {
 			return model->deleteCommentSubject(index, subject_index);
 		}
-		if (tokens.size() < 3) { *error = "new-subject requires <comment> <target>"; return false; }
-		Cyberiada::Element* target = model->idToElement(tokens.at(2));
-		if (!target) { *error = "unknown element id '" + tokens.at(2) + "'"; return false; }
+		if (cmd == "subject-points" || cmd == "subject-polyline") {
+			const Cyberiada::CommentSubject& s = comment->get_subjects().at(size_t(subject_index));
+			int count = tokens.size() - pos;
+			if (count % 2 != 0) { *error = cmd + " requires x y coordinate pairs"; return false; }
+			std::vector<Cyberiada::Point> points;
+			for (int i = 0; i < count; i += 2) {
+				if (!toNumbers(tokens, pos + i, 2, v)) { *error = cmd + " requires numeric coordinates"; return false; }
+				points.push_back(Cyberiada::Point(v[0], v[1]));
+			}
+			if (cmd == "subject-points") {
+				// <sx sy> the source, <sx sy tx ty> both, nothing clears them
+				if (points.size() > 2) { *error = "subject-points takes <sx sy [tx ty]>"; return false; }
+				if (points.size() == 2 && s.has_fragment()) {
+					*error = "a fragment subject has no target point";
+					return false;
+				}
+				return model->updateSubjectGeometry(index, subject_index,
+													points.size() > 0 ? points[0] : Cyberiada::Point(),
+													points.size() > 1 ? points[1] : Cyberiada::Point(),
+													s.get_geometry_polyline());
+			}
+			Cyberiada::Polyline pl;
+			for (const Cyberiada::Point& p : points) pl.push_back(p);
+			return model->updateSubjectGeometry(index, subject_index, s.get_geometry_source_point(),
+												s.get_geometry_target_point(), pl);
+		}
+		if (tokens.size() <= pos) { *error = cmd + " requires a target"; return false; }
+		Cyberiada::Element* target = model->idToElement(tokens.at(pos));
+		if (!target) { *error = "unknown element id '" + tokens.at(pos) + "'"; return false; }
 		if (target->get_type() == Cyberiada::elementRoot ||
 			target->get_type() == Cyberiada::elementSM) {
-			*error = "'" + tokens.at(2) + "' cannot be the subject of a comment";
+			*error = "'" + tokens.at(pos) + "' cannot be the subject of a comment";
 			return false;
+		}
+		pos++;
+		// new-subject: [at sx sy [tx ty]] stores the ends in the model frame
+		Cyberiada::Point source, target_point;
+		if (cmd == "new-subject" && tokens.size() > pos && tokens.at(pos) == "at") {
+			int count = 0;
+			while (count < 4 && toNumbers(tokens, pos + 1 + count, 1, v)) count++;
+			if (count != 2 && count != 4) { *error = "new-subject at requires <sx sy [tx ty]>"; return false; }
+			toNumbers(tokens, pos + 1, count, v);
+			source = Cyberiada::Point(v[0], v[1]);
+			if (count == 4) target_point = Cyberiada::Point(v[2], v[3]);
+			pos += 1 + count;
 		}
 		Cyberiada::CommentSubjectType type = Cyberiada::commentSubjectElement;
 		QString fragment;
-		if (tokens.size() > 3) {
-			if (tokens.at(3) == "name") type = Cyberiada::commentSubjectName;
-			else if (tokens.at(3) == "data") type = Cyberiada::commentSubjectData;
+		if (tokens.size() > pos) {
+			if (tokens.at(pos) == "name") type = Cyberiada::commentSubjectName;
+			else if (tokens.at(pos) == "data") type = Cyberiada::commentSubjectData;
 			else { *error = "the subject type must be 'name' or 'data'"; return false; }
-			fragment = restOfLine(tokens, 4);
+			fragment = restOfLine(tokens, pos + 1);
 			if (fragment.isEmpty()) { *error = "the subject fragment is required"; return false; }
 		}
-		return model->newCommentSubject(index, target, type, fragment);
+		if (type != Cyberiada::commentSubjectElement && target_point.valid) {
+			*error = "a fragment subject has no target point";
+			return false;
+		}
+		bool done = cmd == "new-subject" ?
+			model->newCommentSubject(index, target, type, fragment, source, target_point) :
+			model->updateCommentSubject(index, subject_index, target, type, fragment);
+		if (!done) *error = "the subject is refused (EDIT-STRUCT-12)";
+		return done;
 	} else if (cmd == "new-action" || cmd == "update-action" || cmd == "delete-action") {
 		bool is_state = element->get_type() == Cyberiada::elementSimpleState ||
 			element->get_type() == Cyberiada::elementCompositeState;

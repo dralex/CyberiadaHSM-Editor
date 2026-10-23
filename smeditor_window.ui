@@ -638,7 +638,7 @@
     <string>Transition Tool</string>
    </property>
    <property name="toolTip">
-    <string>Transition Tool</string>
+    <string>Transition Tool: a transition from a state or a pseudostate, a comment link from a comment</string>
    </property>
   </action>
   <action name="actionNewChoise">

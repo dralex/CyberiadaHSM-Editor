@@ -1,0 +1,14 @@
+== document
+LocalDocument: {Document: {id: '', name: '', geometry format: qt, meta: {standard version: '1.0', transition order: action first, event propagation: block events}, elements: {State Machine: {id: 'G0', name: 'Comment on transition', elements: {Formal Comment: {id: 'nMeta', name: 'CGML_META', body: 'standardVersion/ 1.0
+
+transitionOrder/ actionFirst
+
+eventPropagation/ block'}, Simple State: {id: 'n0', name: 'First state', geometry: (160; 120; 300; 200)}, Simple State: {id: 'n1', name: 'Second state', geometry: (656; 120; 300; 200)}, Comment: {id: 'n2', body: 'A note about the transition', geometry: (160; 360; 300; 200), subjects: {{id: 'n2-t0', type: element, to: 't0', source point: (72.7083; -100), target point: (174.5; 0)}, {id: 'n2-n1', type: element, to: 'n1', source point: (150; -72.5806), target point: (-150; 72.5806)}}}, Transition: {id: 't0', type: loc, source: 'n0', target: 'n1', action: {trigger: 'EVENT', behavior: 'go();'}, sp: (150; 0), tp: (-150; 0), rect: (248; 33; 76; 56), polyline: [ (248; 0) ]}}}}, bounding rect: (408; 240; 796; 440)}, file: 'diagrams/comment-transition.graphml', format: cyberiada, format_str: 'Cyberiada-GraphML-1.0'}
+== scene
+  State Machine: {id: 'G0', pos: (0.00; 0.00), rect: (10.00; 20.00; 796.00; 440.00)}
+    Simple State: {id: 'n0', pos: (160.00; 120.00), rect: (-150.00; -100.00; 300.00; 200.00)}
+    Simple State: {id: 'n1', pos: (656.00; 120.00), rect: (-150.00; -100.00; 300.00; 200.00)}
+    Comment: {id: 'n2', pos: (160.00; 360.00), rect: (-150.00; -100.00; 300.00; 200.00)}
+      Subject Link: {index: 0, target: 't0', from: (232.71; 260.00), to: (334.50; 120.00)}
+      Subject Link: {index: 1, target: 'n1', from: (310.00; 287.42), to: (506.00; 192.58)}
+    Transition: {id: 't0', pos: (0.00; 0.00), rect: (300.00; 110.00; 216.00; 20.00)}

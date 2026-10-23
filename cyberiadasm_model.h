@@ -198,8 +198,25 @@ public:
     Cyberiada::Element*                 pasteElement(Cyberiada::ElementCollection* parent,
                                                      const Cyberiada::Element* src);
 
+    // a new subject of the comment, its points in the model frame (EDIT-EDGE-18); refused
+    // by the subject rules (EDIT-STRUCT-12)
     bool                                newCommentSubject(const QModelIndex& index, Cyberiada::Element* target,
-                                                          Cyberiada::CommentSubjectType type, const QString& fragment);
+                                                          Cyberiada::CommentSubjectType type, const QString& fragment,
+                                                          const Cyberiada::Point& source = Cyberiada::Point(),
+                                                          const Cyberiada::Point& targetPoint = Cyberiada::Point());
+    // the points and the bends of subject subject_index; a fragment takes no target point
+    bool                                updateSubjectGeometry(const QModelIndex& index, int subject_index,
+                                                              const Cyberiada::Point& source,
+                                                              const Cyberiada::Point& targetPoint,
+                                                              const Cyberiada::Polyline& pl);
+    // subject subject_index points at a new target, type or fragment (EDIT-STRUCT-12)
+    bool                                updateCommentSubject(const QModelIndex& index, int subject_index,
+                                                             Cyberiada::Element* target,
+                                                             Cyberiada::CommentSubjectType type, const QString& fragment);
+    // the subject rules: an element of the comment's machine, neither the machine nor the
+    // comment itself; a name or data fragment occurs in the target's text (EDIT-STRUCT-12)
+    bool                                subjectAllowed(const Cyberiada::Comment* comment, const Cyberiada::Element* target,
+                                                       Cyberiada::CommentSubjectType type, const QString& fragment) const;
     bool                                deleteCommentSubject(const QModelIndex& index, int subject_index);
 
     bool                                deleteElement(const QModelIndex& index);
