@@ -132,6 +132,39 @@ def no_dangling(dump):                                   # EDIT-STRUCT-5 / 9
                                 % (e.id, to))
 
 
+def subject_targets(dump):                               # EDIT-STRUCT-12
+    doc = dump.document
+    if doc is None:
+        return
+    ids = doc.by_id()
+    for e in doc.walk():
+        for _type, to, _frag in e.subjects:
+            target = ids.get(to)
+            if target is None:
+                continue                                     # no_dangling reports it
+            if target is e:
+                yield Violation("STRUCT-12", "comment %s is its own subject" % e.id)
+            elif target.kind == D.KIND_SM:
+                yield Violation("STRUCT-12", "comment %s comments the state machine %s" % (e.id, to))
+            elif _machine_of(target) is not _machine_of(e):
+                yield Violation("STRUCT-12", "comment %s comments %s of another machine" % (e.id, to))
+
+
+def link_starts_on_comment(dump):                        # EDIT-EDGE-17
+    for item in dump.scene_items().values():
+        if item.kind not in D.COMMENT_KINDS or _degenerate(item.rect):
+            continue
+        x, y, w, h = item.abs_rect
+        for link in item.links:
+            px, py = link.start
+            inside = x - TOL <= px <= x + w + TOL and y - TOL <= py <= y + h + TOL
+            on_edge = (abs(px - x) <= TOL or abs(px - x - w) <= TOL or
+                       abs(py - y) <= TOL or abs(py - y - h) <= TOL)
+            if not (inside and on_edge):
+                yield Violation("EDGE-17", "link %d of comment %s starts off its border at (%g; %g)"
+                                % (link.index, item.id, px, py))
+
+
 def one_initial_per_parent(dump):                        # EDIT-SEM-1
     doc = dump.document
     if doc is None:
@@ -370,7 +403,7 @@ def machine_names(dump):                                 # EDIT-META-5
 # hard laws run always-on and register as defects; gated laws are implemented
 # and tested but not yet registered (pending an EDITOR-SPEC decision)
 HARD = [unique_ids, no_cycle, endpoints_same_machine, composite_by_children,
-        no_dangling, one_initial_per_parent, one_history_per_kind, endpoint_kinds, submachine_children,
+        no_dangling, subject_targets, link_starts_on_comment, one_initial_per_parent, one_history_per_kind, endpoint_kinds, submachine_children,
         meta_hidden, containment, no_overlap, points_named, submachine_reference,
         single_behaviour_blocks, event_names, event_handling, machine_names]
 GATED = []

@@ -97,6 +97,31 @@ class LawTest(unittest.TestCase):
         d = wrap([node(D.KIND_SIMPLE, "n0", "A", children=[node(D.KIND_SIMPLE, "n0::n0", "B")])])
         self.assertIn("STRUCT-6", reqs(d))
 
+    def test_subject_targets(self):
+        # STRUCT-12: neither the comment itself, nor a machine, nor another machine
+        note = node(D.KIND_COMMENT, "c0")
+        state = node(D.KIND_SIMPLE, "s0", "A")
+        d = wrap([state, note])
+        note.subjects = [("element", "s0", "")]
+        self.assertEqual(reqs(d), [])
+        note.subjects = [("element", "c0", "")]
+        self.assertEqual(reqs(d), ["STRUCT-12"])
+        note.subjects = [("element", "G0", "")]
+        self.assertEqual(reqs(d), ["STRUCT-12"])
+        other = node(D.KIND_SM, "G1", "Other", children=[node(D.KIND_SIMPLE, "w0", "W")])
+        d.document.root.children.append(other)
+        other.parent = d.document.root
+        note.subjects = [("element", "w0", "")]
+        self.assertEqual(reqs(d), ["STRUCT-12"])
+
+    def test_link_starts_on_comment(self):
+        # EDGE-17: a drawn link starts on the border of its comment
+        d = D.parse_dump((GOOD / "comment-transition-output.txt").read_text())
+        self.assertEqual(reqs(d), [])
+        link = d.scene_items()["n2"].links[0]
+        link.start = (300.0, 240.0)          # the centre of the comment
+        self.assertEqual(reqs(d), ["EDGE-17"])
+
     def test_dangling_transition(self):
         t = D.Element(kind=D.KIND_TRANSITION, id="t0", source="n0", target="ghost")
         d = wrap([node(D.KIND_SIMPLE, "n0", "A"), t])

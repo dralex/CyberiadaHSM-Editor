@@ -35,7 +35,8 @@ CREATE = {"new-state", "new-comment", "new-formal-comment", "new-initial", "new-
           "new-choice", "new-terminate", "new-shallow-history", "new-deep-history",
           "new-submachine-state", "new-entry-point", "new-exit-point", "new-sm"}
 REFINE = {"rename", "set-color", "new-action", "update-action", "delete-action",
-          "new-subject", "delete-subject", "update-comment", "update-id", "update-meta"}
+          "new-subject", "delete-subject", "subject-points", "subject-polyline", "retarget-subject",
+          "update-comment", "update-id", "update-meta"}
 RESTRUCT = {"reparent", "move", "delete", "new-sm"}       # new-sm also a wrap/split
 CLIP = {"copy", "cut", "paste"}
 HIST = {"undo", "redo"}

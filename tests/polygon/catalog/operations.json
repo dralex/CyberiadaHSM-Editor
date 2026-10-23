@@ -322,8 +322,8 @@
     },
     {
       "verb": "new-subject",
-      "args": "<comment> <target> [name|data <fragment>]",
-      "effect": "link the comment to an element",
+      "args": "<comment> <target> [at sx sy [tx ty]] [name|data <fragment>]",
+      "effect": "link the comment to an element; at stores the ends (the model frame)",
       "targets": [
         "comment",
         "formal-comment"
@@ -335,6 +335,39 @@
       "verb": "delete-subject",
       "args": "<comment> <i>",
       "effect": "remove subject <i> (0-based)",
+      "targets": [
+        "comment",
+        "formal-comment"
+      ],
+      "form": "model",
+      "family": "connect"
+    },
+    {
+      "verb": "subject-points",
+      "args": "<comment> <i> [sx sy [tx ty]]",
+      "effect": "set the source (and target) point of subject <i>; no numbers clear both",
+      "targets": [
+        "comment",
+        "formal-comment"
+      ],
+      "form": "model",
+      "family": "connect"
+    },
+    {
+      "verb": "subject-polyline",
+      "args": "<comment> <i> [x y ...]",
+      "effect": "replace the bends of subject <i>; none clears them",
+      "targets": [
+        "comment",
+        "formal-comment"
+      ],
+      "form": "model",
+      "family": "connect"
+    },
+    {
+      "verb": "retarget-subject",
+      "args": "<comment> <i> <target> [name|data <fragment>]",
+      "effect": "point subject <i> at a new target, type or fragment",
       "targets": [
         "comment",
         "formal-comment"
@@ -636,6 +669,17 @@
       "effect": "drag a transition endpoint to move or reattach it",
       "targets": [
         "transition"
+      ],
+      "form": "gesture-form",
+      "family": "connect"
+    },
+    {
+      "verb": "draw-link",
+      "args": "",
+      "effect": "a comment link drawn with the transition tool: tool transition, press inside the comment, drag, release over a state, a comment or a transition line",
+      "targets": [
+        "comment",
+        "formal-comment"
       ],
       "form": "gesture-form",
       "family": "connect"

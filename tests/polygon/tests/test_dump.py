@@ -67,6 +67,15 @@ class DumpTest(unittest.TestCase):
         self.assertEqual(doc.find("n2").subjects[0], ("name", "n0", "Parent"))
         self.assertEqual(doc.find("n2").subjects[1], ("data", "n1::n0", "init"))
 
+    def test_subject_links(self):
+        # the drawn links sit under their comment item (EDIT-EDGE-6/17)
+        items = load("subject-verbs").scene_items()
+        links = items["n2"].links
+        self.assertEqual([(l.index, l.target) for l in links], [(0, "t0"), (1, "n0"), (2, "t0")])
+        self.assertEqual(links[0].start, (300.0, 200.0))
+        self.assertEqual(links[0].end, (200.0, 50.0))
+        self.assertEqual(items["n0"].links, [])
+
     def test_scene_geometry(self):
         dump = load("geometry")
         items = dump.scene_items()

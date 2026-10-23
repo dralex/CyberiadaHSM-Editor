@@ -43,9 +43,9 @@ def load(name):
 class CatalogTest(unittest.TestCase):
     def test_catalog(self):
         cat = CAT.Catalog()
-        self.assertEqual(len(cat.by_form(CAT.FORM_MODEL)), 30)
+        self.assertEqual(len(cat.by_form(CAT.FORM_MODEL)), 33)
         self.assertEqual(len(cat.by_form(CAT.FORM_GESTURE)), 16)
-        self.assertEqual(len(cat.by_form(CAT.FORM_GESTURE_FORM)), 16)
+        self.assertEqual(len(cat.by_form(CAT.FORM_GESTURE_FORM)), 17)
         self.assertIn("| `new-state <parent> [x y w h] <name>` |", cat.table(CAT.FORM_MODEL))
         self.assertIn(("reparent", "simple"), cat.cells())
 
@@ -70,6 +70,11 @@ class CatalogTest(unittest.TestCase):
         self.assertIsNotNone(fuzzer.emit_transition(dump))
         for name in ("drag-state", "resize-state", "click-delete", "add-point", "move-endpoint"):
             self.assertIsNotNone(fuzzer.generate(name, dump), name)
+        # a comment link: the transition tool from a comment to a state (EDIT-TOOL-15)
+        link = fuzzer.generate("draw-link", load("comment-transition"))
+        self.assertIsNotNone(link)
+        self.assertEqual(link[0][0], "tool transition")
+        self.assertEqual(link[1], "comment")
 
     def test_seed_determinism(self):
         cat = CAT.Catalog()

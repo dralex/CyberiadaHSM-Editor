@@ -108,7 +108,7 @@ grouped by their effect on the diagram, each family aligned with the areas of
 | Family | Model verbs | Gesture forms | Spec areas |
 |---|---|---|---|
 | `create` | new-state, new-sm, new-submachine-state, new-initial, new-final, new-choice, new-terminate, new-shallow-history, new-deep-history, new-entry-point, new-exit-point, new-comment, new-formal-comment | the creation tools: `tool <name>` and a click or a rect | STRUCT, SEM, NODE |
-| `connect` | new-transition, polyline, label, new-subject, delete-subject | draw-loop, add-point, move-point, remove-point, move-endpoint | EDGE, SEM |
+| `connect` | new-transition, polyline, label, new-subject, delete-subject, subject-points, subject-polyline, retarget-subject | draw-loop, add-point, move-point, remove-point, move-endpoint, draw-link | EDGE, SEM, STRUCT-12 |
 | `arrange` | move, reparent, delete | drag-state, resize-state, resize-comment, click-delete | NODE |
 | `behave` | new-action, update-action, delete-action, rename, update-comment, update-id, update-meta | edit-title, edit-action, edit-label, edit-body, double-click-action | TEXT, META |
 | `clipboard` | — | copy-paste, cut-paste (copy, cut, paste) | TOOL, NODE |
@@ -494,9 +494,11 @@ yields the requirement it enforces and the offending detail; a violation is a
 traces to the specification and, like a drill invariant, reproduces minimally and
 skips minimisation. Reference-free like tier 1 — a property, not a prediction. The
 hard laws (unique ids, one-parent, endpoints in one machine, composite⇔children,
-no dangling reference, one initial per level, endpoint kinds, containment, sibling
-no-overlap, the hidden metainformation node) register as defects and are silent on
-the good corpus.
+no dangling reference, the subject targets of `STRUCT-12`, a drawn comment link
+starting on its comment border (`EDGE-17`, from the `Subject Link` scene lines), one
+initial per level, endpoint kinds, containment, sibling no-overlap, the hidden
+metainformation node) register as defects and are silent on the good corpus. The
+fuzzer draws comment links too (`draw-link`: the transition tool from a comment).
 
 The `[U]` geometric laws are editing-mode invariants (`EDITOR-SPEC` §4.10): the editor's
 recovery maintains them, but inspection mode suspends it and shows the stored geometry as-is.

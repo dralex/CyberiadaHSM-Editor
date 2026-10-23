@@ -367,6 +367,19 @@ def parse_document(text):
 SCENE_LINE = re.compile(
     r"^( *)(.+?): \{id: '(.*?)', pos: \(([^;]+); ([^)]+)\), "
     r"rect: \(([^;]+); ([^;]+); ([^;]+); ([^)]+)\)(?:, color: '[^']*')?\}$")
+# a drawn comment link, under its comment (EDIT-EDGE-6/17): the subject index, the
+# target and the scene ends
+SUBJECT_LINE = re.compile(
+    r"^( *)Subject Link: \{index: (\d+), target: '(.*?)', "
+    r"from: \(([^;]+); ([^)]+)\), to: \(([^;]+); ([^)]+)\)\}$")
+
+
+@dataclass
+class SubjectLink:
+    index: int
+    target: str
+    start: tuple
+    end: tuple
 
 
 @dataclass
@@ -378,6 +391,7 @@ class SceneItem:
     depth: int
     parent: object = field(default=None, repr=False)
     children: list = field(default_factory=list)
+    links: list = field(default_factory=list)
 
     @property
     def origin(self):
@@ -406,6 +420,16 @@ def parse_scene(text):
     stack = []
     for line in text.splitlines():
         if not line.strip():
+            continue
+        link = SUBJECT_LINE.match(line)
+        if link:
+            indent, index, target, fx, fy, tx, ty = link.groups()
+            owner = [i for i in stack if i.depth == len(indent) // 2 - 1]
+            if not owner:
+                raise DumpError("a subject link outside a comment: %s" % line)
+            owner[-1].links.append(SubjectLink(index=int(index), target=target,
+                                               start=(float(fx), float(fy)),
+                                               end=(float(tx), float(ty))))
             continue
         match = SCENE_LINE.match(line)
         if not match:

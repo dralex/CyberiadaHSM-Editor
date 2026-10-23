@@ -194,6 +194,23 @@ class Fuzzer:
         return (["tool transition", "press %d %d" % press,
                  "drag %d %d" % to, "release %d %d" % to], "transition")
 
+    def emit_link(self, dump):
+        """`tool transition` then press a comment and drag to a state or another
+        comment: a comment link (EDIT-TOOL-15)."""
+        comments = self.resizable_comments(dump)
+        src = self.pick(comments)
+        if src is None:
+            return None
+        tgt = self.pick(self.sized_states(dump) + [c for c in comments if c is not src])
+        if tgt is None:
+            return None
+        sx, sy, sw, sh = src.abs_rect
+        press = (round(sx + sw - BODY_INSET), round(sy + sh - BODY_INSET))
+        tx, ty, tw, th = tgt.abs_rect
+        to = (round(tx + tw / 2.0), round(ty + th / 2.0))
+        return (["tool transition", "press %d %d" % press,
+                 "drag %d %d" % to, "release %d %d" % to], "comment")
+
     # --- the edge forms ----------------------------------------------------
 
     def transitions_with_handles(self, dump):
@@ -329,12 +346,14 @@ class Fuzzer:
         (the explore burst) restricts to the manipulations."""
         if getattr(self, "gestures_only", False):
             return list(self.MANIPULATIONS)
-        names = [t.name for t in CAT.creation_tools()] + ["draw-transition"]
+        names = [t.name for t in CAT.creation_tools()] + ["draw-transition", "draw-link"]
         return names + list(self.MANIPULATIONS)
 
     def generate(self, name, dump):
         if name == "draw-transition":
             return self.emit_transition(dump)
+        if name == "draw-link":
+            return self.emit_link(dump)
         tool = next((t for t in CAT.creation_tools() if t.name == name), None)
         if tool is not None:
             return self.emit_creation(tool, dump)
@@ -354,7 +373,7 @@ class Fuzzer:
         tool = next((t for t in CAT.creation_tools() if t.name == name), None)
         if tool:
             return tool.element
-        if name == "resize-comment":
+        if name in ("resize-comment", "draw-link"):
             return "comment"
         return ("transition" if "point" in name or name == "draw-transition"
                 or name == "edit-label" else "state")
