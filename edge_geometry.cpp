@@ -159,13 +159,19 @@ QPointF EdgeGeometry::findIntersectionWithItem(const CyberiadaSMEditorAbstractIt
     }
 }
 
-QPointF EdgeGeometry::attachedPoint(const CyberiadaSMEditorAbstractItem* item, const QPointF& toward)
+QPointF EdgeGeometry::attachedPoint(const CyberiadaSMEditorAbstractItem* item, const QPointF& toward,
+                                    bool sideWhenCentred)
 {
     if (!item) return QPointF();
     QPointF centre = item->sceneBoundingRect().center();
-    if (toward == centre) return QPointF();
+    QPointF to = toward;
+    if (toward == centre) {
+        if (!sideWhenCentred) return QPointF();
+        // coincident boxes give no direction: the right side, not the centre
+        to = centre + QPointF(1.0, 0.0);
+    }
     bool has = false;
-    QPointF p = findIntersectionWithItem(item, centre, toward, &has, true);
+    QPointF p = findIntersectionWithItem(item, centre, to, &has, true);
     return has ? p - centre : QPointF();
 }
 

@@ -45,8 +45,10 @@ QPointF findIntersectionWithItem(const CyberiadaSMEditorAbstractItem* item,
                                  bool* hasIntersections, bool forwardOnly = false);
 
 // the attachment of an end without a stored point: the node border toward a scene
-// point, relative to the node centre
-QPointF attachedPoint(const CyberiadaSMEditorAbstractItem* item, const QPointF& toward);
+// point, relative to the node centre; a point at the centre gives the centre, or the
+// right side with sideWhenCentred (a comment link stays on the border, EDIT-EDGE-17)
+QPointF attachedPoint(const CyberiadaSMEditorAbstractItem* item, const QPointF& toward,
+                      bool sideWhenCentred = false);
 
 // put a centre-relative point exactly on the border of a rect of the given
 // half-extents (clamp inside, then snap to the nearest edge)

@@ -141,6 +141,8 @@ void CyberiadaSMEditorScene::slotModelAboutToBeReset()
     if (QGraphicsItem* grabber = mouseGrabberItem()) grabber->ungrabMouse();
     if (QGraphicsItem* focus = focusItem()) focus->clearFocus();
     discardingEdits = false;
+    // the links read their comments: they go before the document does
+    clearSubjectLinks();
 }
 
 bool CyberiadaSMEditorScene::discardsEdits(const QGraphicsItem* item)
@@ -467,10 +469,13 @@ bool CyberiadaSMEditorScene::subjectLinksStale(const Cyberiada::Comment* comment
 void CyberiadaSMEditorScene::clearSubjectLinks()
 {
     // a link may be the one whose handler changed the model: it leaves the scene at
-    // once and is freed later
+    // once and is freed later, detached so a signal of its ends cannot reach the
+    // comment the model is about to free
     for (CyberiadaSMEditorSubjectItem* link : subjectItems) {
         releaseInputFor(link);
+        // out of the index while its bounding rect still holds
         removeItem(link);
+        link->detach();
         link->deleteLater();
     }
     subjectItems.clear();
@@ -1661,9 +1666,9 @@ void CyberiadaSMEditorScene::finishSubjectDraw(CyberiadaSMEditorAbstractItem* sr
     } else {
         if (!element->has_geometry()) return;
         frame = target->sceneBoundingRect().center();
-        end = EdgeGeometry::attachedPoint(target, centre) + frame;
+        end = EdgeGeometry::attachedPoint(target, centre, true) + frame;
     }
-    QPointF start = EdgeGeometry::attachedPoint(src, end) + centre;
+    QPointF start = EdgeGeometry::attachedPoint(src, end, true) + centre;
     model->newCommentSubject(model->elementToIndex(comment), element, Cyberiada::commentSubjectElement, QString(),
                              Cyberiada::Point(start.x() - centre.x(), start.y() - centre.y()),
                              Cyberiada::Point(end.x() - frame.x(), end.y() - frame.y()));

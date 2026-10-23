@@ -64,6 +64,9 @@ public:
     const Cyberiada::CommentSubject& subject() const;
     // false once the subject is gone: the item waits for its removal and draws nothing
     bool hasSubject() const;
+    // leave the ends and forget the comment before the model frees it: the item
+    // waits for its deletion and reads nothing
+    void detach();
 
     // the drawn ends in scene coordinates: the stored points, or the border
     // attachments toward the other end (EDIT-EDGE-17)

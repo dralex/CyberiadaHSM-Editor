@@ -1253,8 +1253,10 @@ Cyberiada::Point CyberiadaSMModel::freeChildCentre(const Cyberiada::ElementColle
 			double cx, cy, hw, hh;
 			const Cyberiada::ElementCollection* c = dynamic_cast<const Cyberiada::ElementCollection*>(*i);
 			const Cyberiada::Vertex* v = dynamic_cast<const Cyberiada::Vertex*>(*i);
-			if (c && c->has_geometry()) {
-				Cyberiada::Rect r = c->get_geometry_rect();
+			// a comment is a sibling box as well
+			const Cyberiada::Comment* m = dynamic_cast<const Cyberiada::Comment*>(*i);
+			if ((c && c->has_geometry()) || (m && m->has_geometry())) {
+				Cyberiada::Rect r = c ? c->get_geometry_rect() : m->get_geometry_rect();
 				if (r.width <= 0.0 || r.height <= 0.0) continue;
 				cx = r.x; cy = r.y; hw = r.width / 2.0; hh = r.height / 2.0;
 			} else if (v && v->has_point_geometry() && v->has_geometry()) {

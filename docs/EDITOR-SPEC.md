@@ -508,7 +508,7 @@ the third is a derived display value the format does not store):
 ```
 - `EDIT-TOOL-17` MUST [A]: a selection in a text edited in place — a name, an action, a label,
   a comment body — offers *Comment the Selection* in its context menu: *New Comment* places a
-  comment beside the element, an existing comment of the machine is picked by its name; either
+  comment beside the element, clear of its siblings (the comments too), an existing comment of the machine is picked by its name; either
   gets a fragment subject of the selection in one undo step. A selection outside one field
   (`EDIT-STRUCT-12`) disables the entry; the comment's own body is not offered to itself. *design*
 

@@ -62,6 +62,7 @@ private slots:
 	void test_fragment_wrapped();
 	void test_fragment_reconciled();
 	void test_comment_selection();
+	void test_cleared_link_detached();
 
 private:
 	CyberiadaSMModel* model = nullptr;
@@ -639,6 +640,24 @@ void TestLinks::test_comment_selection()
 	QRectF freshBox = scene->getMap().value(fresh->get_id())->sceneBoundingRect();
 	QVERIFY(!stateBox.intersects(freshBox));
 	QVERIFY(!link(fresh->get_id(), 0)->underline().isEmpty());
+	// a second new comment takes another free slot, clear of the first
+	state = dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene->getMap().value("n0"));
+	text = state->fieldText(internal, &start);
+	text->startEditing();
+	c = text->textCursor();
+	c.setPosition(start);
+	c.setPosition(start + 6, QTextCursor::KeepAnchor);
+	text->setTextCursor(c);
+	Cyberiada::ID first = fresh->get_id();
+	QVERIFY(scene->commentSelection(text, Cyberiada::ID()));
+	QCOMPARE(int(scene->getMap().size()), elements + 2);
+	for (QGraphicsItem* item : scene->getMap().values()) {
+		CyberiadaSMEditorAbstractItem* other = dynamic_cast<CyberiadaSMEditorAbstractItem*>(item);
+		if (!other || other->getId() == first || !Cyberiada::element_is_comment(other->getElement()) ||
+			!other->getElement()->has_geometry()) continue;
+		QVERIFY(!other->sceneBoundingRect().intersects(scene->getMap().value(first)->sceneBoundingRect()));
+	}
+	model->undoStack()->undo();
 	// the undo takes the comment and its link away together
 	model->undoStack()->undo();
 	QCOMPARE(int(scene->getMap().size()), elements);
@@ -670,5 +689,24 @@ void TestLinks::test_comment_selection()
 	text->startEditing();
 	QVERIFY(scene->selectionComments(text).isEmpty());
 	text->clearFocus();
+}
+
+void TestLinks::test_cleared_link_detached()
+{
+	// a link cleared before its comment is freed leaves its ends at once: a move of
+	// the target before the deferred deletion reads nothing of the freed comment
+	load("diagrams/comment-transition.graphml");
+	QModelIndex ni = model->elementToIndex(model->idToElement("n2"));
+	QVERIFY(model->newCommentSubject(ni, model->idToElement("n1"), Cyberiada::commentSubjectElement, QString()));
+	QPointer<CyberiadaSMEditorSubjectItem> old = link("n2", 1);
+	QVERIFY(old && old->hasSubject());
+	QVERIFY(model->deleteElement(ni));
+	QVERIFY(old);                      // the deletion is deferred
+	QVERIFY(!old->hasSubject());
+	QVERIFY(!old->scene());
+	Cyberiada::Element* second = model->idToElement("n1");
+	Cyberiada::Rect r = static_cast<Cyberiada::State*>(second)->get_geometry_rect();
+	QVERIFY(model->updateGeometry(model->elementToIndex(second), Cyberiada::Rect(r.x + 30, r.y, r.width, r.height)));
+	QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
 }
 

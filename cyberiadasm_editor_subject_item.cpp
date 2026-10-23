@@ -117,6 +117,17 @@ void CyberiadaSMEditorSubjectItem::connectEnds()
     }
 }
 
+void CyberiadaSMEditorSubjectItem::detach()
+{
+    // the bounding rect collapses with the comment gone
+    if (scene()) prepareGeometryChange();
+    for (const QPointer<CyberiadaSMEditorAbstractItem>& end : connectedEnds) {
+        if (end) disconnect(end, nullptr, this, nullptr);
+    }
+    connectedEnds.clear();
+    comment = nullptr;
+}
+
 const Cyberiada::CommentSubject& CyberiadaSMEditorSubjectItem::subject() const
 {
     return comment->get_subjects().at(size_t(index));
@@ -229,7 +240,7 @@ QPointF CyberiadaSMEditorSubjectItem::targetEnd() const
     if (s.has_geometry_target_point()) {
         return toQPoint(s.get_geometry_target_point()) + frameCentre();
     }
-    return EdgeGeometry::attachedPoint(targetNode(), toward) + frameCentre();
+    return EdgeGeometry::attachedPoint(targetNode(), toward, true) + frameCentre();
 }
 
 QPointF CyberiadaSMEditorSubjectItem::sourceEnd() const
@@ -242,7 +253,7 @@ QPointF CyberiadaSMEditorSubjectItem::sourceEnd() const
     }
     const Cyberiada::Polyline& pl = s.get_geometry_polyline();
     QPointF toward = !pl.empty() ? toQPoint(pl.front()) + commentCentre() : targetEnd();
-    return EdgeGeometry::attachedPoint(commentItem(), toward) + commentCentre();
+    return EdgeGeometry::attachedPoint(commentItem(), toward, true) + commentCentre();
 }
 
 QPainterPath CyberiadaSMEditorSubjectItem::path() const
