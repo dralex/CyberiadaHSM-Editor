@@ -29,6 +29,7 @@ import zlib
 from dataclasses import dataclass
 
 from . import dump as D
+from .expectations import RECT_TOLERANCE
 
 # the scene rect the export renders is the visible items rect inflated by this
 # margin - the editor now exports at the diagram size with only a 1px pad (no
@@ -253,7 +254,10 @@ def check(dump, image, probe_px, ink_min, frame=None):
         if item.kind in D.STATE_KINDS and parent is not None and parent.kind in D.STATE_KINDS:
             x, y, w, h = item.abs_rect
             px, py, pw, ph = parent.abs_rect
-            if not (x >= px and y >= py and x + w <= px + pw and y + h <= py + ph):
+            # the same tolerance the NODE-1 law uses: a child flush to the border
+            # (within the writer's pixel rounding) is contained, not outside
+            t = RECT_TOLERANCE
+            if not (x >= px - t and y >= py - t and x + w <= px + pw + t and y + h <= py + ph + t):
                 result.outside.append((item, parent))
     return result
 
