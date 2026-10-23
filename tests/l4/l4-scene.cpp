@@ -1209,10 +1209,21 @@ void TestScene::test_directional_grow()
 	QCOMPARE(child->get_parent(), (Cyberiada::Element*)parent);
 	QCOMPARE(sibling->get_parent(), (Cyberiada::Element*)parent);
 
-	// a clean layout: both children well inside a 400x400 parent
-	QVERIFY(model->updateGeometry(model->elementToIndex(parent), Cyberiada::Rect(0, 0, 400, 400)));
+	// node-0-0 is a composite; this test resizes it to a small box, which a composite
+	// may not do while it holds content (a parent never shrinks below its children,
+	// EDIT-NODE-2). Empty it first so the test exercises node-0's directional grow,
+	// not node-0-0's own containment.
+	Cyberiada::ElementCollection* cc = static_cast<Cyberiada::ElementCollection*>(child);
+	while (!cc->get_children().empty()) {
+		QVERIFY(model->deleteElement(model->elementToIndex(cc->get_children().front())));
+	}
+
+	// a clean layout: place both children first, then size the parent around them
+	// (sizing the parent while a child is still outside would correctly grow it back
+	// to contain the child, EDIT-NODE-2)
 	QVERIFY(model->updateGeometry(model->elementToIndex(child),  Cyberiada::Rect(-100, 0, 100, 100)));
 	QVERIFY(model->updateGeometry(model->elementToIndex(sibling), Cyberiada::Rect(100, 0, 100, 100)));
+	QVERIFY(model->updateGeometry(model->elementToIndex(parent), Cyberiada::Rect(0, 0, 400, 400)));
 
 	Cyberiada::Rect p0 = parent->get_geometry_rect();
 	Cyberiada::Rect s0 = static_cast<const Cyberiada::ElementCollection*>(sibling)->get_geometry_rect();

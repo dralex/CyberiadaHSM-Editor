@@ -957,7 +957,7 @@ bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada:
 		// them too, or a child is left drawn outside the shrunk parent (EDIT-NODE-1)
 		Cyberiada::ElementCollection* coll = dynamic_cast<Cyberiada::ElementCollection*>(element);
 		if (coll && !coll->get_children().empty()) {
-			growToFitChildren(coll->get_children().front());
+			growToFitChildren(coll->get_children().front(), false);  // grow about the centre, children keep their places
 		}
 	}
 	return true;
