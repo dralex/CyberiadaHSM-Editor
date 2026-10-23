@@ -30,6 +30,7 @@
 #include <QMimeData>
 #include "cyberiadasm_model.h"
 #include "settings_manager.h"
+#include "subject_fragment.h"
 
 class TestModel: public QObject {
 	Q_OBJECT
@@ -69,6 +70,8 @@ private slots:
 	void test_unique_machine_name();
 	void test_submachine_point_rename_guarded();
 	void test_new_submachine_state_clears_siblings();
+	void test_fragment_one_field();
+	void test_fragment_reconcile();
 
 private:
 	static bool rectsOverlap(const Cyberiada::Rect& a, const Cyberiada::Rect& b);
@@ -274,6 +277,129 @@ void TestModel::test_subject_on_transition()
 	// deleting the transition strips the subject pointing at it
 	QVERIFY(model->deleteElement(model->elementToIndex(t)));
 	QVERIFY(!c->has_subjects());
+}
+
+// a state "Moving" with entry/ motor.on() and TIMEOUT [count > 3] / stop(), a
+// transition EV [g] / beh(), a comment "Check the sensor" and a note to link
+struct FragmentFixture {
+	Cyberiada::State* state = nullptr;
+	Cyberiada::Element* transition = nullptr;
+	Cyberiada::Comment* other = nullptr;
+	Cyberiada::Comment* note = nullptr;
+	int internal = -1;
+};
+
+static bool setupFragments(CyberiadaSMModel* model, FragmentFixture& f)
+{
+	if (!model->loadDocument("diagrams/geometry.graphml")) return false;
+	f.state = static_cast<Cyberiada::State*>(model->idToElement("node-0-0-2"));
+	f.transition = model->idToElement("edge-2");
+	QModelIndex si = model->elementToIndex(f.state);
+	if (!model->updateTitle(si, "Moving") ||
+		!model->newAction(si, Cyberiada::actionEntry, QString(), QString(), "motor.on()") ||
+		!model->newAction(si, Cyberiada::actionTransition, "TIMEOUT", "count > 3", "stop()") ||
+		!model->updateAction(model->elementToIndex(f.transition), 0, "EV", "g", "beh()")) return false;
+	f.internal = int(f.state->get_actions().size()) - 1;
+	Cyberiada::ElementCollection* parent = static_cast<Cyberiada::ElementCollection*>(model->idToElement("node-0"));
+	f.other = model->newComment(parent, "Check the sensor");
+	f.note = model->newComment(parent, "A note");
+	return f.other && f.note;
+}
+
+void TestModel::test_fragment_one_field()
+{
+	// a fragment lies inside one field: the name, an event, a guard, a behaviour
+	// or a body - as the strict reading checks (EDIT-STRUCT-12)
+	FragmentFixture f;
+	QVERIFY(setupFragments(model, f));
+	const Cyberiada::CommentSubjectType N = Cyberiada::commentSubjectName, D = Cyberiada::commentSubjectData;
+	QVERIFY(model->subjectAllowed(f.note, f.state, N, "Mov"));
+	QVERIFY(!model->subjectAllowed(f.note, f.state, N, "motor"));
+	QVERIFY(model->subjectAllowed(f.note, f.state, D, "motor.on"));
+	QVERIFY(model->subjectAllowed(f.note, f.state, D, "count > 3"));
+	QVERIFY(model->subjectAllowed(f.note, f.state, D, "stop()"));
+	QVERIFY(!model->subjectAllowed(f.note, f.state, D, "TIMEOUT [count"));
+	QVERIFY(!model->subjectAllowed(f.note, f.state, D, "entry/"));
+	QVERIFY(!model->subjectAllowed(f.note, f.state, D, "/ stop"));
+	QVERIFY(!model->subjectAllowed(f.note, f.state, D, QString()));
+	// a transition has no name: both kinds look into its label fields
+	QVERIFY(model->subjectAllowed(f.note, f.transition, N, "EV"));
+	QVERIFY(model->subjectAllowed(f.note, f.transition, D, "beh"));
+	QVERIFY(!model->subjectAllowed(f.note, f.transition, D, "EV [g"));
+	QVERIFY(model->subjectAllowed(f.note, f.other, D, "sensor"));
+	QVERIFY(!model->subjectAllowed(f.note, f.other, N, "sensor"));
+	// the first occurrence in the search order is the commented one
+	SubjectFragment::Place p = SubjectFragment::locate(f.state, D, "o");
+	QVERIFY(p.found());
+	QCOMPARE(p.field.kind, SubjectFragment::fieldBehaviour);
+	QCOMPARE(p.field.text, QString("motor.on()"));
+	QCOMPARE(p.offset, 1);
+	p = SubjectFragment::locate(f.state, D, "T");
+	QCOMPARE(p.field.kind, SubjectFragment::fieldTrigger);
+	QCOMPARE(p.field.action, f.internal);
+	QCOMPARE(SubjectFragment::defaultFragment(f.state, D), QString("motor.on()"));
+	QCOMPARE(SubjectFragment::defaultFragment(f.transition, N), QString("EV"));
+	// the drawn texts place the fields where the items show them
+	SubjectFragment::DrawnAction d = SubjectFragment::stateAction(f.state->get_actions().at(size_t(f.internal)));
+	QCOMPARE(d.text, QString("TIMEOUT [count > 3] / stop()"));
+	QCOMPARE(d.text.mid(d.guard, 9), QString("count > 3"));
+	QCOMPARE(d.text.mid(d.behaviour), QString("stop()"));
+	d = SubjectFragment::transitionLabel(static_cast<Cyberiada::Transition*>(f.transition)->get_action());
+	QCOMPARE(d.text, QString("EV [g] / beh()"));
+	QCOMPARE(d.text.mid(d.guard, 1), QString("g"));
+	QCOMPARE(d.text.mid(d.behaviour), QString("beh()"));
+}
+
+void TestModel::test_fragment_reconcile()
+{
+	// an edit that drops a fragment turns the subject into an element one in the
+	// same undo step, keeping its id and source point (EDIT-STRUCT-13)
+	FragmentFixture f;
+	QVERIFY(setupFragments(model, f));
+	QModelIndex ni = model->elementToIndex(f.note);
+	QModelIndex si = model->elementToIndex(f.state);
+	QVERIFY(model->newCommentSubject(ni, f.state, Cyberiada::commentSubjectData, "stop()",
+									 Cyberiada::Point(10, 0)));
+	QVERIFY(model->newCommentSubject(ni, f.state, Cyberiada::commentSubjectName, "Mov"));
+	QVERIFY(model->newCommentSubject(ni, f.other, Cyberiada::commentSubjectData, "sensor"));
+	Cyberiada::ID id = f.note->get_subjects().at(0).get_id();
+	QSignalSpy spy(model, &CyberiadaSMModel::dataChanged);
+	// a kept fragment stays
+	QVERIFY(model->updateAction(si, f.internal, "TIMEOUT", "count > 4", "stop(); log()"));
+	QCOMPARE(f.note->get_subjects().at(0).get_type(), Cyberiada::commentSubjectData);
+	int steps = model->undoStack()->count();
+	QVERIFY(model->updateAction(si, f.internal, "TIMEOUT", "count > 4", "halt()"));
+	QCOMPARE(model->undoStack()->count(), steps + 1);
+	{
+		const Cyberiada::CommentSubject& s = f.note->get_subjects().at(0);
+		QCOMPARE(s.get_type(), Cyberiada::commentSubjectElement);
+		QCOMPARE(s.get_element(), static_cast<const Cyberiada::Element*>(f.state));
+		QCOMPARE(s.get_id(), id);
+		QVERIFY(s.has_geometry_source_point());
+		QCOMPARE(s.get_geometry_source_point().x, 10.0);
+	}
+	QVERIFY(spy.count() >= 2);   // the state and the comment
+	// the undo brings the fragment back with the text; it re-creates the
+	// elements, so they are fetched again by id
+	QString noteId = QString::fromStdString(f.note->get_id());
+	QString otherId = QString::fromStdString(f.other->get_id());
+	model->undoStack()->undo();
+	f.note = static_cast<Cyberiada::Comment*>(model->idToElement(noteId));
+	f.other = static_cast<Cyberiada::Comment*>(model->idToElement(otherId));
+	f.state = static_cast<Cyberiada::State*>(model->idToElement("node-0-0-2"));
+	QVERIFY(f.note && f.other && f.state);
+	QCOMPARE(f.note->get_subjects().size(), size_t(3));
+	QCOMPARE(f.note->get_subjects().at(0).get_type(), Cyberiada::commentSubjectData);
+	QCOMPARE(QString::fromStdString(f.note->get_subjects().at(0).get_fragment()), QString("stop()"));
+	ni = model->elementToIndex(f.note);
+	si = model->elementToIndex(f.state);
+	// a rename, a deleted action and a comment body do the same
+	QVERIFY(model->updateTitle(si, "Idle"));
+	QCOMPARE(f.note->get_subjects().at(1).get_type(), Cyberiada::commentSubjectElement);
+	QVERIFY(model->deleteAction(si, f.internal));
+	QCOMPARE(f.note->get_subjects().at(0).get_type(), Cyberiada::commentSubjectElement);
+	QVERIFY(model->updateCommentBody(model->elementToIndex(f.other), "Check it"));
+	QCOMPARE(f.note->get_subjects().at(2).get_type(), Cyberiada::commentSubjectElement);
 }
 
 void TestModel::test_read_only()

@@ -38,6 +38,7 @@
 #include "cyberiadasm_editor_items.h"
 #include "code_highlighter.h"
 #include "dialogs/multilinetextdialog.h"
+#include "subject_fragment.h"
 
 CyberiadaSMPropertiesWidget::CyberiadaSMPropertiesWidget(QWidget *parent):
 	QtTreePropertyBrowser(parent), model(NULL), element(NULL)
@@ -716,15 +717,13 @@ void CyberiadaSMPropertiesWidget::slotPropertyChanged(QtProperty* p)
                         }
                         if (cp.name == propSubjectType) stype = Cyberiada::CommentSubjectType(enumManager->value(p));
                         if (cp.name == propFragment) fragment = propertyString(p);
-                        // a new name/data subject starts with the whole name or the first line of the text
+                        // a name/data subject without a fragment of its target starts with
+                        // the first field whole (EDIT-TOOL-16)
                         if (stype == Cyberiada::commentSubjectElement) {
                             fragment.clear();
-                        } else if (fragment.isEmpty() && target) {
-                            fragment = stype == Cyberiada::commentSubjectName && target->has_name() ?
-                                QString::fromStdString(target->get_name()) : QString();
-                            if (fragment.isEmpty() && target->get_type() == Cyberiada::elementTransition) {
-                                fragment = QString::fromStdString(static_cast<const Cyberiada::Transition*>(target)->get_action().get_trigger());
-                            }
+                        } else if (target && cp.name != propFragment &&
+                                   !SubjectFragment::locate(target, stype, fragment).found()) {
+                            fragment = SubjectFragment::defaultFragment(target, stype);
                         }
                         // a refused subject (EDIT-STRUCT-12) shows again as it is
                         if (!model->updateCommentSubject(i, subject_index, target, stype, fragment)) {

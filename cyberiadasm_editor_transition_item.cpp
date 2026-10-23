@@ -39,6 +39,7 @@
 #include "cyberiada_constants.h"
 #include "cyberiadasm_editor_scene.h"
 #include "settings_manager.h"
+#include "subject_fragment.h"
 #include "edge_geometry.h"
 
 using EdgeGeometry::lineIntersect;
@@ -594,26 +595,9 @@ void CyberiadaSMEditorTransitionItem::movePolyline(QPointF delta)
 
 QString CyberiadaSMEditorTransitionItem::actionText() const
 {
-    if(transition->has_action()){
-        QStringList parts;
-
-        if (transition->get_action().has_trigger()) {
-            parts << QString(transition->get_action().get_trigger().c_str());
-        }
-
-        if (transition->get_action().has_guard()) {
-            parts << "[" + QString(transition->get_action().get_guard().c_str()) + "]";
-        }
-
-        if (transition->get_action().has_behavior()) {
-            parts << "/ " + QString(transition->get_action().get_behavior().c_str());
-        }
-
-        QString result = parts.join(" ");
-        return result;
-    }
-
-    return QString();
+    // composed as the fragment places are (EDIT-EDGE-21)
+    if (!transition->has_action()) return QString();
+    return SubjectFragment::transitionLabel(transition->get_action()).text;
 }
 
 void CyberiadaSMEditorTransitionItem::updateAction()

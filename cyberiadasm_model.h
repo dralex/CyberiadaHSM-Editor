@@ -232,7 +232,7 @@ public:
                                                              Cyberiada::Element* target,
                                                              Cyberiada::CommentSubjectType type, const QString& fragment);
     // the subject rules: an element of the comment's machine, neither the machine nor the
-    // comment itself; a name or data fragment occurs in the target's text (EDIT-STRUCT-12)
+    // comment itself; a name or data fragment lies in one field of the target (EDIT-STRUCT-12)
     bool                                subjectAllowed(const Cyberiada::Comment* comment, const Cyberiada::Element* target,
                                                        Cyberiada::CommentSubjectType type, const QString& fragment) const;
     bool                                deleteCommentSubject(const QModelIndex& index, int subject_index);
@@ -308,6 +308,9 @@ private:
 	                                                      const QString& undoText);
 	void                                move(Cyberiada::Element* element, Cyberiada::ElementCollection* target_parent);
 	void                                declareGeometry(Cyberiada::DocumentFormat f, bool skip_geometry);
+	// a fragment subject whose fragment left its target's text becomes an element
+	// subject of the same target (EDIT-STRUCT-13); called by the text mutators
+	void                                reconcileFragments();
 	
 	Cyberiada::LocalDocument*           root;
 	QString                             lastLoadError;

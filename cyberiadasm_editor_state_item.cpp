@@ -39,6 +39,7 @@
 #include "dialogs/stateactiondialog.h"
 #include "cyberiadasm_editor_transition_item.h"
 #include "settings_manager.h"
+#include "subject_fragment.h"
 
 // state action includes
 #include <QTextCursor>
@@ -954,47 +955,17 @@ StateAction::StateAction(const Cyberiada::Action* action, QGraphicsItem *parent)
     setFontRole(fontRoleStateAction);
     setTextMargin(30);
 
-    QString behaviour = QString(action->get_behavior().c_str());
-    Cyberiada::ActionType type = action->get_type();
-    // a single-line behaviour follows the header inline; a multi-line one starts
-    // on its own line under it (EDIT-TEXT-2)
-    bool ownLine = behaviour.contains('\n');
-    if (type == Cyberiada::ActionType::actionTransition) {
-        // an internal transition reads like an edge label: EVENT [guard] / behaviour;
-        // the whole label is editable, so nothing is protected (typeText stays empty)
-        transition = true;
-        QString text = QString(action->get_trigger().c_str());
-        QString guard = QString(action->get_guard().c_str());
-        if (!guard.isEmpty()) text += " [" + guard + "]";
-        // a deferred event reads as EVENT / defer (EDIT-TEXT-6)
-        if (action->get_propagation() == Cyberiada::eventPropagationDefer)
-            text += " / defer";
-        else if (!behaviour.isEmpty()) text += (ownLine ? " /\n" : " / ") + behaviour;
-        setPlainText(text);
-        applyRichFormat();
-        setCodeRole(codeRoleTransition);
-        return;
-    }
-    // TODO "exit", "entry" and "/" are constants from cyberiadamlpp
-    switch(type) {
-    case Cyberiada::ActionType::actionEntry:
-        typeText = QString("entry");
-        break;
-    case Cyberiada::ActionType::actionExit:
-        typeText = QString("exit");
-        break;
-    default:
-        typeText = QString("");
-    }
-    if (!typeText.isEmpty()) {
-        // a single-line behaviour follows the keyword inline (entry/ f()); a
-        // multi-line one drops to its own line under it (EDIT-TEXT-2)
-        typeText += ownLine ? QString("/\n") : QString("/ ");
-    }
-
-    setPlainText(typeText + behaviour);
+    // the text and the field places come from one composition, so a fragment
+    // can be found on screen (EDIT-EDGE-21)
+    SubjectFragment::DrawnAction drawn = SubjectFragment::stateAction(*action);
+    // an internal transition reads like an edge label: EVENT [guard] / behaviour;
+    // the whole label is editable, so nothing is protected (typeText stays empty);
+    // the entry/exit keyword with its separator is
+    transition = action->get_type() == Cyberiada::ActionType::actionTransition;
+    if (!transition) typeText = drawn.text.left(drawn.behaviour);
+    setPlainText(drawn.text);
     applyRichFormat();
-    setCodeRole(codeRoleBehaviour);
+    setCodeRole(transition ? codeRoleTransition : codeRoleBehaviour);
 }
 
 void StateAction::applyRichFormat()

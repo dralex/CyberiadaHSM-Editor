@@ -39,6 +39,7 @@
 #include "myassert.h"
 #include "cyberiada_constants.h"
 #include "code_highlighter.h"
+#include "subject_fragment.h"
 
 // the state machine an element belongs to (the element itself when it is one)
 static const Cyberiada::Element* containingMachine(const Cyberiada::Element* e)
@@ -630,6 +631,7 @@ bool CyberiadaSMModel::updateTitle(const QModelIndex& index, const QString& new_
 	element->set_name(new_name);
 	GestureLog::instance().logAction("rename " + qid(element) + " " + logEsc(new_value));
 	emit dataChanged(index, index);
+	reconcileFragments();
 	return true;
 }
 
@@ -795,6 +797,7 @@ bool CyberiadaSMModel::updateAction(const QModelIndex& index,
 										 QString::number(idx) + " " + logEsc(text));
 	}
 	emit dataChanged(index, index);
+	reconcileFragments();
 	return true;
 }
 
@@ -877,6 +880,7 @@ bool CyberiadaSMModel::deleteAction(const QModelIndex& index, int action_index)
 		GestureLog::instance().logAction("delete-action " + qid(element) + " " + QString::number(idx));
 	}
 	emit dataChanged(index, index);
+	reconcileFragments();
 	return true;
 }
 
@@ -1424,6 +1428,7 @@ bool CyberiadaSMModel::updateCommentBody(const QModelIndex& index, const QString
 	static_cast<Cyberiada::Comment*>(element)->set_body(body.toStdString());
 	GestureLog::instance().logAction("update-comment " + qid(element) + " " + logEsc(body));
 	emit dataChanged(index, index);
+	reconcileFragments();
 	return true;
 }
 
@@ -1983,29 +1988,6 @@ Cyberiada::Comment *CyberiadaSMModel::newFormalComment(Cyberiada::ElementCollect
     return element;
 }
 
-// the text a fragment subject points into: the name, or the actions of a state or a
-// transition, or the body of a comment; a transition has no name of its own, so both
-// kinds look into its label (the event, the guard or the action, PNST 1044 6.7)
-static QString subjectText(const Cyberiada::Element* target, Cyberiada::CommentSubjectType type)
-{
-	if (type == Cyberiada::commentSubjectName && target->get_type() != Cyberiada::elementTransition) {
-		return target->has_name() ? QString::fromStdString(target->get_name()) : QString();
-	}
-	QString text;
-	if (target->get_type() == Cyberiada::elementSimpleState ||
-		target->get_type() == Cyberiada::elementCompositeState ||
-		target->get_type() == Cyberiada::elementSubmachineState) {
-		const Cyberiada::State* state = static_cast<const Cyberiada::State*>(target);
-		for (const Cyberiada::Action& a : state->get_actions()) text += logActionText(a) + "\n";
-	} else if (target->get_type() == Cyberiada::elementTransition) {
-		const Cyberiada::Transition* t = static_cast<const Cyberiada::Transition*>(target);
-		if (t->has_action()) text = logActionText(t->get_action());
-	} else if (Cyberiada::element_is_comment(target)) {
-		text = QString::fromStdString(static_cast<const Cyberiada::Comment*>(target)->get_body());
-	}
-	return text;
-}
-
 bool CyberiadaSMModel::subjectAllowed(const Cyberiada::Comment* comment, const Cyberiada::Element* target,
 									  Cyberiada::CommentSubjectType type, const QString& fragment) const
 {
@@ -2014,7 +1996,8 @@ bool CyberiadaSMModel::subjectAllowed(const Cyberiada::Comment* comment, const C
 	const Cyberiada::StateMachine* machine = root->get_parent_sm(comment);
 	if (!machine || machine != root->get_parent_sm(target)) return false;
 	if (type == Cyberiada::commentSubjectElement) return true;
-	return !fragment.isEmpty() && subjectText(target, type).contains(fragment);
+	// one field holds it, as the strict reading checks (PNST 1044 6.7)
+	return SubjectFragment::locate(target, type, fragment).found();
 }
 
 static Cyberiada::Comment* commentOf(Cyberiada::Element* element)
@@ -2145,6 +2128,33 @@ static void collectElements(Cyberiada::Element* element, Cyberiada::ElementList*
             collectElements(*i, elements);
         }
     }
+}
+
+void CyberiadaSMModel::reconcileFragments()
+{
+	if (!root) return;
+	Cyberiada::ElementList elements;
+	collectElements(root, &elements);
+	for (Cyberiada::Element* e : elements) {
+		if (!Cyberiada::element_is_comment(e)) continue;
+		Cyberiada::Comment* comment = static_cast<Cyberiada::Comment*>(e);
+		bool changed = false;
+		for (size_t i = 0; i < comment->get_subjects().size(); i++) {
+			const Cyberiada::CommentSubject& s = comment->get_subjects().at(i);
+			Cyberiada::Element* target = const_cast<Cyberiada::Element*>(s.get_element());
+			if (!s.has_fragment() || !target ||
+				SubjectFragment::locate(target, s.get_type(), QString::fromStdString(s.get_fragment())).found()) {
+				continue;
+			}
+			// the same target keeps the id, the source point and the bends
+			root->update_comment_subject(comment, i, target, Cyberiada::commentSubjectElement, std::string());
+			changed = true;
+		}
+		if (changed) {
+			QModelIndex ci = elementToIndex(comment);
+			emit dataChanged(ci, ci);
+		}
+	}
 }
 
 bool CyberiadaSMModel::deleteElement(const QModelIndex &index)
@@ -2933,6 +2943,8 @@ Cyberiada::Element* CyberiadaSMModel::pasteElement(Cyberiada::ElementCollection*
     }
 
     endResetModel();
+    // a copied comment follows the copy, whose new name may lose its fragment
+    reconcileFragments();
     GestureLog::instance().logAction("paste " + qid(copied));
     return copied;
 }

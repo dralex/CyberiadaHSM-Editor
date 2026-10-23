@@ -153,6 +153,7 @@ add_library(CyberiadaEditorCore STATIC
   cyberiadasm_editor_state_item.h cyberiadasm_editor_state_item.cpp
   cyberiadasm_editor_transition_item.h cyberiadasm_editor_transition_item.cpp
   edge_geometry.h edge_geometry.cpp
+  subject_fragment.h subject_fragment.cpp
   cyberiadasm_editor_subject_item.h cyberiadasm_editor_subject_item.cpp
   cyberiadasm_editor_sm_item.h cyberiadasm_editor_sm_item.cpp
   cyberiadasm_editor_choice_item.h cyberiadasm_editor_choice_item.cpp
