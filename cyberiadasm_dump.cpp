@@ -77,8 +77,14 @@ static const char* elementTypeName(Cyberiada::ElementType t)
 // a fixed 2-decimal coordinate, locale-independent, without -0.00
 static QString sceneNumber(double v)
 {
-	if (v == 0.0) v = 0.0;
-	return QString::number(v, 'f', 2);
+	// the subject-link ends and its underline derive from the drawn text layout, which
+	// shifts by a fraction of a pixel with the font renderer across machines (observed
+	// ~0.34px, clustering on half-pixel positions). Snap to the nearest half pixel so
+	// the golden is portable: the jitter stays well inside one half-pixel cell, while a
+	// whole-pixel grid would split a value sitting on an x.5 boundary.
+	double r = qRound(v * 2.0) / 2.0;
+	if (r == 0.0) r = 0.0;  // avoid the -0 output
+	return QString::number(r, 'f', 1);
 }
 
 // the == scene accumulation the dump reader applies: the sum of item->pos() over the

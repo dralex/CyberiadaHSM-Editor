@@ -9,5 +9,5 @@ eventPropagation/ block'}, Simple State: {id: 'n0', name: 'First state', geometr
     Simple State: {id: 'n0', pos: (100.00; 50.00), rect: (-100.00; -50.00; 200.00; 100.00)}
     Simple State: {id: 'n1', pos: (500.00; 50.00), rect: (-100.00; -50.00; 200.00; 100.00)}
     Comment: {id: 'n2', pos: (300.00; 240.00), rect: (-100.00; -40.00; 200.00; 80.00)}
-      Subject Link: {index: 0, target: 'n0', from: (380.00; 200.00), to: (110.00; 100.00)}
+      Subject Link: {index: 0, target: 'n0', from: (380.0; 200.0), to: (110.0; 100.0)}
     Transition: {id: 't0', pos: (0.00; 0.00), rect: (190.00; 40.00; 220.00; 20.00)}

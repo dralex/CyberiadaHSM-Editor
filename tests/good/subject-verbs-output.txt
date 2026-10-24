@@ -9,7 +9,7 @@ eventPropagation/ block'}, Simple State: {id: 'n0', name: 'First state', geometr
     Simple State: {id: 'n0', pos: (100.00; 50.00), rect: (-100.00; -50.00; 200.00; 100.00)}
     Simple State: {id: 'n1', pos: (500.00; 50.00), rect: (-100.00; -50.00; 200.00; 100.00)}
     Comment: {id: 'n2', pos: (300.00; 240.00), rect: (-100.00; -40.00; 200.00; 80.00)}
-      Subject Link: {index: 0, target: 't0', from: (300.00; 200.00), to: (200.00; 50.00)}
-      Subject Link: {index: 1, target: 'n0', from: (400.00; 240.00), to: (178.95; 100.00), fragment: 'First'}
-      Subject Link: {index: 2, target: 't0', from: (200.00; 200.00), to: (250.00; 50.00), fragment: 'go()'}
+      Subject Link: {index: 0, target: 't0', from: (300.0; 200.0), to: (200.0; 50.0)}
+      Subject Link: {index: 1, target: 'n0', from: (400.0; 240.0), to: (179.0; 100.0), fragment: 'First'}
+      Subject Link: {index: 2, target: 't0', from: (200.0; 200.0), to: (250.0; 50.0), fragment: 'go()'}
     Transition: {id: 't0', pos: (0.00; 0.00), rect: (190.00; 40.00; 220.00; 20.00)}

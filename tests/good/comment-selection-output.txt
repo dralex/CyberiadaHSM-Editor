@@ -9,8 +9,8 @@ eventPropagation/ block'}, Simple State: {id: 'n0', name: 'First state', actions
     Simple State: {id: 'n0', pos: (100.00; 50.00), rect: (-100.00; -50.00; 200.00; 100.00)}
     Simple State: {id: 'n1', pos: (500.00; 50.00), rect: (-100.00; -50.00; 200.00; 100.00)}
     Comment: {id: 'n2', pos: (300.00; 240.00), rect: (-100.00; -40.00; 200.00; 80.00)}
-      Subject Link: {index: 0, target: 't0', from: (300.00; 200.00), to: (233.44; 50.00)}
-      Subject Link: {index: 1, target: 'n0', from: (258.51; 200.00), to: (71.13; 19.33), fragment: 'First', underline: [(47.06; 19.33; 95.19)]}
+      Subject Link: {index: 0, target: 't0', from: (300.0; 200.0), to: (233.5; 50.0)}
+      Subject Link: {index: 1, target: 'n0', from: (258.5; 200.0), to: (71.0; 19.5), fragment: 'First', underline: [(47.0; 19.5; 95.0)]}
     Comment: {id: 'n3', pos: (120.00; -70.00), rect: (-100.00; -50.00; 200.00; 100.00)}
-      Subject Link: {index: 0, target: 'n0', from: (111.13; -20.00), to: (96.00; 65.33), fragment: 'stop()', underline: [(67.13; 65.33; 124.88)]}
+      Subject Link: {index: 0, target: 'n0', from: (111.0; -20.0), to: (96.0; 65.5), fragment: 'stop()', underline: [(67.0; 65.5; 125.0)]}
     Transition: {id: 't0', pos: (0.00; 0.00), rect: (190.00; 40.00; 220.00; 20.00)}

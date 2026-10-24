@@ -15,7 +15,7 @@ eventPropagation/ block'}, Composite State: {id: 'node-0', name: 'node 0', geome
         Simple State: {id: 'node-0-0-2', pos: (225.00; 25.00), rect: (-75.00; -75.00; 150.00; 150.00)}
       Simple State: {id: 'node-0-1', pos: (380.00; 5.00), rect: (-75.00; -75.00; 150.00; 150.00)}
       Formal Comment: {id: 'node-0::n0', pos: (189.00; -89.00), rect: (-100.00; -50.00; 200.00; 100.00)}
-        Subject Link: {index: 0, target: 'node-0-1', from: (784.00; 180.21), to: (800.00; 188.09)}
+        Subject Link: {index: 0, target: 'node-0-1', from: (784.0; 180.0), to: (800.0; 188.0)}
     Transition: {id: 'edge-0', pos: (0.00; 0.00), rect: (65.00; 215.00; 195.00; 120.00)}
     Transition: {id: 'edge-1', pos: (0.00; 0.00), rect: (240.00; 110.00; 20.00; 50.00)}
     Transition: {id: 'edge-2', pos: (0.00; 0.00), rect: (390.00; 245.00; 120.00; 20.00)}
