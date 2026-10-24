@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.33 (2026-10-23)
+**Document version:** 0.34 (2026-10-24)
 
 **Related authorities:**
 
@@ -221,7 +221,10 @@ the third is a derived display value the format does not store):
   its content and sits at the origin; several rect-less machines would share
   the origin, so the geometry reconstruction of a document with several
   machines gives every machine its rect and places the machines side by side.
-  *design*
+  The reconstruction and the update lay the comments out inside their own
+  containers - a linked comment beside the element of its container that holds
+  the subject, the others on a shelf after the content - and the containers and
+  the machine border grow around them (`EDIT-NODE-1`). *design*
 - `EDIT-NODE-5` MUST [A]: a state, a comment, and a state machine resize directionally - a drag
   of the right or bottom border (or the corner between them) grows that side; a drag of the top or
   left border moves the element. A state and a machine clamp to their content; a comment holds none.
@@ -564,7 +567,8 @@ the third is a derived display value the format does not store):
   1044 6.1.2*
 - `EDIT-META-6` MUST [A]: a `CGML_COMPONENT` formal comment is a machine-readable component
   descriptor; it is not drawn on the scene by default — even when it carries geometry (the geometry
-  reconstruction lays one out) — and is drawn only while the *show component comments* preference is
+  reconstruction leaves a geometry-less one without geometry) — and is drawn only while the *show
+  component comments* preference is
   on. It is always present in the element tree and editable through the properties; it is also
   deletable from the tree with Del even when it has no scene item (no geometry, or hidden). A
   sibling of `EDIT-META-1`, which keeps the `CGML_META` node off the scene unconditionally. *design*

@@ -55,7 +55,7 @@ eventPropagation/ block</data>
       <data key="dNote">informal</data>
       <data key="dData">A note about the transition</data>
       <data key="dGeometry">
-        <rect x="10.000000" y="260.000000" width="300.000000" height="200.000000"/>
+        <rect x="10.000000" y="260.000000" width="286.000000" height="100.000000"/>
       </data>
     </node>
     <edge id="t0" source="n0" target="n1">
@@ -78,7 +78,7 @@ go();
     <edge id="n2-t0" source="n2" target="t0">
       <data key="dPivot"/>
       <data key="dSourcePoint">
-        <point x="222.708300" y="0.000000"/>
+        <point x="190.763200" y="0.000000"/>
       </data>
       <data key="dTargetPoint">
         <point x="324.500000" y="100.000000"/>
@@ -87,10 +87,10 @@ go();
     <edge id="n2-n1" source="n2" target="n1">
       <data key="dPivot"/>
       <data key="dSourcePoint">
-        <point x="300.000000" y="27.419400"/>
+        <point x="275.368400" y="0.000000"/>
       </data>
       <data key="dTargetPoint">
-        <point x="0.000000" y="172.580600"/>
+        <point x="0.000000" y="156.660000"/>
       </data>
     </edge>
   </graph>
