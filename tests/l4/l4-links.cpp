@@ -24,6 +24,9 @@
 
 #include <QtTest>
 #include <QGraphicsSceneMouseEvent>
+#include <QGraphicsSceneContextMenuEvent>
+#include <QMenu>
+#include <QTimer>
 #include <cmath>
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_editor_scene.h"
@@ -62,6 +65,7 @@ private slots:
 	void test_fragment_wrapped();
 	void test_fragment_reconciled();
 	void test_comment_selection();
+	void test_second_fragment_menu();
 	void test_cleared_link_detached();
 
 private:
@@ -689,6 +693,68 @@ void TestLinks::test_comment_selection()
 	text->startEditing();
 	QVERIFY(scene->selectionComments(text).isEmpty());
 	text->clearFocus();
+}
+
+// the link context menu is up: free the link by a rebuild (as the focus-out commit of a
+// text being edited would), then trigger the chosen action - the handler must address the
+// subject by the captured model and index, never through the freed item
+static CyberiadaSMModel* g_menuModel = nullptr;
+static QString g_menuComment;
+static QString g_menuAction;
+static void driveLinkMenu()
+{
+	QMenu* menu = qobject_cast<QMenu*>(QApplication::activePopupWidget());
+	if (!menu) { QTimer::singleShot(5, driveLinkMenu); return; }
+	if (g_menuModel) {
+		// a new drawable subject makes the links stale: rebuildSubjectLinks deleteLater's
+		// the open link, and the menu's nested loop frees it before exec returns
+		QModelIndex ci = g_menuModel->elementToIndex(
+			g_menuModel->idToElement(g_menuComment));
+		g_menuModel->newCommentSubject(ci, g_menuModel->idToElement("n1"),
+									   Cyberiada::commentSubjectElement, QString());
+		QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+	}
+	for (QAction* a : menu->actions()) {
+		if (!a->text().isEmpty() && a->text().startsWith(g_menuAction)) { a->trigger(); break; }
+	}
+	menu->close();
+}
+
+void TestLinks::test_second_fragment_menu()
+{
+	// the crash: right-clicking a comment link runs a nested menu loop; a rebuild during
+	// it frees the link, and the handler then acted on the freed item (Delete Link /
+	// Comment a Fragment). The handler must read the model and index captured before the
+	// menu. Driven here with a real context menu that frees the link mid-exec.
+	load("diagrams/comment-transition.graphml");
+	scene->setCurrentTool(ToolType::Select);
+	CyberiadaSMEditorSubjectItem* l = link("n2", 0);
+	QVERIFY(l);
+	QPointer<CyberiadaSMEditorSubjectItem> guard = l;
+	l->setSelected(true);
+
+	g_menuModel = model;
+	g_menuComment = "n2";
+	g_menuAction = tr("Delete Link");
+	QTimer::singleShot(0, driveLinkMenu);
+	QGraphicsSceneContextMenuEvent ev(QEvent::GraphicsSceneContextMenu);
+	QPointF c = l->path().pointAtPercent(0.5);
+	ev.setScenePos(c);
+	ev.setScreenPos(c.toPoint());
+	ev.setReason(QGraphicsSceneContextMenuEvent::Mouse);
+	QApplication::sendEvent(scene, &ev);
+	QCoreApplication::sendPostedEvents();
+	QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+	QCoreApplication::processEvents();
+	g_menuModel = nullptr;
+
+	// the link was freed during the menu, and the Delete Link action still removed the
+	// subject it addressed (no crash, no stale item)
+	QVERIFY(guard.isNull());
+	for (QGraphicsItem* gi : scene->items()) {
+		CyberiadaSMEditorSubjectItem* s = dynamic_cast<CyberiadaSMEditorSubjectItem*>(gi);
+		QVERIFY(!s || s->hasSubject());
+	}
 }
 
 void TestLinks::test_cleared_link_detached()

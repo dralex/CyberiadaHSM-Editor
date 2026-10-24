@@ -87,8 +87,6 @@ public:
     DotSignal* targetDot() const { return dots[1]; }
     // remove the subject, never the comment
     bool deleteSubject();
-    // pick the fragment in the fragment dialog (EDIT-TOOL-16); true when changed
-    bool editFragment(QWidget* parent);
 
 public slots:
     void updatePath();

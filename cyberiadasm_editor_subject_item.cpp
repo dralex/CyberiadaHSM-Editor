@@ -465,22 +465,6 @@ bool CyberiadaSMEditorSubjectItem::deleteSubject()
     return model->deleteCommentSubject(commentIndex(), index);
 }
 
-bool CyberiadaSMEditorSubjectItem::editFragment(QWidget* parent)
-{
-    // no dialogs in batch mode: the scripts use the subject verbs
-    if (!hasSubject() || (qApp && qApp->property("batchMode").toBool())) return false;
-    const Cyberiada::CommentSubject& s = subject();
-    Cyberiada::Element* target = const_cast<Cyberiada::Element*>(s.get_element());
-    if (!target) return false;
-    QModelIndex ci = commentIndex();
-    int i = index;
-    FragmentDialog dialog(target, s.get_type(), QString::fromStdString(s.get_fragment()),
-                          EditableTextItem::sceneCodeLanguage(scene()), parent);
-    if (dialog.exec() != QDialog::Accepted) return false;
-    // the item may be rebuilt by the change: nothing of it is read after the call
-    return model->updateCommentSubject(ci, i, target, dialog.subjectType(), dialog.fragment());
-}
-
 void CyberiadaSMEditorSubjectItem::contextMenuEvent(QGraphicsSceneContextMenuEvent* event)
 {
     if (!hasSubject()) return;
@@ -497,19 +481,30 @@ void CyberiadaSMEditorSubjectItem::contextMenuEvent(QGraphicsSceneContextMenuEve
                           !SubjectFragment::fields(s.get_element(), Cyberiada::commentSubjectData).isEmpty()));
     QAction* whole = menu.addAction(tr("Comment the Element"));
     whole->setEnabled(editable && s.has_fragment());
+    // everything the chosen action needs is read now: the menu runs a nested loop and
+    // the commit it makes (or a reselection) may rebuild and free this item, so nothing
+    // of this is touched after exec (the model and the subject are addressed by value)
+    CyberiadaSMModel* m = model;
     Cyberiada::Element* target = const_cast<Cyberiada::Element*>(s.get_element());
+    Cyberiada::CommentSubjectType type = s.get_type();
+    QString frag = QString::fromStdString(s.get_fragment());
+    const CodeLanguage* language = EditableTextItem::sceneCodeLanguage(scene());
     QModelIndex ci = commentIndex();
     int i = index;
     QWidget* parent = event->widget() ? event->widget()->window() : nullptr;
     event->accept();
-    // the subject goes, the comment stays (EDIT-EDGE-20); the item may be rebuilt
-    // by the model change, so nothing of it is read after the call
     QAction* chosen = menu.exec(event->screenPos());
     if (chosen == remove) {
-        deleteSubject();
+        m->deleteCommentSubject(ci, i);
     } else if (chosen == fragment) {
-        editFragment(parent);
+        // no dialogs in batch mode: the scripts use the subject verbs
+        if (target && !(qApp && qApp->property("batchMode").toBool())) {
+            FragmentDialog dialog(target, type, frag, language, parent);
+            if (dialog.exec() == QDialog::Accepted) {
+                m->updateCommentSubject(ci, i, target, dialog.subjectType(), dialog.fragment());
+            }
+        }
     } else if (chosen == whole) {
-        model->updateCommentSubject(ci, i, target, Cyberiada::commentSubjectElement, QString());
+        m->updateCommentSubject(ci, i, target, Cyberiada::commentSubjectElement, QString());
     }
 }
