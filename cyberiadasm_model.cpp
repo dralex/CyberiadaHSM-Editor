@@ -189,9 +189,12 @@ CyberiadaSMModel::CyberiadaSMModel(QObject *parent):
 
 CyberiadaSMModel::~CyberiadaSMModel()
 {
-	if (root) {
-		delete root;
-	}
+	// the undo stack is a child object, destroyed after this body by ~QObject; its
+	// destructor emits cleanChanged, which the window turns into a tab-title refresh
+	// that reads rootDocument() - clear the pointer so that read sees no document
+	// instead of the freed one
+	delete root;
+	root = NULL;
 }
 
 void CyberiadaSMModel::reset()
@@ -233,6 +236,7 @@ bool CyberiadaSMModel::loadDocument(const QString& path, bool reconstruct, bool 
 	beginResetModel();
 	if (root) {
 		delete root;
+		root = NULL;
 	}
 	root = new_doc;
 	filePath = QString(root->get_file_path().c_str());
