@@ -218,6 +218,20 @@ def fragment_on_underline(dump):                         # EDIT-EDGE-21
                                     "the text of %s" % (link.index, item.id, a, b, sy, link.target))
 
 
+def link_fragment_no_target(dump):                       # EDIT-EDGE-18 / CGML-9.1-2
+    """A fragment (name/data) comment link carries no stored target point: the
+    fragment itself fixes the end (PNST 1044 9.1.1, EDIT-EDGE-18). A whole-element
+    link to a node or a transition may carry one."""
+    doc = dump.document
+    if doc is None:
+        return
+    for e in doc.walk():
+        for (type_, to, _frag), geom in zip(e.subjects, e.subject_geom):
+            if type_ in ("name", "data") and geom[1]:
+                yield Violation("EDGE-18", "comment %s: the fragment link to %s carries a target point"
+                                % (e.id, to))
+
+
 def one_initial_per_parent(dump):                        # EDIT-SEM-1
     doc = dump.document
     if doc is None:
@@ -490,7 +504,7 @@ def machine_names(dump):                                 # EDIT-META-5
 # hard laws run always-on and register as defects; gated laws are implemented
 # and tested but not yet registered (pending an EDITOR-SPEC decision)
 HARD = [unique_ids, no_cycle, endpoints_same_machine, composite_by_children,
-        no_dangling, subject_targets, link_starts_on_comment, fragment_on_underline, one_initial_per_parent, one_history_per_kind, endpoint_kinds, submachine_children,
+        no_dangling, subject_targets, link_starts_on_comment, fragment_on_underline, link_fragment_no_target, one_initial_per_parent, one_history_per_kind, endpoint_kinds, submachine_children,
         meta_hidden, containment, no_overlap, points_named, submachine_reference,
         single_behaviour_blocks, event_names, event_handling, machine_names,
         endpoint_on_border]

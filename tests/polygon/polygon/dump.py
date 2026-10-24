@@ -240,6 +240,8 @@ class Element:
     geometry: tuple = None
     region: tuple = None
     subjects: list = field(default_factory=list)
+    # aligned with subjects: (has_source_point, has_target_point) per comment link
+    subject_geom: list = field(default_factory=list)
     submachine: str = ""      # the referenced state machine of a submachine state
     children: list = field(default_factory=list)
     parent: object = field(default=None, repr=False)
@@ -290,8 +292,10 @@ def _build(kind, entries, parent=None):
         elif key == "region" and isinstance(value, tuple):
             e.region = value
         elif key == "subjects":
-            e.subjects = [(_get(v, "type", ""), _get(v, "to", ""), _get(v, "fragment", ""))
-                          for k, v in value if k is None]
+            subs = [v for k, v in value if k is None]
+            e.subjects = [(_get(v, "type", ""), _get(v, "to", ""), _get(v, "fragment", "")) for v in subs]
+            e.subject_geom = [(_get(v, "source point", None) is not None,
+                               _get(v, "target point", None) is not None) for v in subs]
         elif key == "elements":
             e.children = [_build(k, v, e) for k, v in value if k is not None]
         elif key == "type" and isinstance(value, str):

@@ -114,6 +114,20 @@ class LawTest(unittest.TestCase):
         note.subjects = [("element", "w0", "")]
         self.assertEqual(reqs(d), ["STRUCT-12"])
 
+    def test_link_fragment_no_target(self):
+        # EDIT-EDGE-18 / CGML-9.1-2: a fragment link carries no stored target point
+        note = node(D.KIND_COMMENT, "c0")
+        state = node(D.KIND_SIMPLE, "s0", "Idle")
+        d = wrap([state, note])
+        note.subjects = [("name", "s0", "Idle")]
+        note.subject_geom = [(True, False)]          # source only: valid
+        self.assertNotIn("EDGE-18", reqs(d))
+        note.subject_geom = [(True, True)]           # a target point on a fragment link: invalid
+        self.assertIn("EDGE-18", reqs(d))
+        note.subjects = [("element", "s0", "")]      # a whole-element link may carry both
+        note.subject_geom = [(True, True)]
+        self.assertNotIn("EDGE-18", reqs(d))
+
     def test_fragment_in_one_field(self):
         # STRUCT-12: a fragment lies inside one field of its target
         note = node(D.KIND_COMMENT, "c0")
