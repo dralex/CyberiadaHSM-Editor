@@ -274,6 +274,10 @@ void TestModel::test_subject_on_transition()
 									 Cyberiada::commentSubjectElement, QString()));
 	QCOMPARE(c->get_subjects().size(), (size_t)1);
 	QCOMPARE(c->get_subjects().front().get_element()->get_id(), Cyberiada::ID("edge-2"));
+	// a transition has no name (CGML-8.5-4): a name fragment is refused, a data
+	// fragment of its label (edge-2 triggers 'LABEL') is accepted
+	QVERIFY(!model->newCommentSubject(model->elementToIndex(c), t, Cyberiada::commentSubjectName, "LABEL"));
+	QVERIFY(model->newCommentSubject(model->elementToIndex(c), t, Cyberiada::commentSubjectData, "LABEL"));
 	// deleting the transition strips the subject pointing at it
 	QVERIFY(model->deleteElement(model->elementToIndex(t)));
 	QVERIFY(!c->has_subjects());
@@ -322,8 +326,10 @@ void TestModel::test_fragment_one_field()
 	QVERIFY(!model->subjectAllowed(f.note, f.state, D, "entry/"));
 	QVERIFY(!model->subjectAllowed(f.note, f.state, D, "/ stop"));
 	QVERIFY(!model->subjectAllowed(f.note, f.state, D, QString()));
-	// a transition has no name: both kinds look into its label fields
-	QVERIFY(model->subjectAllowed(f.note, f.transition, N, "EV"));
+	// a transition has no name (CGML-8.5-4): a name fragment is refused, a data
+	// fragment of its label is accepted
+	QVERIFY(!model->subjectAllowed(f.note, f.transition, N, "EV"));
+	QVERIFY(model->subjectAllowed(f.note, f.transition, D, "EV"));
 	QVERIFY(model->subjectAllowed(f.note, f.transition, D, "beh"));
 	QVERIFY(!model->subjectAllowed(f.note, f.transition, D, "EV [g"));
 	QVERIFY(model->subjectAllowed(f.note, f.other, D, "sensor"));
@@ -338,7 +344,8 @@ void TestModel::test_fragment_one_field()
 	QCOMPARE(p.field.kind, SubjectFragment::fieldTrigger);
 	QCOMPARE(p.field.action, f.internal);
 	QCOMPARE(SubjectFragment::defaultFragment(f.state, D), QString("motor.on()"));
-	QCOMPARE(SubjectFragment::defaultFragment(f.transition, N), QString("EV"));
+	QCOMPARE(SubjectFragment::defaultFragment(f.transition, N), QString());
+	QCOMPARE(SubjectFragment::defaultFragment(f.transition, D), QString("EV"));
 	// the drawn texts place the fields where the items show them
 	SubjectFragment::DrawnAction d = SubjectFragment::stateAction(f.state->get_actions().at(size_t(f.internal)));
 	QCOMPARE(d.text, QString("TIMEOUT [count > 3] / stop()"));

@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.32 (2026-10-23)
+**Document version:** 0.33 (2026-10-23)
 
 **Related authorities:**
 
@@ -167,14 +167,16 @@ over those rows; nothing more than the existing dump is needed.
   target                     name fragment               data fragment
   state                      the name                    each action in turn: the event,
                                                          the guard, the behaviour
-  transition (no name)       the event, the guard, the behaviour of its action
+  transition (no name)       -                           the event, the guard, the behaviour
   comment                    the name                    the body
   pseudostate, choice        the name                    -
   ```
 
   A fragment spanning two fields or holding a keyword or a separator (`entry/`, `[`, `/`) is
-  refused, as the strict reading of PNST 1044 does. A link or a retarget breaking these rules
-  is refused and the subject stays as it was. *PNST 1044 6.7*
+  refused, as the strict reading of PNST 1044 does. A transition carries no name, so a **name**
+  fragment on a transition is refused — only a data fragment of its label is valid (PNST 1044 8.5,
+  `CGML-8.5-4`). A link or a retarget breaking these rules is refused and the subject stays as it
+  was. *PNST 1044 6.7/8.5*
 - `EDIT-STRUCT-13` MUST [U]: an edit of the target's text that leaves no field holding a
   fragment turns that subject into an element subject of the same target in the same undo
   step; the link keeps its source point and gets the box of `EDIT-EDGE-6`. *PNST 1044 6.7*

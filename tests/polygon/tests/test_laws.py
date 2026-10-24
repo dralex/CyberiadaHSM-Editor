@@ -128,13 +128,16 @@ class LawTest(unittest.TestCase):
                            ("data", "Moving")):
             note.subjects = [(kind, "s0", frag)]
             self.assertEqual(reqs(d), ["STRUCT-12"], frag)
-        # a transition has no name: both kinds look into its label
+        # a transition has no name (CGML-8.5-4): a data fragment of its label is valid,
+        # a name fragment on it is refused
         t = D.Element(kind=D.KIND_TRANSITION, id="t0", source="s0", target="s0",
                       action=D.Action(D.ACTION_TRANSITION, "EV", "g", "go()"))
         d.document.root.children[0].children.append(t)
         t.parent = d.document.root.children[0]
-        note.subjects = [("name", "t0", "EV"), ("data", "t0", "go()")]
+        note.subjects = [("data", "t0", "EV"), ("data", "t0", "go()")]
         self.assertEqual(reqs(d), [])
+        note.subjects = [("name", "t0", "EV")]
+        self.assertEqual(reqs(d), ["STRUCT-12"])
         note.subjects = [("data", "t0", "EV [g")]
         self.assertEqual(reqs(d), ["STRUCT-12"])
 

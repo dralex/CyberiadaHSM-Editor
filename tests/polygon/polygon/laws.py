@@ -136,6 +136,9 @@ def _fragment_fields(target, kind):
     """The fields a name or data fragment may lie in (EDIT-STRUCT-12): a transition's
     label either way, else the name, a comment's body or the actions' fields."""
     if target.kind == D.KIND_TRANSITION:
+        # a transition has no name (CGML-8.5-4): only a data fragment comments its label
+        if kind == "name":
+            return []
         a = target.action
         fields = [a.trigger, a.guard, a.behavior] if a else []
     elif kind == "name":

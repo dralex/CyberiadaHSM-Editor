@@ -1,5 +1,5 @@
 # comment subjects on transitions
-new-subject n2 t0 name EVENT
+new-subject n2 t0 data EVENT
 new-comment G0 Another note
 new-subject n3 t0
 new-transition G0 n1 n0 BACK/ back();

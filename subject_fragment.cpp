@@ -57,7 +57,9 @@ QVector<Field> SubjectFragment::fields(const Cyberiada::Element* target, Cyberia
     QVector<Field> list;
     if (!target || type == Cyberiada::commentSubjectElement) return list;
     if (target->get_type() == Cyberiada::elementTransition) {
-        // a transition has no name of its own: both kinds look into its label
+        // a transition has no name (CGML-8.5-4): a name fragment is refused; a data
+        // fragment comments its label - the event, the guard, the behaviour
+        if (type == Cyberiada::commentSubjectName) return list;
         const Cyberiada::Transition* t = static_cast<const Cyberiada::Transition*>(target);
         if (t->has_action()) addActionFields(list, t->get_action(), -1);
         return list;

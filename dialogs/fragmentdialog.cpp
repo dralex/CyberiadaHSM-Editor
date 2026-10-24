@@ -113,7 +113,8 @@ FragmentDialog::FragmentDialog(const Cyberiada::Element* _target, Cyberiada::Com
     result->addWidget(fragmentEdit, 1);
     result->addWidget(new QLabel(tr("Type"), this));
     typeBox = new QComboBox(this);
-    typeBox->addItem(tr("Name"), int(Cyberiada::commentSubjectName));
+    // a transition has no name (CGML-8.5-4): only a data fragment of its label
+    if (!transition) typeBox->addItem(tr("Name"), int(Cyberiada::commentSubjectName));
     typeBox->addItem(tr("Data"), int(Cyberiada::commentSubjectData));
     result->addWidget(typeBox);
     layout->addLayout(result);
@@ -130,6 +131,8 @@ FragmentDialog::FragmentDialog(const Cyberiada::Element* _target, Cyberiada::Com
     connect(fragmentEdit, &QPlainTextEdit::textChanged, this, &FragmentDialog::onFragmentEdited);
     connect(typeBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &FragmentDialog::onFragmentEdited);
 
+    // a transition has no name: its fragment is always a data fragment of the label
+    if (transition) type = Cyberiada::commentSubjectData;
     // an element subject starts with the data, when there is any
     if (type == Cyberiada::commentSubjectElement) {
         type = !SubjectFragment::fields(target, Cyberiada::commentSubjectData).isEmpty() ?

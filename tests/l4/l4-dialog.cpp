@@ -382,14 +382,15 @@ void TestDialog::test_fragment_dialog_transition()
 	CyberiadaSMModel model(this);
 	QVERIFY(model.loadDocument("diagrams/comment-transition.graphml"));
 	Cyberiada::Element* t = model.idToElement("t0");
+	// a transition has no name (CGML-8.5-4): the dialog offers only a data fragment
 	FragmentDialog dlg(t, Cyberiada::commentSubjectName, "EVENT");
 	QCOMPARE(dlg.fieldCount(), 2);
 	QCOMPARE(dlg.field(0).kind, SubjectFragment::fieldTrigger);
 	QCOMPARE(dlg.field(1).kind, SubjectFragment::fieldBehaviour);
-	QCOMPARE(dlg.subjectType(), Cyberiada::commentSubjectName);
+	QCOMPARE(dlg.subjectType(), Cyberiada::commentSubjectData);
 	selectIn(dlg.fieldBox(1), 0, 4);
 	QCOMPARE(dlg.fragment(), QString("go()"));
-	QCOMPARE(dlg.subjectType(), Cyberiada::commentSubjectName);
+	QCOMPARE(dlg.subjectType(), Cyberiada::commentSubjectData);
 	QVERIFY(dlg.acceptable());
 }
 
