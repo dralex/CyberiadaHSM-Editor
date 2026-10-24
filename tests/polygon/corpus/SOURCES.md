@@ -11,6 +11,7 @@ Cyberiada-GraphML, and verified law-clean and save-reopen stable before adoption
 | `labels.graphml` | `cyberiadaml-compat-tests/fixtures/core/F-LABEL.graphml` — transition labels with guards, `propagate`/`block`, a completion transition and an internal `defer` reaction (6.8.1) |
 | `propagation.graphml` | `cyberiadaml-compat-tests/fixtures/field/F-FIELD-propagation.graphml` — event propagation keywords in their final form (6.8.1, 6.8.2) |
 | `comment-links.graphml` | `cyberiadaml-compat-tests/fixtures/core/F-CMT.graphml` — comment links to a name fragment and to a state (6.7) |
+| `comment-links-rich.graphml` | `cyberiadaml-compat-tests/fixtures/core/F-LINKS.graphml` — the fuller link set: a body (data) fragment, whole-element links, a link to another comment, to the initial pseudostate and a composite, and the same subject linked twice (6.7, catalog 1.12) |
 | `turtle-square.graphml` | `hsm_robot_ros_generator/examples/turtle-square.graphml` (yEd → converted) |
 | `maze-solver.graphml` | `hsm_robot_ros_generator/examples/right_hand_maze_solver.graphml` (yEd → converted) |
 | `microwave.graphml` | `hsm-arduino-course/diagrams/2/microwave.graphml` |

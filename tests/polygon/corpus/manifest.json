@@ -32,7 +32,8 @@
   "worker-submachine",
   "labels",
   "propagation",
-  "comment-links"
+  "comment-links",
+  "comment-links-rich"
  ],
  "small": "small.graphml"
 }
