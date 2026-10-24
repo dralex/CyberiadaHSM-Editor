@@ -9,11 +9,11 @@ eventPropagation/ block'}, Simple State: {id: 'n0', name: 'First state', actions
     Simple State: {id: 'n0', pos: (100.00; 50.00), rect: (-100.00; -50.00; 200.00; 100.00)}
     Simple State: {id: 'n1', pos: (500.00; 50.00), rect: (-100.00; -50.00; 200.00; 100.00)}
     Comment: {id: 'n2', pos: (300.00; 240.00), rect: (-100.00; -40.00; 200.00; 80.00)}
-      Subject Link: {index: 0, target: 't0', from: (300.0; 200.0), to: (233.5; 50.0)}
-      Subject Link: {index: 1, target: 'n0', from: (236.5; 200.0), to: (96.0; 111.5), fragment: 'stop()', underline: [(67.0; 111.5; 125.0)]}
-      Subject Link: {index: 2, target: 'n0', from: (254.0; 200.0), to: (129.5; 92.5), fragment: 'count', underline: [(105.5; 92.5; 154.0)]}
-      Subject Link: {index: 3, target: 'n1', from: (342.0; 200.0), to: (447.5; 100.0)}
-      Subject Link: {index: 4, target: 't0', from: (307.5; 200.0), to: (333.5; 56.0), fragment: 'go()', underline: [(314.5; 56.0; 353.0)]}
-      Subject Link: {index: 5, target: 'n0', from: (215.0; 200.0), to: (124.0; 157.5), fragment: 'gamma delta epsilon zeta eta theta', underline: [(67.0; 157.5; 181.0), (19.0; 176.5; 181.0), (19.0; 195.5; 67.0)]}
-      Subject Link: {index: 6, target: 'n1', from: (342.0; 200.0), to: (447.5; 100.0)}
+      Subject Link: {index: 0, target: 't0', from: (300.00; 200.00), to: (233.44; 50.00)}
+      Subject Link: {index: 1, target: 'n0', from: (236.58; 200.00), to: (96.00; 111.33), fragment: 'stop()', underline: [(67.13; 111.33; 124.88)]}
+      Subject Link: {index: 2, target: 'n0', from: (253.87; 200.00), to: (129.69; 92.33), fragment: 'count', underline: [(105.63; 92.33; 153.75)]}
+      Subject Link: {index: 3, target: 'n1', from: (342.11; 200.00), to: (447.37; 100.00)}
+      Subject Link: {index: 4, target: 't0', from: (307.32; 200.00), to: (333.69; 55.83), fragment: 'go()', underline: [(314.44; 55.83; 352.94)]}
+      Subject Link: {index: 5, target: 'n0', from: (214.87; 200.00), to: (124.06; 157.33), fragment: 'gamma delta epsilon zeta eta theta', underline: [(67.13; 157.33; 181.00), (19.00; 176.33; 181.00), (19.00; 195.33; 67.13)]}
+      Subject Link: {index: 6, target: 'n1', from: (342.11; 200.00), to: (447.37; 100.00)}
     Transition: {id: 't0', pos: (0.00; 0.00), rect: (190.00; 40.00; 220.00; 20.00)}

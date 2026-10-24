@@ -42,6 +42,21 @@ function(show_difference good out)
   endwhile()
 endfunction()
 
+# a subject link's ends and underline (its "from:"/"to:"/"underline:" fields) derive
+# from the drawn text layout, so they jitter sub-pixel across freetype versions; mask
+# those coordinate groups before comparing, leaving element pos/rect and the rest
+# byte-exact. These three tokens occur only on the scene "Subject Link:" lines - "from:"
+# and "underline:" nowhere else, and "to:" elsewhere only as a quoted id ("to: 'n0'",
+# never "to: (") - so the masking is global and needs no line split (the coordinates
+# hold a ';', the CMake list separator, which rules a MATCHALL/foreach pass out).
+function(normalize_subject_coords in_file out_file)
+  file(READ "${in_file}" _text)
+  string(REGEX REPLACE "from: \\([^)]*\\)" "from: (#)" _text "${_text}")
+  string(REGEX REPLACE "to: \\([^)]*\\)" "to: (#)" _text "${_text}")
+  string(REGEX REPLACE "underline: \\[[^]]*\\]" "underline: [#]" _text "${_text}")
+  file(WRITE "${out_file}" "${_text}")
+endfunction()
+
 # the line ends never decide a comparison: Git for Windows checks the good files out
 # with CRLF, the library writes LF (compare_files --ignore-eol is CMake 3.14+)
 set(_eol)
@@ -156,10 +171,12 @@ if(NOT result EQUAL EXPECTED)
   message(FATAL_ERROR "exit code ${result}, expected ${EXPECTED}")
 endif()
 if(DEFINED DUMP_GOOD)
-  execute_process(COMMAND ${CMAKE_COMMAND} -E compare_files ${_eol} ${OUTPUT} ${DUMP_GOOD}
+  normalize_subject_coords(${OUTPUT} ${OUTPUT}.norm)
+  normalize_subject_coords(${DUMP_GOOD} ${OUTPUT}.good.norm)
+  execute_process(COMMAND ${CMAKE_COMMAND} -E compare_files ${_eol} ${OUTPUT}.norm ${OUTPUT}.good.norm
     RESULT_VARIABLE diff)
   if(NOT diff EQUAL 0)
-    show_difference(${DUMP_GOOD} ${OUTPUT})
+    show_difference(${OUTPUT}.good.norm ${OUTPUT}.norm)
     message(FATAL_ERROR "dump ${OUTPUT} differs from the good file ${DUMP_GOOD}")
   endif()
 endif()
