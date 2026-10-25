@@ -384,7 +384,7 @@ the third is a derived display value the format does not store):
    ┌──────┴────▼──┐                         ┌──────┴────▼──┐
    │      ▪ press │                     ┌──►│              ├──┐
    │              │              loop 2 └───┤    State     │◄─┘ loop 0
-   └──────────────┘                         └──────┬────▲──┘
+   └──────────────┘                         └──────▲────┬──┘
                                                    └────┘ loop 1
 ```
 
