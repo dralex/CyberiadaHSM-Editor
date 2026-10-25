@@ -60,6 +60,7 @@ struct BatchOptions {
 	Cyberiada::DocumentFormat saveFormat = Cyberiada::formatCyberiada10;
 	bool dumpTextMetrics = false;
 	bool dumpUndoStack = false;
+	bool dumpAudit = false;
 	int exportDpi = 96;
 	QString exportFont;
 	bool dumpTabsLine = false;

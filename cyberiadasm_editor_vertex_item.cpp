@@ -81,6 +81,13 @@ EditableTextItem* CyberiadaSMEditorVertexItem::fieldText(const SubjectFragment::
     return field.kind == SubjectFragment::fieldName ? title : nullptr;
 }
 
+QList<QGraphicsItem*> CyberiadaSMEditorVertexItem::ownedChildren() const
+{
+    QList<QGraphicsItem*> owned = CyberiadaSMEditorAbstractItem::ownedChildren();
+    if (title) owned.append(title);
+    return owned;
+}
+
 void CyberiadaSMEditorVertexItem::syncFromModel()
 {
     Cyberiada::Rect r = element->get_bound_rect(*(model->rootDocument()));

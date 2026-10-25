@@ -99,6 +99,7 @@ public:
     void syncFromModel() override;
     // the title draws the name, an action item its action (EDIT-EDGE-21)
     EditableTextItem* fieldText(const SubjectFragment::Field& field, int* start) const override;
+    QList<QGraphicsItem*> ownedChildren() const override;
 
     void setTextPosition();
 

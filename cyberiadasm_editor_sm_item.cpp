@@ -134,6 +134,13 @@ void CyberiadaSMEditorSMItem::syncFromModel()
     CyberiadaSMEditorAbstractItem::syncFromModel();
 }
 
+QList<QGraphicsItem*> CyberiadaSMEditorSMItem::ownedChildren() const
+{
+    QList<QGraphicsItem*> owned = CyberiadaSMEditorAbstractItem::ownedChildren();
+    if (title) owned.append(title);
+    return owned;
+}
+
 QRectF CyberiadaSMEditorSMItem::boundingRect() const
 {
     MY_ASSERT(model);

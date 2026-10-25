@@ -75,6 +75,11 @@ public:
     QList<CyberiadaSMEditorSubjectItem*> subjectLinks(const Cyberiada::ID& comment) const;
     // the ids of the selected elements in the document order (${selection}, EDIT-PLUG-9)
     QStringList selectedIds() const;
+    // the graphics items in the scene that no live owner tracks: a child item not in
+    // its owner's ownedChildren(), or a stray top-level item (a handle left behind by a
+    // rebuild). Empty when the scene graph is consistent (EDIT-UI-8). Read by the
+    // polygon via the `== audit` dump section (--dump-audit)
+    QStringList auditOrphans() const;
 
     // Comment the Selection (EDIT-TOOL-17): the fragment the selection of a text being
     // edited comments - the target, the kind and the text - when it lies in one field

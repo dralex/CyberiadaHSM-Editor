@@ -36,6 +36,8 @@
 #include <QPen>
 #include <QCursor>
 #include <QMessageBox>
+#include <QSet>
+#include <QStringList>
 
 #include <cmath>
 #include <cstdio>
@@ -465,6 +467,55 @@ QList<CyberiadaSMEditorSubjectItem*> CyberiadaSMEditorScene::subjectLinks(const 
                   return a->getIndex() < b->getIndex();
               });
     return links;
+}
+
+QStringList CyberiadaSMEditorScene::auditOrphans() const
+{
+    // the items a live owner claims: the element and link items, their tracked
+    // children (handles, title, actions, region, link ends) and the transients
+    QSet<QGraphicsItem*> tracked;
+    for (QGraphicsItem* it : elementIdToItemMap) tracked.insert(it);
+    for (CyberiadaSMEditorSubjectItem* l : subjectItems) tracked.insert(l);
+
+    auto owned_of = [](QGraphicsItem* owner) -> QList<QGraphicsItem*> {
+        if (CyberiadaSMEditorAbstractItem* a = dynamic_cast<CyberiadaSMEditorAbstractItem*>(owner))
+            return a->ownedChildren();
+        if (CyberiadaSMEditorSubjectItem* s = dynamic_cast<CyberiadaSMEditorSubjectItem*>(owner))
+            return s->ownedChildren();
+        return QList<QGraphicsItem*>();
+    };
+    auto ident = [](QGraphicsItem* owner) -> QString {
+        if (CyberiadaSMEditorAbstractItem* a = dynamic_cast<CyberiadaSMEditorAbstractItem*>(owner))
+            return a->getElement() ? QString::fromStdString(a->getElement()->get_id()) : QStringLiteral("?");
+        if (CyberiadaSMEditorSubjectItem* s = dynamic_cast<CyberiadaSMEditorSubjectItem*>(owner))
+            return (s->getComment() ? QString::fromStdString(s->getComment()->get_id()) : QStringLiteral("?"))
+                   + "#" + QString::number(s->getIndex());
+        return QStringLiteral("?");
+    };
+    auto type_name = [](QGraphicsItem* it) -> QString {
+        if (QObject* o = dynamic_cast<QObject*>(it)) return QString::fromLatin1(o->metaObject()->className());
+        return QStringLiteral("QGraphicsItem");
+    };
+
+    QStringList orphans;
+    // (1) every direct child of a tracked item must itself be tracked (a nested
+    // element/link item) or declared in the owner's ownedChildren()
+    for (QGraphicsItem* owner : tracked) {
+        QSet<QGraphicsItem*> owned;
+        for (QGraphicsItem* o : owned_of(owner)) owned.insert(o);
+        for (QGraphicsItem* c : owner->childItems()) {
+            if (tracked.contains(c) || owned.contains(c)) continue;
+            orphans << QString("orphan %1 under %2").arg(type_name(c), ident(owner));
+        }
+    }
+    // (2) every top-level item must be tracked or a known transient draw item
+    for (QGraphicsItem* it : items()) {
+        if (it->parentItem() || tracked.contains(it)) continue;
+        if (it == creationPreview || it == transitionDrawLine) continue;
+        orphans << QString("orphan top-level %1").arg(type_name(it));
+    }
+    orphans.sort();
+    return orphans;
 }
 
 bool CyberiadaSMEditorScene::subjectLinksStale(const Cyberiada::Comment* comment) const

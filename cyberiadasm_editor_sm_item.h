@@ -48,6 +48,7 @@ public:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
 
     void syncFromModel() override;
+    QList<QGraphicsItem*> ownedChildren() const override;
 
     // the state machine draws no transition handles: no edge starts or ends here
     void initializeDots() override {}

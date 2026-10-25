@@ -203,6 +203,14 @@ EditableTextItem* CyberiadaSMEditorCommentItem::fieldText(const SubjectFragment:
     return field.kind == SubjectFragment::fieldBody ? body : nullptr;
 }
 
+QList<QGraphicsItem*> CyberiadaSMEditorCommentItem::ownedChildren() const
+{
+    QList<QGraphicsItem*> owned = CyberiadaSMEditorAbstractItem::ownedChildren();
+    if (title) owned.append(title);
+    if (body) owned.append(body);
+    return owned;
+}
+
 void CyberiadaSMEditorCommentItem::syncFromModel()
 {
     prepareGeometryChange();

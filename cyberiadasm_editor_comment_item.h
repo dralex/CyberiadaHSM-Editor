@@ -55,6 +55,7 @@ public:
     void syncFromModel() override;
     // the title draws the name, the body the body (EDIT-EDGE-21)
     EditableTextItem* fieldText(const SubjectFragment::Field& field, int* start) const override;
+    QList<QGraphicsItem*> ownedChildren() const override;
 
 protected:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;

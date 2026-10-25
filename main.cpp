@@ -75,6 +75,8 @@ int main(int argc, char *argv[])
 	parser.addOption(dumpTextOption);
 	QCommandLineOption dumpStackOption("dump-stack", "Dump the undo stack: the step count, the index and the clean state.");
 	parser.addOption(dumpStackOption);
+	QCommandLineOption dumpAuditOption("dump-audit", "Dump the scene-graph audit: the graphics items no live owner tracks.");
+	parser.addOption(dumpAuditOption);
 	QCommandLineOption dumpTabsOption("dump-tabs", "Dump the tab line: the open documents and the active one.");
 	parser.addOption(dumpTabsOption);
 	QCommandLineOption reconstructOption("reconstruct", "Reconstruct absent or malformed geometry on load.");
@@ -206,6 +208,7 @@ int main(int argc, char *argv[])
 			options.strict = parser.isSet(strictOption);
 			options.dumpTextMetrics = parser.isSet(dumpTextOption);
 			options.dumpUndoStack = parser.isSet(dumpStackOption);
+			options.dumpAudit = parser.isSet(dumpAuditOption);
 			options.exportDpi = parser.value(dpiOption).toInt();
 			options.exportFont = parser.value(fontOption);
 			options.dumpTabsLine = parser.isSet(dumpTabsOption);

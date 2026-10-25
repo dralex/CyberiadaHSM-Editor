@@ -119,6 +119,12 @@ public:
     // in it, or null when the element does not draw the field (EDIT-EDGE-21)
     virtual EditableTextItem* fieldText(const SubjectFragment::Field& field, int* start) const;
 
+    // the child graphics items this item legitimately keeps in the scene - the resize
+    // handles, the title, the action labels, the region, the link handles. The scene
+    // orphan audit (EDIT-UI-8) flags any child not in this set (a handle left behind
+    // by a rebuild). The base returns the resize handles; subclasses add their own.
+    virtual QList<QGraphicsItem*> ownedChildren() const;
+
     // the offset (item origin - cursor) captured at press, so a body drag can
     // place the item at the cursor in SCENE space each move - immune to the
     // container moving under it when it grows directionally

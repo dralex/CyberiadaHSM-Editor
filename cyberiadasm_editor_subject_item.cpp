@@ -117,6 +117,13 @@ void CyberiadaSMEditorSubjectItem::connectEnds()
     }
 }
 
+QList<QGraphicsItem*> CyberiadaSMEditorSubjectItem::ownedChildren() const
+{
+    QList<QGraphicsItem*> owned;
+    for (DotSignal* d : dots) if (d) owned.append(d);
+    return owned;
+}
+
 void CyberiadaSMEditorSubjectItem::detach()
 {
     // the bounding rect collapses with the comment gone

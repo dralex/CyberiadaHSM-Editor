@@ -169,6 +169,13 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const BatchOptions& options)
 		if (stageFailed(app)) return batchInternalError;
 	}
 
+	if (options.dumpAudit) {
+		std::cout << "== audit" << std::endl;
+		for (const QString& line : win.getScene()->auditOrphans()) {
+			std::cout << line.toStdString() << std::endl;
+		}
+	}
+
 	if (plugin && action && (options.dump || options.dumpPlugin)) {
 		std::cout << "== plugin" << std::endl;
 		dumpPluginRun(*plugin, *action, pluginResult, std::cout);

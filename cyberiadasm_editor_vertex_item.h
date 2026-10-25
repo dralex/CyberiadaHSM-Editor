@@ -64,6 +64,7 @@ public:
     void syncFromModel() override;
     // the title under the vertex draws its name (EDIT-EDGE-21)
     EditableTextItem* fieldText(const SubjectFragment::Field& field, int* start) const override;
+    QList<QGraphicsItem*> ownedChildren() const override;
 
     QRectF boundingRect() const override;
     QPainterPath shape() const override;

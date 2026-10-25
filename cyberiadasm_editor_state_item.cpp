@@ -361,6 +361,18 @@ EditableTextItem* CyberiadaSMEditorStateItem::fieldText(const SubjectFragment::F
     return *start >= 0 ? actions[size_t(field.action)] : nullptr;
 }
 
+QList<QGraphicsItem*> CyberiadaSMEditorStateItem::ownedChildren() const
+{
+    QList<QGraphicsItem*> owned = CyberiadaSMEditorAbstractItem::ownedChildren();
+    if (title) owned.append(title);
+    if (region) owned.append(region);
+    if (entry) owned.append(entry);
+    if (exit) owned.append(exit);
+    for (StateAction* a : actions) if (a) owned.append(a);
+    for (StateAction* a : internalActions) if (a) owned.append(a);
+    return owned;
+}
+
 void CyberiadaSMEditorStateItem::initializeActions()
 {
     // the rebuild runs from the model change signal, which may originate in

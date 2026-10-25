@@ -85,6 +85,9 @@ public:
     void refreshDots();
     DotSignal* sourceDot() const { return dots[0]; }
     DotSignal* targetDot() const { return dots[1]; }
+    // the child graphics items the link keeps in the scene (its two end handles),
+    // for the scene orphan audit (EDIT-UI-8)
+    QList<QGraphicsItem*> ownedChildren() const;
     // remove the subject, never the comment
     bool deleteSubject();
 

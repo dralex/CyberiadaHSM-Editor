@@ -121,6 +121,7 @@ public:
     void syncFromModel() override;
     // the label draws the action fields (EDIT-EDGE-21)
     EditableTextItem* fieldText(const SubjectFragment::Field& field, int* start) const override;
+    QList<QGraphicsItem*> ownedChildren() const override;
 
 signals:
     // void clicked(CyberiadaSMEditorTransitionItem *rect);

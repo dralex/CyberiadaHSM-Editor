@@ -141,6 +141,15 @@ EditableTextItem* CyberiadaSMEditorAbstractItem::fieldText(const SubjectFragment
     return nullptr;
 }
 
+QList<QGraphicsItem*> CyberiadaSMEditorAbstractItem::ownedChildren() const
+{
+    QList<QGraphicsItem*> owned;
+    for (DotSignal* g : cornerGrabber) {
+        if (g) owned.append(g);
+    }
+    return owned;
+}
+
 void CyberiadaSMEditorAbstractItem::syncFromModel()
 {
     setDotsPosition();

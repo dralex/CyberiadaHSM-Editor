@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.35 (2026-10-25)
+**Document version:** 0.36 (2026-10-25)
 
 **Related authorities:**
 
@@ -771,6 +771,11 @@ The interface translations and their workflow are in `docs/TRANSLATION.md`.
   plugin folder `<folder>/Cyberiada/CyberiadaPro/plugins`, instead of the places of the system
   (the registry and `%APPDATA%` on Windows, `~/.config` and `~/.local/share` on Linux): a
   separate, portable configuration, the same on every system; the tests set both. *design*
+- `EDIT-UI-8` MUST [U]: the scene holds no graphics item that no live owner tracks — every item is
+  an element or comment-link item, one of its owner's declared handles/labels/region, or a known
+  transient draw item; a handle a rebuild replaces leaves the scene at once, never lingering to be
+  painted after it is freed. The editor reports a violation through the `--dump-audit` scene audit
+  and the polygon holds it as a standing law. *design*
 
 ## 5. Coverage
 

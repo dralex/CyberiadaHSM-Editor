@@ -617,6 +617,15 @@ EditableTextItem* CyberiadaSMEditorTransitionItem::fieldText(const SubjectFragme
     return *start >= 0 ? actionItem : nullptr;
 }
 
+QList<QGraphicsItem*> CyberiadaSMEditorTransitionItem::ownedChildren() const
+{
+    QList<QGraphicsItem*> owned = CyberiadaSMEditorAbstractItem::ownedChildren();
+    if (actionItem) owned.append(actionItem);
+    for (DotSignal* d : listDots) if (d) owned.append(d);
+    for (DotSignal* d : labelDots) if (d) owned.append(d);
+    return owned;
+}
+
 void CyberiadaSMEditorTransitionItem::updateAction()
 {
     actionItem->setPlainText(actionText());
