@@ -896,12 +896,12 @@ void StateTitle::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
             if (state->prevItemUnderCursor == newParent) return;
 
             if (newParent == nullptr || state->parentItem() == newParent){
-                state->prevItemUnderCursor->setHighlighted(false);
+                if (state->prevItemUnderCursor) state->prevItemUnderCursor->setHighlighted(false);
                 state->prevItemUnderCursor = newParent;
                 return;
             }
 
-            state->prevItemUnderCursor->setHighlighted(false);
+            if (state->prevItemUnderCursor) state->prevItemUnderCursor->setHighlighted(false);
             state->prevItemUnderCursor = newParent;
             newParent->setHighlighted(true);
         }

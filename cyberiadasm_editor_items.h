@@ -29,6 +29,7 @@
 #include <QMargins>
 #include <QBrush>
 #include <QList>
+#include <QPointer>
 
 #include "cyberiadasm_model.h"
 #include "dotsignal.h"
@@ -163,7 +164,9 @@ protected:
     bool isLeftMouseButtonPressed;
     DotSignal *cornerGrabber[8] = {};
 
-    CyberiadaSMEditorAbstractItem* prevItemUnderCursor;
+    // the parent candidate under a dragged item; it may be deleted between two
+    // drags, so the pointer clears itself
+    QPointer<CyberiadaSMEditorAbstractItem> prevItemUnderCursor;
     bool isHighlighted;
 
     void resizeRight( const QPointF &pt, Qt::KeyboardModifiers mods);
