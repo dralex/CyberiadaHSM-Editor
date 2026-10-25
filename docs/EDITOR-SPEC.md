@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.36 (2026-10-25)
+**Document version:** 0.37 (2026-10-25)
 
 **Related authorities:**
 
@@ -302,7 +302,7 @@ the third is a derived display value the format does not store):
   transition then connects the new pair. The identity of endpoints, not the id,
   which may be renamed). *design*
 - `EDIT-EDGE-8` MUST [U]: a self-loop stays a loop unless an endpoint is dragged
-  onto a non-ancestor node. *design*
+  onto a non-ancestor node; it is drawn outside its state (`EDIT-EDGE-22`). *design*
 - `EDIT-EDGE-9` MUST [A]: adding, moving or removing a polyline point changes
   only that point; the endpoints stay. A point is removed by double-clicking its
   dot or pressing Delete on it. *design*
@@ -365,6 +365,27 @@ the third is a derived display value the format does not store):
    │ TIMEOUT [count > 3] / stop()│- - - -│ Stops the     │
    │                       ‾‾‾‾‾‾       │ motor safely  │
    └────────────────────────────┘        └───────────────┘
+```
+- `EDIT-EDGE-22` MUST [U]: a self-loop is drawn outside its state as an orthogonal polyline
+  leaving one border and returning into one, never as an arc and never across the state. A
+  drawn loop starts on the side nearest the press that began the draw (on a tie, the side of
+  the first move), at the press projected onto it, and returns into the side the release
+  points to (the same side: a bump); the drawn route is stored (`EDIT-EDGE-16` with snap on).
+  A loop without a stored polyline takes a default route at display time, nothing stored:
+  stored endpoints keep their sides, otherwise the k-th such loop of the state takes the
+  right, bottom, left, top side in document order, nesting farther out after four; the first
+  drag of a bend or a segment stores the shown route. A resize moves every bend of a stored
+  loop with the border it lies beyond. A loop label without a stored box lies outside, past
+  the outer segment. *design*
+
+```
+   drawn: the press near the top            default, nothing stored
+          ┌────┐                                   ┌────┐ loop 3
+   ┌──────┴────▼──┐                         ┌──────┴────▼──┐
+   │      ▪ press │                     ┌──►│              ├──┐
+   │              │              loop 2 └───┤    State     │◄─┘ loop 0
+   └──────────────┘                         └──────┬────▲──┘
+                                                   └────┘ loop 1
 ```
 
 ### 4.5 Text of names, actions, and labels — TEXT
