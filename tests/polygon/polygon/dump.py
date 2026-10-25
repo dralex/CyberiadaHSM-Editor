@@ -347,9 +347,12 @@ class Document:
 
 
 def parse_document(text):
-    """The `== document` section: one LocalDocument stream."""
-    reader = _Reader(text.strip())
-    key = reader.bare() if False else None
+    """The `== document` section: one LocalDocument stream, or None for an
+    empty document (a fresh untitled tab dumps the `(empty)` sentinel)."""
+    body = text.strip()
+    if not body or body == "(empty)":
+        return None
+    reader = _Reader(body)
     # the stream starts with 'LocalDocument: {'
     head, _, rest = reader.s.partition(": ")
     if head.strip() != "LocalDocument":
