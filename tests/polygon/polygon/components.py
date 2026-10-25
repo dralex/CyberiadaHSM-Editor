@@ -66,6 +66,8 @@ AREAS = (
     ("text", ("4.5", "4.9"), (CAT.FAMILY_CREATE, CAT.FAMILY_BEHAVE)),
     ("tool", ("4.6",), (CAT.FAMILY_GESTURE,)),
     ("history", ("4.7", "4.8"), CAT.FAMILIES),
+    ("lifetime", ("4.3", "4.4", "4.7", "4.8"),
+     (CAT.FAMILY_CREATE, CAT.FAMILY_ARRANGE, CAT.FAMILY_CLIPBOARD, CAT.FAMILY_HISTORY)),
 )
 
 EDITED, REJECTED, CRASHED = "edited", "rejected", "crashed"

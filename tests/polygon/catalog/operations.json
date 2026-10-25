@@ -713,6 +713,14 @@
       ],
       "form": "gesture-form",
       "family": "clipboard"
+    },
+    {
+      "verb": "repaint",
+      "args": "",
+      "effect": "force the view backing-store paint (every item is repainted)",
+      "targets": [],
+      "form": "gesture",
+      "family": "gesture"
     }
   ]
 }

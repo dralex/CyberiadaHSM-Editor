@@ -335,3 +335,72 @@ class SubmachineDrill(Drill):
         # entry (a target) - the SEM-5 direction the endpoint law checks
         return (["new-transition %s %s %s" % (m.id, st_entries[0].id, entries[0].id)],
                 "transition", "transition %s %s" % (st_entries[0].id, entries[0].id))
+
+
+class LifetimeDrill(Drill):
+    """Add and remove scene items of every kind in many situations - build a
+    composite with children, a comment, a transition and a comment subject link,
+    then churn: create pseudostates/choices, delete, undo, redo, cut+paste and
+    drop a subject - repainting the view after each step so the backing-store
+    paint runs while the scene is in each transient state. The structural laws,
+    the undo/redo identity and strict-reload oracles and the per-round export
+    paint carry the checks; the drill only drives the add/remove surface."""
+
+    name = "lifetime"
+    RP = "repaint"
+
+    def emit(self, dump):
+        doc = dump.document
+        m = self.machine(doc)
+        if m is None:
+            return None
+        states = _states(doc)
+        comments = [e for e in doc.walk() if e.kind in D.COMMENT_KINDS and not e.is_meta]
+        trans = doc.transitions()
+        tops = [s for s in states if s.parent and s.parent.id == m.id]
+        outer = next((s for s in tops if s.name == "Outer"), None)
+
+        # build phase: a composite with two children, a comment, a transition
+        # between the children and a comment subject link
+        if outer is None:
+            return (["new-state %s 60 60 360 260 Outer" % m.id, self.RP], "state", "")
+        kids = [s for s in states if s.parent and s.parent.id == outer.id]
+        if len(kids) < 2:
+            return (["new-state %s %d 40 130 90 %s" % (outer.id, 30 + 170 * len(kids),
+                     self.fresh("S")), self.RP], "state", "")
+        if not comments:
+            return (["new-comment %s a note" % m.id, self.RP], "comment", "")
+        if not trans:
+            return (["new-transition %s %s %s" % (m.id, kids[0].id, kids[1].id), self.RP],
+                    "transition", "")
+        comment = comments[0]
+        if not comment.subjects:
+            return (["new-subject %s %s" % (comment.id, kids[0].id), self.RP], "subject", "")
+
+        # churn phase: each op is followed by a repaint so the view paints the
+        # scene in the transient state the op leaves
+        phase = self.step % 8
+        if phase == 0:                                 # a pseudostate inside the composite
+            return (["new-initial %s 30 30" % outer.id, self.RP], "initial", "")
+        if phase == 1:                                 # a choice in the machine
+            return (["new-choice %s 470 60 40 40" % m.id, self.RP], "choice", "")
+        if phase == 2:                                 # delete a leaf child by id
+            leaf = next((s for s in kids if not s.children), kids[-1])
+            return (["delete %s" % leaf.id, self.RP], "state", "")
+        if phase == 3:                                 # undo the delete
+            return (["undo", self.RP], "history", "")
+        if phase == 4:                                 # redo it
+            return (["redo", self.RP], "history", "")
+        if phase == 5:                                 # undo again, back to a known shape
+            return (["undo", self.RP], "history", "")
+        if phase == 6:                                 # select the comment, cut and paste it
+            item = dump.scene_items().get(comment.id)
+            if item is not None:
+                x, y, w, h = item.abs_rect
+                return (["click %d %d" % (round(x + w / 2.0), round(y + h / 2.0)),
+                         "cut", "paste", self.RP], "clipboard", "")
+            return (["new-comment %s another note" % m.id, self.RP], "comment", "")
+        # drop the subject link, keeping the comment; re-add it next cycle
+        if comment.subjects:
+            return (["delete-subject %s 0" % comment.id, self.RP], "subject", "")
+        return (["new-subject %s %s" % (comment.id, kids[-1].id), self.RP], "subject", "")

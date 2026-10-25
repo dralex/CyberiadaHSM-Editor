@@ -315,12 +315,25 @@ when a child is dragged past the border); **copy-paste** (build a subtree and du
 that tends to strand it — add actions to an endpoint state, unlink it from its parent, resize and
 grow it through the model; the endpoint stays on the border by `EDIT-EDGE-1`); **submachine** (a
 submachine state, its entry/exit connectors and standalone entry/exit points, then a transition
-whose direction follows the connector/standalone role).
+whose direction follows the connector/standalone role); **lifetime** (add and remove scene items
+of every kind in many situations — a composite with children, a comment, a transition, a comment
+subject link, then create pseudostates/choices, delete, undo, redo, cut+paste and drop a subject —
+repainting the view after each step so the real backing-store paint runs while the scene is in each
+transient state; the structural laws, the undo/redo identity and strict-reload oracles and the
+per-round export paint carry the checks).
 
 Deterministic drills are the primary, guaranteed-coverage form, run with `drill --which
 <name|all>` and no LLM. An agent drill is an optional realism variant. A reversibility step
 emits an operation and its inverse in one round and asserts the pre-operation structure is
 restored, catching corruption that save-reopen and undo-all miss.
+
+The **`repaint`** batch verb forces the active view's backing-store paint (`QGraphicsView::
+paintEvent` → `drawItems` → every item's `boundingRect()`/`paint()`), the path the per-round
+`--export` `scene->render()` bypasses; the **lifetime** drill and the **scene item lifetime** theme
+emit it after every add/remove so a paint runs on the transient scene. This broadens the add/remove
+and paint surface; it does not reproduce the narrow freed-item *race* (a batch run paints the item
+while it is still alive, never mid-destruction) — that exact invariant is guarded deterministically
+by the editor unit test `l4-scene::test_retire_vertex_dots`.
 
 #### The shadow model
 

@@ -132,6 +132,15 @@
         20,
         40
       ]
+    },
+    {
+      "name": "scene item lifetime",
+      "start": "corpus",
+      "hint": "repeatedly add and remove every kind of element - states, composite states with children, comments, transitions, comment subject links, initial/final/choice/history pseudostates - in many situations: delete a selected element, delete a parent that holds children and links, cut and paste, undo and redo each removal, drop and re-add a subject link; the diagram must stay consistent after every add and every remove",
+      "budget": [
+        12,
+        22
+      ]
     }
   ]
 }

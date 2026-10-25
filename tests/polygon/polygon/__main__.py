@@ -166,6 +166,7 @@ DRILL_CLASSES = {
     "resize": DRILLF.ResizeDrill, "copy-paste": DRILLF.CopyPasteDrill,
     "transition-stress": DRILLF.TransitionStressDrill,
     "submachine": DRILLF.SubmachineDrill,
+    "lifetime": DRILLF.LifetimeDrill,
     "compound": DRILLC.CompoundDrill,
 }
 
