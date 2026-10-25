@@ -195,13 +195,16 @@ class Fuzzer:
                  "drag %d %d" % to, "release %d %d" % to], "transition")
 
     def emit_link(self, dump):
-        """`tool transition` then press a comment and drag to a state or another
-        comment: a comment link (EDIT-TOOL-15)."""
+        """`tool transition` then press a comment and drag to a state, a choice or
+        another comment: a comment link (EDIT-TOOL-15), on a choice anywhere on its
+        rhombus (EDIT-EDGE-17)."""
         comments = self.resizable_comments(dump)
         src = self.pick(comments)
         if src is None:
             return None
-        tgt = self.pick(self.sized_states(dump) + [c for c in comments if c is not src])
+        choices = [i for i in dump.scene_items().values()
+                   if i.kind == D.KIND_CHOICE and i.rect[2] > 0 and i.rect[3] > 0]
+        tgt = self.pick(self.sized_states(dump) + choices + [c for c in comments if c is not src])
         if tgt is None:
             return None
         sx, sy, sw, sh = src.abs_rect

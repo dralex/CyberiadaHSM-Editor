@@ -191,6 +191,25 @@ def link_starts_on_comment(dump):                        # EDIT-EDGE-17
                                 % (link.index, item.id, px, py))
 
 
+def link_ends_on_choice(dump):                           # EDIT-EDGE-17
+    """A drawn link to a choice ends on its rhombus, anywhere on an edge: only a
+    transition is bound to its vertices (EDIT-EDGE-4)."""
+    items = dump.scene_items()
+    for item in items.values():
+        for link in item.links:
+            target = items.get(link.target)
+            if target is None or target.kind != D.KIND_CHOICE or _degenerate(target.rect):
+                continue
+            x, y, w, h = target.abs_rect
+            hw, hh = w / 2.0, h / 2.0
+            dx, dy = link.end[0] - (x + hw), link.end[1] - (y + hh)
+            # the scaled rhombus equation error is the distance to the border, within
+            # the aspect of the rhombus
+            if abs(abs(dx) / hw + abs(dy) / hh - 1.0) * min(hw, hh) > TOL:
+                yield Violation("EDGE-17", "link %d of comment %s ends off the rhombus of %s at (%g; %g)"
+                                % (link.index, item.id, link.target, link.end[0], link.end[1]))
+
+
 def fragment_on_underline(dump):                         # EDIT-EDGE-21
     """A drawn fragment link ends at the middle of its first underline segment,
     and with the == text boxes every segment lies in a text box of its target."""
@@ -504,7 +523,7 @@ def machine_names(dump):                                 # EDIT-META-5
 # hard laws run always-on and register as defects; gated laws are implemented
 # and tested but not yet registered (pending an EDITOR-SPEC decision)
 HARD = [unique_ids, no_cycle, endpoints_same_machine, composite_by_children,
-        no_dangling, subject_targets, link_starts_on_comment, fragment_on_underline, link_fragment_no_target, one_initial_per_parent, one_history_per_kind, endpoint_kinds, submachine_children,
+        no_dangling, subject_targets, link_starts_on_comment, link_ends_on_choice, fragment_on_underline, link_fragment_no_target, one_initial_per_parent, one_history_per_kind, endpoint_kinds, submachine_children,
         meta_hidden, containment, no_overlap, points_named, submachine_reference,
         single_behaviour_blocks, event_names, event_handling, machine_names,
         endpoint_on_border]

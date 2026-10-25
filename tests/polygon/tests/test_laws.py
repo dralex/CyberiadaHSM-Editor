@@ -181,6 +181,20 @@ class LawTest(unittest.TestCase):
         box.pos = (box.pos[0] + 300, box.pos[1])
         self.assertEqual(reqs(d), ["EDGE-21"])
 
+    def test_link_ends_on_choice(self):
+        # EDGE-17: a link to a choice ends anywhere on its rhombus, not only on a vertex
+        d = D.parse_dump((GOOD / "subject-choice-output.txt").read_text())
+        self.assertEqual(reqs(d), [])
+        ch = d.scene_items()["n3"]
+        x, y, w, h = ch.abs_rect
+        link = next(l for l in d.scene_items()["n2"].links if l.target == "n3")
+        link.end = (x + w * 0.75, y + h * 0.25)        # mid upper-right edge
+        self.assertEqual(reqs(d), [])
+        link.end = (x + w, y)                          # the rect corner, off the rhombus
+        self.assertEqual(reqs(d), ["EDGE-17"])
+        link.end = (x + w / 2.0, y + h / 2.0)          # the centre
+        self.assertEqual(reqs(d), ["EDGE-17"])
+
     def test_link_starts_on_comment(self):
         # EDGE-17: a drawn link starts on the border of its comment
         d = D.parse_dump((GOOD / "comment-transition-output.txt").read_text())
