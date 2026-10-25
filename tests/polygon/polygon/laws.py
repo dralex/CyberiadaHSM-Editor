@@ -411,6 +411,25 @@ def endpoint_on_border(dump):                            # EDIT-EDGE-1
                                 % (role, t.id, end_id, px, py))
 
 
+def loop_outside(dump):                                  # EDIT-EDGE-22
+    # a self-loop is drawn outside its state: its drawn rect reaches past the state
+    # box, never lying within it as the old centre arc did. A loop on a point
+    # element or a state with no geometry has no box to leave, so it is exempt
+    doc = dump.document
+    if doc is None:
+        return
+    items = dump.scene_items()
+    for t in doc.transitions():
+        if t.source != t.target:
+            continue
+        loop, state = items.get(t.id), items.get(t.source)
+        if (loop is None or state is None or state.kind not in D.STATE_KINDS
+                or _degenerate(state.rect) or _degenerate(loop.rect)):
+            continue
+        if _inside(loop.abs_rect, state.abs_rect):
+            yield Violation("EDGE-22", "the self-loop %s is drawn inside %s" % (t.id, t.source))
+
+
 RESERVED_EVENT_NAMES = ("entry", "exit", "do", "propagate", "block", "defer", "else")
 
 
@@ -534,7 +553,7 @@ HARD = [unique_ids, no_cycle, endpoints_same_machine, composite_by_children,
         no_dangling, subject_targets, link_starts_on_comment, link_ends_on_choice, fragment_on_underline, link_fragment_no_target, one_initial_per_parent, one_history_per_kind, endpoint_kinds, submachine_children,
         meta_hidden, containment, no_overlap, points_named, submachine_reference,
         single_behaviour_blocks, event_names, event_handling, machine_names,
-        endpoint_on_border, scene_no_orphans]
+        endpoint_on_border, loop_outside, scene_no_orphans]
 GATED = []
 
 

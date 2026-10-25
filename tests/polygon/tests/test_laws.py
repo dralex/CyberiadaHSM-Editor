@@ -291,6 +291,18 @@ class LawTest(unittest.TestCase):
         t.sp = None                                          # an auto endpoint is exempt
         self.assertNotIn("EDGE-1", reqs(d, gated=True))
 
+    def test_loop_outside(self):
+        # EDGE-22: a self-loop is drawn outside its state; one drawn within the
+        # state box (the old centre arc) is a violation
+        d = D.parse_dump((GOOD / "geometry-output.txt").read_text())
+        self.assertNotIn("EDGE-22", reqs(d))                 # clean to start
+        items = d.scene_items()
+        loop, state = items["edge-0"], items["node-0-0-1"]
+        sx, sy, sw, sh = state.abs_rect
+        lx, ly = loop.abs_rect[0] - loop.rect[0], loop.abs_rect[1] - loop.rect[1]
+        loop.rect = (sx + sw / 2 - 40 - lx, sy + sh / 2 - 40 - ly, 80.0, 80.0)
+        self.assertIn("EDGE-22", reqs(d))
+
 
 if __name__ == "__main__":
     unittest.main()

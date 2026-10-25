@@ -524,7 +524,8 @@ drawn comment link starting on its comment border and, on a choice, ending anywh
 rhombus (`EDGE-17`; the vertices bind only the transitions) (`EDGE-17`, from the `Subject Link` scene lines, which the dump
 emits in the same frame as the element rects so a nested comment's link is not falsely off-border), a
 stored transition endpoint lying on its state's border (`EDGE-1`, from the
-`transition_handles` source/target points — an auto endpoint is exempt), one
+`transition_handles` source/target points — an auto endpoint is exempt), a
+self-loop drawn outside its state (`EDGE-22`, its scene rect reaching past the state box), one
 initial per level, endpoint kinds, containment, sibling no-overlap, the hidden
 metainformation node) register as defects and are silent on the good corpus. The
 fuzzer draws comment links too (`draw-link`: the transition tool from a comment to a state,
