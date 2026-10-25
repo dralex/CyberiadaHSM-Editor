@@ -513,13 +513,15 @@ hard laws (unique ids, one-parent, endpoints in one machine, composite⇔childre
 no dangling reference, the subject targets of `STRUCT-12` with a fragment inside one
 field of its target, a drawn fragment link ending at the middle of its first underline
 segment that lies in a text box of the target (`EDGE-21`, the boxes from `== text`), a
-drawn comment link starting on its comment border (`EDGE-17`, from the `Subject Link` scene lines, which the dump
+drawn comment link starting on its comment border and, on a choice, ending anywhere on its
+rhombus (`EDGE-17`; the vertices bind only the transitions) (`EDGE-17`, from the `Subject Link` scene lines, which the dump
 emits in the same frame as the element rects so a nested comment's link is not falsely off-border), a
 stored transition endpoint lying on its state's border (`EDGE-1`, from the
 `transition_handles` source/target points — an auto endpoint is exempt), one
 initial per level, endpoint kinds, containment, sibling no-overlap, the hidden
 metainformation node) register as defects and are silent on the good corpus. The
-fuzzer draws comment links too (`draw-link`: the transition tool from a comment) and
+fuzzer draws comment links too (`draw-link`: the transition tool from a comment to a state,
+a choice or another comment) and
 comments a selection (`comment-selection`: a state title or a comment body opened,
 selected whole and linked to a new comment beside its element).
 
