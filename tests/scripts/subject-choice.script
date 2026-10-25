@@ -1,0 +1,10 @@
+# a comment link to a choice ends on an edge of its rhombus, off its vertices
+# (EDIT-EDGE-4/17): drawn with the transition tool and kept, a second link
+# without ends filled by the geometry update toward the comment
+new-choice G0 360 120 40 40
+tool transition
+press 300 240
+drag 330 180
+release 360 120
+new-subject n2 n3
+update-geometry

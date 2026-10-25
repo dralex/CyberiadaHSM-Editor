@@ -67,6 +67,7 @@ private slots:
 	void test_comment_selection();
 	void test_second_fragment_menu();
 	void test_cleared_link_detached();
+	void test_link_to_choice();
 
 private:
 	CyberiadaSMModel* model = nullptr;
@@ -774,5 +775,72 @@ void TestLinks::test_cleared_link_detached()
 	Cyberiada::Rect r = static_cast<Cyberiada::State*>(second)->get_geometry_rect();
 	QVERIFY(model->updateGeometry(model->elementToIndex(second), Cyberiada::Rect(r.x + 30, r.y, r.width, r.height)));
 	QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+}
+
+// on the rhombus inscribed in a box (centre-relative |x|/hw + |y|/hh = 1), within a pixel
+static bool onRhombus(const QRectF& box, const QPointF& p)
+{
+	QPointF d = p - box.center();
+	qreal hw = box.width() / 2.0, hh = box.height() / 2.0;
+	return qAbs((qAbs(d.x()) / hw + qAbs(d.y()) / hh - 1.0) * qMin(hw, hh)) < 1.0;
+}
+
+// a vertex of that rhombus, within a pixel
+static bool onVertex(const QRectF& box, const QPointF& p)
+{
+	QPointF d = p - box.center();
+	return qAbs(d.x()) < 1.0 || qAbs(d.y()) < 1.0;
+}
+
+void TestLinks::test_link_to_choice()
+{
+	// a comment link ends anywhere on the border of a choice rhombus, not only on
+	// the vertices a transition takes: drawn, dragged, stored and resized (EDIT-EDGE-4/17)
+	load("diagrams/comment-transition.graphml");
+	Cyberiada::ElementCollection* sm = static_cast<Cyberiada::ElementCollection*>(model->idToElement("G0"));
+	Cyberiada::Element* choice = model->newChoice(sm, Cyberiada::Rect(360, 120, 40, 40));
+	QVERIFY(choice);
+	Cyberiada::ID id = choice->get_id();
+	QRectF box = scene->getMap().value(id)->sceneBoundingRect();
+	// drawn from the comment below-left: the end on the lower-left edge
+	drag(ToolType::Transition, centre("n2"), box.center());
+	QCOMPARE(subjects("n2"), 2);
+	CyberiadaSMEditorSubjectItem* l = link("n2", 1);
+	QVERIFY(l);
+	QVERIFY(onRhombus(box, l->targetEnd()));
+	QVERIFY(!onVertex(box, l->targetEnd()));
+	QVERIFY(l->targetEnd().x() < box.center().x() && l->targetEnd().y() > box.center().y());
+	const Cyberiada::Comment* note = static_cast<const Cyberiada::Comment*>(model->idToElement("n2"));
+	QVERIFY(note->get_subjects().at(1).has_geometry_target_point());
+
+	// the target handle slides along the upper-right edge
+	scene->setCurrentTool(ToolType::Select);
+	l->setSelected(true);
+	drag(ToolType::Select, l->targetDot()->scenePos(), box.center() + QPointF(35, -35));
+	l = link("n2", 1);
+	QVERIFY(l);
+	QVERIFY(onRhombus(box, l->targetEnd()));
+	QVERIFY(!onVertex(box, l->targetEnd()));
+	QVERIFY(l->targetEnd().x() > box.center().x() && l->targetEnd().y() < box.center().y());
+
+	// a stored mid-edge point is drawn as stored
+	note = static_cast<const Cyberiada::Comment*>(model->idToElement("n2"));
+	const Cyberiada::CommentSubject& s = note->get_subjects().at(1);
+	QVERIFY(model->updateSubjectGeometry(model->elementToIndex(model->idToElement("n2")), 1,
+										 s.get_geometry_source_point(), Cyberiada::Point(10, -10),
+										 s.get_geometry_polyline()));
+	l = link("n2", 1);
+	QCOMPARE(l->targetEnd(), box.center() + QPointF(10, -10));
+
+	// a model resize puts it back on the new rhombus
+	QVERIFY(model->updateGeometry(model->elementToIndex(model->idToElement(QString::fromStdString(id))),
+								  Cyberiada::Rect(360, 120, 80, 40)));
+	box = scene->getMap().value(id)->sceneBoundingRect();
+	QCOMPARE(box.width(), 80.0);
+	l = link("n2", 1);
+	QVERIFY(onRhombus(box, l->targetEnd()));
+	note = static_cast<const Cyberiada::Comment*>(model->idToElement("n2"));
+	Cyberiada::Point tp = note->get_subjects().at(1).get_geometry_target_point();
+	QVERIFY(qAbs(qAbs(tp.x) / 40.0 + qAbs(tp.y) / 20.0 - 1.0) < 0.01);
 }
 

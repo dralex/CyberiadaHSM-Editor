@@ -56,11 +56,24 @@ void clampOntoBorder(QPointF& p, qreal hw, qreal hh);
 
 // re-base a centre-relative end after its node was resized: side and d tell the
 // centre displacement; the absolute place is kept and the end put back on the new border
-void rebaseOnResize(int side, QPointF& point, qreal d, const CyberiadaSMEditorAbstractItem* item);
+// a link end on a choice goes back onto its rhombus (EDIT-EDGE-17)
+void rebaseOnResize(int side, QPointF& point, qreal d, const CyberiadaSMEditorAbstractItem* item,
+                    bool link = false);
 
 // the border point of a node nearest to a scene point: a rect node clamps it onto
 // its border, a vertex or a choice attaches toward it
 QPointF borderNearest(const CyberiadaSMEditorAbstractItem* item, const QPointF& p);
+
+// the rhombus of a choice inscribed in a rect of the given half-extents, centre-relative:
+// the border point on the ray toward a point, and the border point nearest to a point
+QPointF rhombusToward(const QPointF& toward, qreal hw, qreal hh);
+QPointF rhombusNearest(const QPointF& p, qreal hw, qreal hh);
+
+// a comment link end: as attachedPoint (the side when centred) and borderNearest, except
+// on a choice, whose comment point lies anywhere on the rhombus border, not only on the
+// vertices a transition takes (EDIT-EDGE-4/17)
+QPointF linkAttachedPoint(const CyberiadaSMEditorAbstractItem* item, const QPointF& toward);
+QPointF linkBorderNearest(const CyberiadaSMEditorAbstractItem* item, const QPointF& p);
 
 // the point of a path nearest to p; endMargin of the first and the last segment
 // and the avoided rect stay free (a link foot keeps off the arrow and the label,

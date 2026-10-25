@@ -243,7 +243,8 @@ void EdgeGeometry::clampOntoBorder(QPointF& p, qreal hw, qreal hh)
     p = QPointF(x, y);
 }
 
-void EdgeGeometry::rebaseOnResize(int side, QPointF& point, qreal d, const CyberiadaSMEditorAbstractItem* item)
+void EdgeGeometry::rebaseOnResize(int side, QPointF& point, qreal d, const CyberiadaSMEditorAbstractItem* item,
+                                  bool link)
 {
     if (!item) return;
     // 'd' is the CENTRE displacement on the flagged axis (not the edge delta, and
@@ -261,6 +262,10 @@ void EdgeGeometry::rebaseOnResize(int side, QPointF& point, qreal d, const Cyber
     // re-attach to the NEW border: a point on an unmoved (e.g. perpendicular)
     // border keeps its place, while a point whose edge moved away is pulled back
     QRectF r = item->sceneBoundingRect();   // already the new size at emit time
+    if (link && item->type() == CyberiadaSMEditorAbstractItem::ChoiceItem) {
+        point = rhombusNearest(point, r.width() / 2.0, r.height() / 2.0);
+        return;
+    }
     clampOntoBorder(point, r.width() / 2.0, r.height() / 2.0);
 }
 
@@ -275,6 +280,51 @@ QPointF EdgeGeometry::borderNearest(const CyberiadaSMEditorAbstractItem* item, c
     QPointF rel = p - r.center();
     clampOntoBorder(rel, r.width() / 2.0, r.height() / 2.0);
     return rel + r.center();
+}
+
+QPointF EdgeGeometry::rhombusToward(const QPointF& toward, qreal hw, qreal hh)
+{
+    // the ray c + t * d crosses |x|/hw + |y|/hh = 1 at t = 1 / s
+    qreal s = hw > 0.0 && hh > 0.0 ? qAbs(toward.x()) / hw + qAbs(toward.y()) / hh : 0.0;
+    return s > 0.0 ? toward / s : QPointF();
+}
+
+QPointF EdgeGeometry::rhombusNearest(const QPointF& p, qreal hw, qreal hh)
+{
+    if (hw <= 0.0 || hh <= 0.0) return p;
+    const QPointF v[4] = { QPointF(hw, 0.0), QPointF(0.0, hh), QPointF(-hw, 0.0), QPointF(0.0, -hh) };
+    QPointF best;
+    qreal bestDist = std::numeric_limits<qreal>::max();
+    for (int i = 0; i < 4; i++) {
+        QPointF a = v[i], d = v[(i + 1) % 4] - a;
+        qreal t = qBound(0.0, QPointF::dotProduct(p - a, d) / QPointF::dotProduct(d, d), 1.0);
+        QPointF q = a + d * t;
+        qreal dist = QPointF::dotProduct(p - q, p - q);
+        if (dist < bestDist) {
+            bestDist = dist;
+            best = q;
+        }
+    }
+    return best;
+}
+
+QPointF EdgeGeometry::linkAttachedPoint(const CyberiadaSMEditorAbstractItem* item, const QPointF& toward)
+{
+    if (!item || item->type() != CyberiadaSMEditorAbstractItem::ChoiceItem) {
+        return attachedPoint(item, toward, true);
+    }
+    QRectF r = item->sceneBoundingRect();
+    QPointF d = toward - r.center();
+    // coincident centres give no direction: the right side
+    if (d.isNull()) d = QPointF(1.0, 0.0);
+    return rhombusToward(d, r.width() / 2.0, r.height() / 2.0);
+}
+
+QPointF EdgeGeometry::linkBorderNearest(const CyberiadaSMEditorAbstractItem* item, const QPointF& p)
+{
+    if (!item || item->type() != CyberiadaSMEditorAbstractItem::ChoiceItem) return borderNearest(item, p);
+    QRectF r = item->sceneBoundingRect();
+    return rhombusNearest(p - r.center(), r.width() / 2.0, r.height() / 2.0) + r.center();
 }
 
 QVector<QLineF> EdgeGeometry::textRangeLines(const QGraphicsTextItem* item, int from, int to)

@@ -40,6 +40,7 @@
 #include "cyberiada_constants.h"
 #include "code_highlighter.h"
 #include "subject_fragment.h"
+#include "edge_geometry.h"
 
 // the state machine an element belongs to (the element itself when it is one)
 static const Cyberiada::Element* containingMachine(const Cyberiada::Element* e)
@@ -2843,7 +2844,13 @@ void CyberiadaSMModel::reattachCommentLinks(Cyberiada::Element* node,
             Cyberiada::Point tp = s.has_geometry_target_point() ? s.get_geometry_target_point() : Cyberiada::Point();
             Cyberiada::Polyline pl = s.get_geometry_polyline();
             if (fixSrc) sp = clampPointOntoBorder(sp.x, sp.y, hw, hh);
-            if (fixTgt) tp = clampPointOntoBorder(tp.x, tp.y, hw, hh);
+            if (fixTgt && node->get_type() == Cyberiada::elementChoice) {
+                // a comment point on a choice stays on its rhombus (EDIT-EDGE-17)
+                QPointF q = EdgeGeometry::rhombusNearest(QPointF(tp.x, tp.y), hw, hh);
+                tp = Cyberiada::Point(q.x(), q.y());
+            } else if (fixTgt) {
+                tp = clampPointOntoBorder(tp.x, tp.y, hw, hh);
+            }
             c->update_subject_geometry(i, sp, tp, pl);
             emit dataChanged(elementToIndex(c), elementToIndex(c));
         }

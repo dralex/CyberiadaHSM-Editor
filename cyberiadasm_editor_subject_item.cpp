@@ -240,7 +240,7 @@ QPointF CyberiadaSMEditorSubjectItem::targetEnd() const
     if (s.has_geometry_target_point()) {
         return toQPoint(s.get_geometry_target_point()) + frameCentre();
     }
-    return EdgeGeometry::attachedPoint(targetNode(), toward, true) + frameCentre();
+    return EdgeGeometry::linkAttachedPoint(targetNode(), toward) + frameCentre();
 }
 
 QPointF CyberiadaSMEditorSubjectItem::sourceEnd() const
@@ -370,7 +370,7 @@ QPointF CyberiadaSMEditorSubjectItem::dragEnd(int end, const QPointF& p) const
     if (CyberiadaSMEditorTransitionItem* t = targetTransition()) {
         return EdgeGeometry::nearestOnPath(t->mapToScene(t->path()), p, 0.0, t->labelSceneRect());
     }
-    return EdgeGeometry::borderNearest(targetNode(), p);
+    return EdgeGeometry::linkBorderNearest(targetNode(), p);
 }
 
 void CyberiadaSMEditorSubjectItem::slotMoveDot(QGraphicsItem* owner, qreal, qreal, QPointF p)
@@ -410,7 +410,7 @@ void CyberiadaSMEditorSubjectItem::slotReleaseDot(QGraphicsItem* owner, QPointF 
             foot = EdgeGeometry::nearestOnPath(t->mapToScene(t->path()), p, 0.0, t->labelSceneRect());
         } else {
             frame = other->sceneBoundingRect().center();
-            foot = EdgeGeometry::borderNearest(other, p);
+            foot = EdgeGeometry::linkBorderNearest(other, p);
         }
         if (model->updateCommentSubject(ci, index, other->getElement(), type, fragment) &&
             type == Cyberiada::commentSubjectElement) {
@@ -454,7 +454,7 @@ void CyberiadaSMEditorSubjectItem::onTargetSizeChanged(CyberiadaSMEditorAbstract
         // a foot on a transition keeps its place: no border to stay on
         tp -= centreShift(side, d);
     } else {
-        EdgeGeometry::rebaseOnResize(side, tp, d, targetNode());
+        EdgeGeometry::rebaseOnResize(side, tp, d, targetNode(), true);
     }
     model->updateSubjectGeometry(commentIndex(), index, s.get_geometry_source_point(), toPoint(tp),
                                  s.get_geometry_polyline());

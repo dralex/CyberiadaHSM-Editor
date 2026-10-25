@@ -1671,7 +1671,7 @@ void CyberiadaSMEditorScene::finishSubjectDraw(CyberiadaSMEditorAbstractItem* sr
     } else {
         if (!element->has_geometry()) return;
         frame = target->sceneBoundingRect().center();
-        end = EdgeGeometry::attachedPoint(target, centre, true) + frame;
+        end = EdgeGeometry::linkAttachedPoint(target, centre) + frame;
     }
     QPointF start = EdgeGeometry::attachedPoint(src, end, true) + centre;
     model->newCommentSubject(model->elementToIndex(comment), element, Cyberiada::commentSubjectElement, QString(),
