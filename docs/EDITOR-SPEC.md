@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.34 (2026-10-24)
+**Document version:** 0.35 (2026-10-25)
 
 **Related authorities:**
 
@@ -291,7 +291,8 @@ the third is a derived display value the format does not store):
 - `EDIT-EDGE-3` MUST [U]: an endpoint of the rest point-based elements (terminator) lies
   on the center. *design*
 - `EDIT-EDGE-4` MUST [U]: an endpoint of a choice element lies on vertexes of the
-  rhombus. *design*
+  rhombus. The end of a comment link is the exception: its comment point lies anywhere on
+  the rhombus border (`EDIT-EDGE-17`). *design*
 - `EDIT-EDGE-5` MUST [U]: a transition line finishes with an arrow. *PNST 984* 
 - `EDIT-EDGE-6` MUST [U]: a comment link is a dashed line from the comment to its subject; a
   link to an element (a node or a transition) finishes with a small black box at the target, a
@@ -328,8 +329,18 @@ the third is a derived display value the format does not store):
   self-loop has its endpoints snapped by `EDIT-EDGE-15`, its out-levels on grid lines past the
   border and its segments orthogonal. The label box is not snapped. *design*
 - `EDIT-EDGE-17` MUST [U]: a comment link starts on the comment border and ends on the target
-  border by `EDIT-EDGE-1..4`, or on the transition path for a transition target; an end without
-  a stored point attaches toward the other end at display time. *PNST 1044 9.1.1*
+  border by `EDIT-EDGE-1..3`, on a choice anywhere on the border of its rhombus (not only on the
+  vertexes of `EDIT-EDGE-4`), or on the transition path for a transition target; an end without
+  a stored point attaches toward the other end at display time, a drawn or dragged end slides
+  along the border, and a resize of the target puts it back on the new border.
+  *PNST 1044 9.1.1*
+
+```
+        /\            a transition ends on a vertex (EDIT-EDGE-4),
+       /  \  ■ - - -  a comment point anywhere on an edge
+       \  /
+        \/
+```
 - `EDIT-EDGE-18` MUST [U]: a link drawn in the editor stores its source point and, unless it
   points at a fragment, its target point, so a saved document has a source point on every link;
   the geometry reconstruction computes the link points and the geometry update fills only the
