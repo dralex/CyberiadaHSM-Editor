@@ -518,6 +518,14 @@ def machine_names(dump):                                 # EDIT-META-5
             seen[name] = m.id
 
 
+def scene_no_orphans(dump):                              # EDIT-UI-8
+    # the editor's scene-graph self-audit (the == audit section): a graphics item
+    # no live owner tracks - a handle a rebuild left in the scene, which an async
+    # repaint would paint after it is freed. Each audit line is a defect.
+    for line in dump.audit:
+        yield Violation("UI-8", line)
+
+
 # --- the registry ---------------------------------------------------------
 
 # hard laws run always-on and register as defects; gated laws are implemented
@@ -526,7 +534,7 @@ HARD = [unique_ids, no_cycle, endpoints_same_machine, composite_by_children,
         no_dangling, subject_targets, link_starts_on_comment, link_ends_on_choice, fragment_on_underline, link_fragment_no_target, one_initial_per_parent, one_history_per_kind, endpoint_kinds, submachine_children,
         meta_hidden, containment, no_overlap, points_named, submachine_reference,
         single_behaviour_blocks, event_names, event_handling, machine_names,
-        endpoint_on_border]
+        endpoint_on_border, scene_no_orphans]
 GATED = []
 
 

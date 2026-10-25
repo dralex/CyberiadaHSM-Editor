@@ -680,6 +680,9 @@ class Dump:
     stack: Stack = None
     texts: list = field(default_factory=list)
     text: str = ""
+    # the == audit section: one line per graphics item no live owner tracks
+    # (a handle a rebuild left in the scene), empty when the scene graph is clean
+    audit: list = field(default_factory=list)
 
     def scene_items(self):
         return {item.id: item for root in self.scene for item in root.walk()}
@@ -737,6 +740,8 @@ def parse_dump(text):
         dump.stack = parse_stack(parts["stack"])
     if "text" in parts:
         dump.texts = parse_text(parts["text"])
+    if "audit" in parts:
+        dump.audit = [l.strip() for l in parts["audit"].splitlines() if l.strip()]
     return dump
 
 

@@ -92,6 +92,9 @@ def run(env, document, script=None, dump=False, stack=False, export=None,
         command += ["--script", str(script)]
     if dump:
         command.append("--dump")
+        # the scene-graph orphan audit rides with every dump (EDIT-UI-8): a handle
+        # left in the scene by a rebuild surfaces here, where the law can see it
+        command.append("--dump-audit")
     if stack:
         command.append("--dump-stack")
     if dump_text:

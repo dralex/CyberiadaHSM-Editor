@@ -330,10 +330,17 @@ restored, catching corruption that save-reopen and undo-all miss.
 The **`repaint`** batch verb forces the active view's backing-store paint (`QGraphicsView::
 paintEvent` → `drawItems` → every item's `boundingRect()`/`paint()`), the path the per-round
 `--export` `scene->render()` bypasses; the **lifetime** drill and the **scene item lifetime** theme
-emit it after every add/remove so a paint runs on the transient scene. This broadens the add/remove
-and paint surface; it does not reproduce the narrow freed-item *race* (a batch run paints the item
-while it is still alive, never mid-destruction) — that exact invariant is guarded deterministically
-by the editor unit test `l4-scene::test_retire_vertex_dots`.
+emit it after every add/remove so a paint runs on the transient scene.
+
+A batch run cannot reproduce the freed-item *race* itself (it paints the item while it is still
+alive, never mid-destruction). So the race is represented instead as a **structural invariant**: the
+editor's `--dump-audit` emits an `== audit` section listing every graphics item no live owner tracks
+(a handle a rebuild left in the scene), and the `scene_no_orphans` standing law (`EDIT-UI-8`) fails
+on any entry. This is deterministic and timing-independent — the moment an add/remove/rebuild leaves
+a handle behind, the audit sees it, whatever the paint does. The runner passes `--dump-audit` with
+every `--dump`, so the law holds over every drill and LLM round. Each item type declares its legit
+children through `ownedChildren()`; the editor unit test `l4-scene::test_retire_vertex_dots` guards
+the same invariant directly at the C++ level.
 
 #### The shadow model
 

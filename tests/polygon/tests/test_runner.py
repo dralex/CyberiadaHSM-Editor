@@ -26,6 +26,7 @@ import unittest
 from pathlib import Path
 
 from polygon import dump as D
+from polygon import laws as L
 from polygon import oracles
 from polygon import runner
 from tests.helpers import CONFIG, DIAGRAMS, ENV, SCRIPTS, needs_editor
@@ -114,6 +115,30 @@ class OracleTest(unittest.TestCase):
     def test_normalize(self):
         self.assertEqual(oracles.normalize("line 12: rect (1.5; -2) x"), "line #: rect (#; #) x")
         self.assertEqual(oracles.normalize("cannot export /tmp/polygon-a1/export.png"), "cannot export <path>")
+
+
+@needs_editor
+class AuditTest(unittest.TestCase):
+    """The scene-graph orphan audit (EDIT-UI-8): a rebuild that retires a handle
+    must take it out of the scene, never leave it to be painted after it is freed."""
+
+    def test_good_diagrams_have_no_orphans(self):
+        for name in ("comment-transition", "geometry", "hierarchy", "choice", "polyline"):
+            result = runner.run(ENV, DIAGRAMS / ("%s.graphml" % name), dump=True)
+            self.assertEqual(result.exit, runner.EXIT_OK, name)
+            self.assertEqual(list(L.scene_no_orphans(D.parse_dump(result.stdout))), [], name)
+
+    def test_retired_handles_leave_the_scene(self):
+        # two polyline bends then a clear: updateDots retires the interior handles. With
+        # the fix they leave the scene (no orphan); a bare deleteLater regression would
+        # leave them, and the == audit section would list them.
+        with tempfile.TemporaryDirectory() as tmp:
+            script = runner.write_script(Path(tmp) / "shrink.script",
+                                         "polyline t0 180 20 180 220\npolyline t0\n")
+            result = runner.run(ENV, DIAGRAMS / "comment-transition.graphml",
+                                script=script, dump=True, workdir=tmp)
+            self.assertEqual(result.exit, runner.EXIT_OK)
+            self.assertEqual(list(L.scene_no_orphans(D.parse_dump(result.stdout))), [])
 
 
 if __name__ == "__main__":

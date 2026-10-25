@@ -62,6 +62,10 @@ class TransitionPointDrill(Drill):
                      "drag %d %d" % (round(v[0] + 40), round(v[1] + 30)),
                      "release %d %d" % (round(v[0] + 40), round(v[1] + 30))], "transition",
                     "transition %s %s" % (t.source, t.target))
+        if self.step % 3 == 2 and h["vertices"]:
+            # remove the bends: updateDots retires the interior handles, which must
+            # leave the scene at once (EDIT-UI-8, checked by the scene-orphan audit)
+            return (["polyline %s" % t.id], "transition", "transition %s %s" % (t.source, t.target))
         seg = h["segments"][len(h["segments"]) // 2]
         sx, sy = round(seg[0]), round(seg[1])
         # add a point by dragging the segment; the endpoints stay
