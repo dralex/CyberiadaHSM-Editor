@@ -132,6 +132,7 @@ private slots:
 	void test_scene_rect_tracks_content();
 	void test_name_only_state();
 	void test_title_drag_through();
+	void test_last_child_removed_centres_title();
 	void test_vertex_name();
 	void test_label_rect();
 	void test_label_shrinks_on_edit();
@@ -953,6 +954,29 @@ void TestScene::test_name_only_state()
 	QVERIFY(title);
 	box = st->rect();
 	QVERIFY(std::fabs(title->pos().y() - box.top()) < 2.0);
+}
+
+void TestScene::test_last_child_removed_centres_title()
+{
+	// a composite losing its last child is a bare state again: its name is centred
+	// at once, as a reload lays it out (the reverse of the first child's reflow)
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	Cyberiada::ElementCollection* parent =
+		static_cast<Cyberiada::ElementCollection*>(model->idToElement("node-0-0-1"));
+	Cyberiada::Element* child = model->newState(parent, "Inner", Cyberiada::Action(),
+												Cyberiada::Rect(0, 10, 40, 20));
+	QVERIFY(child);
+	CyberiadaSMEditorStateItem* st =
+		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0-0-1"));
+	QVERIFY(st && !st->isNameOnly());
+	QVERIFY(model->deleteElement(model->elementToIndex(child)));
+	st = dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0-0-1"));
+	QVERIFY(st && st->isNameOnly());
+	StateTitle* title = stateTitle(st);
+	QVERIFY(title);
+	qreal titleMidY = title->pos().y() + title->boundingRect().height() / 2.0;
+	QVERIFY(std::fabs(titleMidY - st->rect().center().y()) < 2.0);
 }
 
 void TestScene::test_title_drag_through()

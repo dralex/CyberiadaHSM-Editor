@@ -407,8 +407,16 @@ void CyberiadaSMEditorScene::slotRowsAboutToBeRemoved(const QModelIndex& parent,
     update();
 }
 
-void CyberiadaSMEditorScene::slotRowsRemoved(const QModelIndex&, int, int)
+void CyberiadaSMEditorScene::slotRowsRemoved(const QModelIndex& parent, int, int)
 {
+    // a state that lost its last child became simple: re-lay-out its title (a bare
+    // state centres its name), as slotRowsInserted does the other way
+    if (Cyberiada::Element* parentEl = model->indexToElement(parent)) {
+        if (CyberiadaSMEditorAbstractItem* st =
+                dynamic_cast<CyberiadaSMEditorStateItem*>(elementIdToItemMap.value(parentEl->get_id()))) {
+            st->syncFromModel();
+        }
+    }
     rebuildSubjectLinks();
 }
 
