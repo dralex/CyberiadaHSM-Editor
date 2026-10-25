@@ -141,6 +141,11 @@ void CyberiadaSMEditorScene::slotModelAboutToBeReset()
     if (QGraphicsItem* grabber = mouseGrabberItem()) grabber->ungrabMouse();
     if (QGraphicsItem* focus = focusItem()) focus->clearFocus();
     discardingEdits = false;
+    // a transient draw item of an in-progress gesture would dangle once the items are
+    // rebuilt: drop it now so its later removeItem/delete cannot touch a freed object
+    if (creationPreview) { removeItem(creationPreview); delete creationPreview; creationPreview = nullptr; creating = false; }
+    if (transitionDrawLine) { removeItem(transitionDrawLine); delete transitionDrawLine; transitionDrawLine = nullptr; }
+    transitionSource = nullptr;
     // the links read their comments: they go before the document does
     clearSubjectLinks();
 }
