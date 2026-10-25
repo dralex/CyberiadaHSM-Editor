@@ -81,14 +81,14 @@ eventPropagation/ block</data>
     </edge>
     <edge id="n0-n0" source="n0" target="n0">
       <data key="dGeometry">
-        <point x="70.000000" y="-40.000000"/>
-        <point x="130.000000" y="-40.000000"/>
+        <point x="100.000000" y="-40.000000"/>
+        <point x="160.000000" y="-40.000000"/>
       </data>
       <data key="dSourcePoint">
-        <point x="70.000000" y="0.000000"/>
+        <point x="100.000000" y="0.000000"/>
       </data>
       <data key="dTargetPoint">
-        <point x="130.000000" y="0.000000"/>
+        <point x="160.000000" y="0.000000"/>
       </data>
     </edge>
   </graph>

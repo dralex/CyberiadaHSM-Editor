@@ -19,6 +19,6 @@ log_call()'}}, Transition: {id: 't2', type: loc, source: 'idle', target: 'down',
     Transition: {id: 't2', pos: (0.00; 0.00), rect: (-10.00; -10.00; 20.00; 20.00)}
     Transition: {id: 't3', pos: (0.00; 0.00), rect: (-10.00; -10.00; 20.00; 20.00)}
     Transition: {id: 't4', pos: (0.00; 0.00), rect: (-10.00; -10.00; 20.00; 20.00)}
-    Transition: {id: 't5', pos: (0.00; 0.00), rect: (-40.00; -70.00; 80.00; 80.00)}
-    Transition: {id: 't6', pos: (0.00; 0.00), rect: (-40.00; -70.00; 80.00; 80.00)}
+    Transition: {id: 't5', pos: (0.00; 0.00), rect: (-10.00; -40.00; 60.00; 80.00)}
+    Transition: {id: 't6', pos: (0.00; 0.00), rect: (-10.00; -40.00; 60.00; 80.00)}
     Transition: {id: 't7', pos: (0.00; 0.00), rect: (-10.00; -10.00; 20.00; 20.00)}

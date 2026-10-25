@@ -605,9 +605,10 @@ void CyberiadaSMEditorStateItem::startTransition()
     cScene->beginTransientTool(ToolType::Transition);
     CyberiadaSMEditorTransitionItem* trans = cScene->addTransition(this, this);
     if (!trans) return;
+    trans->setLoopStart(transitionPress);
     trans->setSelected(true);
-    trans->getDot(1)->setVisible(true);
-    trans->getDot(1)->grabMouse();
+    trans->targetDot()->setVisible(true);
+    trans->targetDot()->grabMouse();
 }
 
 void CyberiadaSMEditorStateItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)

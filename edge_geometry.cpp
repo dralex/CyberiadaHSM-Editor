@@ -269,6 +269,22 @@ void EdgeGeometry::rebaseOnResize(int side, QPointF& point, qreal d, const Cyber
     clampOntoBorder(point, r.width() / 2.0, r.height() / 2.0);
 }
 
+static qreal rebaseLoopAxis(qreal v, qreal oldHalf, qreal newHalf, qreal shift)
+{
+    // past a side the bend follows it: the side moves by the centre move plus or minus
+    // the half-extent change, the centre-relative bend by that change alone
+    if (v > oldHalf)  return v + (newHalf - oldHalf);
+    if (v < -oldHalf) return v - (newHalf - oldHalf);
+    return v - shift;
+}
+
+QPointF EdgeGeometry::rebaseLoopBend(const QPointF& v, qreal oldHw, qreal oldHh, qreal newHw, qreal newHh,
+                                     const QPointF& shift)
+{
+    return QPointF(rebaseLoopAxis(v.x(), oldHw, newHw, shift.x()),
+                   rebaseLoopAxis(v.y(), oldHh, newHh, shift.y()));
+}
+
 QPointF EdgeGeometry::borderNearest(const CyberiadaSMEditorAbstractItem* item, const QPointF& p)
 {
     if (!item) return p;

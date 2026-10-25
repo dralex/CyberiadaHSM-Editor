@@ -39,6 +39,14 @@
 #define PLACEMENT_GAP        20
 // the grid spacing of a fresh profile and of every batch run
 #define GRID_SPACING_DEFAULT 25
+// a self-loop route (EDIT-EDGE-22): how far it runs past the border, the half span
+// of a one-side bump, the step of a nested loop, the gap of its label from the
+// outer segment and the distance difference that ties two sides of a press
+#define LOOP_DEPTH           40
+#define LOOP_LATERAL         30
+#define LOOP_NEST_STEP       20
+#define LOOP_LABEL_GAP       4
+#define LOOP_SIDE_TIE        0.5
 
 // the parameter key of the code language (EDIT-TEXT-7)
 #define METAINFORMATION_KEY_PLATFORM_LANGUAGE "platformLanguage"

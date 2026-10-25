@@ -60,6 +60,12 @@ void clampOntoBorder(QPointF& p, qreal hw, qreal hh);
 void rebaseOnResize(int side, QPointF& point, qreal d, const CyberiadaSMEditorAbstractItem* item,
                     bool link = false);
 
+// a centre-relative bend of a self-loop after its node was resized from the old to the
+// new half-extents: a bend beyond a side moves with that side, a bend within the node's
+// span on an axis moves by -shift (the centre move: it keeps its absolute place) (EDIT-EDGE-22)
+QPointF rebaseLoopBend(const QPointF& v, qreal oldHw, qreal oldHh, qreal newHw, qreal newHh,
+                       const QPointF& shift);
+
 // the border point of a node nearest to a scene point: a rect node clamps it onto
 // its border, a vertex or a choice attaches toward it
 QPointF borderNearest(const CyberiadaSMEditorAbstractItem* item, const QPointF& p);

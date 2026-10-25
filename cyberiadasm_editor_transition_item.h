@@ -93,10 +93,18 @@ public:
     }
 
     // seed a placed self-loop with a default orthogonal border-to-border
-    // polyline; the two sides follow the initial and final drag direction, the
-    // modifiers of the placing gesture decide the snap (EDIT-EDGE-16)
-    void seedDefaultLoop(const QPointF& startDir, const QPointF& endDir,
-                         Qt::KeyboardModifiers mods);
+    // polyline: it starts where the draw did (setLoopStart), else on the side of
+    // the initial drag, and returns into the side of endDir; the modifiers of the
+    // placing gesture decide the snap (EDIT-EDGE-16/22)
+    void seedDefaultLoop(const QPointF& endDir, Qt::KeyboardModifiers mods);
+    // the scene press that began the draw of this loop, and the direction that
+    // breaks a tie of two sides when no drag move has given one (EDIT-EDGE-22)
+    void setLoopStart(const QPointF& scenePress, const QPointF& tieDir = QPointF());
+    // a self-loop with no polyline of its own: drawn by its default route
+    bool isBareLoop() const;
+    // re-route a bare loop whose default route another loop of its state changed
+    void refreshRoute();
+    DotSignal* targetDot();
 
     // the coordinate a Ctrl drag of an endpoint locks to its neighbour
     enum LockedAxis { LockNone, LockX, LockY };
@@ -154,10 +162,43 @@ private:
     // true when the two items resolve to elements of different state machines, so a
     // retarget binding one end there would cross machines (EDIT-STRUCT-4)
     bool crossesMachine(CyberiadaSMEditorAbstractItem* moving, CyberiadaSMEditorAbstractItem* fixed) const;
-    bool isArcLoop() const;
     // the border side a drag direction points at
     enum LoopSide { LoopTop, LoopBottom, LoopLeft, LoopRight };
     static LoopSide sideFromDir(const QPointF& dir);
+    // the side of a rect of half-extents hw x hh nearest a centre-relative point;
+    // tie tells two sides are as near (a centre press, a corner)
+    static LoopSide nearestSide(const QPointF& p, qreal hw, qreal hh, bool* tie = nullptr);
+    // the side steps clockwise from s
+    static LoopSide turnSide(LoopSide s, int steps);
+    static bool isTopOrBottom(LoopSide s) { return s == LoopTop || s == LoopBottom; }
+    // the centre-relative point of side s at the coordinate along it
+    static QPointF sidePoint(LoopSide s, qreal along, qreal hw, qreal hh);
+    // how far along side s from its middle a loop end may lie
+    static qreal sideRoom(LoopSide s, qreal hw, qreal hh);
+    // the end of a one-side bump paired with e: the bump span toward the side centre
+    static QPointF bumpPartner(LoopSide s, const QPointF& e, qreal hw, qreal hh);
+    // a self-loop route, centre-relative: the ends and the bends between them
+    struct LoopRoute {
+        QPointF sp, tp;
+        QVector<QPointF> bends;
+    };
+    // the orthogonal route from e1 on side s1 to e2 on side s2, nest steps out
+    LoopRoute loopRoute(LoopSide s1, const QPointF& e1, LoopSide s2, const QPointF& e2,
+                        int nest, bool snap) const;
+    // the default route of a bare loop (EDIT-EDGE-22), never stored
+    LoopRoute bareLoopRoute() const;
+    // the default side and nesting of a loop with no stored geometry
+    void defaultSlot(LoopSide* side, int* nest) const;
+    // the end of a loop being drawn: the press projected onto its nearest side
+    bool drawStartEnd(LoopSide* side, QPointF* end) const;
+    // a choice or a pseudostate takes a loop end on a tip, not along a side
+    bool endsOnTips() const;
+    // store the shown route of a bare loop before it is edited
+    void materialiseLoop();
+    // the drawn route in scene coordinates, a tracked end at the cursor
+    QVector<QPointF> routePoints() const;
+    // the bends a handle is shown on, in scene coordinates
+    QVector<QPointF> shownBends() const;
     // the path segment (0-based) that a local point falls on, or -1
     int segmentAt(const QPointF& localPos) const;
     // erase the polyline vertex behind interior dot dotIndex (endpoints ignored)
@@ -195,9 +236,13 @@ private:
     QPointF prevPosition;
 
     // the initial drag direction of a self-loop being placed (captured once,
-    // used to pick the source-side of the default polyline on release)
+    // from the draw press or else the centre): it picks the source side on a tie
+    // of the press, or with no press the source side itself
     QPointF loopStartDir;
     bool loopStartCaptured = false;
+    // the scene press that began the draw of this loop (EDIT-EDGE-22)
+    QPointF loopStart;
+    bool loopStartSet = false;
 
     QList<DotSignal *> listDots;
     // the four label-box corner handles (green boxes), shown when the transition

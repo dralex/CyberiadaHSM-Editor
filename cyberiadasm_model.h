@@ -146,6 +146,15 @@ public:
     void                                reattachTransitions(Cyberiada::Element* node,
                                                             const Cyberiada::Rect& oldRect,
                                                             const Cyberiada::Rect& newRect);
+    // after any size change of a state node, the interactive drag included, move
+    // the bends of its stored self-loops with the border they lie beyond, so a
+    // loop stays outside the state (EDIT-EDGE-22); the other bends keep their
+    // absolute place as the endpoints do on an interactive drag (holdAbsolute),
+    // else they follow the centre as the model-clamped endpoints do
+    void                                reattachLoopBends(Cyberiada::Element* node,
+                                                          const Cyberiada::Rect& oldRect,
+                                                          const Cyberiada::Rect& newRect,
+                                                          bool holdAbsolute);
     // the same for the comment-link ends (EDIT-EDGE-19): on a model-driven resize
     // snap each link's source point onto the resized comment's border and each
     // link's target point onto the resized subject element's border

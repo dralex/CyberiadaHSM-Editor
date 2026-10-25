@@ -388,6 +388,7 @@ void CyberiadaSMEditorScene::slotRowsInserted(const QModelIndex& parent, int fir
     }
     noteModified(parent);
     rebuildSubjectLinks();
+    refreshLoops();
     // the new items may sit outside the current scene rect (a from-scratch build):
     // grow it so they stay reachable and zoom can frame them
     updateSceneRect();
@@ -420,6 +421,19 @@ void CyberiadaSMEditorScene::slotRowsRemoved(const QModelIndex& parent, int, int
         }
     }
     rebuildSubjectLinks();
+    refreshLoops();
+}
+
+void CyberiadaSMEditorScene::refreshLoops(const Cyberiada::ID& stateId)
+{
+    // the default route of a bare loop depends on the other loops of its state
+    for (QMap<Cyberiada::ID, QGraphicsItem*>::const_iterator i = elementIdToItemMap.constBegin();
+         i != elementIdToItemMap.constEnd(); i++) {
+        CyberiadaSMEditorTransitionItem* trans = dynamic_cast<CyberiadaSMEditorTransitionItem*>(i.value());
+        if (trans && trans->isBareLoop() && (stateId.empty() || trans->sourceId() == stateId)) {
+            trans->refreshRoute();
+        }
+    }
 }
 
 void CyberiadaSMEditorScene::slotModelDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight)
@@ -1632,11 +1646,12 @@ CyberiadaSMEditorTransitionItem* CyberiadaSMEditorScene::addTransition(Cyberiada
     }
 }
 
-void CyberiadaSMEditorScene::beginTransitionDraw(CyberiadaSMEditorAbstractItem* source)
+void CyberiadaSMEditorScene::beginTransitionDraw(CyberiadaSMEditorAbstractItem* source, const QPointF& press)
 {
     if (!source) return;
     beginTransientTool(ToolType::Transition);   // one-shot: back to select on release
     transitionSource = source;
+    transitionPress = press;
     QPointF c = source->sceneBoundingRect().center();
     transitionDrawLine = new QGraphicsLineItem(QLineF(c, c));
     QPen pen(Qt::black, 1, Qt::DashLine);
@@ -1683,13 +1698,13 @@ void CyberiadaSMEditorScene::finishTransitionDraw(const QPointF& scenePos, Qt::K
             if (element) {
                 QGraphicsItem* item = elementIdToItemMap.value(element->get_id());
                 if (item) item->setSelected(true);
-                // a source-to-source draw is a self-loop: give it the default
-                // border-to-border polyline instead of the centre arc
+                // a source-to-source draw is a self-loop: it starts where the
+                // draw was pressed and returns toward the release (EDIT-EDGE-22)
                 if (src == target) {
                     if (CyberiadaSMEditorTransitionItem* trans =
                             dynamic_cast<CyberiadaSMEditorTransitionItem*>(item)) {
-                        QPointF dir = scenePos - src->sceneBoundingRect().center();
-                        trans->seedDefaultLoop(dir, dir, mods);
+                        trans->setLoopStart(transitionPress, scenePos - transitionPress);
+                        trans->seedDefaultLoop(scenePos - src->sceneBoundingRect().center(), mods);
                     }
                 }
             }

@@ -955,6 +955,11 @@ bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada:
 		(rect.width > current.width + 0.01 || rect.height > current.height + 0.01)) {
 		pushSiblingsClear(element, current, rect);
 	}
+	// the bends of a stored loop are model geometry: they follow every resize, while
+	// the item layer re-clamps only the endpoints (EDIT-EDGE-22)
+	if (current.valid && rect.valid) {
+		reattachLoopBends(element, current, rect, !reattach);
+	}
 	// a model-driven size change moved the border out from under the attached
 	// transition endpoints; snap them back onto it. The interactive border drag
 	// passes reattach=false and re-clamps in the item layer instead (EDIT-EDGE-1).
@@ -2775,6 +2780,38 @@ void CyberiadaSMModel::reattachTransitions(Cyberiada::Element* node,
         if (onSrc) sp = clampPointOntoBorder(sp.x, sp.y, hw, hh);
         if (onTgt) tp = clampPointOntoBorder(tp.x, tp.y, hw, hh);
         updateGeometry(elementToIndex(tr), sp, tp);
+    }
+}
+
+void CyberiadaSMModel::reattachLoopBends(Cyberiada::Element* node,
+                                         const Cyberiada::Rect& oldRect,
+                                         const Cyberiada::Rect& newRect,
+                                         bool holdAbsolute)
+{
+    if (!root || !node) return;
+    Cyberiada::ElementType t = node->get_type();
+    if (t != Cyberiada::elementSimpleState && t != Cyberiada::elementCompositeState &&
+        t != Cyberiada::elementSubmachineState) return;
+    // a pure move keeps the size, so the centre-relative bends follow it
+    if (qAbs(newRect.width - oldRect.width) < 0.01 && qAbs(newRect.height - oldRect.height) < 0.01) return;
+    Cyberiada::StateMachine* sm = root->get_parent_sm(node);
+    if (!sm) return;
+    // the rects are centre-based in the parent frame (Qt geometry)
+    QPointF shift = holdAbsolute ? QPointF(newRect.x - oldRect.x, newRect.y - oldRect.y) : QPointF();
+    const Cyberiada::ID& id = node->get_id();
+    std::vector<Cyberiada::Transition*> trans = sm->get_transitions();
+    for (size_t i = 0; i < trans.size(); i++) {
+        Cyberiada::Transition* tr = trans[i];
+        if (tr->source_element_id() != id || tr->target_element_id() != id) continue;
+        if (!tr->has_polyline() || tr->get_geometry_polyline().empty()) continue;
+        Cyberiada::Polyline pl = tr->get_geometry_polyline();
+        for (size_t j = 0; j < pl.size(); j++) {
+            QPointF v = EdgeGeometry::rebaseLoopBend(QPointF(pl[j].x, pl[j].y),
+                                                     oldRect.width / 2.0, oldRect.height / 2.0,
+                                                     newRect.width / 2.0, newRect.height / 2.0, shift);
+            pl[j] = Cyberiada::Point(v.x(), v.y());
+        }
+        updateGeometry(elementToIndex(tr), pl);
     }
 }
 

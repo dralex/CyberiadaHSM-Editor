@@ -3,11 +3,11 @@ LocalDocument: {Document: {id: '', name: '', geometry format: qt, meta: {standar
 
 transitionOrder/ actionFirst
 
-eventPropagation/ block'}, Simple State: {id: 'n0', name: 'First state', geometry: (100; 150; 200; 100)}, Simple State: {id: 'n1', name: 'Second state', geometry: (500; 150; 200; 100)}, Transition: {id: 't0', type: loc, source: 'n0', target: 'n1', action: {trigger: 'GO'}, sp: (0; 50), tp: (40; 50), polyline: [ (20; 150), (220; 210), (400; 150) ]}, Transition: {id: 't1', type: loc, source: 'n1', target: 'n1', action: {trigger: 'AGAIN'}, sp: (100; 0), tp: (0; -50), polyline: [ (200; 0), (200; -130), (0; -130) ]}, Transition: {id: 'n0-n0', type: ext, source: 'n0', target: 'n0', sp: (-20; -50), tp: (40; -50), polyline: [ (-20; -90), (40; -90) ]}}}}, bounding rect: (350; 190; 700; 340)}, file: 'diagrams/polyline.graphml', format: cyberiada, format_str: 'Cyberiada-GraphML-1.0'}
+eventPropagation/ block'}, Simple State: {id: 'n0', name: 'First state', geometry: (100; 150; 200; 100)}, Simple State: {id: 'n1', name: 'Second state', geometry: (500; 150; 200; 100)}, Transition: {id: 't0', type: loc, source: 'n0', target: 'n1', action: {trigger: 'GO'}, sp: (0; 50), tp: (40; 50), polyline: [ (20; 150), (220; 210), (400; 150) ]}, Transition: {id: 't1', type: loc, source: 'n1', target: 'n1', action: {trigger: 'AGAIN'}, sp: (100; 0), tp: (0; -50), polyline: [ (200; 0), (200; -130), (0; -130) ]}, Transition: {id: 'n0-n0', type: ext, source: 'n0', target: 'n0', sp: (0; -50), tp: (60; -50), polyline: [ (0; -90), (60; -90) ]}}}}, bounding rect: (350; 190; 700; 340)}, file: 'diagrams/polyline.graphml', format: cyberiada, format_str: 'Cyberiada-GraphML-1.0'}
 == scene
   State Machine: {id: 'G0', pos: (0.00; 0.00), rect: (0.00; 20.00; 700.00; 340.00)}
     Simple State: {id: 'n0', pos: (100.00; 150.00), rect: (-100.00; -50.00; 200.00; 100.00)}
     Simple State: {id: 'n1', pos: (500.00; 150.00), rect: (-100.00; -50.00; 200.00; 100.00)}
     Transition: {id: 't0', pos: (0.00; 0.00), rect: (90.00; 190.00; 460.00; 180.00)}
     Transition: {id: 't1', pos: (0.00; 0.00), rect: (490.00; 10.00; 220.00; 150.00)}
-    Transition: {id: 'n0-n0', pos: (0.00; 0.00), rect: (70.00; 50.00; 80.00; 60.00)}
+    Transition: {id: 'n0-n0', pos: (0.00; 0.00), rect: (90.00; 50.00; 80.00; 60.00)}

@@ -112,6 +112,12 @@ private slots:
 	void test_label_drag_tracks();
 	void test_single_drag_retargets();
 	void test_loop_default_polyline();
+	void test_loop_bare_default();
+	void test_loop_slots();
+	void test_loop_materialise();
+	void test_loop_resize_bends();
+	void test_loop_label_outside();
+	void test_loop_draw_side();
 	void test_vertex_border_attach();
 	void test_vertex_grows_parent();
 	void test_command_sm_has_item();
@@ -216,6 +222,33 @@ bool TestScene::onBorder(const QRectF& box, const QPointF& p)
 	return box.adjusted(-1, -1, 1, 1).contains(p) && !box.adjusted(r, r, -r, -r).contains(p);
 }
 
+// the drawn route of a transition in scene coordinates, point by point
+static QList<QPointF> pathPoints(CyberiadaSMEditorTransitionItem* tr)
+{
+	QList<QPointF> points;
+	QPainterPath path = tr->path();
+	for (int i = 0; i < path.elementCount(); i++) points << QPointF(path.elementAt(i));
+	return points;
+}
+
+// EDIT-EDGE-22: a loop route has bends, orthogonal segments, and none of its
+// segments runs inside the box
+static bool outsideRoute(const QList<QPointF>& points, const QRectF& box)
+{
+	const qreal EPS = 0.01;
+	const int SAMPLES = 20;
+	if (points.size() < 4) return false;
+	QRectF inner = box.adjusted(1, 1, -1, -1);
+	for (int i = 1; i < points.size(); i++) {
+		QPointF a = points[i - 1], b = points[i];
+		if (qAbs(a.x() - b.x()) > EPS && qAbs(a.y() - b.y()) > EPS) return false;
+		for (int k = 0; k <= SAMPLES; k++) {
+			if (inner.contains(a + (b - a) * k / SAMPLES)) return false;
+		}
+	}
+	return true;
+}
+
 void TestScene::deleteTransition(const Cyberiada::ID& source, const Cyberiada::ID& target)
 {
 	const QMap<Cyberiada::ID, QGraphicsItem*>& map = scene->getMap();
@@ -298,7 +331,7 @@ void TestScene::test_item_geometry()
 
 void TestScene::test_loop_polyline()
 {
-	// the loop follows its polyline instead of the default arc
+	// the loop follows its polyline
 	CyberiadaSMEditorTransitionItem* loop =
 		dynamic_cast<CyberiadaSMEditorTransitionItem*>(scene->getMap().value("edge-0"));
 	QVERIFY(loop);
@@ -310,11 +343,19 @@ void TestScene::test_loop_polyline()
 	for (Cyberiada::Polyline::const_iterator i = pl.begin(); i != pl.end(); i++) {
 		QVERIFY(routed.contains(loop->sourceCenter() + QPointF(i->x, i->y)));
 	}
-	// without the points the loop falls back to the arc between the endpoints
-	QPointF farthest = loop->sourceCenter() + QPointF(pl.front().x, pl.front().y);
+	// without the points it takes the default route between its stored ends,
+	// outside the state, and stores nothing (EDIT-EDGE-22)
 	QVERIFY(model->updateGeometry(model->elementToIndex(model->idToElement("edge-0")),
 								  Cyberiada::Polyline()));
-	QVERIFY(!loop->boundingRect().contains(farthest));
+	QVERIFY(!t->has_polyline() || t->get_geometry_polyline().empty());
+	QVERIFY(loop->isBareLoop());
+	QRectF box = loop->source()->sceneBoundingRect();
+	QList<QPointF> points = pathPoints(loop);
+	QVERIFY(outsideRoute(points, box));
+	QVERIFY(QLineF(points.first(), loop->sourceCenter() +
+				   QPointF(t->get_source_point().x, t->get_source_point().y)).length() < 0.01);
+	QVERIFY(QLineF(points.last(), loop->sourceCenter() +
+				   QPointF(t->get_target_point().x, t->get_target_point().y)).length() < 0.01);
 }
 
 void TestScene::test_inspector_region()
@@ -2739,6 +2780,244 @@ void TestScene::test_loop_default_polyline()
 	QVERIFY(!stateRect.contains(item->boundingRect()));
 	// an upward drag puts the source end on the top border
 	QVERIFY(item->sourcePoint().y() < 0);
+}
+
+// a loop on node-0-1 of the geometry diagram, no geometry stored
+static Cyberiada::Element* newLoop(CyberiadaSMModel* model, const Cyberiada::ID& state)
+{
+	Cyberiada::StateMachine* sm = dynamic_cast<Cyberiada::StateMachine*>(model->idToElement("G"));
+	Cyberiada::Element* st = model->idToElement(QString::fromStdString(state));
+	if (!sm || !st) return nullptr;
+	return model->newTransition(sm, Cyberiada::transitionExternal, st, st,
+								Cyberiada::Action(Cyberiada::actionTransition));
+}
+
+void TestScene::test_loop_bare_default()
+{
+	// EDIT-EDGE-22: a loop with no geometry takes the default route at display time,
+	// a clockwise bump on the right side; nothing is stored
+	SettingsManager::instance().setSnapMode(false);
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	Cyberiada::Element* e = newLoop(model, "node-0-1");
+	QVERIFY(e);
+	const Cyberiada::Transition* t = static_cast<const Cyberiada::Transition*>(e);
+	CyberiadaSMEditorTransitionItem* tr =
+		dynamic_cast<CyberiadaSMEditorTransitionItem*>(scene->getMap().value(e->get_id()));
+	QVERIFY(tr && tr->isBareLoop());
+	QRectF box = tr->source()->sceneBoundingRect();
+	QList<QPointF> points = pathPoints(tr);
+	QCOMPARE(points.size(), 4);
+	QVERIFY(outsideRoute(points, box));
+	QVERIFY(onBorder(box, points.first()) && onBorder(box, points.last()));
+	QVERIFY(qAbs(points.first().x() - box.right()) < 0.01);
+	QVERIFY(qAbs(points.at(1).x() - box.right() - LOOP_DEPTH) < 0.01);
+	QVERIFY(points.first().y() < points.last().y());
+	QVERIFY(tr->boundingRect().contains(points.at(1)));
+	QVERIFY(!t->has_polyline() && !t->has_geometry_source_point() && !t->has_geometry_target_point());
+}
+
+void TestScene::test_loop_slots()
+{
+	// EDIT-EDGE-22: the bare loops of a state take the right, bottom and left sides
+	// in document order; a deleted loop frees its side for the next one, a stored
+	// loop keeps its side from the others
+	SettingsManager::instance().setSnapMode(false);
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	QList<Cyberiada::Element*> loops;
+	for (int i = 0; i < 3; i++) {
+		Cyberiada::Element* e = newLoop(model, "node-0-1");
+		QVERIFY(e);
+		loops << e;
+	}
+	QRectF box = scene->getMap().value("node-0-1")->sceneBoundingRect();
+	auto item = [&](Cyberiada::Element* e) {
+		return dynamic_cast<CyberiadaSMEditorTransitionItem*>(scene->getMap().value(e->get_id()));
+	};
+	for (Cyberiada::Element* e : loops) {
+		QVERIFY(item(e));
+		QVERIFY(outsideRoute(pathPoints(item(e)), box));
+	}
+	QVERIFY(pathPoints(item(loops[0])).at(1).x() > box.right());
+	QVERIFY(pathPoints(item(loops[1])).at(1).y() > box.bottom());
+	QVERIFY(pathPoints(item(loops[2])).at(1).x() < box.left());
+
+	// a stored loop on the right keeps that side taken
+	CyberiadaSMEditorTransitionItem* first = item(loops[0]);
+	QList<QPointF> shown = pathPoints(first);
+	Cyberiada::Polyline pl;
+	pl.push_back(Cyberiada::Point(shown[1].x() - first->sourceCenter().x(), shown[1].y() - first->sourceCenter().y()));
+	pl.push_back(Cyberiada::Point(shown[2].x() - first->sourceCenter().x(), shown[2].y() - first->sourceCenter().y()));
+	QVERIFY(model->updateGeometry(model->elementToIndex(loops[0]), pl));
+	QVERIFY(pathPoints(item(loops[1])).at(1).y() > box.bottom());
+	QVERIFY(pathPoints(item(loops[2])).at(1).x() < box.left());
+
+	// deleted, it frees the right side
+	QVERIFY(model->deleteElement(model->elementToIndex(loops[0])));
+	QVERIFY(pathPoints(item(loops[1])).at(1).x() > box.right());
+	QVERIFY(pathPoints(item(loops[2])).at(1).y() > box.bottom());
+}
+
+void TestScene::test_loop_materialise()
+{
+	// EDIT-EDGE-22: dragging a bend of a bare loop stores the shown route with that
+	// bend moved; one undo returns the bare loop
+	SettingsManager::instance().setSnapMode(false);
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+	scene->setCurrentTool(ToolType::Select);
+	Cyberiada::Element* e = newLoop(model, "node-0-1");
+	QVERIFY(e);
+	Cyberiada::ID id = e->get_id();
+	CyberiadaSMEditorTransitionItem* tr =
+		dynamic_cast<CyberiadaSMEditorTransitionItem*>(scene->getMap().value(id));
+	QVERIFY(tr);
+	QUndoStack* stack = model->undoStack();
+	int steps = stack->count();
+
+	QList<QPointF> before = pathPoints(tr);
+	QPointF bend = before.at(1);
+	dragDot(tr, 1, {bend + QPointF(10, 0), bend + QPointF(20, 0)});
+	if (QTest::currentTestFailed()) return;
+	const Cyberiada::Transition* t = static_cast<const Cyberiada::Transition*>(model->idToElement(QString::fromStdString(id)));
+	QVERIFY(t->has_polyline());
+	QCOMPARE(int(t->get_geometry_polyline().size()), 2);
+	QVERIFY(t->has_geometry_source_point() && t->has_geometry_target_point());
+	QList<QPointF> after = pathPoints(tr);
+	QCOMPARE(after.size(), before.size());
+	QVERIFY(QLineF(after.at(1), bend + QPointF(20, 0)).length() < 0.01);
+	QVERIFY(QLineF(after.at(2), before.at(2)).length() < 0.01);
+	QVERIFY(QLineF(after.first(), before.first()).length() < 0.01);
+	QVERIFY(QLineF(after.last(), before.last()).length() < 0.01);
+	QCOMPARE(stack->count(), steps + 1);
+
+	stack->undo();
+	t = static_cast<const Cyberiada::Transition*>(model->idToElement(QString::fromStdString(id)));
+	QVERIFY(t);
+	QVERIFY(!t->has_polyline() && !t->has_geometry_source_point() && !t->has_geometry_target_point());
+}
+
+void TestScene::test_loop_resize_bends()
+{
+	// EDIT-EDGE-22: a resize moves the bends of a stored loop with the border they lie
+	// beyond, through the model and by a border drag, so the loop stays outside
+	SettingsManager::instance().setSnapMode(false);
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	QEvent activate(QEvent::WindowActivate);
+	QApplication::sendEvent(scene, &activate);
+	scene->setCurrentTool(ToolType::Select);
+	CyberiadaSMEditorTransitionItem* loop =
+		dynamic_cast<CyberiadaSMEditorTransitionItem*>(scene->getMap().value("edge-0"));
+	QGraphicsItem* st = scene->getMap().value("node-0-0-1");
+	QVERIFY(loop && st);
+	QVERIFY(!loop->isBareLoop());
+	QVERIFY(outsideRoute(pathPoints(loop), st->sceneBoundingRect()));
+
+	// the bends lie 25 px past the left and the bottom borders: grow past them
+	QModelIndex nidx = model->elementToIndex(model->idToElement("node-0-0-1"));
+	Cyberiada::Rect r = static_cast<const Cyberiada::ElementCollection*>(
+		model->idToElement("node-0-0-1"))->get_geometry_rect();
+	QVERIFY(model->updateGeometry(nidx, Cyberiada::Rect(r.x - 50, r.y + 30, r.width + 100, r.height + 60)));
+	QVERIFY(outsideRoute(pathPoints(loop), st->sceneBoundingRect()));
+
+	// and by dragging the bottom border down, off the loop's end
+	QRectF box = st->sceneBoundingRect();
+	scene->clearSelection();
+	QPointF onBottom(box.center().x() + 40, box.bottom() - 3);
+	mouse(QEvent::GraphicsSceneMousePress, onBottom, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, onBottom + QPointF(0, 30), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, onBottom + QPointF(0, 60), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, onBottom + QPointF(0, 60), Qt::NoButton);
+	QVERIFY(st->sceneBoundingRect().height() > box.height() + 50);
+	QVERIFY(outsideRoute(pathPoints(loop), st->sceneBoundingRect()));
+}
+
+void TestScene::test_loop_label_outside()
+{
+	// EDIT-EDGE-22: the label of a loop with no stored label box lies outside the
+	// state, past the outer segment of the route
+	SettingsManager::instance().setShowTransitionText(true);
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	Cyberiada::Element* e = newLoop(model, "node-0-1");
+	QVERIFY(e);
+	QVERIFY(model->updateAction(model->elementToIndex(e), 0, "TICK", "", "count += 1"));
+	CyberiadaSMEditorTransitionItem* tr =
+		dynamic_cast<CyberiadaSMEditorTransitionItem*>(scene->getMap().value(e->get_id()));
+	QVERIFY(tr);
+	QRectF box = tr->source()->sceneBoundingRect();
+	QRectF label = tr->labelSceneRect();
+	QVERIFY(!label.isNull());
+	QVERIFY(!label.intersects(box));
+	QVERIFY(label.left() > pathPoints(tr).at(1).x());
+}
+
+void TestScene::test_loop_draw_side()
+{
+	// EDIT-EDGE-22: a drawn loop starts on the side nearest the press, at the press
+	// projected onto it, whatever the first move direction; a box press likewise
+	SettingsManager::instance().setSnapMode(false);
+	QEvent activate(QEvent::WindowActivate);
+	struct Case { QPointF press; QPointF move; QPointF sp; };
+	// node-0-1 is 150 x 150: the offsets from its centre and the expected source end
+	const Case cases[] = {
+		{ QPointF( 40,  60), QPointF( 20,   0), QPointF( 40,  75) },   // bottom, moved right
+		{ QPointF(-60, -20), QPointF(  0,  20), QPointF(-75, -20) },   // left, moved down
+		{ QPointF( 65, -10), QPointF(-20,   0), QPointF( 75, -10) },   // right, moved left
+		{ QPointF( 10, -62), QPointF(  0,  20), QPointF( 10, -75) },   // top, moved down
+	};
+	for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+		QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+		scene->loadScene();
+		QApplication::sendEvent(scene, &activate);
+		QPointF c = scene->getMap().value("node-0-1")->sceneBoundingRect().center();
+		scene->setCurrentTool(ToolType::Transition);
+		QPointF p = c + cases[i].press;
+		mouse(QEvent::GraphicsSceneMousePress, p, Qt::LeftButton);
+		mouse(QEvent::GraphicsSceneMouseMove, p + cases[i].move / 2, Qt::LeftButton);
+		mouse(QEvent::GraphicsSceneMouseMove, p + cases[i].move, Qt::LeftButton);
+		mouse(QEvent::GraphicsSceneMouseRelease, p + cases[i].move, Qt::NoButton);
+		const Cyberiada::Transition* loop = findTransition(model, "node-0-1", "node-0-1");
+		QVERIFY2(loop && loop->has_polyline(), qPrintable(QString("case %1").arg(i)));
+		QPointF sp(loop->get_source_point().x, loop->get_source_point().y);
+		QVERIFY2(QLineF(sp, cases[i].sp).length() < 0.01, qPrintable(QString("case %1").arg(i)));
+		CyberiadaSMEditorTransitionItem* tr =
+			dynamic_cast<CyberiadaSMEditorTransitionItem*>(scene->getMap().value(loop->get_id()));
+		QVERIFY(tr);
+		QVERIFY(outsideRoute(pathPoints(tr), tr->source()->sceneBoundingRect()));
+	}
+
+	// a drag from the right box starts on the right side
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	QApplication::sendEvent(scene, &activate);
+	CyberiadaSMEditorStateItem* state =
+		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0-1"));
+	QVERIFY(state);
+	scene->setCurrentTool(ToolType::Select);
+	scene->clearSelection();
+	state->setSelected(true);
+	DotSignal* box = nullptr;
+	for (QGraphicsItem* child : state->childItems()) {
+		DotSignal* dot = dynamic_cast<DotSignal*>(child);
+		if (dot && dot->pos() == QPointF(state->rect().right(), 0)) box = dot;
+	}
+	QVERIFY(box);
+	box->setVisible(true);
+	QPointF on = box->scenePos();
+	QVERIFY(scene->itemAt(on, QTransform()) == box);
+	mouse(QEvent::GraphicsSceneMousePress, on, Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, on + QPointF(-10, -20), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseMove, on + QPointF(-20, -40), Qt::LeftButton);
+	mouse(QEvent::GraphicsSceneMouseRelease, on + QPointF(-20, -40), Qt::NoButton);
+	const Cyberiada::Transition* loop = findTransition(model, "node-0-1", "node-0-1");
+	QVERIFY(loop && loop->has_polyline());
+	QVERIFY(qAbs(loop->get_source_point().x - state->rect().right()) < 0.01);
+	QVERIFY(qAbs(loop->get_source_point().y) < 0.01);
 }
 
 void TestScene::test_vertex_border_attach()

@@ -221,14 +221,16 @@ protected:
     CyberiadaSMEditorAbstractItem* collectionUnderItem();
 
 protected slots:
-    void slotTransitionFromBox();
+    void slotTransitionFromBox(QGraphicsItem* box);
 
 private:
     void handleParentChange();
 
 protected:
-    // a body/box drag under the transition tool is drawing a transition
+    // a body/box drag under the transition tool is drawing a transition, pressed
+    // at this scene point: a self-loop starts there (EDIT-EDGE-22)
     bool creatingOfTrans = false;
+    QPointF transitionPress;
     bool transitionSourceEnabled = false;
     QList<int> transitionSourceDots;
 };

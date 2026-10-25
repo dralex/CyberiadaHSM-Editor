@@ -245,6 +245,7 @@ void CyberiadaSMEditorAbstractItem::mousePressEvent(QGraphicsSceneMouseEvent *ev
             if (transitionSourceEnabled && element->has_geometry() &&
                 !SettingsManager::instance().getInspectorMode()) {
                 creatingOfTrans = true;
+                transitionPress = event->scenePos();
             }
             event->accept();
         } else {
@@ -665,12 +666,13 @@ void CyberiadaSMEditorAbstractItem::startTransition()
     // when a valid target is known. (States override this with the self-loop
     // seed, which they can retarget.)
     CyberiadaSMEditorScene* cScene = dynamic_cast<CyberiadaSMEditorScene*>(scene());
-    if (cScene) cScene->beginTransitionDraw(this);
+    if (cScene) cScene->beginTransitionDraw(this, transitionPress);
 }
 
-void CyberiadaSMEditorAbstractItem::slotTransitionFromBox()
+void CyberiadaSMEditorAbstractItem::slotTransitionFromBox(QGraphicsItem* box)
 {
     if (!element->has_geometry() || SettingsManager::instance().getInspectorMode()) return;
+    transitionPress = box ? box->scenePos() : sceneBoundingRect().center();
     startTransition();
 }
 

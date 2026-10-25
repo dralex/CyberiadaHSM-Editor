@@ -22,6 +22,7 @@
  * ----------------------------------------------------------------------------- */
 
 #include <cstdio>
+#include <limits>
 #include <QPainter>
 #include <QDebug>
 #include <QGraphicsSceneMouseEvent>
@@ -177,6 +178,7 @@ void CyberiadaSMEditorTransitionItem::setSource(CyberiadaSMEditorAbstractItem *n
     connect(newSource, &CyberiadaSMEditorAbstractItem::sizeChanged, this, &CyberiadaSMEditorTransitionItem::onSourceSizeChanged);
 
     model->updateGeometry(model->elementToIndex(element), newSource->getId(), targetId());
+    loopStartSet = false;
 }
 
 
@@ -191,7 +193,7 @@ QPointF CyberiadaSMEditorTransitionItem::sourcePoint() const
     if (transition->has_geometry_source_point()) {
         return QPointF(transition->get_source_point().x, transition->get_source_point().y);
     }
-    if (isArcLoop()) return QPointF();
+    if (isBareLoop()) return bareLoopRoute().sp;
     QPointF toward;
     if (transition->has_polyline() && !transition->get_geometry_polyline().empty()) {
         const Cyberiada::Point& v = transition->get_geometry_polyline().front();
@@ -247,6 +249,7 @@ void CyberiadaSMEditorTransitionItem::setTarget(CyberiadaSMEditorAbstractItem *n
     connect(newTarget, &CyberiadaSMEditorAbstractItem::sizeChanged, this, &CyberiadaSMEditorTransitionItem::onTargetSizeChanged);
 
     model->updateGeometry(model->elementToIndex(element), sourceId(), newTarget->getId());
+    loopStartSet = false;
 
     isMouseTraking = false;
 }
@@ -256,7 +259,7 @@ QPointF CyberiadaSMEditorTransitionItem::targetPoint() const
     if (transition->has_geometry_target_point()) {
         return QPointF(transition->get_target_point().x, transition->get_target_point().y);
     }
-    if (isArcLoop()) return QPointF();
+    if (isBareLoop()) return bareLoopRoute().tp;
     QPointF toward;
     if (transition->has_polyline() && !transition->get_geometry_polyline().empty()) {
         const Cyberiada::Point& v = transition->get_geometry_polyline().back();
@@ -285,10 +288,11 @@ QPointF CyberiadaSMEditorTransitionItem::targetCenter() const
     return (elementIdToItemMap.value(transition->target_element_id()))->sceneBoundingRect().center();
 }
 
-// the loop is drawn as an arc only while it carries no polyline of its own
-bool CyberiadaSMEditorTransitionItem::isArcLoop() const
+// a loop is drawn by its default route while it carries no polyline of its own
+bool CyberiadaSMEditorTransitionItem::isBareLoop() const
 {
-    return source() == target() && !transition->has_polyline();
+    return source() && source() == target() &&
+           (!transition->has_polyline() || transition->get_geometry_polyline().empty());
 }
 
 CyberiadaSMEditorTransitionItem::LoopSide
@@ -298,97 +302,373 @@ CyberiadaSMEditorTransitionItem::sideFromDir(const QPointF& dir)
     return dir.y() >= 0 ? LoopBottom : LoopTop;
 }
 
-// a placed self-loop drops the default arc for a border-to-border orthogonal
-// polyline: it leaves the source side straight out, runs parallel to the state
-// and returns straight into the target side. The two sides follow the initial
-// (startDir) and final (endDir) drag direction; equal sides make a bump, distinct
-// ones a corner, opposite ones wrap around an adjacent side.
-void CyberiadaSMEditorTransitionItem::seedDefaultLoop(const QPointF& startDir, const QPointF& endDir,
-                                                      Qt::KeyboardModifiers mods)
+CyberiadaSMEditorTransitionItem::LoopSide
+CyberiadaSMEditorTransitionItem::nearestSide(const QPointF& p, qreal hw, qreal hh, bool* tie)
 {
-    if (!source() || source() != target()) return;
-    if (transition->has_polyline()) return;   // only a fresh (arc) loop
+    // how far the point lies past each side line: the nearest side has the most
+    qreal past[] = { 0.0, 0.0, 0.0, 0.0 };
+    past[LoopTop]    = -p.y() - hh;
+    past[LoopBottom] =  p.y() - hh;
+    past[LoopLeft]   = -p.x() - hw;
+    past[LoopRight]  =  p.x() - hw;
+    const int count = sizeof(past) / sizeof(past[0]);
+    int best = 0;
+    for (int s = 1; s < count; s++) {
+        if (past[s] > past[best]) best = s;
+    }
+    if (tie) {
+        *tie = false;
+        for (int s = 0; s < count; s++) {
+            if (s != best && past[best] - past[s] < LOOP_SIDE_TIE) *tie = true;
+        }
+    }
+    return LoopSide(best);
+}
 
-    const qreal LOOP_DEPTH = 40.0;    // how far the loop extends past the border
-    const qreal LOOP_LATERAL = 30.0;  // endpoint offset along a shared side
+CyberiadaSMEditorTransitionItem::LoopSide
+CyberiadaSMEditorTransitionItem::turnSide(LoopSide s, int steps)
+{
+    static const LoopSide clockwise[] = { LoopTop, LoopRight, LoopBottom, LoopLeft };
+    const int count = sizeof(clockwise) / sizeof(clockwise[0]);
+    int i = 0;
+    while (clockwise[i] != s) i++;
+    return clockwise[((i + steps) % count + count) % count];
+}
 
+QPointF CyberiadaSMEditorTransitionItem::sidePoint(LoopSide s, qreal along, qreal hw, qreal hh)
+{
+    switch (s) {
+    case LoopTop:    return QPointF(along, -hh);
+    case LoopBottom: return QPointF(along,  hh);
+    case LoopLeft:   return QPointF(-hw, along);
+    default:         return QPointF( hw, along);   // LoopRight
+    }
+}
+
+qreal CyberiadaSMEditorTransitionItem::sideRoom(LoopSide s, qreal hw, qreal hh)
+{
+    // the straight part off the rounded corners, a short side whole, a point node unbounded
+    qreal half = isTopOrBottom(s) ? hw : hh;
+    if (half <= 0) return std::numeric_limits<qreal>::max();
+    return half > ROUNDED_RECT_RADIUS ? half - ROUNDED_RECT_RADIUS : half;
+}
+
+QPointF CyberiadaSMEditorTransitionItem::bumpPartner(LoopSide s, const QPointF& e, qreal hw, qreal hh)
+{
+    qreal room = sideRoom(s, hw, hh);
+    qreal along = isTopOrBottom(s) ? e.x() : e.y();
+    qreal toward = along > 0 ? -1.0 : 1.0;
+    return sidePoint(s, qBound(-room, along + toward * 2.0 * LOOP_LATERAL, room), hw, hh);
+}
+
+bool CyberiadaSMEditorTransitionItem::endsOnTips() const
+{
+    return source() && (source()->type() == CyberiadaSMEditorAbstractItem::ChoiceItem ||
+                        source()->type() == CyberiadaSMEditorAbstractItem::VertexItem);
+}
+
+// the route leaves e1 straight out of side s1, runs parallel to the state and
+// returns straight into e2 on side s2; equal sides make a bump, distinct ones a
+// corner, opposite ones wrap around an adjacent side. With snap on the out-levels
+// lie on grid lines, so the segments stay orthogonal (EDIT-EDGE-16)
+CyberiadaSMEditorTransitionItem::LoopRoute
+CyberiadaSMEditorTransitionItem::loopRoute(LoopSide s1, const QPointF& e1, LoopSide s2, const QPointF& e2,
+                                           int nest, bool snap) const
+{
+    LoopRoute route;
+    route.sp = e1;
+    route.tp = e2;
     QRectF r = source()->sceneBoundingRect();
     QPointF c = r.center();
     qreal hw = r.width() / 2.0;
     qreal hh = r.height() / 2.0;
-    // with snap on the endpoints slide along the border and the out-levels lie
-    // on grid lines; the vertices are built from both, so the segments stay
-    // orthogonal (EDIT-EDGE-16)
-    bool snap = snapActive(mods);
+    qreal depth = LOOP_DEPTH + nest * LOOP_NEST_STEP;
 
-    LoopSide s1 = startDir.isNull() ? LoopTop   : sideFromDir(startDir);
-    LoopSide s2 = endDir.isNull()   ? LoopRight : sideFromDir(endDir);
-
-    // the border point at lateral offset off along a side, and the vertex the
-    // depth-length stub reaches straight out from it (coords are centre-relative)
-    auto border = [&](LoopSide s, qreal off) -> QPointF {
-        QPointF e;
-        switch (s) {
-        case LoopTop:    e = QPointF(off, -hh); break;
-        case LoopBottom: e = QPointF(off,  hh); break;
-        case LoopLeft:   e = QPointF(-hw, off); break;
-        default:         e = QPointF( hw, off); break;   // LoopRight
-        }
-        return snap ? snapAlongBorder(source(), e + c, mods, LockNone) - c : e;
-    };
-    // the level LOOP_DEPTH past a border coordinate (sign: the outward side),
-    // moved to a grid line still past the border when snapping
+    // the level depth past a border coordinate (sign: the outward side), moved to a
+    // grid line still past the border when snapping
     auto level = [&](qreal edge, qreal sign, qreal origin) -> qreal {
-        qreal v = edge + sign * LOOP_DEPTH;
+        qreal v = edge + sign * depth;
         if (!snap) return v;
         qreal snapped = snapCoord(v + origin) - origin;
         if ((snapped - edge) * sign <= 0) snapped += sign * SettingsManager::instance().getGridSpacing();
         return snapped;
     };
+    // the vertex the stub reaches straight out of side s from its end e
     auto outward = [&](LoopSide s, const QPointF& e) -> QPointF {
         switch (s) {
-        case LoopTop:    return QPointF(e.x(), level(e.y(), -1, c.y()));
-        case LoopBottom: return QPointF(e.x(), level(e.y(),  1, c.y()));
-        case LoopLeft:   return QPointF(level(e.x(), -1, c.x()), e.y());
-        default:         return QPointF(level(e.x(),  1, c.x()), e.y());
+        case LoopTop:    return QPointF(e.x(), level(-hh, -1, c.y()));
+        case LoopBottom: return QPointF(e.x(), level( hh,  1, c.y()));
+        case LoopLeft:   return QPointF(level(-hw, -1, c.x()), e.y());
+        default:         return QPointF(level( hw,  1, c.x()), e.y());
         }
     };
-    auto vertical = [](LoopSide s) { return s == LoopTop || s == LoopBottom; };
 
-    QPointF e1, e2;
-    Cyberiada::Polyline pl;
-    if (s1 == s2) {
-        // a rectangular bump on one side: two laterally-offset endpoints
-        e1 = border(s1, -LOOP_LATERAL);
-        e2 = border(s2,  LOOP_LATERAL);
-        QPointF v1 = outward(s1, e1), v2 = outward(s2, e2);
-        pl.push_back(Cyberiada::Point(v1.x(), v1.y()));
-        pl.push_back(Cyberiada::Point(v2.x(), v2.y()));
-    } else {
-        // distinct sides: endpoints at the side midpoints
-        e1 = border(s1, 0);
-        e2 = border(s2, 0);
-        QPointF v1 = outward(s1, e1), vn = outward(s2, e2);
-        pl.push_back(Cyberiada::Point(v1.x(), v1.y()));
-        if (vertical(s1) == vertical(s2)) {
+    QPointF v1 = outward(s1, e1), vn = outward(s2, e2);
+    route.bends.append(v1);
+    if (s1 != s2) {
+        if (isTopOrBottom(s1) == isTopOrBottom(s2)) {
             // opposite sides: wrap around an adjacent side with two corners
-            qreal wrap = vertical(s1) ? level(hw, 1, c.x()) : level(hh, 1, c.y());
-            QPointF c1 = vertical(s1) ? QPointF(wrap, v1.y()) : QPointF(v1.x(), wrap);
-            QPointF c2 = vertical(s1) ? QPointF(wrap, vn.y()) : QPointF(vn.x(), wrap);
-            pl.push_back(Cyberiada::Point(c1.x(), c1.y()));
-            pl.push_back(Cyberiada::Point(c2.x(), c2.y()));
+            qreal wrap = isTopOrBottom(s1) ? level(hw, 1, c.x()) : level(hh, 1, c.y());
+            route.bends.append(isTopOrBottom(s1) ? QPointF(wrap, v1.y()) : QPointF(v1.x(), wrap));
+            route.bends.append(isTopOrBottom(s1) ? QPointF(wrap, vn.y()) : QPointF(vn.x(), wrap));
         } else {
             // adjacent sides: one corner sharing each side's out-level
-            QPointF corner = vertical(s1) ? QPointF(vn.x(), v1.y()) : QPointF(v1.x(), vn.y());
-            pl.push_back(Cyberiada::Point(corner.x(), corner.y()));
+            route.bends.append(isTopOrBottom(s1) ? QPointF(vn.x(), v1.y()) : QPointF(v1.x(), vn.y()));
         }
-        pl.push_back(Cyberiada::Point(vn.x(), vn.y()));
     }
+    route.bends.append(vn);
+    return route;
+}
 
+// EDIT-EDGE-22: the k-th loop of the state with no stored geometry takes the next
+// side no other loop of the state has an end on, in the order right, bottom, left,
+// top, and nests farther out once those sides are taken
+void CyberiadaSMEditorTransitionItem::defaultSlot(LoopSide* side, int* nest) const
+{
+    static const LoopSide order[] = { LoopRight, LoopBottom, LoopLeft, LoopTop };
+    const int count = sizeof(order) / sizeof(order[0]);
+    *side = order[0];
+    *nest = 0;
+    if (!model || !model->rootDocument() || !source()) return;
+    Cyberiada::StateMachine* sm = model->rootDocument()->get_parent_sm(source()->getElement());
+    if (!sm) return;
+    QRectF r = source()->sceneBoundingRect();
+    qreal hw = r.width() / 2.0;
+    qreal hh = r.height() / 2.0;
+    bool taken[] = { false, false, false, false };   // by LoopSide
+    const Cyberiada::ID& id = transition->source_element_id();
+    int k = 0, mine = 0;
+    std::vector<Cyberiada::Transition*> trans = sm->get_transitions();
+    for (size_t i = 0; i < trans.size(); i++) {
+        const Cyberiada::Transition* t = trans[i];
+        if (t->source_element_id() != id || t->target_element_id() != id) continue;
+        bool sp = t->has_geometry_source_point();
+        bool tp = t->has_geometry_target_point();
+        bool pl = t->has_polyline() && !t->get_geometry_polyline().empty();
+        if (!sp && !tp && !pl) {
+            if (t == transition) mine = k;
+            k++;
+            continue;
+        }
+        if (sp || pl) {
+            Cyberiada::Point a = sp ? t->get_source_point() : t->get_geometry_polyline().front();
+            taken[nearestSide(QPointF(a.x, a.y), hw, hh)] = true;
+        }
+        if (tp || pl) {
+            Cyberiada::Point b = tp ? t->get_target_point() : t->get_geometry_polyline().back();
+            taken[nearestSide(QPointF(b.x, b.y), hw, hh)] = true;
+        }
+    }
+    LoopSide free[count];
+    int nfree = 0;
+    for (int i = 0; i < count; i++) {
+        if (!taken[order[i]]) free[nfree++] = order[i];
+    }
+    if (nfree == 0) {
+        for (int i = 0; i < count; i++) free[i] = order[i];
+        nfree = count;
+    }
+    *side = free[mine % nfree];
+    *nest = mine / nfree;
+}
+
+bool CyberiadaSMEditorTransitionItem::drawStartEnd(LoopSide* side, QPointF* end) const
+{
+    if (!loopStartSet || !source()) return false;
+    QRectF r = source()->sceneBoundingRect();
+    qreal hw = r.width() / 2.0;
+    qreal hh = r.height() / 2.0;
+    QPointF p = loopStart - r.center();
+    bool tie = false;
+    LoopSide s = nearestSide(p, hw, hh, &tie);
+    if (tie && loopStartCaptured && !loopStartDir.isNull()) s = sideFromDir(loopStartDir);
+    *side = s;
+    if (endsOnTips()) {
+        *end = sidePoint(s, 0, hw, hh);
+        return true;
+    }
+    qreal room = sideRoom(s, hw, hh);
+    *end = sidePoint(s, qBound(-room, isTopOrBottom(s) ? p.x() : p.y(), room), hw, hh);
+    return true;
+}
+
+// the default route: stored ends keep their sides, a missing end pairs with the
+// other into a bump (on a tip node: the next tip clockwise), and a loop with no
+// geometry at all takes a centred clockwise bump on its default slot side
+CyberiadaSMEditorTransitionItem::LoopRoute CyberiadaSMEditorTransitionItem::bareLoopRoute() const
+{
+    QRectF r = source()->sceneBoundingRect();
+    qreal hw = r.width() / 2.0;
+    qreal hh = r.height() / 2.0;
+    bool tips = endsOnTips();
+    LoopSide s1 = LoopRight, s2 = LoopRight;
+    QPointF e1, e2;
+    bool hasS = false;
+    bool hasT = transition->has_geometry_target_point();
+    if (transition->has_geometry_source_point()) {
+        e1 = QPointF(transition->get_source_point().x, transition->get_source_point().y);
+        s1 = nearestSide(e1, hw, hh);
+        hasS = true;
+    } else {
+        hasS = drawStartEnd(&s1, &e1);
+    }
+    if (hasT) {
+        e2 = QPointF(transition->get_target_point().x, transition->get_target_point().y);
+        s2 = nearestSide(e2, hw, hh);
+    }
+    int nest = 0;
+    if (!hasS && !hasT) {
+        defaultSlot(&s1, &nest);
+        if (tips) {
+            s2 = turnSide(s1, 1);
+            e1 = sidePoint(s1, 0, hw, hh);
+            e2 = sidePoint(s2, 0, hw, hh);
+        } else {
+            s2 = s1;
+            qreal span = qMin(qreal(LOOP_LATERAL + nest * LOOP_NEST_STEP), sideRoom(s1, hw, hh));
+            // clockwise: rightward along the top, downward along the right
+            qreal sign = (s1 == LoopTop || s1 == LoopRight) ? 1.0 : -1.0;
+            e1 = sidePoint(s1, -sign * span, hw, hh);
+            e2 = sidePoint(s1,  sign * span, hw, hh);
+        }
+    } else if (!hasT) {
+        s2 = tips ? turnSide(s1, 1) : s1;
+        e2 = tips ? sidePoint(s2, 0, hw, hh) : bumpPartner(s1, e1, hw, hh);
+    } else if (!hasS) {
+        s1 = tips ? turnSide(s2, -1) : s2;
+        e1 = tips ? sidePoint(s1, 0, hw, hh) : bumpPartner(s2, e2, hw, hh);
+    } else if (tips && s1 == s2) {
+        s2 = turnSide(s1, 1);
+        e2 = sidePoint(s2, 0, hw, hh);
+    }
+    return loopRoute(s1, e1, s2, e2, nest, false);
+}
+
+void CyberiadaSMEditorTransitionItem::setLoopStart(const QPointF& scenePress, const QPointF& tieDir)
+{
+    prepareGeometryChange();
+    loopStart = scenePress;
+    loopStartSet = true;
+    loopStartDir = tieDir;
+    loopStartCaptured = !tieDir.isNull();
+    updateDots();
+    setDotsPosition();
+}
+
+void CyberiadaSMEditorTransitionItem::seedDefaultLoop(const QPointF& endDir, Qt::KeyboardModifiers mods)
+{
+    if (!source() || source() != target()) return;
+    if (!isBareLoop()) return;   // only a fresh loop
+
+    QRectF r = source()->sceneBoundingRect();
+    QPointF c = r.center();
+    qreal hw = r.width() / 2.0;
+    qreal hh = r.height() / 2.0;
+    // with snap on the endpoints slide along the border (EDIT-EDGE-15/16)
+    bool snap = snapActive(mods);
+    bool tips = endsOnTips();
+    auto onBorder = [&](const QPointF& e) -> QPointF {
+        return snap ? snapAlongBorder(source(), e + c, mods, LockNone) - c : e;
+    };
+
+    LoopSide s1;
+    LoopSide s2 = endDir.isNull() ? LoopRight : sideFromDir(endDir);
+    QPointF e1, e2;
+    if (drawStartEnd(&s1, &e1)) {
+        // EDIT-EDGE-22: the loop starts where the draw did
+        if (s1 != s2) {
+            e2 = sidePoint(s2, 0, hw, hh);
+        } else if (tips) {
+            s2 = turnSide(s1, 1);
+            e2 = sidePoint(s2, 0, hw, hh);
+        } else {
+            e2 = bumpPartner(s1, e1, hw, hh);
+        }
+    } else {
+        // an endpoint drag released on its own state: the sides follow the drag
+        s1 = loopStartDir.isNull() ? LoopTop : sideFromDir(loopStartDir);
+        if (s1 == s2 && tips) s2 = turnSide(s1, 1);
+        if (s1 == s2) {
+            e1 = sidePoint(s1, -LOOP_LATERAL, hw, hh);
+            e2 = sidePoint(s2,  LOOP_LATERAL, hw, hh);
+        } else {
+            e1 = sidePoint(s1, 0, hw, hh);
+            e2 = sidePoint(s2, 0, hw, hh);
+        }
+    }
+    LoopRoute route = loopRoute(s1, onBorder(e1), s2, onBorder(e2), 0, snap);
+    loopStartSet = false;
+    loopStartCaptured = false;
+
+    Cyberiada::Polyline pl;
+    for (int i = 0; i < route.bends.size(); i++) {
+        pl.push_back(Cyberiada::Point(route.bends[i].x(), route.bends[i].y()));
+    }
     QModelIndex index = model->elementToIndex(element);
-    model->updateGeometry(index, Cyberiada::Point(e1.x(), e1.y()),
-                                 Cyberiada::Point(e2.x(), e2.y()));
+    model->updateGeometry(index, Cyberiada::Point(route.sp.x(), route.sp.y()),
+                                 Cyberiada::Point(route.tp.x(), route.tp.y()));
     model->updateGeometry(index, pl);   // sets has_polyline last
+}
+
+// the first edit of a bare loop starts from the route it shows (EDIT-EDGE-22)
+void CyberiadaSMEditorTransitionItem::materialiseLoop()
+{
+    if (!isBareLoop()) return;
+    LoopRoute route = bareLoopRoute();
+    loopStartSet = false;
+    Cyberiada::Polyline pl;
+    for (int i = 0; i < route.bends.size(); i++) {
+        pl.push_back(Cyberiada::Point(route.bends[i].x(), route.bends[i].y()));
+    }
+    QModelIndex index = model->elementToIndex(element);
+    model->updateGeometry(index, Cyberiada::Point(route.sp.x(), route.sp.y()),
+                                 Cyberiada::Point(route.tp.x(), route.tp.y()));
+    model->updateGeometry(index, pl);
+}
+
+QVector<QPointF> CyberiadaSMEditorTransitionItem::routePoints() const
+{
+    QVector<QPointF> points;
+    if (isBareLoop() && !(isSourceTraking || isTargetTraking)) {
+        LoopRoute route = bareLoopRoute();
+        QPointF c = sourceCenter();
+        points.append(route.sp + c);
+        for (int i = 0; i < route.bends.size(); i++) points.append(route.bends[i] + c);
+        points.append(route.tp + c);
+        return points;
+    }
+    points.append(isSourceTraking ? prevPosition : sourcePoint() + sourceCenter());
+    if (transition->has_polyline()) {
+        for (const auto& point : transition->get_geometry_polyline()) {
+            points.append(QPointF(point.x, point.y) + sourceCenter());
+        }
+    }
+    points.append(isTargetTraking ? prevPosition : targetPoint() + targetCenter());
+    return points;
+}
+
+QVector<QPointF> CyberiadaSMEditorTransitionItem::shownBends() const
+{
+    QVector<QPointF> bends;
+    QPointF c = sourceCenter();
+    if (isBareLoop()) {
+        LoopRoute route = bareLoopRoute();
+        for (int i = 0; i < route.bends.size(); i++) bends.append(route.bends[i] + c);
+    } else if (transition->has_polyline()) {
+        for (const auto& point : transition->get_geometry_polyline()) {
+            bends.append(QPointF(point.x, point.y) + c);
+        }
+    }
+    return bends;
+}
+
+void CyberiadaSMEditorTransitionItem::refreshRoute()
+{
+    prepareGeometryChange();
+    updateDots();
+    setDotsPosition();
+    updateActionPosition();
+    update();
 }
 
 QRectF CyberiadaSMEditorTransitionItem::labelSceneRect() const
@@ -401,86 +681,18 @@ QPainterPath CyberiadaSMEditorTransitionItem::path() const
 {
     MY_ASSERT(model);
     QPainterPath path = QPainterPath();
-
-    // loop
-    if (isArcLoop() && !(isSourceTraking || isTargetTraking)) {
-        QPointF p1 = sourcePoint() + sourceCenter();
-        QPointF p2 = targetPoint() + targetCenter();
-
-        QPointF v1 = p1 - sourceCenter();
-        QPointF v2 = p2 - sourceCenter();
-
-        double cross = v1.x() * v2.y() - v1.y() * v2.x();
-
-        bool clockwise = (cross > 0);
-        // clockwise = !clockwise;
-
-        QPointF center = (p1 + p2) / 2;
-        qreal radius = QLineF(p1, p2).length() / 2;
-
-        qreal MIN_RADIUS = 30;
-
-        if (radius <= MIN_RADIUS) {
-            QPointF dir = p2 - p1;
-            if (dir.isNull()) {
-                dir = QPointF(1, 0);
-            }
-
-            QLineF norm(dir, QPointF());
-            norm.setLength(1.0);
-
-            QPointF normal(-norm.dy(), norm.dx());
-
-            qreal offset = std::sqrt(MIN_RADIUS * MIN_RADIUS - radius * radius);
-
-            center += normal * offset;
-            radius = MIN_RADIUS;
-        }
-
-        QRectF rect(center.x() - radius, center.y() - radius,
-                    radius * 2, radius * 2);
-
-
-        qreal angle1 = QLineF(center, p1).angle();
-        qreal angle2 = QLineF(center, p2).angle();
-
-        if(angle1 == angle2) {
-            angle2 += 360;
-        }
-
-        qreal spanAngle = angle2 - angle1;
-        if (clockwise) {
-            if (spanAngle > 0) spanAngle -= 360;
-        } else {
-            if (spanAngle < 0) spanAngle += 360;
-        }
-
-        path.moveTo(p1);
-        path.arcTo(rect, angle1, spanAngle);
-
-        return path;
+    // a polyline point by point; a bare self-loop by its default route (EDIT-EDGE-22)
+    QVector<QPointF> points = routePoints();
+    path.moveTo(points.first());
+    for (int i = 1; i < points.size(); i++) {
+        path.lineTo(points[i]);
     }
-
-    // polyline
-    if (isSourceTraking) {
-        path.moveTo(prevPosition);
-    } else {
-        path.moveTo(sourcePoint() + sourceCenter());
-    }
-
-    if(transition->has_polyline()) {
-        for (const auto& point : transition->get_geometry_polyline()) {
-            path.lineTo(QPointF(point.x, point.y) + sourceCenter());
-        }
-    }
-
-    if (isTargetTraking) {
-        path.lineTo(prevPosition);
-    } else {
-        path.lineTo(targetPoint() + targetCenter());
-    }
-
     return path;
+}
+
+DotSignal* CyberiadaSMEditorTransitionItem::targetDot()
+{
+    return listDots.isEmpty() ? nullptr : listDots.last();
 }
 
 DotSignal *CyberiadaSMEditorTransitionItem::getDot(int index)
@@ -504,41 +716,12 @@ void CyberiadaSMEditorTransitionItem::drawArrow(QPainter* painter)
     }
     painter->setPen(pen);
 
-    double angle;
-
-    QPointF p1 = sourcePoint() + sourceCenter();
-    QPointF p2 = targetPoint() + targetCenter();
-    if (isSourceTraking) {
-        p1 = prevPosition;
-    }
-    if (isTargetTraking) {
-        p2 = prevPosition;
-    }
-
-    if (isArcLoop() && !(isTargetTraking || isSourceTraking)) {
-        QPointF center = (p1 + p2) / 2;
-        angle = qDegreesToRadians(QLineF(center, p2).angle());
-        QPointF v1 = p1 - sourceCenter();
-        QPointF v2 = p2 - sourceCenter();
-
-        double cross = v1.x() * v2.y() - v1.y() * v2.x();
-
-        bool clockwise = (cross > 0);
-
-        if (clockwise) {
-            angle -= M_PI / 2;
-        } else {
-            angle += M_PI / 2;
-        }
-    } else {
-        if(transition->has_polyline()) {
-            Cyberiada::Polyline polyline = transition->get_geometry_polyline();
-            p1 = QPointF(polyline.back().x, polyline.back().y) + sourceCenter();
-        }
-
-        QLineF line(p1, p2);
-        angle = std::atan2(-line.dy(), line.dx());
-    }
+    // the tangent of the last segment, into the target
+    QVector<QPointF> points = routePoints();
+    QPointF p1 = points.at(points.size() - 2);
+    QPointF p2 = points.last();
+    QLineF line(p1, p2);
+    double angle = std::atan2(-line.dy(), line.dx());
 
     qreal arrowSize = 10.0;
     QPointF arrowP1 = p2 + QPointF(-arrowSize * std::cos(angle - M_PI / 6),
@@ -677,6 +860,29 @@ void CyberiadaSMEditorTransitionItem::updateActionPosition() {
     }
 
     actionItem->setTextWidth(-1);
+    // EDIT-EDGE-22: a loop label lies outside, past the longest segment between bends
+    QVector<QPointF> route = (source() && source() == target()) ? routePoints() : QVector<QPointF>();
+    if (route.size() >= 4) {
+        int outer = 1;
+        for (int i = 2; i + 2 < route.size(); i++) {
+            if (QLineF(route[i], route[i + 1]).length() > QLineF(route[outer], route[outer + 1]).length()) {
+                outer = i;
+            }
+        }
+        QPointF a = route[outer], b = route[outer + 1];
+        QPointF mid = (a + b) / 2;
+        QPointF c = sourceCenter();
+        QRectF bb = actionItem->boundingRect();
+        QPointF away;
+        if (qAbs(a.y() - b.y()) <= qAbs(a.x() - b.x())) {
+            away = QPointF(0, (mid.y() < c.y() ? -1 : 1) * (bb.height() / 2.0 + LOOP_LABEL_GAP));
+        } else {
+            away = QPointF((mid.x() < c.x() ? -1 : 1) * (bb.width() / 2.0 + LOOP_LABEL_GAP), 0);
+        }
+        actionItem->setPos(mid + away - bb.center());
+        update();
+        return;
+    }
     QPointF lastPoint = sourcePoint();
     if(transition->has_polyline() && transition->get_geometry_polyline().size() > 0) {
         Cyberiada::Polyline polyline = transition->get_geometry_polyline();
@@ -705,6 +911,12 @@ void CyberiadaSMEditorTransitionItem::syncFromModel()
     updateDots();
     setDotsPosition();
     CyberiadaSMEditorAbstractItem::syncFromModel();
+    // the default routes of the other bare loops of the state follow this one
+    if (source() && source() == target()) {
+        if (CyberiadaSMEditorScene* cScene = dynamic_cast<CyberiadaSMEditorScene*>(scene())) {
+            cScene->refreshLoops(sourceId());
+        }
+    }
 }
 
 void CyberiadaSMEditorTransitionItem::onSourceGeomertyChanged()
@@ -758,9 +970,10 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
     prevPosition = p;
 
     // the first move of a self-loop being placed fixes its initial drag
-    // direction, which later picks the source-side of the default polyline
-    if (source() == target() && !transition->has_polyline() && !loopStartCaptured) {
-        loopStartDir = p - sourceCenter();
+    // direction: from the draw press it breaks a tie of two sides, from the
+    // centre (an endpoint drag) it picks the source side of the default polyline
+    if (isBareLoop() && !loopStartCaptured) {
+        loopStartDir = p - (loopStartSet ? loopStart : sourceCenter());
         loopStartCaptured = true;
     }
 
@@ -827,7 +1040,7 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
                 }
                 bool hasIntersections = false;
 
-                if (isArcLoop()) {
+                if (isBareLoop()) {
                     // loop
                     nextPoint = sourceCenter();
                 }
@@ -905,7 +1118,7 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
 
                 bool hasIntersections = false;
 
-                if (isArcLoop()) {
+                if (isBareLoop()) {
                     // loop
                     nextPoint = sourceCenter();
                 }
@@ -924,8 +1137,10 @@ void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qr
                 break;
             }
 
-            // polyline points
+            // polyline points; a bare loop stores its shown route first
+            materialiseLoop();
             Cyberiada::Polyline pol = transition->get_geometry_polyline();
+            if (i - 1 >= int(pol.size())) break;
             Cyberiada::Point pt = pol.at(i - 1);
             // the first move fixes the grab offset (dx, dy is the step from the
             // press); the point then follows the cursor and snaps in scene space,
@@ -1036,15 +1251,20 @@ void CyberiadaSMEditorTransitionItem::slotMouseReleaseDot(QGraphicsItem *signalO
     CyberiadaSMEditorAbstractItem* cItem = itemUnderCursor(p);
     p = snapToGrid(p, mods);
     prevPosition = p;
-    if (!cItem) { return; }
-
     prepareGeometryChange();
+    if (!cItem) {
+        // a loop released over the empty canvas stays as drawn (EDIT-EDGE-22)
+        seedDefaultLoop(p - sourceCenter(), mods);
+        setDotsPosition();
+        return;
+    }
+
     bool hasIntersections = false;
     if (idx == listDots.size() - 1) {
         // a small drag that ends over an ancestor of the source (the parent SM
         // it sits in) is a self-loop being placed, not a retarget to the parent
         if (cItem == target() || isAncestorOf(cItem, source())) {
-            seedDefaultLoop(loopStartDir, p - sourceCenter(), mods);
+            seedDefaultLoop(p - sourceCenter(), mods);
             return;
         }
         QPointF newPoint = snappedIntersection(cItem, p, sourceCenter(), &hasIntersections, mods, LockNone) -
@@ -1055,7 +1275,7 @@ void CyberiadaSMEditorTransitionItem::slotMouseReleaseDot(QGraphicsItem *signalO
         setTargetPoint(newPoint);
     } else {
         if (cItem == source() || isAncestorOf(cItem, target())) {
-            seedDefaultLoop(loopStartDir, p - sourceCenter(), mods);
+            seedDefaultLoop(p - sourceCenter(), mods);
             return;
         }
         QPointF newPoint = snappedIntersection(cItem, p, targetCenter(), &hasIntersections, mods, LockNone) -
@@ -1071,7 +1291,8 @@ void CyberiadaSMEditorTransitionItem::slotMouseReleaseDot(QGraphicsItem *signalO
 void CyberiadaSMEditorTransitionItem::slotDeleteDot(QGraphicsItem *signalOwner)
 {
     if (SettingsManager::instance().getInspectorMode()) { return; }
-    if (isArcLoop()) { return; }
+    // a bare loop stores no bend to remove
+    if (isBareLoop()) { return; }
 
     for(int i = 0; i < listDots.size(); i++){
         if(listDots.at(i) == signalOwner){
@@ -1160,7 +1381,7 @@ void CyberiadaSMEditorTransitionItem::mousePressEvent(QGraphicsSceneMouseEvent *
         isLeftMouseButtonPressed = true;
         // a press on a segment arms a vertex insertion, sprung by the drag
         pressPos = event->pos();
-        pendingSegment = isArcLoop() ? 0 : segmentAt(pressPos);
+        pendingSegment = segmentAt(pressPos);
         vertexDragArmed = (pendingSegment >= 0);
     }
     QGraphicsItem::mousePressEvent(event);
@@ -1179,6 +1400,8 @@ void CyberiadaSMEditorTransitionItem::mouseMoveEvent(QGraphicsSceneMouseEvent *e
     if (vertexDragArmed &&
         QLineF(pressPos, event->pos()).length() > 3.0) {
         vertexDragArmed = false;
+        // a bare loop stores its shown route first (EDIT-EDGE-22)
+        materialiseLoop();
         QPointF p = event->pos() - sourceCenter();
         Cyberiada::Point cybP(p.x(), p.y());
         Cyberiada::Polyline pol;
@@ -1254,26 +1477,7 @@ void CyberiadaSMEditorTransitionItem::hoverLeaveEvent(QGraphicsSceneHoverEvent *
 
 void CyberiadaSMEditorTransitionItem::initializeDots()
 {
-    if (isArcLoop()) {
-        // source
-        DotSignal *dotS = new DotSignal(sourcePoint() + sourceCenter(), this);
-        connect(dotS, &DotSignal::signalMove, this, &CyberiadaSMEditorTransitionItem::slotMoveDot);
-        connect(dotS, &DotSignal::signalMouseRelease, this, &CyberiadaSMEditorTransitionItem::slotMouseReleaseDot);
-        connect(dotS, &DotSignal::signalDelete, this, &CyberiadaSMEditorTransitionItem::slotDeleteDot);
-        dotS->setDotFlags(DotSignal::Movable);
-        dotS->setDeleteable(true);
-        listDots.append(dotS);
-        // target
-        DotSignal *dotT = new DotSignal(targetPoint() + targetCenter(), this);
-        connect(dotT, &DotSignal::signalMove, this, &CyberiadaSMEditorTransitionItem::slotMoveDot);
-        connect(dotT, &DotSignal::signalMouseRelease, this, &CyberiadaSMEditorTransitionItem::slotMouseReleaseDot);
-        connect(dotT, &DotSignal::signalDelete, this, &CyberiadaSMEditorTransitionItem::slotDeleteDot);
-        dotT->setDotFlags(DotSignal::Movable);
-        dotT->setDeleteable(true);
-        listDots.append(dotT);
-        return;
-    }
-    // polyline
+    // a handle on every point of the shown route, the bends of a bare loop included
     QPainterPath linePath = path();
     for(int i = 0; i < linePath.elementCount(); i++) {
         QPointF point = linePath.elementAt(i);
@@ -1289,10 +1493,8 @@ void CyberiadaSMEditorTransitionItem::initializeDots()
 
 void CyberiadaSMEditorTransitionItem::updateDots()
 {
-    int n = 2;
-    if(!isArcLoop() && transition->has_polyline()) {
-        n += transition->get_geometry_polyline().size();
-    }
+    QVector<QPointF> bends = shownBends();
+    int n = 2 + bends.size();
 
     if(listDots.size() == n) {
         return;
@@ -1311,15 +1513,8 @@ void CyberiadaSMEditorTransitionItem::updateDots()
         listDots.append(last);
     }
 
-    if(!transition->has_polyline()) {
-        return;
-    }
-
-    // polyline
-    Cyberiada::Polyline pol = transition->get_geometry_polyline();
     for(int i = 0; i < n - 2; i++) {
-        QPointF point = QPointF(pol.at(i).x, pol.at(i).y);
-        DotSignal *dot = new DotSignal(point, this);
+        DotSignal *dot = new DotSignal(bends.at(i), this);
         connect(dot, &DotSignal::signalMove, this, &CyberiadaSMEditorTransitionItem::slotMoveDot);
         connect(dot, &DotSignal::signalMouseRelease, this, &CyberiadaSMEditorTransitionItem::slotMouseReleaseDot);
         connect(dot, &DotSignal::signalDelete, this, &CyberiadaSMEditorTransitionItem::slotDeleteDot);
@@ -1355,15 +1550,21 @@ void CyberiadaSMEditorTransitionItem::hideDots()
 
 void CyberiadaSMEditorTransitionItem::setDotsPosition()
 {
-    QPainterPath linePath = path();
-    if (isArcLoop()) {
-        listDots.at(0)->setPos(sourcePoint() + sourceCenter());
-        listDots.at(1)->setPos(targetPoint() + targetCenter());
+    if (listDots.isEmpty()) return;
+    QVector<QPointF> points = routePoints();
+    if (points.size() == listDots.size()) {
+        for (int i = 0; i < points.size(); i++) {
+            listDots.at(i)->setPos(points.at(i));
+        }
         return;
     }
-    for(int i = 0; i < linePath.elementCount(); i++) {
-        QPointF point = linePath.elementAt(i);
-        listDots.at(i)->setPos(point);
+    // a tracked bare loop draws no bends: its ends keep the end handles, the bend
+    // handles stay on the default route
+    QVector<QPointF> bends = shownBends();
+    listDots.first()->setPos(points.first());
+    listDots.last()->setPos(points.last());
+    for (int i = 1; i < listDots.size() - 1 && i - 1 < bends.size(); i++) {
+        listDots.at(i)->setPos(bends.at(i - 1));
     }
 }
 

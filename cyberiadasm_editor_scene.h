@@ -118,7 +118,9 @@ public:
     CyberiadaSMEditorTransitionItem* addTransition(CyberiadaSMEditorAbstractItem* source, CyberiadaSMEditorAbstractItem* target);
     // draw a transition with a rubber-band line, creating it on release over a
     // valid target (used by sources that cannot seed a self-loop)
-    void beginTransitionDraw(CyberiadaSMEditorAbstractItem* source);
+    void beginTransitionDraw(CyberiadaSMEditorAbstractItem* source, const QPointF& press);
+    // re-route the bare self-loops of a state, or of all states (EDIT-EDGE-22)
+    void refreshLoops(const Cyberiada::ID& stateId = Cyberiada::ID());
 
     // the scene rect of the state machine whose content changed most recently
     // (for the zoom-to-SM action); a null rect if none is known
@@ -227,6 +229,7 @@ private:
     // the transition rubber-band draw (from a pseudostate or the choice)
     QGraphicsLineItem* transitionDrawLine = nullptr;
     CyberiadaSMEditorAbstractItem* transitionSource = nullptr;
+    QPointF transitionPress;
     void  finishTransitionDraw(const QPointF& scenePos, Qt::KeyboardModifiers mods);
     // the transition tool drawn from a comment links it to the node, the comment or
     // the transition line under the release, the ends stored (EDIT-TOOL-15, EDIT-EDGE-18)

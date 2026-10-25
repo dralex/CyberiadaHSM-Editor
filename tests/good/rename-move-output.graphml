@@ -84,9 +84,9 @@ eventPropagation/ block</data>
     </node>
     <edge id="edge-0" source="node-0-0-1" target="node-0-0-1">
       <data key="dGeometry">
-        <point x="-45.000000" y="70.000000"/>
-        <point x="-45.000000" y="170.000000"/>
-        <point x="130.000000" y="170.000000"/>
+        <point x="-25.000000" y="70.000000"/>
+        <point x="-25.000000" y="165.000000"/>
+        <point x="130.000000" y="165.000000"/>
       </data>
       <data key="dSourcePoint">
         <point x="0.000000" y="70.000000"/>
