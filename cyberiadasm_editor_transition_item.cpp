@@ -89,17 +89,27 @@ CyberiadaSMEditorTransitionItem::~CyberiadaSMEditorTransitionItem()
 {
     if(actionItem) { delete actionItem; }
 
-    if(!listDots.isEmpty()){
-        foreach (DotSignal *dot, listDots) {
-            dot->deleteLater();
-        }
-        listDots.clear();
+    foreach (DotSignal *dot, listDots) {
+        retireDot(dot);
     }
+    listDots.clear();
 
     foreach (DotSignal *dot, labelDots) {
-        dot->deleteLater();
+        retireDot(dot);
     }
     labelDots.clear();
+}
+
+// a retired handle leaves the scene immediately (so a repaint cannot paint it) but its
+// deletion is deferred - the rebuild that retires it may run from the dot's own event
+// handler (see CyberiadaSMEditorStateItem::initializeActions for the same pattern)
+void CyberiadaSMEditorTransitionItem::retireDot(DotSignal* dot)
+{
+    if (!dot) return;
+    dot->disconnect(this);
+    dot->hide();
+    if (dot->scene()) dot->scene()->removeItem(dot);
+    dot->deleteLater();
 }
 
 QRectF CyberiadaSMEditorTransitionItem::boundingRect() const
@@ -1281,7 +1291,7 @@ void CyberiadaSMEditorTransitionItem::updateDots()
 
     if (listDots.size() > 2) {
         for (int i = 1; i < listDots.size() - 1; ++i) {
-            listDots[i]->deleteLater();
+            retireDot(listDots[i]);
         }
 
         DotSignal *first = listDots.first();

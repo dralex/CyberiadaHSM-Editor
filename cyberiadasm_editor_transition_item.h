@@ -225,6 +225,10 @@ private:
 
     void initializeDots() override;
     void updateDots();
+    // take a handle out of the scene at once, then defer its deletion: the rebuild may
+    // run from the dot's own event handler, so it must outlive the call stack, but it
+    // must not stay in the draw tree (a repaint would paint a freed item)
+    void retireDot(DotSignal* dot);
     void showDots() override;
     void hideDots() override;
     void setDotsPosition() override;

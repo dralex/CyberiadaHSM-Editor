@@ -89,6 +89,7 @@ private slots:
 	void test_guard_newline_kept();
 	void test_segment_drag_vertex();
 	void test_remove_vertex();
+	void test_retire_vertex_dots();
 	void test_double_click_removes_vertex();
 	void test_default_name_unique();
 	void test_reparent_simple();
@@ -1977,6 +1978,29 @@ void TestScene::test_remove_vertex()
 	size_t mid = t->get_geometry_polyline().size();
 	tr->getDot(0)->deleteDot();
 	QCOMPARE(t->get_geometry_polyline().size(), mid);
+}
+
+void TestScene::test_retire_vertex_dots()
+{
+	// when the drawn point count shrinks, the retired handles must leave the scene at
+	// once: a handle left in the draw tree pending deleteLater is painted by an async
+	// repaint after it is freed (intermittent crash in QGraphicsScene::drawSubtreeRecursive)
+	QVERIFY(model->loadDocument("diagrams/polyline.graphml"));
+	scene->loadScene();
+	CyberiadaSMEditorTransitionItem* tr =
+		dynamic_cast<CyberiadaSMEditorTransitionItem*>(scene->getMap().value("t0"));
+	QVERIFY(tr);
+	scene->setCurrentTool(ToolType::Select);
+	tr->setSelected(true);                       // the handles are shown
+	DotSignal* vertex = tr->getDot(1);           // an interior polyline handle
+	QVERIFY(vertex && vertex->scene() == scene);
+	QPointer<DotSignal> retired = vertex;
+	vertex->deleteDot();                         // removes the vertex -> updateDots retires the handle
+	// the handle is out of the scene immediately, even though its deletion is deferred
+	QVERIFY(retired.isNull() || retired->scene() == nullptr);
+	for (QGraphicsItem* gi : scene->items()) {
+		QVERIFY(gi != static_cast<QGraphicsItem*>(retired.data()));
+	}
 }
 
 void TestScene::test_double_click_removes_vertex()
