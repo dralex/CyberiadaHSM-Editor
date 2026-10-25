@@ -925,6 +925,14 @@ bool runEditScript(CyberiadaSMEditorWindow* win, const QString& path, QString* e
 					win->actionPaste->trigger();
 					ok = true;
 				}
+			} else if (cmd == "repaint") {
+				// force the view's backing-store paint (QGraphicsView::paintEvent ->
+				// drawItems -> every item's boundingRect()/paint()); scene->render used
+				// by --export bypasses the view, so this exercises the real paint path
+				if (win->sceneView && win->sceneView->viewport()) {
+					win->sceneView->viewport()->repaint();
+				}
+				ok = true;
 			} else {
 				ok = runCommand(model, tokens, &message);
 			}

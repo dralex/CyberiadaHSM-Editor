@@ -1,0 +1,7 @@
+repaint
+new-comment G0 a second note
+repaint
+delete n2
+repaint
+undo
+repaint

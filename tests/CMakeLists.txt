@@ -333,6 +333,7 @@ endfunction()
 
 add_l2_test(add-elements hierarchy)
 add_l2_test(add-transition geometry)
+add_l2_test(repaint comment-transition)
 add_l2_test(rename-move geometry)
 add_l2_test(reparent hierarchy)
 add_l2_test(delete geometry)
