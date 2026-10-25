@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.37 (2026-10-25)
+**Document version:** 0.38 (2026-10-25)
 
 **Related authorities:**
 
@@ -482,8 +482,9 @@ the third is a derived display value the format does not store):
 
 - `EDIT-TOOL-1` MUST [A]: a creation tool click creates exactly one element of
   its kind, parented to the element under the press point (a state or a state machine).
-  The first element created on an empty canvas is centred in the current viewport (the
-  scene centre when no view is attached), not at the scene origin. *design*
+  The first element on an empty canvas lands under the press point too: the canvas gains
+  a hosting state machine and the element is placed where the cursor is, not centred in
+  the viewport (which stranded a small pseudostate at the view corner). *design*
 - `EDIT-TOOL-2` MUST [A]: a rect tool draws a rubber-band rect or places a
   default size on a bare click. *design*
 - `EDIT-TOOL-3` MUST [A]: a creation tool reverts to select after one use.

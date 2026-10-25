@@ -1350,7 +1350,14 @@ void CyberiadaSMEditorScene::createByTool(ToolType tool, const QRectF& sceneRect
         // auto-create a borderless machine for it (the tools are disabled too)
         if ((et == Cyberiada::elementEntryPoint || et == Cyberiada::elementExitPoint) && !currentSM)
             return;
-        if (!currentSM) { addSMItem(et); return; }   // empty canvas: auto-place
+        if (!currentSM) {
+            // empty canvas: create the hosting machine, then place the element
+            // where the user clicked (the code below), not at the viewport centre -
+            // a first comment, choice or pseudostate must land under the cursor too
+            Cyberiada::Element* sm = model->newStateMachine(tr("New State Machine").toStdString());
+            if (!sm) return;
+            currentSM = static_cast<Cyberiada::StateMachine*>(sm);
+        }
         parentColl = static_cast<Cyberiada::ElementCollection*>(currentSM);
         parentCItem = dynamic_cast<CyberiadaSMEditorAbstractItem*>(elementIdToItemMap.value(currentSM->get_id()));
     }

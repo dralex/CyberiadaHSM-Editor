@@ -68,7 +68,7 @@ private slots:
 	void test_box_transition();
 	void test_auto_attach();
 	void test_new_element_place();
-	void test_new_state_empty_canvas_centres();
+	void test_new_element_empty_canvas_at_press();
 	void test_undo_gesture();
 	void test_sm_border();
 	void test_new_state();
@@ -1461,45 +1461,38 @@ void TestScene::test_new_element_place()
 	}
 }
 
-void TestScene::test_new_state_empty_canvas_centres()
+void TestScene::test_new_element_empty_canvas_at_press()
 {
-	// a state created on an empty canvas is centred in the current viewport, not
-	// at the scene origin (which rendered in the top-left of the view)
-	CyberiadaSMModel m(this);
-	CyberiadaSMEditorScene sc(&m, this);   // empty document: no state machine yet
-
-	QGraphicsView view(&sc);
-	view.resize(1200, 800);
-	view.show();
-	QVERIFY(QTest::qWaitForWindowExposed(&view));
-	view.setTransform(QTransform());
-	view.centerOn(600, 400);   // look away from the origin
-
-	QPointF vc = view.mapToScene(view.viewport()->rect().center());
-	QList<Cyberiada::ID> before = sc.getMap().keys();
-	sc.addSMItem(Cyberiada::elementSimpleState);
-
-	QGraphicsItem* fresh = nullptr;
-	for (const Cyberiada::ID& id : sc.getMap().keys()) {
-		QGraphicsItem* it = sc.getMap().value(id);
-		if (!before.contains(id) && dynamic_cast<CyberiadaSMEditorStateItem*>(it)) { fresh = it; break; }
+	// the first element on an empty canvas lands under the press point, like any
+	// later element - not at the viewport centre, which left a small pseudostate
+	// stranded at the scene origin / view corner (EDIT-TOOL-1)
+	struct Case { const char* name; Cyberiada::ElementType type; ToolType tool; };
+	const Case cases[] = {
+		{"state", Cyberiada::elementSimpleState, ToolType::NewState},
+		{"comment", Cyberiada::elementComment, ToolType::NewComment},
+		{"choice", Cyberiada::elementChoice, ToolType::NewChoice},
+		{"initial", Cyberiada::elementInitial, ToolType::NewInitial},
+		{"final", Cyberiada::elementFinal, ToolType::NewFinal},
+	};
+	const QPointF press(-402, -309);
+	for (const Case& c : cases) {
+		CyberiadaSMModel m(this);
+		CyberiadaSMEditorScene sc(&m, this);   // empty document: no state machine yet
+		QList<Cyberiada::ID> before = sc.getMap().keys();
+		sc.setCurrentTool(c.tool);
+		sceneMouse(&sc, QEvent::GraphicsSceneMousePress, press, Qt::LeftButton);
+		sceneMouse(&sc, QEvent::GraphicsSceneMouseRelease, press, Qt::NoButton);
+		QGraphicsItem* fresh = nullptr;
+		for (const Cyberiada::ID& id : sc.getMap().keys()) {
+			if (before.contains(id)) continue;
+			QGraphicsItem* it = sc.getMap().value(id);
+			CyberiadaSMEditorAbstractItem* ci = dynamic_cast<CyberiadaSMEditorAbstractItem*>(it);
+			if (ci && ci->getElement() && ci->getElement()->get_type() == Cyberiada::elementSM) continue;
+			fresh = it; break;
+		}
+		QVERIFY2(fresh, c.name);
+		QVERIFY2(QLineF(fresh->sceneBoundingRect().center(), press).length() < 1.0, c.name);
 	}
-	QVERIFY(fresh);
-	QVERIFY(QLineF(fresh->sceneBoundingRect().center(), vc).length() < 5.0);
-
-	// headless (no view): the placement falls back to the scene-rect centre
-	CyberiadaSMModel m2(this);
-	CyberiadaSMEditorScene sc2(&m2, this);
-	QPointF fallback = sc2.sceneRect().center();
-	QList<Cyberiada::ID> before2 = sc2.getMap().keys();
-	sc2.addSMItem(Cyberiada::elementSimpleState);
-	QGraphicsItem* fresh2 = nullptr;
-	for (const Cyberiada::ID& id : sc2.getMap().keys()) {
-		QGraphicsItem* it = sc2.getMap().value(id);
-		if (!before2.contains(id) && dynamic_cast<CyberiadaSMEditorStateItem*>(it)) { fresh2 = it; break; }
-	}
-	QVERIFY(fresh2);
-	QVERIFY(QLineF(fresh2->sceneBoundingRect().center(), fallback).length() < 5.0);
 }
 
 void TestScene::test_undo_gesture()
