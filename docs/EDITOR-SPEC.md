@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.40 (2026-10-26)
+**Document version:** 0.41 (2026-10-27)
 
 **Related authorities:**
 
@@ -814,13 +814,15 @@ session protocol 1). `EDIT-PLUG-36..49` are the sessions (plugin level 2).
   focus to the event line), Load Stream..., Edit Stream..., Save Log... — each entry enabled as
   its dock control, all disabled without a session on the current document. *design*
 - `EDIT-PLUG-47` MUST [A]: in batch mode a session action needs `--session-script`, else it is
-  a usage error (exit 1); the verbs run in order; `step` and `restart` wait for a state whose
-  status is not `running`, `wait` for the status given, each within `SESSION_WAIT_S` or the
-  seconds given; a failed `expect`, a timeout or a failed session exits 6; the end of the
-  script stops the session. *design*
-- `EDIT-PLUG-48` MUST [A]: `--dump-session` prints `== session`: the model, then every `state`
-  and `history` message in the order of arrival, one line each with the fields sorted, no
-  machine path. *design*
+  a usage error (exit 1); the verbs run in order after the first state; `step` and `restart`
+  wait for a state whose status is not `running`, `wait` for the status given (`ended`: the
+  plugin's own end), `answer` and `decline` for an open question, each within
+  `SESSION_WAIT_S` or the seconds given; a failed `expect`, a timeout or a failed session
+  exits 6; the end of the script stops the session. *design*
+- `EDIT-PLUG-48` MUST [A]: `--dump-session` prints `== session`: every message both ways in
+  the order it went, one line each with the fields sorted — the model, the plugin's
+  messages, the editor's prefixed `sent`, the replies; `initialize` without its parameters
+  and a path by its file name, so no line depends on the machine. *design*
 - `EDIT-PLUG-49` MUST [A]: a `log` message goes to the output tab, `warning` and `error` in the
   stderr colour; a `diagnostics` message replaces the session's findings in Diagnostics
   (`EDIT-PLUG-15`). *design*
