@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.39 (2026-10-26)
+**Document version:** 0.40 (2026-10-26)
 
 **Related authorities:**
 
@@ -763,9 +763,11 @@ session protocol 1). `EDIT-PLUG-36..49` are the sessions (plugin level 2).
   confirmation and saves it to a file as plain UTF-8 text. *design*
 - `EDIT-PLUG-36` MUST [A]: the session actions of a descriptor (`session.actions`) follow the
   plugin's other actions in its submenu, after a separator, and on its toolbar; the action ids
-  are unique across both lists; a `session.version` the editor does not run leaves them out
-  with a warning in the plugin manager and `--list-plugins`, and the other actions stay.
-  *design*
+  are unique across both lists; the one-shot actions a session action `replaces` are hidden
+  from the menu and the toolbars, while `--run-plugin` still runs them; a `session.version`
+  the editor does not run leaves the session actions out with a warning in the plugin
+  manager and `--list-plugins`, and the other actions stay; `actions` stays required
+  (`EDIT-PLUG-2`). *design*
 - `EDIT-PLUG-37` MUST [A]: a session run is configured, saved and staged as a run
   (`EDIT-PLUG-7..9`, `EDIT-PLUG-25`, `EDIT-PLUG-34`) and is the one run of its document
   (`EDIT-PLUG-21`); the plugin process gets stdin and stdout as the session channel; the
