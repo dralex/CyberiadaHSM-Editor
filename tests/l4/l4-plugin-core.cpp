@@ -27,6 +27,7 @@
 #include <QSignalSpy>
 #include <QTemporaryDir>
 
+#include "plugin_channel.h"
 #include "plugin_descriptor.h"
 #include "plugin_registry.h"
 #include "plugin_runner.h"
@@ -42,6 +43,8 @@ private slots:
     void test_parse_rejections_data();
     void test_parse_rejections();
     void test_parse_warnings();
+    void test_parse_session();
+    void test_channel_lines();
     void test_default_folders();
     void test_config_data_home();
     void test_resolve_interpreter();
@@ -186,13 +189,99 @@ void TestPluginCore::test_parse_rejections()
 void TestPluginCore::test_parse_warnings()
 {
     QString error;
-    PluginDescriptor d = parsed(R"({"api": 1, "id": "p", "name": "P", "colour": "red", "session": {},
+    PluginDescriptor d = parsed(R"({"api": 1, "id": "p", "name": "P", "colour": "red",
+        "session": {"version": 1, "actions": []},
         "parameters": [{"id": "x", "type": "string", "hint": "h"}],
         "actions": [{"id": "a", "label": "A", "result": "log", "argv": ["run"],
                      "load": {"strict": true, "fast": true}}]})", &error);
     QVERIFY2(error.isEmpty(), qPrintable(error));
     QCOMPARE(d.warnings, QStringList() << "unknown field 'colour'" << "unknown field 'parameters/x/hint'"
                                        << "unknown field 'actions/a/load/fast'");
+}
+
+// the session actions follow the one-shot ones and hide those they replace; a
+// broken session block costs only the session actions (EDIT-PLUG-36)
+void TestPluginCore::test_parse_session()
+{
+    QString error;
+    PluginDescriptor d = parsed(R"({"api": 1, "id": "p", "name": "P",
+        "actions": [{"id": "run", "label": "Run", "result": "log", "argv": ["x"]},
+                    {"id": "check", "label": "Check", "result": "log", "argv": ["x"]}],
+        "session": {"version": 1, "actions": [{"id": "step", "label": "Step", "argv": ["x"],
+                                               "replaces": ["run"]}]}})", &error);
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+    QCOMPARE(d.sessionVersion, SESSION_PROTOCOL_VERSION);
+    QCOMPARE(d.actions.size(), 3);
+    QVERIFY(d.action("run")->hidden);
+    QVERIFY(!d.action("check")->hidden);
+    const PluginAction* step = d.action("step");
+    QVERIFY(step && step->session);
+    QCOMPARE(step->result, PluginAction::resultLog);
+    QCOMPARE(step->timeout, 0);
+    QVERIFY(d.warnings.isEmpty());
+
+    // each broken block keeps the plugin with its one-shot actions
+    const char* const broken[][2] = {
+        { R"({"version": 2, "actions": []})", "the session version 2 is not supported" },
+        { R"({"actions": []})", "the session version is not given" },
+        { R"({"version": 1, "actions": [{"id": "s", "label": "S", "argv": ["x"], "replaces": ["nope"]}]})",
+          "replaces an unknown action 'nope'" },
+        { R"({"version": 1, "actions": [{"id": "run", "label": "S", "argv": ["x"]}]})",
+          "the action 'run' is duplicated" },
+        { R"({"version": 1, "actions": [{"id": "s", "label": "S", "argv": ["x"], "result": "replace"}]})",
+          "cannot have the result 'replace'" },
+    };
+    for (const auto& b: broken) {
+        QByteArray json = QByteArray(R"({"api": 1, "id": "p", "name": "P", "actions": [{"id": "run",
+            "label": "Run", "result": "log", "argv": ["x"]}], "session": )") + b[0] + "}";
+        PluginDescriptor k = parsed(json, &error);
+        QVERIFY2(error.isEmpty(), qPrintable(error));
+        QCOMPARE(k.actions.size(), 1);
+        QVERIFY(!k.actions.first().hidden);
+        QCOMPARE(k.sessionVersion, 0);
+        QCOMPARE(k.warnings.size(), 1);
+        QVERIFY2(k.warnings.first().contains(b[1]), qPrintable(k.warnings.first()));
+    }
+    // the one-shot actions stay required, for the editors before the sessions
+    parsed(R"({"api": 1, "id": "p", "name": "P", "actions": [],
+        "session": {"version": 1, "actions": [{"id": "s", "label": "S", "argv": ["x"]}]}})", &error);
+    QVERIFY(error.contains("the plugin has no actions"));
+}
+
+// one object per line: a message by its kind, any other line is text (EDIT-PLUG-38)
+void TestPluginCore::test_channel_lines()
+{
+    PluginChannel channel;
+    QStringList seen;
+    connect(&channel, &PluginChannel::text, [&seen](const QString& line) { seen << "text " + line; });
+    connect(&channel, &PluginChannel::notificationReceived, [&seen](const QString& method, const QJsonValue& p) {
+        seen << "notification " + method + (p.isArray() ? " array" : "");
+    });
+    connect(&channel, &PluginChannel::requestReceived,
+            [&seen](const QJsonValue& id, const QString& method, const QJsonValue&) {
+                seen << QString("request %1 %2").arg(id.toInt()).arg(method);
+            });
+    connect(&channel, &PluginChannel::replyReceived, [&seen](int id, const QJsonValue&, const QJsonObject& e) {
+        seen << QString("reply %1%2").arg(id).arg(e.isEmpty() ? "" : " error");
+    });
+    QList<QByteArray> sent;
+    connect(&channel, &PluginChannel::send, [&sent](const QByteArray& line, const QJsonObject&) { sent << line; });
+    channel.receive("hello from print()");
+    channel.receive(R"({"jsonrpc":"2.0","method":"state","params":{"status":"paused"}})");
+    channel.receive(R"({"jsonrpc":"2.0","method":"diagnostics","params":[]})");
+    channel.receive(R"({"jsonrpc":"2.0","id":7,"method":"ask","params":{"text":"?"}})");
+    channel.receive(R"({"jsonrpc":"2.0","id":1,"result":{}})");
+    channel.receive(R"({"jsonrpc":"2.0","id":2,"error":{"code":-32602,"message":"bad"}})");
+    channel.receive("{ not json");
+    QCOMPARE(seen, QStringList() << "text hello from print()" << "notification state"
+                                 << "notification diagnostics array" << "request 7 ask" << "reply 1"
+                                 << "reply 2 error" << "text { not json");
+    QCOMPARE(channel.request("initialize"), 1);
+    QCOMPARE(channel.request("save"), 2);
+    channel.notify("control");
+    QCOMPARE(sent.size(), 3);
+    QVERIFY(sent.first().endsWith('\n'));
+    QCOMPARE(sent.first().count('\n'), 1);
 }
 
 // the default search path: the variable's folders, the user, the system (EDIT-PLUG-1)

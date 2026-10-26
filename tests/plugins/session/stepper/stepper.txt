@@ -1,0 +1,22 @@
+# a driven session over the lift diagram
+on initialize
+  result {"kind":"driven","steps":["event","time"],"speeds":[1,0],"events":["CALL_UP","CALL_DOWN","OPEN"],"stream":true,"save":true}
+  send {"method":"state","params":{"status":"paused","active":["idle"],"fired":["t0"],"time":0}}
+on event
+  send {"method":"log","params":{"text":"queued"}}
+on control:step
+  send {"method":"state","params":{"status":"running"}}
+  send {"method":"history","params":{"event":"CALL_UP","params":{"floor":"3"},"time":0.5,"origin":"user","outcome":"fired","fired":["t1"]}}
+  send {"method":"state","params":{"status":"paused","active":["moving","up"],"fired":["t1"],"time":0.5}}
+on control:step
+  send {"method":"history","params":{"event":"t1.TIMEOUT","time":1,"origin":"model","outcome":"dropped"}}
+  send {"method":"state","params":{"status":"waiting","fired":[],"time":1}}
+on input
+  result {"items":[{"event":"OPEN","time":2},{"event":"CALL_DOWN","time":3}]}
+on save
+  result {}
+on control:restart
+  send {"method":"state","params":{"status":"paused","active":["idle"],"fired":["t0"],"time":0,"position":0}}
+on shutdown
+  result {}
+  exit 0

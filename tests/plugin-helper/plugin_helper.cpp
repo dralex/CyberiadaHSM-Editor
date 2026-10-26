@@ -36,6 +36,7 @@
 #include <sstream>
 #include <string>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #ifdef _WIN32
@@ -120,6 +121,107 @@ static bool makeDir(const std::string& path)
     return true;
 }
 
+// a field of a compact JSON line: "key":"value" as the text, "key":123 as the digits
+static std::string field(const std::string& line, const std::string& key)
+{
+    std::string quoted = "\"" + key + "\":";
+    size_t at = line.find(quoted);
+    if (at == std::string::npos) return std::string();
+    at += quoted.size();
+    if (at < line.size() && line[at] == '"') {
+        size_t end = line.find('"', at + 1);
+        return end == std::string::npos ? std::string() : line.substr(at + 1, end - at - 1);
+    }
+    size_t end = line.find_first_not_of("-0123456789", at);
+    return line.substr(at, end == std::string::npos ? std::string::npos : end - at);
+}
+
+static void emitLine(const std::string& line)
+{
+    std::cout << line << std::endl;
+    std::cout.flush();
+}
+
+// {"a":1} with the jsonrpc member put first
+static std::string message(const std::string& json)
+{
+    return "{\"jsonrpc\":\"2.0\"," + json.substr(json.find('{') + 1);
+}
+
+// session FILE: a session plugin answering the editor from FILE. A turn starts with
+// "on KEY" (the method, control:<command> or reply); its lines run for the k-th
+// message with the key, the last turn again for the later ones:
+//   result JSON | error JSON   reply to the request
+//   send JSON                  a message of the plugin
+//   ask ID JSON                an ask request with the id and the params
+//   print TEXT | eprint TEXT | sleep MS | exit N
+static bool session(const std::string& path)
+{
+    std::string text;
+    if (!readFile(path, &text)) return fail("cannot read " + path);
+    std::vector<std::pair<std::string, std::vector<std::string> > > turns;
+    std::istringstream lines(text);
+    std::string line;
+    while (std::getline(lines, line)) {
+        size_t start = line.find_first_not_of(" \t\r");
+        if (start == std::string::npos || line[start] == '#') continue;
+        line = line.substr(start);
+        if (!line.empty() && line[line.size() - 1] == '\r') line.erase(line.size() - 1);
+        if (line.compare(0, 3, "on ") == 0) {
+            turns.push_back(std::make_pair(line.substr(3), std::vector<std::string>()));
+        } else if (!turns.empty()) {
+            turns.back().second.push_back(line);
+        }
+    }
+    std::vector<std::pair<std::string, int> > seen;
+    while (std::getline(std::cin, line)) {
+        std::string method = field(line, "method");
+        std::string key = method.empty() ? "reply" : method;
+        if (method == "control") key += ":" + field(line, "command");
+        std::string id = field(line, "id");
+        int count = 0;
+        for (size_t i = 0; i < seen.size(); i++) {
+            if (seen[i].first == key) count = ++seen[i].second;
+        }
+        if (count == 0) seen.push_back(std::make_pair(key, count = 1));
+        const std::vector<std::string>* actions = nullptr;
+        int k = 0;
+        for (size_t i = 0; i < turns.size(); i++) {
+            if (turns[i].first != key) continue;
+            actions = &turns[i].second;
+            if (++k == count) break;
+        }
+        if (!actions) continue;
+        for (const std::string& a: *actions) {
+            size_t space = a.find(' ');
+            std::string verb = a.substr(0, space);
+            std::string rest = space == std::string::npos ? std::string() : a.substr(space + 1);
+            if (verb == "result" || verb == "error") {
+                emitLine("{\"jsonrpc\":\"2.0\",\"id\":" + id + ",\"" + verb + "\":" + rest + "}");
+            } else if (verb == "send") {
+                emitLine(message(rest));
+            } else if (verb == "ask") {
+                size_t at = rest.find(' ');
+                emitLine("{\"jsonrpc\":\"2.0\",\"id\":" + rest.substr(0, at) +
+                         ",\"method\":\"ask\",\"params\":" + rest.substr(at + 1) + "}");
+            } else if (verb == "print") {
+                emitLine(rest);
+            } else if (verb == "eprint") {
+                std::cerr << rest << std::endl;
+            } else if (verb == "sleep") {
+                std::this_thread::sleep_for(std::chrono::milliseconds(std::atoi(rest.c_str())));
+            } else if (verb == "exit") {
+                std::cout.flush();
+                std::exit(std::atoi(rest.c_str()));
+            } else {
+                return fail("unknown session action '" + verb + "'");
+            }
+        }
+    }
+    // stdin closed: the session is over
+    return true;
+}
+
 static bool run(const Args& op)
 {
     const std::string& name = op[0];
@@ -180,6 +282,8 @@ static bool run(const Args& op)
     } else if (name == "crash" && n == 0) {
         std::cout.flush();
         std::abort();
+    } else if (name == "session" && n == 1) {
+        return session(op[1]);
     } else if (name == "spam" && n == 1) {
         int lines = std::atoi(op[1].c_str());
         for (int i = 0; i < lines; i++) std::cout << "line " << i << std::endl;

@@ -1,0 +1,6 @@
+== session
+sent initialize
+model events=CALL_UP,CALL_DOWN,OPEN kind=driven save=true speeds=1,0 steps=event,time stream=true
+state active=idle fired=t0 status=paused time=0
+sent shutdown
+reply shutdown

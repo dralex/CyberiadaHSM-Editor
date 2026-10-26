@@ -1,0 +1,9 @@
+== plugin
+action: stepper:run
+result: log
+state: done
+exit: 0
+stdout:
+  one-shot run
+== diagnostics
+count: 0

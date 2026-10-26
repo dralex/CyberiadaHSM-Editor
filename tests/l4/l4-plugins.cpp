@@ -40,6 +40,7 @@
 #include <QTabWidget>
 #include <QTemporaryDir>
 #include <QToolBar>
+#include <QToolButton>
 #include <QTreeWidget>
 #include <sstream>
 
@@ -49,6 +50,10 @@
 #include "gesture_log.h"
 #include "plugin_dock.h"
 #include "plugin_registry.h"
+#include "plugin_session.h"
+#include "plugin_session_view.h"
+#include "cyberiadasm_editor_items.h"
+#include "cyberiadasm_render.h"
 #include "plugins_menu.h"
 #include "settings_manager.h"
 #include "dialogs/plugin_manager_dialog.h"
@@ -86,6 +91,10 @@ private slots:
     void test_output_tabs();
     void test_output_tab_reopens();
     void test_output_menu();
+    void test_session_window();
+    void test_session_questions();
+    void test_session_teardown();
+    void test_session_grab();
 };
 
 static QString documentDump(CyberiadaSMModel* model)
@@ -756,4 +765,177 @@ void TestPlugins::test_output_menu()
 }
 
 QTEST_MAIN(TestPlugins)
+// the session test plugins beside the main ones, for one test
+struct SessionPlugins {
+    SessionPlugins()
+    {
+        PluginRegistry::instance().setSearchPath(QStringList() << PLUGIN_TEST_DIR "/main"
+                                                               << PLUGIN_TEST_DIR "/session");
+        PluginRegistry::instance().scan();
+    }
+    ~SessionPlugins()
+    {
+        PluginRegistry::instance().setSearchPath(QStringList() << PLUGIN_TEST_DIR "/main");
+        PluginRegistry::instance().scan();
+    }
+};
+
+static CyberiadaSMEditorAbstractItem* sceneItem(CyberiadaSMEditorDocument* doc, const char* id)
+{
+    return dynamic_cast<CyberiadaSMEditorAbstractItem*>(doc->scene()->getMap().value(id, nullptr));
+}
+
+static QAction* menuEntry(QMenu* menu, const QString& text)
+{
+    for (QAction* a: menu->actions()) {
+        if (a->text() == text) return a;
+    }
+    return nullptr;
+}
+
+// a session: the marks, the lock with the view interactive, the controls, the tab,
+// the Session menu, the export without marks, Stop (EDIT-PLUG-36..46)
+void TestPlugins::test_session_window()
+{
+    SessionPlugins plugins;
+    CyberiadaSMEditorWindow win;
+    // the one-shot action a session replaces leaves the menu (EDIT-PLUG-36)
+    QVERIFY(!win.pluginsMenu()->action("stepper", "run"));
+    QVERIFY(win.pluginsMenu()->action("stepper", "step"));
+    QVERIFY(win.openDocument("diagrams/lift.graphml"));
+    CyberiadaSMEditorDocument* doc = win.currentDocument();
+    QAction* step = menuEntry(win.pluginSessionMenu(), "Step");
+    QVERIFY(step && !step->isEnabled());
+    PluginRunner* run = win.runPlugin("stepper", "step", PluginValues());
+    QVERIFY(run && run->session());
+    PluginSession* session = run->session();
+    QTRY_VERIFY_WITH_TIMEOUT(session->stateCount() > 0, RUN_WAIT_MS);
+    // the marks, apart from the selection (EDIT-PLUG-40)
+    QTRY_COMPARE_WITH_TIMEOUT(doc->scene()->runActive(), QStringList() << "idle", RUN_WAIT_MS);
+    QCOMPARE(sceneItem(doc, "idle")->runMark(), CyberiadaSMEditorAbstractItem::runMarkActive);
+    QCOMPARE(sceneItem(doc, "t0")->runMark(), CyberiadaSMEditorAbstractItem::runMarkFired);
+    QCOMPARE(sceneItem(doc, "doors")->runMark(), CyberiadaSMEditorAbstractItem::runMarkNone);
+    // the lock keeps the view: select, but no edits (EDIT-PLUG-41)
+    QVERIFY(doc->model()->isLocked());
+    QVERIFY(doc->view()->isInteractive());
+    QVERIFY(!sceneItem(doc, "idle")->isEditable());
+    QVERIFY(!win.actionUndo->isEnabled());
+    QModelIndex index = doc->model()->elementToIndex(doc->model()->idToElement("idle"));
+    QVERIFY(!doc->model()->setData(index, "Changed"));
+    // the controls follow the model and the status (EDIT-PLUG-39, EDIT-PLUG-46)
+    PluginSessionControls* controls = win.pluginDock()->sessionControls(run);
+    QVERIFY(controls);
+    QVERIFY(controls->stepButton()->isEnabled());
+    QVERIFY(step->isEnabled());
+    QVERIFY(menuEntry(win.pluginSessionMenu(), "Load Stream...")->isEnabled());
+    QVERIFY(!menuEntry(win.pluginSessionMenu(), "Pause")->isEnabled());
+    // the session tab (EDIT-PLUG-42)
+    PluginSessionTab* tab = win.pluginDock()->sessionTab(run);
+    QVERIFY(tab);
+    QTabWidget* tabs = win.pluginDock()->tabs();
+    QCOMPARE(tabs->tabText(tabs->indexOf(tab)), QString("lift.graphml session"));
+    QCOMPARE(tabs->currentWidget(), static_cast<QWidget*>(tab));
+    // an event from the line, a step from the menu (EDIT-PLUG-44)
+    tab->eventLine()->setEditText("CALL_UP floor=3");
+    QTest::keyClick(tab->eventLine()->lineEdit(), Qt::Key_Return);
+    step->trigger();
+    QTRY_COMPARE_WITH_TIMEOUT(doc->scene()->runActive(), QStringList() << "moving" << "up", RUN_WAIT_MS);
+    QTRY_COMPARE_WITH_TIMEOUT(tab->historyList()->topLevelItemCount(), 1, RUN_WAIT_MS);
+    QTreeWidgetItem* row = tab->historyList()->topLevelItem(0);
+    QCOMPARE(row->text(1), QString("CALL_UP floor=3"));
+    QCOMPARE(row->text(4), QString("Idle -> MovingUp"));
+    // a click on the row selects the fired transition in the locked document
+    emit tab->historyList()->itemClicked(row, 4);
+    QVERIFY(sceneItem(doc, "t1")->isSelected());
+    // a running session keeps its tab
+    tabs->tabCloseRequested(tabs->indexOf(tab));
+    QVERIFY(tabs->indexOf(tab) >= 0);
+    // the export draws no marks and leaves them on the canvas (EDIT-PLUG-40)
+    QTemporaryDir dir;
+    QString svg = dir.filePath("lift.svg");
+    QString error;
+    QVERIFY2(renderScene(doc->scene(), svg, &error, 96, QString()), qPrintable(error));
+    QFile image(svg);
+    QVERIFY(image.open(QIODevice::ReadOnly));
+    QVERIFY(!image.readAll().contains(QByteArray(RUN_ACTIVE_COLOR)));
+    QCOMPARE(doc->scene()->runActive(), QStringList() << "moving" << "up");
+    // Stop: the marks and the lock go with the session (EDIT-PLUG-45)
+    QSignalSpy finished(&win, &CyberiadaSMEditorWindow::pluginRunFinished);
+    win.pluginDock()->cancelButton(run)->click();
+    QVERIFY(finished.wait(RUN_WAIT_MS));
+    QVERIFY(doc->scene()->runActive().isEmpty());
+    QCOMPARE(sceneItem(doc, "moving")->runMark(), CyberiadaSMEditorAbstractItem::runMarkNone);
+    QVERIFY(!doc->model()->isLocked());
+    QVERIFY(!step->isEnabled());
+    // the tab stays with its history, and closes now
+    QCOMPARE(tab->historyList()->topLevelItemCount(), 1);
+    tabs->tabCloseRequested(tabs->indexOf(tab));
+    QCOMPARE(tabs->indexOf(tab), -1);
+}
+
+// the questions of a session in the answer bar, the findings it sends; the plugin
+// ends the session itself (EDIT-PLUG-43, EDIT-PLUG-49)
+void TestPlugins::test_session_questions()
+{
+    SessionPlugins plugins;
+    CyberiadaSMEditorWindow win;
+    QVERIFY(win.openDocument("diagrams/lift.graphml"));
+    PluginRunner* run = win.runPlugin("asker", "run", PluginValues());
+    QVERIFY(run && run->session());
+    PluginSession* session = run->session();
+    PluginSessionControls* controls = win.pluginDock()->sessionControls(run);
+    QTRY_VERIFY_WITH_TIMEOUT(!controls->answerBar()->isHidden(), RUN_WAIT_MS);
+    QCOMPARE(session->questions().size(), 1);
+    // the choices are buttons; the answer line answers too
+    QList<QPushButton*> buttons = controls->answerBar()->findChildren<QPushButton*>();
+    QStringList texts;
+    for (QPushButton* b: buttons) texts << b->text();
+    QVERIFY(texts.contains("yes") && texts.contains("no") && texts.contains("Decline"));
+    controls->answerEdit()->setText("yes");
+    QTest::keyClick(controls->answerEdit(), Qt::Key_Return);
+    QTRY_COMPARE_WITH_TIMEOUT(win.pluginDock()->diagnostics()->topLevelItemCount(), 1, RUN_WAIT_MS);
+    QTRY_COMPARE_WITH_TIMEOUT(session->questions().size(), 1, RUN_WAIT_MS);
+    QCOMPARE(session->questions().first().text, QString("Why?"));
+    QSignalSpy finished(&win, &CyberiadaSMEditorWindow::pluginRunFinished);
+    for (QPushButton* b: controls->answerBar()->findChildren<QPushButton*>()) {
+        if (b->text() == "Decline") b->click();
+    }
+    QVERIFY(finished.wait(RUN_WAIT_MS));
+    QCOMPARE(finished.first().first().value<PluginRunner*>()->result().state, PluginResult::stateDone);
+}
+
+// a window closed with a session running stops it first (EDIT-PLUG-45)
+void TestPlugins::test_session_teardown()
+{
+    SessionPlugins plugins;
+    CyberiadaSMEditorWindow* win = new CyberiadaSMEditorWindow();
+    QVERIFY(win->openDocument("diagrams/lift.graphml"));
+    PluginRunner* run = win->runPlugin("stepper", "step", PluginValues());
+    QVERIFY(run && run->session());
+    QTRY_VERIFY_WITH_TIMEOUT(run->session()->stateCount() > 0, RUN_WAIT_MS);
+    delete win;
+}
+
+// a picture of a session for the review: the marks, the controls, the history
+void TestPlugins::test_session_grab()
+{
+    SessionPlugins plugins;
+    CyberiadaSMEditorWindow win;
+    win.resize(1200, 800);
+    win.show();
+    // the lift has no geometry of its own: laid out for the picture
+    QVERIFY(win.openDocument("diagrams/lift.graphml", nullptr, true));
+    PluginRunner* run = win.runPlugin("stepper", "step", PluginValues());
+    QVERIFY(run && run->session());
+    QTRY_VERIFY_WITH_TIMEOUT(run->session()->stateCount() > 0, RUN_WAIT_MS);
+    run->session()->post("CALL_UP floor=3");
+    run->session()->step();
+    QTRY_COMPARE_WITH_TIMEOUT(win.currentDocument()->scene()->runActive(), QStringList() << "moving" << "up",
+                              RUN_WAIT_MS);
+    QVERIFY(QTest::qWaitForWindowExposed(&win));
+    QTest::qWait(200);
+    QVERIFY(win.grab().save(PLUGIN_TEST_DIR "/../plugins-session.png"));
+    run->session()->stop();
+}
+
 #include "l4-plugins.moc"

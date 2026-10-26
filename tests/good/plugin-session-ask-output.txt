@@ -1,0 +1,23 @@
+== plugin
+action: asker:run
+result: log
+state: done
+exit: 0
+stdout:
+  the agent has finished
+== diagnostics
+count: 1
+warning - doors: the doors stay open
+== session
+sent initialize
+model kind=supervised
+state active=idle status=running text=round 1
+request ask choices=yes,no text=Open the doors?
+state status=waiting
+sent reply action=accept text=yes
+history event=user.APPROVED fired=t3 origin=user outcome=fired
+state active=doors fired=t3 status=running text=round 2
+diagnostics 1
+request ask text=Why?
+sent reply action=decline
+state status=finished

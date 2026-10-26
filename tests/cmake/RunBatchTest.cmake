@@ -4,7 +4,8 @@
 # TEXT shows the text elements, DUMP_TEXT dumps their font and layout and
 # DUMP_STACK dumps the undo stack, DUMP_TABS adds the tab line to the dump;
 # the plugin cases: PLUGIN_PATH and PLUGIN_PARAMS ('|'-separated), PLUGIN,
-# LIST_PLUGINS, DUMP_PLUGIN, NO_DUMP (stdout without --dump), CLEAN_DIR (a fresh
+# LIST_PLUGINS, DUMP_PLUGIN, DUMP_SESSION and SESSION_SCRIPT (a plugin session),
+# NO_DUMP (stdout without --dump), CLEAN_DIR (a fresh
 # work dir), SEED (src>dst copies before the run), FORBID (absent from the output)
 
 # what differs between a good file and the output: diff -u where there is one, else
@@ -108,6 +109,12 @@ endif()
 if(DEFINED DUMP_PLUGIN)
   list(APPEND _args --dump-plugin)
 endif()
+if(DEFINED DUMP_SESSION)
+  list(APPEND _args --dump-session)
+endif()
+if(DEFINED SESSION_SCRIPT)
+  list(APPEND _args --session-script ${SESSION_SCRIPT})
+endif()
 if(DEFINED PLUGIN_PATH)
   string(REPLACE "|" ";" _plugin_paths "${PLUGIN_PATH}")
   foreach(_p ${_plugin_paths})
@@ -145,7 +152,7 @@ endif()
 if(DEFINED DUMP_GOOD)
   # the text, stack and plugin cases compare their sections alone
   if(NOT DEFINED DUMP_TEXT AND NOT DEFINED DUMP_STACK AND NOT DEFINED DUMP_PLUGIN AND
-     NOT DEFINED LIST_PLUGINS AND NOT DEFINED NO_DUMP)
+     NOT DEFINED DUMP_SESSION AND NOT DEFINED LIST_PLUGINS AND NOT DEFINED NO_DUMP)
     list(APPEND _args --dump)
   endif()
   execute_process(COMMAND ${BATCH_BIN} ${_args}

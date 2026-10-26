@@ -1,0 +1,25 @@
+{
+  "api": 1,
+  "id": "badmodel",
+  "name": "Bad model",
+  "version": "0.1.0",
+  "description": "answers initialize with an unknown kind",
+  "actions": [
+    {
+      "id": "say",
+      "label": "Say",
+      "result": "log",
+      "argv": ["${plugin_dir}/../../bin/plugin-helper", "print", "bad model"]
+    }
+  ],
+  "session": {
+    "version": 1,
+    "actions": [
+      {
+        "id": "run",
+        "label": "Run",
+        "argv": ["${plugin_dir}/../../bin/plugin-helper", "session", "${plugin_dir}/badmodel.txt"]
+      }
+    ]
+  }
+}

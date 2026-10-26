@@ -1,0 +1,16 @@
+# the first state, an event, two steps, a stream, a log, a restart, stop
+expect-active idle
+expect-fired t0
+event CALL_UP floor=3
+step
+expect-status paused
+expect-active moving up
+expect-fired t1
+step time
+expect-status waiting
+expect-fired
+input scripts/session-stream.log
+save lift.log
+restart
+expect-active idle
+stop

@@ -1,0 +1,3 @@
+# the model has no known kind: the editor fails the session
+on initialize
+  result {"kind":"unknown"}

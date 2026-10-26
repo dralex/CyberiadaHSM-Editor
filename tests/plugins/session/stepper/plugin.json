@@ -1,0 +1,27 @@
+{
+  "api": 1,
+  "id": "stepper",
+  "name": "Stepper",
+  "version": "0.1.0",
+  "description": "a driven session answered from a script",
+  "actions": [
+    {
+      "id": "run",
+      "label": "Run once",
+      "result": "log",
+      "argv": ["${plugin_dir}/../../bin/plugin-helper", "print", "one-shot run"]
+    }
+  ],
+  "session": {
+    "version": 1,
+    "actions": [
+      {
+        "id": "step",
+        "label": "Run step by step",
+        "replaces": ["run"],
+        "toolbar": true,
+        "argv": ["${plugin_dir}/../../bin/plugin-helper", "session", "${plugin_dir}/stepper.txt"]
+      }
+    ]
+  }
+}

@@ -1,0 +1,9 @@
+== plugins
+asker 0.1.0 enabled plugin-path 1
+  session: run
+badmodel 0.1.0 enabled plugin-path 1
+  session: run
+broken 0.1.0 enabled plugin-path 1
+  warning: the session actions are left out: the session version 2 is not supported
+stepper 0.1.0 enabled plugin-path 1
+  session: step replaces run

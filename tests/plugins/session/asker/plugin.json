@@ -1,0 +1,25 @@
+{
+  "api": 1,
+  "id": "asker",
+  "name": "Asker",
+  "version": "0.1.0",
+  "description": "a supervised session that asks two questions",
+  "actions": [
+    {
+      "id": "list",
+      "label": "Say",
+      "result": "log",
+      "argv": ["${plugin_dir}/../../bin/plugin-helper", "print", "asker"]
+    }
+  ],
+  "session": {
+    "version": 1,
+    "actions": [
+      {
+        "id": "run",
+        "label": "Run the agent",
+        "argv": ["${plugin_dir}/../../bin/plugin-helper", "session", "${plugin_dir}/asker.txt"]
+      }
+    ]
+  }
+}

@@ -681,14 +681,14 @@ configure_file(plugins/main/echo/plugin.json
   "${PLUGIN_USER_DATA}/${CYBERIADA_VENDOR}/${CYBERIADA_APP_NAME}/plugins/echo/plugin.json" COPYONLY)
 
 # add_plugin_test(<case> [INPUT f] [PLUGIN id[:action]] [PARAMS p...] [PATHS set...]
-#   [SCRIPT f] [EXPECTED n] [FORBID text] [SEED src>dst] [CONFIG dir] [DATA dir]
-#   [ENV var=value...] [DUMP] [DUMP_PLUGIN] [DUMP_STACK] [DUMP_TABS] [LIST] [NO_DUMP]
-#   [SAVE] [INSPECT] [CLEAN] [NOPATH])
+#   [SCRIPT f] [SESSION f] [EXPECTED n] [FORBID text] [SEED src>dst] [CONFIG dir] [DATA dir]
+#   [ENV var=value...] [DUMP] [DUMP_PLUGIN] [DUMP_SESSION] [DUMP_STACK] [DUMP_TABS] [LIST]
+#   [NO_DUMP] [SAVE] [INSPECT] [CLEAN] [NOPATH])
 # compares good/plugin-<case>-output.txt when a section is dumped and
 # good/plugin-<case>-output.graphml with SAVE; the work dir is plugin-work/<case>
 function(add_plugin_test name)
-  cmake_parse_arguments(P "DUMP;DUMP_PLUGIN;DUMP_STACK;DUMP_TABS;LIST;NO_DUMP;SAVE;INSPECT;CLEAN;NOPATH"
-    "INPUT;PLUGIN;SCRIPT;EXPECTED;FORBID;SEED;CONFIG;DATA" "PARAMS;PATHS;ENV" ${ARGN})
+  cmake_parse_arguments(P "DUMP;DUMP_PLUGIN;DUMP_SESSION;DUMP_STACK;DUMP_TABS;LIST;NO_DUMP;SAVE;INSPECT;CLEAN;NOPATH"
+    "INPUT;PLUGIN;SCRIPT;SESSION;EXPECTED;FORBID;SEED;CONFIG;DATA" "PARAMS;PATHS;ENV" ${ARGN})
   if(NOT DEFINED P_EXPECTED)
     set(P_EXPECTED 0)
   endif()
@@ -717,7 +717,10 @@ function(add_plugin_test name)
       list(APPEND _vars "-D${_option}=${P_${_option}}")
     endif()
   endforeach()
-  foreach(_flag DUMP_PLUGIN DUMP_STACK DUMP_TABS INSPECT NO_DUMP)
+  if(P_SESSION)
+    list(APPEND _vars "-DSESSION_SCRIPT=${P_SESSION}")
+  endif()
+  foreach(_flag DUMP_PLUGIN DUMP_SESSION DUMP_STACK DUMP_TABS INSPECT NO_DUMP)
     if(P_${_flag})
       list(APPEND _vars -D${_flag}=1)
     endif()
@@ -737,7 +740,7 @@ function(add_plugin_test name)
     endif()
     list(APPEND _vars "-DSEED=${_src}>${_work}/${_dst}")
   endif()
-  if(P_DUMP OR P_DUMP_PLUGIN OR P_DUMP_STACK OR P_DUMP_TABS OR P_LIST OR P_NO_DUMP)
+  if(P_DUMP OR P_DUMP_PLUGIN OR P_DUMP_SESSION OR P_DUMP_STACK OR P_DUMP_TABS OR P_LIST OR P_NO_DUMP)
     list(APPEND _vars -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/plugin-${name}.out
       -DDUMP_GOOD=${CMAKE_CURRENT_SOURCE_DIR}/good/plugin-${name}-output.txt)
   endif()
@@ -864,6 +867,18 @@ add_plugin_test(relative INPUT diagrams/hierarchy.graphml PLUGIN relative DUMP_P
 add_plugin_test(interp-prefs INPUT diagrams/hierarchy.graphml PLUGIN interp DUMP_PLUGIN CONFIG ${PLUGIN_CONFIG_DIR})
 add_plugin_test(interp-missing INPUT diagrams/hierarchy.graphml PLUGIN nointerp DUMP_PLUGIN EXPECTED 6)
 add_plugin_test(shadow-run INPUT diagrams/hierarchy.graphml PLUGIN echo PATHS shadow main DUMP_PLUGIN)
+# sessions, plugin level 2 (EDIT-PLUG-36..49): the helper answers from a script
+add_plugin_test(list-session LIST PATHS session)
+add_plugin_test(session-step INPUT diagrams/lift.graphml PLUGIN stepper:step PATHS session
+  SESSION scripts/session-step.session DUMP_PLUGIN DUMP_SESSION)
+add_plugin_test(session-ask INPUT diagrams/lift.graphml PLUGIN asker:run PATHS session
+  SESSION scripts/session-ask.session DUMP_PLUGIN DUMP_SESSION)
+add_plugin_test(session-replaced INPUT diagrams/lift.graphml PLUGIN stepper:run PATHS session DUMP_PLUGIN)
+add_plugin_test(session-no-script INPUT diagrams/lift.graphml PLUGIN stepper:step PATHS session EXPECTED 1)
+add_plugin_test(session-bad-model INPUT diagrams/lift.graphml PLUGIN badmodel:run PATHS session
+  SESSION scripts/session-fail.session DUMP_PLUGIN EXPECTED 6)
+add_plugin_test(session-expect INPUT diagrams/lift.graphml PLUGIN stepper:step PATHS session
+  SESSION scripts/session-fail.session DUMP_SESSION EXPECTED 6)
 
 # the plugin core in process: the descriptors, the values and the runner over the helper
 add_l4_test(plugin-core)

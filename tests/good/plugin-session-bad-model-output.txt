@@ -1,0 +1,8 @@
+== plugin
+action: badmodel:run
+result: log
+state: failed
+exit: -
+error: the session model has no known kind
+== diagnostics
+count: 0

@@ -1,0 +1,18 @@
+# a supervised session: a question with choices, a finding, a declined question
+on initialize
+  result {"kind":"supervised"}
+  send {"method":"state","params":{"status":"running","active":["idle"],"text":"round 1"}}
+  ask 100 {"text":"Open the doors?","choices":["yes","no"]}
+  send {"method":"state","params":{"status":"waiting"}}
+on reply
+  send {"method":"history","params":{"event":"user.APPROVED","origin":"user","outcome":"fired","fired":["t3"]}}
+  send {"method":"state","params":{"status":"running","active":["doors"],"fired":["t3"],"text":"round 2"}}
+  send {"method":"diagnostics","params":[{"severity":"warning","message":"the doors stay open","element":"doors"}]}
+  ask 101 {"text":"Why?"}
+on reply
+  send {"method":"state","params":{"status":"finished"}}
+  print the agent has finished
+  exit 0
+on shutdown
+  result {}
+  exit 0

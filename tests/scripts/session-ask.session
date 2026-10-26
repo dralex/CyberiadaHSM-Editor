@@ -1,0 +1,10 @@
+# a supervised session: answer, decline, the plugin ends it
+wait waiting
+expect-active idle
+answer yes
+wait running
+expect-active doors
+expect-fired t3
+decline
+wait finished
+wait ended

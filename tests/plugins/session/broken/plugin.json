@@ -1,0 +1,25 @@
+{
+  "api": 1,
+  "id": "broken",
+  "name": "Broken",
+  "version": "0.1.0",
+  "description": "a session block of an unknown version: the one-shot action stays",
+  "actions": [
+    {
+      "id": "say",
+      "label": "Say",
+      "result": "log",
+      "argv": ["${plugin_dir}/../../bin/plugin-helper", "print", "broken"]
+    }
+  ],
+  "session": {
+    "version": 2,
+    "actions": [
+      {
+        "id": "walk",
+        "label": "Walk",
+        "argv": ["${plugin_dir}/../../bin/plugin-helper", "session", "${plugin_dir}/none.txt"]
+      }
+    ]
+  }
+}
