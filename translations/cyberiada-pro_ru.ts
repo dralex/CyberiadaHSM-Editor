@@ -49,54 +49,55 @@
 <context>
     <name>CyberiadaSMEditorScene</name>
     <message>
-        <location filename="../cyberiadasm_editor_scene.cpp" line="+1044"/>
+        <location filename="../cyberiadasm_editor_scene.cpp" line="+1144"/>
         <location line="+35"/>
         <location line="+161"/>
+        <location line="+35"/>
         <source>New State Machine</source>
         <translation>Новая машина состояний</translation>
     </message>
     <message>
-        <location line="-186"/>
+        <location line="-221"/>
         <source>Create new state machine</source>
         <translation>Создание машины состояний</translation>
     </message>
     <message>
         <location line="+1"/>
         <location line="+116"/>
-        <location line="+155"/>
-        <location line="+234"/>
+        <location line="+164"/>
+        <location line="+240"/>
         <source>Parameters error:
 </source>
         <translation>Ошибка параметров:
 </translation>
     </message>
     <message>
-        <location line="-436"/>
-        <location line="+160"/>
+        <location line="-451"/>
+        <location line="+169"/>
         <source>New state</source>
         <translation>Новое состояние</translation>
     </message>
     <message>
-        <location line="-126"/>
-        <location line="+134"/>
-        <location line="+210"/>
+        <location line="-135"/>
+        <location line="+143"/>
+        <location line="+216"/>
         <source>New comment</source>
         <translation>Новый комментарий</translation>
     </message>
     <message>
-        <location line="-340"/>
-        <location line="+133"/>
+        <location line="-355"/>
+        <location line="+142"/>
         <source>New formal comment</source>
         <translation>Новый формальный комментарий</translation>
     </message>
     <message>
-        <location line="-125"/>
-        <location line="+155"/>
+        <location line="-134"/>
+        <location line="+164"/>
         <source>Create new element</source>
         <translation>Создание элемента</translation>
     </message>
     <message>
-        <location line="+164"/>
+        <location line="+170"/>
         <source>comment the selection</source>
         <translation type="unfinished">комментарий к выделенному</translation>
     </message>
@@ -109,7 +110,7 @@
 <context>
     <name>CyberiadaSMEditorStateItem</name>
     <message>
-        <location filename="../cyberiadasm_editor_state_item.cpp" line="+704"/>
+        <location filename="../cyberiadasm_editor_state_item.cpp" line="+725"/>
         <source>Delete</source>
         <translation>Удалить</translation>
     </message>
@@ -142,7 +143,7 @@
 <context>
     <name>CyberiadaSMEditorSubjectItem</name>
     <message>
-        <location filename="../cyberiadasm_editor_subject_item.cpp" line="+479"/>
+        <location filename="../cyberiadasm_editor_subject_item.cpp" line="+481"/>
         <source>Delete Link</source>
         <translation>Удалить связь с предметом комментирования</translation>
     </message>
@@ -160,7 +161,7 @@
 <context>
     <name>CyberiadaSMEditorTransitionItem</name>
     <message>
-        <location filename="../cyberiadasm_editor_transition_item.cpp" line="+1121"/>
+        <location filename="../cyberiadasm_editor_transition_item.cpp" line="+1365"/>
         <source>Delete point</source>
         <translation>Удалить точку</translation>
     </message>
@@ -168,7 +169,7 @@
 <context>
     <name>CyberiadaSMEditorWindow</name>
     <message>
-        <location filename="../smeditor_window.cpp" line="+116"/>
+        <location filename="../smeditor_window.cpp" line="+118"/>
         <source>Output panel</source>
         <translation>Панель вывода</translation>
     </message>
@@ -178,7 +179,7 @@
         <translation>Менеджер плагинов...</translation>
     </message>
     <message>
-        <location line="+110"/>
+        <location line="+111"/>
         <source>Close</source>
         <translation>Закрыть</translation>
     </message>
@@ -212,7 +213,7 @@
         <translation>Markdown</translation>
     </message>
     <message>
-        <location line="+98"/>
+        <location line="+120"/>
         <source>Undo</source>
         <translation>Отменить</translation>
     </message>
@@ -366,13 +367,13 @@
         <translation>у плагина «%1» нет действия «%2»</translation>
     </message>
     <message>
-        <location line="+100"/>
+        <location line="+107"/>
         <source>the document is closed</source>
         <translation>документ закрыт</translation>
     </message>
     <message>
-        <location line="-141"/>
-        <location line="+154"/>
+        <location line="-148"/>
+        <location line="+161"/>
         <source>Plugin: %1</source>
         <translation>Плагин: %1</translation>
     </message>
@@ -382,12 +383,58 @@
         <translation>документ доступен только для чтения</translation>
     </message>
     <message>
-        <location line="+124"/>
+        <location line="+33"/>
+        <source>Session</source>
+        <translation type="unfinished">Сессия</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Step</source>
+        <translation type="unfinished">Шаг</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <location line="+186"/>
         <source>Run</source>
         <translation>Запустить</translation>
     </message>
     <message>
-        <location line="+20"/>
+        <location line="-184"/>
+        <source>Pause</source>
+        <translation type="unfinished">Пауза</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Restart</source>
+        <translation type="unfinished">Перезапуск</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Stop</source>
+        <translation type="unfinished">Стоп</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Post Event</source>
+        <translation type="unfinished">Послать событие</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Load Stream...</source>
+        <translation type="unfinished">Загрузить поток...</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Edit Stream...</source>
+        <translation type="unfinished">Изменить поток...</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Save Log...</source>
+        <translation type="unfinished">Сохранить журнал...</translation>
+    </message>
+    <message>
+        <location line="+195"/>
         <source>%1 - Settings</source>
         <translation>%1 - Параметры</translation>
     </message>
@@ -400,7 +447,7 @@
 <context>
     <name>CyberiadaSMModel</name>
     <message>
-        <location filename="../cyberiadasm_model.cpp" line="+219"/>
+        <location filename="../cyberiadasm_model.cpp" line="+223"/>
         <source>XML graphml error:
 </source>
         <translation>Ошибка XML в файле graphml:
@@ -421,7 +468,7 @@
 </translation>
     </message>
     <message>
-        <location line="+73"/>
+        <location line="+74"/>
         <source>edit</source>
         <translation>правка</translation>
     </message>
@@ -465,7 +512,7 @@
     <message>
         <location line="+31"/>
         <location line="+19"/>
-        <location line="+100"/>
+        <location line="+105"/>
         <location line="+14"/>
         <location line="+21"/>
         <source>geometry</source>
@@ -483,13 +530,13 @@
         <translation>удаление границы</translation>
     </message>
     <message>
-        <location line="+201"/>
-        <location line="+1592"/>
+        <location line="+203"/>
+        <location line="+1630"/>
         <source>reparent</source>
         <translation>смена родителя</translation>
     </message>
     <message>
-        <location line="-1537"/>
+        <location line="-1575"/>
         <source>comment</source>
         <translation>комментарий</translation>
     </message>
@@ -574,7 +621,7 @@
         <translation>удаление</translation>
     </message>
     <message>
-        <location line="+695"/>
+        <location line="+733"/>
         <source>paste</source>
         <translation>вставка</translation>
     </message>
@@ -1163,12 +1210,12 @@
     </message>
     <message>
         <location line="+22"/>
-        <location line="+37"/>
+        <location line="+38"/>
         <source>Name</source>
         <translation type="unfinished">Имя</translation>
     </message>
     <message>
-        <location line="-36"/>
+        <location line="-37"/>
         <source>Body</source>
         <translation type="unfinished">Текст</translation>
     </message>
@@ -1213,12 +1260,12 @@
         <translation type="unfinished">Тип</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+4"/>
         <source>Data</source>
         <translation type="unfinished">Данные</translation>
     </message>
     <message>
-        <location line="+167"/>
+        <location line="+169"/>
         <source>Select the commented text in one field.</source>
         <translation type="unfinished">Выделите комментируемый текст в одном поле.</translation>
     </message>
@@ -1315,7 +1362,7 @@
 <context>
     <name>PluginDock</name>
     <message>
-        <location filename="../plugin_dock.cpp" line="+64"/>
+        <location filename="../plugin_dock.cpp" line="+66"/>
         <source>error</source>
         <comment>severity</comment>
         <translation>ошибка</translation>
@@ -1377,7 +1424,7 @@
         <translation>Вывод %1</translation>
     </message>
     <message>
-        <location line="+39"/>
+        <location line="+46"/>
         <source>Save to File...</source>
         <translation>Сохранить в файл...</translation>
     </message>
@@ -1417,7 +1464,12 @@
         <translation>Сохранение вывода</translation>
     </message>
     <message>
-        <location line="+20"/>
+        <location line="+34"/>
+        <source>%1 session</source>
+        <translation type="unfinished">Сессия %1</translation>
+    </message>
+    <message>
+        <location line="+19"/>
         <source>%1: running</source>
         <translation>%1: выполняется</translation>
     </message>
@@ -1427,7 +1479,7 @@
         <translation>Отменить</translation>
     </message>
     <message>
-        <location line="+18"/>
+        <location line="+19"/>
         <source>%1 is set to %2</source>
         <translation>%1: установлено значение %2</translation>
     </message>
@@ -1442,12 +1494,12 @@
         <translation>%1 не установлено: в документе нет машины состояний или он только для чтения</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+30"/>
         <source>%1: running %2:%3</source>
         <translation>%1: выполняется %2:%3</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+18"/>
         <source>done, exit code %1</source>
         <translation>готово, код выхода %1</translation>
     </message>
@@ -1479,7 +1531,7 @@
         <translation>изменен файл %1</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+19"/>
         <source>%1 (absent)</source>
         <translation>%1 (отсутствует)</translation>
     </message>
@@ -1575,7 +1627,7 @@
 <context>
     <name>PluginRunner</name>
     <message>
-        <location filename="../plugin_runner.cpp" line="+118"/>
+        <location filename="../plugin_runner.cpp" line="+122"/>
         <source>the variable at &apos;%1&apos; is not closed</source>
         <translation>переменная в «%1» не закрыта</translation>
     </message>
@@ -1681,19 +1733,24 @@
         <translation>не удается записать файл параметра</translation>
     </message>
     <message>
-        <location line="+44"/>
-        <location line="+16"/>
-        <location line="+93"/>
+        <location line="+46"/>
+        <location line="+23"/>
+        <location line="+162"/>
         <source>cancelled</source>
         <translation>отменено</translation>
     </message>
     <message>
-        <location line="-15"/>
+        <location line="-73"/>
+        <source>a session line exceeds the limit</source>
+        <translation type="unfinished">строка сессии превышает предел</translation>
+    </message>
+    <message>
+        <location line="+47"/>
         <source>the program &apos;%1&apos; cannot start</source>
         <translation>программу «%1» не удается запустить</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+22"/>
         <source>the run timed out after %1 s</source>
         <translation>время запуска истекло через %1 с</translation>
     </message>
@@ -1744,7 +1801,7 @@
         <translation>выходной документ не является допустимым документом CyberiadaML</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+16"/>
         <source>the diagnostics file cannot be read</source>
         <translation>файл замечаний не удается прочитать</translation>
     </message>
@@ -1752,6 +1809,273 @@
         <location line="+5"/>
         <source>the diagnostics file is missing</source>
         <translation>файл замечаний отсутствует</translation>
+    </message>
+</context>
+<context>
+    <name>PluginSession</name>
+    <message>
+        <location filename="../plugin_session.cpp" line="+156"/>
+        <source>the plugin did not answer initialize within %1 s</source>
+        <translation type="unfinished">плагин не ответил на initialize за %1 с</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>the session model has no known kind</source>
+        <translation type="unfinished">у модели сессии нет известного вида</translation>
+    </message>
+    <message>
+        <location line="+42"/>
+        <source>the plugin refused initialize: %1</source>
+        <translation type="unfinished">плагин отклонил initialize: %1</translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <source>line %1: %2</source>
+        <translation type="unfinished">строка %1: %2</translation>
+    </message>
+    <message>
+        <location line="+86"/>
+        <source>the session diagnostics are malformed: %1</source>
+        <translation type="unfinished">замечания сессии повреждены: %1</translation>
+    </message>
+    <message>
+        <location line="+186"/>
+        <source>no event to post</source>
+        <translation type="unfinished">нет события для отправки</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>&apos;%1&apos; is not name=value</source>
+        <translation type="unfinished">«%1» — не имя=значение</translation>
+    </message>
+</context>
+<context>
+    <name>PluginSessionControls</name>
+    <message>
+        <location filename="../plugin_session_view.cpp" line="+63"/>
+        <source>running</source>
+        <comment>session status</comment>
+        <translation type="unfinished">идёт</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>paused</source>
+        <comment>session status</comment>
+        <translation type="unfinished">пауза</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>waiting</source>
+        <comment>session status</comment>
+        <translation type="unfinished">ожидание</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>finished</source>
+        <comment>session status</comment>
+        <translation type="unfinished">завершена</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>accepted</source>
+        <comment>session verdict</comment>
+        <translation type="unfinished">допущена</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>rejected</source>
+        <comment>session verdict</comment>
+        <translation type="unfinished">не допущена</translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <source>Pause</source>
+        <translation type="unfinished">Пауза</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Restart</source>
+        <translation type="unfinished">Перезапуск</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Stop</source>
+        <translation type="unfinished">Стоп</translation>
+    </message>
+    <message>
+        <location line="+18"/>
+        <source>Answer</source>
+        <translation type="unfinished">Ответить</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Decline</source>
+        <translation type="unfinished">Отказаться</translation>
+    </message>
+    <message>
+        <location line="+28"/>
+        <source>event</source>
+        <comment>step unit</comment>
+        <translation type="unfinished">событие</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>input</source>
+        <comment>step unit</comment>
+        <translation type="unfinished">вход</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>time</source>
+        <comment>step unit</comment>
+        <translation type="unfinished">время</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>max</source>
+        <comment>run speed</comment>
+        <translation type="unfinished">макс.</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>x%1</source>
+        <comment>run speed</comment>
+        <translation type="unfinished">x%1</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>starting</source>
+        <translation type="unfinished">запуск</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>stopping</source>
+        <translation type="unfinished">остановка</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>t = %1 s</source>
+        <translation type="unfinished">t = %1 с</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>#%1</source>
+        <translation type="unfinished">#%1</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>%1: %2</source>
+        <translation type="unfinished">%1: %2</translation>
+    </message>
+    <message>
+        <location line="+36"/>
+        <source>Step: %1</source>
+        <translation type="unfinished">Шаг: %1</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Run %1</source>
+        <translation type="unfinished">Пуск %1</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>? %1</source>
+        <translation type="unfinished">? %1</translation>
+    </message>
+</context>
+<context>
+    <name>PluginSessionTab</name>
+    <message>
+        <location line="+23"/>
+        <source>Post</source>
+        <translation type="unfinished">Послать</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Load Stream...</source>
+        <translation type="unfinished">Загрузить поток...</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Edit Stream...</source>
+        <translation type="unfinished">Изменить поток...</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Save Log...</source>
+        <translation type="unfinished">Сохранить журнал...</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+13"/>
+        <source>Event</source>
+        <translation type="unfinished">Событие</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Time</source>
+        <translation type="unfinished">Время</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Origin</source>
+        <translation type="unfinished">Источник</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Outcome</source>
+        <translation type="unfinished">Исход</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Fired</source>
+        <translation type="unfinished">Сработало</translation>
+    </message>
+    <message>
+        <location line="+49"/>
+        <source>Output: %1</source>
+        <translation type="unfinished">Выход: %1</translation>
+    </message>
+    <message>
+        <location line="+54"/>
+        <source>pending</source>
+        <translation type="unfinished">ожидает</translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <source>the event is not posted: %1</source>
+        <translation type="unfinished">событие не отправлено: %1</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>the plugin refused: %1</source>
+        <translation type="unfinished">плагин отказал: %1</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Load a stream</source>
+        <translation type="unfinished">Загрузить поток</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+21"/>
+        <source>Streams (*.log *.txt);;All files (*)</source>
+        <translation type="unfinished">Потоки (*.log *.txt);;Все файлы (*)</translation>
+    </message>
+    <message>
+        <location line="-14"/>
+        <source>Edit the stream</source>
+        <translation type="unfinished">Изменить поток</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Stream</source>
+        <translation type="unfinished">Поток</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>Save the log</source>
+        <translation type="unfinished">Сохранить журнал</translation>
     </message>
 </context>
 <context>
@@ -1795,7 +2119,7 @@
         <translation>Панели плагинов</translation>
     </message>
     <message>
-        <location line="+72"/>
+        <location line="+81"/>
         <source>Settings...</source>
         <translation>Параметры...</translation>
     </message>
@@ -2004,7 +2328,7 @@
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../batch_driver.cpp" line="+49"/>
+        <location filename="../batch_driver.cpp" line="+50"/>
         <source>Open State Machine</source>
         <translation>Открытие машины состояний</translation>
     </message>
@@ -2014,7 +2338,7 @@
         <translation>Предупреждение</translation>
     </message>
     <message>
-        <location filename="../cyberiadasm_editor_transition_item.cpp" line="+465"/>
+        <location filename="../cyberiadasm_editor_transition_item.cpp" line="+445"/>
         <source>Reset label position</source>
         <translation>Сбросить положение подписи</translation>
     </message>
@@ -2022,12 +2346,12 @@
 <context>
     <name>Render</name>
     <message>
-        <location filename="../cyberiadasm_render.cpp" line="+94"/>
+        <location filename="../cyberiadasm_render.cpp" line="+106"/>
         <source>the scene is empty, nothing to export</source>
         <translation>сцена пуста, экспортировать нечего</translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+28"/>
         <location line="+22"/>
         <source>cannot write the image %1</source>
         <translation>не удается записать изображение %1</translation>
