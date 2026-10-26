@@ -41,6 +41,8 @@ class QActionGroup;
 class MetaChoiceMenu;
 class PluginsMenu;
 class PluginDock;
+class PluginSession;
+class PluginSessionTab;
 
 // The window holds the documents (docs/WINDOW.md): the menus, the toolbars,
 // the clipboard and the armed tool are global; the structure tree, the
@@ -111,6 +113,9 @@ public:
                                               CyberiadaSMEditorDocument* doc, const PluginValues& values);
     PluginsMenu*            pluginsMenu() const { return pluginMenu; }
     PluginDock*             pluginDock() const { return pluginDockWidget; }
+    // Plugins > Session: the session of the active document (EDIT-PLUG-46)
+    QMenu*                  pluginSessionMenu() const { return sessionMenu; }
+    PluginSession*          currentSession() const;
     // View > Structure tree / Properties: the toggle actions of the docks (EDIT-UI-6)
     QAction*                actionStructureTree = nullptr;
     QAction*                actionProperties = nullptr;
@@ -177,6 +182,8 @@ private slots:
     void                    slotPluginFinished();
     // the enabled state and the tooltips of the plugin actions (EDIT-PLUG-4)
     void                    updatePluginActions();
+    // the Session menu follows the active document's session
+    void                    updateSessionActions();
     void                    slotPluginsScanned();
     // the interpreters or the switches changed: the plugins are scanned again
     void                    slotPluginSettingsChanged();
@@ -251,6 +258,21 @@ private:
     MetaChoiceMenu* languageChoice = nullptr;
     PluginsMenu* pluginMenu = nullptr;
     PluginDock* pluginDockWidget = nullptr;
+    QMenu* sessionMenu = nullptr;
+    QAction* actionSessionStep = nullptr;
+    QAction* actionSessionRun = nullptr;
+    QAction* actionSessionPause = nullptr;
+    QAction* actionSessionRestart = nullptr;
+    QAction* actionSessionStop = nullptr;
+    QAction* actionSessionPost = nullptr;
+    QAction* actionSessionLoad = nullptr;
+    QAction* actionSessionEdit = nullptr;
+    QAction* actionSessionSave = nullptr;
+    void initSessionMenu();
+    // a session's marks, findings and menu follow it (EDIT-PLUG-40/46/49)
+    void connectSession(PluginRunner* run, CyberiadaSMEditorDocument* doc);
+    // the session tab of the active document's session, else nullptr
+    PluginSessionTab* currentSessionTab() const;
     MetaChoiceMenu* markupChoice = nullptr;
 
     // a detached deep clone of the last copied/cut element (nullptr when empty),

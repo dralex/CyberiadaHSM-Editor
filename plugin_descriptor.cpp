@@ -48,6 +48,12 @@ const QStringList actionFields = {
     "parameters", "outdir", "load", "save", "cwd", "toolbar", "meta"
 };
 const QStringList loadFields = { "strict", "reconstruct" };
+const QStringList sessionFields = { "version", "actions" };
+// a session action has no timeout and loads no document (docs/PLUGIN-API.md, Sessions)
+const QStringList sessionActionFields = {
+    "id", "label", "description", "icon", "result", "argv", "exit_ok",
+    "parameters", "outdir", "save", "cwd", "toolbar", "meta", "replaces"
+};
 
 const char* const typeNames[] = {
     "string", "text", "int", "double", "bool", "enum", "file", "dir", "secret"
@@ -279,29 +285,35 @@ bool parseArgv(const QJsonValue& value, const QString& actionId, PluginAction* a
     return true;
 }
 
-bool parseAction(const QJsonValue& value, int index, PluginAction* a,
+bool parseAction(const QJsonValue& value, int index, bool session, PluginAction* a,
                  QStringList* warnings, QString* error)
 {
-    if (!value.isObject()) return fail(error, QString("the action %1 is not an object").arg(index));
+    const QString list = session ? "session.actions" : "actions";
+    if (!value.isObject()) return fail(error, QString("the %1 %2 is not an object").arg(list).arg(index));
     QJsonObject o = value.toObject();
-    QString where = QString("actions[%1].").arg(index);
+    QString where = QString("%1[%2].").arg(list).arg(index);
     if (!readString(o, "id", where, &a->id, error)) return false;
     if (!PluginDescriptor::validId(a->id)) {
-        return fail(error, QString("the action %1 has no valid id").arg(index));
+        return fail(error, QString("the %1 %2 has no valid id").arg(list).arg(index));
     }
-    where = QString("actions/%1/").arg(a->id);
-    warnUnknown(o, actionFields, where, warnings);
+    a->session = session;
+    where = QString("%1/%2/").arg(session ? "session/actions" : "actions", a->id);
+    warnUnknown(o, session ? sessionActionFields : actionFields, where, warnings);
 
     if (!readString(o, "label", where, &a->label, error)) return false;
     if (a->label.isEmpty()) return fail(error, QString("the action '%1' has no label").arg(a->id));
     if (!readString(o, "description", where, &a->description, error)) return false;
     if (!readString(o, "icon", where, &a->icon, error)) return false;
 
-    QString result;
+    // a session takes back a log, the findings or the files when it ends
+    QString result = session ? resultNames[PluginAction::resultLog] : QString();
     if (!readString(o, "result", where, &result, error)) return false;
     int r = indexOfName(resultNames, sizeof(resultNames) / sizeof(resultNames[0]), result);
     if (r < 0) return fail(error, QString("the action '%1' has an unknown result '%2'").arg(a->id, result));
     a->result = static_cast<PluginAction::Result>(r);
+    if (session && (a->result == PluginAction::resultReplace || a->result == PluginAction::resultNewDocument)) {
+        return fail(error, QString("the session action '%1' cannot have the result '%2'").arg(a->id, result));
+    }
 
     if (!parseArgv(o.value("argv"), a->id, a, error)) return false;
 
@@ -316,7 +328,9 @@ bool parseAction(const QJsonValue& value, int index, PluginAction* a,
     }
     if (a->exitOk.isEmpty()) a->exitOk.append(0);
 
-    if (o.contains("timeout")) {
+    if (session) {
+        a->timeout = 0;
+    } else if (o.contains("timeout")) {
         if (!isInteger(o.value("timeout")) || o.value("timeout").toInt() < 0) {
             return fail(error, QString("the timeout of '%1' is not a non-negative integer").arg(a->id));
         }
@@ -335,7 +349,7 @@ bool parseAction(const QJsonValue& value, int index, PluginAction* a,
     }
 
     if (!readString(o, "outdir", where, &a->outdir, error)) return false;
-    if (o.contains("load")) {
+    if (!session && o.contains("load")) {
         if (!o.value("load").isObject()) {
             return fail(error, QString("the field '%1load' is not an object").arg(where));
         }
@@ -366,6 +380,15 @@ bool parseAction(const QJsonValue& value, int index, PluginAction* a,
             a->meta.append(qMakePair(key, meta.value(key).toString()));
         }
     }
+    if (session && o.contains("replaces")) {
+        if (!o.value("replaces").isArray()) {
+            return fail(error, QString("the field '%1replaces' is not a list").arg(where));
+        }
+        for (const QJsonValue& id: o.value("replaces").toArray()) {
+            if (!id.isString()) return fail(error, QString("a replaced action of '%1' is not a string").arg(a->id));
+            a->replaces.append(id.toString());
+        }
+    }
     return true;
 }
 
@@ -379,6 +402,87 @@ QStringList referencedParameters(const QString& text)
     return ids;
 }
 
+
+// the cross references of an action to the parameters
+bool checkReferences(const PluginDescriptor& d, const PluginAction& a, QString* error)
+{
+    for (const QString& id: a.parameters) {
+        if (!d.parameter(id)) {
+            return fail(error, QString("the action '%1' names an unknown parameter '%2'").arg(a.id, id));
+        }
+    }
+    if (!a.outdir.isEmpty()) {
+        const PluginParameter* p = d.parameter(a.outdir);
+        if (!p || (p->type != PluginParameter::typeDir && p->type != PluginParameter::typeFile)) {
+            return fail(error, QString("the outdir of '%1' is not a dir or file parameter").arg(a.id));
+        }
+    } else if (a.result == PluginAction::resultFiles) {
+        return fail(error, QString("the files action '%1' names no outdir").arg(a.id));
+    }
+    for (const PluginArgument& arg: a.argv) {
+        QStringList refs;
+        if (arg.isConditional()) {
+            if (!d.parameter(arg.condition)) {
+                return fail(error, QString("a condition of '%1' names an unknown parameter '%2'")
+                            .arg(a.id, arg.condition));
+            }
+            for (const QString& s: arg.arguments) refs += referencedParameters(s);
+        } else {
+            refs = referencedParameters(arg.text);
+        }
+        // a secret travels in the environment only (EDIT-PLUG-10)
+        for (const QString& id: refs) {
+            const PluginParameter* p = d.parameter(id);
+            if (p && p->type == PluginParameter::typeSecret) {
+                return fail(error, QString("the secret '%1' is used in the argv of '%2'").arg(id, a.id));
+            }
+        }
+    }
+    return true;
+}
+
+// the session block: its actions follow the one-shot ones, which those it
+// replaces hide (docs/PLUGIN-API.md, Sessions)
+bool parseSession(const QJsonValue& value, PluginDescriptor* d, QString* error)
+{
+    if (!value.isObject()) return fail(error, "the field 'session' is not an object");
+    QJsonObject o = value.toObject();
+    warnUnknown(o, sessionFields, "session/", &d->warnings);
+    if (!isInteger(o.value("version"))) return fail(error, "the session version is not given");
+    int version = o.value("version").toInt();
+    if (version != SESSION_PROTOCOL_VERSION) {
+        return fail(error, QString("the session version %1 is not supported").arg(version));
+    }
+    if (!o.value("actions").isArray()) return fail(error, "the field 'session.actions' is not a list");
+    QJsonArray actions = o.value("actions").toArray();
+    QList<PluginAction> list;
+    QStringList replaced;
+    for (int i = 0; i < actions.size(); i++) {
+        PluginAction a;
+        QStringList warnings;
+        if (!parseAction(actions.at(i), i, true, &a, &warnings, error)) return false;
+        if (d->action(a.id)) return fail(error, QString("the action '%1' is duplicated").arg(a.id));
+        for (const PluginAction& other: list) {
+            if (other.id == a.id) return fail(error, QString("the action '%1' is duplicated").arg(a.id));
+        }
+        if (!checkReferences(*d, a, error)) return false;
+        for (const QString& id: a.replaces) {
+            if (!d->action(id)) {
+                return fail(error, QString("the session action '%1' replaces an unknown action '%2'")
+                            .arg(a.id, id));
+            }
+        }
+        replaced += a.replaces;
+        d->warnings += warnings;
+        list.append(a);
+    }
+    for (PluginAction& a: d->actions) {
+        if (replaced.contains(a.id)) a.hidden = true;
+    }
+    d->actions += list;
+    d->sessionVersion = version;
+    return true;
+}
 } // namespace
 
 bool PluginDescriptor::validId(const QString& id)
@@ -533,45 +637,21 @@ bool PluginDescriptor::parse(const QByteArray& json, const QString& dir,
     QSet<QString> actionIds;
     for (int i = 0; i < actions.size(); i++) {
         PluginAction a;
-        if (!parseAction(actions.at(i), i, &a, &d.warnings, error)) return false;
+        if (!parseAction(actions.at(i), i, false, &a, &d.warnings, error)) return false;
         if (actionIds.contains(a.id)) return fail(error, QString("the action '%1' is duplicated").arg(a.id));
         actionIds.insert(a.id);
         d.actions.append(a);
     }
 
-    // the cross references of the actions and the parameters
     for (const PluginAction& a: d.actions) {
-        for (const QString& id: a.parameters) {
-            if (!d.parameter(id)) {
-                return fail(error, QString("the action '%1' names an unknown parameter '%2'").arg(a.id, id));
-            }
-        }
-        if (!a.outdir.isEmpty()) {
-            const PluginParameter* p = d.parameter(a.outdir);
-            if (!p || (p->type != PluginParameter::typeDir && p->type != PluginParameter::typeFile)) {
-                return fail(error, QString("the outdir of '%1' is not a dir or file parameter").arg(a.id));
-            }
-        } else if (a.result == PluginAction::resultFiles) {
-            return fail(error, QString("the files action '%1' names no outdir").arg(a.id));
-        }
-        for (const PluginArgument& arg: a.argv) {
-            QStringList refs;
-            if (arg.isConditional()) {
-                if (!d.parameter(arg.condition)) {
-                    return fail(error, QString("a condition of '%1' names an unknown parameter '%2'")
-                                .arg(a.id, arg.condition));
-                }
-                for (const QString& s: arg.arguments) refs += referencedParameters(s);
-            } else {
-                refs = referencedParameters(arg.text);
-            }
-            // a secret travels in the environment only (EDIT-PLUG-10)
-            for (const QString& id: refs) {
-                const PluginParameter* p = d.parameter(id);
-                if (p && p->type == PluginParameter::typeSecret) {
-                    return fail(error, QString("the secret '%1' is used in the argv of '%2'").arg(id, a.id));
-                }
-            }
+        if (!checkReferences(d, a, error)) return false;
+    }
+    // an editor before the sessions ignores the block, so a broken one costs only
+    // the session actions (EDIT-PLUG-36)
+    if (root.contains("session")) {
+        QString sessionError;
+        if (!parseSession(root.value("session"), &d, &sessionError)) {
+            d.warnings.append(QString("the session actions are left out: %1").arg(sessionError));
         }
     }
 

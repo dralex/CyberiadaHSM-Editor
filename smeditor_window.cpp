@@ -59,6 +59,8 @@
 #include "plugin_registry.h"
 #include "plugins_menu.h"
 #include "plugin_dock.h"
+#include "plugin_session.h"
+#include "plugin_session_view.h"
 #include "dialogs/plugin_manager_dialog.h"
 #include "dialogs/plugin_parameter_dialog.h"
 
@@ -116,7 +118,8 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     outputPanel->setText(tr("Output panel"));
     QAction* manager = new QAction(tr("Plugin manager..."), this);
     connect(manager, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotPluginManager);
-    pluginMenu->setTailActions(QList<QAction*>() << outputPanel << manager);
+    initSessionMenu();
+    pluginMenu->setTailActions(QList<QAction*>() << sessionMenu->menuAction() << outputPanel << manager);
     connect(this, &CyberiadaSMEditorWindow::pluginRunStarted, pluginDockWidget, &PluginDock::runStarted);
     connect(pluginDockWidget, &PluginDock::diagnosticActivated,
             this, &CyberiadaSMEditorWindow::slotDiagnosticActivated);
@@ -434,6 +437,21 @@ void CyberiadaSMEditorWindow::updateEditActions()
     }
     actionNewEntryPoint->setEnabled(hasContainer && !inspector);
     actionNewExitPoint->setEnabled(hasContainer && !inspector);
+    // a document locked by a session keeps its view: the creation tools wait like
+    // in inspection, select, pan and zoom stay (EDIT-PLUG-41)
+    if (!SettingsManager::instance().getInspectorMode()) {
+        for (auto i = toolActMap.constBegin(); i != toolActMap.constEnd(); i++) {
+            if (i.key() != ToolType::Select && i.key() != ToolType::Pan && i.key() != ToolType::Zoom &&
+                i.key() != ToolType::NewEntryPoint && i.key() != ToolType::NewExitPoint) {
+                i.value()->setEnabled(!inspector);
+            }
+        }
+        if (inspector && currentTool != ToolType::Select && currentTool != ToolType::Pan &&
+            currentTool != ToolType::Zoom) {
+            actionSelectTool->setChecked(true);
+            slotToolSelected(actionSelectTool);
+        }
+    }
 
     // the file actions follow the document and its modified state (the creation
     // tools stay enabled: the model creates a document lazily on the first edit)
@@ -452,6 +470,13 @@ void CyberiadaSMEditorWindow::updateEditActions()
 // per-document slots are guarded by the current pointer
 CyberiadaSMEditorWindow::~CyberiadaSMEditorWindow()
 {
+    // the runs end while the docks and the actions they report to are alive
+    for (PluginRunner* run: pluginRuns.keys()) {
+        if (run->session()) run->session()->disconnect(this);
+        run->disconnect(this);
+        delete run;
+    }
+    pluginRuns.clear();
     if (current) unbindDocument(current);
     current = nullptr;
     sceneView = nullptr;
@@ -1325,6 +1350,12 @@ PluginRunner* CyberiadaSMEditorWindow::runPlugin(const QString& pluginId, const 
         doc->model()->setLocked(true);
         doc->view()->setInteractive(false);
         updateEditActions();
+    } else if (action->session) {
+        // a session reads the document as it was: select and zoom, no edits (EDIT-PLUG-41)
+        doc->model()->setLocked(true);
+        updateEditActions();
+        updateUndoActions();
+        connectSession(run, doc);
     }
     connect(run, &PluginRunner::finished, this, &CyberiadaSMEditorWindow::slotPluginFinished);
     emit pluginRunStarted(run, doc);
@@ -1392,9 +1423,10 @@ CyberiadaSMEditorDocument* CyberiadaSMEditorWindow::applyPluginResult(PluginRunn
     const PluginAction& action = run->action();
     if (doc) {
         doc->setPluginRun(nullptr);
-        if (action.changesDocument()) {
+        if (action.changesDocument() || action.session) {
             doc->model()->setLocked(false);
             doc->view()->setInteractive(true);
+            updateUndoActions();
         }
     }
     if (r->state == PluginResult::stateDone && !doc) {
@@ -1445,6 +1477,104 @@ CyberiadaSMEditorDocument* CyberiadaSMEditorWindow::applyPluginResult(PluginRunn
     return target;
 }
 
+void CyberiadaSMEditorWindow::initSessionMenu()
+{
+    sessionMenu = new QMenu(tr("Session"), this);
+    sessionMenu->setObjectName("menuPluginSession");
+    actionSessionStep = sessionMenu->addAction(tr("Step"));
+    actionSessionStep->setShortcut(QKeySequence(Qt::Key_F10));
+    actionSessionRun = sessionMenu->addAction(tr("Run"));
+    actionSessionRun->setShortcut(QKeySequence(Qt::Key_F5));
+    actionSessionPause = sessionMenu->addAction(tr("Pause"));
+    actionSessionPause->setShortcut(QKeySequence(Qt::Key_F6));
+    actionSessionRestart = sessionMenu->addAction(tr("Restart"));
+    actionSessionStop = sessionMenu->addAction(tr("Stop"));
+    actionSessionStop->setShortcut(QKeySequence(Qt::SHIFT + Qt::Key_F5));
+    sessionMenu->addSeparator();
+    actionSessionPost = sessionMenu->addAction(tr("Post Event"));
+    actionSessionLoad = sessionMenu->addAction(tr("Load Stream..."));
+    actionSessionEdit = sessionMenu->addAction(tr("Edit Stream..."));
+    actionSessionSave = sessionMenu->addAction(tr("Save Log..."));
+    connect(actionSessionStep, &QAction::triggered, this, [this]() {
+        if (PluginSession* s = currentSession()) { if (s->canStep()) s->step(); }
+    });
+    connect(actionSessionRun, &QAction::triggered, this, [this]() {
+        if (PluginSession* s = currentSession()) { if (s->canRun()) s->run(s->lastSpeed()); }
+    });
+    connect(actionSessionPause, &QAction::triggered, this, [this]() {
+        if (PluginSession* s = currentSession()) { if (s->canPause()) s->pause(); }
+    });
+    connect(actionSessionRestart, &QAction::triggered, this, [this]() {
+        if (PluginSession* s = currentSession()) { if (s->canRestart()) s->restart(); }
+    });
+    connect(actionSessionStop, &QAction::triggered, this, [this]() {
+        if (PluginSession* s = currentSession()) s->stop();
+    });
+    connect(actionSessionPost, &QAction::triggered, this, [this]() {
+        if (PluginSessionTab* tab = currentSessionTab()) {
+            pluginDockWidget->show();
+            pluginDockWidget->tabs()->setCurrentWidget(tab);
+            tab->focusEventLine();
+        }
+    });
+    connect(actionSessionLoad, &QAction::triggered, this, [this]() {
+        if (PluginSessionTab* tab = currentSessionTab()) tab->askLoadStream();
+    });
+    connect(actionSessionEdit, &QAction::triggered, this, [this]() {
+        if (PluginSessionTab* tab = currentSessionTab()) tab->askEditStream();
+    });
+    connect(actionSessionSave, &QAction::triggered, this, [this]() {
+        if (PluginSessionTab* tab = currentSessionTab()) tab->askSaveLog();
+    });
+    updateSessionActions();
+}
+
+PluginSession* CyberiadaSMEditorWindow::currentSession() const
+{
+    return current && current->pluginRun() ? current->pluginRun()->session() : nullptr;
+}
+
+PluginSessionTab* CyberiadaSMEditorWindow::currentSessionTab() const
+{
+    if (!currentSession() || !pluginDockWidget) return nullptr;
+    return pluginDockWidget->sessionTab(current->pluginRun());
+}
+
+void CyberiadaSMEditorWindow::updateSessionActions()
+{
+    if (!sessionMenu) return;
+    PluginSession* s = currentSession();
+    actionSessionStep->setEnabled(s && s->canStep());
+    actionSessionRun->setEnabled(s && s->canRun());
+    actionSessionPause->setEnabled(s && s->canPause());
+    actionSessionRestart->setEnabled(s && s->canRestart());
+    actionSessionStop->setEnabled(s && (s->phase() == PluginSession::phaseStarting ||
+                                        s->phase() == PluginSession::phaseRunning));
+    actionSessionPost->setEnabled(s && s->canPost());
+    actionSessionLoad->setEnabled(s && s->canStream());
+    actionSessionEdit->setEnabled(s && s->canStream());
+    actionSessionSave->setEnabled(s && s->canSave());
+}
+
+void CyberiadaSMEditorWindow::connectSession(PluginRunner* run, CyberiadaSMEditorDocument* doc)
+{
+    PluginSession* session = run->session();
+    QPointer<CyberiadaSMEditorDocument> target(doc);
+    // the marks go to the document's own scene, whichever tab is active (EDIT-PLUG-40)
+    connect(session, &PluginSession::marksChanged, this, [session, target]() {
+        if (target) target->scene()->setRunMarks(session->state().active, session->state().fired);
+    });
+    connect(session, &PluginSession::stateChanged, this, &CyberiadaSMEditorWindow::updateSessionActions);
+    connect(session, &PluginSession::modelReceived, this, &CyberiadaSMEditorWindow::updateSessionActions);
+    connect(session, &PluginSession::diagnosticsChanged, this, [this, session, target]() {
+        QList<PluginDiagnostic> findings = session->diagnostics();
+        for (PluginDiagnostic& d: findings) {
+            d.linked = target && !d.element.isEmpty() && target->model()->idToElement(d.element);
+        }
+        if (pluginDockWidget) pluginDockWidget->showDiagnostics(findings, target);
+    });
+}
+
 void CyberiadaSMEditorWindow::slotPluginsScanned()
 {
     if (pluginMenu) pluginMenu->rebuild();
@@ -1453,6 +1583,7 @@ void CyberiadaSMEditorWindow::slotPluginsScanned()
 
 void CyberiadaSMEditorWindow::updatePluginActions()
 {
+    updateSessionActions();
     if (!pluginMenu) return;
     for (const QPair<QString, QString>& ids: pluginMenu->actionIds()) {
         QAction* act = pluginMenu->action(ids.first, ids.second);

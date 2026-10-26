@@ -177,10 +177,14 @@ add_library(CyberiadaEditorCore STATIC
   plugin_values.h plugin_values.cpp
   plugin_registry.h plugin_registry.cpp
   plugin_runner.h plugin_runner.cpp
+  plugin_channel.h plugin_channel.cpp
+  plugin_session.h plugin_session.cpp
+  batch_session.h batch_session.cpp
   plugins_menu.h plugins_menu.cpp
   dialogs/plugin_parameter_dialog.h dialogs/plugin_parameter_dialog.cpp
   dialogs/plugin_manager_dialog.h dialogs/plugin_manager_dialog.cpp
   plugin_dock.h plugin_dock.cpp
+  plugin_session_view.h plugin_session_view.cpp
 )
 
 # the forms are compiled into the core, so its generated headers must be reachable

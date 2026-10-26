@@ -113,6 +113,12 @@ struct PluginAction {
     bool toolbar = false;
     // the metainformation the action fills in before its run (EDIT-PLUG-34)
     QList<QPair<QString, QString> > meta;
+    // a session action of the session block (docs/PLUGINS.md, Level 2)
+    bool session = false;
+    // a session action: the one-shot actions it supersedes (EDIT-PLUG-36)
+    QStringList replaces;
+    // a one-shot action a session action replaces: not in the menu or the toolbar
+    bool hidden = false;
 
     bool changesDocument() const { return result == resultReplace; }
     // save and cwd: document need the document file to be current
@@ -131,7 +137,10 @@ struct PluginDescriptor {
     QString dir;
     QList<QPair<QString, QString> > env;
     QList<PluginParameter> parameters;
+    // the one-shot actions, then the session actions
     QList<PluginAction> actions;
+    // the session.version of the session actions kept, 0 without them
+    int sessionVersion = 0;
     // the unknown fields, ignored within the major (EDIT-PLUG-3)
     QStringList warnings;
 

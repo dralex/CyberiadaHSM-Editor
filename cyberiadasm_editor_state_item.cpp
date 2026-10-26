@@ -568,13 +568,21 @@ void CyberiadaSMEditorStateItem::paint(QPainter *painter, const QStyleOptionGrap
     if (Cyberiada::element_has_color(element)) {
         pen.setColor(QColor(QString::fromStdString(Cyberiada::element_get_color(element))));
     }
+    // a session mark tints the state; the selection keeps its border over it
+    QColor mark = runMarkColor();
+    if (mark.isValid()) {
+        pen.setColor(mark);
+        pen.setWidth(RUN_MARK_WIDTH);
+        mark.setAlpha(RUN_MARK_FILL_ALPHA);
+        painter->setBrush(QBrush(mark));
+    }
     if (isSelected() || isHighlighted) {
         SettingsManager& sm = SettingsManager::instance();
         pen.setColor(sm.getSelectionColor());
         pen.setWidth(sm.getSelectionBorderWidth());
         QColor fillColor = sm.getSelectionColor();
         fillColor.setAlpha(50);
-        painter->setBrush(QBrush(fillColor));
+        if (!mark.isValid()) painter->setBrush(QBrush(fillColor));
     }
 
     painter->setPen(pen);
@@ -836,7 +844,7 @@ void StateTitle::mousePressEvent(QGraphicsSceneMouseEvent *event) {
     if (parentItem()) {
         state = dynamic_cast<CyberiadaSMEditorStateItem*>(parentItem());
     }
-    if (state != nullptr && SettingsManager::instance().getInspectorMode()) {
+    if (state != nullptr && state->getModel()->readOnly()) {
         event->accept();
         return;
     }
@@ -872,7 +880,7 @@ void StateTitle::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
     }
 
     if(currentTool != ToolType::Select ||
-            (state != nullptr && SettingsManager::instance().getInspectorMode())) {
+            (state != nullptr && state->getModel()->readOnly())) {
         event->ignore();
         return;
     }
@@ -1104,7 +1112,7 @@ void StateAction::beginTextEditing()
 
 void StateAction::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) {
     if (dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select ||
-        SettingsManager::instance().getInspectorMode()) {
+        dynamic_cast<CyberiadaSMEditorScene*>(scene())->readOnly()) {
         event->ignore();
         return;
     }
@@ -1120,7 +1128,7 @@ void StateAction::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) {
 void StateAction::contextMenuEvent(QGraphicsSceneContextMenuEvent *event) {
     // the text being edited has the edit menu (EDIT-TOOL-17)
     if (isEdit) { EditableTextItem::contextMenuEvent(event); return; }
-    if (SettingsManager::instance().getInspectorMode()) { return; }
+    if (dynamic_cast<CyberiadaSMEditorScene*>(scene())->readOnly()) { return; }
 
     QMenu menu;
 

@@ -66,7 +66,7 @@ EditableTextItem::EditableTextItem(const QString &text, QGraphicsItem *parent):
 
 void EditableTextItem::mousePressEvent(QGraphicsSceneMouseEvent *event) {
     if (dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select ||
-        SettingsManager::instance().getInspectorMode()) {
+        dynamic_cast<CyberiadaSMEditorScene*>(scene())->readOnly()) {
         event->ignore();
         return;
     }
@@ -96,7 +96,7 @@ void EditableTextItem::mousePressEvent(QGraphicsSceneMouseEvent *event) {
 
 void EditableTextItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) {
     if (dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select ||
-        SettingsManager::instance().getInspectorMode()) {
+        dynamic_cast<CyberiadaSMEditorScene*>(scene())->readOnly()) {
         event->ignore();
         return;
     }
@@ -141,7 +141,7 @@ void EditableTextItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event) {
     Cyberiada::Element* target = nullptr;
     Cyberiada::CommentSubjectType type = Cyberiada::commentSubjectElement;
     QString fragment;
-    bool commentable = !SettingsManager::instance().getInspectorMode() &&
+    bool commentable = !dynamic_cast<CyberiadaSMEditorScene*>(scene())->readOnly() &&
         sc->selectionFragment(this, &target, &type, &fragment);
     QMenu menu;
     QAction* copy = menu.addAction(tr("Copy"));
@@ -176,7 +176,7 @@ void EditableTextItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event) {
 
 void EditableTextItem::hoverEnterEvent(QGraphicsSceneHoverEvent *event) {
     if (dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select ||
-        SettingsManager::instance().getInspectorMode()) {
+        dynamic_cast<CyberiadaSMEditorScene*>(scene())->readOnly()) {
         event->ignore();
         return;
     }

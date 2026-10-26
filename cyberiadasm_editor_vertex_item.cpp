@@ -165,6 +165,7 @@ void CyberiadaSMEditorVertexItem::paint(QPainter* painter, const QStyleOptionGra
     if (Cyberiada::element_has_color(element)) {
         color = QColor(QString::fromStdString(Cyberiada::element_get_color(element)));
     }
+    if (runMarkColor().isValid()) color = runMarkColor();
     if (isSelected()) {
         SettingsManager& sm = SettingsManager::instance();
         color = sm.getSelectionColor();

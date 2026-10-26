@@ -126,6 +126,10 @@ void CyberiadaSMEditorTransitionItem::paint(QPainter *painter, const QStyleOptio
     if (Cyberiada::element_has_color(element)) {
         pen.setColor(QColor(QString::fromStdString(Cyberiada::element_get_color(element))));
     }
+    if (runMarkColor().isValid()) {
+        pen.setColor(runMarkColor());
+        pen.setWidth(RUN_MARK_WIDTH);
+    }
     if (isSelected()) {
         SettingsManager& sm = SettingsManager::instance();
         pen.setColor(sm.getSelectionColor());
@@ -955,7 +959,7 @@ void CyberiadaSMEditorTransitionItem::onTargetSizeChanged(CyberiadaSMEditorAbstr
 
 void CyberiadaSMEditorTransitionItem::slotMoveDot(QGraphicsItem *signalOwner, qreal dx, qreal dy, QPointF p)
 {
-    if (SettingsManager::instance().getInspectorMode()) { return; }
+    if (model->readOnly()) { return; }
     prepareGeometryChange();
 
     // with Ctrl held the endpoint locks to the adjacent point on the dominant
@@ -1234,7 +1238,7 @@ void CyberiadaSMEditorTransitionItem::slotMouseReleaseDot(QGraphicsItem *signalO
     isTargetTraking = false;
     vertexDragDot = nullptr;
 
-    if (SettingsManager::instance().getInspectorMode()) { return; }
+    if (model->readOnly()) { return; }
 
     // a single-drag transition draw (or a quick drag-to-release) seeds a
     // self-loop and delivers no move to the grabbed endpoint dot, so the loop
@@ -1290,7 +1294,7 @@ void CyberiadaSMEditorTransitionItem::slotMouseReleaseDot(QGraphicsItem *signalO
 
 void CyberiadaSMEditorTransitionItem::slotDeleteDot(QGraphicsItem *signalOwner)
 {
-    if (SettingsManager::instance().getInspectorMode()) { return; }
+    if (model->readOnly()) { return; }
     // a bare loop stores no bend to remove
     if (isBareLoop()) { return; }
 
@@ -1332,7 +1336,7 @@ int CyberiadaSMEditorTransitionItem::segmentAt(const QPointF& localPos) const
 
 void CyberiadaSMEditorTransitionItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
 {
-    if (SettingsManager::instance().getInspectorMode()) { return; }
+    if (model->readOnly()) { return; }
 
     // a double click edits the transition label; a vertex is added by dragging
     // a segment instead. place the label where the line was clicked (item-local
@@ -1345,7 +1349,7 @@ void CyberiadaSMEditorTransitionItem::mouseDoubleClickEvent(QGraphicsSceneMouseE
 
 void CyberiadaSMEditorTransitionItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 {
-    if (SettingsManager::instance().getInspectorMode()) { return; }
+    if (model->readOnly()) { return; }
 
     // offer to remove a polyline vertex when the click is on an interior dot
     int vertexDot = -1;
@@ -1371,7 +1375,7 @@ void CyberiadaSMEditorTransitionItem::mousePressEvent(QGraphicsSceneMouseEvent *
         event->ignore();
         return;
     }
-    if (SettingsManager::instance().getInspectorMode()) {
+    if (model->readOnly()) {
         QGraphicsItem::mousePressEvent(event);
         return;
     }
@@ -1390,7 +1394,7 @@ void CyberiadaSMEditorTransitionItem::mousePressEvent(QGraphicsSceneMouseEvent *
 void CyberiadaSMEditorTransitionItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
     if (dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select ||
-        SettingsManager::instance().getInspectorMode()) {
+        model->readOnly()) {
         event->ignore();
         return;
     }
@@ -1442,7 +1446,7 @@ void CyberiadaSMEditorTransitionItem::mouseReleaseEvent(QGraphicsSceneMouseEvent
 void CyberiadaSMEditorTransitionItem::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
 {
     if (dynamic_cast<CyberiadaSMEditorScene*>(scene())->getCurrentTool() != ToolType::Select ||
-        SettingsManager::instance().getInspectorMode()) {
+        model->readOnly()) {
         event->ignore();
         return;
     }
@@ -1595,7 +1599,7 @@ void CyberiadaSMEditorTransitionItem::setLabelDotsPosition()
 
 void CyberiadaSMEditorTransitionItem::slotMoveLabelHandle(QGraphicsItem *signalOwner, qreal, qreal, QPointF p)
 {
-    if (SettingsManager::instance().getInspectorMode() || !actionItem) return;
+    if (model->readOnly() || !actionItem) return;
     int idx = labelDots.indexOf(dynamic_cast<DotSignal*>(signalOwner));
     if (idx < 0) return;
 
@@ -1623,7 +1627,7 @@ void CyberiadaSMEditorTransitionItem::slotMoveLabelHandle(QGraphicsItem *signalO
 void CyberiadaSMEditorTransitionItem::slotReleaseLabelHandle(QGraphicsItem *, QPointF)
 {
     labelHandleDragging = false;
-    if (!actionItem || SettingsManager::instance().getInspectorMode()) return;
+    if (!actionItem || model->readOnly()) return;
     // commit the box as a rect: centre relative to the source centre, current width,
     // text-driven height (mirrors TransitionAction::persistLabelPosition)
     qreal w = (actionItem->textWidth() > 0) ? actionItem->textWidth() : actionItem->boundingRect().width();
@@ -1801,7 +1805,7 @@ void TransitionAction::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 {
     // the text being edited has the edit menu (EDIT-TOOL-17)
     if (isEdit) { EditableTextItem::contextMenuEvent(event); return; }
-    if (SettingsManager::instance().getInspectorMode()) { return; }
+    if (dynamic_cast<CyberiadaSMEditorScene*>(scene())->readOnly()) { return; }
     QMenu menu;
     QAction* reset = menu.addAction(QObject::tr("Reset label position"));
     if (menu.exec(event->screenPos()) == reset) {

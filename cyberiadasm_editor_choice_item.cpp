@@ -104,6 +104,10 @@ void CyberiadaSMEditorChoiceItem::paint(QPainter* painter, const QStyleOptionGra
     }
     // the same border as a state: width 2, the selection colour/width when selected
     int width = 2;
+    if (runMarkColor().isValid()) {
+        color = runMarkColor();
+        width = RUN_MARK_WIDTH;
+    }
     if (isSelected()) {
         SettingsManager& sm = SettingsManager::instance();
         color = sm.getSelectionColor();

@@ -39,6 +39,7 @@
 
 class QTemporaryDir;
 class QTextDecoder;
+class PluginSession;
 
 // what the window hands to a run: the document as it is now
 struct PluginRunContext {
@@ -141,8 +142,18 @@ public:
     void                 start();
     // terminate, then kill after the grace period (EDIT-PLUG-20)
     void                 cancel();
-    // kill at once and wait: the document or the editor is closing
+    // kill at once and wait: the document or the editor is closing; a session
+    // first gets its shutdown and the grace (EDIT-PLUG-45)
     void                 abort();
+
+    // the session of a session action, else nullptr (docs/PLUGINS.md, Level 2)
+    PluginSession*       session() const { return sessionObject; }
+    // the session's side of the process: a message line to stdin, a text line of
+    // stdout, a failed session, stdin closed after shutdown with the grace to exit
+    void                 write(const QByteArray& line);
+    void                 textLine(const QString& line);
+    void                 failSession(const QString& error);
+    void                 endInput();
 
     // the variables of the argv (EDIT-PLUG-8): the fixed ones by name, plus
     // param:x, param-file:x and meta:k; false with the reason
@@ -169,6 +180,7 @@ private slots:
     void                 slotError(QProcess::ProcessError error);
     void                 slotTimeout();
     void                 slotKill();
+    void                 slotStarted();
 
 private:
     bool                 stage(QString* error);
@@ -207,6 +219,11 @@ private:
     bool                 timedOut = false;
     bool                 cancelled = false;
     bool                 finishedFlag = false;
+    PluginSession*       sessionObject = nullptr;
+    // the stdout of a session up to its next line end
+    QString              lineBuffer;
+    QString              failure;
+    QTimer               graceTimer;
 };
 
 #endif

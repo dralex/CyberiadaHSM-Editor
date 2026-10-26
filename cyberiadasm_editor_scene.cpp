@@ -666,6 +666,23 @@ void CyberiadaSMEditorScene::addSceneItem(QGraphicsItem* item)
     }
 }
 
+void CyberiadaSMEditorScene::setRunMarks(const QStringList& active, const QStringList& fired)
+{
+    auto mark = [this](const QStringList& ids, CyberiadaSMEditorAbstractItem::RunMark runMark) {
+        for (const QString& id: ids) {
+            CyberiadaSMEditorAbstractItem* item =
+                dynamic_cast<CyberiadaSMEditorAbstractItem*>(elementIdToItemMap.value(id.toStdString(), nullptr));
+            if (item && item->getElement()->get_type() != Cyberiada::elementSM) item->setRunMark(runMark);
+        }
+    };
+    mark(runMarkedActive + runMarkedFired, CyberiadaSMEditorAbstractItem::runMarkNone);
+    runMarkedActive = active;
+    runMarkedFired = fired;
+    mark(active, CyberiadaSMEditorAbstractItem::runMarkActive);
+    // a state of an internal transition is fired over active
+    mark(fired, CyberiadaSMEditorAbstractItem::runMarkFired);
+}
+
 QGraphicsItem* CyberiadaSMEditorScene::addElementItem(Cyberiada::Element* child, QGraphicsItem* new_parent)
 {
     QGraphicsItem* item = NULL;

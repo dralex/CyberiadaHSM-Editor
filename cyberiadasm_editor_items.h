@@ -104,13 +104,24 @@ public:
     void setPreviousPosition(const QPointF newPreviousPosition);
 
     bool hasGeometry();
-    // no element is edited while the document is inspected
+    // no element is edited while the document is inspected or locked
     bool isEditable() const;
     // the resize/move zone of a point in item coordinates (CornerFlags bits)
     int borderZone(const QPointF& pt) const;
     static void applyZoneCursor(QGraphicsItem* item, int flags);
 
     void setHighlighted(bool on);
+
+    // the mark of a plugin session, apart from the selection (EDIT-PLUG-40)
+    enum RunMark {
+        runMarkNone = 0,
+        runMarkActive,
+        runMarkFired
+    };
+    void setRunMark(RunMark mark);
+    RunMark runMark() const { return currentRunMark; }
+    // the colour of the mark, invalid without one
+    QColor runMarkColor() const;
 
     virtual void syncFromModel();
     virtual void updateSizeToFitChildren(CyberiadaSMEditorAbstractItem* child);
@@ -174,6 +185,7 @@ protected:
     // drags, so the pointer clears itself
     QPointer<CyberiadaSMEditorAbstractItem> prevItemUnderCursor;
     bool isHighlighted;
+    RunMark currentRunMark = runMarkNone;
 
     void resizeRight( const QPointF &pt, Qt::KeyboardModifiers mods);
     void resizeBottom(const QPointF &pt, Qt::KeyboardModifiers mods);

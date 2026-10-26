@@ -83,6 +83,23 @@
 // the stderr lines reported with a failed run
 #define PLUGIN_STDERR_TAIL      10
 
+// Plugin sessions, level 2 (docs/PLUGINS.md, Level 2)
+// the session.version the editor runs
+#define SESSION_PROTOCOL_VERSION 1
+#define SESSION_INIT_TIMEOUT_MS  30000
+// the history rows kept per session tab
+#define SESSION_HISTORY_LIMIT    10000
+// seconds a batch session verb waits by default
+#define SESSION_WAIT_S           30
+// the canvas marks are repainted at most this often
+#define RUN_MARK_INTERVAL_MS     50
+#define RUN_ACTIVE_COLOR         "#2e7d32"
+#define RUN_FIRED_COLOR          "#ef6c00"
+#define RUN_MARK_WIDTH           4
+#define RUN_MARK_FILL_ALPHA      40
+// the JSON-RPC errors the editor sends
+#define JSONRPC_METHOD_NOT_FOUND (-32601)
+
 // Text constants
 #define FONT_SIZE     12
 #define FONT_SIZE_MIN 6

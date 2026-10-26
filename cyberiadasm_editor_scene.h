@@ -111,6 +111,13 @@ public:
 
     void  setCurrentTool(ToolType tool);
     ToolType getCurrentTool() { return currentTool; }
+    // the document is inspected or locked by a plugin run (EDIT-PLUG-41)
+    bool  readOnly() const { return model && model->readOnly(); }
+    // the elements a plugin session marks, apart from the selection (EDIT-PLUG-40);
+    // an id the scene does not show and a state machine are left out
+    void  setRunMarks(const QStringList& active, const QStringList& fired);
+    const QStringList& runActive() const { return runMarkedActive; }
+    const QStringList& runFired() const { return runMarkedFired; }
     // a tool for one gesture: the select tool is back with the mouse release
     void  beginTransientTool(ToolType tool);
 
@@ -209,6 +216,8 @@ private:
     const CodeLanguage*            codeLanguagePtr = nullptr;
     QString                        markupLanguageValue;
     QMap<Cyberiada::ID, QGraphicsItem*> elementIdToItemMap;
+    QStringList                    runMarkedActive;
+    QStringList                    runMarkedFired;
     QMultiMap<Cyberiada::ID, CyberiadaSMEditorSubjectItem*> subjectItems;
 	
     // int                            gridSize;

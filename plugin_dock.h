@@ -38,12 +38,16 @@ class QTreeWidget;
 class QTreeWidgetItem;
 class QVBoxLayout;
 class PluginRunner;
+class PluginSessionControls;
+class PluginSessionTab;
 class CyberiadaSMEditorDocument;
+struct PluginDiagnostic;
 
 // under the canvas, hidden until the first run (EDIT-PLUG-32): one row per
 // running plugin with its time and Cancel, the findings of the last run with
 // findings (EDIT-PLUG-15), an output tab per plugin with one block per run
-// (EDIT-PLUG-17), closable, cleared and saved from its menu (EDIT-PLUG-35)
+// (EDIT-PLUG-17), closable, cleared and saved from its menu (EDIT-PLUG-35); a
+// session has its controls in the run row and a session tab (EDIT-PLUG-39, 42)
 class PluginDock : public QDockWidget {
     Q_OBJECT
 
@@ -61,8 +65,13 @@ public:
     QMenu*        createOutputMenu(const QString& pluginId);
     void          clearOutput(const QString& pluginId);
     bool          saveOutput(const QString& pluginId, const QString& path, QString* error = nullptr) const;
-    // the Cancel button of a running plugin (the tests press it)
+    // the Cancel button of a running plugin, the Stop of a session (the tests press it)
     QPushButton*  cancelButton(PluginRunner* run) const;
+    // the session parts of a running session, else nullptr
+    PluginSessionControls* sessionControls(PluginRunner* run) const;
+    PluginSessionTab* sessionTab(PluginRunner* run) const;
+    // the findings of a running session replace the shown ones (EDIT-PLUG-49)
+    void          showDiagnostics(const QList<PluginDiagnostic>& diagnostics, CyberiadaSMEditorDocument* doc);
 
 signals:
     void          diagnosticActivated(CyberiadaSMEditorDocument* doc, const QString& elementId);
@@ -77,8 +86,10 @@ private slots:
 private:
     struct Row {
         QWidget*  widget;
-        QLabel*   label;
-        QPushButton* cancel;
+        QLabel*   label = nullptr;
+        QPushButton* cancel = nullptr;
+        PluginSessionControls* controls = nullptr;
+        PluginSessionTab* tab = nullptr;
         QString   title;
     };
 

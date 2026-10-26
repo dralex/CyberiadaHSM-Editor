@@ -35,6 +35,7 @@
 #include <cyberiadamlpp.h>
 
 #include "plugin_runner.h"
+#include "plugin_session.h"
 #include "version.h"
 
 #define INPUT_FILE        "input.graphml"
@@ -73,6 +74,9 @@ PluginRunner::PluginRunner(const PluginEntry& plugin, const QString& actionId,
     killTimer.setSingleShot(true);
     connect(&timeoutTimer, &QTimer::timeout, this, &PluginRunner::slotTimeout);
     connect(&killTimer, &QTimer::timeout, this, &PluginRunner::slotKill);
+    graceTimer.setSingleShot(true);
+    connect(&graceTimer, &QTimer::timeout, this, &PluginRunner::cancel);
+    if (action().session) sessionObject = new PluginSession(this);
     res.pluginDir = entry.folder;
     res.documentDir = pluginDocumentPaths(context.documentPath).dir;
 }
@@ -426,7 +430,9 @@ bool PluginRunner::stage(QString* error)
     process->setArguments(arguments);
     process->setProcessEnvironment(env);
     process->setWorkingDirectory(workDir);
-    process->setStandardInputFile(QProcess::nullDevice());
+    // a session talks over stdin, a one-shot run reads nothing from it
+    if (!sessionObject) process->setStandardInputFile(QProcess::nullDevice());
+    connect(process, &QProcess::started, this, &PluginRunner::slotStarted);
     connect(process, &QProcess::readyReadStandardOutput, this, &PluginRunner::slotStdout);
     connect(process, &QProcess::readyReadStandardError, this, &PluginRunner::slotStderr);
     connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
@@ -464,12 +470,62 @@ void PluginRunner::abort()
 {
     if (finishedFlag) return;
     cancelled = true;
+    if (process && process->state() != QProcess::NotRunning && sessionObject) {
+        sessionObject->stop();
+        if (!process->waitForFinished(PLUGIN_KILL_GRACE_MS)) {
+            process->terminate();
+            process->waitForFinished(PLUGIN_KILL_GRACE_MS);
+        }
+    }
     if (process && process->state() != QProcess::NotRunning) {
         // the finished signal arrives during the wait and ends the run
         process->kill();
         process->waitForFinished(PLUGIN_KILL_GRACE_MS);
     }
     if (!finishedFlag) finish(PluginResult::stateCancelled, PluginRunner::tr("cancelled"));
+}
+
+void PluginRunner::slotStarted()
+{
+    if (sessionObject) sessionObject->begin();
+}
+
+void PluginRunner::write(const QByteArray& line)
+{
+    if (process && process->state() == QProcess::Running) process->write(line);
+}
+
+void PluginRunner::textLine(const QString& line)
+{
+    if (capped) return;
+    QString text = line + '\n';
+    outputBytes += text.size();
+    if (outputBytes > PLUGIN_OUTPUT_CAP) {
+        capped = true;
+        text += "[the output is cut at the limit]\n";
+    }
+    res.stdoutText += text;
+    emit output(text, false);
+}
+
+void PluginRunner::failSession(const QString& error)
+{
+    if (finishedFlag || !failure.isEmpty()) return;
+    failure = error;
+    if (!process || process->state() == QProcess::NotRunning) {
+        finish(PluginResult::stateFailed, error);
+        return;
+    }
+    process->terminate();
+    killTimer.start(PLUGIN_KILL_GRACE_MS);
+}
+
+void PluginRunner::endInput()
+{
+    if (!process || process->state() == QProcess::NotRunning) return;
+    process->closeWriteChannel();
+    // the plugin exits after shutdown within the grace, else it is cancelled
+    graceTimer.start(PLUGIN_KILL_GRACE_MS);
 }
 
 QString PluginRunner::decode(const QByteArray& bytes, QTextDecoder** decoder)
@@ -504,6 +560,21 @@ void PluginRunner::slotStdout()
 {
     if (!process) return;
     QByteArray bytes = process->readAllStandardOutput();
+    if (sessionObject && !bytes.isEmpty()) {
+        // the messages of a session come line by line (EDIT-PLUG-38)
+        lineBuffer += lineFeeds(decode(bytes, &stdoutDecoder), &stdoutCr);
+        int end;
+        while ((end = lineBuffer.indexOf('\n')) >= 0) {
+            QString line = lineBuffer.left(end);
+            lineBuffer.remove(0, end + 1);
+            sessionObject->receive(line);
+        }
+        if (lineBuffer.size() > PLUGIN_OUTPUT_CAP) {
+            lineBuffer.clear();
+            failSession(PluginRunner::tr("a session line exceeds the limit"));
+        }
+        return;
+    }
     if (bytes.isEmpty() || capped) return;
     outputBytes += bytes.size();
     QString text = lineFeeds(decode(bytes, &stdoutDecoder), &stdoutCr);
@@ -555,8 +626,19 @@ void PluginRunner::slotFinished(int exitCode, QProcess::ExitStatus status)
     if (finishedFlag) return;
     timeoutTimer.stop();
     killTimer.stop();
+    graceTimer.stop();
     slotStdout();
     slotStderr();
+    if (sessionObject && !lineBuffer.isEmpty()) {
+        // the last line of a session may come without its line end
+        QString line = lineBuffer;
+        lineBuffer.clear();
+        sessionObject->receive(line);
+    }
+    if (!failure.isEmpty()) {
+        finish(PluginResult::stateFailed, failure);
+        return;
+    }
     if (timedOut) {
         finish(PluginResult::stateFailed, PluginRunner::tr("the run timed out after %1 s").arg(action().timeout));
         return;
@@ -624,7 +706,10 @@ void PluginRunner::validate()
     }
 
     QFile diagnostics(QDir(runPath).filePath(DIAGNOSTICS_FILE));
-    if (diagnostics.exists()) {
+    if (sessionObject && !diagnostics.exists()) {
+        // the findings of a session come as messages (EDIT-PLUG-49)
+        res.diagnostics = sessionObject->diagnostics();
+    } else if (diagnostics.exists()) {
         QString error;
         if (!diagnostics.open(QIODevice::ReadOnly) ||
             !readDiagnostics(diagnostics.readAll(), &res.diagnostics, &error)) {
@@ -662,6 +747,8 @@ void PluginRunner::finish(PluginResult::State state, const QString& error)
     finishedFlag = true;
     timeoutTimer.stop();
     killTimer.stop();
+    graceTimer.stop();
+    if (sessionObject) sessionObject->end();
     res.state = state;
     res.error = error;
     QStringList lines = stderrText.split('\n', QString::SkipEmptyParts);

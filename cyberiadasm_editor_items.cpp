@@ -123,9 +123,10 @@ bool CyberiadaSMEditorAbstractItem::hasGeometry()
 bool CyberiadaSMEditorAbstractItem::isEditable() const
 {
     const CyberiadaSMEditorScene* s = dynamic_cast<const CyberiadaSMEditorScene*>(scene());
+    // inspected, or locked by a plugin session that keeps the view interactive (EDIT-PLUG-41)
     return element->has_geometry() &&
            s && const_cast<CyberiadaSMEditorScene*>(s)->getCurrentTool() == ToolType::Select &&
-           !SettingsManager::instance().getInspectorMode();
+           !model->readOnly();
 }
 
 void CyberiadaSMEditorAbstractItem::setHighlighted(bool on)
@@ -134,6 +135,21 @@ void CyberiadaSMEditorAbstractItem::setHighlighted(bool on)
         isHighlighted = on;
         update();
     }
+}
+
+void CyberiadaSMEditorAbstractItem::setRunMark(RunMark mark)
+{
+    if (currentRunMark != mark) {
+        currentRunMark = mark;
+        update();
+    }
+}
+
+QColor CyberiadaSMEditorAbstractItem::runMarkColor() const
+{
+    if (currentRunMark == runMarkActive) return QColor(RUN_ACTIVE_COLOR);
+    if (currentRunMark == runMarkFired) return QColor(RUN_FIRED_COLOR);
+    return QColor();
 }
 
 EditableTextItem* CyberiadaSMEditorAbstractItem::fieldText(const SubjectFragment::Field&, int*) const
@@ -243,7 +259,7 @@ void CyberiadaSMEditorAbstractItem::mousePressEvent(QGraphicsSceneMouseEvent *ev
             scene()->clearSelection();
             setSelected(true);
             if (transitionSourceEnabled && element->has_geometry() &&
-                !SettingsManager::instance().getInspectorMode()) {
+                !model->readOnly()) {
                 creatingOfTrans = true;
                 transitionPress = event->scenePos();
             }
@@ -671,7 +687,7 @@ void CyberiadaSMEditorAbstractItem::startTransition()
 
 void CyberiadaSMEditorAbstractItem::slotTransitionFromBox(QGraphicsItem* box)
 {
-    if (!element->has_geometry() || SettingsManager::instance().getInspectorMode()) return;
+    if (!element->has_geometry() || model->readOnly()) return;
     transitionPress = box ? box->scenePos() : sceneBoundingRect().center();
     startTransition();
 }
@@ -698,7 +714,7 @@ void CyberiadaSMEditorAbstractItem::refreshTransitionDots()
     bool show = transitionSourceEnabled && cScene &&
                 cScene->getCurrentTool() == ToolType::Transition &&
                 isSelected() && element->has_geometry() &&
-                !SettingsManager::instance().getInspectorMode();
+                !model->readOnly();
     setDotsPosition();
     for (int i = 0; i < 8; i++) {
         cornerGrabber[i]->setVisible(show && transitionSourceDots.contains(i));

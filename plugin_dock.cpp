@@ -42,6 +42,8 @@
 
 #include "plugin_dock.h"
 #include "plugin_runner.h"
+#include "plugin_session.h"
+#include "plugin_session_view.h"
 #include "cyberiadasm_editor_document.h"
 
 #define TICK_MS              1000
@@ -136,6 +138,13 @@ QString PluginDock::pluginIdOf(const QWidget* tab) const
 
 void PluginDock::slotTabCloseRequested(int index)
 {
+    if (PluginSessionTab* tab = qobject_cast<PluginSessionTab*>(tabWidget->widget(index))) {
+        // a session tab closes only after its session (EDIT-PLUG-42)
+        if (tab->isRunning()) return;
+        tabWidget->removeTab(index);
+        tab->deleteLater();
+        return;
+    }
     QString id = pluginIdOf(tabWidget->widget(index));
     if (id.isEmpty()) return;
     QPlainTextEdit* text = outputs[id].text;
@@ -211,7 +220,19 @@ void PluginDock::askSave(const QString& pluginId)
 
 QPushButton* PluginDock::cancelButton(PluginRunner* run) const
 {
-    return rows.contains(run) ? rows.value(run).cancel : nullptr;
+    if (!rows.contains(run)) return nullptr;
+    const Row& row = rows[run];
+    return row.controls ? row.controls->stopButton() : row.cancel;
+}
+
+PluginSessionControls* PluginDock::sessionControls(PluginRunner* run) const
+{
+    return rows.contains(run) ? rows[run].controls : nullptr;
+}
+
+PluginSessionTab* PluginDock::sessionTab(PluginRunner* run) const
+{
+    return rows.contains(run) ? rows[run].tab : nullptr;
 }
 
 void PluginDock::runStarted(PluginRunner* run, CyberiadaSMEditorDocument* doc)
@@ -223,17 +244,39 @@ void PluginDock::runStarted(PluginRunner* run, CyberiadaSMEditorDocument* doc)
     tab.folder = doc && doc->hasFile() ? QFileInfo(doc->filePath()).absolutePath() : QString();
     Row row;
     row.title = QString("%1: %2").arg(run->plugin().descriptor.name, run->action().label);
-    row.widget = new QWidget(widget());
-    QHBoxLayout* h = new QHBoxLayout(row.widget);
-    h->setContentsMargins(4, 0, 4, 0);
-    row.label = new QLabel(tr("%1: running").arg(row.title), row.widget);
-    row.cancel = new QPushButton(tr("Cancel"), row.widget);
-    h->addWidget(row.label, 1);
-    h->addWidget(row.cancel);
+    if (PluginSession* session = run->session()) {
+        // a session: its controls replace Cancel, its tab holds the history (EDIT-PLUG-42)
+        row.controls = new PluginSessionControls(run, row.title, widget());
+        row.widget = row.controls;
+        row.tab = new PluginSessionTab(run, doc, tabWidget);
+        int index = tabWidget->addTab(row.tab, tr("%1 session").arg(doc ? doc->title() : row.title));
+        tabWidget->setTabToolTip(index, row.title);
+        connect(row.controls, &PluginSessionControls::asking, this, [this]() {
+            if (!qApp->property("batchMode").toBool()) {
+                show();
+                raise();
+            }
+        });
+        connect(row.tab, &PluginSessionTab::elementActivated, this, &PluginDock::diagnosticActivated);
+        connect(row.tab, &PluginSessionTab::message, this, [this, id](const QString& text, bool isError) {
+            append(id, text, isError);
+        });
+        connect(session, &PluginSession::logLine, this, [this, id](const QString& text, bool isError) {
+            append(id, text, isError);
+        });
+    } else {
+        row.widget = new QWidget(widget());
+        QHBoxLayout* h = new QHBoxLayout(row.widget);
+        h->setContentsMargins(4, 0, 4, 0);
+        row.label = new QLabel(tr("%1: running").arg(row.title), row.widget);
+        row.cancel = new QPushButton(tr("Cancel"), row.widget);
+        h->addWidget(row.label, 1);
+        h->addWidget(row.cancel);
+        QPointer<PluginRunner> guard(run);
+        connect(row.cancel, &QPushButton::clicked, this, [guard]() { if (guard) guard->cancel(); });
+    }
     runsLayout->addWidget(row.widget);
     rows.insert(run, row);
-    QPointer<PluginRunner> guard(run);
-    connect(row.cancel, &QPushButton::clicked, this, [guard]() { if (guard) guard->cancel(); });
     connect(run, &PluginRunner::output, this, [this, id](const QString& text, bool isError) {
         QString t = text;
         if (t.endsWith('\n')) t.chop(1);
@@ -241,7 +284,7 @@ void PluginDock::runStarted(PluginRunner* run, CyberiadaSMEditorDocument* doc)
     });
     append(id, doc ? QString("== %1 - %2").arg(row.title, doc->title()) : QString("== %1").arg(row.title),
            false);
-    tabWidget->setCurrentWidget(output(id));
+    tabWidget->setCurrentWidget(row.tab ? static_cast<QWidget*>(row.tab) : output(id));
     for (const PluginMetaNote& note: run->result().metaNotes) {
         switch (note.kind) {
         case PluginMetaNote::metaSet:
@@ -277,6 +320,10 @@ void PluginDock::append(const QString& pluginId, const QString& text, bool isErr
 void PluginDock::slotTick()
 {
     for (QMap<PluginRunner*, Row>::const_iterator i = rows.begin(); i != rows.end(); i++) {
+        if (i.value().controls) {
+            i.value().controls->tick(i.key()->elapsedMs());
+            continue;
+        }
         qint64 s = i.key()->elapsedMs() / 1000;
         i.value().label->setText(tr("%1: running %2:%3").arg(i.value().title)
                                  .arg(s / 60, 2, 10, QChar('0')).arg(s % 60, 2, 10, QChar('0')));
@@ -287,6 +334,8 @@ void PluginDock::runFinished(PluginRunner* run, CyberiadaSMEditorDocument* doc)
 {
     if (rows.contains(run)) {
         Row row = rows.take(run);
+        // the session tab keeps its history until it is closed (EDIT-PLUG-42)
+        if (row.tab) row.tab->finish();
         row.widget->deleteLater();
     }
     if (rows.isEmpty()) ticker.stop();
@@ -309,13 +358,17 @@ void PluginDock::runFinished(PluginRunner* run, CyberiadaSMEditorDocument* doc)
                false);
     }
     if (r.diagnostics.isEmpty() && run->action().result != PluginAction::resultDiagnostics) return;
+    showDiagnostics(r.diagnostics, doc);
+}
 
+void PluginDock::showDiagnostics(const QList<PluginDiagnostic>& diagnostics, CyberiadaSMEditorDocument* doc)
+{
     // the findings of this run replace the previous ones
     diagnosticsList->clear();
     disconnect(documentChanged);
     diagnosticsDocument = doc;
     stale = false;
-    for (const PluginDiagnostic& d: r.diagnostics) {
+    for (const PluginDiagnostic& d: diagnostics) {
         QTreeWidgetItem* item = new QTreeWidgetItem(diagnosticsList);
         item->setText(columnSeverity, severityText(d.severity));
         item->setText(columnRule, d.rule);
@@ -326,8 +379,8 @@ void PluginDock::runFinished(PluginRunner* run, CyberiadaSMEditorDocument* doc)
         if (d.linked) item->setData(columnElement, Qt::UserRole, d.element);
     }
     tabWidget->setTabText(tabWidget->indexOf(diagnosticsList),
-                          tr("Diagnostics %1").arg(r.diagnostics.size()));
-    if (!r.diagnostics.isEmpty()) tabWidget->setCurrentWidget(diagnosticsList);
+                          tr("Diagnostics %1").arg(diagnostics.size()));
+    if (!diagnostics.isEmpty()) tabWidget->setCurrentWidget(diagnosticsList);
     if (doc) {
         documentChanged = connect(doc->model()->undoStack(), &QUndoStack::indexChanged,
                                   this, &PluginDock::slotDocumentChanged);

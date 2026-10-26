@@ -84,8 +84,13 @@ void PluginsMenu::rebuild()
     for (const PluginEntry* e: entries) {
         const PluginDescriptor& d = e->descriptor;
         const QString pluginId = d.id;
-        // a single action without stored values is a single entry (EDIT-PLUG-5)
-        bool single = d.actions.size() == 1 && !d.hasStoredParameters();
+        // a single action without stored values is a single entry (EDIT-PLUG-5); the
+        // one-shot actions a session action replaces are left out (EDIT-PLUG-36)
+        int shown = 0;
+        for (const PluginAction& a: d.actions) {
+            if (!a.hidden) shown++;
+        }
+        bool single = shown == 1 && !d.hasStoredParameters();
         QMenu* target = pluginsMenu;
         if (!single) {
             target = new QMenu(d.name, pluginsMenu);
@@ -94,7 +99,11 @@ void PluginsMenu::rebuild()
             submenus.append(target);
         }
         QToolBar* tb = nullptr;
+        bool sessions = false;
         for (const PluginAction& a: d.actions) {
+            if (a.hidden) continue;
+            if (a.session && !sessions && !single) target->addSeparator();
+            sessions = sessions || a.session;
             QAction* act = new QAction(a.label, this);
             QString icon = d.iconPath(a.icon.isEmpty() ? d.icon : a.icon);
             if (!icon.isEmpty() && QFile::exists(icon)) act->setIcon(QIcon(icon));
