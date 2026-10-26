@@ -1,7 +1,7 @@
 # The Plugin Interface
 
-**Document version:** 0.4 (2026-10-15), plugin contract `api` 1. In Russian:
-`PLUGIN-API-ru.md`.
+**Document version:** 0.5 (2026-10-26), plugin contract `api` 1, session protocol 1. In
+Russian: `PLUGIN-API-ru.md`.
 
 This is the brief for a plugin author. A plugin gives CyberiadaPro, the Cyberiada HSM editor, a
 new action — check a diagram, generate code, compile, draw — without changing the editor. The
@@ -11,7 +11,8 @@ into their user plugin folder. How the editor works inside is in `PLUGINS.md`.
 
 A plugin is a directory with a `plugin.json` descriptor. For each run the editor writes a
 copy of the active document into a temporary run directory, starts the declared command
-there, waits for it and takes the result the action declares.
+there, waits for it and takes the result the action declares. A session action keeps the
+plugin running and talks to it while the user works (see Sessions).
 
 ```
  the editor                                           the plugin
@@ -102,8 +103,8 @@ output" tab of the plugin dock.
 | `interpreter` | no | a logical interpreter name (`python3`); the command is then `interpreter + argv` |
 | `env` | no | extra environment variables; the values may use `${plugin_dir}` |
 | `parameters` | no | the parameters, shared by the actions (see Parameters) |
-| `actions` | yes | at least one action |
-| `session` | no | reserved for the level 2 session protocol; ignored by `api` 1 |
+| `actions` | yes | the actions; at least one here or in `session.actions` |
+| `session` | no | the session actions (see Sessions); an editor before the sessions ignores it |
 
 An action:
 
@@ -164,7 +165,8 @@ An action:
 ```
 
 The plugin itself opens no windows and asks nothing on stdin: everything it needs is
-declared as parameters, so the same action also runs in the batch mode.
+declared as parameters, so the same action also runs in the batch mode. A session asks its
+questions with `ask` (see Sessions).
 
 ## The command line
 
@@ -172,7 +174,8 @@ The command is `interpreter + argv`, or `argv` alone; without an interpreter `ar
 a program relative to the plugin directory, or found in `PATH`; on Windows a program
 without a suffix also matches `<name>.exe`, and a `.bat` or `.cmd` file cannot be one.
 There is no shell: each list element is one argument, quoting is never needed, and a
-substituted value is never expanded again. stdin is the null device. The environment is
+substituted value is never expanded again. stdin is the null device; a session action gets
+the session channel instead (see Sessions). The environment is
 the editor's, plus `env`, plus the exported secrets, plus `CYBERIADA_PRO_LANGUAGE`: the
 interface language.
 
@@ -449,6 +452,355 @@ Install the plugin directory as is, `i18n/` included:
 * Raise `api` only when the editor documents a new major; a new editor keeps running the
   majors it lists.
 
+## Sessions
+
+A session action keeps the plugin running while the user works with it:
+
+* a diagram run step by step, with the active states marked on the canvas;
+* a replay of a recorded log;
+* an agent that asks the user mid-run;
+* a bridge to a machine that runs elsewhere.
+
+For the whole session the editor and the plugin exchange JSON-RPC 2.0 messages over
+stdin and stdout.
+
+```
+ the editor                                            the session plugin
++-------------------------------+                    +------------------------------+
+| the run dir, argv, env:       |    initialize      | reads ${input} and the rest  |
+|   as for any action           |    control, event  | as any action                |
+|                               |    input, save     |                              |
+| marks the canvas, shows the   |    replies to ask  | runs the machine, the agent, |
+| status, the history and the   | -----------------> | the replay or the bridge     |
+| questions                     |       stdin        |                              |
+|                               | <----------------- |                              |
+|                               |       stdout       |                              |
+|                               |    state, history  |                              |
+|                               |    log, ask        |                              |
+|                               |    diagnostics     |                              |
+| the output tab                | <---- stderr ----- |                              |
++-------------------------------+                    +------------------------------+
+```
+
+| Kind | Who runs the machine and its clock | The user gets | Example |
+|---|---|---|---|
+| `driven` | the plugin, on the user's command | Step, Run, Pause, Restart, Stop; posting events; a stream to load, a log to save | `hsm-to-python`: a diagram step by step, a replay |
+| `supervised` | the plugin, on its own | Pause, Run (resume), Stop; the questions | `cybersphere-agents`: an agent run |
+| `observed` | an outside system; the plugin relays | Stop; posting events; Save Log | a bridge to an HSM-ROS2 controller |
+
+### The session block
+
+```json
+{
+  "api": 1,
+  "id": "hsm-to-python",
+  "actions": [ ... ],
+  "session": {
+    "version": 1,
+    "actions": [
+      { "id": "step", "label": "Run step by step...", "icon": "icons/step.svg",
+        "toolbar": true, "save": true, "parameters": ["main", "tick"],
+        "argv": ["-m", "hsm", "--session", "${document}", "--tick", "${param:tick}",
+                 {"if": "main", "argv": ["--main", "${param:main}"]}] }
+    ]
+  }
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `session.version` | the session protocol, `1`; an editor that does not run this version leaves the session actions out and keeps the other actions |
+| `session.actions` | the session actions, with the fields of an action except `timeout` and `load`; `result` is `log` (the default), `diagnostics` or `files`, taken when the session ends |
+
+* The action ids are unique across `actions` and `session.actions`; a plugin may have
+  session actions only.
+* An editor before the sessions ignores the block, so the plugin's other actions keep
+  working there.
+* The parameters, the dialog, `save`, `meta`, the variables and `request.json` work as for
+  any action. `${input}` is the document at the start, and the document stays locked
+  until the session ends.
+
+### The exchange
+
+* One JSON-RPC 2.0 object per line, UTF-8, with no newline inside; flush after every
+  line.
+* stdin carries the editor's messages and stdout carries yours.
+  * A stdout line that is not a JSON object goes to the output tab as text, so a stray
+    `print` breaks nothing.
+  * stderr goes to the output tab too.
+* A request has an `id` and gets a reply with the same `id`; a notification has none and
+  gets none.
+* The editor answers a request it does not know with the error -32601. Unknown
+  notifications and unknown fields are ignored on both sides.
+* Reply to `initialize` within 30 seconds. Do the long work (a build, a connection) after
+  that, and report it with `state`.
+
+```
+ editor                                                         plugin
+   | -- initialize {session, editor, language, plugin, action} --> |
+   | <-- the reply: the model ------------------------------------ |
+   |                   the editor shows the controls; the session runs
+   | -- control, event, input, save -----------------------------> |
+   | <-- state, history, log, diagnostics ------------------------ |
+   | <-- ask {text, choices} ------------------------------------- |
+   | -- the reply {action, text} --------------------------------> |
+   | -- shutdown (Stop, the tab closed, the editor closed) ------> |
+   | <-- the reply {} --------------------------------------------  |  exit
+```
+
+The plugin may also end the session itself by exiting, for example when the agent has
+finished. In every case the editor checks the exit code against `exit_ok` and takes the
+`result`. Exit within 3 seconds of `shutdown`: after that the editor terminates the
+process and kills it 3 seconds later, and such a session counts as cancelled.
+
+A driven session, one message per line on the wire, wrapped here:
+
+```
+-> {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"session":1,
+    "editor":"1.1.0","language":"en","plugin":"hsm-to-python","action":"step"}}
+<- {"jsonrpc":"2.0","id":1,"result":{"kind":"driven","steps":["event","input","time"],
+    "speeds":[1,10,0],"events":["COIN","CANCEL"],"stream":true,"save":true}}
+<- {"jsonrpc":"2.0","method":"state","params":{"status":"paused","active":["n1"],
+    "time":0}}
+-> {"jsonrpc":"2.0","method":"event","params":{"name":"COIN","params":{"amount":"5"}}}
+-> {"jsonrpc":"2.0","method":"control","params":{"command":"step","unit":"event"}}
+<- {"jsonrpc":"2.0","method":"log","params":{"text":"display: insert 1 more coin"}}
+<- {"jsonrpc":"2.0","method":"history","params":{"event":"COIN","params":{"amount":"5"},
+    "time":0,"origin":"user","outcome":"fired","fired":["n1-n2"]}}
+<- {"jsonrpc":"2.0","method":"state","params":{"status":"paused","active":["n2"],
+    "fired":["n1-n2"]}}
+-> {"jsonrpc":"2.0","id":2,"method":"shutdown"}
+<- {"jsonrpc":"2.0","id":2,"result":{}}
+```
+
+### The model
+
+The reply to `initialize` describes the session, and the editor builds the controls from
+it.
+
+| Field | Kinds | Meaning |
+|---|---|---|
+| `kind` | all | `driven`, `supervised` or `observed`; required |
+| `controls` | all | the buttons besides Stop, from `step`, `run`, `pause`, `restart`; by default all four for `driven`, `pause` and `run` for `supervised`, none for `observed` |
+| `steps` | driven | the units of Step, the first by default: `event` (one event from the queue, handled to completion), `input` (the next stream item, after what falls due before it, with everything it causes), `time` (one tick of the clock); by default `["event"]` |
+| `speeds` | driven | the speeds of Run: `1` real time, `N` N times faster on the virtual clock, `0` as fast as possible; by default `[1]` |
+| `events` | driven, observed | the event names offered in the event line; without it there is no event line |
+| `stream` | driven | `true`: Load Stream... and Edit Stream... |
+| `save` | driven, observed | `true`: Save Log... |
+| `logic` | driven | `async` (an event queue and a clock; the default) or `stream` (each input handled until nothing more happens, an end symbol, a verdict) |
+| `end` | driven, `stream` | the end symbol, offered as a button and sent as an event (`EOF`) |
+| `verdict`, `output` | driven, `stream` | `true`: the status shows the verdict, the session tab the output symbols |
+
+```json
+{"kind": "driven", "logic": "async", "steps": ["event", "input", "time"],
+ "speeds": [1, 10, 0], "events": ["COIN", "CANCEL"], "stream": true, "save": true}
+{"kind": "driven", "logic": "stream", "steps": ["input"], "controls": ["step", "run",
+ "restart"], "events": ["0", "1"], "end": "EOF", "stream": true, "verdict": true,
+ "output": true}
+{"kind": "supervised"}
+{"kind": "observed", "events": ["MOVE_COMPLETED", "TIMER_TICK"], "save": true}
+```
+
+The first is an HSM run step by step, the second a finite automaton on a tape, the third
+an agent, the fourth a bridge to a robot.
+
+### The editor's messages
+
+| Method | Type | Params | What the plugin does |
+|---|---|---|---|
+| `initialize` | request | `{session, editor, language, plugin, action}` | replies with the model, then sends the first `state` |
+| `control` | notification | `{command: "step", unit}` | one step of the unit; when it is done, a `state` whose status is not `running` |
+| | | `{command: "run", speed}` | runs until Pause, the end of the machine or of the stream |
+| | | `{command: "pause"}` | stops at the next step boundary and sends `state` `paused` |
+| | | `{command: "restart"}` | starts over: the initial state, the stream from its first item, the clock at 0 |
+| `event` | notification | `{name, params: {name: "value"}}` | posts the event (driven) or passes it on (observed); the values are strings as the user typed them |
+| `input` | request | `{text}` or `{path}` | reads the stream and replies `{items: [{event, params?, time?}]}`; the stream replaces the previous one and the session restarts with it; a bad stream is the error -32602 with `data: [{line, message}]` |
+| `save` | request | `{path}` | writes the inputs of this run (the stream items handled, the user's events, with their times) as a stream it can load again; replies `{}` |
+| `shutdown` | request | | replies `{}` and exits |
+
+### The plugin's messages
+
+| Method | Type | Params | The editor |
+|---|---|---|---|
+| `state` | notification | the fields below | marks the canvas, updates the status and the controls |
+| `history` | notification | `{event, params?, time?, origin, outcome, fired?, position?}` | adds a row to the history |
+| `log` | notification | `{text, level?}` | the output tab; `warning` and `error` in the error colour |
+| `ask` | request | `{text, choices?}` | shows the question; replies `{action: "accept", text}`, `{action: "decline"}` or `{action: "cancel"}` |
+| `diagnostics` | notification | the array of the diagnostics file | replaces the session's findings |
+
+| `state` field | Meaning |
+|---|---|
+| `status` | `running`, `paused`, `waiting` (for an answer, an event or the outside system), `finished` (the machine or the stream has ended; Restart may start over) |
+| `text` | a short status of yours, e.g. `round 7, 23303 tokens` |
+| `active` | the ids of the active states |
+| `fired` | the ids of the last step: its transitions, the pseudostates passed, the state of an internal transition |
+| `events` | the events the machine reacts to now; replaces the model's list in the event line |
+| `time` | the clock, in seconds from the start |
+| `position` | the index of the next stream item |
+| `queue` | the pending events, in their order |
+| `verdict` | `accepted` or `rejected` |
+| `output` | the output symbols so far |
+
+* A field present in a `state` replaces its earlier value, and a field left out keeps it;
+  `[]` clears a list.
+* `history` comes once per handled event, in order.
+  * `origin` is one of `input` (the stream), `user` (the event line), `model` (the machine
+    itself: timers, completion, its own events) or `system` (the outside system).
+  * `outcome` is one of `fired`, `dropped` (nothing reacted), `deferred` or `rejected`
+    (stream logic: the input is not accepted).
+* `log` levels are `debug`, `info` (the default), `notice`, `warning` and `error`, the
+  MCP logging names.
+* Several questions may be open at once: the editor shows them one at a time, in order.
+  * `decline` means the user refused to answer.
+  * `cancel` comes for every open question when the user stops the session.
+  * The shape follows MCP elicitation.
+
+### Element ids
+
+* `active`, `fired` and `history.fired` hold the ids of `${input}`. The editor ignores the
+  ids it does not find.
+* A runtime that uses names or ids of its own maps them back through the document:
+  * an internal transition marks its state;
+  * an element of an inlined submachine marks the submachine state.
+
+### Steps and streams
+
+The stream format is yours: the editor passes the text or the path and shows the items
+you return. If your inputs are events, reuse the format of the `hsmd` dispatcher, which
+the `hsm-to-python` session reads:
+
+```
+# timers: model                 <- or: recorded (the timeouts come from the log)
+0.000   POWER_ON
+0.512   button.CLICKED
++0.788  sensor.VALUE value=23.5 <- +delta from the previous line; an ISO time also works
+SHOW                            <- no time: handled when the previous one is done
+```
+
+A worked example: at 0.1 s one tick of the `10-timer` diagram makes two timers due,
+`t1.TIMEOUT` (priority 10) and `t2.TIMEOUT`.
+
+| Unit | One Step does |
+|---|---|
+| `event` | `t1.TIMEOUT` in one step, `t2.TIMEOUT` in the next; each step sends a `history` and a `state` |
+| `input` | both timeouts and the next stream item: everything due up to the item's time, then the item |
+| `time` | the clock advances by one tick; the due events are handled one per `history` |
+
+A finite automaton reads its tape one symbol per `input` step, sends `EOF` after the last
+one, and reports `verdict` and `output`.
+
+### Testing a session
+
+The batch mode runs a session action from a script given by `--session-script`:
+
+```
+CyberiadaPro --batch coffee.graphml --plugin-path . --run-plugin hsm-to-python:step \
+    --session-script coffee.session --dump-session
+```
+
+```
+# coffee.session: the initial state, a coin, a step
+expect-active n1
+event COIN amount=5
+step
+expect-active n2
+expect-fired n1-n2
+stop
+```
+
+| Verb | Sends, waits |
+|---|---|
+| `step [UNIT]` | `control step`; waits for a state that is not `running` |
+| `run [SPEED]`, `pause` | `control run`, `control pause` |
+| `restart` | `control restart`; waits as `step` |
+| `event NAME [name=value ...]` | `event` |
+| `input FILE`, `save FILE` | `input {path}`, `save {path}`; an error reply fails the script |
+| `wait STATUS [SECONDS]` | waits for the status |
+| `answer TEXT`, `decline` | replies to the oldest open question |
+| `expect-active ID ...`, `expect-fired ID ...` | the marks are exactly these ids, in any order |
+| `expect-status STATUS`, `expect-verdict VERDICT` | the current status, the verdict |
+| `stop` | `shutdown`, then waits for the exit |
+
+* A wait lasts at most 30 seconds unless SECONDS is given.
+* A failed `expect`, a timeout or a failed session exits with 6.
+* A session action without a script is a usage error (1).
+* `--dump-session` prints the model and then every `state` and `history`, one line each.
+
+### A minimal session plugin
+
+```
+walker/
+    plugin.json
+    walker.py
+```
+
+```json
+{
+  "api": 1,
+  "id": "walker",
+  "name": "Walker",
+  "interpreter": "python3",
+  "session": {
+    "version": 1,
+    "actions": [
+      { "id": "walk", "label": "Walk the nodes",
+        "argv": ["${plugin_dir}/walker.py", "${input}"] }
+    ]
+  }
+}
+```
+
+```python
+# walks the nodes of the diagram: every step marks the next one
+import json
+import sys
+import xml.etree.ElementTree as ET
+
+GRAPHML = '{http://graphml.graphdrawing.org/xmlns}'
+
+
+def send(message):
+    message['jsonrpc'] = '2.0'
+    print(json.dumps(message), flush=True)
+
+
+def main():
+    nodes = [n.get('id') for n in ET.parse(sys.argv[1]).getroot().iter(GRAPHML + 'node')]
+    step = 0
+    for line in sys.stdin:
+        message = json.loads(line)
+        method, ident = message.get('method'), message.get('id')
+        if method == 'initialize':
+            send({'id': ident, 'result': {'kind': 'driven',
+                                          'controls': ['step', 'restart']}})
+        elif method == 'control':
+            step = step + 1 if message['params']['command'] == 'step' else 0
+        elif method == 'shutdown':
+            send({'id': ident, 'result': {}})
+            break
+        else:
+            if ident is not None:
+                send({'id': ident, 'error': {'code': -32601, 'message': method}})
+            continue
+        active = [nodes[step % len(nodes)]] if nodes else []
+        send({'method': 'state', 'params': {'status': 'paused', 'active': active}})
+
+
+main()
+```
+
+Put `walker/` into the user plugin folder and choose Plugins > Walker > Walk the nodes;
+F10 marks the next node.
+
+### The planned session plugins
+
+| Plugin | Kind, logic | The session |
+|---|---|---|
+| `hsm-to-python` "Run step by step..." | driven, async | the generated program on the `hsmd` dispatcher; posting events, timers on the virtual clock, replay of a stream, Save Log |
+| `cybersphere-agents` "Run the agent..." | supervised | the agent diagram marked as it runs; the agent's questions as `ask`; Pause before the next model request |
+| a finite automaton plugin | driven, stream | a tape of symbols, `EOF`, the verdict and the output (the FA extension, `type/fa`) |
+| an HSM-ROS2 or turtlesim bridge | observed | the controller's transitions relayed from ROS 2; events sent as message codes; Save Log of the timeline |
+
 ## Examples
 
 ### A diagram checker over cgmlval
@@ -611,7 +963,7 @@ non-zero on a failed build. The platform comes from the document meta
 
 ## A checklist
 
-* No windows, no questions on stdin: declare parameters.
+* No windows, no questions on stdin: declare parameters; a session asks with `ask`.
 * Write only the declared outputs; leave `${input}` and the plugin directory alone.
 * UTF-8 on stdout and stderr; one clear line per error.
 * Exit codes that mean something, and `exit_ok` that lists the good ones.
@@ -620,3 +972,5 @@ non-zero on a failed build. The platform comes from the document meta
 * Say in `description` when the document leaves the machine.
 * Keep `i18n/<lang>.json` in step with the English texts: a changed text loses its
   translation until the file follows.
+* A session: reply to `initialize` at once, flush every line, send a `state` after each
+  step, and exit after `shutdown`.

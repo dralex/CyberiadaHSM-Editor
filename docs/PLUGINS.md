@@ -1,6 +1,6 @@
 # The Plugin System — Architecture
 
-**Document version:** 0.4 (2026-10-15)
+**Document version:** 0.5 (2026-10-26)
 
 A plugin adds a feature to the editor without rebuilding it: a diagram checker, a code
 generator, a compiler front end, an LLM diagram maker. A plugin is a directory with a
@@ -12,7 +12,7 @@ and the Qt JSON classes only: no interpreter, no network library, no plugin ABI.
 
 This document is the editor side. The contract a plugin author follows — the descriptor,
 the variables, the files and the formats — is `PLUGIN-API.md`; the requirements are
-`EDIT-PLUG-1..35` in `EDITOR-SPEC.md` §4.12, the tests the plugin layer of `TESTING.md`.
+`EDIT-PLUG-1..49` in `EDITOR-SPEC.md` §4.12, the tests the plugin layer of `TESTING.md`.
 
 ```
  smeditor_window.cpp, batch_driver.cpp
@@ -47,9 +47,10 @@ the variables, the files and the formats — is `PLUGIN-API.md`; the requirement
 | Level | Process | Exchange | For |
 |---|---|---|---|
 | 1 (this design) | one process per run | argv, environment and files in; exit code and files out | checkers, generators, the compiler adapter, one-prompt LLM drawing |
-| 2 (reserved) | a session for the whole interaction | JSON-RPC 2.0 over stdio | an LLM conversation, incremental edits, live diagnostics |
+| 2 | a session for the whole interaction | JSON-RPC 2.0 over stdin and stdout | a diagram run step by step, a replay, an LLM agent asking the user, a bridge to a running machine |
 
-Both levels use the same descriptor; level 2 adds a `session` block (see the end).
+Both levels use the same descriptor; level 2 adds the `session` block (see Level 2:
+sessions).
 
 ## Discovery
 
@@ -295,18 +296,298 @@ The batch mode creates the window too, so `runPlugin()` is the one place that ap
 result. The dialogs are `dialogs/plugin_parameter_dialog.cpp` and
 `dialogs/plugin_manager_dialog.cpp`.
 
-## Level 2 (outline)
+## Level 2: sessions
 
-A `session` block in the descriptor names the session command. The editor starts it once
-and keeps it for the document; the messages are JSON-RPC 2.0 over stdio.
+A session action keeps its plugin running for the whole interaction:
 
-| Direction | Messages |
+* a diagram run step by step, with the active states marked on the canvas;
+* a replay of a recorded log;
+* an LLM agent that asks the user mid-run;
+* a bridge to a machine running elsewhere.
+
+The contract (the `session` block, the messages, the model) is the Sessions chapter of
+`PLUGIN-API.md`; the requirements are `EDIT-PLUG-36..49`.
+
+| Kind | The machine and its clock | The editor offers | Example |
+|---|---|---|---|
+| driven | run by the plugin on the editor's command | Step (units), Run (speeds), Pause, Restart, Stop; the event line; the stream | `hsm-to-python` step by step and replay; an FA plugin |
+| supervised | run by the plugin on its own | Pause, Run (resume), Stop; the answers | `cybersphere-agents` |
+| observed | run by an outside system; the plugin is a bridge | Stop; the event line; Save Log | an HSM-ROS2 controller on turtlesim |
+
+The kind and the rest of the panel come from the plugin's answer to `initialize`, the
+*model*. The editor knows no execution semantics: the FA tape, the HSM event queue and
+the replay clock belong to the plugin, so a new kind of run needs no new editor.
+
+### Architecture
+
+```
+ smeditor_window.cpp      Plugins > Session (the current document): Step, Run, Pause, ...
++--------------------------------------------------------------------------------------+
+| PluginDock                                                                           |
+|  run row: title, status, time; Step v, Run v, Pause, Restart, Stop; the answer bar   |
+|  tabs: Diagnostics | "<document> session": event line, stream, history | outputs     |
++--------------------------------------------------------------------------------------+
+     | control, event, input, save, answers                ^ model, state, history,
+     v                                                     | log, ask, diagnostics
++--------------------------------------------------------------------------------------+
+| PluginSession (QtCore)    the session of one run: the model, the latest state, the   |
+|                           history, the open questions, the findings                  |
++--------------------------------------------------------------------------------------+
+     | requests, notifications                             ^ messages; text lines
+     v                                                     |
++--------------------------------------------------------------------------------------+
+| PluginChannel (QtCore)    JSON-RPC 2.0, one object per line: ids, replies, errors    |
++--------------------------------------------------------------------------------------+
+     | lines                                               ^ lines
+     v                                                     |
++--------------------------------------------------------------------------------------+
+| PluginRunner, session mode: the level-1 staging; stdin open; stdout split into lines |
+| stderr -> the output tab; shutdown, then terminate and kill as a cancelled run       |
++--------------------------------------------------------------------------------------+
+     | stdin                                               ^ stdout, stderr
+     v                                                     |
++--------------------------------------------------------------------------------------+
+| the session plugin process                                                           |
++--------------------------------------------------------------------------------------+
+
+ PluginSession --(active, fired) at most every RUN_MARK_INTERVAL_MS-->
+     CyberiadaSMEditorScene::setRunMarks() --> RunMark {None, Active, Fired} of the items
+```
+
+What is reused from level 1:
+
+* the descriptor parsing and the registry;
+* the parameter dialog and the stored values;
+* the staging (`${...}`, `request.json`, `save`, `meta`);
+* the output tab;
+* the Diagnostics tab;
+* `cancel()` with its grace;
+* the result validation and apply;
+* the one-run-per-document rule;
+* the scene lookup `getMap()` and `idToElement`.
+
+A stream file is never read by the editor: `input` passes its path or text to the plugin.
+Edit Stream... uses the `MultilineTextDialog` of the properties (`EDIT-TEXT-10`).
+
+### The session run
+
+```
+   a session action: the menu, the toolbar, --run-plugin
+          |
+          v
+   configure, save, meta, stage -- as a run (EDIT-PLUG-7..9, 25, 34) ------------+
+          | the document is locked from here                                     |
+          v                                                                      |
+   +-------------+                                                               |
+   |  starting   | -- no answer within SESSION_INIT_TIMEOUT_MS, a bad model, ----+
+   +-------------+    the process ended                                          |
+          | initialize answered: the model; the controls and the session tab     |
+          v                                                                      |
+   +-------------+   control, event, input, save, replies to ask --> plugin      |
+   |   session   |   state, history, log, ask, diagnostics       <-- plugin      |
+   +-------------+                                                               |
+          | Stop, the tab closed, the editor closed      | the plugin exits      |
+          v                                              |                       |
+   +-------------+                                       |                       |
+   |  stopping   | cancel the open questions, shutdown,  |                       |
+   |             | close stdin; terminate after the      |                       |
+   |             | grace, kill after another             |                       |
+   +-------------+                                       |                       |
+          | the process ended                            |                       |
+          v                                              v                       v
+   validate (exit_ok) and apply the result (log, diagnostics, files) as a run   failed
+   always: clear the marks, unlock the document, remove the run dir
+```
+
+* A plugin that answers `shutdown` and exits with a code in `exit_ok` has ended the
+  session normally, and its result is applied.
+* A plugin the editor has to terminate is a cancelled run, and its result is dropped.
+
+### Run marks
+
+* `RunMark {None, Active, Fired}` is an item state of its own, apart from the selection
+  and from `setHighlighted` (the drag target).
+* It is drawn by the state, transition, choice and vertex items; Fired is drawn over
+  Active.
+* The colours are `RUN_ACTIVE_COLOR` and `RUN_FIRED_COLOR`.
+* The scene resolves the ids through `getMap()`. An unknown id is ignored, and so is a
+  state machine id (its border is not marked).
+* The latest marks are applied at most every `RUN_MARK_INTERVAL_MS`, so a fast run shows
+  the latest marks and never a backlog.
+* The marks live in the scene of the session's document. The end of the session clears
+  them, and the export never draws them.
+
+### Lock
+
+A session locks its document (`setLocked`), as a `replace` run does, but the view stays
+interactive. `isEditable()` of the items also checks `model->readOnly()`, so a drag, a
+resize, a text edit or a delete is refused. Selecting, zooming, scrolling, the structure
+tree and the read-only properties still work. Undo and Redo are disabled.
+
+### The dock
+
+```
+ driven (HSM step by step, replay)
++--------------------------------------------------------------------------------------+
+| HSM to Python: Run step by step - coffee.graphml    paused  t = 1.300 s  #12  00:41  |
+|   [Step: event v] [Run x1 v] [Pause] [Restart] [Stop]                                |
+| [Diagnostics] [coffee.graphml session] [HSM to Python output x]                      |
+|   Event [COIN amount=5   v] [Post]   [Load Stream...] [Edit Stream...] [Save Log...] |
+|     time   event                    origin  outcome  fired                           |
+|    0.000   POWER_ON                 input   fired    Off -> Idle                     |
+|    0.512   button.CLICKED           input   fired    Idle -> Ready                   |
+|    1.000   t1.TIMEOUT               model   fired    Ready: t1.TIMEOUT               |
+|  > 1.300   sensor.VALUE value=23.5  input   pending                                  |
++--------------------------------------------------------------------------------------+
+
+ supervised (an LLM agent)
++--------------------------------------------------------------------------------------+
+| Cybersphere Agents: Run the agent - develop.graphml    waiting  round 7  03:41       |
+|   [Pause] [Stop]                                                                     |
+|   ? The tests fail in parser.c. Rewrite the lexer?                                   |
+|   [answer ........................................] [yes] [no] [Answer] [Decline]    |
+| [Diagnostics] [develop.graphml session] [Cybersphere Agents output x]                |
++--------------------------------------------------------------------------------------+
+```
+
+* The run row replaces Cancel with the controls the model offers.
+* The answer bar appears under it while a question is open.
+* The status text is the plugin's `status` and `text`, plus `time` and `position` when the
+  plugin sends them.
+* The session tab "<document> session" opens at the start of the session and becomes
+  current. It can be closed only after the session ends. The plugin's name and action are
+  in its tooltip.
+* A history row names its fired elements: a transition as `source -> target`, a state's
+  own reaction as `state: trigger`. A click selects and centres the element, as a finding
+  does.
+* An observed session shows Stop in the run row, and the event line, Save Log and the
+  history in its tab.
+* A stream-logic session (an FA tape) shows the `output` symbols above the history and the
+  `verdict` in the status.
+
+### The Session menu
+
+```
+ Plugins                                Plugins > HSM to Python
++-------------------------------+      +----------------------------+
+| HSM to Python               > |      | Generate the code...       |
+| Cybersphere Agents          > |      | Check the code             |
+| ----------------------------- |      | Run the diagram...         |
+| Session                     > |      | -------------------------- |
+| Output panel                  |      | Run step by step...        |
+| Plugin manager...             |      | -------------------------- |
++-------------------------------+      | Settings...                |
+                                       +----------------------------+
+ Plugins > Session (the current document)
++-------------------------------+
+| Step                     F10  |
+| Run                       F5  |
+| Pause                     F6  |
+| Restart                       |
+| Stop                Shift+F5  |
+| ----------------------------- |
+| Post Event                    |
+| Load Stream...                |
+| Edit Stream...                |
+| Save Log...                   |
++-------------------------------+
+```
+
+* The session actions follow the plugin's other actions, after a separator.
+* Step repeats the last unit chosen in the dock.
+* Post Event moves the focus to the event line.
+* Every entry is enabled exactly as its dock control. Without a session on the current
+  document, all of them are disabled.
+
+### Batch mode
+
+A session action in batch mode needs `--session-script FILE`; without it the run is a
+usage error (exit 1). The verbs run in order, one per line, with `#` comments:
+
+| Verb | Sends, waits |
 |---|---|
-| editor → plugin | `initialize` (api, the snapshot, meta, values), `document/changed`, `shutdown` |
-| plugin → editor | `edit` (a list of edit-script verbs, the batch script vocabulary; one undo step per list), `input` (a parameter list: the editor shows the same generated dialog mid-run), `diagnostics/publish`, `log`, `message` (a conversation pane) |
+| `step [UNIT]` | `control step`; waits for a `state` whose status is not `running` |
+| `run [SPEED]`, `pause` | `control run`, `control pause` |
+| `restart` | `control restart`; waits as `step` |
+| `event NAME [name=value ...]` | `event` |
+| `input FILE`, `save FILE` | `input {path}`, `save {path}`; an error reply fails the script |
+| `wait STATUS [SECONDS]` | waits for that status |
+| `answer TEXT`, `decline` | replies to the oldest open question; fails when there is none |
+| `expect-active ID ...`, `expect-fired ID ...` | the marks are exactly these ids, in any order |
+| `expect-status STATUS`, `expect-verdict VERDICT` | the current status, the verdict |
+| `stop` | ends the session as Stop, then waits for the exit |
 
-The alternative is the editor acting as an MCP server for an outside agent; the choice is
-left for the level 2 design.
+* Every wait is limited by `SESSION_WAIT_S`, or by the SECONDS given.
+* A failed `expect`, a timeout or a failed session exits with 6.
+* The end of the script stops a session that is still running.
+* `--dump-session` prints the deterministic `== session` section: the model, then every
+  `state` and `history` message in the order of arrival, one line each, with the fields
+  sorted. An open question is printed with its text.
+
+```
+== session
+model controls=pause,restart,run,step events=COIN,CANCEL kind=driven logic=async ...
+state active=n1 status=paused time=0
+history event=COIN fired=n1-n2 origin=user outcome=fired time=0.5
+state active=n2 fired=n1-n2 status=paused time=0.5
+```
+
+### Code layout, level 2
+
+```
+ plugin_channel.cpp       PluginChannel: JSON-RPC 2.0 over lines; ids, replies, errors
+ plugin_session.cpp       PluginSession: the model, the state, the history, the questions
+ plugin_runner.cpp        + the session mode: stdin open, lines, shutdown before terminate
+ plugin_dock.cpp          + the run row controls, the answer bar, the session tab
+ plugins_menu.cpp         + the session actions, Plugins > Session
+ cyberiadasm_editor_*item.cpp, cyberiadasm_editor_scene.cpp   + RunMark, setRunMarks()
+ batch_session.cpp        --session-script, --dump-session
+ tests/plugins/session/   the C++ helper in its session mode: scripted replies
+```
+
+| Constant (`cyberiada_constants.h`) | Value | Use |
+|---|---|---|
+| `SESSION_PROTOCOL_VERSION` | 1 | the `session.version` the editor runs |
+| `SESSION_INIT_TIMEOUT_MS` | 30000 | the answer to `initialize` |
+| `SESSION_HISTORY_LIMIT` | 10000 | the history rows kept per session tab |
+| `SESSION_WAIT_S` | 30 | the default limit of a batch wait |
+| `RUN_MARK_INTERVAL_MS` | 50 | the repaint throttle of the marks |
+| `RUN_ACTIVE_COLOR`, `RUN_FIRED_COLOR` | `#2e7d32`, `#ef6c00` | the mark colours |
+
+### Why JSON-RPC and not MCP
+
+MCP is an application protocol on top of JSON-RPC 2.0, made for an LLM host that calls
+the tools and reads the resources of a server. A session runs the other way: the user
+drives through the editor, and the plugin pushes a stream of state.
+
+| | Our session | MCP |
+|---|---|---|
+| who drives | the user, through the editor | the model in the host |
+| a pushed state | one `state` notification | `resources/updated`, then `resources/read`: three messages |
+| a question | `ask` | `elicitation/create` (the shape we copy) |
+| a plugin in Python | `json` and stdin/stdout, any Python 3 | the official SDK needs Python 3.10+ and pydantic; the Windows 7/8.1 build has 3.8 |
+
+The conventions are MCP's, so that a bridge stays cheap:
+
+* the stdio framing;
+* `initialize` first, with the capabilities;
+* the `log` levels;
+* the replies to `ask`.
+
+MCP fits the reverse direction, planned later: the editor, or a bridge plugin, as an MCP
+server whose tools are the edit verbs and whose resources are the open documents, used by
+an outside agent.
+
+### Later
+
+* the expected values of a replay and the divergence marks;
+* micro steps (exit, effect and entry one by one);
+* breakpoints on the canvas;
+* a variables view;
+* run marks in the structure tree;
+* simulated platform components;
+* plugin `edit` requests (a conversation that changes the document);
+* the MCP bridge.
 
 ## Trust
 
@@ -343,4 +624,4 @@ left for the level 2 design.
 Deferred: a `network` flag with a first-run notice, a `${sm}` variable
 for documents with several state machines, plugin shortcuts, element context-menu actions,
 the toolbar positions (`saveState`), stdout as the output document, a JSON Schema of the
-descriptor, level 2.
+descriptor; the level 2 items under Later.
