@@ -31,6 +31,7 @@
 #include <cmath>
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_editor_scene.h"
+#include "cyberiadasm_editor_document.h"
 #include "cyberiadasm_editor_transition_item.h"
 #include "cyberiadasm_editor_state_item.h"
 #include "cyberiadasm_editor_vertex_item.h"
@@ -69,6 +70,7 @@ private slots:
 	void test_auto_attach();
 	void test_new_element_place();
 	void test_new_element_empty_canvas_at_press();
+	void test_first_element_stays_in_view();
 	void test_undo_gesture();
 	void test_sm_border();
 	void test_new_state();
@@ -1492,6 +1494,42 @@ void TestScene::test_new_element_empty_canvas_at_press()
 		}
 		QVERIFY2(fresh, c.name);
 		QVERIFY2(QLineF(fresh->sceneBoundingRect().center(), press).length() < 1.0, c.name);
+	}
+}
+
+void TestScene::test_first_element_stays_in_view()
+{
+	// the first element expands the scene rect from the tiny default, which scrolls
+	// the view; a click far from the origin (easy in a maximized window) must not
+	// leave the new element outside the viewport (EDIT-TOOL-1)
+	const QPointF clicks[] = { QPointF(300, 200), QPointF(1100, 600), QPointF(1200, -650) };
+	for (const QPointF& click : clicks) {
+		CyberiadaSMEditorDocument doc(this);
+		CyberiadaSMEditorScene* sc = doc.scene();
+		QGraphicsView* view = doc.view();
+		view->resize(2560, 1400);   // a maximized window, larger than the default scene
+		view->show();
+		QTest::qWait(20);
+		// the click is inside the current (empty) viewport
+		QVERIFY(view->mapToScene(view->viewport()->rect()).boundingRect().contains(click));
+		QList<Cyberiada::ID> before = sc->getMap().keys();
+		sc->setCurrentTool(ToolType::NewInitial);
+		sceneMouse(sc, QEvent::GraphicsSceneMousePress, click, Qt::LeftButton);
+		sceneMouse(sc, QEvent::GraphicsSceneMouseRelease, click, Qt::NoButton);
+		QTest::qWait(30);
+		QGraphicsItem* fresh = nullptr;
+		for (const Cyberiada::ID& id : sc->getMap().keys()) {
+			if (before.contains(id)) continue;
+			QGraphicsItem* it = sc->getMap().value(id);
+			CyberiadaSMEditorAbstractItem* ci = dynamic_cast<CyberiadaSMEditorAbstractItem*>(it);
+			if (ci && ci->getElement() && ci->getElement()->get_type() == Cyberiada::elementSM) continue;
+			fresh = it; break;
+		}
+		QVERIFY(fresh);
+		QPointF p = fresh->sceneBoundingRect().center();
+		QVERIFY2(QLineF(p, click).length() < 1.0, "the element lands at the click");
+		QRectF visAfter = view->mapToScene(view->viewport()->rect()).boundingRect();
+		QVERIFY2(visAfter.contains(p), "the new element is kept in the viewport");
 	}
 }
 

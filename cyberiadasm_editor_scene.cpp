@@ -1335,6 +1335,7 @@ void CyberiadaSMEditorScene::createByTool(ToolType tool, const QRectF& sceneRect
     // a child element: find the collection under the start point
     CyberiadaSMEditorAbstractItem* parentCItem = nullptr;
     Cyberiada::ElementCollection* parentColl = nullptr;
+    bool createdSM = false;
     for (QGraphicsItem* gi : items(creationStart)) {
         CyberiadaSMEditorAbstractItem* ci = dynamic_cast<CyberiadaSMEditorAbstractItem*>(gi);
         if (ci && (ci->type() == CyberiadaSMEditorAbstractItem::SMItem ||
@@ -1357,6 +1358,7 @@ void CyberiadaSMEditorScene::createByTool(ToolType tool, const QRectF& sceneRect
             Cyberiada::Element* sm = model->newStateMachine(tr("New State Machine").toStdString());
             if (!sm) return;
             currentSM = static_cast<Cyberiada::StateMachine*>(sm);
+            createdSM = true;
         }
         parentColl = static_cast<Cyberiada::ElementCollection*>(currentSM);
         parentCItem = dynamic_cast<CyberiadaSMEditorAbstractItem*>(elementIdToItemMap.value(currentSM->get_id()));
@@ -1429,6 +1431,12 @@ void CyberiadaSMEditorScene::createByTool(ToolType tool, const QRectF& sceneRect
             model->growToFitChildren(element, false);
         }
         item->setSelected(true);
+        if (createdSM && !views().isEmpty() && views().first()) {
+            // the first element expands the scene rect from the tiny default, which
+            // scrolls the view; keep the new element in sight so a click far from the
+            // origin (easy in a maximized window) is not left outside the viewport
+            views().first()->ensureVisible(item);
+        }
     }
 }
 
