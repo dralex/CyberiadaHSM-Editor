@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.38 (2026-10-25)
+**Document version:** 0.39 (2026-10-26)
 
 **Related authorities:**
 
@@ -659,7 +659,8 @@ The window holds several documents; the structure is drawn in `docs/WINDOW.md`.
 ### 4.12 Plugins — PLUG
 
 The plugins are external programs run on the active document: the architecture is
-`docs/PLUGINS.md`, the contract a plugin follows is `docs/PLUGIN-API.md` (`api` 1).
+`docs/PLUGINS.md`, the contract a plugin follows is `docs/PLUGIN-API.md` (`api` 1, the
+session protocol 1). `EDIT-PLUG-36..49` are the sessions (plugin level 2).
 
 - `EDIT-PLUG-1` MUST [A]: the plugins are looked up in `--plugin-path` (which replaces the
   rest), `$CYBERIADA_PRO_PLUGIN_PATH`, the user folder (moved by `$CYBERIADA_PRO_DATA_HOME`,
@@ -760,6 +761,67 @@ The plugins are external programs run on the active document: the architecture i
 - `EDIT-PLUG-35` MUST [A]: a plugin output tab can be closed, which drops its text, and
   comes back empty with the plugin's next output; its context menu clears the text after a
   confirmation and saves it to a file as plain UTF-8 text. *design*
+- `EDIT-PLUG-36` MUST [A]: the session actions of a descriptor (`session.actions`) follow the
+  plugin's other actions in its submenu, after a separator, and on its toolbar; the action ids
+  are unique across both lists; a `session.version` the editor does not run leaves them out
+  with a warning in the plugin manager and `--list-plugins`, and the other actions stay.
+  *design*
+- `EDIT-PLUG-37` MUST [A]: a session run is configured, saved and staged as a run
+  (`EDIT-PLUG-7..9`, `EDIT-PLUG-25`, `EDIT-PLUG-34`) and is the one run of its document
+  (`EDIT-PLUG-21`); the plugin process gets stdin and stdout as the session channel; the
+  editor sends `initialize` first, and no answer within `SESSION_INIT_TIMEOUT_MS`, a model
+  without a known `kind` or the process ending first fails the session as a failed run
+  (`EDIT-PLUG-18`). *design*
+- `EDIT-PLUG-38` MUST [A]: the channel carries one JSON-RPC 2.0 object per line in UTF-8; a
+  stdout line that is not a JSON object and the stderr go to the plugin's output tab; a
+  request with an unknown method gets the error -32601; an unknown notification and the
+  unknown fields are ignored. *design*
+- `EDIT-PLUG-39` MUST [A]: the controls follow the model: Stop always; Step with the units of
+  `steps`, the first one by default; Run with the speeds of `speeds`; Pause and Restart when
+  `controls` lists them; the event line when `events` is given, the stream entries when
+  `stream`, Save Log when `save`; each control is enabled by the current `status`. *design*
+- `EDIT-PLUG-40` MUST [A]: the `active` and `fired` ids of the latest state mark their elements
+  Active and Fired on the canvas, unlike the selection; an id the document lacks is ignored; a
+  `state` message replaces only the fields it carries; the marks are repainted at most every
+  `RUN_MARK_INTERVAL_MS` with the latest values and cleared when the session ends; an export
+  draws none. *design*
+- `EDIT-PLUG-41` MUST [A]: a session locks its document: editing, undo and redo are refused,
+  while selecting, zooming, scrolling, the structure tree and the read-only properties keep
+  working. *design*
+- `EDIT-PLUG-42` MUST [A]: the session tab "<document> session" holds the event line, the
+  stream entries and the history — a row per `history` message (the time, the event and its
+  parameters, the origin, the outcome, the fired elements; a click selects and centres the
+  element) and a pending row per item of a loaded stream, at most `SESSION_HISTORY_LIMIT`
+  rows; it opens current with the session and closes only after the session ends. *design*
+- `EDIT-PLUG-43` MUST [A]: an `ask` raises the dock and shows the question with an answer line,
+  its `choices` as buttons, Answer and Decline; the reply is `accept` with the text, or
+  `decline`; the questions are shown one at a time in their order; Stop replies `cancel` to
+  every open question. *design*
+- `EDIT-PLUG-44` MUST [A]: Post sends `event` with `NAME name=value ...` split into the name and
+  the string parameters; Load Stream... and Edit Stream... send `input` with the path or the
+  text, and an error reply is shown in the output tab; Save Log... sends `save` with the chosen
+  path, `<document name>.log` in the document folder by default. *design*
+- `EDIT-PLUG-45` MUST [A]: Stop, closing the tab (after a question) or exiting the editor ends
+  the session: `cancel` to the open questions, `shutdown`, stdin closed, then terminate after
+  `PLUGIN_KILL_GRACE_MS` and kill after another; the plugin may end the session by exiting; the
+  exit code is then checked against `exit_ok` and the action's `result` is applied as a run's,
+  a session the editor terminates being a cancelled run; the marks are cleared and the document unlocked in
+  every case. *design*
+- `EDIT-PLUG-46` MUST [A]: Plugins > Session acts on the session of the current document — Step
+  (F10, the last unit chosen), Run (F5), Pause (F6), Restart, Stop (Shift+F5), Post Event (the
+  focus to the event line), Load Stream..., Edit Stream..., Save Log... — each entry enabled as
+  its dock control, all disabled without a session on the current document. *design*
+- `EDIT-PLUG-47` MUST [A]: in batch mode a session action needs `--session-script`, else it is
+  a usage error (exit 1); the verbs run in order; `step` and `restart` wait for a state whose
+  status is not `running`, `wait` for the status given, each within `SESSION_WAIT_S` or the
+  seconds given; a failed `expect`, a timeout or a failed session exits 6; the end of the
+  script stops the session. *design*
+- `EDIT-PLUG-48` MUST [A]: `--dump-session` prints `== session`: the model, then every `state`
+  and `history` message in the order of arrival, one line each with the fields sorted, no
+  machine path. *design*
+- `EDIT-PLUG-49` MUST [A]: a `log` message goes to the output tab, `warning` and `error` in the
+  stderr colour; a `diagnostics` message replaces the session's findings in Diagnostics
+  (`EDIT-PLUG-15`). *design*
 
 ### 4.13 Interface language and preferences — UI
 
