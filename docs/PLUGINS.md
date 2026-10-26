@@ -493,7 +493,9 @@ tree and the read-only properties still work. Undo and Redo are disabled.
 +-------------------------------+
 ```
 
-* The session actions follow the plugin's other actions, after a separator.
+* The session actions follow the plugin's other actions, after a separator. The one-shot
+  actions a session action `replaces` are hidden from the menu and the toolbar; the batch
+  mode still runs them by id.
 * Step repeats the last unit chosen in the dock.
 * Post Event moves the focus to the event line.
 * Every entry is enabled exactly as its dock control. Without a session on the current

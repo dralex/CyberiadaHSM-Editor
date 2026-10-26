@@ -103,7 +103,7 @@ output" tab of the plugin dock.
 | `interpreter` | no | a logical interpreter name (`python3`); the command is then `interpreter + argv` |
 | `env` | no | extra environment variables; the values may use `${plugin_dir}` |
 | `parameters` | no | the parameters, shared by the actions (see Parameters) |
-| `actions` | yes | the actions; at least one here or in `session.actions` |
+| `actions` | yes | at least one action; a plugin with session actions keeps one too, so that an editor before the sessions loads it |
 | `session` | no | the session actions (see Sessions); an editor before the sessions ignores it |
 
 An action:
@@ -511,11 +511,18 @@ stdin and stdout.
 |---|---|
 | `session.version` | the session protocol, `1`; an editor that does not run this version leaves the session actions out and keeps the other actions |
 | `session.actions` | the session actions, with the fields of an action except `timeout` and `load`; `result` is `log` (the default), `diagnostics` or `files`, taken when the session ends |
+| `replaces` | in a session action: the ids of the one-shot actions it supersedes; an editor that runs the sessions hides them from the menu and the toolbar, an older editor shows them, and `--run-plugin` runs them by id everywhere |
 
-* The action ids are unique across `actions` and `session.actions`; a plugin may have
-  session actions only.
+* The action ids are unique across `actions` and `session.actions`.
 * An editor before the sessions ignores the block, so the plugin's other actions keep
-  working there.
+  working there. A one-shot fallback of a session action, named in its `replaces`, is
+  what such an editor shows instead:
+
+| | a level-1 plugin | `actions` + `session` | `actions` + `session` with `replaces` |
+|---|---|---|---|
+| an editor before the sessions | the actions | the actions | the actions, the fallbacks included |
+| an editor with the sessions | the actions | the actions and the session actions | the session actions instead of the fallbacks |
+
 * The parameters, the dialog, `save`, `meta`, the variables and `request.json` work as for
   any action. `${input}` is the document at the start, and the document stays locked
   until the session ends.
@@ -740,6 +747,10 @@ walker/
   "id": "walker",
   "name": "Walker",
   "interpreter": "python3",
+  "actions": [
+    { "id": "list", "label": "List the nodes", "result": "log",
+      "argv": ["${plugin_dir}/walker.py", "${input}", "--list"] }
+  ],
   "session": {
     "version": 1,
     "actions": [
@@ -766,6 +777,9 @@ def send(message):
 
 def main():
     nodes = [n.get('id') for n in ET.parse(sys.argv[1]).getroot().iter(GRAPHML + 'node')]
+    if sys.argv[2:] == ['--list']:
+        print('\n'.join(nodes))
+        return
     step = 0
     for line in sys.stdin:
         message = json.loads(line)
@@ -797,7 +811,7 @@ F10 marks the next node.
 | Plugin | Kind, logic | The session |
 |---|---|---|
 | `hsm-to-python` "Run step by step..." | driven, async | the generated program on the `hsmd` dispatcher; posting events, timers on the virtual clock, replay of a stream, Save Log |
-| `cybersphere-agents` "Run the agent..." | supervised | the agent diagram marked as it runs; the agent's questions as `ask`; Pause before the next model request |
+| `cybersphere-agents` "Run the agent..." | supervised | the agent diagram marked as it runs; the agent's questions as `ask`; Pause before the next model request; `replaces` the one-shot run and its continuation |
 | a finite automaton plugin | driven, stream | a tape of symbols, `EOF`, the verdict and the output (the FA extension, `type/fa`) |
 | an HSM-ROS2 or turtlesim bridge | observed | the controller's transitions relayed from ROS 2; events sent as message codes; Save Log of the timeline |
 
