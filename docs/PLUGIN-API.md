@@ -1,6 +1,6 @@
 # The Plugin Interface
 
-**Document version:** 0.5 (2026-10-26), plugin contract `api` 1, session protocol 1. In
+**Document version:** 0.6 (2026-10-27), plugin contract `api` 1, session protocol 1. In
 Russian: `PLUGIN-API-ru.md`.
 
 This is the brief for a plugin author. A plugin gives CyberiadaPro, the Cyberiada HSM editor, a
@@ -722,8 +722,8 @@ stop
 | `restart` | `control restart`; waits as `step` |
 | `event NAME [name=value ...]` | `event` |
 | `input FILE`, `save FILE` | `input {path}`, `save {path}`; an error reply fails the script |
-| `wait STATUS [SECONDS]` | waits for the status |
-| `answer TEXT`, `decline` | replies to the oldest open question |
+| `wait STATUS [SECONDS]` | waits for the status; `ended` waits for the plugin to end the session |
+| `answer TEXT`, `decline` | replies to the oldest open question, waiting for one |
 | `expect-active ID ...`, `expect-fired ID ...` | the marks are exactly these ids, in any order |
 | `expect-status STATUS`, `expect-verdict VERDICT` | the current status, the verdict |
 | `stop` | `shutdown`, then waits for the exit |
@@ -731,7 +731,8 @@ stop
 * A wait lasts at most 30 seconds unless SECONDS is given.
 * A failed `expect`, a timeout or a failed session exits with 6.
 * A session action without a script is a usage error (1).
-* `--dump-session` prints the model and then every `state` and `history`, one line each.
+* `--dump-session` prints every message both ways, one line each; the editor's lines start
+  with `sent`.
 
 ### A minimal session plugin
 

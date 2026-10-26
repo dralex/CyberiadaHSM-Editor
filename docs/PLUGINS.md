@@ -1,6 +1,6 @@
 # The Plugin System — Architecture
 
-**Document version:** 0.5 (2026-10-26)
+**Document version:** 0.6 (2026-10-27)
 
 A plugin adds a feature to the editor without rebuilding it: a diagram checker, a code
 generator, a compiler front end, an LLM diagram maker. A plugin is a directory with a
@@ -408,7 +408,8 @@ Edit Stream... uses the `MultilineTextDialog` of the properties (`EDIT-TEXT-10`)
 * `RunMark {None, Active, Fired}` is an item state of its own, apart from the selection
   and from `setHighlighted` (the drag target).
 * It is drawn by the state, transition, choice and vertex items; Fired is drawn over
-  Active.
+  Active. A state gets a tint of the colour and a border of `RUN_MARK_WIDTH`; a selected
+  element keeps the selection border, so both show.
 * The colours are `RUN_ACTIVE_COLOR` and `RUN_FIRED_COLOR`.
 * The scene resolves the ids through `getMap()`. An unknown id is ignored, and so is a
   state machine id (its border is not marked).
@@ -513,8 +514,8 @@ usage error (exit 1). The verbs run in order, one per line, with `#` comments:
 | `restart` | `control restart`; waits as `step` |
 | `event NAME [name=value ...]` | `event` |
 | `input FILE`, `save FILE` | `input {path}`, `save {path}`; an error reply fails the script |
-| `wait STATUS [SECONDS]` | waits for that status |
-| `answer TEXT`, `decline` | replies to the oldest open question; fails when there is none |
+| `wait STATUS [SECONDS]` | waits for that status; `ended` waits for the plugin to end the session |
+| `answer TEXT`, `decline` | replies to the oldest open question, waiting for one |
 | `expect-active ID ...`, `expect-fired ID ...` | the marks are exactly these ids, in any order |
 | `expect-status STATUS`, `expect-verdict VERDICT` | the current status, the verdict |
 | `stop` | ends the session as Stop, then waits for the exit |
@@ -522,16 +523,22 @@ usage error (exit 1). The verbs run in order, one per line, with `#` comments:
 * Every wait is limited by `SESSION_WAIT_S`, or by the SECONDS given.
 * A failed `expect`, a timeout or a failed session exits with 6.
 * The end of the script stops a session that is still running.
-* `--dump-session` prints the deterministic `== session` section: the model, then every
-  `state` and `history` message in the order of arrival, one line each, with the fields
-  sorted. An open question is printed with its text.
+* `--dump-session` prints the deterministic `== session` section: every message both
+  ways in the order it went, one line each with the fields sorted. The editor's own lines
+  start with `sent`; `initialize` is printed without its parameters and a path by its file
+  name.
 
 ```
 == session
-model controls=pause,restart,run,step events=COIN,CANCEL kind=driven logic=async ...
+sent initialize
+model events=COIN,CANCEL kind=driven speeds=1,0 steps=event,time stream=true
 state active=n1 status=paused time=0
-history event=COIN fired=n1-n2 origin=user outcome=fired time=0.5
+sent event name=COIN params={amount=5}
+sent control command=step unit=event
+history event=COIN fired=n1-n2 origin=user outcome=fired params={amount=5} time=0.5
 state active=n2 fired=n1-n2 status=paused time=0.5
+request ask choices=yes,no text=Refund the coin?
+sent reply action=accept text=yes
 ```
 
 ### Code layout, level 2
@@ -540,9 +547,12 @@ state active=n2 fired=n1-n2 status=paused time=0.5
  plugin_channel.cpp       PluginChannel: JSON-RPC 2.0 over lines; ids, replies, errors
  plugin_session.cpp       PluginSession: the model, the state, the history, the questions
  plugin_runner.cpp        + the session mode: stdin open, lines, shutdown before terminate
- plugin_dock.cpp          + the run row controls, the answer bar, the session tab
- plugins_menu.cpp         + the session actions, Plugins > Session
+ plugin_session_view.cpp  PluginSessionControls (the run row, the answer bar),
+                          PluginSessionTab (the event line, the stream, the history)
+ plugin_dock.cpp          + the session rows and tabs, the findings of a session
+ plugins_menu.cpp         + the session actions; smeditor_window.cpp: Plugins > Session
  cyberiadasm_editor_*item.cpp, cyberiadasm_editor_scene.cpp   + RunMark, setRunMarks()
+ cyberiadasm_render.cpp   + the export without the marks
  batch_session.cpp        --session-script, --dump-session
  tests/plugins/session/   the C++ helper in its session mode: scripted replies
 ```
