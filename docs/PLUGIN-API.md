@@ -812,7 +812,7 @@ F10 marks the next node.
 | Plugin | Kind, logic | The session | State |
 |---|---|---|---|
 | `hsm-to-python` "Run step by step..." | driven, async | the generated program on the `hsmd` dispatcher; posting events, timers on the virtual clock, replay of a stream, Save Log | available: hsm-to-python 2.1, hsm-dispatcher-py 0.2 (`hsmd_session`) |
-| `cybersphere-agents` "Run the agent..." | supervised | the agent diagram marked as it runs; the agent's questions as `ask`; Pause before the next model request; `replaces` the one-shot run and its continuation | planned |
+| `cybersphere-agents` "Run the agent..." | supervised | the agent diagram marked as it runs; the agent's questions as `ask`; Pause before the next model request; `replaces` the one-shot run and its continuation | available: the session action `session` (`run --session`) |
 | a finite automaton plugin | driven, stream | a tape of symbols, `EOF`, the verdict and the output (the FA extension, `type/fa`) | planned |
 | an HSM-ROS2 or turtlesim bridge | observed | the controller's transitions relayed from ROS 2; events sent as message codes; Save Log of the timeline | planned |
 
