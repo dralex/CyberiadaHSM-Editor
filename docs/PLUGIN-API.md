@@ -1,6 +1,6 @@
 # The Plugin Interface
 
-**Document version:** 0.6 (2026-10-27), plugin contract `api` 1, session protocol 1. In
+**Document version:** 0.7 (2026-10-27), plugin contract `api` 1, session protocol 1. In
 Russian: `PLUGIN-API-ru.md`.
 
 This is the brief for a plugin author. A plugin gives CyberiadaPro, the Cyberiada HSM editor, a
@@ -807,14 +807,14 @@ main()
 Put `walker/` into the user plugin folder and choose Plugins > Walker > Walk the nodes;
 F10 marks the next node.
 
-### The planned session plugins
+### Session plugins
 
-| Plugin | Kind, logic | The session |
-|---|---|---|
-| `hsm-to-python` "Run step by step..." | driven, async | the generated program on the `hsmd` dispatcher; posting events, timers on the virtual clock, replay of a stream, Save Log |
-| `cybersphere-agents` "Run the agent..." | supervised | the agent diagram marked as it runs; the agent's questions as `ask`; Pause before the next model request; `replaces` the one-shot run and its continuation |
-| a finite automaton plugin | driven, stream | a tape of symbols, `EOF`, the verdict and the output (the FA extension, `type/fa`) |
-| an HSM-ROS2 or turtlesim bridge | observed | the controller's transitions relayed from ROS 2; events sent as message codes; Save Log of the timeline |
+| Plugin | Kind, logic | The session | State |
+|---|---|---|---|
+| `hsm-to-python` "Run step by step..." | driven, async | the generated program on the `hsmd` dispatcher; posting events, timers on the virtual clock, replay of a stream, Save Log | available: hsm-to-python 2.1, hsm-dispatcher-py 0.2 (`hsmd_session`) |
+| `cybersphere-agents` "Run the agent..." | supervised | the agent diagram marked as it runs; the agent's questions as `ask`; Pause before the next model request; `replaces` the one-shot run and its continuation | planned |
+| a finite automaton plugin | driven, stream | a tape of symbols, `EOF`, the verdict and the output (the FA extension, `type/fa`) | planned |
+| an HSM-ROS2 or turtlesim bridge | observed | the controller's transitions relayed from ROS 2; events sent as message codes; Save Log of the timeline | planned |
 
 ## Examples
 
