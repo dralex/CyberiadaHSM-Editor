@@ -68,6 +68,17 @@
 // the initial width of the tree and the properties docks
 static const int PANE_DOCK_WIDTH = 300;
 
+// a bold dock title; the contents keep the inherited weight (EDIT-UI-6)
+static void setBoldDockTitle(QDockWidget* dock)
+{
+    QFont contents;
+    contents.setWeight(dock->font().weight());
+    dock->widget()->setFont(contents);
+    QFont title;
+    title.setBold(true);
+    dock->setFont(title);
+}
+
 CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
 	QMainWindow(parent)
 {
@@ -114,6 +125,9 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     pluginDockWidget = new PluginDock(this);
     addDockWidget(Qt::BottomDockWidgetArea, pluginDockWidget);
     pluginDockWidget->hide();
+    for (QDockWidget* dock : findChildren<QDockWidget*>(QString(), Qt::FindDirectChildrenOnly)) {
+        setBoldDockTitle(dock);
+    }
     QAction* outputPanel = pluginDockWidget->toggleViewAction();
     outputPanel->setText(tr("Output panel"));
     QAction* manager = new QAction(tr("Plugin manager..."), this);

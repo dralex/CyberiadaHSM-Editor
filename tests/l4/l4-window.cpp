@@ -26,6 +26,7 @@
 #include <QMenu>
 #include <cmath>
 #include "smeditor_window.h"
+#include "plugin_dock.h"
 #include "settings_manager.h"
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_editor_view.h"
@@ -51,6 +52,7 @@ private slots:
 	void test_delete_component_formal_from_tree();
 	void test_pane_toggles();
 	void test_pane_persist();
+	void test_dock_titles_bold();
 
 private:
 	CyberiadaSMEditorWindow* window;
@@ -471,6 +473,21 @@ void TestWindow::test_pane_persist()
 	sm.setShowStructureTree(true);
 	QVERIFY(sm.getShowStructureTree() && sm.getShowProperties());
 	QVERIFY(window->treeDock->isVisible());
+}
+
+// EDIT-UI-6: every dock title is bold, its contents are not
+void TestWindow::test_dock_titles_bold()
+{
+	QList<QDockWidget*> docks = QList<QDockWidget*>() << window->treeDock << window->propertiesDock
+	                                                  << window->pluginDock();
+	for (QDockWidget* dock : docks) {
+		QVERIFY2(dock->font().bold(), qPrintable(dock->objectName()));
+		QVERIFY2(!dock->widget()->font().bold(), qPrintable(dock->objectName()));
+		QCOMPARE(dock->font().family(), window->font().family());
+		QCOMPARE(dock->font().pointSizeF(), window->font().pointSizeF());
+	}
+	QVERIFY(!window->SMView->font().bold());
+	QVERIFY(!window->propertiesWidget->font().bold());
 }
 
 QTEST_MAIN(TestWindow)
