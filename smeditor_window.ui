@@ -497,7 +497,7 @@
   <action name="actionUpdateGeometry">
    <property name="icon">
     <iconset resource="smeditor.qrc">
-     <normaloff>:/Icons/images/reconstruction.png</normaloff>:/Icons/images/reconstruction.png</iconset>
+     <normaloff>:/Icons/images/reconstruction-available.png</normaloff>:/Icons/images/reconstruction-available.png</iconset>
    </property>
    <property name="text">
     <string>Geometry Update</string>
