@@ -361,6 +361,7 @@ add_l2_test(copy-paste empty)
 add_l2_test(set-color empty)
 add_l2_test(reconstruct-two-sms two-sms)
 add_l2_test(update-geometry partial-geometry)
+add_l2_test(center geometry)
 add_l2_test(snap-transition polyline)
 add_l2_test(snap-alt polyline)
 
@@ -446,6 +447,7 @@ endfunction()
 add_undo_test(undo-all hierarchy hierarchy)
 add_undo_test(redo-all hierarchy add-elements add-elements)
 add_undo_test(gestures-undo geometry geometry)
+add_undo_test(center-undo geometry geometry)
 
 # The reconstruction test suite: the document is loaded with the library's
 # geometry reconstruction, then the scene dump and the saved document are

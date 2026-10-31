@@ -46,6 +46,7 @@ class TestLog: public QObject {
 private slots:
 	void initTestCase();
 	void test_session_from_scratch();
+	void test_center_logged();
 	void test_gesture_recording();
 	void test_gesture_suppression();
 	void test_crash_marker();
@@ -116,6 +117,35 @@ void TestLog::test_session_from_scratch()
 	QVERIFY2(runEditScript(&replay, QDir(dir).filePath("session.script"), &error),
 			 qPrintable(error));
 
+	std::ostringstream original, replayed;
+	dumpDocument(model, original);
+	dumpDocument(replay.getModel(), replayed);
+	QCOMPARE(QString::fromStdString(replayed.str()), QString::fromStdString(original.str()));
+}
+
+// a centring is logged as its own verb, so the replay moves the covered sibling
+// clear exactly as the GUI did (EDIT-TOOL-18)
+void TestLog::test_center_logged()
+{
+	CyberiadaSMEditorWindow win;
+	CyberiadaSMModel* model = win.getModel();
+
+	GestureLog::instance().startSession(model);
+	QString dir = GestureLog::instance().sessionDir();
+	Cyberiada::StateMachine* sm = model->newStateMachine("Main", Cyberiada::Rect(0, 0, 520, 320));
+	QVERIFY(sm);
+	Cyberiada::State* a = model->newState(sm, "Left", Cyberiada::Action(), Cyberiada::Rect(-130, 0, 200, 100));
+	Cyberiada::State* b = model->newState(sm, "Right", Cyberiada::Action(), Cyberiada::Rect(130, 0, 200, 100));
+	QVERIFY(a && b);
+	QVERIFY(model->centerInParent(model->elementToIndex(b), Qt::Horizontal));
+	GestureLog::instance().endSession();
+
+	QString script = readScript(dir);
+	QVERIFY(script.contains("\ncenter n1 h"));
+	CyberiadaSMEditorWindow replay;
+	QString error;
+	QVERIFY2(runEditScript(&replay, QDir(dir).filePath("session.script"), &error),
+			 qPrintable(error));
 	std::ostringstream original, replayed;
 	dumpDocument(model, original);
 	dumpDocument(replay.getModel(), replayed);

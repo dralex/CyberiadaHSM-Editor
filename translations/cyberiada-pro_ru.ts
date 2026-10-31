@@ -179,7 +179,7 @@
         <translation>Менеджер плагинов...</translation>
     </message>
     <message>
-        <location line="+111"/>
+        <location line="+113"/>
         <source>Close</source>
         <translation>Закрыть</translation>
     </message>
@@ -213,7 +213,7 @@
         <translation>Markdown</translation>
     </message>
     <message>
-        <location line="+120"/>
+        <location line="+124"/>
         <source>Undo</source>
         <translation>Отменить</translation>
     </message>
@@ -321,7 +321,7 @@
         <translation>Построить геометрию всей диаграммы заново? Расположение элементов будет изменено; вернуть ее можно отменой действия.</translation>
     </message>
     <message>
-        <location line="+121"/>
+        <location line="+130"/>
         <source>the plugin is %1</source>
         <translation>плагин %1</translation>
     </message>
@@ -530,7 +530,12 @@
         <translation>удаление границы</translation>
     </message>
     <message>
-        <location line="+203"/>
+        <location line="+233"/>
+        <source>center</source>
+        <translation type="unfinished">центрирование</translation>
+    </message>
+    <message>
+        <location line="+43"/>
         <location line="+1630"/>
         <source>reparent</source>
         <translation>смена родителя</translation>
@@ -2400,7 +2405,7 @@
         <translation>Разметка</translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location line="+23"/>
         <source>View</source>
         <translation>Вид</translation>
     </message>
@@ -2415,7 +2420,7 @@
         <translation>Основная панель</translation>
     </message>
     <message>
-        <location line="+31"/>
+        <location line="+34"/>
         <source>Elements</source>
         <translation>Элементы</translation>
     </message>
@@ -2550,6 +2555,26 @@
         <location line="+3"/>
         <source>Lay out the elements without geometry around the drawn ones, which stay</source>
         <translation>Разместить элементы без геометрии вокруг нарисованных, не сдвигая их</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Center Horizontally</source>
+        <translation type="unfinished">Центрировать по горизонтали</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Center the selected element horizontally in its parent</source>
+        <translation type="unfinished">Центрировать выбранный элемент по горизонтали в родительском элементе</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Center Vertically</source>
+        <translation type="unfinished">Центрировать по вертикали</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Center the selected element vertically in its parent</source>
+        <translation type="unfinished">Центрировать выбранный элемент по вертикали в родительском элементе</translation>
     </message>
     <message>
         <location line="+9"/>

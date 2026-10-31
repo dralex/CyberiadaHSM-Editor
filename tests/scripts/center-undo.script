@@ -1,0 +1,9 @@
+# every centring is one undo step: undoing them restores the loaded document
+center node-0-0-0 h
+center node-0-0-2 h
+center node-0-0-2 v
+center node-0-1 v
+undo
+undo
+undo
+undo

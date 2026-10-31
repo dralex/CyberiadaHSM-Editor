@@ -1366,6 +1366,79 @@ bool CyberiadaSMModel::growToFitChildren(Cyberiada::Element* moved, bool directi
 	return grew;
 }
 
+// a node's box in its parent's frame: its rect, or a point vertex's drawn circle
+static bool nodeBox(const Cyberiada::Element* e, Cyberiada::Rect& box)
+{
+	if (CyberiadaSMModel::elementRect(e, box)) return box.width > 0.0 && box.height > 0.0;
+	const Cyberiada::Vertex* v = dynamic_cast<const Cyberiada::Vertex*>(e);
+	if (!v || !v->has_point_geometry() || !v->has_geometry()) return false;
+	Cyberiada::Point p = v->get_geometry_point();
+	box = Cyberiada::Rect(p.x, p.y, 2.0 * VERTEX_POINT_RADIUS, 2.0 * VERTEX_POINT_RADIUS);
+	return true;
+}
+
+static bool boxesOverlap(const Cyberiada::Rect& a, const Cyberiada::Rect& b)
+{
+	return std::fabs(a.x - b.x) * 2.0 < a.width + b.width &&
+		   std::fabs(a.y - b.y) * 2.0 < a.height + b.height;
+}
+
+bool CyberiadaSMModel::canCenterInParent(const Cyberiada::Element* e) const
+{
+	Cyberiada::Rect box;
+	if (!e || e->get_type() == Cyberiada::elementSM || !nodeBox(e, box)) return false;
+	// a frameless machine frames its content, a submachine holds only its connectors
+	const Cyberiada::ElementCollection* pc = dynamic_cast<const Cyberiada::ElementCollection*>(e->get_parent());
+	return pc && pc->has_geometry() &&
+		(pc->get_type() == Cyberiada::elementCompositeState || pc->get_type() == Cyberiada::elementSM);
+}
+
+bool CyberiadaSMModel::centerInParent(const QModelIndex& index, Qt::Orientation orientation)
+{
+	if (readOnly()) return false;
+	Cyberiada::Element* element = indexToElement(index);
+	if (!canCenterInParent(element)) return false;
+	Cyberiada::Rect box;
+	nodeBox(element, box);
+	bool horizontal = (orientation == Qt::Horizontal);
+	double& axis = horizontal ? box.x : box.y;
+	double from = axis;
+	if (std::fabs(from) < GEOMETRY_TOLERANCE) return true;   // already centred: no step, no log
+	axis = 0.0;
+	UndoScope scope(this, tr("center"));
+	Cyberiada::Rect r;
+	if (elementRect(element, r)) {
+		r.x = box.x; r.y = box.y;
+		if (!updateGeometry(index, r, false)) return false;
+	} else if (!updateGeometry(index, Cyberiada::Point(box.x, box.y), false)) {
+		return false;
+	}
+	// the node stays exactly centred; a sibling it covers is pushed clear along the
+	// axis, away from the node (one on the axis goes the way the node moved), then
+	// settled clear of the others (EDIT-NODE-6)
+	Cyberiada::ElementCollection* pc = static_cast<Cyberiada::ElementCollection*>(element->get_parent());
+	Cyberiada::ElementList kids = pc->get_children();
+	for (Cyberiada::ElementList::const_iterator i = kids.begin(); i != kids.end(); i++) {
+		Cyberiada::Element* s = *i;
+		Cyberiada::Rect sb;
+		if (s == element || !nodeBox(s, sb) || !boxesOverlap(box, sb)) continue;
+		double& at = horizontal ? sb.x : sb.y;
+		double reach = (horizontal ? box.width + sb.width : box.height + sb.height) / 2.0 + PLACEMENT_GAP;
+		at = (at > 0.0 || (at == 0.0 && from < 0.0)) ? reach : -reach;
+		Cyberiada::Point f = freeChildCentre(pc, s, sb.width, sb.height, Cyberiada::Point(sb.x, sb.y));
+		Cyberiada::Rect sr;
+		if (elementRect(s, sr)) {
+			updateGeometry(elementToIndex(s), Cyberiada::Rect(f.x, f.y, sr.width, sr.height), false);
+		} else {
+			updateGeometry(elementToIndex(s), f, false);
+		}
+	}
+	// grow about the centre: a directional grow re-bases the node off the axis
+	growToFitChildren(element, false);
+	GestureLog::instance().logAction("center " + qid(element) + (horizontal ? " h" : " v"));
+	return true;
+}
+
 // EDIT-SEM-4: a submachine state may hold only entry/exit connection points
 static bool submachineParent(const Cyberiada::ElementCollection* parent)
 {

@@ -145,6 +145,8 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     connect(SMView, &CyberiadaSMView::currentIndexActivated, this, &CyberiadaSMEditorWindow::updateEditActions);
     connect(actionReconstructGeometry, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotReconstructGeometry);
     connect(actionUpdateGeometry, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotUpdateGeometry);
+    connect(actionCenterHorizontally, &QAction::triggered, this, [this]() { slotCenterElement(Qt::Horizontal); });
+    connect(actionCenterVertically, &QAction::triggered, this, [this]() { slotCenterElement(Qt::Vertical); });
     // the undo group speaks for the active document's stack
     connect(undoGroup, &QUndoGroup::canUndoChanged, this, &CyberiadaSMEditorWindow::updateUndoActions);
     connect(undoGroup, &QUndoGroup::canRedoChanged, this, &CyberiadaSMEditorWindow::updateUndoActions);
@@ -422,6 +424,10 @@ void CyberiadaSMEditorWindow::updateEditActions()
     actionCopy->setEnabled(copyable && !inspector);
     actionDeleteElement->setEnabled(deletable && !inspector);
     actionPaste->setEnabled(clipboardElement != nullptr && !inspector);
+    // centring needs a parent frame: never on the top level (EDIT-TOOL-18)
+    bool centerable = model()->canCenterInParent(el);
+    actionCenterHorizontally->setEnabled(centerable && !inspector);
+    actionCenterVertically->setEnabled(centerable && !inspector);
 
     // an entry/exit point needs a container with a border to lie on: an explicit
     // state-machine border or a submachine state. A borderless machine cannot hold
@@ -1084,6 +1090,15 @@ void CyberiadaSMEditorWindow::slotUpdateGeometry()
     // the drawn elements stay, so no confirmation: one undo step restores it
     if (!model()->rootDocument()) return;
     model()->updateGeometry();
+}
+
+void CyberiadaSMEditorWindow::slotCenterElement(Qt::Orientation orientation)
+{
+    if (scene()->selectedItems().isEmpty()) return;
+    CyberiadaSMEditorAbstractItem* item =
+        dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene()->selectedItems().first());
+    if (!item || !item->getElement()) return;
+    model()->centerInParent(model()->elementToIndex(item->getElement()), orientation);
 }
 
 void CyberiadaSMEditorWindow::slotCopy()

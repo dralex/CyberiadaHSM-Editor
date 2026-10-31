@@ -24,6 +24,7 @@
 #include <QtTest>
 #include <QScrollBar>
 #include <QMenu>
+#include <cmath>
 #include "smeditor_window.h"
 #include "settings_manager.h"
 #include "cyberiadasm_model.h"
@@ -46,6 +47,7 @@ private slots:
 	void test_recent_files();
 	void test_menu_refactor();
 	void test_edit_action_gating();
+	void test_center_actions();
 	void test_delete_component_formal_from_tree();
 	void test_pane_toggles();
 	void test_pane_persist();
@@ -315,6 +317,63 @@ void TestWindow::test_edit_action_gating()
 	QCoreApplication::processEvents();
 	QVERIFY(!window->actionCopy->isEnabled());
 	QVERIFY(window->actionDeleteElement->isEnabled());
+}
+
+void TestWindow::test_center_actions()
+{
+	// EDIT-TOOL-18: the centring pair sits before the grid toggle and in Edit
+	QList<QAction*> mt = window->mainToolBar->actions();
+	int iH = mt.indexOf(window->actionCenterHorizontally);
+	int iV = mt.indexOf(window->actionCenterVertically);
+	QVERIFY(iH >= 0 && iV == iH + 1 && iV < mt.indexOf(window->actionGridVisibility));
+	QList<QAction*> em = window->menuEdit->actions();
+	QVERIFY(em.contains(window->actionCenterHorizontally) && em.contains(window->actionCenterVertically));
+
+	// off without a selection and on the top level (node-0 is in a frameless machine)
+	QVERIFY(window->openDocument("diagrams/geometry.graphml"));
+	CyberiadaSMEditorScene* scene = window->getScene();
+	CyberiadaSMModel* m = window->getModel();
+	scene->clearSelection();
+	QCoreApplication::processEvents();
+	QVERIFY(!window->actionCenterHorizontally->isEnabled());
+	QVERIFY(!window->actionCenterVertically->isEnabled());
+	scene->getMap().value("node-0")->setSelected(true);
+	QCoreApplication::processEvents();
+	QVERIFY(!window->actionCenterHorizontally->isEnabled());
+	QVERIFY(!window->actionCenterVertically->isEnabled());
+
+	// a nested state moves onto its parent's axis, the other coordinate kept,
+	// and the sibling it lands on is moved clear - all in one undo step
+	scene->clearSelection();
+	scene->getMap().value("node-0-0-2")->setSelected(true);
+	QCoreApplication::processEvents();
+	QVERIFY(window->actionCenterHorizontally->isEnabled());
+	QVERIFY(window->actionCenterVertically->isEnabled());
+	Cyberiada::Rect before, after, sibling;
+	QVERIFY(CyberiadaSMModel::elementRect(m->idToElement("node-0-0-2"), before));
+	int steps = m->undoStack()->count();
+	window->actionCenterHorizontally->trigger();
+	QVERIFY(CyberiadaSMModel::elementRect(m->idToElement("node-0-0-2"), after));
+	QCOMPARE(after.x, 0.0);
+	QCOMPARE(after.y, before.y);
+	QVERIFY(CyberiadaSMModel::elementRect(m->idToElement("node-0-0-1"), sibling));
+	QVERIFY(std::fabs(after.x - sibling.x) * 2.0 >= after.width + sibling.width ||
+			std::fabs(after.y - sibling.y) * 2.0 >= after.height + sibling.height);
+	QCOMPARE(m->undoStack()->count(), steps + 1);
+	window->actionUndo->trigger();
+	QVERIFY(CyberiadaSMModel::elementRect(m->idToElement("node-0-0-2"), after));
+	QVERIFY(after.almost_equal(before));
+
+	// inspection is read-only
+	scene->clearSelection();
+	scene->getMap().value("node-0-0-2")->setSelected(true);
+	QCoreApplication::processEvents();
+	SettingsManager::instance().setInspectorMode(true);
+	QCoreApplication::processEvents();
+	QVERIFY(!window->actionCenterHorizontally->isEnabled());
+	QVERIFY(!window->actionCenterVertically->isEnabled());
+	SettingsManager::instance().setInspectorMode(false);
+	QCoreApplication::processEvents();
 }
 
 void TestWindow::test_delete_component_formal_from_tree()

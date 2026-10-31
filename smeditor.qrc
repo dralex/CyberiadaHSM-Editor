@@ -35,6 +35,8 @@
         <file>images/zoom-in-32.png</file>
         <file>images/reconstruction.png</file>
         <file>images/reconstruction-available.png</file>
+        <file>images/center-horizontal.png</file>
+        <file>images/center-vertical.png</file>
         <file>images/remove.png</file>
         <file>images/inspector-mode.png</file>
         <file>images/snap-mode.png</file>

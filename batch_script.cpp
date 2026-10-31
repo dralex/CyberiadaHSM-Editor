@@ -264,7 +264,7 @@ static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QStri
 	}
 
 	// the remaining commands address an existing element by id
-	if (cmd != "rename" && cmd != "move" && cmd != "reparent" && cmd != "delete" &&
+	if (cmd != "rename" && cmd != "move" && cmd != "center" && cmd != "reparent" && cmd != "delete" &&
 		cmd != "new-action" && cmd != "update-action" && cmd != "delete-action" &&
 		cmd != "update-comment" && cmd != "update-id" && cmd != "polyline" &&
 		cmd != "label" && cmd != "set-color" &&
@@ -303,6 +303,16 @@ static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QStri
 		}
 		*error = "move requires <x y> or <x y w h>";
 		return false;
+	} else if (cmd == "center") {
+		if (tokens.size() != 3 || (tokens.at(2) != "h" && tokens.at(2) != "v")) {
+			*error = "center requires <id> h|v";
+			return false;
+		}
+		if (!model->canCenterInParent(element)) {
+			*error = "element '" + tokens.at(1) + "' has no parent frame to center in";
+			return false;
+		}
+		return model->centerInParent(index, tokens.at(2) == "h" ? Qt::Horizontal : Qt::Vertical);
 	} else if (cmd == "reparent") {
 		if (tokens.size() != 3) { *error = "reparent requires <id> <new-parent-id>"; return false; }
 		if (!model->idToElement(tokens.at(2))) {

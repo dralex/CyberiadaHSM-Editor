@@ -102,6 +102,12 @@ public:
     // hold their absolute place (paste/move); otherwise grow about the centre so
     // the existing children keep their stored positions (create).
     bool                                growToFitChildren(Cyberiada::Element* moved, bool directional = true);
+    // a node with geometry in a drawn parent frame - a composite state or a bordered
+    // machine; never on the top level (EDIT-TOOL-18)
+    bool                                canCenterInParent(const Cyberiada::Element* e) const;
+    // put the node on its parent's axis (x = 0 for Qt::Horizontal, y = 0 for
+    // Qt::Vertical) in one undo step; the siblings it lands on move clear
+    bool                                centerInParent(const QModelIndex& index, Qt::Orientation orientation);
     // an entry/exit point lies on its parent border (EDIT-NODE-14): it is not
     // content the border must contain, so it neither grows the parent nor
     // floors its resize (like a comment)

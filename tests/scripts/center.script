@@ -1,0 +1,6 @@
+# center nodes in their parents (EDIT-TOOL-18): a point keeps its y, a rect
+# centred onto a sibling moves the sibling clear, a vertical centring keeps x
+center node-0-0-0 h
+center node-0-0-2 h
+center node-0-0-2 v
+center node-0-1 v

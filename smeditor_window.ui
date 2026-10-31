@@ -178,6 +178,8 @@
     <addaction name="actionDeleteElement"/>
     <addaction name="actionReconstructGeometry"/>
     <addaction name="actionUpdateGeometry"/>
+    <addaction name="actionCenterHorizontally"/>
+    <addaction name="actionCenterVertically"/>
     <addaction name="separator"/>
     <addaction name="actionUndo"/>
     <addaction name="actionRedo"/>
@@ -244,6 +246,9 @@
    <addaction name="actionDeleteElement"/>
    <addaction name="actionReconstructGeometry"/>
    <addaction name="actionUpdateGeometry"/>
+   <addaction name="separator"/>
+   <addaction name="actionCenterHorizontally"/>
+   <addaction name="actionCenterVertically"/>
    <addaction name="separator"/>
    <addaction name="actionGridVisibility"/>
    <addaction name="actionSnapMode"/>
@@ -499,6 +504,30 @@
    </property>
    <property name="toolTip">
     <string>Lay out the elements without geometry around the drawn ones, which stay</string>
+   </property>
+  </action>
+  <action name="actionCenterHorizontally">
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/center-horizontal.png</normaloff>:/Icons/images/center-horizontal.png</iconset>
+   </property>
+   <property name="text">
+    <string>Center Horizontally</string>
+   </property>
+   <property name="toolTip">
+    <string>Center the selected element horizontally in its parent</string>
+   </property>
+  </action>
+  <action name="actionCenterVertically">
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/center-vertical.png</normaloff>:/Icons/images/center-vertical.png</iconset>
+   </property>
+   <property name="text">
+    <string>Center Vertically</string>
+   </property>
+   <property name="toolTip">
+    <string>Center the selected element vertically in its parent</string>
    </property>
   </action>
   <action name="actionCut">

@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.41 (2026-10-27)
+**Document version:** 0.42 (2026-10-30)
 
 **Related authorities:**
 
@@ -549,6 +549,12 @@ the third is a derived display value the format does not store):
   comment beside the element, clear of its siblings (the comments too), an existing comment of the machine is picked by its name; either
   gets a fragment subject of the selection in one undo step. A selection outside one field
   (`EDIT-STRUCT-12`) disables the entry; the comment's own body is not offered to itself. *design*
+- `EDIT-TOOL-18` MUST [A]: *Center Horizontally* / *Center Vertically* (the toolbar and *Edit*)
+  put the selected node's centre on its parent's vertical / horizontal axis (`x = 0` / `y = 0`,
+  `EDIT-NODE-3`), the other coordinate kept, in one undo step; a sibling it lands on moves to the
+  nearest free slot (`EDIT-NODE-6`) and the parent grows to fit (`EDIT-NODE-2`). Enabled only for a
+  node with geometry in a state or a bordered state machine; disabled on the top level (a machine,
+  a child of a frameless machine), for a submachine connector and in inspection. *design*
 
 ### 4.7 History — HIST
 

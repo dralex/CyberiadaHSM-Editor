@@ -237,6 +237,7 @@ public slots:
     void                    slotDeleteElement();
     void                    slotReconstructGeometry();
     void                    slotUpdateGeometry();
+    void                    slotCenterElement(Qt::Orientation orientation);
     void                    slotCopy();
     void                    slotCut();
     void                    slotPaste();
