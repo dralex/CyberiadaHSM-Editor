@@ -99,7 +99,7 @@
     <message>
         <location line="+170"/>
         <source>comment the selection</source>
-        <translation type="unfinished">комментарий к выделенному</translation>
+        <translation>комментарий к выделенному тексту</translation>
     </message>
     <message>
         <location line="+70"/>
@@ -150,12 +150,12 @@
     <message>
         <location line="+4"/>
         <source>Comment a Fragment…</source>
-        <translation type="unfinished">Комментировать фрагмент…</translation>
+        <translation>Комментировать фрагмент…</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>Comment the Element</source>
-        <translation type="unfinished">Комментировать элемент</translation>
+        <translation>Комментировать элемент</translation>
     </message>
 </context>
 <context>
@@ -385,12 +385,12 @@
     <message>
         <location line="+33"/>
         <source>Session</source>
-        <translation type="unfinished">Сессия</translation>
+        <translation>Сессия</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Step</source>
-        <translation type="unfinished">Шаг</translation>
+        <translation>Шаг</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -401,37 +401,37 @@
     <message>
         <location line="-184"/>
         <source>Pause</source>
-        <translation type="unfinished">Пауза</translation>
+        <translation>Пауза</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Restart</source>
-        <translation type="unfinished">Перезапуск</translation>
+        <translation>Перезапуск</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Stop</source>
-        <translation type="unfinished">Стоп</translation>
+        <translation>Стоп</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Post Event</source>
-        <translation type="unfinished">Послать событие</translation>
+        <translation>Послать событие</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Load Stream...</source>
-        <translation type="unfinished">Загрузить поток...</translation>
+        <translation>Загрузить последовательность...</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Edit Stream...</source>
-        <translation type="unfinished">Изменить поток...</translation>
+        <translation>Изменить последовательность...</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Save Log...</source>
-        <translation type="unfinished">Сохранить журнал...</translation>
+        <translation>Сохранить журнал...</translation>
     </message>
     <message>
         <location line="+195"/>
@@ -532,7 +532,7 @@
     <message>
         <location line="+233"/>
         <source>center</source>
-        <translation type="unfinished">центрирование</translation>
+        <translation>центрирование</translation>
     </message>
     <message>
         <location line="+43"/>
@@ -1145,17 +1145,17 @@
     <message>
         <location filename="../editable_text_item.cpp" line="+147"/>
         <source>Copy</source>
-        <translation type="unfinished">Копировать</translation>
+        <translation>Копировать</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Comment the Selection</source>
-        <translation type="unfinished">Комментировать выделенное</translation>
+        <translation>Комментировать выделенный текст</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>New Comment</source>
-        <translation type="unfinished">Новый комментарий</translation>
+        <translation>Новый комментарий</translation>
     </message>
 </context>
 <context>
@@ -1186,108 +1186,108 @@
     <message>
         <location filename="../dialogs/fragmentdialog.cpp" line="+47"/>
         <source>Comment a Fragment</source>
-        <translation type="unfinished">Комментировать фрагмент</translation>
+        <translation>Комментировать фрагмент</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>transition</source>
-        <translation type="unfinished">переход</translation>
+        <translation>переход</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>comment</source>
-        <translation type="unfinished">комментарий</translation>
+        <translation>комментарий</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>state</source>
-        <translation type="unfinished">состояние</translation>
+        <translation>состояние</translation>
     </message>
     <message>
         <location line="+0"/>
         <source>pseudostate</source>
-        <translation type="unfinished">псевдосостояние</translation>
+        <translation>псевдосостояние</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Target: %1 (%2)</source>
-        <translation type="unfinished">Цель: %1 (%2)</translation>
+        <translation>Цель: %1 (%2)</translation>
     </message>
     <message>
         <location line="+22"/>
         <location line="+38"/>
         <source>Name</source>
-        <translation type="unfinished">Имя</translation>
+        <translation>Имя</translation>
     </message>
     <message>
         <location line="-37"/>
         <source>Body</source>
-        <translation type="unfinished">Текст</translation>
+        <translation>Текст</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Label</source>
-        <translation type="unfinished">Метка</translation>
+        <translation>Метка</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>Reaction</source>
-        <translation type="unfinished">Реакция</translation>
+        <translation>Реакция</translation>
     </message>
     <message>
         <location line="+6"/>
         <source>event</source>
-        <translation type="unfinished">событие</translation>
+        <translation>событие</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>guard</source>
-        <translation type="unfinished">условие</translation>
+        <translation>условие</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>behaviour</source>
-        <translation type="unfinished">поведение</translation>
+        <translation>поведение</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>The target has no text to comment.</source>
-        <translation type="unfinished">У цели нет текста для комментария.</translation>
+        <translation>У цели нет текста для комментария.</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>Fragment</source>
-        <translation type="unfinished">Фрагмент</translation>
+        <translation>Фрагмент</translation>
     </message>
     <message>
         <location line="+7"/>
         <source>Type</source>
-        <translation type="unfinished">Тип</translation>
+        <translation>Тип</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>Data</source>
-        <translation type="unfinished">Данные</translation>
+        <translation>Данные</translation>
     </message>
     <message>
         <location line="+169"/>
         <source>Select the commented text in one field.</source>
-        <translation type="unfinished">Выделите комментируемый текст в одном поле.</translation>
+        <translation>Выделите комментируемый текст в одном поле.</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>The fragment does not lie in one field of the target.</source>
-        <translation type="unfinished">Фрагмент не лежит в одном поле цели.</translation>
+        <translation>Фрагмент не лежит в одном поле цели.</translation>
     </message>
     <message>
         <location line="+12"/>
         <source>The first occurrence (%1) will be underlined; extend the selection to make it unique.</source>
-        <translation type="unfinished">Будет подчёркнуто первое вхождение (%1); расширьте выделение, чтобы оно стало единственным.</translation>
+        <translation>Будет подчёркнуто первое вхождение (%1); расширьте выделение, чтобы оно стало единственным.</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Underlined in: %1.</source>
-        <translation type="unfinished">Подчёркнуто в: %1.</translation>
+        <translation>Подчёркнуто в: %1.</translation>
     </message>
 </context>
 <context>
@@ -1471,7 +1471,7 @@
     <message>
         <location line="+34"/>
         <source>%1 session</source>
-        <translation type="unfinished">Сессия %1</translation>
+        <translation>Сессия %1</translation>
     </message>
     <message>
         <location line="+19"/>
@@ -1747,7 +1747,7 @@
     <message>
         <location line="-73"/>
         <source>a session line exceeds the limit</source>
-        <translation type="unfinished">строка сессии превышает предел</translation>
+        <translation>строка сессии превышает установленное ограничение</translation>
     </message>
     <message>
         <location line="+47"/>
@@ -1821,37 +1821,37 @@
     <message>
         <location filename="../plugin_session.cpp" line="+156"/>
         <source>the plugin did not answer initialize within %1 s</source>
-        <translation type="unfinished">плагин не ответил на initialize за %1 с</translation>
+        <translation>плагин не ответил на команду initialize за %1 с</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>the session model has no known kind</source>
-        <translation type="unfinished">у модели сессии нет известного вида</translation>
+        <translation>у модели сессии нет известного вида</translation>
     </message>
     <message>
         <location line="+42"/>
         <source>the plugin refused initialize: %1</source>
-        <translation type="unfinished">плагин отклонил initialize: %1</translation>
+        <translation>плагин отклонил команду initialize: %1</translation>
     </message>
     <message>
         <location line="+19"/>
         <source>line %1: %2</source>
-        <translation type="unfinished">строка %1: %2</translation>
+        <translation>строка %1: %2</translation>
     </message>
     <message>
         <location line="+86"/>
         <source>the session diagnostics are malformed: %1</source>
-        <translation type="unfinished">замечания сессии повреждены: %1</translation>
+        <translation>замечания сессии некорректны: %1</translation>
     </message>
     <message>
         <location line="+186"/>
         <source>no event to post</source>
-        <translation type="unfinished">нет события для отправки</translation>
+        <translation>нет события для отправки</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>&apos;%1&apos; is not name=value</source>
-        <translation type="unfinished">«%1» — не имя=значение</translation>
+        <translation>«%1» — не пара имя=значение</translation>
     </message>
 </context>
 <context>
@@ -1860,132 +1860,132 @@
         <location filename="../plugin_session_view.cpp" line="+63"/>
         <source>running</source>
         <comment>session status</comment>
-        <translation type="unfinished">идёт</translation>
+        <translation>идёт</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>paused</source>
         <comment>session status</comment>
-        <translation type="unfinished">пауза</translation>
+        <translation>пауза</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>waiting</source>
         <comment>session status</comment>
-        <translation type="unfinished">ожидание</translation>
+        <translation>ожидание</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>finished</source>
         <comment>session status</comment>
-        <translation type="unfinished">завершена</translation>
+        <translation>завершена</translation>
     </message>
     <message>
         <location line="+6"/>
         <source>accepted</source>
         <comment>session verdict</comment>
-        <translation type="unfinished">допущена</translation>
+        <translation>принята</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>rejected</source>
         <comment>session verdict</comment>
-        <translation type="unfinished">не допущена</translation>
+        <translation>не принята</translation>
     </message>
     <message>
         <location line="+19"/>
         <source>Pause</source>
-        <translation type="unfinished">Пауза</translation>
+        <translation>Пауза</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Restart</source>
-        <translation type="unfinished">Перезапуск</translation>
+        <translation>Перезапуск</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Stop</source>
-        <translation type="unfinished">Стоп</translation>
+        <translation>Стоп</translation>
     </message>
     <message>
         <location line="+18"/>
         <source>Answer</source>
-        <translation type="unfinished">Ответить</translation>
+        <translation>Ответить</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Decline</source>
-        <translation type="unfinished">Отказаться</translation>
+        <translation>Отказаться</translation>
     </message>
     <message>
         <location line="+28"/>
         <source>event</source>
         <comment>step unit</comment>
-        <translation type="unfinished">событие</translation>
+        <translation>событие</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>input</source>
         <comment>step unit</comment>
-        <translation type="unfinished">вход</translation>
+        <translation>вход</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>time</source>
         <comment>step unit</comment>
-        <translation type="unfinished">время</translation>
+        <translation>время</translation>
     </message>
     <message>
         <location line="+6"/>
         <source>max</source>
         <comment>run speed</comment>
-        <translation type="unfinished">макс.</translation>
+        <translation>макс.</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>x%1</source>
         <comment>run speed</comment>
-        <translation type="unfinished">x%1</translation>
+        <translation>x%1</translation>
     </message>
     <message>
         <location line="+14"/>
         <source>starting</source>
-        <translation type="unfinished">запуск</translation>
+        <translation>запуск</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>stopping</source>
-        <translation type="unfinished">остановка</translation>
+        <translation>остановка</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>t = %1 s</source>
-        <translation type="unfinished">t = %1 с</translation>
+        <translation>t = %1 с</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>#%1</source>
-        <translation type="unfinished">#%1</translation>
+        <translation>#%1</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>%1: %2</source>
-        <translation type="unfinished">%1: %2</translation>
+        <translation>%1: %2</translation>
     </message>
     <message>
         <location line="+36"/>
         <source>Step: %1</source>
-        <translation type="unfinished">Шаг: %1</translation>
+        <translation>Шаг: %1</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Run %1</source>
-        <translation type="unfinished">Пуск %1</translation>
+        <translation>Пуск %1</translation>
     </message>
     <message>
         <location line="+21"/>
         <source>? %1</source>
-        <translation type="unfinished">? %1</translation>
+        <translation>? %1</translation>
     </message>
 </context>
 <context>
@@ -1993,94 +1993,94 @@
     <message>
         <location line="+23"/>
         <source>Post</source>
-        <translation type="unfinished">Послать</translation>
+        <translation>Послать</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Load Stream...</source>
-        <translation type="unfinished">Загрузить поток...</translation>
+        <translation>Загрузить последовательность...</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Edit Stream...</source>
-        <translation type="unfinished">Изменить поток...</translation>
+        <translation>Изменить последовательность...</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Save Log...</source>
-        <translation type="unfinished">Сохранить журнал...</translation>
+        <translation>Сохранить журнал...</translation>
     </message>
     <message>
         <location line="+1"/>
         <location line="+13"/>
         <source>Event</source>
-        <translation type="unfinished">Событие</translation>
+        <translation>Событие</translation>
     </message>
     <message>
         <location line="+0"/>
         <source>Time</source>
-        <translation type="unfinished">Время</translation>
+        <translation>Время</translation>
     </message>
     <message>
         <location line="+0"/>
         <source>Origin</source>
-        <translation type="unfinished">Источник</translation>
+        <translation>Источник</translation>
     </message>
     <message>
         <location line="+0"/>
         <source>Outcome</source>
-        <translation type="unfinished">Исход</translation>
+        <translation>Исход</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Fired</source>
-        <translation type="unfinished">Сработало</translation>
+        <translation>Сработало</translation>
     </message>
     <message>
         <location line="+49"/>
         <source>Output: %1</source>
-        <translation type="unfinished">Выход: %1</translation>
+        <translation>Выход: %1</translation>
     </message>
     <message>
         <location line="+54"/>
         <source>pending</source>
-        <translation type="unfinished">ожидает</translation>
+        <translation>ожидает</translation>
     </message>
     <message>
         <location line="+19"/>
         <source>the event is not posted: %1</source>
-        <translation type="unfinished">событие не отправлено: %1</translation>
+        <translation>событие не отправлено: %1</translation>
     </message>
     <message>
         <location line="+12"/>
         <source>the plugin refused: %1</source>
-        <translation type="unfinished">плагин отказал: %1</translation>
+        <translation>плагин отказал: %1</translation>
     </message>
     <message>
         <location line="+13"/>
         <source>Load a stream</source>
-        <translation type="unfinished">Загрузить поток</translation>
+        <translation>Загрузить последовательность</translation>
     </message>
     <message>
         <location line="+1"/>
         <location line="+21"/>
         <source>Streams (*.log *.txt);;All files (*)</source>
-        <translation type="unfinished">Потоки (*.log *.txt);;Все файлы (*)</translation>
+        <translation>Последовательности (*.log *.txt);;Все файлы (*)</translation>
     </message>
     <message>
         <location line="-14"/>
         <source>Edit the stream</source>
-        <translation type="unfinished">Изменить поток</translation>
+        <translation>Изменить последовательность</translation>
     </message>
     <message>
         <location line="+0"/>
         <source>Stream</source>
-        <translation type="unfinished">Поток</translation>
+        <translation>Последовательность</translation>
     </message>
     <message>
         <location line="+12"/>
         <source>Save the log</source>
-        <translation type="unfinished">Сохранить журнал</translation>
+        <translation>Сохранить журнал</translation>
     </message>
 </context>
 <context>
@@ -2559,22 +2559,22 @@
     <message>
         <location line="+9"/>
         <source>Center Horizontally</source>
-        <translation type="unfinished">Центрировать по горизонтали</translation>
+        <translation>Центрировать по горизонтали</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Center the selected element horizontally in its parent</source>
-        <translation type="unfinished">Центрировать выбранный элемент по горизонтали в родительском элементе</translation>
+        <translation>Центрировать выбранный элемент по горизонтали в родительском элементе</translation>
     </message>
     <message>
         <location line="+9"/>
         <source>Center Vertically</source>
-        <translation type="unfinished">Центрировать по вертикали</translation>
+        <translation>Центрировать по вертикали</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Center the selected element vertically in its parent</source>
-        <translation type="unfinished">Центрировать выбранный элемент по вертикали в родительском элементе</translation>
+        <translation>Центрировать выбранный элемент по вертикали в родительском элементе</translation>
     </message>
     <message>
         <location line="+9"/>
@@ -2789,12 +2789,12 @@
     <message>
         <location line="+8"/>
         <source>the Lapki format requires the platform name</source>
-        <translation type="unfinished">для формата Lapki требуется имя платформы</translation>
+        <translation>для формата Lapki требуется имя платформы</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Lapki IDE (CyberiadaML-GraphML 1.0)</source>
-        <translation type="unfinished">Lapki IDE (CyberiadaML-GraphML 1.0)</translation>
+        <translation>Lapki IDE (CyberiadaML-GraphML 1.0)</translation>
     </message>
     <message>
         <location line="+66"/>
