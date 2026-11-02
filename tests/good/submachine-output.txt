@@ -1,7 +1,9 @@
 == document
-LocalDocument: {Document: {id: '', name: '', geometry format: qt, meta: {standard version: '1.0', geometry: 'full', transition order: action first, event propagation: block events}, elements: {State Machine: {id: 'G0', name: 'SM', elements: {Formal Comment: {id: 'nMeta', name: 'CGML_META', body: 'standardVersion/ 1.0
+LocalDocument: {Document: {id: '', name: '', geometry format: qt, meta: {standard version: '1.0', geometry: 'full', regionGeometry: 'stored', transition order: action first, event propagation: block events}, elements: {State Machine: {id: 'G0', name: 'SM', elements: {Formal Comment: {id: 'nMeta', name: 'CGML_META', body: 'standardVersion/ 1.0
 
 geometry/ full
+
+regionGeometry/ stored
 
 transitionOrder/ actionFirst
 

@@ -69,6 +69,8 @@ public:
     // fit: the view follows the whole scene (a fresh document); a rebuild
     // after an undo keeps the view where it is
     void  loadScene(bool fit = true);
+    // hold the computed regions of a document without the marker as stored
+    void  adoptRegions();
 
     QMap<Cyberiada::ID, QGraphicsItem*>& getMap() { return elementIdToItemMap; }
     // the drawn comment links of a comment in the subject order (EDIT-EDGE-6/17-20)
@@ -160,6 +162,9 @@ public slots:
     // void  enableGridSnap(bool on = true);
     void  slotGridSettingsChanged();
     void  slotServiceObjectsChanged();
+    // leaving the inspection gives a document without the marker its computed
+    // regions (EDIT-INSPECT-4)
+    void  slotInspectorModeChanged(bool on);
     // the CGML_COMPONENT comment items follow the visibility preference (EDIT-META-6)
     void  slotComponentCommentsChanged(bool show);
     void  slotSelectionChanged();

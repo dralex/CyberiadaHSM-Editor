@@ -110,6 +110,7 @@ CyberiadaSMEditorScene::CyberiadaSMEditorScene(CyberiadaSMModel* _model, QObject
     gridPen = QPen(Qt::gray, 0, Qt::DotLine);
     connect(&SettingsManager::instance(), &SettingsManager::gridSettingsChanged, this, &CyberiadaSMEditorScene::slotGridSettingsChanged);
     connect(&SettingsManager::instance(), &SettingsManager::serviceObjectsChanged, this, &CyberiadaSMEditorScene::slotServiceObjectsChanged);
+    connect(&SettingsManager::instance(), &SettingsManager::inspectorModeChanged, this, &CyberiadaSMEditorScene::slotInspectorModeChanged);
     connect(&SettingsManager::instance(), &SettingsManager::componentCommentsChanged, this, &CyberiadaSMEditorScene::slotComponentCommentsChanged);
     // the underlines follow the texts once the items have taken the change (EDIT-EDGE-21)
     connect(&SettingsManager::instance(), &SettingsManager::showTransitionTextChanged,
@@ -610,6 +611,25 @@ void CyberiadaSMEditorScene::slotSMSizeChanged(CyberiadaSMEditorAbstractItem::Co
     updateSceneRect();
 }
 
+// a document without the marker is drawn with the regions computed from the
+// texts; once the model holds every one of them the document marks them stored
+// (EDIT-NODE-15). The pass runs before the items react to the leaving of the
+// inspection, so none of them takes an unmarked region as stored
+void CyberiadaSMEditorScene::adoptRegions()
+{
+    if (SettingsManager::instance().getInspectorMode() || model->regionsStored()) return;
+    for (QGraphicsItem* item : items()) {
+        CyberiadaSMEditorStateItem* state = dynamic_cast<CyberiadaSMEditorStateItem*>(item);
+        if (state && state->getRegion()) state->updateRegion();
+    }
+    model->storeRegions();
+}
+
+void CyberiadaSMEditorScene::slotInspectorModeChanged(bool on)
+{
+    if (!on) adoptRegions();
+}
+
 void CyberiadaSMEditorScene::slotGridSettingsChanged()
 {
     update();
@@ -845,6 +865,7 @@ void CyberiadaSMEditorScene::loadScene(bool fit)
         }
     }
     clearSelection();
+    adoptRegions();
     // the scene rect follows the content (padded for a pan/scroll range), so the
     // view can always reach and frame the objects
     updateSceneRect();
@@ -1285,18 +1306,9 @@ void CyberiadaSMEditorScene::addSMItem(Cyberiada::ElementType type)
                    dynamic_cast<Cyberiada::ElementCollection*>(parentCItem->getElement()) &&
                    parentCItem->getElement()->has_geometry()) {
             // a composite state parent: grow it (and its ancestors) about the
-            // centre to contain the new child, keeping the existing children put
+            // centre to contain the new child in its region, keeping the
+            // existing children put
             model->growToFitChildren(element, false);
-            // a parent with entry/exit action blocks needs extra height, since
-            // its child region is inset by those blocks
-            CyberiadaSMEditorStateItem* st = dynamic_cast<CyberiadaSMEditorStateItem*>(parentCItem);
-            if (st && st->actionInset() > 0.5) {
-                Cyberiada::Rect r =
-                    static_cast<Cyberiada::ElementCollection*>(parentCItem->getElement())->get_geometry_rect();
-                model->updateGeometry(parentCItem->getIndex(),
-                                      Cyberiada::Rect(r.x, r.y, r.width, r.height + st->actionInset()));
-                model->growToFitChildren(element, false);   // re-cascade the extra height up to the SM
-            }
         }
         item->setSelected(true);
     }

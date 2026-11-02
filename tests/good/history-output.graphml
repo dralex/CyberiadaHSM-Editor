@@ -35,6 +35,8 @@
 
 geometry/ full
 
+regionGeometry/ stored
+
 transitionOrder/ actionFirst
 
 eventPropagation/ block</data>
@@ -42,9 +44,12 @@ eventPropagation/ block</data>
     <node id="n0">
       <data key="dName">Region</data>
       <data key="dGeometry">
-        <rect x="-100.000000" y="-80.000000" width="260.000000" height="220.000000"/>
+        <rect x="-100.000000" y="-93.500000" width="260.000000" height="247.000000"/>
       </data>
       <graph id="n0:" edgedefault="directed">
+        <data key="dGeometry">
+          <rect x="0.000000" y="27.000000" width="260.000000" height="220.000000"/>
+        </data>
         <node id="n0::n0">
           <data key="dName">Sub</data>
           <data key="dGeometry">

@@ -38,6 +38,8 @@
 
 name/ minimal
 
+regionGeometry/ stored
+
 geometry/ full
 
 transitionOrder/ actionFirst

@@ -215,8 +215,9 @@ the third is a derived display value the format does not store):
   (snap-to-grid included); a dragged element is never relocated away from where it is
   dropped. *design*
 - `EDIT-NODE-3` MUST [A]: an element's point is its centre; a top-level element
-  is in absolute coordinates, a nested one relative to its parent's centre.
-  *design*
+  is in absolute coordinates, a nested one relative to its parent's centre, and one nested
+  in a composite state relative to the centre of its region (`EDIT-NODE-15`).
+  *PNST 1044 7.2.1*
 - `EDIT-NODE-4` SHOULD [U]: a state machine without a rect frames the union of
   its content and sits at the origin; several rect-less machines would share
   the origin, so the geometry reconstruction of a document with several
@@ -272,6 +273,33 @@ the third is a derived display value the format does not store):
   no containment at the state-machine level, so this is not a violation: `EDIT-NODE-1` containment
   is checked only for the rect children of a rect state, never against the state-machine frame.
   *PNST 984/1044*
+- `EDIT-NODE-15` MUST [I]: a composite state's region is stored: the state rect less its bands -
+  the header (the name, the entry, the internal transitions), the footer (the exit) and the side
+  margins it was stored with - and the nested elements are placed in it (`EDIT-NODE-3`). A document
+  with the meta parameter `regionGeometry/ stored` is drawn from its region rects. A document
+  without it (an earlier editor's or another tool's) is drawn with the regions computed from the
+  texts, as it was seen before, and the editor then holds them as stored: a save writes every
+  region rect and the marker, so the other tools read the nested elements where the editor drew
+  them. A state promoted to composite gets its computed region. A resize keeps the bands; the
+  region never follows the font or the text visibility. *PNST 1044 6.5.1, 6.9*
+
+```
+ a composite        the header band: name, entry, internal transitions
+ +-----------+ --
+ |  Moving   |   } the header  (state top .. region top)
+ | entry/... |
+ |+---------+| --
+ ||  region || } the nested elements, relative to the region centre
+ |+---------+| --
+ | exit/...  |   } the footer  (region bottom .. state bottom)
+ +-----------+ --
+```
+
+- `EDIT-NODE-16` MUST [A]: a change of a composite's text (its name or an action) gives the
+  changed band the height of its text in the current font: the state border moves, the region and
+  the nested elements keep their places. A font change moves nothing: a text wraps to the state
+  width and one taller than its band is cut at the band with an ellipsis, the whole text in its
+  tooltip; the text being edited is shown whole. *design*
 
 ### 4.4 Transitions/comment links geometry and layout — EDGES
 
@@ -618,14 +646,14 @@ the third is a derived display value the format does not store):
   operation (create, delete, rename, move, resize, reparent, action edit, paste,
   metainformation) is refused and changes nothing. *design*
 - `EDIT-INSPECT-2` MUST [A]: a diagram is drawn from its stored geometry — a composite state's
-  region follows the document's region rect, not the layout reconstructed from its title and
-  actions; the geometric recovery (the `[U]` NODE/EDGE laws) is suspended, so a diagram whose
-  stored geometry breaks them is shown as-is. *design*
+  region follows the document's region rect (the state rect when it has none), even in a
+  document without the marker (`EDIT-NODE-15`); the geometric recovery (the `[U]` NODE/EDGE laws)
+  is suspended, so a diagram whose stored geometry breaks them is shown as-is. *design*
 - `EDIT-INSPECT-3` MUST [A]: inspection and geometry reconstruction are mutually exclusive — an
   inspected document is never given the geometry it does not have. *design*
 - `EDIT-INSPECT-4` SHOULD [I]: leaving inspection mode re-applies the editing layout and the
-  recovery — the region follows the text again and the `[U]` compliance laws regain force.
-  *design*
+  recovery — a document without the marker gets its computed regions (`EDIT-NODE-15`) and the
+  `[U]` compliance laws regain force. *design*
 
 ### 4.11 Documents and tabs — DOC
 

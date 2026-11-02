@@ -31,6 +31,10 @@
 #include <QTextBlockFormat>
 #include <QTextCursor>
 #include <QTextCharFormat>
+#include <QTextBlock>
+#include <QTextLayout>
+#include <QAbstractTextDocumentLayout>
+#include <QFontMetricsF>
 #include <QDebug>
 #include <QMenu>
 #include <QClipboard>
@@ -107,7 +111,7 @@ void EditableTextItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) {
 void EditableTextItem::startEditing() {
     setTextInteractionFlags(Qt::TextEditorInteraction);
     setFocus();
-    isEdit = true;
+    setEditing(true);
     // a fragment underlined in this text gives way while it is edited (EDIT-EDGE-21)
     if (CyberiadaSMEditorScene* sc = dynamic_cast<CyberiadaSMEditorScene*>(scene())) sc->updateSubjectLinks();
 }
@@ -120,7 +124,7 @@ void EditableTextItem::keyPressEvent(QKeyEvent *event) {
 
 void EditableTextItem::focusOutEvent(QFocusEvent *event) {
     setTextInteractionFlags(Qt::NoTextInteraction);
-    isEdit = false;
+    setEditing(false);
     setPlainText(toPlainText().trimmed());
     QGraphicsTextItem::focusOutEvent(event);
     if (CyberiadaSMEditorScene* sc = dynamic_cast<CyberiadaSMEditorScene*>(scene())) sc->updateSubjectLinks();
@@ -210,10 +214,92 @@ CyberiadaSMEditorAbstractItem* EditableTextItem::parentBox() const
     return box;
 }
 
+void EditableTextItem::setEditing(bool on)
+{
+    if (isEdit == on) return;
+    prepareGeometryChange();
+    isEdit = on;
+}
+
+void EditableTextItem::setBandHeight(qreal height)
+{
+    if (height != bandHeight) {
+        prepareGeometryChange();
+        bandHeight = height;
+    }
+    setToolTip(isCut() ? toPlainText() : QString());
+}
+
+bool EditableTextItem::isCut() const
+{
+    return bandHeight >= 0.0 && !isEdit && fullHeight() > bandHeight + GEOMETRY_TOLERANCE;
+}
+
+QRectF EditableTextItem::boundingRect() const
+{
+    QRectF box = QGraphicsTextItem::boundingRect();
+    if (isCut()) box.setHeight(bandHeight);
+    return box;
+}
+
+QPainterPath EditableTextItem::shape() const
+{
+    QPainterPath path;
+    path.addRect(boundingRect());
+    return path;
+}
+
+bool EditableTextItem::contains(const QPointF& point) const
+{
+    return boundingRect().contains(point);
+}
+
+// the whole lines a band of the given height holds: the bottom of the last one
+// and its top, both 0 when none fits
+static void bandLines(const QTextDocument* document, qreal height, qreal& bottom, qreal& lastTop)
+{
+    bottom = lastTop = 0.0;
+    for (QTextBlock block = document->begin(); block.isValid(); block = block.next()) {
+        const QTextLayout* layout = block.layout();
+        QPointF origin = document->documentLayout()->blockBoundingRect(block).topLeft();
+        for (int i = 0; layout && i < layout->lineCount(); i++) {
+            QTextLine line = layout->lineAt(i);
+            qreal top = origin.y() + line.y();
+            if (top + line.height() > height) return;
+            lastTop = top;
+            bottom = top + line.height();
+        }
+    }
+}
+
 void EditableTextItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) {
     painter->setFont(QFont(font()));
 
+    if (!isCut()) {
+        QGraphicsTextItem::paint(painter, option, widget);
+        return;
+    }
+    // the lines above the last whole one, then the last one short of the mark
+    qreal bottom, lastTop;
+    bandLines(document(), bandHeight, bottom, lastTop);
+    if (bottom <= 0.0) return;
+    const QString mark(QChar(0x2026));
+    QFontMetricsF metrics(font());
+    QRectF box = QGraphicsTextItem::boundingRect();
+    qreal markLeft = box.right() - document()->documentMargin() - metrics.horizontalAdvance(mark);
+    painter->save();
+    painter->setClipRect(QRectF(box.left(), box.top(), box.width(), lastTop - box.top()));
     QGraphicsTextItem::paint(painter, option, widget);
+    painter->restore();
+    painter->save();
+    painter->setClipRect(QRectF(box.left(), lastTop, markLeft - box.left(), bottom - lastTop));
+    QGraphicsTextItem::paint(painter, option, widget);
+    painter->restore();
+    painter->save();
+    painter->setPen(defaultTextColor());
+    painter->drawText(QRectF(markLeft, lastTop, box.right() - markLeft, bottom - lastTop),
+                      Qt::AlignLeft | Qt::AlignVCenter, mark);
+    painter->restore();
 }
 
 void EditableTextItem::setTextAlignment(Qt::Alignment alignment) {

@@ -57,6 +57,8 @@ date/ 2024-04-14T11:22:00
 
 markupLanguage/ html
 
+regionGeometry/ stored
+
 transitionOrder/ exitFirst
 
 eventPropagation/ propagate</data>

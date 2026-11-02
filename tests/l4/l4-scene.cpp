@@ -169,6 +169,13 @@ private slots:
 	void test_snap_alt_suspends();
 	void test_snap_label_free();
 	void test_snap_roundtrip();
+	void test_regions_computed();
+	void test_regions_stored();
+	void test_regions_save_reload();
+	void test_bands_fit_text();
+	void test_resize_keeps_bands();
+	void test_reparent_into_region();
+	void test_font_change_moves_nothing();
 	// runs last: it reloads and modifies the shared document
 	void test_directional_grow();
 
@@ -181,6 +188,8 @@ private:
 	CyberiadaSMEditorTransitionItem* loadPolyline();
 	void dragDot(CyberiadaSMEditorTransitionItem* tr, int index, const QList<QPointF>& path,
 				 Qt::KeyboardModifiers mods = Qt::NoModifier);
+	CyberiadaSMEditorStateItem* stateItem(const Cyberiada::ID& id);
+	QPointF sceneOffset(const Cyberiada::ID& id);
 	CyberiadaSMModel* model;
 	CyberiadaSMEditorScene* scene;
 };
@@ -360,24 +369,39 @@ void TestScene::test_loop_polyline()
 				   QPointF(t->get_target_point().x, t->get_target_point().y)).length() < 0.01);
 }
 
+// the inspection mode is a shared setting: a failed check must not leave it on
+struct InspectionGuard {
+	~InspectionGuard() { SettingsManager::instance().setInspectorMode(false); }
+};
+
 void TestScene::test_inspector_region()
 {
-	// the inspected region follows the document, the edited one is laid out
-	// around the state title and activities
+	// the inspected region is the document's, the state rect without one
+	// (EDIT-INSPECT-2); leaving the inspection gives a document without the
+	// marker its regions computed from the texts, held as stored (EDIT-INSPECT-4)
+	InspectionGuard guard;
+	SettingsManager::instance().setInspectorMode(true);
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
 	CyberiadaSMEditorStateItem* state =
 		dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0"));
 	QVERIFY(state);
 	QVERIFY(state->getRegion());
-
-	QVERIFY(!SettingsManager::instance().getInspectorMode());
-	QVERIFY(state->getRegion()->pos() != QPointF(0, 0));
-
-	SettingsManager::instance().setInspectorMode(true);
+	QVERIFY(!model->regionsStored());
 	QCOMPARE(state->getRegion()->pos(), QPointF(0, 0));
 	QCOMPARE(state->getRegion()->rect(), state->rect());
 
 	SettingsManager::instance().setInspectorMode(false);
-	QVERIFY(state->getRegion()->pos() != QPointF(0, 0));
+	QVERIFY(model->regionsStored());
+	QVERIFY(state->getRegion()->pos().y() > 0);   // below the title
+	Cyberiada::Rect r;
+	QVERIFY(CyberiadaSMModel::regionRect(model->idToElement("node-0"), r));
+	QCOMPARE(state->getRegion()->pos(), QPointF(r.x, r.y));
+
+	// the stored region is the inspected one now
+	SettingsManager::instance().setInspectorMode(true);
+	QCOMPARE(state->getRegion()->pos(), QPointF(r.x, r.y));
+	QCOMPARE(state->getRegion()->rect().size(), QSizeF(r.width, r.height));
 }
 
 void TestScene::test_service_objects()
@@ -402,11 +426,11 @@ void TestScene::test_service_objects()
 	QCOMPARE(state->getRegion()->pos(), pos);
 	QCOMPARE(state->getRegion()->rect(), rect);
 
-	// while the inspector mode still moves it, whatever the decoration
+	// the inspection shows the stored region, whatever the decoration
+	InspectionGuard guard;
 	SettingsManager::instance().setShowServiceObjects(true);
 	SettingsManager::instance().setInspectorMode(true);
-	QCOMPARE(state->getRegion()->pos(), QPointF(0, 0));
-	QVERIFY(state->getRegion()->pos() != pos);
+	QCOMPARE(state->getRegion()->pos(), pos);
 
 	SettingsManager::instance().setInspectorMode(false);
 	SettingsManager::instance().setShowServiceObjects(false);
@@ -4366,4 +4390,214 @@ void TestScene::test_snap_roundtrip()
 }
 
 QTEST_MAIN(TestScene)
+CyberiadaSMEditorStateItem* TestScene::stateItem(const Cyberiada::ID& id)
+{
+	return dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value(id));
+}
+
+// a nested state's top-left from its parent's top-left, as drawn
+QPointF TestScene::sceneOffset(const Cyberiada::ID& id)
+{
+	QGraphicsItem* item = scene->getMap().value(id);
+	const Cyberiada::Element* e = model->idToElement(QString(id.c_str()));
+	QGraphicsItem* parent = scene->getMap().value(e->get_parent()->get_id());
+	return item->sceneBoundingRect().topLeft() - parent->sceneBoundingRect().topLeft();
+}
+
+// the same, as another tool reads it from the file: the region's top-left and
+// the state's own (PNST 1044 7.2.1)
+static QPointF libraryOffset(const QString& path, const Cyberiada::ID& id)
+{
+	Cyberiada::LocalDocument d;
+	d.open(path.toStdString(), Cyberiada::formatDetect, Cyberiada::geometryFormatCyberiada10);
+	const Cyberiada::State* s = dynamic_cast<const Cyberiada::State*>(d.find_element_by_id(id));
+	const Cyberiada::State* p = s ? dynamic_cast<const Cyberiada::State*>(s->get_parent()) : nullptr;
+	if (!s || !p) return QPointF(-1e9, -1e9);
+	Cyberiada::Rect r = s->get_geometry_rect();
+	QPointF offset(r.x, r.y);
+	if (p->has_region_geometry()) {
+		offset += QPointF(p->get_region_geometry_rect().x, p->get_region_geometry_rect().y);
+	}
+	return offset;
+}
+
+static bool closePoints(const QPointF& a, const QPointF& b)
+{
+	return QLineF(a, b).length() < 0.01;
+}
+
+void TestScene::test_regions_computed()
+{
+	// a document without the marker is drawn with the regions computed from the
+	// texts, as before, and holds them as stored without a change (EDIT-NODE-15)
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	QVERIFY(model->regionsStored());
+	QCOMPARE(model->undoStack()->count(), 0);
+	QVERIFY(model->undoStack()->isClean());
+	CyberiadaSMEditorStateItem* s = stateItem("node-0-0");
+	QVERIFY(s && s->getRegion());
+	StateTitle* title = nullptr;
+	for (QGraphicsItem* child : s->childItems()) {
+		if (!title) title = dynamic_cast<StateTitle*>(child);
+	}
+	QVERIFY(title);
+	// the header is the title, there is no footer, the region spans the width
+	QMarginsF bands = s->contentInset();
+	QCOMPARE(bands, QMarginsF(0, title->fullHeight(), 0, 0));
+	Cyberiada::Rect r;
+	QVERIFY(CyberiadaSMModel::regionRect(model->idToElement("node-0-0"), r));
+	QCOMPARE(s->getRegion()->pos(), QPointF(r.x, r.y));
+	QCOMPARE(r.y, bands.top() / 2.0);
+}
+
+void TestScene::test_regions_stored()
+{
+	// a document with the marker is drawn from its region rects: a library
+	// layout keeps the nested states where the library placed them
+	const QString path = "diagrams/regions-stored.graphml";
+	QVERIFY(model->loadDocument(path));
+	scene->loadScene();
+	QVERIFY(model->regionsStored());
+	CyberiadaSMEditorStateItem* c = stateItem("c");
+	QVERIFY(c && c->getRegion());
+	Cyberiada::Rect r;
+	QVERIFY(CyberiadaSMModel::regionRect(model->idToElement("c"), r));
+	QCOMPARE(r.width, 896.0);
+	QCOMPARE(r.height, 230.0);
+	QCOMPARE(c->getRegion()->pos(), QPointF(r.x, r.y));
+	QCOMPARE(c->getRegion()->rect().size(), QSizeF(r.width, r.height));
+	QVERIFY(closePoints(sceneOffset("c::a"), libraryOffset(path, "c::a")));
+	QVERIFY(closePoints(sceneOffset("c::b"), libraryOffset(path, "c::b")));
+}
+
+void TestScene::test_regions_save_reload()
+{
+	// a save writes every region and the marker: another tool reads the nested
+	// states where the editor draws them, and a reload draws the same
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	QPointF nested = scene->getMap().value("node-0-0-1")->scenePos();
+	QPointF offset = sceneOffset("node-0-0-1");
+	QTemporaryDir dir;
+	QVERIFY(dir.isValid());
+	const QString path = dir.filePath("regions.graphml");
+	model->saveAsDocument(path, Cyberiada::formatCyberiada10, false);
+	QVERIFY(closePoints(libraryOffset(path, "node-0-0-1"), offset));
+	QVERIFY(closePoints(libraryOffset(path, "node-0-0-2"), sceneOffset("node-0-0-2")));
+
+	QVERIFY(model->loadDocument(path));
+	scene->loadScene();
+	QVERIFY(model->regionsStored());
+	QVERIFY(closePoints(scene->getMap().value("node-0-0-1")->scenePos(), nested));
+}
+
+void TestScene::test_bands_fit_text()
+{
+	// a new entry takes its place in the header: the top edge moves up, the
+	// region and the nested states stay, in one undo step (EDIT-NODE-16)
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	CyberiadaSMEditorStateItem* s = stateItem("node-0-0");
+	QVERIFY(s);
+	QRectF before = s->sceneBoundingRect();
+	QRectF region = s->getRegion()->sceneBoundingRect();
+	QPointF nested = scene->getMap().value("node-0-0-1")->scenePos();
+	qreal header = s->contentInset().top();
+	int steps = model->undoStack()->count();
+
+	QVERIFY(model->newAction(model->elementToIndex(model->idToElement("node-0-0")),
+							 Cyberiada::actionEntry, QString(), QString(), "first()"));
+	s = stateItem("node-0-0");
+	QRectF after = s->sceneBoundingRect();
+	qreal grown = s->contentInset().top() - header;
+	QVERIFY(grown > 0);
+	QCOMPARE(after.top(), before.top() - grown);
+	QCOMPARE(after.bottom(), before.bottom());
+	QCOMPARE(s->getRegion()->sceneBoundingRect(), region);
+	QVERIFY(closePoints(scene->getMap().value("node-0-0-1")->scenePos(), nested));
+	QCOMPARE(model->undoStack()->count(), steps + 1);
+
+	model->undoStack()->undo();
+	s = stateItem("node-0-0");
+	QCOMPARE(s->sceneBoundingRect(), before);
+	QCOMPARE(s->contentInset().top(), header);
+}
+
+void TestScene::test_resize_keeps_bands()
+{
+	// a resize moves the region with the border and keeps the bands
+	QVERIFY(model->loadDocument("diagrams/regions-stored.graphml"));
+	scene->loadScene();
+	CyberiadaSMEditorStateItem* c = stateItem("c");
+	QVERIFY(c);
+	QMarginsF bands = c->contentInset();
+	Cyberiada::Element* e = model->idToElement("c");
+	Cyberiada::Rect rect = static_cast<Cyberiada::State*>(e)->get_geometry_rect();
+	QVERIFY(model->updateGeometry(model->elementToIndex(e),
+								  Cyberiada::Rect(rect.x + 20, rect.y + 30, rect.width + 40, rect.height + 60)));
+	c = stateItem("c");
+	QCOMPARE(c->contentInset(), bands);
+	Cyberiada::Rect r;
+	QVERIFY(CyberiadaSMModel::regionRect(e, r));
+	QCOMPARE(CyberiadaSMModel::regionMargins(static_cast<Cyberiada::State*>(e)->get_geometry_rect(), r), bands);
+}
+
+void TestScene::test_reparent_into_region()
+{
+	// a state moved into a composite keeps its place: it is re-based into the
+	// region, not into the composite rect (EDIT-NODE-3)
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	QPointF before = scene->getMap().value("node-0-1")->scenePos();
+	QVERIFY(model->updateParent(model->elementToIndex(model->idToElement("node-0-1")), "node-0-0"));
+	QVERIFY(model->idToElement("node-0-1")->get_parent()->get_id() == "node-0-0");
+	QVERIFY(closePoints(scene->getMap().value("node-0-1")->scenePos(), before));
+}
+
+void TestScene::test_font_change_moves_nothing()
+{
+	// a font change is a view change: the composite, its region and the nested
+	// states stay; a text taller than its band is cut, the whole text in its
+	// tooltip (EDIT-NODE-16)
+	QVERIFY(model->loadDocument("diagrams/regions-stored.graphml"));
+	scene->loadScene();
+	CyberiadaSMEditorStateItem* c = stateItem("c");
+	QVERIFY(c);
+	QRectF box = c->sceneBoundingRect();
+	QRectF region = c->getRegion()->sceneBoundingRect();
+	QPointF nested = scene->getMap().value("c::a")->scenePos();
+	QMarginsF bands = c->contentInset();
+	SettingsManager& settings = SettingsManager::instance();
+	const int size = settings.getFontSize(fontRoleStateAction);
+	struct FontGuard {
+		int size;
+		~FontGuard() { SettingsManager::instance().setFontSize(fontRoleStateAction, size); }
+	} guard{size};
+	settings.setFontSize(fontRoleStateAction, size * 3);
+
+	c = stateItem("c");
+	QCOMPARE(c->sceneBoundingRect(), box);
+	QCOMPARE(c->getRegion()->sceneBoundingRect(), region);
+	QCOMPARE(scene->getMap().value("c::a")->scenePos(), nested);
+	QCOMPARE(c->contentInset(), bands);
+	int cut = 0;
+	for (QGraphicsItem* child : c->childItems()) {
+		StateAction* action = dynamic_cast<StateAction*>(child);
+		if (!action || !action->isCut()) continue;
+		cut++;
+		QVERIFY(action->fullHeight() > action->boundingRect().height());
+		QVERIFY(c->mapRectFromItem(action, action->boundingRect()).bottom() <= c->rect().bottom() + 0.01);
+		QCOMPARE(action->toolTip(), action->toPlainText());
+	}
+	QVERIFY(cut > 0);
+	QCOMPARE(model->undoStack()->count(), 0);
+
+	settings.setFontSize(fontRoleStateAction, size);
+	for (QGraphicsItem* child : stateItem("c")->childItems()) {
+		StateAction* action = dynamic_cast<StateAction*>(child);
+		if (action) QVERIFY(!action->isCut() && action->toolTip().isEmpty());
+	}
+}
+
 #include "l4-scene.moc"

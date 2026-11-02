@@ -1,7 +1,9 @@
 == document
-LocalDocument: {Document: {id: '', name: 'test-multiline-actions', geometry format: qt, meta: {standard version: '1.0', name: 'test-multiline-actions', transition order: action first, event propagation: block events}, elements: {State Machine: {id: 'G', name: 'parent', elements: {Formal Comment: {id: 'nMeta', name: 'CGML_META', body: 'standardVersion/ 1.0
+LocalDocument: {Document: {id: '', name: 'test-multiline-actions', geometry format: qt, meta: {standard version: '1.0', name: 'test-multiline-actions', regionGeometry: 'stored', transition order: action first, event propagation: block events}, elements: {State Machine: {id: 'G', name: 'parent', elements: {Formal Comment: {id: 'nMeta', name: 'CGML_META', body: 'standardVersion/ 1.0
 
 name/ test-multiline-actions
+
+regionGeometry/ stored
 
 transitionOrder/ actionFirst
 

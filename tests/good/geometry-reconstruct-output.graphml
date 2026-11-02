@@ -35,6 +35,8 @@
 
 name/ test-geometry-1
 
+regionGeometry/ stored
+
 geometry/ full
 
 transitionOrder/ actionFirst

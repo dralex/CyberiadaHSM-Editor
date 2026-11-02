@@ -77,13 +77,12 @@ public:
     bool isNameOnly() const;
 
     StateRegion* getRegion();
-    // create the region on demand when the state turned composite
+    // create the region on demand when the state turned composite: it gets the
+    // region computed from its texts (EDIT-NODE-15)
     StateRegion* ensureRegion();
+    // draw the stored region; a document without the marker gets the computed
+    // one, held in the model as stored (EDIT-NODE-15)
     void updateRegion();
-    // the vertical space the title and the entry/exit action blocks take out of
-    // the child region (updated by updateRegion); a nested child needs the
-    // parent taller by this much
-    qreal actionInset() const { return region_action_inset; }
 
     QRectF boundingRect() const override;
 
@@ -108,6 +107,16 @@ public:
 
 private:
     void initializeActions();
+    // the bands the texts take in the current font: the header (the title, the
+    // entry, the internal transitions) and the footer (the exit)
+    void textBands(qreal& top, qreal& bottom) const;
+    // the region the texts leave in the state rect (Qt, off the state centre)
+    Cyberiada::Rect computedRegion() const;
+    // a changed text gives its band the text height: the border moves around the
+    // region (EDIT-NODE-16)
+    void fitBands();
+    QString headerText() const;
+    QString footerText() const;
     void addAction(Cyberiada::ActionType type);
     void addInternalTransition();
     // a state can self-loop, so it draws with the self-loop-then-retarget seed
@@ -144,9 +153,11 @@ private:
 
     QRectF m_rect;
     StateRegion* region = nullptr;
-    qreal region_action_inset = 0;
-    qreal m_topInset = 0;      // title + entry + internal-transition blocks
-    qreal m_bottomInset = 0;   // exit block
+    // the state rect less the region: the header, the footer and the sides
+    QMarginsF m_bands;
+    // the texts the bands were fitted to: a change refits them (EDIT-NODE-16)
+    QString m_headerText;
+    QString m_footerText;
     const Cyberiada::State* state;
     std::vector<StateAction*> actions;
     // the internal-transition action blocks (type actionTransition), tracked so
@@ -170,8 +181,8 @@ class StateRegion : public QGraphicsRectItem
 public:
     explicit StateRegion(QGraphicsItem *parent = NULL):
         QGraphicsRectItem(parent) {
-        // the region spans the composite's full width and sits above it, so it
-        // must never intercept the border press that drives resize
+        // the region spans the composite less its bands and sits above it, so
+        // it must never intercept the border press that drives resize
         setAcceptedMouseButtons(Qt::NoButton);
         setAcceptHoverEvents(false);
     }

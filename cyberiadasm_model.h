@@ -28,6 +28,7 @@
 #include <QUndoStack>
 #include <QIcon>
 #include <QDateTime>
+#include <QMarginsF>
 #include <cyberiada/cyberiadamlpp.h>
 
 class CyberiadaSMModel: public QAbstractItemModel {
@@ -102,6 +103,23 @@ public:
     // hold their absolute place (paste/move); otherwise grow about the centre so
     // the existing children keep their stored positions (create).
     bool                                growToFitChildren(Cyberiada::Element* moved, bool directional = true);
+    // the stored regions (EDIT-NODE-15): the document says its region rects are
+    // the frames of the nested elements as drawn (regionGeometry/ stored)
+    bool                                regionsStored() const;
+    // mark the document once the scene holds every drawn region in the model;
+    // the drawing does not change, so no undo step and no modification
+    void                                storeRegions();
+    // the region a scene item draws, written without an undo step: the computed
+    // region of a document without the marker or of a promoted composite
+    void                                setRegion(Cyberiada::Element* element, const Cyberiada::Rect& region);
+    // a composite's border moves around its region, which keeps its place: a band
+    // takes its text after a text change (EDIT-NODE-16); one undo step, no gesture
+    bool                                updateBands(const QModelIndex& index, const Cyberiada::Rect& rect,
+                                                    const Cyberiada::Rect& region);
+    // the region of a composite in its centre frame (Qt), false without one
+    static bool                         regionRect(const Cyberiada::Element* element, Cyberiada::Rect& out);
+    // the bands around the region: the state rect less the region, each side
+    static QMarginsF                    regionMargins(const Cyberiada::Rect& rect, const Cyberiada::Rect& region);
     // a node with geometry in a drawn parent frame - a composite state or a bordered
     // machine; never on the top level (EDIT-TOOL-18)
     bool                                canCenterInParent(const Cyberiada::Element* e) const;
@@ -339,6 +357,8 @@ private:
 	std::string                         undoBefore;
 	bool                                undoBeforeOk;
 	bool                                m_growing = false;   // growToFitChildren re-entrancy guard
+	// set the marker of the stored regions (EDIT-NODE-15), no signal
+	void                                markRegionsStored();
 	bool                                locked = false;
 	// the file identity, restored after a snapshot decode
 	QString                             filePath;

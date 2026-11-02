@@ -16,6 +16,7 @@ stdout:
       "input": "<rundir>/input.graphml",
       "language": "en",
       "meta": {
+          "regionGeometry": "stored",
           "standardVersion": "1.0"
       },
       "outputs": {

@@ -35,6 +35,8 @@
 
 geometry/ full
 
+regionGeometry/ stored
+
 transitionOrder/ actionFirst
 
 eventPropagation/ block</data>

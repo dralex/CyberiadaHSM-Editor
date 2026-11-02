@@ -29,6 +29,7 @@
 #include <QGraphicsSceneMouseEvent>
 #include <QGraphicsRectItem>
 #include <math.h>
+#include <cmath>
 
 #include "myassert.h"
 #include "dotsignal.h"
@@ -72,9 +73,13 @@ CyberiadaSMEditorStateItem::CyberiadaSMEditorStateItem(QObject *parent_object,
     connect(title, &EditableTextItem::sizeChanged, this, &CyberiadaSMEditorStateItem::onTextItemSizeChanged);
 
     initializeActions();
+    m_headerText = headerText();
+    m_footerText = footerText();
 
     if (state->is_composite_state()) {
-        ensureRegion();
+        // a composite drawn from the document keeps its stored region
+        region = new StateRegion(this);
+        region->setVisibleRegon(SettingsManager::instance().getShowServiceObjects());
         updateRegion();
     }
 
@@ -186,62 +191,91 @@ StateRegion *CyberiadaSMEditorStateItem::ensureRegion()
     if (state->is_composite_state() && region == nullptr) {
         region = new StateRegion(this);
         region->setVisibleRegon(SettingsManager::instance().getShowServiceObjects());
-        // position the fresh region below the title/actions, as a
-        // composite-from-load does: a state promoted to composite otherwise
-        // leaves its region at (0,0), shifting the children on the next reload
+        // the promoted state gets the region below its title and actions, as
+        // stored: a region left over from an earlier composite is dropped
+        model->setRegion(element, Cyberiada::Rect());
         updateRegion();
     }
     return region;
 }
 
+void CyberiadaSMEditorStateItem::textBands(qreal& top, qreal& bottom) const
+{
+    // the text sizes, shown or hidden: the region never follows the visibility
+    top = title->fullHeight();
+    if (entry) top += entry->fullHeight();
+    for (StateAction* a : internalActions) top += a->fullHeight();
+    bottom = exit ? exit->fullHeight() : 0.0;
+}
+
+Cyberiada::Rect CyberiadaSMEditorStateItem::computedRegion() const
+{
+    qreal top, bottom;
+    textBands(top, bottom);
+    return Cyberiada::Rect(0.0, (top - bottom) / 2.0, width(),
+                           std::max(0.0, double(height() - top - bottom)));
+}
+
 void CyberiadaSMEditorStateItem::updateRegion()
 {
-    if (SettingsManager::instance().getInspectorMode()) {
-        if (state->has_region_geometry()) {
-            Cyberiada::Rect r = state->get_region_geometry_rect();
-            region->setRect(QRectF(- r.width / 2,
-                                   - r.height / 2,
-                                   r.width,
-                                   r.height));
-        } else {
-            region->setRect(rect());
-        }
-        region->setPos(0, 0);
-        // the document region has no place for the action separators
-        region->setTopLine(false);
-        region->setBottomLine(false);
-        return;
+    Cyberiada::Rect r;
+    bool stored = CyberiadaSMModel::regionRect(element, r);
+    bool inspector = SettingsManager::instance().getInspectorMode();
+    if (inspector) {
+        // the inspected region is the document's, the state rect without one
+        if (!stored) r = Cyberiada::Rect(0.0, 0.0, width(), height());
+    } else if (!stored || !model->regionsStored()) {
+        // a region not stored yet is computed from the texts, as it was drawn
+        // before, and held as stored (EDIT-NODE-15)
+        r = computedRegion();
+        if (state->has_geometry()) model->setRegion(element, r);
     }
+    region->setRect(-r.width / 2.0, -r.height / 2.0, r.width, r.height);
+    region->setPos(r.x, r.y);
+    m_bands = CyberiadaSMModel::regionMargins(Cyberiada::Rect(0.0, 0.0, width(), height()), r);
+    // the action separators bound the bands that hold actions
+    bool lines = !inspector && SettingsManager::instance().getShowText();
+    region->setTopLine(lines && (entry || !internalActions.empty()));
+    region->setBottomLine(lines && exit);
+    // the texts fit the bands
+    setTextPosition();
+}
 
-    // draw region based on state title and actions
-    qreal top_delta = 0;
-    qreal bottom_delta = 0;
-    region->setTopLine(false);
-    region->setBottomLine(false);
+QString CyberiadaSMEditorStateItem::headerText() const
+{
+    QString text = title->toPlainText();
+    if (entry) text += "\n" + entry->toPlainText();
+    for (StateAction* a : internalActions) text += "\n" + a->toPlainText();
+    return text;
+}
 
-    if (SettingsManager::instance().getShowText()) {
-        top_delta = title->boundingRect().height();
-        if (entry) {
-            top_delta += entry->boundingRect().height();
-            region->setTopLine(true);
-        }
-        // the internal-transition block shares the top area with the entry, so
-        // its height is reserved out of the child region too
-        for (StateAction* a : internalActions) {
-            top_delta += a->boundingRect().height();
-            region->setTopLine(true);
-        }
-        if (exit) {
-            bottom_delta += exit->boundingRect().height();
-            region->setBottomLine(true);
-        }
-    }
+QString CyberiadaSMEditorStateItem::footerText() const
+{
+    return exit ? exit->toPlainText() : QString();
+}
 
-    region->setRect(-width()/2, -(height() - top_delta - bottom_delta) / 2, width(), height() - top_delta - bottom_delta);
-    region->setPos(0, (top_delta - bottom_delta)/2 );
-    region_action_inset = top_delta + bottom_delta;
-    m_topInset = top_delta;
-    m_bottomInset = bottom_delta;
+void CyberiadaSMEditorStateItem::fitBands()
+{
+    QString header = headerText(), footer = footerText();
+    bool headerChanged = header != m_headerText, footerChanged = footer != m_footerText;
+    m_headerText = header;
+    m_footerText = footer;
+    Cyberiada::Rect r;
+    if (!(headerChanged || footerChanged) || !region || !state->has_geometry() ||
+        !model->regionsStored() || !CyberiadaSMModel::regionRect(element, r)) return;
+    qreal top, bottom;
+    textBands(top, bottom);
+    Cyberiada::Rect rect = state->get_geometry_rect();
+    QMarginsF bands = CyberiadaSMModel::regionMargins(rect, r);
+    qreal dTop = headerChanged ? top - bands.top() : 0.0;
+    qreal dBottom = footerChanged ? bottom - bands.bottom() : 0.0;
+    if (std::fabs(dTop) < GEOMETRY_TOLERANCE && std::fabs(dBottom) < GEOMETRY_TOLERANCE) return;
+    // the top edge moves up by dTop, the bottom one down by dBottom; the region
+    // keeps its place off the moved centre
+    qreal shift = (dBottom - dTop) / 2.0;
+    model->updateBands(model->elementToIndex(element),
+                       Cyberiada::Rect(rect.x, rect.y + shift, rect.width, rect.height + dTop + dBottom),
+                       Cyberiada::Rect(r.x, r.y - shift, r.width, r.height));
 }
 
 QRectF CyberiadaSMEditorStateItem::boundingRect() const
@@ -253,18 +287,17 @@ QRectF CyberiadaSMEditorStateItem::boundingRect() const
 
 QMarginsF CyberiadaSMEditorStateItem::contentInset() const
 {
-    // the children live in the region, inset below the title / entry / internal
-    // blocks (top) and above the exit block (bottom); the region spans full width
+    // the children live in the region, inside the bands
     if (!state->is_composite_state()) return QMarginsF();
-    return QMarginsF(0, m_topInset, 0, m_bottomInset);
+    return m_bands;
 }
 
 qreal CyberiadaSMEditorStateItem::minSpanHeight() const
 {
-    // a composite keeps room for its action blocks even with no children
+    // a composite keeps room for its bands even with no children
     if (!state->is_composite_state())
         return CyberiadaSMEditorAbstractItem::minSpanHeight();
-    return std::max((qreal)ELEMENT_MIN_SIZE, (qreal)(region_action_inset + ELEMENT_MIN_SIZE));
+    return std::max((qreal)ELEMENT_MIN_SIZE, (qreal)(m_bands.top() + m_bands.bottom() + ELEMENT_MIN_SIZE));
 }
 
 qreal CyberiadaSMEditorStateItem::minimumWidth() const
@@ -272,22 +305,21 @@ qreal CyberiadaSMEditorStateItem::minimumWidth() const
     // a simple state has no children: keep the base floor
     if (!state->is_composite_state())
         return CyberiadaSMEditorAbstractItem::minimumWidth();
-    // children live in the region, whose width equals the state width
+    // children live in the region, inside the side bands
     double hw, hh;
     model->childrenHalfExtent(static_cast<const Cyberiada::ElementCollection*>(element), hw, hh);
-    return std::max((qreal)ELEMENT_MIN_SIZE, (qreal)(2.0 * hw));
+    return std::max((qreal)ELEMENT_MIN_SIZE, (qreal)(2.0 * hw + m_bands.left() + m_bands.right()));
 }
 
 qreal CyberiadaSMEditorStateItem::minimumHeight() const
 {
     if (!state->is_composite_state())
         return CyberiadaSMEditorAbstractItem::minimumHeight();
-    // the region (child area) sits below the title/entry/internal blocks and
-    // above the exit block, so the state must be that much taller than the
-    // content to keep the children inside the region
+    // the region (child area) sits between the header and the footer bands, so
+    // the state must be that much taller than the content
     double hw, hh;
     model->childrenHalfExtent(static_cast<const Cyberiada::ElementCollection*>(element), hw, hh);
-    return std::max((qreal)ELEMENT_MIN_SIZE, (qreal)(2.0 * hh + region_action_inset));
+    return std::max((qreal)ELEMENT_MIN_SIZE, (qreal)(2.0 * hh + m_bands.top() + m_bands.bottom()));
 }
 
 bool CyberiadaSMEditorStateItem::isNameOnly() const
@@ -299,6 +331,16 @@ void CyberiadaSMEditorStateItem::setTextPosition()
 {
     // TODO refactor
     QRectF oldRect = rect();
+    // a composite's texts fit its stored bands: a font change moves nothing, a
+    // text taller than its band is cut (EDIT-NODE-16); a simple state's are
+    // whole, and so are those of a state without geometry, which has no bands
+    bool banded = state->is_composite_state() && region != nullptr && state->has_geometry();
+    qreal room = m_bands.top();
+    auto fit = [&](EditableTextItem* text) {
+        text->setBandHeight(banded ? std::max(0.0, double(room)) : -1.0);
+        room -= text->fullHeight();
+    };
+    fit(title);
     QRectF titleRect = title->boundingRect();
     // a bare state (no actions, no children) centres the name in the box; any
     // action or nested state turns it into the top header, with the blocks below
@@ -311,18 +353,23 @@ void CyberiadaSMEditorStateItem::setTextPosition()
 
     // the entry is pinned to the top-left of the region under the title and
     // the exit to its bottom-left, in the simple and the composite state alike
-    qreal top = oldRect.y() + titleRect.height();
+    qreal top = oldRect.y() + title->fullHeight();
     if (entry != nullptr) {
+        fit(entry);
         entry->setPos(oldRect.x() + 15, top);
-        top += entry->boundingRect().height();
+        top += entry->fullHeight();
     }
     // the internal transitions stack below the entry
     for (StateAction* a : internalActions) {
+        fit(a);
         a->setPos(oldRect.x() + 15, top);
-        top += a->boundingRect().height();
+        top += a->fullHeight();
     }
     if (exit != nullptr) {
-        exit->setPos(oldRect.x() + 15, oldRect.bottom() - exit->boundingRect().height());
+        // the footer band holds the exit from its top
+        room = m_bands.bottom();
+        fit(exit);
+        exit->setPos(oldRect.x() + 15, oldRect.bottom() - (banded ? m_bands.bottom() : exit->fullHeight()));
     }
     // setPositionGrabbers();
 }
@@ -342,6 +389,11 @@ void CyberiadaSMEditorStateItem::syncFromModel()
     if (state->is_composite_state()) {
         ensureRegion();
         updateRegion();
+        // a model update of the texts refits their bands (EDIT-NODE-16)
+        fitBands();
+    } else {
+        m_headerText = headerText();
+        m_footerText = footerText();
     }
     // a reparent rebuilds the item through the model row signals
     CyberiadaSMEditorAbstractItem::syncFromModel();
@@ -790,7 +842,7 @@ static void titleRefused(const QString& message)
 void StateTitle::focusOutEvent(QFocusEvent *event)
 {
     setTextInteractionFlags(Qt::NoTextInteraction);
-    isEdit = false;
+    setEditing(false);
 
     QTextCursor cursor = textCursor();
     cursor.clearSelection();
@@ -1153,7 +1205,7 @@ void StateAction::contextMenuEvent(QGraphicsSceneContextMenuEvent *event) {
 void StateAction::focusOutEvent(QFocusEvent *event)
 {
     setTextInteractionFlags(Qt::NoTextInteraction);
-    isEdit = false;
+    setEditing(false);
     QGraphicsTextItem::focusOutEvent(event);
     if (CyberiadaSMEditorScene::discardsEdits(this)) return;
     emit actionUpdated(this);

@@ -57,6 +57,16 @@ public:
     static CodeMarkup sceneMarkup(QGraphicsScene* s);
     // the wrap width follows the parent box, refreshed after a resize
     void updateTextWidth();
+    // the height of the whole text, uncut by its band (EDIT-NODE-16)
+    qreal fullHeight() const { return QGraphicsTextItem::boundingRect().height(); }
+    // the height its band leaves the text (EDIT-NODE-16): a taller one is cut at
+    // its last whole line with an ellipsis, the whole text in the tooltip, and
+    // shown whole while edited; a negative height sets no band
+    void setBandHeight(qreal height);
+    bool isCut() const;
+    QRectF boundingRect() const override;
+    QPainterPath shape() const override;
+    bool contains(const QPointF& point) const override;
     // a title that hugs its text (a state machine header) rather than the box
     void setTextWidthEnabled(bool on);
     void setTextAlignment(Qt::Alignment alignment);
@@ -86,6 +96,8 @@ protected:
 
     // weight the leading [0, length) characters bold or normal (idempotent)
     void setBoldRange(int length, bool bold);
+    // the edit mode shows the whole text: the box changes with it
+    void setEditing(bool on);
 
     // the resizable box the text belongs to, or null
     CyberiadaSMEditorAbstractItem* parentBox() const;
@@ -101,6 +113,7 @@ protected slots:
 protected:
     bool isEdit = false;
     bool align = false;
+    qreal bandHeight = -1.0;
     bool isTextWidthEnabled = true;
     FontRole fontRole = fontRoleStateAction;
     // the comment body keeps the default: it wraps at the full element width

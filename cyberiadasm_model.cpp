@@ -242,6 +242,8 @@ bool CyberiadaSMModel::loadDocument(const QString& path, bool reconstruct, bool 
 	root = new_doc;
 	filePath = QString(root->get_file_path().c_str());
 	fileFormat = root->get_file_format();
+	// the library's regions are the frames of the nested elements (EDIT-NODE-15)
+	if (reconstruct) markRegionsStored();
 	// recover loose transition endpoints onto their borders (EDIT-EDGE-1); inspect
 	// mode shows the stored geometry as-is, so it is exempt
 	if (!SettingsManager::instance().getInspectorMode()) {
@@ -380,6 +382,7 @@ bool CyberiadaSMModel::reconstructGeometry()
 		endResetModel();
 		return false;
 	}
+	markRegionsStored();
 	endResetModel();
 	GestureLog::instance().logAction("reconstruct");
 	return true;
@@ -405,8 +408,74 @@ bool CyberiadaSMModel::updateGeometry()
 		endResetModel();
 		return false;
 	}
+	markRegionsStored();
 	endResetModel();
 	GestureLog::instance().logAction("update-geometry");
+	return true;
+}
+
+bool CyberiadaSMModel::regionsStored() const
+{
+	return root && root->meta().regions_stored();
+}
+
+void CyberiadaSMModel::markRegionsStored()
+{
+	if (!root || root->meta().regions_stored()) return;
+	root->meta().set_regions_stored(true);
+	root->update_metainfo_element();
+}
+
+void CyberiadaSMModel::storeRegions()
+{
+	if (readOnly()) return;
+	markRegionsStored();
+}
+
+void CyberiadaSMModel::setRegion(Cyberiada::Element* element, const Cyberiada::Rect& region)
+{
+	Cyberiada::State* state = dynamic_cast<Cyberiada::State*>(element);
+	if (readOnly() || !state) return;
+	state->update_region_geometry_rect(region);
+}
+
+bool CyberiadaSMModel::regionRect(const Cyberiada::Element* element, Cyberiada::Rect& out)
+{
+	const Cyberiada::State* state = dynamic_cast<const Cyberiada::State*>(element);
+	if (!state || !state->is_composite_state() || !state->has_region_geometry()) return false;
+	out = state->get_region_geometry_rect();
+	return true;
+}
+
+QMarginsF CyberiadaSMModel::regionMargins(const Cyberiada::Rect& rect, const Cyberiada::Rect& region)
+{
+	// Qt frames: the rect by its centre, the region off that centre
+	return QMarginsF(rect.width / 2.0 + region.x - region.width / 2.0,
+					 rect.height / 2.0 + region.y - region.height / 2.0,
+					 rect.width / 2.0 - region.x - region.width / 2.0,
+					 rect.height / 2.0 - region.y - region.height / 2.0);
+}
+
+bool CyberiadaSMModel::updateBands(const QModelIndex& index, const Cyberiada::Rect& rect,
+								   const Cyberiada::Rect& region)
+{
+	if (readOnly()) return false;
+	Cyberiada::State* state = dynamic_cast<Cyberiada::State*>(indexToElement(index));
+	if (!state || !state->has_geometry() || !state->has_region_geometry()) return false;
+	UndoScope scope(this, tr("geometry"));
+	Cyberiada::Rect current = state->get_geometry_rect();
+	if (current.almost_equal(rect)) {
+		state->update_region_geometry_rect(region);
+		emit dataChanged(index, index);
+		return true;
+	}
+	// updateGeometry keeps the region's place off the centre and adds the size
+	// change of the border: preset it so that it lands on the region asked for
+	state->update_region_geometry_rect(Cyberiada::Rect(region.x, region.y,
+		region.width - (rect.width - current.width), region.height - (rect.height - current.height)));
+	if (!updateGeometry(index, rect, false, true)) return false;
+	// the moved border may reach out of the parent's region
+	growToFitChildren(state);
 	return true;
 }
 
@@ -942,6 +1011,15 @@ bool CyberiadaSMModel::updateGeometry(const QModelIndex& index, const Cyberiada:
         comment->update_geometry(rect);
 	} else {
 		Cyberiada::ElementCollection* ec = static_cast<Cyberiada::ElementCollection*>(element);
+		// the region keeps its bands: its place off the centre stays and it takes
+		// the size change of the border (EDIT-NODE-15)
+		Cyberiada::State* st = dynamic_cast<Cyberiada::State*>(ec);
+		if (st && st->has_region_geometry()) {
+			Cyberiada::Rect r = st->get_region_geometry_rect();
+			st->update_region_geometry_rect(!(current.valid && rect.valid) ? Cyberiada::Rect() :
+				Cyberiada::Rect(r.x, r.y, std::max(0.0, r.width + rect.width - current.width),
+								std::max(0.0, r.height + rect.height - current.height)));
+		}
         ec->update_geometry(rect);
 	}
 	// a derived grow (growToFitChildren) is reproduced on replay by re-creating
@@ -1333,6 +1411,14 @@ bool CyberiadaSMModel::growToFitChildren(Cyberiada::Element* moved, bool directi
 		if (!(std::isfinite(cl) && std::isfinite(cr) && std::isfinite(ct) && std::isfinite(cb))) {
 			e = pc;
 			continue;
+		}
+		// the children are placed in the region: the border holds them with its
+		// bands, the region keeping them as the border moves (EDIT-NODE-15)
+		Cyberiada::Rect region;
+		if (regionRect(pc, region)) {
+			QMarginsF m = regionMargins(pr, region);
+			cl += region.x - m.left();  cr += region.x + m.right();
+			ct += region.y - m.top();   cb += region.y + m.bottom();
 		}
 		if (directional) {
 			// extend each edge outward to include the content, keeping the edges
@@ -2625,7 +2711,7 @@ Qt::DropActions CyberiadaSMModel::supportedDropActions() const
 }
 
 // the offset of a parent chain in the local geometry formats: the sum of
-// the ancestor positions up to the state machine
+// the ancestor positions and their region places up to the state machine
 static void ancestorsOffset(const Cyberiada::Element* parent, double& x, double& y)
 {
     x = y = 0.0;
@@ -2636,6 +2722,12 @@ static void ancestorsOffset(const Cyberiada::Element* parent, double& x, double&
             const Cyberiada::Rect& r = static_cast<const Cyberiada::ElementCollection*>(e)->get_geometry_rect();
             x += r.x;
             y += r.y;
+            // the nested elements are placed in the region (EDIT-NODE-3)
+            Cyberiada::Rect region;
+            if (CyberiadaSMModel::regionRect(e, region)) {
+                x += region.x;
+                y += region.y;
+            }
         }
     }
 }
