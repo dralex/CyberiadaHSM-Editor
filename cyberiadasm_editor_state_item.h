@@ -113,7 +113,7 @@ private:
     // the region the texts leave in the state rect (Qt, off the state centre)
     Cyberiada::Rect computedRegion() const;
     // a changed text gives its band the text height: the border moves around the
-    // region (EDIT-NODE-16)
+    // region; a simple state grows to hold its texts (EDIT-NODE-16)
     void fitBands();
     QString headerText() const;
     QString footerText() const;

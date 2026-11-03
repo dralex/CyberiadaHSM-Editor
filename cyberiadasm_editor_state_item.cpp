@@ -260,12 +260,22 @@ void CyberiadaSMEditorStateItem::fitBands()
     bool headerChanged = header != m_headerText, footerChanged = footer != m_footerText;
     m_headerText = header;
     m_footerText = footer;
-    Cyberiada::Rect r;
-    if (!(headerChanged || footerChanged) || !region || !state->has_geometry() ||
-        !model->regionsStored() || !CyberiadaSMModel::regionRect(element, r)) return;
+    if (!(headerChanged || footerChanged) || !state->has_geometry()) return;
     qreal top, bottom;
     textBands(top, bottom);
     Cyberiada::Rect rect = state->get_geometry_rect();
+    if (!state->is_composite_state()) {
+        // a simple state grows down by the missing height and never shrinks
+        qreal missing = top + bottom - rect.height;
+        if (missing < GEOMETRY_TOLERANCE) return;
+        if (model->growToFitText(model->elementToIndex(element),
+                                 Cyberiada::Rect(rect.x, rect.y + missing / 2.0, rect.width, rect.height + missing))) {
+            emit sizeChanged(CornerFlags::Bottom, missing / 2.0);
+        }
+        return;
+    }
+    Cyberiada::Rect r;
+    if (!region || !model->regionsStored() || !CyberiadaSMModel::regionRect(element, r)) return;
     QMarginsF bands = CyberiadaSMModel::regionMargins(rect, r);
     qreal dTop = headerChanged ? top - bands.top() : 0.0;
     qreal dBottom = footerChanged ? bottom - bands.bottom() : 0.0;
@@ -389,12 +399,9 @@ void CyberiadaSMEditorStateItem::syncFromModel()
     if (state->is_composite_state()) {
         ensureRegion();
         updateRegion();
-        // a model update of the texts refits their bands (EDIT-NODE-16)
-        fitBands();
-    } else {
-        m_headerText = headerText();
-        m_footerText = footerText();
     }
+    // a model update of the texts refits their bands (EDIT-NODE-16)
+    fitBands();
     // a reparent rebuilds the item through the model row signals
     CyberiadaSMEditorAbstractItem::syncFromModel();
 }

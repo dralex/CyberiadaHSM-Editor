@@ -173,6 +173,7 @@ private slots:
 	void test_regions_stored();
 	void test_regions_save_reload();
 	void test_bands_fit_text();
+	void test_simple_state_fits_text();
 	void test_resize_keeps_bands();
 	void test_reparent_into_region();
 	void test_font_change_moves_nothing();
@@ -4522,6 +4523,65 @@ void TestScene::test_bands_fit_text()
 	s = stateItem("node-0-0");
 	QCOMPARE(s->sceneBoundingRect(), before);
 	QCOMPARE(s->contentInset().top(), header);
+}
+
+void TestScene::test_simple_state_fits_text()
+{
+	// a simple state grows down to hold a new internal transition, its top and
+	// texts staying, in one undo step; it never shrinks on its own (EDIT-NODE-16)
+	QVERIFY(model->loadDocument("diagrams/regions-stored.graphml"));
+	scene->loadScene();
+	Cyberiada::Element* e = model->idToElement("c::a");
+	QModelIndex index = model->elementToIndex(e);
+	Cyberiada::Rect rect = static_cast<Cyberiada::State*>(e)->get_geometry_rect();
+	const double compact = 70.0;
+	QVERIFY(model->updateGeometry(index, Cyberiada::Rect(rect.x, rect.y - (rect.height - compact) / 2.0,
+														  rect.width, compact)));
+	QRectF before = stateItem("c::a")->sceneBoundingRect();
+
+	// the entry still fits: nothing moves
+	QVERIFY(model->newAction(index, Cyberiada::actionEntry, QString(), QString(), "lamp()"));
+	QCOMPARE(stateItem("c::a")->sceneBoundingRect(), before);
+
+	// the source end of the edge to c::b lies on the right border
+	auto sourceY = [this]() {
+		const Cyberiada::Transition* t = static_cast<const Cyberiada::Transition*>(model->idToElement("c::a-c::b"));
+		const Cyberiada::State* a = static_cast<const Cyberiada::State*>(model->idToElement("c::a"));
+		return a->get_geometry_rect().y + t->get_source_point().y;
+	};
+	const double sourceBefore = sourceY();
+	int steps = model->undoStack()->count();
+	QVERIFY(model->newAction(index, Cyberiada::actionTransition, "EVT", QString(), "handle()"));
+	CyberiadaSMEditorStateItem* s = stateItem("c::a");
+	QRectF after = s->sceneBoundingRect();
+	QVERIFY(after.height() > before.height());
+	QCOMPARE(after.top(), before.top());
+	QCOMPARE(after.left(), before.left());
+	QCOMPARE(after.width(), before.width());
+	qreal textBottom = 0.0;
+	for (QGraphicsItem* child : s->childItems()) {
+		StateAction* action = dynamic_cast<StateAction*>(child);
+		if (action) textBottom = std::max(textBottom, s->mapRectFromItem(action, action->boundingRect()).bottom());
+	}
+	QVERIFY(std::fabs(textBottom - s->rect().bottom()) < 0.01);
+	// an end on an unmoved border keeps its place (EDIT-EDGE-1)
+	QVERIFY(std::fabs(sourceY() - sourceBefore) < 0.01);
+	QCOMPARE(model->undoStack()->count(), steps + 1);
+
+	model->undoStack()->undo();
+	QCOMPARE(stateItem("c::a")->sceneBoundingRect(), before);
+	model->undoStack()->redo();
+	QCOMPARE(stateItem("c::a")->sceneBoundingRect(), after);
+
+	// a removed text leaves the room; a resize below the texts is kept (the
+	// undo rebuilt the document)
+	e = model->idToElement("c::a");
+	index = model->elementToIndex(e);
+	QVERIFY(model->deleteAction(index, 1));
+	QCOMPARE(stateItem("c::a")->sceneBoundingRect(), after);
+	rect = static_cast<Cyberiada::State*>(e)->get_geometry_rect();
+	QVERIFY(model->updateGeometry(index, Cyberiada::Rect(rect.x, rect.y, rect.width, compact / 2.0)));
+	QCOMPARE(stateItem("c::a")->sceneBoundingRect().height(), compact / 2.0);
 }
 
 void TestScene::test_resize_keeps_bands()

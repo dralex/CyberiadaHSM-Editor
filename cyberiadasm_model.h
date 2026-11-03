@@ -116,6 +116,9 @@ public:
     // takes its text after a text change (EDIT-NODE-16); one undo step, no gesture
     bool                                updateBands(const QModelIndex& index, const Cyberiada::Rect& rect,
                                                     const Cyberiada::Rect& region);
+    // a simple state grows to hold its texts after a text change (EDIT-NODE-16);
+    // one undo step, no gesture; the caller re-bases the endpoints (sizeChanged)
+    bool                                growToFitText(const QModelIndex& index, const Cyberiada::Rect& rect);
     // the region of a composite in its centre frame (Qt), false without one
     static bool                         regionRect(const Cyberiada::Element* element, Cyberiada::Rect& out);
     // the bands around the region: the state rect less the region, each side

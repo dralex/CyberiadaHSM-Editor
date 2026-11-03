@@ -479,6 +479,20 @@ bool CyberiadaSMModel::updateBands(const QModelIndex& index, const Cyberiada::Re
 	return true;
 }
 
+bool CyberiadaSMModel::growToFitText(const QModelIndex& index, const Cyberiada::Rect& rect)
+{
+	if (readOnly()) return false;
+	Cyberiada::State* state = dynamic_cast<Cyberiada::State*>(indexToElement(index));
+	if (!state || !state->has_geometry()) return false;
+	UndoScope scope(this, tr("geometry"));
+	// reattach=false: the item re-bases the incident endpoints through sizeChanged,
+	// holding their absolute place (EDIT-EDGE-1)
+	if (!updateGeometry(index, rect, false, false)) return false;
+	// the grown border may reach out of the parent's region
+	growToFitChildren(state);
+	return true;
+}
+
 // the written document declares its geometry (7.1): the editor writes the
 // exact sizes or none at all; the yEd formats carry no metainformation
 void CyberiadaSMModel::declareGeometry(Cyberiada::DocumentFormat f, bool skip_geometry)

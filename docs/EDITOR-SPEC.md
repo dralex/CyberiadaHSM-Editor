@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.43 (2026-10-31)
+**Document version:** 0.44 (2026-11-03)
 
 **Related authorities:**
 
@@ -297,7 +297,9 @@ the third is a derived display value the format does not store):
 
 - `EDIT-NODE-16` MUST [A]: a change of a composite's text (its name or an action) gives the
   changed band the height of its text in the current font: the state border moves, the region and
-  the nested elements keep their places. A font change moves nothing: a text wraps to the state
+  the nested elements keep their places. A simple state whose texts no longer fit after a change of
+  its text grows down by the missing height, its top and texts keeping their places; it never
+  shrinks on its own. A font change moves nothing: a text wraps to the state
   width and one taller than its band is cut at the band with an ellipsis, the whole text in its
   tooltip; the text being edited is shown whole. *design*
 
