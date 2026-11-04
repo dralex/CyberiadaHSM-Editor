@@ -27,7 +27,9 @@ Right after it, the **python packages** (`hsm-dispatcher-py`, `hsm-to-python`,
 `cybersphere-hsm-maker`, `cybersphere-agents`) are built and tested against it, each
 skipped when the python 3 is older than its `requires-python`; `--wheel-dir DIR`
 adds their `.zip` and pip wheels. Skip the binding and the packages with
-`--no-python`.
+`--no-python`. Their tests see the binding as installed (a throwaway user site in
+its build dir): the editor-plugin tests of the maker and the agents run the
+`CyberiadaHSM-Editor/build/CyberiadaPro` beside them when it starts.
 
 The paths are resolved from the **script's own location**, so it can be run from
 anywhere — the working directory does not matter:

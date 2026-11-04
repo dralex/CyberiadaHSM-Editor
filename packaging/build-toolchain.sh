@@ -274,6 +274,17 @@ build_python() {
         ${REDIRECT:+-DCMAKE_PROJECT_INCLUDE="$REDIRECT"} >/dev/null
     cmake --build "$bdir" -j "$JOBS"
 
+    # the editor-plugin tests of the python packages drop PYTHONPATH, as an
+    # installed plugin does: a throwaway user site gives them this binding,
+    # chained to the real user site (pip --user, AGENTS_TEST)
+    PY_USERBASE="$bdir/pyuser"
+    PYTHONUSERBASE="$PY_USERBASE" python3 -c "import os, site, sys
+d = site.getusersitepackages()
+os.makedirs(d, exist_ok=True)
+with open(os.path.join(d, 'cyberiada-toolchain.pth'), 'w') as f:
+    f.write('%s\nimport site; site.addsitedir(%r)\n' % (sys.argv[1], sys.argv[2]))" \
+        "$bdir" "$(python3 -c 'import site; print(site.getusersitepackages())')"
+
     if [ "$TEST" -eq 1 ]; then
         echo "Testing $repo..."
         ( cd "$bdir" && LD_LIBRARY_PATH="$py_ld" ctest --output-on-failure )
@@ -360,7 +371,8 @@ build_pydeb() {
         if [ "$run_test" -eq 1 ]; then
             echo "Testing $repo..."
             ( cd "$bdir" && PYTHONPATH="$py_py${PYTHONPATH:+:$PYTHONPATH}" \
-                LD_LIBRARY_PATH="$py_ld" ctest --output-on-failure )
+                LD_LIBRARY_PATH="$py_ld" \
+                env ${PY_USERBASE:+PYTHONUSERBASE="$PY_USERBASE"} ctest --output-on-failure )
         fi
     fi
 
@@ -401,6 +413,7 @@ fi
 # is not installed, e.g. on Windows); hsm-dispatcher and the maker need only
 # CyberiadaML; hsm-to-python and the agents also need the dispatcher's hsmd (on
 # PYTHONPATH via the source)
+PY_USERBASE=""                # the test user site holding the binding (see build_python)
 build_pyapps() {
     build_pydeb cyberiadaml-py pydantic2
     build_pydeb hsm-dispatcher-py
