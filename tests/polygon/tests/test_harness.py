@@ -41,7 +41,7 @@ from polygon import register as R
 from tests.helpers import CONFIG, ENV, POLYGON, needs_editor
 
 try:
-    import hsmd_components
+    import hsmd.components
     from cybersphere_agents import Engine
     from cybersphere_agents.controller import Controller
     from polygon import components as PC
@@ -249,7 +249,7 @@ def load(kind, tmp, stubs=True):
     PC.install(context(tmp, kind))
     if stubs:
         for name, cls in STUBS.items():
-            hsmd_components.register(name, cls)
+            hsmd.components.register(name, cls)
     engine = FakeEngine()
     controller = Controller(str(DIAGRAMS / (kind + ".graphml")), engine, output=open(os.devnull, "w"))
     controller.start()

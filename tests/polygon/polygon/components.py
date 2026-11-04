@@ -34,7 +34,7 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
-import hsmd_components
+import hsmd.components
 from cybersphere_agents.activities import Job
 from cybersphere_agents.components import PlatformComponent
 
@@ -98,7 +98,7 @@ def install(context):
     global CONTEXT                     # pylint: disable=global-statement
     CONTEXT = context
     for name, cls in TYPES.items():
-        hsmd_components.register(name, cls)
+        hsmd.components.register(name, cls)
 
 
 class Polygon(PlatformComponent):

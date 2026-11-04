@@ -537,8 +537,8 @@ d = C.LocalDocument()
 d.open(sys.argv[1], C.formatCyberiada10, C.geometryFormatQt, False)
 assert d.get_state_machines()[0].get_name() == \"SM\"" py/read-meta.graphml'
     check cml-hsmd "$CML python3-hsm-dispatcher" \
-        "$NOML python3 -c \"import sys, hsmd, hsmd_reader
-assert hsmd_reader.CyberiadaML.__name__ == 'cyberiadaml_py.cml', hsmd_reader.CyberiadaML
+        "$NOML python3 -c \"import sys, hsmd, hsmd.reader
+assert hsmd.reader.CyberiadaML.__name__ == 'cyberiadaml_py.cml', hsmd.reader.CyberiadaML
 d = hsmd.Dispatcher(sys.argv[1])
 d.start()
 assert d.states() == ['a'], d.states()
