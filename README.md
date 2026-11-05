@@ -22,6 +22,18 @@ The informal comments in Markdown are highlighted as well (Edit > Markup).
 
 ![CyberiadaPro. Sample 2](images/gui-sample-2.jpg)
 
+## Plugins
+
+The editor supports plugins (see ![The Plugin Interface](docs/PLUGIN-API.md))
+which allow to process HSM diagrams and run controlled by HSM diagrams programs.
+The most interesting plugins are:
+
+* ![HSM Diagram Maker](https://github.com/dralex/cybersphere-hsm-maker): generating HSM diagrams using LLM;
+* ![HSM Python](https://github.com/dralex/hsm-to-python): running HSM diagrams with Python code;
+* ![Finite Automata](https://github.com/kruzhok-team/fa-dispatcher-py/): running FA diargams;
+* ![HSM-ROS2 Node Generator](https://github.com/kruzhok-team/hsm_robot_ros_generator): generating and checking HSM-based ROS2 code; 
+* ![HSM-ROS2 Turtle](https://github.com/dralex/turtle_driver): running ROS2 turtle controlled by a HSM diagram.
+
 ## Installation
 
 One can install ![binary releases](https://github.com/dralex/CyberiadaHSM-Editor/releases)

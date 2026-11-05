@@ -25,6 +25,18 @@ Python; правила в каталоге `syntax/`), который выбир
 
 ![Редактор, пример 2](images/gui-sample-2.jpg)
 
+## Плагины
+
+Редактор поддерживает систему плагинов (см. ![Интерфейс плагинов](docs/PLUGIN-API-ru.md)),
+позволяющи обрабатывать диаграммы ПРИМС и запускать программы под управлением диаграмм ПРИМС.
+Примеры интересных плагинов:
+
+* ![Рисование диаграмм ПРИМС](https://github.com/dralex/cybersphere-hsm-maker): создание диаграмм ПРИМС с использованием языковых больших моделей;
+* ![ПРИМС с Python](https://github.com/dralex/hsm-to-python): запуск диаграмм ПРИМС с кодом на Python;
+* ![Конечные автоматы](https://github.com/kruzhok-team/fa-dispatcher-py/): запуск диаграмм конечных автоматов;
+* ![Генерация кода для ROS2](https://github.com/kruzhok-team/hsm_robot_ros_generator): генерация и проверка кода для нод ROS2 на Python; 
+* ![Черепашка ROS2](https://github.com/dralex/turtle_driver): запуск диаграмм ПРИМС по управлению черепашки ROS2.
+
 ## Установка
 
 Для установки доступны ![скомпилированные релизы](https://github.com/dralex/CyberiadaHSM-Editor/releases)
