@@ -1,6 +1,6 @@
 # The Plugin Interface
 
-**Document version:** 0.7 (2026-10-27), plugin contract `api` 1, session protocol 1. In
+**Document version:** 0.8 (2026-11-09), plugin contract `api` 1, session protocol 1. In
 Russian: `PLUGIN-API-ru.md`.
 
 This is the brief for a plugin author. A plugin gives CyberiadaPro, the Cyberiada HSM editor, a
@@ -103,6 +103,7 @@ output" tab of the plugin dock.
 | `interpreter` | no | a logical interpreter name (`python3`); the command is then `interpreter + argv` |
 | `env` | no | extra environment variables; the values may use `${plugin_dir}` |
 | `parameters` | no | the parameters, shared by the actions (see Parameters) |
+| `requires` | no | the programs, variables and plugins the plugin needs (see Conditions) |
 | `actions` | yes | at least one action; a plugin with session actions keeps one too, so that an editor before the sessions loads it |
 | `session` | no | the session actions (see Sessions); an editor before the sessions ignores it |
 
@@ -125,6 +126,9 @@ An action:
 | `meta` | none | metainformation the action works with, e.g. `{"platformLanguage": "Python"}`; filled in when the document lacks it (see Metainformation) |
 | `icon` | the plugin icon | the action icon for the toolbar and the menu |
 | `description` | none | the tooltip |
+| `requires` | none | what the action needs besides the plugin's `requires` (see Conditions) |
+| `when` | none | the document conditions of the action (see Conditions) |
+| `reason` | none | the tooltip when a `when` token fails |
 
 ## How the editor shows a plugin
 
@@ -137,6 +141,9 @@ An action:
   for this document, or a required `persistent` parameter without a value, the editor
   opens a dialog generated from them; otherwise the action runs at once with the stored
   values.
+* **A greyed-out action** — the plugin is switched off or unavailable, a run is going on
+  the document, inspection mode holds a `replace` action, or a condition of the action
+  fails (see Conditions); the tooltip says why.
 * **The plugin dock** — every plugin has its own output tab, "<name> output", with the
   stdout and stderr of its runs; the user closes it, clears it or saves it to a text
   file. The Diagnostics tab holds the findings; the running plugin has a Cancel button.
@@ -356,8 +363,8 @@ hsm-to-python/
 
 * When it scans the plugins the editor reads the file of its interface language (chosen in
   the Preferences, applied at start) and translates the name and the description, the
-  labels and the descriptions of the actions and the parameters, and the shown enum
-  choices; a choice keeps its value.
+  labels, the descriptions and the reasons of the actions, the labels and the descriptions
+  of the parameters, and the shown enum choices; a choice keeps its value.
 * A text without a translation is shown as written, a key that matches no text is
   ignored, and a file that is not a JSON object is listed as a warning.
 * The batch mode is English and reads no translation.
@@ -381,6 +388,58 @@ An action may declare the metainformation it works with:
   (`python3`, `Python`).
 * A document without a state machine, or a read-only one, is left as it is.
 * A `replace` or `new-document` result carries its metainformation in the document itself.
+
+## Conditions
+
+An action may need a program, a saved file or a certain diagram. Declare it, and the editor
+greys the action out with the reason in the tooltip instead of starting a run that fails.
+
+```json
+{
+  "requires": { "programs": ["arduino-cli"], "plugins": ["cgml-checker>=0.3"] },
+  "actions": [
+    { "id": "upload", "label": "Upload", "result": "log",
+      "requires": { "env": ["ARDUINO_PORT"] },
+      "when": ["saved", "initial", "meta:platform=ArduinoUno"],
+      "reason": "Save a diagram for the Arduino Uno",
+      "argv": [ ... ] }
+  ]
+}
+```
+
+`requires` is the system, checked when the editor scans the plugins (the start, Rescan, the
+Preferences). On the descriptor it disables the whole plugin, on an action the action alone.
+
+| Key | Holds when |
+|---|---|
+| `programs` | each program is found on `PATH`; a path with `${plugin_dir}` is an executable file |
+| `env` | each variable is set and not empty, in the editor environment or in `env` |
+| `plugins` | each `<id>` or `<id>>=<version>` is a plugin found and enabled, of that version at least; the user's switch in the plugin manager does not count |
+
+`when` is the document, checked again after every edit, undo, save and selection change. All
+the tokens must hold; `!` negates one (`!fa`).
+
+| Token | Holds when |
+|---|---|
+| `file` | the document has a file |
+| `saved` | the document has a file and no unsaved changes |
+| `selection` | an element or a state machine is selected: `${selection}` is not empty |
+| `sm` | the document has a state machine |
+| `initial` | every state machine has an initial pseudostate at its top level |
+| `fa` | the document is a finite automaton: `type/ fa` in the metainformation (EXT-FA) |
+| `fa-valid` | a finite automaton without EXT-FA violations |
+| `meta:<key>` | the metainformation has the key |
+| `meta:<key>=<value>` | the key has the value; the platform language under any of its names |
+
+* `reason` replaces the reason of a failing token: tell the user what to do.
+* `saved` greys the action out on a modified document; `save: true` saves it instead.
+* A key the action's `meta` fills holds when the document lacks it.
+* An unknown token or key keeps the action (the plugin) off, telling that it needs a newer
+  editor, and is a warning in `--list-plugins`; an editor before the conditions ignores
+  `requires` and `when`.
+* A program installed while the editor runs counts after Rescan, a variable set after a
+  restart of the editor.
+* A check only your program can make stays in the run: fail with one clear line.
 
 ## Exit codes, errors, cancel
 
@@ -982,6 +1041,7 @@ non-zero on a failed build. The platform comes from the document meta
 * Write only the declared outputs; leave `${input}` and the plugin directory alone.
 * UTF-8 on stdout and stderr; one clear line per error.
 * Exit codes that mean something, and `exit_ok` that lists the good ones.
+* Declare in `requires` and `when` what an action needs, so it is greyed out, not failing.
 * Stop every process you started.
 * Never print a secret.
 * Say in `description` when the document leaves the machine.

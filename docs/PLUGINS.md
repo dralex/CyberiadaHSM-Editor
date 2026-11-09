@@ -1,6 +1,6 @@
 # The Plugin System — Architecture
 
-**Document version:** 0.6 (2026-10-27)
+**Document version:** 0.7 (2026-11-09)
 
 A plugin adds a feature to the editor without rebuilding it: a diagram checker, a code
 generator, a compiler front end, an LLM diagram maker. A plugin is a directory with a
@@ -62,6 +62,7 @@ sessions).
 | 2  $CYBERIADA_PRO_PLUGIN_PATH        | ------> |   "api" major supported?             |
 | 3  the user plugin folder            |         |   id seen earlier on the path? skip  |
 | 4  the system plugin folder          |         |   interpreter found? else disabled   |
+|                                      |         |   requires hold? else disabled       |
 +--------------------------------------+         +--------------------------------------+
                                                      | rejected              | accepted
                     +--------------------------------+                       |
@@ -140,7 +141,48 @@ plugin's `i18n/<lang>.json` of the interface language and translates the plugin 
 * **Plugin manager** — the plugins found: folder, version, enabled or the reason why not;
   enable/disable, Rescan.
 * **Disabled actions** — a missing interpreter, inspection mode (for `replace`), a run
-  already going on the same document; the tooltip gives the reason.
+  already going on the same document, a condition of the plugin or the action (see
+  Conditions); the tooltip gives the reason.
+
+## Conditions
+
+A plugin declares when its actions can run (`EDIT-PLUG-50..54`, the fields in
+`PLUGIN-API.md`): `requires` is the system, checked by the scan, `when` the document, checked
+by every refresh of the actions. A failing condition greys the action out with the reason.
+
+```
+ scan(), Rescan, Preferences                   updatePluginActions(): undo, updateEditActions()
++--------------------------------------+      +---------------------------------------------+
+| parse: requires, when, reason        |      | pluginDisabledReason(entry, action, doc)    |
+| interpreter found?                   |entry |  1 the status, the manager switch           |
+| requires: programs, env              |----->|  2 entry.unavailable[action]                |
+| requires.plugins: passes until no    |      |  3 no document, a run, inspection           |
+|   status changes                     |      |  4 PluginConditions::check(when, facts)     |
++--------------------------------------+      +---------------------------------------------+
+  the plugin: disabled + the reason               ^ facts                        | reason
+  an action: unavailable[action]                  |                              v
+                                     +-----------------------------+   menu, toolbar: enabled,
+                                     | doc->pluginFacts()          |   tooltip; plugin manager;
+                                     |  live: file, saved,         |   --list-plugins;
+                                     |        selection            |   --run-plugin: exit 6
+                                     |  cached: machines, initial, |
+                                     |        fa, findings, meta   |
+                                     +-----------------------------+
+                                       dropped on indexChanged, modelReset
+```
+
+* A plugin `requires` disables the plugin, as a missing interpreter does; an action
+  `requires` fills `PluginEntry::unavailable`. The plugin dependencies come last, in passes
+  until no status changes, so a chain of plugins is disabled in turn.
+* `updatePluginActions()` runs on every move of the undo group (an edit, an undo, a redo)
+  and from `updateEditActions()` (a save, a selection change, a tab switch). The content
+  facts are kept by the document until its undo stack moves or its model is reset;
+  `fa-valid` costs one EXT-FA check per change of an automaton.
+* `meta:` sees the document as the action's `meta` fill leaves it (`EDIT-PLUG-34`).
+* An unknown token or key keeps the action (the plugin) off and is a warning; `reason`
+  replaces only the reason of a known `when` token.
+* `--list-plugins` prints `unavailable: <action>: <reason>`; `--run-plugin` of an
+  unavailable action fails with the reason.
 
 ## The run
 
@@ -290,6 +332,7 @@ output tabs, the session log or the settings.
   plugin_registry.cpp           plugin_runner.cpp             cyberiadasm_model.cpp
   plugin_descriptor.cpp         no widgets: QtCore and
   plugin_values.cpp             libcyberiadamlpp
+  plugin_conditions.cpp
 ```
 
 The batch mode creates the window too, so `runPlugin()` is the one place that applies a
@@ -637,3 +680,14 @@ Deferred: a `network` flag with a first-run notice, a `${sm}` variable
 for documents with several state machines, plugin shortcuts, element context-menu actions,
 the toolbar positions (`saveState`), stdout as the output document, a JSON Schema of the
 descriptor; the level 2 items under Later.
+
+## Decisions of 0.7
+
+* The conditions are declared, not probed: the editor checks `requires` and `when` itself,
+  so a check starts no process and works the same in batch mode.
+* `requires` acts at the scan, on the plugin or on an action; `when` acts per document.
+* A required plugin counts when the scan enables it; the manager switch does not count.
+* `api` stays 1: an editor before the conditions ignores the fields and shows the action.
+
+Deferred: a probe command that reports the unavailable actions, an action available after
+another one succeeded (`after`).

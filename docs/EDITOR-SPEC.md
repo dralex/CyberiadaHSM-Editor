@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.44 (2026-11-03)
+**Document version:** 0.45 (2026-11-09)
 
 **Related authorities:**
 
@@ -696,7 +696,8 @@ The window holds several documents; the structure is drawn in `docs/WINDOW.md`.
 
 The plugins are external programs run on the active document: the architecture is
 `docs/PLUGINS.md`, the contract a plugin follows is `docs/PLUGIN-API.md` (`api` 1, the
-session protocol 1). `EDIT-PLUG-36..49` are the sessions (plugin level 2).
+session protocol 1). `EDIT-PLUG-36..49` are the sessions (plugin level 2), `EDIT-PLUG-50..54`
+the conditions of an action.
 
 - `EDIT-PLUG-1` MUST [A]: the plugins are looked up in `--plugin-path` (which replaces the
   rest), `$CYBERIADA_PRO_PLUGIN_PATH`, the user folder (moved by `$CYBERIADA_PRO_DATA_HOME`,
@@ -709,8 +710,8 @@ session protocol 1). `EDIT-PLUG-36..49` are the sessions (plugin level 2).
 - `EDIT-PLUG-3` SHOULD [A]: an unknown descriptor field is ignored and listed as a warning.
   *design*
 - `EDIT-PLUG-4` MUST [A]: a plugin whose interpreter is not found (the Preferences, then `PATH`)
-  is listed as disabled with the reason; its actions are disabled, the reason in the tooltip.
-  *design*
+  is listed as disabled with the reason; its actions are disabled, the reason in the tooltip;
+  so is a plugin whose `requires` does not hold (`EDIT-PLUG-50`). *design*
 - `EDIT-PLUG-5` MUST [A]: the Plugins menu stands before Help: a submenu per plugin, ending with
   Settings... when the plugin has stored parameters, or a single entry for a plugin with one
   action and none; Output panel and Plugin manager... close the menu. *design*
@@ -862,6 +863,30 @@ session protocol 1). `EDIT-PLUG-36..49` are the sessions (plugin level 2).
 - `EDIT-PLUG-49` MUST [A]: a `log` message goes to the output tab, `warning` and `error` in the
   stderr colour; a `diagnostics` message replaces the session's findings in Diagnostics
   (`EDIT-PLUG-15`). *design*
+- `EDIT-PLUG-50` MUST [A]: a `requires` of the descriptor or of an action holds when every
+  `programs` entry is found on `PATH` (a path with `${plugin_dir}`: an executable file) and
+  every `env` variable is set and not empty in the editor environment or the descriptor
+  `env`; the descriptor `requires` not holding disables the plugin (`EDIT-PLUG-4`), an action
+  `requires` that action alone; both are checked at every scan. *design*
+- `EDIT-PLUG-51` MUST [A]: a `requires.plugins` entry `<id>` or `<id>>=<version>` holds when
+  the plugin of the id is listed as enabled — found, neither shadowed, rejected nor disabled —
+  with at least the version given; its manager switch does not count; a plugin disabled this
+  way disables the plugins requiring it in turn. *design*
+- `EDIT-PLUG-52` MUST [A]: an action with `when` is enabled only while every token holds on the
+  current document — `file`, `saved`, `selection`, `sm`, `initial`, `fa`, `fa-valid`,
+  `meta:<key>`, `meta:<key>=<value>` as `PLUGIN-API.md` defines them, `!` negating a token; an
+  absent key the action's `meta` fills (`EDIT-PLUG-34`) counts as holding the action's value;
+  the tokens are checked again after every edit, undo, redo, save and selection change.
+  *design*
+- `EDIT-PLUG-53` MUST [A]: an unknown `when` token or `requires` key disables the action (the
+  plugin, for the descriptor `requires`) with the reason that it needs a newer editor and is
+  listed as a warning (`EDIT-PLUG-3`); a `when`, `requires` or `reason` of a wrong type rejects
+  the descriptor (`EDIT-PLUG-2`). *design*
+- `EDIT-PLUG-54` MUST [A]: the tooltip of a disabled action gives the reason — the action's
+  `reason` for a failing `when` token when it has one, else the first condition failing; the
+  plugin manager lists the actions disabled by their `requires` with the reasons and
+  `--list-plugins` prints them as `unavailable` lines; `--run-plugin` of a disabled action
+  fails with the reason (`EDIT-PLUG-27`). *design*
 
 ### 4.13 Interface language and preferences — UI
 

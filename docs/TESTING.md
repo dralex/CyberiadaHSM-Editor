@@ -120,7 +120,7 @@ it checks in a comment):
 | DOC    | `tabs-*` (the document verbs with the `== tabs` dump, `EDIT-DOC-2/3/5/9`), `l4-tabs` (the tab line, the re-targeting, the prompts, `EDIT-DOC-1..8,10`) |
 | INSPECT| `inspect-reject-*` (editing refused under `--inspect`, `EDIT-INSPECT-1`); `inspect-render-*` (stored-geometry render vs a good image, `EDIT-INSPECT-2`) |
 | UI     | `l4-translation` (`EDIT-UI-1/3`: the bundled languages, the Preferences selector, the Russian menus, Qt's buttons, the property labels, the default names, the property lookup), `ui-batch-english` (`EDIT-UI-2`), `l4-window test_pane_toggles/test_pane_persist/test_dock_titles_bold` (`EDIT-UI-6`: the tree and properties docks, their View entries, the close button, the stored choice, the bold dock titles), `l4-plugin-core test_config_data_home` (`EDIT-UI-7`: the ini file under `CYBERIADA_PRO_CONFIG_HOME`, the user plugin folder under `CYBERIADA_PRO_DATA_HOME`) |
-| PLUG   | the `plugin-*` cases: discovery and rejection (`EDIT-PLUG-1..4`), variables and secrets (`EDIT-PLUG-8..11`), the results and failures (`EDIT-PLUG-12..20`), save and cwd (`EDIT-PLUG-25`), the batch contract (`EDIT-PLUG-27/28`); `l4-plugin-core`; `l4-plugins` for the window (`EDIT-PLUG-5..7`, `EDIT-PLUG-15`, `EDIT-PLUG-17`, `EDIT-PLUG-21..24`, `EDIT-PLUG-29..32`, `EDIT-PLUG-35`); the sessions: `list-session`, `session-*` (`EDIT-PLUG-36..38`, `EDIT-PLUG-47/48`), `l4-plugin-core` (the session block, the channel), `l4-plugins` (`EDIT-PLUG-39..46`, `EDIT-PLUG-49`) |
+| PLUG   | the `plugin-*` cases: discovery and rejection (`EDIT-PLUG-1..4`), variables and secrets (`EDIT-PLUG-8..11`), the results and failures (`EDIT-PLUG-12..20`), save and cwd (`EDIT-PLUG-25`), the batch contract (`EDIT-PLUG-27/28`); `l4-plugin-core`; `l4-plugins` for the window (`EDIT-PLUG-5..7`, `EDIT-PLUG-15`, `EDIT-PLUG-17`, `EDIT-PLUG-21..24`, `EDIT-PLUG-29..32`, `EDIT-PLUG-35`); the sessions: `list-session`, `session-*` (`EDIT-PLUG-36..38`, `EDIT-PLUG-47/48`), `l4-plugin-core` (the session block, the channel), `l4-plugins` (`EDIT-PLUG-39..46`, `EDIT-PLUG-49`); the conditions: `list-conditions*`, `conditions-*` (`EDIT-PLUG-50..54`), `l4-plugin-core` (their parsing, the tokens, the programs and the variables, the document facts), `l4-plugins test_conditions` (the menu and the plugin manager follow the document) |
 
 Requirements with **no dedicated case yet** — the gaps to fill: `SEM-1` (one initial per
 level — only the polygon pseudostate drill and the standing law cover it), `TOOL-7` (pan/zoom
@@ -153,8 +153,8 @@ keep their empty names.
 `l4-plugin-core` checks the plugin core without a window: the descriptor
 parsing and its rejections, the search path and the shadowing, the interpreter
 lookup, the variable expansion with the conditional elements, the values and their
-settings keys, the diagnostics file, and the runner's cancel, run directory and output
-decoding; the selection order is checked on a bare scene, as the window keeps one selected
+settings keys, the diagnostics file, the runner's cancel, run directory and output
+decoding, and the conditions over the facts of a document; the selection order is checked on a bare scene, as the window keeps one selected
 element. `l4-plugins` drives the window: the Plugins menu, the plugin
 toolbars, the generated dialog, the document lock, the plugin dock with its output tab
 per plugin and the plugin manager; it saves pictures of the window, the parameter
@@ -484,7 +484,7 @@ info CGML-6.4-4-2 G9 (absent) line 28: state machine 'G9' contains no initial ps
   the `line` when given, and the message.
 
 The plugin layer (`plugin-<case>`) runs the example plugins of
-`tests/plugins/<set>/<id>/` (the sets `main`, `rejected`, `shadow`, `session`; the data in
+`tests/plugins/<set>/<id>/` (the sets `main`, `rejected`, `shadow`, `session`, `conditions`; the data in
 `tests/plugins/data/`). They drive one small test helper (`tests/plugin-helper/`,
 plain C++ with no dependencies) whose arguments are a list of operations, so the
 cases need no interpreter. Its `session <file>` operation is a session plugin answering
