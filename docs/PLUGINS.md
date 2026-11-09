@@ -690,4 +690,6 @@ descriptor; the level 2 items under Later.
 * `api` stays 1: an editor before the conditions ignores the fields and shows the action.
 
 Deferred: a probe command that reports the unavailable actions, an action available after
-another one succeeded (`after`).
+another one succeeded (`after`), a `param:<id>` token holding when the stored value of a
+parameter (a `secret` through its `env:` or `file:` reference) is not empty — the model key
+of hsm-maker and cybersphere-agents.
