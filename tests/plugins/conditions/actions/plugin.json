@@ -1,0 +1,218 @@
+{
+  "api": 1,
+  "id": "actions",
+  "name": "Conditions",
+  "version": "1.2.0",
+  "actions": [
+    {
+      "id": "sm",
+      "label": "Machines",
+      "result": "log",
+      "when": [
+        "sm"
+      ],
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "print",
+        "sm"
+      ]
+    },
+    {
+      "id": "initial",
+      "label": "Initial",
+      "result": "log",
+      "when": [
+        "initial"
+      ],
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "print",
+        "initial"
+      ]
+    },
+    {
+      "id": "fa",
+      "label": "Automaton",
+      "result": "log",
+      "when": [
+        "fa"
+      ],
+      "reason": "Open a finite automaton",
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "print",
+        "fa"
+      ]
+    },
+    {
+      "id": "fa-valid",
+      "label": "Valid automaton",
+      "result": "log",
+      "when": [
+        "fa-valid"
+      ],
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "print",
+        "fa-valid"
+      ]
+    },
+    {
+      "id": "not-fa",
+      "label": "Not an automaton",
+      "result": "log",
+      "when": [
+        "!fa"
+      ],
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "print",
+        "not-fa"
+      ]
+    },
+    {
+      "id": "saved",
+      "label": "Saved",
+      "result": "log",
+      "when": [
+        "saved"
+      ],
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "print",
+        "saved"
+      ]
+    },
+    {
+      "id": "selection",
+      "label": "Selection",
+      "result": "log",
+      "when": [
+        "selection"
+      ],
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "print",
+        "selection"
+      ]
+    },
+    {
+      "id": "python",
+      "label": "Python",
+      "result": "log",
+      "when": [
+        "meta:platformLanguage=Python"
+      ],
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "print",
+        "python"
+      ]
+    },
+    {
+      "id": "python-fill",
+      "label": "Python, filled",
+      "result": "log",
+      "when": [
+        "meta:platformLanguage=python3"
+      ],
+      "meta": {
+        "platformLanguage": "Python"
+      },
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "print",
+        "python-fill"
+      ]
+    },
+    {
+      "id": "future",
+      "label": "Future",
+      "result": "log",
+      "when": [
+        "sm",
+        "future-token"
+      ],
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "print",
+        "future"
+      ]
+    },
+    {
+      "id": "helper",
+      "label": "Helper",
+      "result": "log",
+      "requires": {
+        "programs": [
+          "${plugin_dir}/../../bin/plugin-helper"
+        ]
+      },
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "print",
+        "helper"
+      ]
+    },
+    {
+      "id": "tool",
+      "label": "Tool",
+      "result": "log",
+      "requires": {
+        "programs": [
+          "no-such-tool"
+        ]
+      },
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "print",
+        "tool"
+      ]
+    },
+    {
+      "id": "variable",
+      "label": "Variable",
+      "result": "log",
+      "requires": {
+        "env": [
+          "CYBERIADA_TEST_TOKEN"
+        ]
+      },
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "print",
+        "variable"
+      ]
+    },
+    {
+      "id": "newer",
+      "label": "Newer",
+      "result": "log",
+      "requires": {
+        "licence": [
+          "key"
+        ]
+      },
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "print",
+        "newer"
+      ]
+    },
+    {
+      "id": "too-old",
+      "label": "Too old",
+      "result": "log",
+      "requires": {
+        "plugins": [
+          "actions>=9"
+        ]
+      },
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "print",
+        "too-old"
+      ]
+    }
+  ]
+}

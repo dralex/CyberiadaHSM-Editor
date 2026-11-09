@@ -101,6 +101,16 @@ void PluginManagerDialog::fill()
             item->setCheckState(columnName, SettingsManager::instance().getPluginEnabled(e.descriptor.id) ?
                                 Qt::Checked : Qt::Unchecked);
         }
+        // the actions off by their requires (EDIT-PLUG-54)
+        for (const PluginAction& a: e.descriptor.actions) {
+            if (!e.unavailable.contains(a.id)) continue;
+            QTreeWidgetItem* row = new QTreeWidgetItem(item);
+            QString reason = tr("unavailable: %1").arg(e.unavailable.value(a.id));
+            row->setText(columnName, a.label);
+            row->setText(columnState, reason);
+            row->setToolTip(columnState, reason);
+        }
+        item->setExpanded(true);
     }
     for (int c = 0; c < columnsCount - 1; c++) tree->resizeColumnToContents(c);
 }

@@ -37,7 +37,7 @@ namespace {
 
 const QStringList descriptorFields = {
     "api", "id", "name", "version", "description", "icon", "interpreter", "env",
-    "parameters", "actions", "session"
+    "requires", "parameters", "actions", "session"
 };
 const QStringList parameterFields = {
     "id", "type", "label", "description", "default", "scope", "required", "language",
@@ -45,15 +45,18 @@ const QStringList parameterFields = {
 };
 const QStringList actionFields = {
     "id", "label", "description", "icon", "result", "argv", "exit_ok", "timeout",
-    "parameters", "outdir", "load", "save", "cwd", "toolbar", "meta"
+    "parameters", "outdir", "load", "save", "cwd", "toolbar", "meta", "requires", "when",
+    "reason"
 };
 const QStringList loadFields = { "strict", "reconstruct" };
 const QStringList sessionFields = { "version", "actions" };
 // a session action has no timeout and loads no document (docs/PLUGIN-API.md, Sessions)
 const QStringList sessionActionFields = {
     "id", "label", "description", "icon", "result", "argv", "exit_ok",
-    "parameters", "outdir", "save", "cwd", "toolbar", "meta", "replaces"
+    "parameters", "outdir", "save", "cwd", "toolbar", "meta", "replaces", "requires", "when",
+    "reason"
 };
+const QStringList requirementFields = { "programs", "env", "plugins" };
 
 const char* const typeNames[] = {
     "string", "text", "int", "double", "bool", "enum", "file", "dir", "secret"
@@ -103,6 +106,22 @@ bool readBool(const QJsonObject& object, const QString& key, const QString& wher
     return true;
 }
 
+// an optional list of non-empty strings
+bool readStrings(const QJsonObject& object, const QString& key, const QString& where,
+                 QStringList* out, QString* error)
+{
+    if (!object.contains(key)) return true;
+    QJsonValue v = object.value(key);
+    if (!v.isArray()) return fail(error, QString("the field '%1%2' is not a list").arg(where, key));
+    for (const QJsonValue& item: v.toArray()) {
+        if (!item.isString() || item.toString().isEmpty()) {
+            return fail(error, QString("the field '%1%2' holds a value that is not a string").arg(where, key));
+        }
+        out->append(item.toString());
+    }
+    return true;
+}
+
 bool isInteger(const QJsonValue& v)
 {
     if (!v.isDouble()) return false;
@@ -144,6 +163,36 @@ bool validVariableName(const QString& name)
 {
     static const QRegularExpression re("^[A-Za-z_][A-Za-z0-9_]*$");
     return re.match(name).hasMatch();
+}
+
+// requires of the descriptor or an action; an unknown key is kept, so the plugin or the
+// action stays off (EDIT-PLUG-53)
+bool parseRequirements(const QJsonValue& value, const QString& where, PluginRequirements* r,
+                       QStringList* warnings, QString* error)
+{
+    if (!value.isObject()) return fail(error, QString("the field '%1requires' is not an object").arg(where));
+    QJsonObject o = value.toObject();
+    for (const QString& key: o.keys()) {
+        if (requirementFields.contains(key)) continue;
+        warnings->append(QString("unknown field '%1requires/%2'").arg(where, key));
+        r->unknown.append(key);
+    }
+    const QString inner = where + "requires.";
+    if (!readStrings(o, "programs", inner, &r->programs, error)) return false;
+    if (!readStrings(o, "env", inner, &r->env, error)) return false;
+    if (!readStrings(o, "plugins", inner, &r->plugins, error)) return false;
+    for (const QString& name: r->env) {
+        if (!validVariableName(name)) {
+            return fail(error, QString("the required variable '%1' is not a name").arg(name));
+        }
+    }
+    for (const QString& plugin: r->plugins) {
+        if (!PluginConditions::parsePluginReference(plugin, nullptr, nullptr)) {
+            return fail(error, QString("the required plugin '%1' is neither <id> nor <id>>=<version>")
+                        .arg(plugin));
+        }
+    }
+    return true;
 }
 
 bool parseParameter(const QJsonValue& value, int index, PluginParameter* p,
@@ -389,6 +438,17 @@ bool parseAction(const QJsonValue& value, int index, bool session, PluginAction*
             a->replaces.append(id.toString());
         }
     }
+    if (o.contains("requires") &&
+        !parseRequirements(o.value("requires"), where, &a->requirements, warnings, error)) {
+        return false;
+    }
+    if (!readStrings(o, "when", where, &a->when, error)) return false;
+    for (const QString& token: a->when) {
+        if (!PluginConditions::knownToken(token)) {
+            warnings->append(QString("unknown condition '%1when/%2'").arg(where, token));
+        }
+    }
+    if (!readString(o, "reason", where, &a->reason, error)) return false;
     return true;
 }
 
@@ -568,6 +628,7 @@ void PluginDescriptor::translate(const QString& language)
     for (PluginAction& a: actions) {
         translated(&a.label);
         translated(&a.description);
+        translated(&a.reason);
     }
     for (PluginParameter& p: parameters) {
         translated(&p.label);
@@ -615,6 +676,10 @@ bool PluginDescriptor::parse(const QByteArray& json, const QString& dir,
             }
             d.env.append(qMakePair(key, env.value(key).toString()));
         }
+    }
+    if (root.contains("requires") &&
+        !parseRequirements(root.value("requires"), QString(), &d.requirements, &d.warnings, error)) {
+        return false;
     }
 
     if (root.contains("parameters")) {

@@ -27,6 +27,7 @@
 #include <QFileInfo>
 #include <QSet>
 #include <QStandardPaths>
+#include <QVersionNumber>
 
 #include "plugin_registry.h"
 #include "interface_language.h"
@@ -203,13 +204,59 @@ void PluginRegistry::scan()
                         entry.status = PluginEntry::statusDisabled;
                         entry.reason = PluginRegistry::tr("the interpreter '%1' is not found")
                             .arg(interpreter);
+                    } else {
+                        entry.reason = PluginConditions::checkSystem(entry.descriptor.requirements,
+                                                                     pluginDir, entry.descriptor.env);
+                        if (!entry.reason.isEmpty()) entry.status = PluginEntry::statusDisabled;
                     }
                 }
             }
             list.append(entry);
         }
     }
+    checkRequirements();
     emit scanned();
+}
+
+QString PluginRegistry::pluginsReason(const QStringList& plugins) const
+{
+    for (const QString& reference: plugins) {
+        QString id, version;
+        PluginConditions::parsePluginReference(reference, &id, &version);
+        const PluginEntry* required = find(id);
+        if (!required) return tr("the plugin '%1' is not installed").arg(id);
+        if (required->status != PluginEntry::statusEnabled) return tr("the plugin '%1' is unavailable").arg(id);
+        if (!version.isEmpty() && QVersionNumber::fromString(required->descriptor.version) <
+            QVersionNumber::fromString(version)) {
+            return tr("the plugin '%1' is older than %2").arg(id, version);
+        }
+    }
+    return QString();
+}
+
+void PluginRegistry::checkRequirements()
+{
+    // a disabled plugin disables the plugins requiring it in turn
+    bool changed = true;
+    while (changed) {
+        changed = false;
+        for (PluginEntry& e: list) {
+            if (e.status != PluginEntry::statusEnabled) continue;
+            QString reason = pluginsReason(e.descriptor.requirements.plugins);
+            if (reason.isEmpty()) continue;
+            e.status = PluginEntry::statusDisabled;
+            e.reason = reason;
+            changed = true;
+        }
+    }
+    for (PluginEntry& e: list) {
+        if (!e.usable()) continue;
+        for (const PluginAction& a: e.descriptor.actions) {
+            QString reason = PluginConditions::checkSystem(a.requirements, e.folder, e.descriptor.env);
+            if (reason.isEmpty()) reason = pluginsReason(a.requirements.plugins);
+            if (!reason.isEmpty()) e.unavailable.insert(a.id, reason);
+        }
+    }
 }
 
 const PluginEntry* PluginRegistry::find(const QString& id) const

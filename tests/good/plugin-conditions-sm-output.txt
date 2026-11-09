@@ -1,0 +1,9 @@
+== plugin
+action: actions:sm
+result: log
+state: done
+exit: 0
+stdout:
+  sm
+== diagnostics
+count: 0

@@ -95,6 +95,7 @@ private slots:
     void test_session_questions();
     void test_session_teardown();
     void test_session_grab();
+    void test_conditions();
 };
 
 static QString documentDump(CyberiadaSMModel* model)
@@ -762,6 +763,92 @@ void TestPlugins::test_output_menu()
     });
     clear->trigger();
     QVERIFY(dock->output("echo")->toPlainText().isEmpty());
+}
+
+// the when tokens follow the document: an edit greys out a saved action, an undo
+// back to the saved state brings it back, a later edit refreshes the content tokens;
+// the plugin manager lists the actions off by their requires (EDIT-PLUG-50..54)
+void TestPlugins::test_conditions()
+{
+    // the conditions set for this case only
+    struct Restore {
+        ~Restore() {
+            PluginRegistry::instance().setSearchPath(QStringList() << PLUGIN_TEST_DIR "/main");
+            PluginRegistry::instance().scan();
+        }
+    } restore;
+    qunsetenv("CYBERIADA_TEST_TOKEN");
+    PluginRegistry::instance().setSearchPath(QStringList() << PLUGIN_TEST_DIR "/conditions");
+    PluginRegistry::instance().scan();
+    QTemporaryDir dir;
+    QString path = dir.filePath("hierarchy.graphml");
+    QVERIFY(QFile::copy("diagrams/hierarchy.graphml", path));
+    CyberiadaSMEditorWindow win;
+    QVERIFY(win.openDocument(path));
+    PluginsMenu* pm = win.pluginsMenu();
+    QAction* saved = pm->action("actions", "saved");
+    QAction* fa = pm->action("actions", "fa");
+    QAction* selection = pm->action("actions", "selection");
+    QAction* tool = pm->action("actions", "tool");
+    QVERIFY(saved && fa && selection && tool);
+    QVERIFY(saved->isEnabled());
+    // the state machine selected on open is in ${selection}
+    QVERIFY(selection->isEnabled());
+    QVERIFY(pm->action("actions", "sm")->isEnabled());
+    QVERIFY(pm->action("actions", "python-fill")->isEnabled());
+    QVERIFY(!pm->action("actions", "python")->isEnabled());
+    QVERIFY(!pm->action("actions", "future")->isEnabled());
+    QCOMPARE(pm->action("actions", "future")->toolTip(), QString("the condition 'future-token' needs a newer editor"));
+    QVERIFY(!fa->isEnabled());
+    QCOMPARE(fa->toolTip(), QString("Open a finite automaton"));
+    QVERIFY(!tool->isEnabled());
+    QCOMPARE(tool->toolTip(), QString("the program 'no-such-tool' is not found"));
+    QVERIFY(pm->action("actions", "helper")->isEnabled());
+    QVERIFY(!pm->action("chain", "run")->isEnabled());
+    QCOMPARE(pm->action("chain", "run")->toolTip(), QString("the plugin 'needs-disabled' is unavailable"));
+
+    QModelIndex n = win.getModel()->elementToIndex(win.getModel()->idToElement("n1"));
+    QVERIFY(win.getModel()->setData(n, "Changed"));
+    QVERIFY(!saved->isEnabled());
+    QCOMPARE(saved->toolTip(), QString("the document is not saved"));
+    QVERIFY(!win.runPlugin("actions", "saved", PluginValues()));
+    win.getModel()->undoStack()->undo();
+    QVERIFY(saved->isEnabled());
+
+    // a second edit of a modified document refreshes the content tokens; the undo
+    // rebuilt the indexes
+    n = win.getModel()->elementToIndex(win.getModel()->idToElement("n1"));
+    QVERIFY(win.getModel()->setData(n, "Changed"));
+    QAction* python = pm->action("actions", "python");
+    QVERIFY(!python->isEnabled());
+    QVERIFY(win.getModel()->setPlatformLanguage("Python"));
+    QVERIFY(python->isEnabled());
+    QVERIFY(pm->action("actions", "not-fa")->isEnabled());
+
+    win.getScene()->clearSelection();
+    QVERIFY(!selection->isEnabled());
+    QCOMPARE(selection->toolTip(), QString("nothing is selected"));
+    QGraphicsItem* item = win.getScene()->getMap().value("n1");
+    QVERIFY(item);
+    item->setSelected(true);
+    QVERIFY(selection->isEnabled());
+
+    PluginManagerDialog manager(&win);
+    QTreeWidgetItem* actions = nullptr;
+    for (int i = 0; i < manager.list()->topLevelItemCount(); i++) {
+        QTreeWidgetItem* item = manager.list()->topLevelItem(i);
+        if (item->data(0, Qt::UserRole).toString() == "actions") actions = item;
+    }
+    QVERIFY(actions);
+    QStringList rows;
+    for (int i = 0; i < actions->childCount(); i++) {
+        rows << actions->child(i)->text(0) + " " + actions->child(i)->text(2);
+    }
+    QCOMPARE(rows, QStringList()
+             << "Tool unavailable: the program 'no-such-tool' is not found"
+             << "Variable unavailable: the environment variable 'CYBERIADA_TEST_TOKEN' is not set"
+             << "Newer unavailable: the requirement 'licence' needs a newer editor"
+             << "Too old unavailable: the plugin 'actions' is older than 9");
 }
 
 QTEST_MAIN(TestPlugins)

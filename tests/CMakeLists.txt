@@ -882,6 +882,25 @@ add_plugin_test(session-bad-model INPUT diagrams/lift.graphml PLUGIN badmodel:ru
 add_plugin_test(session-expect INPUT diagrams/lift.graphml PLUGIN stepper:step PATHS session
   SESSION scripts/session-fail.session DUMP_SESSION EXPECTED 6)
 
+# the conditions (EDIT-PLUG-50..54): requires at the scan, when on the document
+add_plugin_test(list-conditions LIST PATHS conditions ENV "CYBERIADA_TEST_TOKEN=")
+add_plugin_test(list-conditions-env LIST PATHS conditions ENV "CYBERIADA_TEST_TOKEN=1")
+add_plugin_test(conditions-sm INPUT diagrams/hierarchy.graphml PLUGIN actions:sm PATHS conditions DUMP_PLUGIN)
+add_plugin_test(conditions-reason INPUT diagrams/hierarchy.graphml PLUGIN actions:fa PATHS conditions
+  DUMP_PLUGIN EXPECTED 6)
+add_plugin_test(conditions-fa-valid INPUT diagrams/fa-turnstile.graphml PLUGIN actions:fa-valid
+  PATHS conditions DUMP_PLUGIN)
+add_plugin_test(conditions-fa-invalid INPUT diagrams/fa-empty-event.graphml PLUGIN actions:fa-valid
+  PATHS conditions DUMP_PLUGIN EXPECTED 6)
+add_plugin_test(conditions-unsaved INPUT diagrams/hierarchy.graphml SCRIPT scripts/plugin-rename.script
+  PLUGIN actions:saved PATHS conditions DUMP_PLUGIN EXPECTED 6)
+add_plugin_test(conditions-meta-fill INPUT diagrams/hierarchy.graphml PLUGIN actions:python-fill
+  PATHS conditions DUMP_PLUGIN)
+add_plugin_test(conditions-tool INPUT diagrams/hierarchy.graphml PLUGIN actions:tool PATHS conditions
+  DUMP_PLUGIN EXPECTED 6)
+add_plugin_test(conditions-chain INPUT diagrams/hierarchy.graphml PLUGIN chain PATHS conditions
+  DUMP_PLUGIN EXPECTED 6)
+
 # the plugin core in process: the descriptors, the values and the runner over the helper
 add_l4_test(plugin-core)
 target_compile_definitions(l4-plugin-core PRIVATE

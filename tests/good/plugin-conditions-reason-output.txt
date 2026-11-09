@@ -1,0 +1,8 @@
+== plugin
+action: actions:fa
+result: log
+state: failed
+exit: -
+error: Open a finite automaton
+== diagnostics
+count: 0

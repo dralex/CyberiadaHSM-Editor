@@ -31,6 +31,7 @@
 #include <QStringList>
 
 #include "cyberiada_constants.h"
+#include "plugin_conditions.h"
 
 struct PluginParameter {
     enum Type {
@@ -119,6 +120,11 @@ struct PluginAction {
     QStringList replaces;
     // a one-shot action a session action replaces: not in the menu or the toolbar
     bool hidden = false;
+    // the conditions of the action (EDIT-PLUG-50..54); reason replaces the reason of a
+    // failing when token
+    PluginRequirements requirements;
+    QStringList when;
+    QString reason;
 
     bool changesDocument() const { return result == resultReplace; }
     // save and cwd: document need the document file to be current
@@ -136,6 +142,8 @@ struct PluginDescriptor {
     // the plugin directory, absolute
     QString dir;
     QList<QPair<QString, QString> > env;
+    // the system the whole plugin needs (EDIT-PLUG-50/51)
+    PluginRequirements requirements;
     QList<PluginParameter> parameters;
     // the one-shot actions, then the session actions
     QList<PluginAction> actions;

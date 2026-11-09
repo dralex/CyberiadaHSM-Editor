@@ -41,7 +41,7 @@
 <context>
     <name>CyberiadaSMEditorDocument</name>
     <message>
-        <location filename="../cyberiadasm_editor_document.cpp" line="+114"/>
+        <location filename="../cyberiadasm_editor_document.cpp" line="+116"/>
         <source>untitled</source>
         <translation>без имени</translation>
     </message>
@@ -49,22 +49,22 @@
 <context>
     <name>CyberiadaSMEditorScene</name>
     <message>
-        <location filename="../cyberiadasm_editor_scene.cpp" line="+1144"/>
+        <location filename="../cyberiadasm_editor_scene.cpp" line="+1165"/>
         <location line="+35"/>
-        <location line="+161"/>
+        <location line="+152"/>
         <location line="+35"/>
         <source>New State Machine</source>
         <translation>Новая машина состояний</translation>
     </message>
     <message>
-        <location line="-221"/>
+        <location line="-212"/>
         <source>Create new state machine</source>
         <translation>Создание машины состояний</translation>
     </message>
     <message>
         <location line="+1"/>
         <location line="+116"/>
-        <location line="+164"/>
+        <location line="+155"/>
         <location line="+240"/>
         <source>Parameters error:
 </source>
@@ -72,27 +72,27 @@
 </translation>
     </message>
     <message>
-        <location line="-451"/>
-        <location line="+169"/>
+        <location line="-442"/>
+        <location line="+160"/>
         <source>New state</source>
         <translation>Новое состояние</translation>
     </message>
     <message>
-        <location line="-135"/>
-        <location line="+143"/>
+        <location line="-126"/>
+        <location line="+134"/>
         <location line="+216"/>
         <source>New comment</source>
         <translation>Новый комментарий</translation>
     </message>
     <message>
-        <location line="-355"/>
-        <location line="+142"/>
+        <location line="-346"/>
+        <location line="+133"/>
         <source>New formal comment</source>
         <translation>Новый формальный комментарий</translation>
     </message>
     <message>
-        <location line="-134"/>
-        <location line="+164"/>
+        <location line="-125"/>
+        <location line="+155"/>
         <source>Create new element</source>
         <translation>Создание элемента</translation>
     </message>
@@ -110,7 +110,7 @@
 <context>
     <name>CyberiadaSMEditorStateItem</name>
     <message>
-        <location filename="../cyberiadasm_editor_state_item.cpp" line="+725"/>
+        <location filename="../cyberiadasm_editor_state_item.cpp" line="+784"/>
         <source>Delete</source>
         <translation>Удалить</translation>
     </message>
@@ -169,7 +169,7 @@
 <context>
     <name>CyberiadaSMEditorWindow</name>
     <message>
-        <location filename="../smeditor_window.cpp" line="+118"/>
+        <location filename="../smeditor_window.cpp" line="+132"/>
         <source>Output panel</source>
         <translation>Панель вывода</translation>
     </message>
@@ -179,7 +179,7 @@
         <translation>Менеджер плагинов...</translation>
     </message>
     <message>
-        <location line="+113"/>
+        <location line="+115"/>
         <source>Close</source>
         <translation>Закрыть</translation>
     </message>
@@ -331,7 +331,7 @@
         <translation>плагин выключен</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+4"/>
         <source>there is no document</source>
         <translation>нет документа</translation>
     </message>
@@ -346,12 +346,12 @@
         <translation>в режиме инспектора документ доступен только для чтения</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+17"/>
         <source>the document cannot be encoded</source>
         <translation>не удалось сериализовать документ</translation>
     </message>
     <message>
-        <location line="+83"/>
+        <location line="+71"/>
         <location line="+9"/>
         <source>the document is not saved</source>
         <translation>документ не сохранен</translation>
@@ -468,7 +468,7 @@
 </translation>
     </message>
     <message>
-        <location line="+74"/>
+        <location line="+76"/>
         <source>edit</source>
         <translation>правка</translation>
     </message>
@@ -478,12 +478,12 @@
         <translation>восстановление геометрии</translation>
     </message>
     <message>
-        <location line="+25"/>
+        <location line="+26"/>
         <source>geometry update</source>
         <translation>обновление геометрии</translation>
     </message>
     <message>
-        <location line="+161"/>
+        <location line="+241"/>
         <source>id</source>
         <translation>идентификатор</translation>
     </message>
@@ -510,9 +510,11 @@
         <translation>действие</translation>
     </message>
     <message>
-        <location line="+31"/>
+        <location line="-482"/>
+        <location line="+22"/>
+        <location line="+491"/>
         <location line="+19"/>
-        <location line="+105"/>
+        <location line="+114"/>
         <location line="+14"/>
         <location line="+21"/>
         <source>geometry</source>
@@ -530,18 +532,18 @@
         <translation>удаление границы</translation>
     </message>
     <message>
-        <location line="+233"/>
+        <location line="+241"/>
         <source>center</source>
         <translation>центрирование</translation>
     </message>
     <message>
         <location line="+43"/>
-        <location line="+1630"/>
+        <location line="+1636"/>
         <source>reparent</source>
         <translation>смена родителя</translation>
     </message>
     <message>
-        <location line="-1575"/>
+        <location line="-1581"/>
         <source>comment</source>
         <translation>комментарий</translation>
     </message>
@@ -626,7 +628,7 @@
         <translation>удаление</translation>
     </message>
     <message>
-        <location line="+733"/>
+        <location line="+739"/>
         <source>paste</source>
         <translation>вставка</translation>
     </message>
@@ -1143,7 +1145,7 @@
 <context>
     <name>EditableTextItem</name>
     <message>
-        <location filename="../editable_text_item.cpp" line="+147"/>
+        <location filename="../editable_text_item.cpp" line="+151"/>
         <source>Copy</source>
         <translation>Копировать</translation>
     </message>
@@ -1365,6 +1367,121 @@
     </message>
 </context>
 <context>
+    <name>PluginConditions</name>
+    <message>
+        <location filename="../plugin_conditions.cpp" line="+69"/>
+        <source>the document has no file</source>
+        <translation>у документа нет файла</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>the document has a file</source>
+        <translation>у документа есть файл</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>the document is not saved</source>
+        <translation>документ не сохранен</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>the document is saved</source>
+        <translation>документ сохранен</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>nothing is selected</source>
+        <translation>ничего не выделено</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>an element is selected</source>
+        <translation>выделен элемент</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>the document has no state machine</source>
+        <translation>в документе нет машины состояний</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>the document has a state machine</source>
+        <translation>в документе есть машина состояний</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>a state machine has no initial state</source>
+        <translation>у машины состояний нет начального псевдосостояния</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>every state machine has an initial state</source>
+        <translation>у каждой машины состояний есть начальное псевдосостояние</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <location line="+5"/>
+        <source>the diagram is not a finite automaton</source>
+        <translation>диаграмма не является конечным автоматом</translation>
+    </message>
+    <message>
+        <location line="-4"/>
+        <source>the diagram is a finite automaton</source>
+        <translation>диаграмма является конечным автоматом</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>the automaton breaks EXT-FA: %1</source>
+        <translation>автомат нарушает EXT-FA: %1</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>the automaton is valid</source>
+        <translation>автомат корректен</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <location line="+5"/>
+        <source>the metainformation has no &apos;%1&apos;</source>
+        <translation>в метаинформации нет «%1»</translation>
+    </message>
+    <message>
+        <location line="-4"/>
+        <source>the metainformation has &apos;%1&apos;</source>
+        <translation>в метаинформации есть «%1»</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>&apos;%1&apos; is &apos;%2&apos;, not &apos;%3&apos;</source>
+        <translation>«%1» равно «%2», а не «%3»</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>&apos;%1&apos; is &apos;%2&apos;</source>
+        <translation>«%1» равно «%2»</translation>
+    </message>
+    <message>
+        <location line="+46"/>
+        <source>the condition &apos;%1&apos; needs a newer editor</source>
+        <translation>условие «%1» требует более новой версии редактора</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>the requirement &apos;%1&apos; needs a newer editor</source>
+        <translation>требование «%1» требует более новой версии редактора</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>the program &apos;%1&apos; is not found</source>
+        <translation>программа «%1» не найдена</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>the environment variable &apos;%1&apos; is not set</source>
+        <translation>переменная окружения «%1» не задана</translation>
+    </message>
+</context>
+<context>
     <name>PluginDock</name>
     <message>
         <location filename="../plugin_dock.cpp" line="+66"/>
@@ -1578,6 +1695,11 @@
         <source>Rescan</source>
         <translation>Сканировать заново</translation>
     </message>
+    <message>
+        <location line="+48"/>
+        <source>unavailable: %1</source>
+        <translation>недоступно: %1</translation>
+    </message>
 </context>
 <context>
     <name>PluginParameterDialog</name>
@@ -1590,7 +1712,7 @@
 <context>
     <name>PluginRegistry</name>
     <message>
-        <location filename="../plugin_registry.cpp" line="+52"/>
+        <location filename="../plugin_registry.cpp" line="+53"/>
         <source>enabled</source>
         <comment>plugin status</comment>
         <translation>включен</translation>
@@ -1627,6 +1749,21 @@
         <location line="+9"/>
         <source>the interpreter &apos;%1&apos; is not found</source>
         <translation>интерпретатор «%1» не найден</translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <source>the plugin &apos;%1&apos; is not installed</source>
+        <translation>плагин «%1» не установлен</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>the plugin &apos;%1&apos; is unavailable</source>
+        <translation>плагин «%1» недоступен</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>the plugin &apos;%1&apos; is older than %2</source>
+        <translation>версия плагина «%1» ниже %2</translation>
     </message>
 </context>
 <context>

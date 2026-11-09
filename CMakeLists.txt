@@ -174,6 +174,7 @@ add_library(CyberiadaEditorCore STATIC
   interface_language.h interface_language.cpp
   gesture_log.h gesture_log.cpp
   plugin_descriptor.h plugin_descriptor.cpp
+  plugin_conditions.h plugin_conditions.cpp
   plugin_values.h plugin_values.cpp
   plugin_registry.h plugin_registry.cpp
   plugin_runner.h plugin_runner.cpp

@@ -1,0 +1,8 @@
+== plugin
+action: chain:run
+result: log
+state: failed
+exit: -
+error: the plugin 'needs-disabled' is unavailable
+== diagnostics
+count: 0

@@ -308,6 +308,12 @@ void dumpPlugins(const QList<PluginEntry>& entries, std::ostream& os)
 		for (const QString& w: e.descriptor.warnings) {
 			os << "  warning: " << w.toStdString() << std::endl;
 		}
+		// the actions off by their requires, in the descriptor order (EDIT-PLUG-54)
+		for (const PluginAction& a: e.descriptor.actions) {
+			if (!e.unavailable.contains(a.id)) continue;
+			os << "  unavailable: " << a.id.toStdString() << ": "
+			   << e.unavailable.value(a.id).simplified().toStdString() << std::endl;
+		}
 		// the session actions and the one-shot actions they hide (EDIT-PLUG-36)
 		for (const PluginAction& a: e.descriptor.actions) {
 			if (!a.session) continue;

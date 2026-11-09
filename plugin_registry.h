@@ -56,6 +56,8 @@ struct PluginEntry {
     // when the plugin runs its argv[0]
     QString program;
     QStringList programArguments;
+    // the actions off by their requires, by the action id (EDIT-PLUG-50/51)
+    QMap<QString, QString> unavailable;
 
     // the descriptor id, or the directory name of a rejected descriptor
     QString name() const;
@@ -98,6 +100,10 @@ signals:
 
 private:
     PluginRegistry() {}
+    // why the required plugins are not all enabled, empty when they are (EDIT-PLUG-51)
+    QString pluginsReason(const QStringList& plugins) const;
+    // the plugin requires after the scan, then the action requires
+    void checkRequirements();
     PluginRegistry(const PluginRegistry&) = delete;
     PluginRegistry& operator=(const PluginRegistry&) = delete;
 

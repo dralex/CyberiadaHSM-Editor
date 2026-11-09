@@ -36,6 +36,8 @@ CyberiadaSMEditorDocument::CyberiadaSMEditorDocument(QObject* parent):
     m_view->setScene(m_scene);
     connect(m_model, &QAbstractItemModel::dataChanged, this, &CyberiadaSMEditorDocument::refreshTitle);
     connect(m_model, &QAbstractItemModel::modelReset, this, &CyberiadaSMEditorDocument::refreshTitle);
+    connect(m_model, &QAbstractItemModel::modelReset, this, &CyberiadaSMEditorDocument::dropPluginFacts);
+    connect(m_model->undoStack(), &QUndoStack::indexChanged, this, &CyberiadaSMEditorDocument::dropPluginFacts);
     lastTitle = title();
 }
 
@@ -129,6 +131,19 @@ void CyberiadaSMEditorDocument::announceTitle()
 void CyberiadaSMEditorDocument::refreshTitle()
 {
     if (title() != lastTitle) announceTitle();
+}
+
+PluginDocumentFacts CyberiadaSMEditorDocument::pluginFacts() const
+{
+    if (!m_pluginFactsValid) {
+        PluginConditions::readDocument(m_model->rootDocument(), &m_pluginFacts);
+        m_pluginFactsValid = true;
+    }
+    PluginDocumentFacts facts = m_pluginFacts;
+    facts.file = hasFile();
+    facts.saved = hasFile() && isClean();
+    facts.selection = !m_scene->selectedIds().isEmpty();
+    return facts;
 }
 
 bool CyberiadaSMEditorDocument::isClean() const

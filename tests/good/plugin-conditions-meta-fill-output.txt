@@ -1,0 +1,10 @@
+== plugin
+action: actions:python-fill
+result: log
+meta: set platformLanguage Python
+state: done
+exit: 0
+stdout:
+  python-fill
+== diagnostics
+count: 0

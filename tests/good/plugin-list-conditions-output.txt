@@ -1,0 +1,15 @@
+== plugins
+actions 1.2.0 enabled plugin-path 1
+  warning: unknown condition 'actions/future/when/future-token'
+  warning: unknown field 'actions/newer/requires/licence'
+  unavailable: tool: the program 'no-such-tool' is not found
+  unavailable: variable: the environment variable 'CYBERIADA_TEST_TOKEN' is not set
+  unavailable: newer: the requirement 'licence' needs a newer editor
+  unavailable: too-old: the plugin 'actions' is older than 9
+bad-when - rejected plugin-path 1: the field 'actions/run/when' is not a list
+chain 0.1.0 disabled plugin-path 1: the plugin 'needs-disabled' is unavailable
+needs-actions 0.1.0 enabled plugin-path 1
+needs-disabled 0.1.0 disabled plugin-path 1: the plugin 'needs-tool' is unavailable
+needs-env 0.1.0 disabled plugin-path 1: the environment variable 'CYBERIADA_TEST_TOKEN' is not set
+needs-missing 0.1.0 disabled plugin-path 1: the plugin 'no-such-plugin' is not installed
+needs-tool 0.1.0 disabled plugin-path 1: the program 'no-such-tool' is not found

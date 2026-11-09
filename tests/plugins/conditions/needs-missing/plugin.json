@@ -1,0 +1,23 @@
+{
+  "api": 1,
+  "id": "needs-missing",
+  "name": "Needs a missing plugin",
+  "version": "0.1.0",
+  "requires": {
+    "plugins": [
+      "no-such-plugin"
+    ]
+  },
+  "actions": [
+    {
+      "id": "run",
+      "label": "Run",
+      "result": "log",
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "print",
+        "run"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+== plugin
+action: actions:tool
+result: log
+state: failed
+exit: -
+error: the program 'no-such-tool' is not found
+== diagnostics
+count: 0

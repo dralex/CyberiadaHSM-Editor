@@ -1,0 +1,23 @@
+{
+  "api": 1,
+  "id": "needs-env",
+  "name": "Needs a variable",
+  "version": "0.1.0",
+  "requires": {
+    "env": [
+      "CYBERIADA_TEST_TOKEN"
+    ]
+  },
+  "actions": [
+    {
+      "id": "run",
+      "label": "Run",
+      "result": "log",
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "print",
+        "run"
+      ]
+    }
+  ]
+}

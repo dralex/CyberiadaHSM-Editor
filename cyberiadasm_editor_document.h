@@ -33,6 +33,7 @@
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_editor_scene.h"
 #include "cyberiadasm_editor_view.h"
+#include "plugin_conditions.h"
 
 class PluginRunner;
 
@@ -83,6 +84,9 @@ public:
     // the plugin values of an untitled document last for the session (EDIT-PLUG-11),
     // by "<plugin>/<parameter>"
     QMap<QString, QString>&  sessionPluginValues() { return m_sessionPluginValues; }
+    // what the when tokens test (EDIT-PLUG-52): the content is kept until the document
+    // changes, the file, the save and the selection are read each time
+    PluginDocumentFacts      pluginFacts() const;
 
 signals:
     void                     titleChanged();
@@ -90,6 +94,7 @@ signals:
 private slots:
     // the title of an unsaved document follows its name (a rename, an undo, a reset)
     void                     refreshTitle();
+    void                     dropPluginFacts() { m_pluginFactsValid = false; }
 
 private:
     void                     announceTitle();
@@ -101,6 +106,8 @@ private:
     QString                  pendingViewState;
     QPointer<PluginRunner>   m_pluginRun;
     QMap<QString, QString>   m_sessionPluginValues;
+    mutable PluginDocumentFacts m_pluginFacts;
+    mutable bool             m_pluginFactsValid = false;
 };
 
 #endif

@@ -27,7 +27,9 @@
 #include <QSignalSpy>
 #include <QTemporaryDir>
 
+#include "cyberiadasm_model.h"
 #include "plugin_channel.h"
+#include "plugin_conditions.h"
 #include "plugin_descriptor.h"
 #include "plugin_registry.h"
 #include "plugin_runner.h"
@@ -57,6 +59,12 @@ private slots:
     void test_output_decoding();
     void test_selected_ids_order();
     void test_translation();
+    void test_parse_conditions();
+    void test_when_tokens_data();
+    void test_when_tokens();
+    void test_system_requirements();
+    void test_plugin_references();
+    void test_document_facts();
 
 private:
     // a plugin entry running the helper with the operations of one log action
@@ -173,6 +181,33 @@ void TestPluginCore::test_parse_rejections_data()
                          "export": "K"}], "actions": [{"id": "a", "label": "A", "result": "log",
                          "argv": ["run", {"if": "k", "argv": ["${param-file:k}"]}]}]})")
         << "is used in the argv";
+    QTest::newRow("when type")
+        << QByteArray(R"({"api": 1, "id": "p", "name": "P", "actions": [{"id": "a", "label": "A",
+                         "result": "log", "when": "saved", "argv": ["run"]}]})")
+        << "the field 'actions/a/when' is not a list";
+    QTest::newRow("when item")
+        << QByteArray(R"({"api": 1, "id": "p", "name": "P", "actions": [{"id": "a", "label": "A",
+                         "result": "log", "when": ["saved", 1], "argv": ["run"]}]})")
+        << "holds a value that is not a string";
+    QTest::newRow("reason type")
+        << QByteArray(R"({"api": 1, "id": "p", "name": "P", "actions": [{"id": "a", "label": "A",
+                         "result": "log", "reason": 1, "argv": ["run"]}]})")
+        << "the field 'actions/a/reason' is not a string";
+    QTest::newRow("requires type")
+        << QByteArray(R"({"api": 1, "id": "p", "name": "P", "requires": ["tool"], "actions": [)" + action + "]}")
+        << "the field 'requires' is not an object";
+    QTest::newRow("requires list")
+        << QByteArray(R"({"api": 1, "id": "p", "name": "P", "actions": [{"id": "a", "label": "A",
+                         "result": "log", "requires": {"programs": "tool"}, "argv": ["run"]}]})")
+        << "the field 'actions/a/requires.programs' is not a list";
+    QTest::newRow("requires variable")
+        << QByteArray(R"({"api": 1, "id": "p", "name": "P", "requires": {"env": ["A-B"]},
+                         "actions": [)" + action + "]}")
+        << "the required variable 'A-B' is not a name";
+    QTest::newRow("requires plugin")
+        << QByteArray(R"({"api": 1, "id": "p", "name": "P", "requires": {"plugins": ["x>=one"]},
+                         "actions": [)" + action + "]}")
+        << "the required plugin 'x>=one' is neither";
 }
 
 // a descriptor breaking a rule is rejected with the reason (EDIT-PLUG-2)
@@ -591,6 +626,181 @@ void TestPluginCore::test_translation()
     QCOMPARE(pluginDefaultValue(*english.parameter("lang"), PluginDocumentPaths()), QString("ru"));
     PluginRegistry::instance().setLanguage(QString());
     QCOMPARE(pluginDefaultValue(*english.parameter("lang"), PluginDocumentPaths()), QString("en"));
+}
+
+// requires, when and reason on the descriptor and the actions; the unknown are
+// warnings and stay in the descriptor (EDIT-PLUG-50..53)
+void TestPluginCore::test_parse_conditions()
+{
+    QString error;
+    PluginDescriptor d = parsed(R"({"api": 1, "id": "p", "name": "P",
+        "requires": {"programs": ["tool"], "env": ["TOKEN"], "plugins": ["q", "r>=1.2"], "licence": []},
+        "actions": [{"id": "a", "label": "A", "result": "log", "argv": ["run"],
+                     "requires": {"programs": ["${plugin_dir}/bin/x"]},
+                     "when": ["saved", "!fa", "meta:platform=Uno", "later"], "reason": "Save it"}]})", &error);
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+    QCOMPARE(d.requirements.programs, QStringList() << "tool");
+    QCOMPARE(d.requirements.env, QStringList() << "TOKEN");
+    QCOMPARE(d.requirements.plugins, QStringList() << "q" << "r>=1.2");
+    QCOMPARE(d.requirements.unknown, QStringList() << "licence");
+    const PluginAction* a = d.action("a");
+    QVERIFY(a);
+    QCOMPARE(a->requirements.programs, QStringList() << "${plugin_dir}/bin/x");
+    QCOMPARE(a->when, QStringList() << "saved" << "!fa" << "meta:platform=Uno" << "later");
+    QCOMPARE(a->reason, QString("Save it"));
+    QCOMPARE(d.warnings, QStringList() << "unknown field 'requires/licence'"
+                                       << "unknown condition 'actions/a/when/later'");
+    // the session actions take them too
+    d = parsed(R"({"api": 1, "id": "p", "name": "P",
+        "actions": [{"id": "a", "label": "A", "result": "log", "argv": ["run"]}],
+        "session": {"version": 1, "actions": [{"id": "s", "label": "S", "argv": ["run"],
+                                               "when": ["sm"], "reason": "Draw a machine"}]}})", &error);
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+    QCOMPARE(d.action("s")->when, QStringList() << "sm");
+    QCOMPARE(d.action("s")->reason, QString("Draw a machine"));
+    QVERIFY(d.warnings.isEmpty());
+}
+
+void TestPluginCore::test_when_tokens_data()
+{
+    QTest::addColumn<QStringList>("tokens");
+    QTest::addColumn<QString>("reason");
+    QTest::addColumn<bool>("fill");
+    QTest::addColumn<QString>("expected");
+    QTest::newRow("empty") << QStringList() << QString() << false << QString();
+    QTest::newRow("file") << QStringList{"file"} << QString() << false << QString();
+    QTest::newRow("not file") << QStringList{"!file"} << QString() << false << "the document has a file";
+    QTest::newRow("saved") << QStringList{"saved"} << QString() << false << "the document is not saved";
+    QTest::newRow("not saved") << QStringList{"!saved"} << QString() << false << QString();
+    QTest::newRow("selection") << QStringList{"selection"} << QString() << false << "nothing is selected";
+    QTest::newRow("sm") << QStringList{"sm"} << QString() << false << QString();
+    QTest::newRow("not sm") << QStringList{"!sm"} << QString() << false << "the document has a state machine";
+    QTest::newRow("initial") << QStringList{"initial"} << QString() << false
+                             << "a state machine has no initial state";
+    QTest::newRow("fa") << QStringList{"fa"} << QString() << false << QString();
+    QTest::newRow("not fa") << QStringList{"!fa"} << QString() << false << "the diagram is a finite automaton";
+    QTest::newRow("fa-valid") << QStringList{"fa-valid"} << QString() << false
+                              << "the automaton breaks EXT-FA: CGML-FA-1 a fault";
+    QTest::newRow("not fa-valid") << QStringList{"!fa-valid"} << QString() << false << QString();
+    QTest::newRow("meta key") << QStringList{"meta:name"} << QString() << false << QString();
+    QTest::newRow("meta absent") << QStringList{"meta:platform"} << QString() << false
+                                 << "the metainformation has no 'platform'";
+    QTest::newRow("meta value") << QStringList{"meta:name=Lift"} << QString() << false << QString();
+    QTest::newRow("meta other") << QStringList{"meta:name=Door"} << QString() << false
+                                << "'name' is 'Lift', not 'Door'";
+    QTest::newRow("not meta value") << QStringList{"!meta:name=Lift"} << QString() << false << "'name' is 'Lift'";
+    // the platform language under any of its names; a key the action fills (EDIT-PLUG-34)
+    QTest::newRow("language alias") << QStringList{"meta:platformLanguage=python3"} << QString() << true
+                                    << QString();
+    QTest::newRow("no fill") << QStringList{"meta:platformLanguage=Python"} << QString() << false
+                             << "the metainformation has no 'platformLanguage'";
+    // the first failing token; the plugin's reason replaces it
+    QTest::newRow("first") << QStringList{"sm", "saved", "selection"} << QString() << false
+                           << "the document is not saved";
+    QTest::newRow("reason") << QStringList{"sm", "saved"} << "Save the diagram" << false << "Save the diagram";
+    QTest::newRow("unknown") << QStringList{"saved", "later"} << "Save the diagram" << false
+                             << "the condition 'later' needs a newer editor";
+    QTest::newRow("empty key") << QStringList{"meta:=x"} << QString() << false
+                               << "the condition 'meta:=x' needs a newer editor";
+}
+
+// the tokens over the facts of a document (EDIT-PLUG-52/53)
+void TestPluginCore::test_when_tokens()
+{
+    QFETCH(QStringList, tokens);
+    QFETCH(QString, reason);
+    QFETCH(bool, fill);
+    QFETCH(QString, expected);
+    PluginDocumentFacts facts;
+    facts.file = true;
+    facts.machines = 1;
+    facts.fa = true;
+    facts.faFinding = "CGML-FA-1 a fault";
+    facts.meta.insert("name", "Lift");
+    QList<QPair<QString, QString> > fills;
+    if (fill) fills.append(qMakePair(QString("platformLanguage"), QString("Python")));
+    QCOMPARE(PluginConditions::check(tokens, reason, facts, fills), expected);
+}
+
+// the programs and the variables (EDIT-PLUG-50); an unknown key never holds (EDIT-PLUG-53)
+void TestPluginCore::test_system_requirements()
+{
+    QFileInfo helper(PLUGIN_HELPER);
+    QVERIFY(helper.exists());
+    QString dir = helper.absolutePath();
+    PluginRequirements r;
+    QCOMPARE(PluginConditions::checkSystem(r, dir, {}), QString());
+    r.programs = QStringList() << helper.absoluteFilePath() << "${plugin_dir}/" + helper.completeBaseName();
+    QCOMPARE(PluginConditions::checkSystem(r, dir, {}), QString());
+    r.programs << "${plugin_dir}/no-such-tool";
+    QCOMPARE(PluginConditions::checkSystem(r, dir, {}),
+             QString("the program '${plugin_dir}/no-such-tool' is not found"));
+    r.programs = QStringList() << "no-such-tool-on-path";
+    QCOMPARE(PluginConditions::checkSystem(r, dir, {}), QString("the program 'no-such-tool-on-path' is not found"));
+
+    PluginRequirements e;
+    e.env = QStringList() << "CYB_CONDITION_TEST";
+    qunsetenv("CYB_CONDITION_TEST");
+    QCOMPARE(PluginConditions::checkSystem(e, dir, {}),
+             QString("the environment variable 'CYB_CONDITION_TEST' is not set"));
+    // the descriptor's env is what the run gets
+    QCOMPARE(PluginConditions::checkSystem(e, dir, {qMakePair(QString("CYB_CONDITION_TEST"), QString("1"))}),
+             QString());
+    qputenv("CYB_CONDITION_TEST", "1");
+    QCOMPARE(PluginConditions::checkSystem(e, dir, {}), QString());
+    QVERIFY(!PluginConditions::checkSystem(e, dir, {qMakePair(QString("CYB_CONDITION_TEST"), QString())})
+             .isEmpty());
+    qunsetenv("CYB_CONDITION_TEST");
+
+    PluginRequirements u;
+    u.unknown = QStringList() << "licence";
+    QCOMPARE(PluginConditions::checkSystem(u, dir, {}), QString("the requirement 'licence' needs a newer editor"));
+}
+
+void TestPluginCore::test_plugin_references()
+{
+    QString id, version;
+    QVERIFY(PluginConditions::parsePluginReference("cgml-checker", &id, &version));
+    QCOMPARE(id, QString("cgml-checker"));
+    QVERIFY(version.isEmpty());
+    QVERIFY(PluginConditions::parsePluginReference("hsm-to-python >= 0.4.1", &id, &version));
+    QCOMPARE(id, QString("hsm-to-python"));
+    QCOMPARE(version, QString("0.4.1"));
+    QVERIFY(!PluginConditions::parsePluginReference("x>=", nullptr, nullptr));
+    QVERIFY(!PluginConditions::parsePluginReference("x>=1.b", nullptr, nullptr));
+    QVERIFY(!PluginConditions::parsePluginReference("Bad Id", nullptr, nullptr));
+}
+
+// the content facts from the library: the machines, the initial states, EXT-FA, the
+// metainformation (EDIT-PLUG-52)
+void TestPluginCore::test_document_facts()
+{
+    PluginDocumentFacts facts;
+    PluginConditions::readDocument(nullptr, &facts);
+    QCOMPARE(facts.machines, 0);
+    QVERIFY(!facts.initial && !facts.fa);
+
+    CyberiadaSMModel hierarchy(this);
+    QVERIFY(hierarchy.loadDocument("diagrams/hierarchy.graphml"));
+    PluginConditions::readDocument(hierarchy.rootDocument(), &facts);
+    QCOMPARE(facts.machines, 1);
+    QVERIFY(!facts.initial);
+    QVERIFY(!facts.fa);
+    QCOMPARE(facts.meta.value("standardVersion"), QString("1.0"));
+
+    CyberiadaSMModel valid(this);
+    QVERIFY(valid.loadDocument("diagrams/fa-turnstile.graphml"));
+    PluginConditions::readDocument(valid.rootDocument(), &facts);
+    QVERIFY(facts.initial);
+    QVERIFY(facts.fa);
+    QVERIFY2(facts.faFinding.isEmpty(), qPrintable(facts.faFinding));
+    QCOMPARE(facts.meta.value("name"), QString("Turnstile"));
+
+    CyberiadaSMModel invalid(this);
+    QVERIFY(invalid.loadDocument("diagrams/fa-empty-event.graphml"));
+    PluginConditions::readDocument(invalid.rootDocument(), &facts);
+    QVERIFY(facts.fa);
+    QVERIFY(!facts.faFinding.isEmpty());
 }
 
 QTEST_MAIN(TestPluginCore)

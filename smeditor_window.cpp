@@ -167,6 +167,8 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     connect(undoGroup, &QUndoGroup::undoTextChanged, this, &CyberiadaSMEditorWindow::slotUndoTextChanged);
     connect(undoGroup, &QUndoGroup::redoTextChanged, this, &CyberiadaSMEditorWindow::slotRedoTextChanged);
     connect(undoGroup, &QUndoGroup::cleanChanged, this, &CyberiadaSMEditorWindow::slotCleanChanged);
+    // the when tokens follow every edit, undo and redo (EDIT-PLUG-52)
+    connect(undoGroup, &QUndoGroup::indexChanged, this, &CyberiadaSMEditorWindow::updatePluginActions);
     actionUndo->setEnabled(false);
     actionRedo->setEnabled(false);
     updateEditActions();
@@ -1228,12 +1230,19 @@ QString CyberiadaSMEditorWindow::pluginDisabledReason(const PluginEntry& plugin,
         !SettingsManager::instance().getPluginEnabled(plugin.descriptor.id)) {
         return tr("the plugin is switched off");
     }
+    QString unavailable = plugin.unavailable.value(action.id);
+    if (!unavailable.isEmpty()) return unavailable;
     if (!doc) return tr("there is no document");
     if (doc->pluginRun()) return tr("a plugin is running on the document");
     if (action.changesDocument() && SettingsManager::instance().getInspectorMode()) {
         return tr("the inspection mode keeps the document read-only");
     }
-    return QString();
+    if (action.when.isEmpty()) return QString();
+    PluginDocumentFacts facts = doc->pluginFacts();
+    // the keys fillPluginMeta would write (EDIT-PLUG-34)
+    QList<QPair<QString, QString> > fills;
+    if (facts.machines > 0 && !doc->model()->readOnly()) fills = action.meta;
+    return PluginConditions::check(action.when, action.reason, facts, fills);
 }
 
 bool CyberiadaSMEditorWindow::pluginContext(CyberiadaSMEditorDocument* doc, PluginRunContext* context,
@@ -1267,18 +1276,6 @@ bool CyberiadaSMEditorWindow::pluginContext(CyberiadaSMEditorDocument* doc, Plug
     return true;
 }
 
-// the platform language is the same under any of its aliases (python3, py)
-static bool sameMetaValue(const QString& key, const QString& present, const QString& declared)
-{
-    if (key == METAINFORMATION_KEY_PLATFORM_LANGUAGE) {
-        const CodeLanguage* a = CodeStyle::instance().find(present);
-        const CodeLanguage* b = CodeStyle::instance().find(declared);
-        if (a && b) return a == b;
-        return present.compare(declared, Qt::CaseInsensitive) == 0;
-    }
-    return present == declared;
-}
-
 QList<PluginMetaNote> CyberiadaSMEditorWindow::fillPluginMeta(CyberiadaSMEditorDocument* doc,
                                                               const PluginAction& action)
 {
@@ -1304,7 +1301,7 @@ QList<PluginMetaNote> CyberiadaSMEditorWindow::fillPluginMeta(CyberiadaSMEditorD
             note.value = item.second;
             fills.append(item);
             notes.append(note);
-        } else if (!sameMetaValue(item.first, present, item.second)) {
+        } else if (!PluginConditions::sameMetaValue(item.first, present, item.second)) {
             // the document's own value wins
             note.kind = PluginMetaNote::metaKept;
             note.value = present;

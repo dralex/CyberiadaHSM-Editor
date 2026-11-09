@@ -1,0 +1,8 @@
+== plugin
+action: actions:fa-valid
+result: log
+state: failed
+exit: -
+error: the automaton breaks EXT-FA: CGML-FA-3.4-1 transition locked-unlocked carries no symbol
+== diagnostics
+count: 0
