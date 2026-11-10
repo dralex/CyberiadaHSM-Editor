@@ -87,6 +87,8 @@ public:
     // what the when tokens test (EDIT-PLUG-52): the content is kept until the document
     // changes, the file, the save and the selection are read each time
     PluginDocumentFacts      pluginFacts() const;
+    // the git fact is kept for the path until a save or a scan (EDIT-PLUG-55)
+    void                     dropGitFact() { m_gitValid = false; }
 
 signals:
     void                     titleChanged();
@@ -108,6 +110,9 @@ private:
     QMap<QString, QString>   m_sessionPluginValues;
     mutable PluginDocumentFacts m_pluginFacts;
     mutable bool             m_pluginFactsValid = false;
+    mutable QString          m_gitPath;
+    mutable bool             m_git = false;
+    mutable bool             m_gitValid = false;
 };
 
 #endif

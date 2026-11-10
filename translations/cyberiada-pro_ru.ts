@@ -41,7 +41,7 @@
 <context>
     <name>CyberiadaSMEditorDocument</name>
     <message>
-        <location filename="../cyberiadasm_editor_document.cpp" line="+116"/>
+        <location filename="../cyberiadasm_editor_document.cpp" line="+119"/>
         <source>untitled</source>
         <translation>без имени</translation>
     </message>
@@ -179,7 +179,7 @@
         <translation>Менеджер плагинов...</translation>
     </message>
     <message>
-        <location line="+115"/>
+        <location line="+119"/>
         <source>Close</source>
         <translation>Закрыть</translation>
     </message>
@@ -394,12 +394,12 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+186"/>
+        <location line="+190"/>
         <source>Run</source>
         <translation>Запустить</translation>
     </message>
     <message>
-        <location line="-184"/>
+        <location line="-188"/>
         <source>Pause</source>
         <translation>Пауза</translation>
     </message>
@@ -434,7 +434,7 @@
         <translation>Сохранить журнал...</translation>
     </message>
     <message>
-        <location line="+195"/>
+        <location line="+199"/>
         <source>%1 - Settings</source>
         <translation>%1 - Параметры</translation>
     </message>
@@ -1369,12 +1369,13 @@
 <context>
     <name>PluginConditions</name>
     <message>
-        <location filename="../plugin_conditions.cpp" line="+69"/>
+        <location filename="../plugin_conditions.cpp" line="+70"/>
+        <location line="+30"/>
         <source>the document has no file</source>
         <translation>у документа нет файла</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="-29"/>
         <source>the document has a file</source>
         <translation>у документа есть файл</translation>
     </message>
@@ -1440,6 +1441,16 @@
         <translation>автомат корректен</translation>
     </message>
     <message>
+        <location line="+3"/>
+        <source>the document is not in a git repository</source>
+        <translation type="unfinished">документ не находится в репозитории git</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>the document is in a git repository</source>
+        <translation type="unfinished">документ находится в репозитории git</translation>
+    </message>
+    <message>
         <location line="+9"/>
         <location line="+5"/>
         <source>the metainformation has no &apos;%1&apos;</source>
@@ -1461,7 +1472,7 @@
         <translation>«%1» равно «%2»</translation>
     </message>
     <message>
-        <location line="+46"/>
+        <location line="+60"/>
         <source>the condition &apos;%1&apos; needs a newer editor</source>
         <translation>условие «%1» требует более новой версии редактора</translation>
     </message>

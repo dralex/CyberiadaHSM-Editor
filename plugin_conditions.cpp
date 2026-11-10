@@ -35,10 +35,11 @@
 
 namespace {
 
-const char* const plainTokens[] = { "file", "saved", "selection", "sm", "initial", "fa", "fa-valid" };
+const char* const plainTokens[] = { "file", "saved", "selection", "sm", "initial", "fa", "fa-valid", "git" };
 const QString negation = "!";
 const QString metaPrefix = "meta:";
 const QString versionAtLeast = ">=";
+const QString gitDirectory = ".git";
 
 bool plainToken(const QString& name)
 {
@@ -93,6 +94,11 @@ QString tokenFailure(const QString& name, bool negated, const PluginDocumentFact
         unmet = facts.fa ? PluginConditions::tr("the automaton breaks EXT-FA: %1").arg(facts.faFinding)
                          : PluginConditions::tr("the diagram is not a finite automaton");
         met = PluginConditions::tr("the automaton is valid");
+    } else if (name == "git") {
+        holds = facts.file && facts.git;
+        unmet = facts.file ? PluginConditions::tr("the document is not in a git repository")
+                           : PluginConditions::tr("the document has no file");
+        met = PluginConditions::tr("the document is in a git repository");
     } else {
         QString text = name.mid(metaPrefix.size());
         int at = text.indexOf('=');
@@ -137,6 +143,20 @@ bool variableSet(const QString& name, const QList<QPair<QString, QString> >& env
     return !qEnvironmentVariableIsEmpty(name.toLocal8Bit().constData());
 }
 
+}
+
+bool PluginConditions::readGit(const QString& filePath)
+{
+    if (filePath.isEmpty()) return false;
+    // git resolves the links of its directory, so does the lookup; the directory
+    // exists even for a file not written yet
+    QString parent = QFileInfo(filePath).absolutePath();
+    QString path = QFileInfo(parent).canonicalFilePath();
+    QDir dir(path.isEmpty() ? parent : path);
+    do {
+        if (QFileInfo(dir.filePath(gitDirectory)).isDir()) return true;
+    } while (dir.cdUp());
+    return false;
 }
 
 bool PluginConditions::knownToken(const QString& token)

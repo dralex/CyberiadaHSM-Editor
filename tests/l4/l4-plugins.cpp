@@ -49,6 +49,7 @@
 #include "code_highlighter.h"
 #include "gesture_log.h"
 #include "plugin_dock.h"
+#include "plugin_conditions.h"
 #include "plugin_registry.h"
 #include "plugin_session.h"
 #include "plugin_session_view.h"
@@ -96,6 +97,7 @@ private slots:
     void test_session_teardown();
     void test_session_grab();
     void test_conditions();
+    void test_git_refresh();
 };
 
 static QString documentDump(CyberiadaSMModel* model)
@@ -849,6 +851,64 @@ void TestPlugins::test_conditions()
              << "Variable unavailable: the environment variable 'CYBERIADA_TEST_TOKEN' is not set"
              << "Newer unavailable: the requirement 'licence' needs a newer editor"
              << "Too old unavailable: the plugin 'actions' is older than 9");
+}
+
+// the git token follows the file: a Save As into a work tree, a .git made after
+// the open counted at the next save and at a scan (EDIT-PLUG-55)
+void TestPlugins::test_git_refresh()
+{
+    struct Restore {
+        ~Restore() {
+            PluginRegistry::instance().setSearchPath(QStringList() << PLUGIN_TEST_DIR "/main");
+            PluginRegistry::instance().scan();
+        }
+    } restore;
+    PluginRegistry::instance().setSearchPath(QStringList() << PLUGIN_TEST_DIR "/git");
+    PluginRegistry::instance().scan();
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    QDir root(dir.path());
+    if (PluginConditions::readGit(root.filePath("probe.graphml"))) {
+        QSKIP("the temporary directory is inside a git work tree");
+    }
+    QString path = root.filePath("hierarchy.graphml");
+    QVERIFY(QFile::copy("diagrams/hierarchy.graphml", path));
+    CyberiadaSMEditorWindow win;
+    QVERIFY(win.openDocument(path));
+    QAction* in = win.pluginsMenu()->action("git", "in");
+    QVERIFY(in);
+    QVERIFY(!in->isEnabled());
+    QCOMPARE(in->toolTip(), QString("the document is not in a git repository"));
+
+    // a Save As of the unmodified document into a work tree
+    QVERIFY(root.mkpath("repo/.git"));
+    QString error;
+    QVERIFY(win.currentDocument()->saveAs(root.filePath("repo/hierarchy.graphml"), Cyberiada::formatCyberiada10,
+                                          false, false, false, false, false, &error));
+    QVERIFY(in->isEnabled());
+
+    // a .git made after the open: kept for the path until the save
+    QString second = root.filePath("second/hierarchy.graphml");
+    QVERIFY(root.mkpath("second"));
+    QVERIFY(QFile::copy("diagrams/hierarchy.graphml", second));
+    QVERIFY(win.openDocument(second));
+    QVERIFY(!in->isEnabled());
+    QVERIFY(root.mkpath("second/.git"));
+    QModelIndex n = win.getModel()->elementToIndex(win.getModel()->idToElement("n1"));
+    QVERIFY(win.getModel()->setData(n, "Changed"));
+    QVERIFY(!in->isEnabled());
+    QVERIFY(win.currentDocument()->save(&error));
+    QVERIFY(in->isEnabled());
+
+    // and until a scan
+    QString third = root.filePath("third/hierarchy.graphml");
+    QVERIFY(root.mkpath("third"));
+    QVERIFY(QFile::copy("diagrams/hierarchy.graphml", third));
+    QVERIFY(win.openDocument(third));
+    QVERIFY(!in->isEnabled());
+    QVERIFY(root.mkpath("third/.git"));
+    PluginRegistry::instance().scan();
+    QVERIFY(win.pluginsMenu()->action("git", "in")->isEnabled());
 }
 
 QTEST_MAIN(TestPlugins)

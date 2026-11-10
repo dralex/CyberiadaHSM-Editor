@@ -1,0 +1,8 @@
+== plugin
+action: git:in
+result: log
+state: failed
+exit: -
+error: the document has no file
+== diagnostics
+count: 0

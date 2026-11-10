@@ -1,0 +1,30 @@
+{
+  "api": 1,
+  "id": "git",
+  "name": "Git token",
+  "version": "0.1.0",
+  "actions": [
+    {
+      "id": "in",
+      "label": "In a work tree",
+      "result": "log",
+      "when": ["git"],
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "print",
+        "in"
+      ]
+    },
+    {
+      "id": "out",
+      "label": "Out of a work tree",
+      "result": "log",
+      "when": ["!git"],
+      "argv": [
+        "${plugin_dir}/../../bin/plugin-helper",
+        "print",
+        "out"
+      ]
+    }
+  ]
+}

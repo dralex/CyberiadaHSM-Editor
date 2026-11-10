@@ -690,7 +690,7 @@ configure_file(plugins/main/echo/plugin.json
 # good/plugin-<case>-output.graphml with SAVE; the work dir is plugin-work/<case>
 function(add_plugin_test name)
   cmake_parse_arguments(P "DUMP;DUMP_PLUGIN;DUMP_SESSION;DUMP_STACK;DUMP_TABS;LIST;NO_DUMP;SAVE;INSPECT;CLEAN;NOPATH"
-    "INPUT;PLUGIN;SCRIPT;SESSION;EXPECTED;FORBID;SEED;CONFIG;DATA" "PARAMS;PATHS;ENV" ${ARGN})
+    "INPUT;PLUGIN;SCRIPT;SESSION;EXPECTED;FORBID;SEED;CONFIG;DATA" "PARAMS;PATHS;ENV;MARKERS" ${ARGN})
   if(NOT DEFINED P_EXPECTED)
     set(P_EXPECTED 0)
   endif()
@@ -730,8 +730,17 @@ function(add_plugin_test name)
   if(P_LIST)
     list(APPEND _vars -DLIST_PLUGINS=1)
   endif()
-  if(P_CLEAN OR P_SEED)
+  if(P_CLEAN OR P_SEED OR P_MARKERS)
     list(APPEND _vars -DCLEAN_DIR=${_work})
+  endif()
+  # the directories made in the work dir before the run: a .git cannot be committed
+  if(P_MARKERS)
+    set(_markers)
+    foreach(_marker ${P_MARKERS})
+      list(APPEND _markers ${_work}/${_marker})
+    endforeach()
+    string(REPLACE ";" "|" _markers "${_markers}")
+    list(APPEND _vars "-DMARKERS=${_markers}")
   endif()
   if(P_SEED)
     string(REPLACE ">" ";" _seed "${P_SEED}")
@@ -902,6 +911,15 @@ add_plugin_test(conditions-tool INPUT diagrams/hierarchy.graphml PLUGIN actions:
   DUMP_PLUGIN EXPECTED 6)
 add_plugin_test(conditions-chain INPUT diagrams/hierarchy.graphml PLUGIN chain PATHS conditions
   DUMP_PLUGIN EXPECTED 6)
+# the git token (EDIT-PLUG-55): a .git directory made by the test, so the cases do not
+# depend on the work tree the build directory may sit in
+add_plugin_test(conditions-git INPUT <work>/repo/sub/hierarchy.graphml
+  SEED diagrams/hierarchy.graphml>repo/sub/hierarchy.graphml MARKERS repo/.git
+  PLUGIN git:in PATHS git DUMP_PLUGIN)
+add_plugin_test(conditions-not-git INPUT <work>/repo/sub/hierarchy.graphml
+  SEED diagrams/hierarchy.graphml>repo/sub/hierarchy.graphml MARKERS repo/.git
+  PLUGIN git:out PATHS git DUMP_PLUGIN EXPECTED 6)
+add_plugin_test(conditions-git-untitled PLUGIN git:in PATHS git DUMP_PLUGIN EXPECTED 6)
 
 # the plugin core in process: the descriptors, the values and the runner over the helper
 add_l4_test(plugin-core)

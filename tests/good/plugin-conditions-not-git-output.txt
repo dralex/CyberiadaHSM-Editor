@@ -1,0 +1,8 @@
+== plugin
+action: git:out
+result: log
+state: failed
+exit: -
+error: the document is in a git repository
+== diagnostics
+count: 0

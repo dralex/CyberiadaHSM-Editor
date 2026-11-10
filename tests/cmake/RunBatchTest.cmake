@@ -6,7 +6,8 @@
 # the plugin cases: PLUGIN_PATH and PLUGIN_PARAMS ('|'-separated), PLUGIN,
 # LIST_PLUGINS, DUMP_PLUGIN, DUMP_SESSION and SESSION_SCRIPT (a plugin session),
 # NO_DUMP (stdout without --dump), CLEAN_DIR (a fresh
-# work dir), SEED (src>dst copies before the run), FORBID (absent from the output)
+# work dir), SEED (src>dst copies before the run), MARKERS (directories made before
+# the run, '|'-separated), FORBID (absent from the output)
 
 # what differs between a good file and the output: diff -u where there is one, else
 # the first lines that differ (Windows has no diff)
@@ -74,6 +75,12 @@ if(DEFINED SEED)
   list(GET _seed 0 _seed_src)
   list(GET _seed 1 _seed_dst)
   configure_file(${_seed_src} ${_seed_dst} COPYONLY)
+endif()
+if(DEFINED MARKERS)
+  string(REPLACE "|" ";" _markers "${MARKERS}")
+  foreach(_marker ${_markers})
+    file(MAKE_DIRECTORY ${_marker})
+  endforeach()
 endif()
 set(_args --batch --no-text)
 if(DEFINED RECONSTRUCT)

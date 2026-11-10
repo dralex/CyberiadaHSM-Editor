@@ -57,6 +57,8 @@ struct PluginDocumentFacts {
     // the first EXT-FA violation, empty for a valid automaton
     QString faFinding;
     QMap<QString, QString> meta;
+    // a .git directory in the directory of the file or above it (EDIT-PLUG-55)
+    bool git = false;
 };
 
 class PluginConditions {
@@ -74,6 +76,9 @@ public:
     // env: the variables of the descriptor
     static QString checkSystem(const PluginRequirements& requirements, const QString& pluginDir,
                                const QList<QPair<QString, QString> >& env);
+    // a .git directory in the directory of the file or above it; the .git file of a
+    // linked work tree does not count, no process is run (EDIT-PLUG-55)
+    static bool readGit(const QString& filePath);
     // the content facts of a document; file, saved and selection are the caller's
     static void readDocument(const Cyberiada::Document* document, PluginDocumentFacts* facts);
     // <id> or <id>>=<version>; false when it is neither

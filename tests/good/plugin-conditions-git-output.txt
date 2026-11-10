@@ -1,0 +1,9 @@
+== plugin
+action: git:in
+result: log
+state: done
+exit: 0
+stdout:
+  in
+== diagnostics
+count: 0

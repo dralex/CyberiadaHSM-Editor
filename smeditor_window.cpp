@@ -197,7 +197,11 @@ CyberiadaSMEditorDocument* CyberiadaSMEditorWindow::newDocument()
     connect(doc->view(), &CyberiadaSMGraphicsView::scaleChanged, this,
             [this, doc](qreal scale) { if (doc == current) slotZoomScaleChanged(scale); });
     connect(doc, &CyberiadaSMEditorDocument::titleChanged, this,
-            [this, doc]() { updateTabTitle(doc); if (doc == current) updateTitle(); });
+            [this, doc]() {
+                updateTabTitle(doc);
+                // a Save As of an unmodified document changes the file, not the clean state
+                if (doc == current) { updateTitle(); updatePluginActions(); }
+            });
     connect(doc->scene(), &CyberiadaSMEditorScene::codeLanguageChanged, this,
             [this, doc]() { if (doc == current) syncChoiceMenus(); });
     connect(doc->scene(), &CyberiadaSMEditorScene::markupLanguageChanged, this,
@@ -1604,6 +1608,10 @@ void CyberiadaSMEditorWindow::connectSession(PluginRunner* run, CyberiadaSMEdito
 void CyberiadaSMEditorWindow::slotPluginsScanned()
 {
     if (pluginMenu) pluginMenu->rebuild();
+    // a .git directory made while the document is open counts after a scan (EDIT-PLUG-55)
+    for (int i = 0; i < documentCount(); i++) {
+        if (documentAt(i)) documentAt(i)->dropGitFact();
+    }
     updatePluginActions();
 }
 

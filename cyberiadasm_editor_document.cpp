@@ -67,6 +67,8 @@ bool CyberiadaSMEditorDocument::load(const QString& path, QString* error,
 bool CyberiadaSMEditorDocument::save(QString* error)
 {
     if (!hasFile()) return false;
+    // the save refreshes the actions, which look for the .git directory anew
+    m_gitValid = false;
     try {
         m_scene->migrateLabelsToRect();                 // point labels become rects
         m_model->setEditorView(m_view->viewState());   // persist the current view
@@ -83,6 +85,7 @@ bool CyberiadaSMEditorDocument::saveAs(const QString& path, Cyberiada::DocumentF
                                        bool strict_actions, bool skip_empty_behavior,
                                        QString* error)
 {
+    m_gitValid = false;
     try {
         m_scene->migrateLabelsToRect();
         m_model->setEditorView(m_view->viewState());
@@ -140,6 +143,12 @@ PluginDocumentFacts CyberiadaSMEditorDocument::pluginFacts() const
         m_pluginFactsValid = true;
     }
     PluginDocumentFacts facts = m_pluginFacts;
+    if (!m_gitValid || filePath() != m_gitPath) {
+        m_gitPath = filePath();
+        m_git = PluginConditions::readGit(m_gitPath);
+        m_gitValid = true;
+    }
+    facts.git = m_git;
     facts.file = hasFile();
     facts.saved = hasFile() && isClean();
     facts.selection = !m_scene->selectedIds().isEmpty();

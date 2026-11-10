@@ -65,6 +65,7 @@ private slots:
     void test_system_requirements();
     void test_plugin_references();
     void test_document_facts();
+    void test_git_marker();
 
 private:
     // a plugin entry running the helper with the operations of one log action
@@ -702,6 +703,9 @@ void TestPluginCore::test_when_tokens_data()
                              << "the condition 'later' needs a newer editor";
     QTest::newRow("empty key") << QStringList{"meta:=x"} << QString() << false
                                << "the condition 'meta:=x' needs a newer editor";
+    // a .git directory above the file (EDIT-PLUG-55)
+    QTest::newRow("git") << QStringList{"git"} << QString() << false << QString();
+    QTest::newRow("not git") << QStringList{"!git"} << QString() << false << "the document is in a git repository";
 }
 
 // the tokens over the facts of a document (EDIT-PLUG-52/53)
@@ -717,6 +721,7 @@ void TestPluginCore::test_when_tokens()
     facts.fa = true;
     facts.faFinding = "CGML-FA-1 a fault";
     facts.meta.insert("name", "Lift");
+    facts.git = true;
     QList<QPair<QString, QString> > fills;
     if (fill) fills.append(qMakePair(QString("platformLanguage"), QString("Python")));
     QCOMPARE(PluginConditions::check(tokens, reason, facts, fills), expected);
@@ -801,6 +806,43 @@ void TestPluginCore::test_document_facts()
     PluginConditions::readDocument(invalid.rootDocument(), &facts);
     QVERIFY(facts.fa);
     QVERIFY(!facts.faFinding.isEmpty());
+}
+
+// a .git directory in the directory of the file or above it, the links resolved;
+// a .git file does not count (EDIT-PLUG-55)
+void TestPluginCore::test_git_marker()
+{
+    QTemporaryDir tmp;
+    QVERIFY(tmp.isValid());
+    QDir root(tmp.path());
+    QVERIFY(root.mkpath("a/b"));
+    QString doc = root.filePath("a/b/doc.graphml");
+    if (PluginConditions::readGit(doc)) {
+        QSKIP("the temporary directory is inside a git work tree");
+    }
+    QVERIFY(!PluginConditions::readGit(QString()));
+    QVERIFY(root.mkpath("a/.git"));
+    QVERIFY(PluginConditions::readGit(doc));
+    QVERIFY(PluginConditions::readGit(root.filePath("a/doc.graphml")));
+    QVERIFY(QDir(root.filePath("a/.git")).removeRecursively());
+    QFile link(root.filePath("a/.git"));
+    QVERIFY(link.open(QIODevice::WriteOnly));
+    link.write("gitdir: elsewhere\n");
+    link.close();
+    QVERIFY(!PluginConditions::readGit(doc));
+#ifdef Q_OS_UNIX
+    // a link to a directory of a work tree is in the work tree
+    QVERIFY(QFile::remove(root.filePath("a/.git")));
+    QVERIFY(root.mkpath("repo/.git"));
+    QVERIFY(root.mkpath("repo/inner"));
+    QVERIFY(QFile::link(root.filePath("repo/inner"), root.filePath("linked")));
+    QVERIFY(PluginConditions::readGit(root.filePath("linked/doc.graphml")));
+#endif
+    PluginDocumentFacts facts;
+    QCOMPARE(PluginConditions::check(QStringList{"git"}, QString(), facts, {}), QString("the document has no file"));
+    facts.file = true;
+    QCOMPARE(PluginConditions::check(QStringList{"git"}, QString(), facts, {}),
+             QString("the document is not in a git repository"));
 }
 
 QTEST_MAIN(TestPluginCore)
