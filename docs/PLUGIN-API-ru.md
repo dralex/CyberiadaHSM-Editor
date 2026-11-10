@@ -167,9 +167,9 @@ print(os.path.getsize(sys.argv[1]), 'bytes')
 +--------------------------------------------------+
 
 +--------------------------------------------------+
-| ROS2 package - Make the package              [x] |
+| HSM ROS2 - Generate the package...           [x] |
 +--------------------------------------------------+
-| Package directory [~/work/light/ros      ] [...] |
+| Workspace [~/work/light/ros2_ws          ] [...] |
 |                                 [Cancel]  [Run]  |
 +--------------------------------------------------+
 ```
@@ -884,7 +884,7 @@ the nodes»; F10 отмечает следующий узел.
 | `cybersphere-agents` «Run the agent...» | supervised | диаграмма агента отмечается по ходу работы; вопросы агента — `ask`; пауза перед следующим запросом к модели; `replaces` однократного прогона и его продолжения | готов: действие-сессия `session` (`run --session`) |
 | `git` «Commit...» | supervised | перечисляются ветка и файлы в индексе, сообщение коммита запрашивается как ответ, коммитится индекс; `replaces` однократного коммита с сообщением | запланирован: cybersphere-git-plugin 0.1 |
 | плагин конечных автоматов | driven, stream | лента символов, `EOF`, вердикт и выход (расширение КА, `type/fa`) | запланирован |
-| мост к HSM-ROS2 или turtlesim | observed | переходы контроллера пересылаются из ROS 2; события отправляются кодами сообщений; сохранение журнала событий | запланирован |
+| `hsm-ros2` «Испытать на программном симуляторе робота...», `hsm-turtle` «Запустить черепашку...» | observed | шаги контроллера пересылаются из его топика трассировки ROS 2 и отмечаются на диаграмме; стоп; `replaces` заменяет разовые испытание и запуск | доступен: hsm_generator (параметр `trace`), hsm_tests (`--session`) |
 
 ## Примеры
 
@@ -957,31 +957,65 @@ if __name__ == '__main__':
 
 ### Генератор пакета ROS2
 
-`hsm_robot_ros_generator` принимает диаграмму и выходной каталог; адаптер не нужен.
-Каталог запоминается для каждой диаграммы.
+`hsm_robot_ros_generator` поставляет плагин `hsm-ros2` в своём каталоге `editor-plugin/`.
+Рабочее пространство запоминается для каждой диаграммы; для генерации и испытания нужна
+сохранённая диаграмма с начальным состоянием и кодом на Python, а испытание идёт
+наблюдаемой сессией.
 
 ```json
 {
   "api": 1,
   "id": "hsm-ros2",
-  "name": "ROS2 package",
-  "description": "Generates the hsm_controller ROS 2 package; needs ROS 2 and pysm",
-  "interpreter": "python3",
+  "name": "HSM ROS2",
+  "version": "1.1.0",
+  "interpreter": "bash",
+  "requires": { "programs": ["bash"] },
   "parameters": [
-    { "id": "dir", "type": "dir", "label": "Package directory", "scope": "document",
-      "default": "${document_dir}/ros", "create": true, "required": true }
+    { "id": "setup", "type": "file", "label": "ROS 2 setup script", "scope": "persistent",
+      "default": "/opt/ros/jazzy/setup.bash" },
+    { "id": "ws", "type": "dir", "label": "Workspace", "scope": "document",
+      "default": "${document_dir}/ros2_ws", "create": true, "required": true },
+    { "id": "duration", "type": "int", "label": "Test duration, s", "scope": "document",
+      "default": 30, "min": 1 }
   ],
   "actions": [
-    { "id": "generate", "label": "Make the package...", "result": "files",
-      "outdir": "dir",
-      "argv": ["${plugin_dir}/hsm_generator.py", "${input}", "-o", "${outdir}", "-f"] }
-  ]
+    { "id": "generate", "label": "Generate the package...", "result": "files",
+      "outdir": "ws", "save": true, "meta": { "platformLanguage": "Python" },
+      "when": ["saved", "sm", "!fa", "initial", "meta:platformLanguage=Python"],
+      "parameters": ["setup", "ws"],
+      "argv": ["${plugin_dir}/ros2_env", "--setup", "${param:setup}", "hsm_generator",
+               "${input}", "-o", "${outdir}/src/hsm_controller", "-f", "-q"] },
+    { "id": "test", "label": "Test with the fake robot...", "result": "diagnostics",
+      "exit_ok": [0, 1], "timeout": 0, "save": true, "meta": { "platformLanguage": "Python" },
+      "when": ["saved", "sm", "!fa", "initial", "meta:platformLanguage=Python"],
+      "parameters": ["setup", "duration"],
+      "argv": ["${plugin_dir}/ros2_env", "--setup", "${param:setup}", "--ros-exec",
+               "hsm_tests", "hsm_robot_test", "${input}", "--json", "${diagnostics}",
+               "--duration", "${param:duration}"] }
+  ],
+  "session": {
+    "version": 1,
+    "actions": [
+      { "id": "test-live", "label": "Test with the fake robot...", "result": "diagnostics",
+        "exit_ok": [0, 1], "replaces": ["test"], "save": true,
+        "meta": { "platformLanguage": "Python" },
+        "when": ["saved", "sm", "!fa", "initial", "meta:platformLanguage=Python"],
+        "parameters": ["setup", "duration"],
+        "argv": ["${plugin_dir}/ros2_env", "--setup", "${param:setup}", "--ros-exec",
+                 "hsm_tests", "hsm_robot_test", "${input}", "--json", "${diagnostics}",
+                 "--duration", "${param:duration}", "--session"] }
+    ]
+  }
 }
 ```
 
-Инструмент, который читает дополнительные файлы рядом с диаграммой (`hsm-to-python`
-встраивает файлы, названные в диаграмме), задаёт `"cwd": "document"` и использует
-`${document}` вместо `${input}`.
+Настоящий дескриптор добавляет действие `check` (`sm`, `!fa`: оно сообщает об отсутствии
+начального состояния), действие `build` (`saved`), а также начальное положение и дальномер
+имитатора робота. Адаптер `ros2_env` на bash подключает `${param:setup}`, потому что
+редактор обычно запускается без ROS 2. В `test-live` контроллер публикует свои шаги в
+`/hsm_ros_trace` в идентификаторах диаграммы, а исполнитель пересылает их
+(`hsm_robot_ros_generator/docs/editor_plugin.md`); `hsm-turtle` из `turtle_driver` так же
+управляет turtlesim, и его `run-live` возвращает путь черепашки.
 
 ### Рисование диаграмм с помощью LLM
 

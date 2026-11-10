@@ -1,0 +1,13 @@
+# an observed session over the lift diagram: a machine running elsewhere, relayed; the
+# last state keeps the marks, the user only stops it
+on initialize
+  result {"kind":"observed"}
+  send {"method":"state","params":{"status":"waiting","text":"starting the run"}}
+  send {"method":"state","params":{"status":"running","text":"","active":["idle"],"fired":["t0"],"time":0}}
+  send {"method":"history","params":{"event":"CALL_UP","time":0.5,"origin":"system","outcome":"fired","fired":["t1"]}}
+  send {"method":"state","params":{"status":"running","text":"0.5 s","active":["moving","up"],"fired":["t1"],"time":0.5}}
+  send {"method":"history","params":{"event":"CALL_UP","time":0.6,"origin":"system","outcome":"dropped","fired":[]}}
+  send {"method":"state","params":{"status":"finished","text":"PASSED"}}
+on shutdown
+  result {}
+  exit 0

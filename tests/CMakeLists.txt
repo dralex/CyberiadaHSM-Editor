@@ -881,6 +881,8 @@ add_plugin_test(session-bad-model INPUT diagrams/lift.graphml PLUGIN badmodel:ru
   SESSION scripts/session-fail.session DUMP_PLUGIN EXPECTED 6)
 add_plugin_test(session-expect INPUT diagrams/lift.graphml PLUGIN stepper:step PATHS session
   SESSION scripts/session-fail.session DUMP_SESSION EXPECTED 6)
+add_plugin_test(session-observed INPUT diagrams/lift.graphml PLUGIN observer:watch PATHS session
+  SESSION scripts/session-observed.session DUMP_PLUGIN DUMP_SESSION)
 
 # the conditions (EDIT-PLUG-50..54): requires at the scan, when on the document
 add_plugin_test(list-conditions LIST PATHS conditions ENV "CYBERIADA_TEST_TOKEN=")
