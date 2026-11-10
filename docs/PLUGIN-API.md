@@ -876,7 +876,7 @@ F10 marks the next node.
 |---|---|---|---|
 | `hsm-to-python` "Run step by step..." | driven, async | the generated program on the `hsmd` dispatcher; posting events, timers on the virtual clock, replay of a stream, Save Log | available: hsm-to-python 2.1, hsm-dispatcher-py 0.2 (`hsmd.session`) |
 | `cybersphere-agents` "Run the agent..." | supervised | the agent diagram marked as it runs; the agent's questions as `ask`; Pause before the next model request; `replaces` the one-shot run and its continuation | available: the session action `session` (`run --session`) |
-| `git` "Commit..." | supervised | the branch and the staged files listed, the commit message asked as the answer, the index committed; `replaces` the one-shot commit with a message | planned: cybersphere-git-plugin 0.1 |
+| `git` "Commit..." | supervised | the branch and the staged files listed, the commit message asked as the answer, the index committed; `replaces` the one-shot commit with a message | available: cybersphere-git-plugin 0.1 (`commit --session`) |
 | a finite automaton plugin | driven, stream | a tape of symbols, `EOF`, the verdict and the output (the FA extension, `type/fa`) | planned |
 | `hsm-ros2` "Test with the fake robot...", `hsm-turtle` "Run the turtle..." | observed | the controller's steps relayed from its ROS 2 trace topic and marked on the diagram; Stop; `replaces` the one-shot test and run | available: hsm_generator (the `trace` parameter), hsm_tests (`--session`) |
 

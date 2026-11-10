@@ -32,7 +32,8 @@ The most interesting plugins are:
 * ![HSM Python](https://github.com/dralex/hsm-to-python): running HSM diagrams with Python code;
 * ![Finite Automata](https://github.com/kruzhok-team/fa-dispatcher-py/): running FA diargams;
 * ![HSM-ROS2 Node Generator](https://github.com/kruzhok-team/hsm_robot_ros_generator): generating and checking HSM-based ROS2 code; 
-* ![HSM-ROS2 Turtle](https://github.com/dralex/turtle_driver): running ROS2 turtle controlled by a HSM diagram.
+* ![HSM-ROS2 Turtle](https://github.com/dralex/turtle_driver): running ROS2 turtle controlled by a HSM diagram;
+* ![Git](https://github.com/dralex/cybersphere-git-plugin): staging and committing the diagram, its changes since a revision state by state.
 
 ## Installation
 

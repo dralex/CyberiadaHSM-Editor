@@ -35,7 +35,8 @@ Python; правила в каталоге `syntax/`), который выбир
 * ![ПРИМС с Python](https://github.com/dralex/hsm-to-python): запуск диаграмм ПРИМС с кодом на Python;
 * ![Конечные автоматы](https://github.com/kruzhok-team/fa-dispatcher-py/): запуск диаграмм конечных автоматов;
 * ![Генерация кода для ROS2](https://github.com/kruzhok-team/hsm_robot_ros_generator): генерация и проверка кода для нод ROS2 на Python; 
-* ![Черепашка ROS2](https://github.com/dralex/turtle_driver): запуск диаграмм ПРИМС по управлению черепашки ROS2.
+* ![Черепашка ROS2](https://github.com/dralex/turtle_driver): запуск диаграмм ПРИМС по управлению черепашки ROS2;
+* ![Git](https://github.com/dralex/cybersphere-git-plugin): добавление диаграммы в индекс и коммит, её изменения с ревизии по состояниям.
 
 ## Установка
 
