@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.46 (2026-11-10)
+**Document version:** 0.47 (2026-11-10)
 
 **Related authorities:**
 
@@ -56,21 +56,23 @@ exception, etc.)
 
 ### Editing and inspection modes
 
-Two modes decide whether the geometric requirements are enforced:
+The mode of a tab (§4.14, `docs/MODES.md`) decides whether the geometric requirements are
+enforced:
 
-- **Editing mode** (the default): operations mutate the document and the editor's *recovery*
-  keeps it spec-compliant — a container grows to fit its content (`EDIT-NODE-2`), a grown or
+- **Editing** (an HSM or FA tab, the default): operations mutate the document and the editor's
+  *recovery* keeps it spec-compliant — a container grows to fit its content (`EDIT-NODE-2`), a grown or
   reparented element pushes its siblings clear (`EDIT-NODE-6`), and the geometry is
   reconstructed on request - rebuilt from scratch, or *updated*: the drawn elements keep
   their places and the geometry-less ones are laid out around them. The `[U]` geometric laws hold after every operation because this
-  recovery maintains them.
-- **Inspection mode**: the document is read-only and drawn as faithfully as possible to its
-  stored geometry — the recovery is suspended, so a loaded diagram may break the `[U]`
-  geometric laws and is shown as-is (see §4.10). No operation runs, so nothing enforces or
-  breaks a law.
+  recovery maintains them. The read-only flag of a tab refuses the operations and keeps the
+  recovery.
+- **Inspection** (an HSM inspection tab, also both sides of an HSM diff tab): the document is
+  read-only, read and drawn as faithfully as possible to its stored geometry — the recovery is
+  suspended, so a loaded diagram may break the `[U]` geometric laws and is shown as-is (see
+  §4.10). No operation runs, so nothing enforces or breaks a law.
 
 A `[U]` geometric law is therefore an **editing-mode** invariant, and the test system checks
-it in editing mode; inspection mode is where a non-compliant diagram is read without change.
+it in editing tabs; an inspection tab is where a non-compliant diagram is read without change.
 
 ## 3. Where the specification sits
 
@@ -81,7 +83,7 @@ it in editing mode; inspection mode is where a non-compliant diagram is read wit
  │ UML2      │               ├──────────────────┤            │  dump        │
  ├───────────┤  geometry     │ NODE  EDGE  TEXT │───[U]/[A]─▶│              │─▶ polygon laws
  │ editor    │──interaction─▶│ TOOL INSPECT DOC │───[A]─────▶│  graph +     │   (every round)
- │ design    │  history      │ HIST  PLUG       │───[I]/[A]─▶│  rectangle   │
+ │ design    │  history      │ HIST  PLUG  MODE │───[I]/[A]─▶│  rectangle   │
  ├───────────┤               ├──────────────────┤            │  arithmetic  │─▶ ctest cases
  │ ПНСТ 1044 │──round-trip──▶│ ROBUST IO META   │───[I]/[C]─▶│              │   (per requirement)
  └───────────┘               └──────────────────┘            └──────────────┘
@@ -189,7 +191,7 @@ over those rows; nothing more than the existing dump is needed.
 ### 4.3 State machines/states/pseudostates/comments geometry and layout — NODES
 
 The `[U]` laws below are editing-mode invariants: the editor's recovery maintains them after
-each operation (grow-to-fit, push-siblings). Inspection mode suspends them and shows the stored
+each operation (grow-to-fit, push-siblings). An inspection tab suspends them and shows the stored
 geometry as-is (see Modes and §4.10).
 
 Three geometries are distinct and must not be conflated (PNST 1044 §7.2 defines the first two;
@@ -313,8 +315,8 @@ the third is a derived display value the format does not store):
   border. This holds however the node geometry changes — an interactive border drag, a move or
   resize through the model, a grow to fit the children, a reparent — so a transition never hangs
   off a state that was moved, resized or reparented. A loaded document is recovered the same way:
-  an endpoint stored off its border is snapped onto it on load (inspect mode shows it as stored,
-  `EDIT-INSPECT-*`). *design*
+  an endpoint stored off its border is snapped onto it on load (an inspection tab shows it as
+  stored, `EDIT-INSPECT-*`). *design*
 - `EDIT-EDGE-2` MUST [U]: an endpoint of a point-based circle elements (initial
   pseudostate, final state, history pseudostate, or entry/exit point) lies on the border of the
   drawn element, not the center. *design*
@@ -450,16 +452,18 @@ the third is a derived display value the format does not store):
   titles, names, informal comments ─► plain
   ```
 
-  Languages (`syntax/*.json`): C, C++ (Arduino), C#, Java, JavaScript (TypeScript), Python; the
-  value is matched case-insensitively by the name or an alias.
+  Languages (`syntax/*.json`): C, C++ (Arduino), C#, Python; the value is matched
+  case-insensitively by the name or an alias. The same files are the language modes of the text
+  tabs (`EDIT-MODE-13`).
 - `EDIT-TEXT-8` SHOULD [A]: the new action and new internal transition dialogs highlight the
   entered text as EDIT-TEXT-7 does; an exported image is plain unless the export preference
   keeps the colours. *design*
-- `EDIT-TEXT-9` SHOULD [A]: the Edit > Language menu (after Edit > Tools) sets the
+- `EDIT-TEXT-9` SHOULD [A]: the Document > Language menu (after Document > Read-only) sets the
   `platformLanguage` of the active document; choosing an entry writes the value, *Undefined*
   removes the parameter, each choice is one undo step; an empty document first gets the state
   machine the first drawn element would create (the format needs one). The checked entry follows the active document on load, tab switch, properties edit,
-  undo/redo and batch `update-meta`. The menu is disabled in inspection mode. *design*
+  undo/redo and batch `update-meta`. The menu is enabled only in an editable diagram tab — HSM or
+  FA without the read-only flag (`EDIT-MODE-4`). *design*
 
   ```
   ( ) Undefined                 the parameter is absent or empty
@@ -499,11 +503,12 @@ the third is a derived display value the format does not store):
   [text](url) <url>    ─► link
   ```cpp … ```         ─► the fence lines as markers, the body as code
   ```
-- `EDIT-TEXT-12` SHOULD [A]: the Edit > Markup menu (after Edit > Language) sets the
+- `EDIT-TEXT-12` SHOULD [A]: the Document > Markup menu (after Document > Language) sets the
   `markupLanguage` of the active document with the rules of `EDIT-TEXT-9`: *Plain* removes the
   parameter (a `plain` value checks it too), *Markdown* writes `markdown`, an unknown value shows as
   an extra entry kept for the session, the check follows the active document, and the menu is
-  disabled in inspection mode. A comment's own `dMarkup` still overrides the document value. *design*
+  enabled only in an editable diagram tab. A comment's own `dMarkup` still overrides the document
+  value. *design*
 - `EDIT-TEXT-13` MUST [A]: a model reset (a document load, an undo/redo, the geometry
   reconstruction or update) discards an unfinished canvas text edit before the old document is
   freed: nothing is committed and no undo step is added. *design*
@@ -584,7 +589,8 @@ the third is a derived display value the format does not store):
   `EDIT-NODE-3`), the other coordinate kept, in one undo step; a sibling it lands on moves to the
   nearest free slot (`EDIT-NODE-6`) and the parent grows to fit (`EDIT-NODE-2`). Enabled only for a
   node with geometry in a state or a bordered state machine; disabled on the top level (a machine,
-  a child of a frameless machine), for a submachine connector and in inspection. *design*
+  a child of a frameless machine), for a submachine connector and in a tab that is not editable
+  (`EDIT-MODE-4`). *design*
 
 ### 4.7 History — HIST
 
@@ -616,8 +622,9 @@ the third is a derived display value the format does not store):
 - `EDIT-IO-6` MUST [A]: an exported image is the diagram's own size — the visible items'
   bounding rect padded by 1px, with no scene margin — and the `export frame` is reported on stderr
   in batch mode only (silent in the interactive editor). *design*
-- `EDIT-IO-7` MUST [A]: Save is enabled only for an open, modified document that is not in
-  inspection mode; Save-As and Export are enabled whenever a document is open. *design*
+- `EDIT-IO-7` MUST [A]: Save is enabled only for an open, modified document in an editable tab
+  (`EDIT-MODE-4`); Save-As is enabled in every tab but a diff tab, Export in every diagram tab.
+  *design*
 
 ### 4.9 Metainformation — META
 
@@ -642,20 +649,26 @@ the third is a derived display value the format does not store):
   deletable from the tree with Del even when it has no scene item (no geometry, or hidden). A
   sibling of `EDIT-META-1`, which keeps the `CGML_META` node off the scene unconditionally. *design*
 
-### 4.10 Inspection mode — INSPECT
+### 4.10 Inspection — INSPECT
 
-- `EDIT-INSPECT-1` MUST [C]: in inspection mode the document is read-only — every editing
+Inspection is the mode HSM inspection of a tab of its own (`EDIT-MODE-6`); the sides of an HSM
+diff tab are inspected the same way (`EDIT-MODE-10`).
+
+- `EDIT-INSPECT-1` MUST [C]: in an inspection tab the document is read-only — every editing
   operation (create, delete, rename, move, resize, reparent, action edit, paste,
   metainformation) is refused and changes nothing. *design*
-- `EDIT-INSPECT-2` MUST [A]: a diagram is drawn from its stored geometry — a composite state's
-  region follows the document's region rect (the state rect when it has none), even in a
-  document without the marker (`EDIT-NODE-15`); the geometric recovery (the `[U]` NODE/EDGE laws)
-  is suspended, so a diagram whose stored geometry breaks them is shown as-is. *design*
+- `EDIT-INSPECT-2` MUST [A]: an inspected diagram is read and drawn from its stored geometry —
+  no endpoint is snapped on load (`EDIT-EDGE-1`), a composite state's region follows the
+  document's region rect (the state rect when it has none), even in a document without the
+  marker (`EDIT-NODE-15`); the geometric recovery (the `[U]` NODE/EDGE laws) is suspended, so a
+  diagram whose stored geometry breaks them is shown as-is. *design*
 - `EDIT-INSPECT-3` MUST [A]: inspection and geometry reconstruction are mutually exclusive — an
   inspected document is never given the geometry it does not have. *design*
-- `EDIT-INSPECT-4` SHOULD [I]: leaving inspection mode re-applies the editing layout and the
-  recovery — a document without the marker gets its computed regions (`EDIT-NODE-15`) and the
-  `[U]` compliance laws regain force. *design*
+- `EDIT-INSPECT-4` SHOULD [I]: turning an inspection tab into an editing one (Document > Mode >
+  HSM diagram or FA diagram) re-applies the editing layout and the recovery — the endpoints are
+  snapped (`EDIT-EDGE-1`), a document without the marker gets its computed regions
+  (`EDIT-NODE-15`) and the `[U]` compliance laws regain force; the undo history starts
+  there. *design*
 
 ### 4.11 Documents and tabs — DOC
 
@@ -665,7 +678,8 @@ The window holds several documents; the structure is drawn in `docs/WINDOW.md`.
   line appears with the second open document and disappears when one is left. *design*
 - `EDIT-DOC-2` MUST [A]: New opens a new untitled document in a new tab without a prompt; Open
   loads into the active tab when it is a clean untitled document and into a new tab otherwise;
-  opening a path that is already open activates its tab instead of loading it twice. *design*
+  opening a path that is already open activates its tab instead of loading it twice — an
+  editing and an inspection tab of one path are counted apart (`EDIT-MODE-6`). *design*
 - `EDIT-DOC-3` MUST [A]: the structure tree, the properties panel, undo/redo and their texts, the
   window title with the modified marker, the zoom level and the armed tool follow the active
   document on every tab switch; a background document is not changed by a switch. *design*
@@ -676,9 +690,10 @@ The window holds several documents; the structure is drawn in `docs/WINDOW.md`.
   document is pasted into the active one with the rules of `EDIT-TOOL-4`; the paste target is the
   copied element's parent collection when the active document has it, else its first state
   machine. *design*
-- `EDIT-DOC-6` MUST [A]: inspection mode is an application mode — switching it on makes every
-  open document read-only (`EDIT-INSPECT-1`) and the window title of the active document carries
-  the marker. *design*
+- `EDIT-DOC-6` MUST [A]: the mode and the read-only flag belong to a tab (`EDIT-MODE-1`) —
+  changing them in one tab leaves the other tabs as they are; the Document menu, the tools, the
+  docks and the plugin actions follow the active tab on every switch, and the window title
+  carries its marker (`EDIT-MODE-2`). *design*
 - `EDIT-DOC-7` MUST [A]: the files given on the command line in GUI mode open as tabs in order,
   the last one active; a file that fails to load is reported and skipped. *design*
 - `EDIT-DOC-8` MUST [A]: a gesture-log session is bound to one document — a tab switch while
@@ -697,7 +712,8 @@ The window holds several documents; the structure is drawn in `docs/WINDOW.md`.
 The plugins are external programs run on the active document: the architecture is
 `docs/PLUGINS.md`, the contract a plugin follows is `docs/PLUGIN-API.md` (`api` 1, the
 session protocol 1). `EDIT-PLUG-36..49` are the sessions (plugin level 2), `EDIT-PLUG-50..55`
-the conditions of an action.
+the conditions of an action, `EDIT-PLUG-56..59` the modes of an action and the diff result
+(`docs/MODES.md`).
 
 - `EDIT-PLUG-1` MUST [A]: the plugins are looked up in `--plugin-path` (which replaces the
   rest), `$CYBERIADA_PRO_PLUGIN_PATH`, the user folder (moved by `$CYBERIADA_PRO_DATA_HOME`,
@@ -727,8 +743,9 @@ the conditions of an action.
   parameter is true or not empty, a `$` not followed by `{` is kept, and an unknown variable
   fails the run before it starts. *design*
 - `EDIT-PLUG-9` MUST [A]: `${input}` holds the active document as Cyberiada 1.0 with its unsaved
-  edits (an empty file for an empty document), `${selection}` the selected element ids in the
-  document order; `request.json` is written exactly when the argv uses `${request}`. *design*
+  edits (an empty file for an empty document; a text tab: `EDIT-PLUG-57`), `${selection}` the
+  selected element ids in the document order; `request.json` is written exactly when the argv
+  uses `${request}`. *design*
 - `EDIT-PLUG-10` MUST [U]: a secret value never appears in the argv, `request.json`, the Output,
   the dumps, the session log or the settings; only the environment variable named by `export`
   carries it to the plugin process. *design*
@@ -748,7 +765,8 @@ the conditions of an action.
   centres the element, a finding whose element is absent has no link, and the findings turn
   grey once the document changes. *design*
 - `EDIT-PLUG-16` MUST [A]: a `files` result lists the new and changed files under the action's
-  outdir in the path order. *design*
+  outdir in the path order; a listed file whose extension a text mode knows (`EDIT-MODE-13`)
+  is a link that opens it in a text tab. *design*
 - `EDIT-PLUG-17` MUST [A]: the plugin's stdout and stderr stream during the run into the
   plugin's own output tab ("<plugin> output"), one block per run headed by the action and the
   document, capped per tab; a starting run makes its tab current. *design*
@@ -766,8 +784,9 @@ the conditions of an action.
   refused and the canvas takes no input until the run ends. *design*
 - `EDIT-PLUG-23` MUST [A]: closing a tab with a run asks, then cancels the run; exiting the
   editor cancels every run; the result for a closed document is never applied. *design*
-- `EDIT-PLUG-24` MUST [A]: inspection mode disables the `replace` actions, and a result that
-  arrives after it is switched on is refused. *design*
+- `EDIT-PLUG-24` MUST [A]: a tab that is not editable (`EDIT-MODE-4`: read-only, inspection,
+  diff) disables the `replace` actions, and a result that arrives after its tab became read-only
+  is refused. *design*
 - `EDIT-PLUG-25` MUST [A]: an action with `save` or `cwd: document` saves a modified or untitled
   document first — an untitled one asks for a name, a cancel cancels the run, and in batch mode
   an untitled document fails it; `cwd: document` runs the plugin in the document's directory.
@@ -892,6 +911,27 @@ the conditions of an action.
   through its links; a `.git` file does not count and no process is started; the lookup is
   made when the document gets its file (open, Save As), at every save and at every scan, and
   kept for the path between them. *design*
+- `EDIT-PLUG-56` MUST [A]: an action works in the modes its `modes` lists (`EDIT-MODE-1` ids),
+  `["hsm", "fa"]` when it has none; in a tab of another mode it is disabled with the reason
+  naming the modes; an unknown id is a warning (`EDIT-PLUG-3`) and an action without a known id
+  is disabled as needing a newer editor (`EDIT-PLUG-53`); a `modes` of a wrong type rejects the
+  descriptor (`EDIT-PLUG-2`). The mode is checked before the `when` tokens. *design*
+- `EDIT-PLUG-57` MUST [A]: in a text tab `${input}` is `<rundir>/input.<ext>` holding the text
+  with its unsaved edits in UTF-8, `<ext>` the first extension of the tab's mode, and
+  `${output}` is `<rundir>/output.<ext>`; a `replace` result replaces the text as one undo step
+  (`EDIT-PLUG-12`), a `new-document` result opens a text tab of the same mode; the tokens of
+  `EDIT-PLUG-52` that need a diagram (`sm`, `initial`, `fa`, `fa-valid`, `meta:`) do not hold.
+  *design*
+- `EDIT-PLUG-58` MUST [A]: a `diff` result opens a diff tab (`EDIT-MODE-10`): the base is
+  `${output}` read in any format the library reads — an empty output is an empty document, not
+  a failure — and the target is the run's `${input}`; the base is labelled by the values of the
+  action's `string` parameters, else by the action label; the source document is untouched;
+  Refresh of the tab runs the action again with the same values (`EDIT-MODE-12`). A `diff`
+  action lists only the diagram modes `hsm`, `fa`, `inspection`, else the descriptor is
+  rejected. *design*
+- `EDIT-PLUG-59` MUST [A]: an action with an unknown `result` is disabled with the reason that
+  it needs a newer editor and listed as a warning, the plugin's other actions staying, as an
+  unknown `when` token (`EDIT-PLUG-53`). *design*
 
 ### 4.13 Interface language and preferences — UI
 
@@ -931,6 +971,89 @@ The interface translations and their workflow are in `docs/TRANSLATION.md`.
   transient draw item; a handle a rebuild replaces leaves the scene at once, never lingering to be
   painted after it is freed. The editor reports a violation through the `--dump-audit` scene audit
   and the polygon holds it as a standing law. *design*
+
+### 4.14 Document modes — MODE
+
+A tab holds its document in a mode — the format, the access, the tools and the plugins — and
+has a read-only flag; the architecture is `docs/MODES.md`. Specified in 0.47, implemented by
+the stages of `docs/MODES.md`.
+
+- `EDIT-MODE-1` MUST [A]: every tab has one mode — `hsm` (HSM diagram), `inspection` (HSM
+  inspection), `fa` (FA diagram), `diff` (HSM diff), `text` (Plain text), `markdown`
+  (Markdown) or a language of `syntax/*.json` (`c`, `cpp`, `csharp`, `python`) — and a
+  read-only flag, off in every new or opened tab; changing them in one tab leaves the others
+  as they are (`EDIT-DOC-6`). *design*
+- `EDIT-MODE-2` MUST [A]: the tab text and the window title carry the mode after the title —
+  nothing for HSM, `[inspection]`, `[FA]`, `[diff]`, `[text]`, `[Markdown]`, `[<language
+  name>]` — and the flag as `ro` in the tab, `read-only` in the window: `a.graphml [FA, ro]*`,
+  `a.graphml [FA, read-only][*]`, `a.graphml [ro]` for HSM. *design*
+- `EDIT-MODE-3` MUST [A]: Document > Mode lists the modes, the active tab's checked; an entry
+  the tab cannot reach is disabled: an HSM or FA tab reaches HSM, FA and HSM inspection
+  (`EDIT-MODE-6`), an inspection tab HSM and FA, a text tab every text mode, a diff tab none.
+  *design*
+- `EDIT-MODE-4` MUST [A]: Document > Read-only sets the flag of the active tab. A tab is
+  *editable* when it is HSM, FA or a text mode without the flag and not locked by a plugin
+  (`EDIT-PLUG-22/41`); in a tab that is not, every edit is refused as in `EDIT-INSPECT-1` (a
+  text takes no input), Undo, Redo and Save are disabled, and selecting, zooming, scrolling and
+  copying keep working. The flag keeps the editing layout and the recovery of a diagram. In an
+  inspection or a diff tab the entry is checked and disabled. *design*
+- `EDIT-MODE-5` MUST [A]: HSM to FA sets the metainformation `type` to `fa`, FA to HSM removes
+  it, each as one undo step; the mode follows the document: a loaded document with `type/ fa`
+  opens in FA, and an undo, a redo, a properties edit or a plugin result that sets or removes it
+  switches the tab. File > New > FA diagram opens an untitled FA tab whose document, made by
+  the first edit (`EDIT-TEXT-9`), carries `type/ fa`. *EXT-FA 5; design*
+- `EDIT-MODE-6` MUST [A]: HSM inspection opens a tab of its own: chosen on an HSM or FA tab it
+  opens an inspection tab of the same document — read from its file when the tab is saved,
+  else from the tab's snapshot — without the recovery (`EDIT-INSPECT-2`), titled as the source;
+  the source tab is untouched; a file with an inspection tab already open activates it. The
+  Open dialog's inspection box (off by default) and `--inspect` open the files in inspection
+  tabs. HSM or FA on an inspection tab makes it an editing tab in place (`EDIT-INSPECT-4`),
+  FA as `EDIT-MODE-5`. *design*
+- `EDIT-MODE-7` MUST [A]: in an FA tab the creation tools are State, Initial, Final,
+  Transition, Comment and Formal comment; the others — choice, terminate, the histories, the
+  submachine state, the entry and exit points, the state machine — are disabled with the
+  reason in the tooltip. A paste, a plugin result or a load is not filtered: an FA draft may
+  hold any element. *EXT-FA 3; design*
+- `EDIT-MODE-8` SHOULD [A]: View > FA symbols (off by default, kept per user) draws the entry
+  action of a state in an FA tab as its behaviour alone, without `entry/`; the document is not
+  changed. *EXT-FA 3.1; design*
+- `EDIT-MODE-9` SHOULD [A]: Document > Check of an FA tab runs the EXT-FA check and shows each
+  violation in Diagnostics with its requirement, linked to its element (`EDIT-PLUG-15`), or
+  says there is none; it is disabled in the other tabs. *EXT-FA 5; design*
+- `EDIT-MODE-10` MUST [A]: Document > Compare with... on a diagram tab opens a diff tab: the
+  target is the tab's snapshot, the base another open diagram tab, a file, or the tab's saved
+  file when it is modified; a plugin opens one with a `diff` result (`EDIT-PLUG-58`). Both
+  sides are read as inspected (`EDIT-INSPECT-2`) in any format the library reads, an empty base
+  being an empty document; the tab is titled `<target> ↔ <base>`; the source tabs are
+  untouched. *design*
+- `EDIT-MODE-11` MUST [A]: a diff tab shows the base and the target side by side, read-only,
+  their elements marked added (the target only), removed (the base only) and changed; the
+  change list in the structure tree dock lists the pairs by state machine with what differs, a
+  row selecting and centring the element in both views. The pairs and what differs are the
+  library's revision diff with the geometry option of Document > Geometry (off): without it
+  the ids, the geometry and the `cyberiadaEditorView` metainformation are not shown. *design*
+- `EDIT-MODE-12` MUST [A]: Document > Refresh takes both sides of the active diff tab again from
+  their origins: the target from its source tab (kept when the tab is closed), the base from
+  its tab, its file, the saved file, or a run of its plugin action with the same values.
+  *design*
+- `EDIT-MODE-13` MUST [A]: File > New > Text file opens an untitled text tab in Plain text,
+  Markdown or a language; Open reads a file into a text tab in the mode its extension names
+  (the `extensions` of `syntax/*.json`, `.md`, `.txt`), Plain text for an extension no mode
+  names, a diagram for `.graphml`; the text is UTF-8 and Save writes it back as it is, Save As
+  proposing the mode's first extension; Undo and Redo step through the text's own edits; the
+  text is highlighted by the language (`EDIT-TEXT-7`) or as Markdown (`EDIT-TEXT-11`), and a
+  switch between the text modes changes only the highlighting and the marker. *design*
+- `EDIT-MODE-14` SHOULD [A]: a read-only Markdown tab shows the rendered document instead of the
+  source; clearing the flag shows the source again. *design*
+- `EDIT-MODE-15` MUST [A]: the parts of the window follow the mode of the active tab
+  (`docs/MODES.md`, The modes): a text tab hides the element toolbar and disables the zoom,
+  Language, Markup, Properties..., the geometry actions and Export, and the tree and properties
+  docks are empty; Geometry and Refresh act on a diff tab, Check on an FA tab only. *design*
+- `EDIT-MODE-16` MUST [A]: the batch verbs `new-document [<mode>]`, `mode <id>` (`inspection`
+  opens the inspection tab), `read-only on|off`, `compare <index|title|file>`, `geometry
+  on|off` and `refresh` act as the menus do; `--dump-tabs` prints `i <title>[*] <mode>[ ro]
+  [active]`; `--dump` of a text tab prints `== text` (the mode and the lines), of a diff tab
+  `== diff` (the base label and the pairs with what differs, by id). *design*
 
 ## 5. Coverage
 

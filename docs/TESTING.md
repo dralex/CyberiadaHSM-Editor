@@ -96,6 +96,7 @@ specification §2):
 | INSPECT                 | [C]/[A]/[I]| inspect-reject, inspect-render   |
 | DOC                     | [A]        | tabs, L4                         |
 | PLUG                    | [A]/[U]/[I]/[C] | plugin, L4                  |
+| MODE                    | [A]        | mode (planned), L4 (planned)     |
 
 The exploratory polygon runs the same requirements as standing laws over long histories;
 `POLYGON.md` maps the check kinds to its oracles.
@@ -121,8 +122,10 @@ it checks in a comment):
 | INSPECT| `inspect-reject-*` (editing refused under `--inspect`, `EDIT-INSPECT-1`); `inspect-render-*` (stored-geometry render vs a good image, `EDIT-INSPECT-2`) |
 | UI     | `l4-translation` (`EDIT-UI-1/3`: the bundled languages, the Preferences selector, the Russian menus, Qt's buttons, the property labels, the default names, the property lookup), `ui-batch-english` (`EDIT-UI-2`), `l4-window test_pane_toggles/test_pane_persist/test_dock_titles_bold` (`EDIT-UI-6`: the tree and properties docks, their View entries, the close button, the stored choice, the bold dock titles), `l4-plugin-core test_config_data_home` (`EDIT-UI-7`: the ini file under `CYBERIADA_PRO_CONFIG_HOME`, the user plugin folder under `CYBERIADA_PRO_DATA_HOME`) |
 | PLUG   | the `plugin-*` cases: discovery and rejection (`EDIT-PLUG-1..4`), variables and secrets (`EDIT-PLUG-8..11`), the results and failures (`EDIT-PLUG-12..20`), save and cwd (`EDIT-PLUG-25`), the batch contract (`EDIT-PLUG-27/28`); `l4-plugin-core`; `l4-plugins` for the window (`EDIT-PLUG-5..7`, `EDIT-PLUG-15`, `EDIT-PLUG-17`, `EDIT-PLUG-21..24`, `EDIT-PLUG-29..32`, `EDIT-PLUG-35`); the sessions: `list-session`, `session-*` (`EDIT-PLUG-36..38`, `EDIT-PLUG-47/48`), `l4-plugin-core` (the session block, the channel), `l4-plugins` (`EDIT-PLUG-39..46`, `EDIT-PLUG-49`); the conditions: `list-conditions*`, `conditions-*` (`EDIT-PLUG-50..55`; `conditions-git*` with a `.git` directory made by the test), `l4-plugin-core` (their parsing, the tokens, the programs and the variables, the document facts, the `.git` lookup), `l4-plugins test_conditions` (the menu and the plugin manager follow the document, a Save As, a `.git` made after the open) |
+| MODE   | planned with the stages of `docs/MODES.md`: `mode-*` batch scripts with `--dump-tabs` (an inspection tab beside its editing tab, the read-only flag per tab, HSM to FA and its undo, the FA tools refused, a `type/ fa` file opened in FA, a text file opened, edited and saved per mode, a read-only Markdown dump, `compare` of `tests/diagrams` pairs with and without `geometry`), the `plugin-*` cases of a `modes` action and a `diff`-result example plugin (`EDIT-PLUG-56..59`), `l4-modes` (the traits, the title markers, the text undo proxy, the extension of a mode) |
 
-Requirements with **no dedicated case yet** — the gaps to fill: `SEM-1` (one initial per
+Requirements with **no dedicated case yet** — the gaps to fill: `MODE-1..16` and
+`PLUG-56..59` (specified ahead of the code, `docs/MODES.md`), `SEM-1` (one initial per
 level — only the polygon pseudostate drill and the standing law cover it), `TOOL-7` (pan/zoom
 not drivable in batch). The first is held by the polygon; the last awaits the editor additions. `NODE-6` (sibling no-overlap) is now
 held by `l4-model test_reparent_free_slot` and `l4-scene test_grow_pushes_siblings` beside the
@@ -217,7 +220,7 @@ name the model refuses reverts once the row is left.
 
 `l4-dialog` checks the file dialogs. The open dialog: the file browser and the
 option check boxes really share one window (the options are injected into the
-dialog grid layout), the document is inspected by default, and the inspected
+dialog grid layout), the inspection is opt-in (the box is off), and the inspected
 document is never given the geometry it does not have - the reconstruction box
 is unchecked and disabled while the inspector box is checked. The save dialog:
 every writable format is offered, the yEd formats are disabled with the reason
@@ -371,8 +374,9 @@ also as one undo step; the `update-geometry` L2 case runs it on
 `partial-geometry.graphml` (the `geometry` diagram with two states stripped of
 their geometry) and compares the dump and the saved file.
 
-`--inspect` opens the document read-only, as the GUI does through the open
-dialog: every model mutation is refused, so an edit script fails with exit
+`--inspect` opens the document in an inspection tab (`EDIT-MODE-6`), as the
+inspection box of the open dialog does: the document is read without the
+recovery, every model mutation is refused, so an edit script fails with exit
 code 4, and the region rectangles are taken from `dRegion` instead of the
 layout around the state title. The dumps do not differ: with `--no-text` the
 text heights are zero, so both region layouts coincide, which is why the mode

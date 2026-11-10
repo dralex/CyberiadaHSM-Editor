@@ -1,6 +1,6 @@
 # The Plugin Interface
 
-**Document version:** 0.9 (2026-11-10), plugin contract `api` 1, session protocol 1. In
+**Document version:** 0.10 (2026-11-10), plugin contract `api` 1, session protocol 1. In
 Russian: `PLUGIN-API-ru.md`.
 
 This is the brief for a plugin author. A plugin gives CyberiadaPro, the Cyberiada HSM editor, a
@@ -113,7 +113,7 @@ An action:
 |---|---|---|
 | `id` | required | the action id, unique in the plugin; `--run-plugin <plugin>:<action>` |
 | `label` | required | the menu text; end it with `...` when the action asks for input |
-| `result` | required | `replace`, `new-document`, `diagnostics`, `files` or `log` (see Results) |
+| `result` | required | `replace`, `new-document`, `diagnostics`, `files`, `log` or `diff` (see Results) |
 | `argv` | required | the command: a list of strings with variables, and conditional elements (see The command line) |
 | `exit_ok` | `[0]` | the exit codes of a successful run |
 | `timeout` | `60` | seconds; `0` means none |
@@ -129,6 +129,7 @@ An action:
 | `requires` | none | what the action needs besides the plugin's `requires` (see Conditions) |
 | `when` | none | the document conditions of the action (see Conditions) |
 | `reason` | none | the tooltip when a `when` token fails |
+| `modes` | `["hsm", "fa"]` | the modes of the tabs the action works in (see Modes) |
 
 ## How the editor shows a plugin
 
@@ -142,8 +143,9 @@ An action:
   opens a dialog generated from them; otherwise the action runs at once with the stored
   values.
 * **A greyed-out action** — the plugin is switched off or unavailable, a run is going on
-  the document, inspection mode holds a `replace` action, or a condition of the action
-  fails (see Conditions); the tooltip says why.
+  the document, the tab is in a mode the action does not list (see Modes), the tab is not
+  editable for a `replace` action, or a condition of the action fails (see Conditions); the
+  tooltip says why.
 * **The plugin dock** — every plugin has its own output tab, "<name> output", with the
   stdout and stderr of its runs; the user closes it, clears it or saves it to a text
   file. The Diagnostics tab holds the findings; the running plugin has a Cancel button.
@@ -197,8 +199,8 @@ otherwise.
 
 | Variable | Value |
 |---|---|
-| `${input}` | `<rundir>/input.graphml`: the active document as CyberiadaML-GraphML 1.0, unsaved edits included; an empty file for an empty document |
-| `${output}` | `<rundir>/output.graphml`: where a `replace` or `new-document` action writes the document |
+| `${input}` | `<rundir>/input.graphml`: the active document as CyberiadaML-GraphML 1.0, unsaved edits included; an empty file for an empty document. A text tab: `<rundir>/input.<ext>`, the text in UTF-8 (see Modes) |
+| `${output}` | `<rundir>/output.graphml`: where a `replace`, `new-document` or `diff` action writes the document. A text tab: `<rundir>/output.<ext>` |
 | `${diagnostics}` | `<rundir>/diagnostics.json`: where findings go |
 | `${outdir}` | the value of the action's `outdir` parameter; the run dir when there is none |
 | `${rundir}` | the temporary run directory; removed after the run |
@@ -257,8 +259,9 @@ metainformation strings except the editor's own view state. Secrets are never in
 | `replace` | the whole changed document to `${output}` | replaces the document as one undo step "Plugin: <label>" |
 | `new-document` | a document to `${output}` | opens it as a modified unsaved document titled by its document name: in the active tab when that is an empty untitled one, in a new tab otherwise |
 | `diagnostics` | `${diagnostics}` | shows the findings |
-| `files` | files into `${outdir}` (the action's `outdir` parameter) | lists the new and changed files in the output tab |
+| `files` | files into `${outdir}` (the action's `outdir` parameter) | lists the new and changed files in the output tab; a text file opens in a tab on a click |
 | `log` | stdout, stderr | nothing more |
+| `diff` | the base document to `${output}`; an empty file is an empty document | opens a diff tab: the base is the output, the target the document as `${input}` had it; the tab is labelled by the values of the action's `string` parameters, else by its label; Refresh runs the action again |
 
 * The output document may be CyberiadaML-GraphML 1.0 or a yEd dialect the library reads;
   the document keeps its own save format.
@@ -267,11 +270,17 @@ metainformation strings except the editor's own view state. Secrets are never in
 * A `replace` output keeps the ids of the elements it does not change, so the selection
   and the findings still point at them. An output equal to the input changes nothing.
 * An output that cannot be read, or an empty one, fails the run; the document stays as it
-  was.
+  was. A `diff` output may be empty.
 * Any action may also write `${diagnostics}`; a `replace` action may report what it
   changed this way.
-* A `replace` action is disabled while the editor is in the inspection mode, and the
-  document is locked while it runs.
+* A `replace` action is disabled in a tab that is not editable — read-only, inspection,
+  diff — and the document is locked while it runs.
+* A `diff` action supplies the base only: the editor pairs the elements itself, with the
+  revision diff of libcyberiadaml, as in Document > Compare with.... Its `modes` may list
+  only `hsm`, `fa` and `inspection`.
+* An editor that does not know a `result` greys that action out as needing a newer editor;
+  an editor before the diff tabs rejects the whole plugin, so a package with a `diff`
+  action requires an editor with them.
 
 ## The diagnostics file
 
@@ -444,6 +453,36 @@ the tokens must hold; `!` negates one (`!fa`).
   `.git` made while the document is open counts after a save or Rescan; whether the file is
   tracked, staged or ignored is your program's check.
 * A check only your program can make stays in the run: fail with one clear line.
+
+## Modes
+
+A tab of the editor holds a diagram or a text in a mode (Document > Mode). `modes` lists the
+modes an action works in; in a tab of another mode the action is greyed out.
+
+```json
+{ "id": "compare", "label": "Compare with a Revision...", "result": "diff",
+  "modes": ["hsm", "fa", "inspection"], "when": ["git"], "parameters": ["revision"],
+  "argv": ["-m", "hsm_git", "revision", "${document}", "--revision=${param:revision}",
+           "--output", "${output}"] }
+```
+
+| Mode | A tab of | `${input}` |
+|---|---|---|
+| `hsm` | an HSM diagram | `input.graphml` |
+| `fa` | a finite automaton diagram (`type/ fa`) | `input.graphml` |
+| `inspection` | a diagram inspected, read-only | `input.graphml` |
+| `diff` | two diagrams compared, read-only | - (no action runs there yet) |
+| `text` | a plain text | `input.txt` |
+| `markdown` | a Markdown text | `input.md` |
+| `c`, `cpp`, `csharp`, `python` | a source file of the language | `input.c`, `input.cpp`, `input.cs`, `input.py` |
+
+* Without `modes` an action works in `hsm` and `fa`: a plugin written before the modes is
+  where it was.
+* In a text tab `${output}` is `output.<ext>`: a `replace` action writes the whole text
+  there, a `new-document` action a new text of the same mode. The diagram tokens of `when`
+  (`sm`, `initial`, `fa`, `fa-valid`, `meta:`) do not hold in a text tab.
+* An unknown mode is a warning; an action that lists no mode the editor knows is greyed
+  out as needing a newer editor. An editor before the modes ignores the field.
 
 ## Exit codes, errors, cancel
 

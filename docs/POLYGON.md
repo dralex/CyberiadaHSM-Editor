@@ -534,9 +534,9 @@ comments a selection (`comment-selection`: a state title or a comment body opene
 selected whole and linked to a new comment beside its element).
 
 The `[U]` geometric laws are editing-mode invariants (`EDITOR-SPEC` §4.10): the editor's
-recovery maintains them, but inspection mode suspends it and shows the stored geometry as-is.
-The polygon runs the editor in editing mode (never `--inspect`), so the laws apply; an
-inspection-mode dump is exempt.
+recovery maintains them, but an inspection tab suspends it and shows the stored geometry as-is.
+The polygon runs the editor in editing tabs (never `--inspect`), so the laws apply; the dump of
+an inspection or a diff tab is exempt.
 
 ## Expectation language
 

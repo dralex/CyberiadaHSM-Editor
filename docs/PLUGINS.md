@@ -1,14 +1,15 @@
 # The Plugin System — Architecture
 
-**Document version:** 0.8 (2026-11-10)
+**Document version:** 0.9 (2026-11-10)
 
 A plugin adds a feature to the editor without rebuilding it: a diagram checker, a code
 generator, a compiler front end, an LLM diagram maker. A plugin is a directory with a
 `plugin.json` descriptor and the program it runs. The tools ship their plugins in their
 own packages; the editor ships none. The editor never loads plugin code: it runs the
 program in a separate process, hands it a copy of the active document and takes back what
-the action declares — a document, diagnostics, files or a log. The editor gains `QProcess`
-and the Qt JSON classes only: no interpreter, no network library, no plugin ABI.
+the action declares — a document, diagnostics, files, a log or the base of a diff. The
+editor gains `QProcess` and the Qt JSON classes only: no interpreter, no network library, no
+plugin ABI.
 
 This document is the editor side. The contract a plugin author follows — the descriptor,
 the variables, the files and the formats — is `PLUGIN-API.md`; the requirements are
@@ -140,9 +141,10 @@ plugin's `i18n/<lang>.json` of the interface language and translates the plugin 
   Copy and Select All.
 * **Plugin manager** — the plugins found: folder, version, enabled or the reason why not;
   enable/disable, Rescan.
-* **Disabled actions** — a missing interpreter, inspection mode (for `replace`), a run
-  already going on the same document, a condition of the plugin or the action (see
-  Conditions); the tooltip gives the reason.
+* **Disabled actions** — a missing interpreter, a tab whose mode the action does not list
+  (`modes`), a tab that is not editable (for `replace`), a run already going on the same
+  document, a condition of the plugin or the action (see Conditions); the tooltip gives the
+  reason.
 
 ## Conditions
 
@@ -153,10 +155,10 @@ by every refresh of the actions. A failing condition greys the action out with t
 ```
  scan(), Rescan, Preferences                   updatePluginActions(): undo, updateEditActions()
 +--------------------------------------+      +---------------------------------------------+
-| parse: requires, when, reason        |      | pluginDisabledReason(entry, action, doc)    |
+| parse: requires, when, reason, modes |      | pluginDisabledReason(entry, action, doc)    |
 | interpreter found?                   |entry |  1 the status, the manager switch           |
 | requires: programs, env              |----->|  2 entry.unavailable[action]                |
-| requires.plugins: passes until no    |      |  3 no document, a run, inspection           |
+| requires.plugins: passes until no    |      |  3 no document, a run, the mode, read-only  |
 |   status changes                     |      |  4 PluginConditions::check(when, facts)     |
 +--------------------------------------+      +---------------------------------------------+
   the plugin: disabled + the reason               ^ facts                        | reason
@@ -233,6 +235,7 @@ by every refresh of the actions. A failing condition greys the action out with t
 * The run dir is a fresh `QTemporaryDir`, removed after the run unless
   `CYBERIADA_PRO_PLUGIN_KEEP=1`. `input.graphml` is the model snapshot (Cyberiada 1.0,
   unsaved edits included) — never the file on disk; an empty document gives an empty file.
+  A text tab writes its text as `input.<ext>` instead (`EDIT-PLUG-57`).
 * An action's declared `meta` fills the keys the document lacks first, as one undo step; a
   present different value is kept and noted (`EDIT-PLUG-34`).
 * An action with `save` (or `cwd: document`) saves a modified or untitled document first:
@@ -260,8 +263,14 @@ by every refresh of the actions. A failing condition greys the action out with t
 | untouched, the output    |        |               restoreSnapshot(encoded)           |
 | path is logged           |        |               endUndoStep()                      |
 +--------------------------+        | new-document: a modified untitled document       |
+                                    | diff:         a diff tab, the output its base,   |
+                                    |               the input snapshot its target      |
                                     +--------------------------------------------------+
 ```
+
+* A `diff` output may be empty: the base is then an empty document (a file not in the
+  revision), not a failure. The editor computes the diff itself (`docs/MODES.md`, The diff
+  tab); the tab keeps the run's plugin, action and values, so Refresh runs it again.
 
 * A new document takes the active tab when that is an empty untitled one, as Open does
   (`EDIT-DOC-2`), and a new tab otherwise; its tab is titled by the document name the plugin
@@ -708,3 +717,17 @@ Deferred: a probe command that reports the unavailable actions, an action availa
 another one succeeded (`after`), a `param:<id>` token holding when the stored value of a
 parameter (a `secret` through its `env:` or `file:` reference) is not empty — the model key
 of hsm-maker and cybersphere-agents.
+
+## Decisions of 0.9
+
+* `modes` says which tabs an action serves, as the image types of a GIMP procedure; `when`
+  stays the state of the document. The default `["hsm", "fa"]` keeps every earlier plugin
+  where it was: on the diagrams, off the text and the diff tabs.
+* A text tab gives its text, not a diagram: `input.<ext>`, `output.<ext>`.
+* `diff` hands the editor the base only; the editor pairs the elements with the library, so
+  every diff tab shows the same pairs, whoever supplied the base. The label is the action's
+  string values (`HEAD`): no result file.
+* An unknown `result` disables its action alone, so a plugin may offer a `diff` action and
+  still work in an editor before it (from this version on).
+* A generated text file opens from the `files` list; `new-document` stays in the mode of the
+  tab it ran in.

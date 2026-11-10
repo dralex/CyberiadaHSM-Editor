@@ -1,36 +1,41 @@
 # The Editor Window — Documents and Tabs
 
-**Document version:** 0.6 (2026-10-26)
+**Document version:** 0.7 (2026-11-10) — the modes are specified, not implemented yet.
 
 The window holds several documents at once. The menus, the toolbars, the tab line and the
 docks (the structure tree, the properties, the plugins) are one set; each document brings its
-own model, scene and canvas view. The requirements are `EDIT-DOC-1..10` in `EDITOR-SPEC.md`
-§4.11 and `EDIT-UI-6` for the docks; the plugin parts follow `docs/PLUGINS.md` (`EDIT-PLUG-n`,
-§4.12), the plugin sessions its chapter Level 2 (`EDIT-PLUG-36..49`).
+own page — a diagram its model, scene and canvas view — and its mode (`docs/MODES.md`). The
+requirements are `EDIT-DOC-1..10` in `EDITOR-SPEC.md` §4.11, `EDIT-MODE-1..16` §4.14 and
+`EDIT-UI-6` for the docks; the plugin parts follow `docs/PLUGINS.md` (`EDIT-PLUG-n`, §4.12), the
+plugin sessions its chapter Level 2 (`EDIT-PLUG-36..49`).
 
 ## Structure
 
 ```
 CyberiadaSMEditorWindow (QMainWindow)                                   GLOBAL
- | menuBar  mainToolBar (top)  elementToolBar (left)  zoomOptionsToolBar  zoomCombo
+ | menuBar (File, Edit, Document, View, Plugins, Help)   ModeTraits (document_mode.h)
+ | mainToolBar (top)  elementToolBar (left)  zoomOptionsToolBar  zoomCombo
  | Plugins menu + plugin toolbars (PluginsMenu, before zoomOptionsToolBar)
  | clipboard (a detached element copy)   armed tool (toolGroup)   QUndoGroup
- | documents : QList<CyberiadaSMEditorDocument*>   current
+ | documents : QList<EditorDocument*>   current
  |
  | central widget (QVBoxLayout)              | right dock area (EDIT-UI-6)
  |  +--------------------------------------+ | +---------------------------------+
  |  | documentTabs : QTabBar  hidden < 2   | | | treeDock "Structure tree" [_][x]|
- |  | [ a.graphml ][ b.graphml* ]          | | |   SMView (structure tree)       |
- |  +--------------------------------------+ | +---------------------------------+
- |  | documentStack : QStackedWidget       | | | propertiesDock "Properties"[_][x]|
- |  |   page i = documents[i]->view()      | | |   propertiesWidget              |
- |  |   (CyberiadaSMGraphicsView)          | | |   (re-targeted on switch)       |
+ |  | [ a.graphml ][ a.graphml [FA]* ]     | | |   SMView (structure tree);      |
+ |  +--------------------------------------+ | |   a diff tab: the change list   |
+ |  | documentStack : QStackedWidget       | | +---------------------------------+
+ |  |   page i = documents[i]->page()      | | | propertiesDock "Properties"[_][x]|
+ |  |   a canvas, two canvases (diff) or   | | |   propertiesWidget              |
+ |  |   a CodeEditor (text)                | | |   (re-targeted on switch)       |
  |  +--------------------------------------+ | +---------------------------------+
  |  View > Structure tree / Properties: the docks' toggle actions, kept in the settings
  +-------------------------------------------+-------------------------------------
  | pluginDock (QDockWidget, bottom, full width, hidden until the first run)   pluginRuns
  |
- +-- CyberiadaSMEditorDocument (QObject)                                 PER DOCUMENT
+ +-- EditorDocument (QObject): mode, read-only flag, title marker, page    PER DOCUMENT
+ |     DiffDocument, TextDocument: docs/MODES.md
+ +-- CyberiadaSMEditorDocument (EditorDocument): HSM, FA, HSM inspection
        model : CyberiadaSMModel         the document tree, the undo stack, the file path
        scene : CyberiadaSMEditorScene   the canvas items (parent: the document)
        view  : CyberiadaSMGraphicsView  the stacked page (zoom, pan)
@@ -48,8 +53,10 @@ documentTabs.currentChanged(i)  /  openFile  /  newDocument  /  closeTab
       v
 setCurrentDocument(doc)
   unbind the old document        SMView <-> scene selection links
-  documentStack.setCurrentWidget(doc.view)
+  documentStack.setCurrentWidget(doc.page)
+  apply ModeTraits(doc.mode) and the read-only flag: tools, docks, Document menu, actions
   SMView.setModel(doc.model) + setRootIndex   propertiesWidget.setModel/setScene(doc)
+                                 (a diagram; a text tab empties them, a diff tab lists changes)
   undoGroup.setActiveStack(doc.model.undoStack())   -> undo/redo actions and texts
   bind the new document          scene.elementSelected -> SMView.select
                                  SMView.currentIndexActivated -> scene.slotElementSelected
@@ -65,29 +72,31 @@ setCurrentDocument(doc)
 | Part / action | Scope | Rule |
 |---|---|---|
 | Menus, toolbars, tab line | global | one set; the actions target the active document |
-| New, Open, Open Recent, Exit, Preferences, About | global | New = a new tab; Open = replace a clean untitled tab, else a new tab; an open path activates its tab; the interface language of the Preferences applies at the next start (`EDIT-UI-1`) |
-| Grid, Snap, Service objects, Transition text, Log session | global | settings; every scene listens to `SettingsManager` |
-| Inspection mode | global | every document is read-only together (`EDIT-DOC-6`) |
+| New, Open, Open Recent, Exit, Preferences, About | global | New > HSM diagram, FA diagram, Text file = a new tab in that mode; Open = replace a clean untitled tab, else a new tab, the mode by the file (`EDIT-MODE-5/13`), the inspection box an inspection tab; an open path activates its tab; the interface language of the Preferences applies at the next start (`EDIT-UI-1`) |
+| Grid, Snap, Service objects, Transition text, FA symbols, Log session | global | settings; every scene listens to `SettingsManager` |
+| Document > Mode, Read-only | document | the mode and the flag of the active tab (`EDIT-DOC-6`, `EDIT-MODE-1..7`); HSM inspection and Compare with... open tabs of their own |
+| Document > Check, Geometry, Refresh | document | Check on an FA tab, Geometry and Refresh on a diff tab (`EDIT-MODE-9..12`) |
 | Armed tool | global | pushed to the active scene on a switch; a scene's own tool change is honoured only from the active scene |
 | Clipboard | global | paste into the active document (`EDIT-DOC-5`) |
-| Close (Ctrl+W), Save, Save As, Export | document | the active one; Save enabling as `EDIT-IO-7` |
-| Undo, Redo | document | the active stack of the `QUndoGroup` |
-| Cut, Copy, Delete, Reconstruct geometry | document | the active scene's selection |
-| Zoom in/out, Fit, Zoom to SM, zoom combo | document | the active view |
-| Edit > Language, code highlighting | document | the checked entry is the active document's `platformLanguage`; each tab is highlighted by its own (`EDIT-TEXT-9`); the list of unknown values met is global |
-| Edit > Markup, comment markup | document | the checked entry is the active document's `markupLanguage` (`EDIT-TEXT-12`); the list of unknown values met is global |
+| Close (Ctrl+W), Save, Save As, Export | document | the active one; Save, Save As and Export enabling as `EDIT-IO-7` |
+| Undo, Redo | document | the active stack of the `QUndoGroup`; a text tab's stack proxies its `QTextDocument` |
+| Cut, Copy, Delete | document | the active scene's selection, or the active text editor's |
+| Document > Reconstruct geometry, Update geometry | document | the active diagram; disabled in a tab that is not editable (`EDIT-MODE-4`) |
+| Zoom in/out, Fit, Zoom to SM, zoom combo | document | the active view; disabled in a text tab |
+| Document > Language, code highlighting | document | the checked entry is the active document's `platformLanguage`; each tab is highlighted by its own (`EDIT-TEXT-9`); the list of unknown values met is global |
+| Document > Markup, comment markup | document | the checked entry is the active document's `markupLanguage` (`EDIT-TEXT-12`); the list of unknown values met is global |
 | Structure tree, properties panel | shared docks | content re-targeted on a switch; shown or hidden by View, the choice kept (`EDIT-UI-6`) |
-| Window title and `[*]` | document | the active one; the tab text carries `*` when modified; an unsaved document is `[document name]` or `untitled` (`EDIT-DOC-10`) |
+| Window title and `[*]` | document | the active one with its mode marker (`EDIT-MODE-2`); the tab text carries the marker and `*` when modified; an unsaved document is `[document name]` or `untitled` (`EDIT-DOC-10`) |
 | Saved viewport (zoom/pan in the document) | document | restored on the tab's first activation |
 | Gesture-log session | bound to one document | a switch ends it and starts a new one (`EDIT-DOC-8`) |
-| Batch mode | the tab line | `open`, `new-document`, `switch`, `close`; dumps of the active tab (`EDIT-DOC-9`) |
+| Batch mode | the tab line | `open`, `new-document [<mode>]`, `switch`, `close`, `mode`, `read-only`, `compare`, `geometry`, `refresh`; dumps of the active tab (`EDIT-DOC-9`, `EDIT-MODE-16`) |
 | Exit | global | asks for every modified document in turn; a cancel keeps the editor open; running plugins are cancelled and the sessions stopped after one question (`EDIT-PLUG-23/45`) |
-| Plugins menu, plugin toolbars | global | an action runs on the active document; its state and tooltip follow it (`EDIT-PLUG-4..7`) |
+| Plugins menu, plugin toolbars | global | an action runs on the active document; its state and tooltip follow it and its mode (`EDIT-PLUG-4..7`, `EDIT-PLUG-56`) |
 | Plugin run | bound to one document | one at a time; a replace run locks the document; the result goes to it after any switch (`EDIT-PLUG-21/22`) |
 | Plugin session | bound to one document | a run (one at a time); locks the document with the view interactive; marks the elements on the document's own scene; its tab "<document> session" in the plugin dock (`EDIT-PLUG-37/40/41/42`) |
 | Plugins > Session, F10, F5, F6, Shift+F5 | document | act on the session of the active document; disabled without one (`EDIT-PLUG-46`) |
 | Plugin dock | global | the findings link to the document of their run; one output tab per plugin, not per document, each run headed by its document; a session tab per session, named by its document (`EDIT-PLUG-15/17/32/35/42`) |
-| Command-line files (GUI) | global | each opens a tab, the last one active (`EDIT-DOC-7`) |
+| Command-line files (GUI) | global | each opens a tab, the last one active (`EDIT-DOC-7`); `--inspect` makes them inspection tabs (`EDIT-MODE-6`) |
 
 ## Lifetimes and traps
 
@@ -104,3 +113,5 @@ setCurrentDocument(doc)
   document loads.
 - `QTabBar::currentChanged` fires on `addTab`/`removeTab`: the structural changes run with the tab
   bar signals blocked and set the active document explicitly.
+- The tree and the properties hold a diagram's model and scene: a text or a diff tab drops them
+  before its page shows, so no index of a background model stays linked.
