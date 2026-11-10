@@ -1,6 +1,6 @@
 # The Plugin Interface
 
-**Document version:** 0.8 (2026-11-09), plugin contract `api` 1, session protocol 1. In
+**Document version:** 0.9 (2026-11-10), plugin contract `api` 1, session protocol 1. In
 Russian: `PLUGIN-API-ru.md`.
 
 This is the brief for a plugin author. A plugin gives CyberiadaPro, the Cyberiada HSM editor, a
@@ -430,6 +430,7 @@ the tokens must hold; `!` negates one (`!fa`).
 | `fa-valid` | a finite automaton without EXT-FA violations |
 | `meta:<key>` | the metainformation has the key |
 | `meta:<key>=<value>` | the key has the value; the platform language under any of its names |
+| `git` | the document file is in a git work tree: a `.git` directory in its directory or above; no program is run |
 
 * `reason` replaces the reason of a failing token: tell the user what to do.
 * `saved` greys the action out on a modified document; `save: true` saves it instead.
@@ -439,6 +440,9 @@ the tokens must hold; `!` negates one (`!fa`).
   `requires` and `when`.
 * A program installed while the editor runs counts after Rescan, a variable set after a
   restart of the editor.
+* `git` sees a `.git` directory only: the `.git` file of a linked work tree does not count. A
+  `.git` made while the document is open counts after a save or Rescan; whether the file is
+  tracked, staged or ignored is your program's check.
 * A check only your program can make stays in the run: fail with one clear line.
 
 ## Exit codes, errors, cancel
@@ -872,6 +876,7 @@ F10 marks the next node.
 |---|---|---|---|
 | `hsm-to-python` "Run step by step..." | driven, async | the generated program on the `hsmd` dispatcher; posting events, timers on the virtual clock, replay of a stream, Save Log | available: hsm-to-python 2.1, hsm-dispatcher-py 0.2 (`hsmd.session`) |
 | `cybersphere-agents` "Run the agent..." | supervised | the agent diagram marked as it runs; the agent's questions as `ask`; Pause before the next model request; `replaces` the one-shot run and its continuation | available: the session action `session` (`run --session`) |
+| `git` "Commit..." | supervised | the branch and the staged files listed, the commit message asked as the answer, the index committed; `replaces` the one-shot commit with a message | planned: cybersphere-git-plugin 0.1 |
 | a finite automaton plugin | driven, stream | a tape of symbols, `EOF`, the verdict and the output (the FA extension, `type/fa`) | planned |
 | an HSM-ROS2 or turtlesim bridge | observed | the controller's transitions relayed from ROS 2; events sent as message codes; Save Log of the timeline | planned |
 

@@ -1,6 +1,6 @@
 # The Plugin System — Architecture
 
-**Document version:** 0.7 (2026-11-09)
+**Document version:** 0.8 (2026-11-10)
 
 A plugin adds a feature to the editor without rebuilding it: a diagram checker, a code
 generator, a compiler front end, an LLM diagram maker. A plugin is a directory with a
@@ -146,7 +146,7 @@ plugin's `i18n/<lang>.json` of the interface language and translates the plugin 
 
 ## Conditions
 
-A plugin declares when its actions can run (`EDIT-PLUG-50..54`, the fields in
+A plugin declares when its actions can run (`EDIT-PLUG-50..55`, the fields in
 `PLUGIN-API.md`): `requires` is the system, checked by the scan, `when` the document, checked
 by every refresh of the actions. A failing condition greys the action out with the reason.
 
@@ -167,17 +167,24 @@ by every refresh of the actions. A failing condition greys the action out with t
                                      |        selection            |   --run-plugin: exit 6
                                      |  cached: machines, initial, |
                                      |        fa, findings, meta   |
+                                     |  per path: git, the .git    |
+                                     |        folder walk          |
                                      +-----------------------------+
-                                       dropped on indexChanged, modelReset
+                                       dropped on indexChanged, modelReset;
+                                       git: on save, Save As, Rescan
 ```
 
 * A plugin `requires` disables the plugin, as a missing interpreter does; an action
   `requires` fills `PluginEntry::unavailable`. The plugin dependencies come last, in passes
   until no status changes, so a chain of plugins is disabled in turn.
 * `updatePluginActions()` runs on every move of the undo group (an edit, an undo, a redo)
-  and from `updateEditActions()` (a save, a selection change, a tab switch). The content
+  and from `updateEditActions()` (a save, a selection change, a tab switch), and when the
+  title of the current document changes (a Save As of an unmodified document). The content
   facts are kept by the document until its undo stack moves or its model is reset;
   `fa-valid` costs one EXT-FA check per change of an automaton.
+* `git` walks from the file's directory up to the root looking for a `.git` directory
+  (`EDIT-PLUG-55`); the answer is kept for the path until a save, a Save As or a scan, so an
+  edit or a selection costs no file system lookup.
 * `meta:` sees the document as the action's `meta` fill leaves it (`EDIT-PLUG-34`).
 * An unknown token or key keeps the action (the plugin) off and is a warning; `reason`
   replaces only the reason of a known `when` token.
@@ -688,6 +695,14 @@ descriptor; the level 2 items under Later.
 * `requires` acts at the scan, on the plugin or on an action; `when` acts per document.
 * A required plugin counts when the scan enables it; the manager switch does not count.
 * `api` stays 1: an editor before the conditions ignores the fields and shows the action.
+
+## Decisions of 0.8
+
+* `git` is a lookup of a `.git` directory, not `git rev-parse`: no process at every refresh,
+  the same in batch mode. The `.git` file of a linked work tree does not count. Whether the
+  file is tracked, staged or ignored is the plugin's check in the run.
+* A Save As refreshes the actions even when the document stays unmodified: the path-based
+  tokens (`file`, `git`) follow the new file.
 
 Deferred: a probe command that reports the unavailable actions, an action available after
 another one succeeded (`after`), a `param:<id>` token holding when the stored value of a

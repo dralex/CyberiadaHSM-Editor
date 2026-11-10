@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.45 (2026-11-09)
+**Document version:** 0.46 (2026-11-10)
 
 **Related authorities:**
 
@@ -696,7 +696,7 @@ The window holds several documents; the structure is drawn in `docs/WINDOW.md`.
 
 The plugins are external programs run on the active document: the architecture is
 `docs/PLUGINS.md`, the contract a plugin follows is `docs/PLUGIN-API.md` (`api` 1, the
-session protocol 1). `EDIT-PLUG-36..49` are the sessions (plugin level 2), `EDIT-PLUG-50..54`
+session protocol 1). `EDIT-PLUG-36..49` are the sessions (plugin level 2), `EDIT-PLUG-50..55`
 the conditions of an action.
 
 - `EDIT-PLUG-1` MUST [A]: the plugins are looked up in `--plugin-path` (which replaces the
@@ -874,10 +874,10 @@ the conditions of an action.
   way disables the plugins requiring it in turn. *design*
 - `EDIT-PLUG-52` MUST [A]: an action with `when` is enabled only while every token holds on the
   current document — `file`, `saved`, `selection`, `sm`, `initial`, `fa`, `fa-valid`,
-  `meta:<key>`, `meta:<key>=<value>` as `PLUGIN-API.md` defines them, `!` negating a token; an
-  absent key the action's `meta` fills (`EDIT-PLUG-34`) counts as holding the action's value;
-  the tokens are checked again after every edit, undo, redo, save and selection change.
-  *design*
+  `meta:<key>`, `meta:<key>=<value>` as `PLUGIN-API.md` defines them and `git`
+  (`EDIT-PLUG-55`), `!` negating a token; an absent key the action's `meta` fills
+  (`EDIT-PLUG-34`) counts as holding the action's value; the tokens are checked again after
+  every edit, undo, redo, save (Save As included) and selection change. *design*
 - `EDIT-PLUG-53` MUST [A]: an unknown `when` token or `requires` key disables the action (the
   plugin, for the descriptor `requires`) with the reason that it needs a newer editor and is
   listed as a warning (`EDIT-PLUG-3`); a `when`, `requires` or `reason` of a wrong type rejects
@@ -887,6 +887,11 @@ the conditions of an action.
   plugin manager lists the actions disabled by their `requires` with the reasons and
   `--list-plugins` prints them as `unavailable` lines; `--run-plugin` of a disabled action
   fails with the reason (`EDIT-PLUG-27`). *design*
+- `EDIT-PLUG-55` MUST [A]: the `git` token holds when the document has a file and a directory
+  named `.git` is in the file's directory or in one of its ancestors, the path resolved
+  through its links; a `.git` file does not count and no process is started; the lookup is
+  made when the document gets its file (open, Save As), at every save and at every scan, and
+  kept for the path between them. *design*
 
 ### 4.13 Interface language and preferences — UI
 
