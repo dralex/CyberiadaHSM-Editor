@@ -1,0 +1,6 @@
+# an observed session: the marks of the relayed machine kept by a state without them, stop
+wait finished
+expect-status finished
+expect-active moving up
+expect-fired t1
+stop

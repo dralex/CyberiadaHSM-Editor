@@ -1,6 +1,6 @@
 # The Plugin Interface
 
-**Document version:** 0.8 (2026-11-09), plugin contract `api` 1, session protocol 1. In
+**Document version:** 0.9 (2026-11-10), plugin contract `api` 1, session protocol 1. In
 Russian: `PLUGIN-API-ru.md`.
 
 This is the brief for a plugin author. A plugin gives CyberiadaPro, the Cyberiada HSM editor, a
@@ -164,9 +164,9 @@ An action:
 +--------------------------------------------------+
 
 +--------------------------------------------------+
-| ROS2 package - Make the package              [x] |
+| HSM ROS2 - Generate the package...           [x] |
 +--------------------------------------------------+
-| Package directory [~/work/light/ros      ] [...] |
+| Workspace [~/work/light/ros2_ws          ] [...] |
 |                                 [Cancel]  [Run]  |
 +--------------------------------------------------+
 ```
@@ -873,7 +873,7 @@ F10 marks the next node.
 | `hsm-to-python` "Run step by step..." | driven, async | the generated program on the `hsmd` dispatcher; posting events, timers on the virtual clock, replay of a stream, Save Log | available: hsm-to-python 2.1, hsm-dispatcher-py 0.2 (`hsmd.session`) |
 | `cybersphere-agents` "Run the agent..." | supervised | the agent diagram marked as it runs; the agent's questions as `ask`; Pause before the next model request; `replaces` the one-shot run and its continuation | available: the session action `session` (`run --session`) |
 | a finite automaton plugin | driven, stream | a tape of symbols, `EOF`, the verdict and the output (the FA extension, `type/fa`) | planned |
-| an HSM-ROS2 or turtlesim bridge | observed | the controller's transitions relayed from ROS 2; events sent as message codes; Save Log of the timeline | planned |
+| `hsm-ros2` "Test with the fake robot...", `hsm-turtle` "Run the turtle..." | observed | the controller's steps relayed from its ROS 2 trace topic and marked on the diagram; Stop; `replaces` the one-shot test and run | available: hsm_generator (the `trace` parameter), hsm_tests (`--session`) |
 
 ## Examples
 
@@ -946,30 +946,64 @@ editor test diagram `tests/diagrams/choice.graphml`.
 
 ### A ROS2 package generator
 
-`hsm_robot_ros_generator` takes a diagram and an output directory; no adapter is needed.
-The directory is remembered per diagram.
+`hsm_robot_ros_generator` ships the `hsm-ros2` plugin in its `editor-plugin/`. The
+workspace is remembered per diagram; generating and testing need a saved diagram with an
+initial state and Python code, and the test runs as an observed session.
 
 ```json
 {
   "api": 1,
   "id": "hsm-ros2",
-  "name": "ROS2 package",
-  "description": "Generates the hsm_controller ROS 2 package; needs ROS 2 and pysm",
-  "interpreter": "python3",
+  "name": "HSM ROS2",
+  "version": "1.1.0",
+  "interpreter": "bash",
+  "requires": { "programs": ["bash"] },
   "parameters": [
-    { "id": "dir", "type": "dir", "label": "Package directory", "scope": "document",
-      "default": "${document_dir}/ros", "create": true, "required": true }
+    { "id": "setup", "type": "file", "label": "ROS 2 setup script", "scope": "persistent",
+      "default": "/opt/ros/jazzy/setup.bash" },
+    { "id": "ws", "type": "dir", "label": "Workspace", "scope": "document",
+      "default": "${document_dir}/ros2_ws", "create": true, "required": true },
+    { "id": "duration", "type": "int", "label": "Test duration, s", "scope": "document",
+      "default": 30, "min": 1 }
   ],
   "actions": [
-    { "id": "generate", "label": "Make the package...", "result": "files",
-      "outdir": "dir",
-      "argv": ["${plugin_dir}/hsm_generator.py", "${input}", "-o", "${outdir}", "-f"] }
-  ]
+    { "id": "generate", "label": "Generate the package...", "result": "files",
+      "outdir": "ws", "save": true, "meta": { "platformLanguage": "Python" },
+      "when": ["saved", "sm", "!fa", "initial", "meta:platformLanguage=Python"],
+      "parameters": ["setup", "ws"],
+      "argv": ["${plugin_dir}/ros2_env", "--setup", "${param:setup}", "hsm_generator",
+               "${input}", "-o", "${outdir}/src/hsm_controller", "-f", "-q"] },
+    { "id": "test", "label": "Test with the fake robot...", "result": "diagnostics",
+      "exit_ok": [0, 1], "timeout": 0, "save": true, "meta": { "platformLanguage": "Python" },
+      "when": ["saved", "sm", "!fa", "initial", "meta:platformLanguage=Python"],
+      "parameters": ["setup", "duration"],
+      "argv": ["${plugin_dir}/ros2_env", "--setup", "${param:setup}", "--ros-exec",
+               "hsm_tests", "hsm_robot_test", "${input}", "--json", "${diagnostics}",
+               "--duration", "${param:duration}"] }
+  ],
+  "session": {
+    "version": 1,
+    "actions": [
+      { "id": "test-live", "label": "Test with the fake robot...", "result": "diagnostics",
+        "exit_ok": [0, 1], "replaces": ["test"], "save": true,
+        "meta": { "platformLanguage": "Python" },
+        "when": ["saved", "sm", "!fa", "initial", "meta:platformLanguage=Python"],
+        "parameters": ["setup", "duration"],
+        "argv": ["${plugin_dir}/ros2_env", "--setup", "${param:setup}", "--ros-exec",
+                 "hsm_tests", "hsm_robot_test", "${input}", "--json", "${diagnostics}",
+                 "--duration", "${param:duration}", "--session"] }
+    ]
+  }
 }
 ```
 
-A tool that reads more files next to the diagram — `hsm-to-python` inlines the files the
-diagram names — sets `"cwd": "document"` and takes `${document}` instead of `${input}`.
+The real descriptor adds a `check` action (`sm`, `!fa`: it reports a missing initial state),
+a `build` action (`saved`) and the start pose and the scan of the fake robot. The bash
+adapter `ros2_env` sources `${param:setup}`, because the editor is usually started without
+ROS 2. In `test-live` the controller publishes its steps on `/hsm_ros_trace` in the ids of
+the diagram and the runner relays them (`hsm_robot_ros_generator/docs/editor_plugin.md`);
+`hsm-turtle` of `turtle_driver` drives turtlesim the same way, its `run-live` bringing back
+the path of the turtle.
 
 ### An LLM diagram maker
 

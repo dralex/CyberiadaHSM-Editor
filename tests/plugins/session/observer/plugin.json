@@ -1,0 +1,27 @@
+{
+  "api": 1,
+  "id": "observer",
+  "name": "Observer",
+  "version": "0.1.0",
+  "description": "an observed session answered from a script",
+  "actions": [
+    {
+      "id": "run",
+      "label": "Run once",
+      "result": "log",
+      "argv": ["${plugin_dir}/../../bin/plugin-helper", "print", "one-shot run"]
+    }
+  ],
+  "session": {
+    "version": 1,
+    "actions": [
+      {
+        "id": "watch",
+        "label": "Watch the run",
+        "result": "diagnostics",
+        "replaces": ["run"],
+        "argv": ["${plugin_dir}/../../bin/plugin-helper", "session", "${plugin_dir}/observer.txt"]
+      }
+    ]
+  }
+}

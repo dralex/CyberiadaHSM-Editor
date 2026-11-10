@@ -1,0 +1,18 @@
+== plugin
+action: observer:watch
+result: diagnostics
+state: done
+exit: 0
+== diagnostics
+count: 0
+== session
+sent initialize
+model kind=observed
+state status=waiting text=starting the run
+state active=idle fired=t0 status=running text= time=0
+history event=CALL_UP fired=t1 origin=system outcome=fired time=0.5
+state active=moving,up fired=t1 status=running text=0.5 s time=0.5
+history event=CALL_UP fired= origin=system outcome=dropped time=0.6
+state status=finished text=PASSED
+sent shutdown
+reply shutdown
