@@ -85,7 +85,7 @@ def evaluate_script(env, config, diagram, script_text, expectation_text="", work
 def family_of(signature):
     """The oracle family a signature belongs to: the reruns it needs."""
     head = signature.split(":")[0]
-    if head in ("save-reopen", "undo-all", "redo-all", "export", "render"):
+    if head in ("save-reopen", "undo-all", "redo-all", "export", "render", "law"):
         return head
     return "main"
 

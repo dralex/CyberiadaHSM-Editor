@@ -57,6 +57,12 @@ class RegisterTest(unittest.TestCase):
             again.save()
             self.assertNotIn("P-1", (Path(tmp) / "problems" / R.CASES_NAME).read_text())
 
+    def test_family_of(self):
+        # a law problem reruns the standing laws, a semantic one the main run
+        self.assertEqual(R.family_of("law:NODE-6:siblings n# and n# overlap"), "law")
+        self.assertEqual(R.family_of("redo-all:simple-state:region"), "redo-all")
+        self.assertEqual(R.family_of("expect:shown n# title alpha"), "main")
+
 
 @needs_editor
 class MinimizeTest(unittest.TestCase):
