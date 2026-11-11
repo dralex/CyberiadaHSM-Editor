@@ -1,0 +1,2 @@
+# a base that is neither a tab nor a file is refused (EDIT-MODE-16)
+compare missing.graphml

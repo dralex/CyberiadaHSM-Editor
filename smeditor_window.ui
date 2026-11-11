@@ -192,6 +192,7 @@
      <addaction name="actionModeHSM"/>
      <addaction name="actionModeInspection"/>
      <addaction name="actionModeFA"/>
+     <addaction name="actionModeDiff"/>
     </widget>
     <widget class="QMenu" name="menuLanguage">
      <property name="title">
@@ -213,6 +214,10 @@
     <addaction name="actionCheck"/>
     <addaction name="actionReconstructGeometry"/>
     <addaction name="actionUpdateGeometry"/>
+    <addaction name="separator"/>
+    <addaction name="actionCompare"/>
+    <addaction name="actionGeometry"/>
+    <addaction name="actionRefresh"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
@@ -503,6 +508,44 @@
    </property>
    <property name="toolTip">
     <string>A finite automaton: the metainformation type/ fa, the automaton tools</string>
+   </property>
+  </action>
+  <action name="actionModeDiff">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>HSM diff</string>
+   </property>
+   <property name="toolTip">
+    <string>Two revisions of a diagram side by side: opened by Compare with...</string>
+   </property>
+  </action>
+  <action name="actionCompare">
+   <property name="text">
+    <string>Compare with...</string>
+   </property>
+   <property name="toolTip">
+    <string>Open a diff tab of this diagram against another tab, a file or its saved file</string>
+   </property>
+  </action>
+  <action name="actionGeometry">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Geometry</string>
+   </property>
+   <property name="toolTip">
+    <string>Compare the geometry, the ids and the view state too</string>
+   </property>
+  </action>
+  <action name="actionRefresh">
+   <property name="text">
+    <string>Refresh</string>
+   </property>
+   <property name="toolTip">
+    <string>Take both sides of the comparison again</string>
    </property>
   </action>
   <action name="actionNewFA">

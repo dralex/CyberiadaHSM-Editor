@@ -26,10 +26,14 @@
 #include <QSyntaxHighlighter>
 #include <QTabBar>
 #include <QTextBrowser>
+#include <QTreeWidget>
 #include "smeditor_window.h"
 #include "code_editor.h"
 #include "code_highlighter.h"
 #include "text_document.h"
+#include "diff_document.h"
+#include "cyberiadasm_editor_scene.h"
+#include "cyberiadasm_editor_items.h"
 
 // the EDIT-MODE laws of the text tabs at the widget level: the modes, the page,
 // the window parts that follow, the undo, the save and the rendered Markdown
@@ -44,7 +48,28 @@ private slots:
 	void test_text_modes();
 	void test_markdown_rendered();
 	void test_back_to_diagram();
+	void test_compare_saved();
+	void test_compare_refresh();
+	void test_compare_tab();
+
+private:
+	static CyberiadaSMEditorAbstractItem::RunMark mark(CyberiadaSMEditorScene* scene, const char* id);
+	static const DiffRow* row(DiffDocument* diff, const QString& first, const QString& second);
 };
+
+CyberiadaSMEditorAbstractItem::RunMark TestModes::mark(CyberiadaSMEditorScene* scene, const char* id)
+{
+	CyberiadaSMEditorAbstractItem* item = dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene->getMap().value(id));
+	return item ? item->runMark() : CyberiadaSMEditorAbstractItem::runMarkNone;
+}
+
+const DiffRow* TestModes::row(DiffDocument* diff, const QString& first, const QString& second)
+{
+	for (const DiffRow& r : diff->rows()) {
+		if (r.first == first && r.second == second) return &r;
+	}
+	return nullptr;
+}
 
 // EDIT-MODE-13: the extension names the mode, the mode its extension
 void TestModes::test_extension_modes()
@@ -208,6 +233,105 @@ void TestModes::test_back_to_diagram()
 	// closing the text tab leaves the diagram as it was
 	QVERIFY(window.closeDocument(window.tabAt(1)));
 	QCOMPARE(window.documentCount(), 1);
+}
+
+// EDIT-MODE-10/11: a diff tab of an edited diagram against its saved file
+void TestModes::test_compare_saved()
+{
+	CyberiadaSMEditorWindow window;
+	QVERIFY(window.openFile("diagrams/geometry.graphml"));
+	CyberiadaSMEditorDocument* source = window.currentDocument();
+	CyberiadaSMModel* m = source->model();
+	QVERIFY(m->updateTitle(m->elementToIndex(m->idToElement("node-0-0-1")), "Idle"));
+	QVERIFY(window.actionCompare->isEnabled() && !window.actionRefresh->isEnabled());
+	DiffOrigin saved;
+	saved.kind = DiffOrigin::originSaved;
+	saved.tab = source;
+	saved.path = source->filePath();
+	saved.label = "saved";
+	QString error;
+	DiffDocument* diff = window.compareDocument(source, saved, &error);
+	QVERIFY2(diff, qPrintable(error));
+	QCOMPARE(window.documentCount(), 2);
+	QCOMPARE(window.currentDiff(), diff);
+	QCOMPARE(diff->mode(), QString(MODE_DIFF));
+	QCOMPARE(diff->title(), QString::fromUtf8("geometry.graphml ↔ saved"));
+	QCOMPARE(window.tabBar()->tabText(1), QString::fromUtf8("geometry.graphml ↔ saved [diff]"));
+	// the rename is a changed title, marked on both sides
+	const DiffRow* renamed = row(diff, "node-0-0-1", "node-0-0-1");
+	QVERIFY(renamed);
+	QCOMPARE(renamed->change, QString("title"));
+	QCOMPARE(mark(diff->baseScene(), "node-0-0-1"), CyberiadaSMEditorAbstractItem::runMarkChanged);
+	QCOMPARE(mark(diff->targetScene(), "node-0-0-1"), CyberiadaSMEditorAbstractItem::runMarkChanged);
+	QCOMPARE(mark(diff->targetScene(), "node-0-1"), CyberiadaSMEditorAbstractItem::runMarkNone);
+	// both sides read-only and as stored
+	QVERIFY(diff->isReadOnly() && diff->baseModel()->readOnly() && diff->targetModel()->inspected());
+	QVERIFY(window.actionReadOnly->isChecked() && !window.actionReadOnly->isEnabled());
+	QVERIFY(!window.actionSave->isEnabled() && !window.actionSaveAs->isEnabled() &&
+			!window.actionExport->isEnabled() && !window.actionCompare->isEnabled());
+	QVERIFY(window.actionZoomIn->isEnabled() && window.actionGeometry->isEnabled() &&
+			window.actionRefresh->isEnabled());
+	QVERIFY(window.actionModeDiff->isChecked() && !window.actionModeHSM->isEnabled());
+	QVERIFY(!window.setDocumentMode(diff, MODE_HSM));
+	// the change list stands in the structure tree dock
+	QVERIFY(window.changeList()->isVisibleTo(&window) || !window.changeList()->isHidden());
+	QVERIFY(window.SMView->isHidden());
+	QVERIFY(window.changeList()->topLevelItemCount() > 0);
+	diff->showElement("node-0-0-1", "node-0-0-1");
+	QVERIFY(diff->baseScene()->getMap().value("node-0-0-1")->isSelected());
+	QVERIFY(diff->targetScene()->getMap().value("node-0-0-1")->isSelected());
+	// the geometry, the ids and the view state with Document > Geometry only
+	int rows = diff->rows().size();
+	window.actionGeometry->trigger();
+	QVERIFY(diff->geometry());
+	QVERIFY(diff->rows().size() >= rows);
+	QVERIFY(row(diff, "node-0-0-1", "node-0-0-1")->element.contains("(node-0-0-1)"));
+	// a diagram tab gets its tree back
+	window.setCurrentDocument(source);
+	QVERIFY(!window.SMView->isHidden() && window.changeList()->isHidden());
+}
+
+// EDIT-MODE-12: Refresh takes both sides again; a closed source keeps the target
+void TestModes::test_compare_refresh()
+{
+	CyberiadaSMEditorWindow window;
+	QVERIFY(window.openFile("diagrams/geometry.graphml"));
+	CyberiadaSMEditorDocument* source = window.currentDocument();
+	CyberiadaSMModel* m = source->model();
+	DiffOrigin saved;
+	saved.kind = DiffOrigin::originSaved;
+	saved.tab = source;
+	saved.path = source->filePath();
+	saved.label = "saved";
+	DiffDocument* diff = window.compareDocument(source, saved);
+	QVERIFY(diff);
+	QVERIFY(!row(diff, "node-0-1", "node-0-1"));
+	QVERIFY(m->updateTitle(m->elementToIndex(m->idToElement("node-0-1")), "Second"));
+	// the tab keeps its snapshot until Refresh
+	QVERIFY(!row(diff, "node-0-1", "node-0-1"));
+	window.actionRefresh->trigger();
+	QVERIFY(row(diff, "node-0-1", "node-0-1"));
+	QVERIFY(window.closeDocument(source, true));
+	QVERIFY(window.refreshDiff(diff));
+	QVERIFY(row(diff, "node-0-1", "node-0-1"));
+}
+
+// EDIT-MODE-10: the base may be another tab
+void TestModes::test_compare_tab()
+{
+	CyberiadaSMEditorWindow window;
+	QVERIFY(window.openFile("diagrams/hierarchy.graphml"));
+	CyberiadaSMEditorDocument* base = window.currentDocument();
+	QVERIFY(window.openFile("diagrams/geometry.graphml"));
+	DiffOrigin tab;
+	tab.kind = DiffOrigin::originTab;
+	tab.tab = base;
+	tab.label = base->title();
+	DiffDocument* diff = window.compareDocument(window.currentDocument(), tab);
+	QVERIFY(diff);
+	QCOMPARE(diff->title(), QString::fromUtf8("geometry.graphml ↔ hierarchy.graphml"));
+	QVERIFY(diff->added() > 0 && diff->removed() > 0);
+	QCOMPARE(window.documentCount(), 3);
 }
 
 QTEST_MAIN(TestModes)

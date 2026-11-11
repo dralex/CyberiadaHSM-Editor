@@ -21,7 +21,8 @@ Each tab has a mode (Document > Mode, see `docs/MODES.md`): an HSM diagram, a fi
 automaton (FA) diagram with the automaton tools and the EXT-FA check, the inspection of
 a file exactly as it is stored, or a text - plain, Markdown or a C, C++, C# or Python
 source, highlighted; any tab can also be made read-only (a read-only Markdown tab shows
-the rendered document).
+the rendered document). Document > Compare with... opens a diff tab: two revisions of a
+diagram side by side, the added, removed and changed elements marked and listed.
 
 ![CyberiadaPro. Sample 1](images/gui-sample-1.jpg)
 

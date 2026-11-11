@@ -120,6 +120,8 @@ public:
     // the elements a plugin session marks, apart from the selection (EDIT-PLUG-40);
     // an id the scene does not show and a state machine are left out
     void  setRunMarks(const QStringList& active, const QStringList& fired);
+    // the marks of a side of a diff tab, by element id (EDIT-MODE-11)
+    void  setDiffMarks(const QMap<QString, CyberiadaSMEditorAbstractItem::RunMark>& marks);
     const QStringList& runActive() const { return runMarkedActive; }
     const QStringList& runFired() const { return runMarkedFired; }
     // a tool for one gesture: the select tool is back with the mouse release

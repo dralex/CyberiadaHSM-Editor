@@ -35,6 +35,7 @@
 
 #include "cyberiadasm_dump.h"
 #include "text_document.h"
+#include "diff_document.h"
 #include "cyberiadasm_editor_subject_item.h"
 #include "plugin_runner.h"
 #include <algorithm>
@@ -313,6 +314,28 @@ void dumpTextDocument(const TextDocument* doc, std::ostream& os)
 	const QStringList lines = doc->text().split('\n');
 	os << "lines: " << lines.size() << std::endl;
 	for (const QString& line : lines) os << "| " << line.toStdString() << std::endl;
+}
+
+void dumpDiffDocument(const DiffDocument* doc, std::ostream& os)
+{
+	DiffDocument* diff = const_cast<DiffDocument*>(doc);
+	os << "base: " << diff->base().label.toStdString() << std::endl;
+	os << "target: " << diff->target().label.toStdString() << std::endl;
+	os << "geometry: " << (doc->geometry() ? "yes" : "no") << std::endl;
+	if (!doc->error().isEmpty()) os << "error: " << doc->error().toStdString() << std::endl;
+	os << "changed: " << doc->changed() << ", added: " << doc->added() << ", removed: "
+	   << doc->removed() << std::endl;
+	QString machine;
+	for (const DiffRow& row : doc->rows()) {
+		if (row.machine != machine) {
+			machine = row.machine;
+			if (!machine.isEmpty()) os << machine.toStdString() << std::endl;
+		}
+		os << (row.machine.isEmpty() ? "" : "  ") << row.element.toStdString() << ": "
+		   << row.change.toStdString() << " ("
+		   << (row.first.isEmpty() ? "-" : row.first.toStdString()) << " / "
+		   << (row.second.isEmpty() ? "-" : row.second.toStdString()) << ")" << std::endl;
+	}
 }
 
 void dumpPlugins(const QList<PluginEntry>& entries, std::ostream& os)

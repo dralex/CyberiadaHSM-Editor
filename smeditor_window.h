@@ -31,6 +31,7 @@
 #include "cyberiadasm_editor_scene.h"
 #include "cyberiadasm_editor_document.h"
 #include "text_document.h"
+#include "diff_document.h"
 #include "plugin_runner.h"
 
 class QToolBar;
@@ -39,6 +40,8 @@ class QMenu;
 class QUndoGroup;
 class QTabBar;
 class QActionGroup;
+class QTreeWidget;
+class QTreeWidgetItem;
 class MetaChoiceMenu;
 class PluginsMenu;
 class PluginDock;
@@ -81,6 +84,13 @@ public:
                                                QString* error = nullptr);
     // Document > Read-only of a tab (EDIT-MODE-4)
     void                    setDocumentReadOnly(EditorDocument* doc, bool on);
+    // Document > Compare with...: a new diff tab of the diagram against the base (EDIT-MODE-10)
+    DiffDocument*           compareDocument(CyberiadaSMEditorDocument* source, const DiffOrigin& base,
+                                            QString* error = nullptr);
+    // Document > Refresh: both sides again from their origins (EDIT-MODE-12)
+    bool                    refreshDiff(DiffDocument* diff, QString* error = nullptr);
+    // the change list of a diff tab, in the structure tree dock (EDIT-MODE-11)
+    QTreeWidget*            changeList() const { return m_changeList; }
     // a new untitled diagram in a new tab
     CyberiadaSMEditorDocument* newDocument();
     // a new untitled text tab in a text mode (EDIT-MODE-13)
@@ -96,6 +106,7 @@ public:
     EditorDocument*         currentTab() const { return active; }
     CyberiadaSMEditorDocument* currentDocument() const { return current; }
     TextDocument*           currentText() const { return qobject_cast<TextDocument*>(active); }
+    DiffDocument*           currentDiff() const { return qobject_cast<DiffDocument*>(active); }
     CyberiadaSMModel*       getModel() { return model(); }
     CyberiadaSMEditorScene* getScene() { return scene(); }
     int                     documentCount() const { return documents.size(); }
@@ -173,8 +184,14 @@ private:
     void                    addTab(EditorDocument* doc);
     // the tab of a file, its editing or its inspection one
     CyberiadaSMEditorDocument* findDocument(const QString& fileName, bool inspection) const;
-    // the actions of a text tab (EDIT-MODE-15)
+    // the actions of a text tab and of a diff tab (EDIT-MODE-15)
     void                    updateTextActions();
+    void                    updateDiffActions();
+    // the rows of the active diff tab
+    void                    fillChangeList();
+    // a side of a diff tab as a buffer; a closed source tab keeps the last one
+    bool                    originBuffer(const DiffOrigin& origin, const std::string& last,
+                                         std::string* buffer, QString* error) const;
     // the canvas tools and docks go with a text tab and come back with a diagram
     void                    showDiagramParts(bool on);
     // the Document menu: the modes, the flag (EDIT-MODE-3/4)
@@ -211,6 +228,9 @@ private slots:
     void                    slotFileNewFA();
     // File > New > Text file > <mode> (EDIT-MODE-13)
     void                    slotFileNewText(const QString& mode);
+    // Document > Compare with...: the base chosen among the tabs, a file, the saved file
+    void                    slotCompare();
+    void                    slotChangeActivated(QTreeWidgetItem* item);
     // Document > Check: the EXT-FA findings of an FA tab in Diagnostics (EDIT-MODE-9)
     void                    slotCheck();
     void                    slotServiceObjectsChanged(bool on);
@@ -292,6 +312,7 @@ private:
     CyberiadaSMEditorDocument* current = nullptr;
     // the element toolbar was hidden for a text tab, not by the user
     bool                    elementBarHidden = false;
+    QTreeWidget*            m_changeList = nullptr;
     // the running plugins and the documents they started from
     QMap<PluginRunner*, QPointer<CyberiadaSMEditorDocument> > pluginRuns;
     QUndoGroup*             undoGroup = nullptr;

@@ -22,6 +22,7 @@
  * ----------------------------------------------------------------------------- */
 
 #include <QCloseEvent>
+#include <QFile>
 #include <QFileDialog>
 #include <QDebug>
 #include <QDir>
@@ -40,6 +41,9 @@
 #include <QTabBar>
 #include <QActionGroup>
 #include <QEventLoop>
+#include <QHeaderView>
+#include <QInputDialog>
+#include <QTreeWidget>
 
 #include "smeditor_window.h"
 #include "code_editor.h"
@@ -400,6 +404,8 @@ void CyberiadaSMEditorWindow::setCurrentDocument(EditorDocument* tab)
     // a text tab has no canvas, no structure and no element tools (EDIT-MODE-15)
     showDiagramParts(current != nullptr);
 
+    SMView->setVisible(!currentDiff());
+    m_changeList->setVisible(currentDiff() != nullptr);
     if (CyberiadaSMEditorDocument* doc = current) {
         sceneView = doc->view();
         CyberiadaSMModel* m = doc->model();
@@ -419,6 +425,7 @@ void CyberiadaSMEditorWindow::setCurrentDocument(EditorDocument* tab)
         sceneView = nullptr;
         SMView->setModel(nullptr);
         propertiesWidget->detachModel();
+        fillChangeList();
     }
     updateTitle();
     updateEditActions();
@@ -518,6 +525,8 @@ void CyberiadaSMEditorWindow::initDocumentMenu()
     modeGroup->addAction(actionModeHSM);
     modeGroup->addAction(actionModeInspection);
     modeGroup->addAction(actionModeFA);
+    actionModeDiff->setData(QString(MODE_DIFF));
+    modeGroup->addAction(actionModeDiff);
     // the text modes: Plain text, Markdown, Code > the languages (EDIT-MODE-3/13)
     menuMode->addSeparator();
     QMenu* code = nullptr;
@@ -553,6 +562,31 @@ void CyberiadaSMEditorWindow::initDocumentMenu()
     connect(actionDocumentProperties, &QAction::triggered,
             this, &CyberiadaSMEditorWindow::slotDocumentProperties);
     connect(actionCheck, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotCheck);
+    // the diff tabs (EDIT-MODE-10..12)
+    connect(actionCompare, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotCompare);
+    connect(actionGeometry, &QAction::triggered, this, [this](bool on) {
+        if (DiffDocument* diff = currentDiff()) {
+            diff->setGeometry(on);
+            fillChangeList();
+        }
+    });
+    connect(actionRefresh, &QAction::triggered, this, [this]() {
+        QString error;
+        if (DiffDocument* diff = currentDiff()) {
+            if (!refreshDiff(diff, &error) && !qApp->property("batchMode").toBool()) {
+                QMessageBox::warning(this, tr("Refresh"), error);
+            }
+        }
+    });
+    // the change list shares the structure tree dock, shown for a diff tab
+    m_changeList = new QTreeWidget(treeDockContents);
+    m_changeList->setObjectName("changeList");
+    m_changeList->setHeaderLabels(QStringList() << tr("Element") << tr("Change"));
+    m_changeList->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    m_changeList->hide();
+    treeDockLayout->addWidget(m_changeList);
+    connect(m_changeList, &QTreeWidget::itemActivated, this, &CyberiadaSMEditorWindow::slotChangeActivated);
+    connect(m_changeList, &QTreeWidget::itemClicked, this, &CyberiadaSMEditorWindow::slotChangeActivated);
     connect(actionNewFA, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotFileNewFA);
     // View > FA symbols is a preference of every tab (EDIT-MODE-8)
     SettingsManager& sm = SettingsManager::instance();
@@ -566,10 +600,12 @@ void CyberiadaSMEditorWindow::updateModeActions()
     if (!active || !modeGroup) return;
     QString mode = active->mode();
     bool text = active->traits().text;
-    // a diagram reaches the diagram modes, a text the text ones (EDIT-MODE-3)
+    // a diagram reaches the diagram modes, a text the text ones, a diff none (EDIT-MODE-3)
+    auto kind = [](const QString& id) { return isTextMode(id) ? 1 : id == MODE_DIFF ? 2 : 0; };
     for (QAction* action : modeGroup->actions()) {
-        action->setChecked(action->data().toString() == mode);
-        action->setEnabled(isTextMode(action->data().toString()) == text);
+        QString id = action->data().toString();
+        action->setChecked(id == mode);
+        action->setEnabled(kind(id) == kind(mode));
     }
     if (QMenu* code = menuMode->findChild<QMenu*>("menuModeCode")) code->setEnabled(text);
     // a read-only mode shows the flag checked and fixed (EDIT-MODE-4)
@@ -592,6 +628,11 @@ bool CyberiadaSMEditorWindow::setDocumentMode(EditorDocument* tab, const QString
             return false;
         }
         return text->setMode(mode);
+    }
+    // a diff tab is opened by Compare with... and stays one
+    if (tab->mode() == MODE_DIFF || mode == MODE_DIFF) {
+        if (error) *error = tr("a diff tab is opened by Document > Compare with...");
+        return false;
     }
     CyberiadaSMEditorDocument* doc = static_cast<CyberiadaSMEditorDocument*>(tab);
     if (isTextMode(mode)) {
@@ -724,7 +765,7 @@ void CyberiadaSMEditorWindow::updateTextActions()
     const QList<QAction*> diagramOnly = QList<QAction*>()
         << actionDeleteElement << actionCenterHorizontally << actionCenterVertically
         << actionReconstructGeometry << actionUpdateGeometry << actionDocumentProperties
-        << actionCheck << actionExport;
+        << actionCheck << actionExport << actionCompare << actionGeometry << actionRefresh;
     for (QAction* off : diagramOnly) off->setEnabled(false);
     for (QAction* tool : toolActMap) tool->setEnabled(false);
     actionSave->setEnabled(!text->isClean() && !readOnly);
@@ -734,11 +775,187 @@ void CyberiadaSMEditorWindow::updateTextActions()
     updatePluginActions();
 }
 
+void CyberiadaSMEditorWindow::updateDiffActions()
+{
+    DiffDocument* diff = currentDiff();
+    // nothing to edit, save or export; the view zooms, the comparison refreshes
+    const QList<QAction*> off = QList<QAction*>()
+        << actionCut << actionCopy << actionPaste << actionDeleteElement
+        << actionCenterHorizontally << actionCenterVertically << actionReconstructGeometry
+        << actionUpdateGeometry << actionDocumentProperties << actionCheck << actionExport
+        << actionSave << actionSaveAs << actionCompare << actionZoomToSM;
+    for (QAction* action : off) action->setEnabled(false);
+    for (QAction* tool : toolActMap) tool->setEnabled(false);
+    actionZoomIn->setEnabled(true);
+    actionZoomOut->setEnabled(true);
+    actionFitContent->setEnabled(true);
+    actionGeometry->setEnabled(true);
+    actionGeometry->setChecked(diff->geometry());
+    actionRefresh->setEnabled(true);
+    updateModeActions();
+    updateUndoActions();
+    updatePluginActions();
+}
+
+void CyberiadaSMEditorWindow::fillChangeList()
+{
+    if (!m_changeList) return;
+    m_changeList->clear();
+    DiffDocument* diff = currentDiff();
+    if (!diff) return;
+    QTreeWidgetItem* group = nullptr;
+    QString machine;
+    for (const DiffRow& row : diff->rows()) {
+        QString change = row.change == "added" ? tr("added") :
+                         row.change == "removed" ? tr("removed") : row.change;
+        QTreeWidgetItem* item = nullptr;
+        if (row.machine.isEmpty()) {
+            item = new QTreeWidgetItem(m_changeList);
+        } else {
+            if (!group || row.machine != machine) {
+                machine = row.machine;
+                group = new QTreeWidgetItem(m_changeList, QStringList() << machine);
+                group->setExpanded(true);
+            }
+            // the machine's own row is its group
+            item = row.element == row.machine ? group : new QTreeWidgetItem(group);
+        }
+        item->setText(0, row.element);
+        item->setText(1, change);
+        item->setData(0, Qt::UserRole, row.first);
+        item->setData(1, Qt::UserRole, row.second);
+        QColor color = row.change == "added" ? QColor(DIFF_ADDED_COLOR) :
+                       row.change == "removed" ? QColor(DIFF_REMOVED_COLOR) : QColor(DIFF_CHANGED_COLOR);
+        item->setForeground(1, color);
+    }
+    m_changeList->expandAll();
+}
+
+void CyberiadaSMEditorWindow::slotChangeActivated(QTreeWidgetItem* item)
+{
+    DiffDocument* diff = currentDiff();
+    if (!diff || !item) return;
+    diff->showElement(item->data(0, Qt::UserRole).toString(), item->data(1, Qt::UserRole).toString());
+}
+
+bool CyberiadaSMEditorWindow::originBuffer(const DiffOrigin& origin, const std::string& last,
+                                           std::string* buffer, QString* error) const
+{
+    if (origin.kind == DiffOrigin::originTab) {
+        CyberiadaSMEditorDocument* doc = qobject_cast<CyberiadaSMEditorDocument*>(origin.tab.data());
+        // a closed source tab leaves the side as it was taken (EDIT-MODE-12)
+        if (!doc) {
+            *buffer = last;
+            return true;
+        }
+        bool ok = true;
+        *buffer = doc->model()->snapshot(&ok);
+        if (!ok && error) *error = tr("the document %1 cannot be encoded").arg(doc->title());
+        return ok;
+    }
+    QFile file(origin.path);
+    if (!file.open(QIODevice::ReadOnly)) {
+        if (error) *error = tr("Cannot read %1:\n%2").arg(origin.path, file.errorString());
+        return false;
+    }
+    QByteArray bytes = file.readAll();
+    *buffer = std::string(bytes.constData(), size_t(bytes.size()));
+    return true;
+}
+
+bool CyberiadaSMEditorWindow::refreshDiff(DiffDocument* diff, QString* error)
+{
+    if (!diff) return false;
+    std::string base, target;
+    if (!originBuffer(diff->base(), diff->baseBuffer(), &base, error)) return false;
+    if (!originBuffer(diff->target(), diff->targetBuffer(), &target, error)) return false;
+    diff->setSides(base, target);
+    if (diff == active) {
+        fillChangeList();
+        updateEditActions();
+    }
+    return true;
+}
+
+DiffDocument* CyberiadaSMEditorWindow::compareDocument(CyberiadaSMEditorDocument* source,
+                                                        const DiffOrigin& base, QString* error)
+{
+    if (!source) {
+        if (error) *error = tr("the active tab holds no diagram");
+        return nullptr;
+    }
+    DiffDocument* diff = new DiffDocument(this);
+    diff->base() = base;
+    diff->target().kind = DiffOrigin::originTab;
+    diff->target().tab = source;
+    diff->target().label = source->title();
+    if (!refreshDiff(diff, error)) {
+        delete diff;
+        return nullptr;
+    }
+    addTab(diff);
+    connect(diff, &DiffDocument::compared, this, [this, diff]() { if (diff == active) fillChangeList(); });
+    setCurrentDocument(diff);
+    QTimer::singleShot(0, diff, &DiffDocument::fit);
+    return diff;
+}
+
+void CyberiadaSMEditorWindow::slotCompare()
+{
+    if (!current) return;
+    QStringList labels;
+    QList<DiffOrigin> origins;
+    // the saved file of a modified document, the other diagram tabs, a file
+    if (current->hasFile() && !current->isClean()) {
+        DiffOrigin saved;
+        saved.kind = DiffOrigin::originSaved;
+        saved.tab = current;
+        saved.path = current->filePath();
+        saved.label = tr("saved");
+        labels << tr("The saved file");
+        origins << saved;
+    }
+    for (int i = 0; i < documentCount(); i++) {
+        CyberiadaSMEditorDocument* doc = documentAt(i);
+        if (!doc || doc == current) continue;
+        DiffOrigin tab;
+        tab.kind = DiffOrigin::originTab;
+        tab.tab = doc;
+        tab.label = doc->title();
+        labels << doc->title() + doc->modeMarker();
+        origins << tab;
+    }
+    labels << tr("A file...");
+    bool ok = false;
+    QString choice = QInputDialog::getItem(this, tr("Compare with"), tr("The base of the comparison:"),
+                                           labels, 0, false, &ok);
+    if (!ok) return;
+    int index = labels.indexOf(choice);
+    DiffOrigin base;
+    if (index >= 0 && index < origins.size()) {
+        base = origins.at(index);
+    } else {
+        QString path = QFileDialog::getOpenFileName(this, tr("Compare with"),
+                                                    SettingsManager::instance().getLastDirectory(),
+                                                    tr("CyberiadaML graph (*.graphml)") + ";;" + tr("All files (*)"),
+                                                    nullptr, QFileDialog::DontUseNativeDialog);
+        if (path.isEmpty()) return;
+        base.kind = DiffOrigin::originFile;
+        base.path = path;
+        base.label = QFileInfo(path).fileName();
+    }
+    QString error;
+    if (!compareDocument(current, base, &error)) {
+        QMessageBox::warning(this, tr("Compare with"), error);
+    }
+}
+
 void CyberiadaSMEditorWindow::updateEditActions()
 {
     if (!active) return;   // the documents are gone (destructor)
     if (!current) {
-        updateTextActions();
+        if (currentText()) updateTextActions();
+        else updateDiffActions();
         return;
     }
     Cyberiada::Element* el = nullptr;
@@ -821,6 +1038,11 @@ void CyberiadaSMEditorWindow::updateEditActions()
     actionUpdateGeometry->setEnabled(docOpen && !readOnly);
     actionDocumentProperties->setEnabled(docOpen);
     actionCheck->setEnabled(docOpen && current->mode() == MODE_FA);
+    // a diagram is compared; Geometry and Refresh belong to a diff tab (EDIT-MODE-15)
+    actionCompare->setEnabled(true);
+    actionGeometry->setEnabled(false);
+    actionGeometry->setChecked(false);
+    actionRefresh->setEnabled(false);
     actionSave->setEnabled(docOpen && modified && !readOnly);
     actionSaveAs->setEnabled(docOpen);
     actionExport->setEnabled(docOpen);
@@ -1224,8 +1446,15 @@ void CyberiadaSMEditorWindow::initializeTools()
     zoomOptionsToolBar->setVisible(false);
     toolOptionBars[ToolType::Zoom] = zoomOptionsToolBar;
 
-    connect(actionZoomIn, &QAction::triggered, this, [this]() { if (sceneView) sceneView->zoomIn(); });
-    connect(actionZoomOut, &QAction::triggered, this, [this]() { if (sceneView) sceneView->zoomOut(); });
+    // a diff tab zooms both of its sides
+    connect(actionZoomIn, &QAction::triggered, this, [this]() {
+        if (sceneView) sceneView->zoomIn();
+        else if (currentDiff()) currentDiff()->zoomIn();
+    });
+    connect(actionZoomOut, &QAction::triggered, this, [this]() {
+        if (sceneView) sceneView->zoomOut();
+        else if (currentDiff()) currentDiff()->zoomOut();
+    });
     connect(actionZoomToSM, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotZoomToSM);
     connect(zoomCombo, &QComboBox::currentTextChanged, this, &CyberiadaSMEditorWindow::slotZoomComboActivated);
 
@@ -1289,6 +1518,10 @@ void CyberiadaSMEditorWindow::slotToolSelected(QAction *action)
 }
 
 void CyberiadaSMEditorWindow::slotFitContent() {
+    if (DiffDocument* diff = currentDiff()) {
+        diff->fit();
+        return;
+    }
     if (!current) return;   // a text tab has no canvas
     QRectF bounds = scene()->visibleItemsBoundingRect();
     if (bounds.isNull()) return;

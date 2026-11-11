@@ -1,6 +1,6 @@
 # The Document Modes — Architecture
 
-**Document version:** 0.5 (2026-11-11) — stages 1 to 3 implemented (see Stages). The requirements are
+**Document version:** 0.6 (2026-11-11) — stages 1 to 4 implemented (see Stages). The requirements are
 `EDIT-MODE-1..16` in `EDITOR-SPEC.md` §4.14, the plugin parts `EDIT-PLUG-56..60`.
 
 A tab holds one document in one **mode**: the format edited, the access, and the tools, the
@@ -131,7 +131,11 @@ CyberiadaSMEditorWindow                                                         
 
 * The pairs come from the library, never from the editor: the same `Document::diff` the git
   plugin prints. Without Document > Geometry the ids, the geometry and the
-  `cyberiadaEditorView` metainformation are not reported, as `hsm-git diff` does.
+  `cyberiadaEditorView` metainformation are not reported, as `hsm-git diff` does, nor the
+  `regionGeometry` marker the editor writes itself on a save.
+* A pair reads in the names of the target, a removed element in those of the base. Two
+  elements of one id pair on enough evidence only (the library's rule): a rename without
+  geometry reads as removed and added.
 * The title is `<target> ↔ <base>`; the base is named by its tab title, its file name, `saved`,
   or, for a plugin run, the values of the action's string parameters (`HEAD`), else the action
   label.
@@ -249,7 +253,11 @@ File                              Document
    diagram ones stay `currentDocument()`, `documentAt()`, null for a text), the canvas
    parts go with a text tab (`showDiagramParts`), Open and File > New > Text file, the
    batch `== text` dump; the plugins wait for a diagram until stage 5.
-4. The diff tabs.
+4. The diff tabs — done: `DiffDocument` (two inspected models, scenes and views in a
+   splitter, `DiffOrigin` per side, the rows), Document > Compare with... (the saved file,
+   another diagram tab, a file), Geometry, Refresh, the change list in the tree dock, the
+   added/removed/changed run marks, the batch `compare`/`geometry`/`refresh` and the
+   `== diff` dump; a plugin run as a base comes with stage 5.
 5. The plugin `modes`, the text input, `result: "diff"`, the plugin `languages`.
 6. The git plugin: Compare with a Revision....
 

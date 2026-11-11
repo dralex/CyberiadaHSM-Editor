@@ -698,6 +698,16 @@ void CyberiadaSMEditorScene::setRunMarks(const QStringList& active, const QStrin
     mark(fired, CyberiadaSMEditorAbstractItem::runMarkFired);
 }
 
+void CyberiadaSMEditorScene::setDiffMarks(const QMap<QString, CyberiadaSMEditorAbstractItem::RunMark>& marks)
+{
+    for (QGraphicsItem* item : items()) {
+        CyberiadaSMEditorAbstractItem* element = dynamic_cast<CyberiadaSMEditorAbstractItem*>(item);
+        if (!element || !element->getElement()) continue;
+        QString id = QString::fromStdString(element->getElement()->get_id());
+        element->setRunMark(marks.value(id, CyberiadaSMEditorAbstractItem::runMarkNone));
+    }
+}
+
 QGraphicsItem* CyberiadaSMEditorScene::addElementItem(Cyberiada::Element* child, QGraphicsItem* new_parent)
 {
     QGraphicsItem* item = NULL;

@@ -183,6 +183,20 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const BatchOptions& options)
 		dumpTabs(&win, std::cout);
 	}
 
+	// a diff tab dumps its comparison and has nothing to draw or save (EDIT-MODE-16)
+	if (DiffDocument* diff = win.currentDiff()) {
+		if (options.dump) {
+			std::cout << "== diff" << std::endl;
+			dumpDiffDocument(diff, std::cout);
+		}
+		if (!options.exportImage.isEmpty() || options.dumpAudit || options.dumpTextMetrics ||
+			options.dumpUndoStack || !options.save.isEmpty()) {
+			fprintf(stderr, "the active tab is a diff tab\n");
+			return batchUsageError;
+		}
+		return pluginCode;
+	}
+
 	// a text tab has its text and no diagram to dump, draw or save as one (EDIT-MODE-16)
 	if (TextDocument* text = win.currentText()) {
 		if (options.dump) {

@@ -22,6 +22,7 @@
  * ----------------------------------------------------------------------------- */
 
 #include <QFile>
+#include <QFileInfo>
 #include <QTextStream>
 #include <QRegularExpression>
 #include <QApplication>
@@ -828,7 +829,8 @@ static bool runSettingVerb(const QStringList& tokens, QString* error)
 static bool isDocumentVerb(const QString& cmd)
 {
 	return cmd == "open" || cmd == "new-document" || cmd == "switch" || cmd == "close" ||
-		cmd == "mode" || cmd == "read-only";
+		cmd == "mode" || cmd == "read-only" || cmd == "compare" || cmd == "geometry" ||
+		cmd == "refresh";
 }
 
 // switch/close address a tab by its index or its title
@@ -892,6 +894,49 @@ static bool runDocumentVerb(CyberiadaSMEditorWindow* win, const QStringList& tok
 			return false;
 		}
 		win->setDocumentReadOnly(doc, tokens[1] == "on");
+		return true;
+	}
+	if (cmd == "compare") {
+		// compare <index|title|file|saved>: a diff tab of the active diagram (EDIT-MODE-16)
+		if (tokens.size() < 2) { *error = "compare needs a tab, a file or saved"; return false; }
+		CyberiadaSMEditorDocument* source = win->currentDocument();
+		if (!source) { *error = "the active tab holds no diagram"; return false; }
+		QString what = tokens.mid(1).join(' ');
+		DiffOrigin base;
+		if (what == "saved") {
+			if (!source->hasFile()) { *error = "the document has no saved file"; return false; }
+			base.kind = DiffOrigin::originSaved;
+			base.tab = source;
+			base.path = source->filePath();
+			base.label = "saved";
+		} else if (EditorDocument* tab = documentByToken(win, what)) {
+			CyberiadaSMEditorDocument* doc = qobject_cast<CyberiadaSMEditorDocument*>(tab);
+			if (!doc) { *error = "the tab " + what + " holds no diagram"; return false; }
+			base.kind = DiffOrigin::originTab;
+			base.tab = doc;
+			base.label = doc->title();
+		} else if (QFileInfo(what).isFile()) {
+			base.kind = DiffOrigin::originFile;
+			base.path = what;
+			base.label = QFileInfo(what).fileName();
+		} else {
+			*error = "no tab or file " + what;
+			return false;
+		}
+		return win->compareDocument(source, base, error) != nullptr;
+	}
+	if (cmd == "geometry" || cmd == "refresh") {
+		DiffDocument* diff = win->currentDiff();
+		if (!diff) { *error = cmd + " needs an active diff tab"; return false; }
+		if (cmd == "refresh") {
+			if (tokens.size() != 1) { *error = "refresh takes no argument"; return false; }
+			return win->refreshDiff(diff, error);
+		}
+		if (tokens.size() != 2 || (tokens[1] != "on" && tokens[1] != "off")) {
+			*error = "geometry requires on or off";
+			return false;
+		}
+		diff->setGeometry(tokens[1] == "on");
 		return true;
 	}
 	if (cmd == "switch") {

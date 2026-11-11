@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.48 (2026-11-11)
+**Document version:** 0.49 (2026-11-11)
 
 **Related authorities:**
 
@@ -1044,7 +1044,8 @@ the stages of `docs/MODES.md`.
   change list in the structure tree dock lists the pairs by state machine with what differs, a
   row selecting and centring the element in both views. The pairs and what differs are the
   library's revision diff with the geometry option of Document > Geometry (off): without it
-  the ids, the geometry and the `cyberiadaEditorView` metainformation are not shown. *design*
+  the ids, the geometry and the `cyberiadaEditorView` and `regionGeometry` metainformation
+  are not shown; a pair is named as the target names it. *design*
 - `EDIT-MODE-12` MUST [A]: Document > Refresh takes both sides of the active diff tab again from
   their origins: the target from its source tab (kept when the tab is closed), the base from
   its tab, its file, the saved file, or a run of its plugin action with the same values.

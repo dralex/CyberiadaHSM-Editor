@@ -1,0 +1,4 @@
+# Compare with... the saved file: a diff tab of the edited diagram (EDIT-MODE-10/11)
+rename node-0-0-1 Idle
+move node-0-0-0 -90 -70
+compare saved

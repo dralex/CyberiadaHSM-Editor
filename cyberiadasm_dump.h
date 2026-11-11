@@ -57,6 +57,11 @@ class TextDocument;
 // the active text tab: its mode, its file, its state and its lines (EDIT-MODE-16)
 void dumpTextDocument(const TextDocument* doc, std::ostream& os);
 
+class DiffDocument;
+// the active diff tab: its sides, the geometry option, the counts and the rows
+// by state machine, each with its change and the ids of its sides (EDIT-MODE-16)
+void dumpDiffDocument(const DiffDocument* doc, std::ostream& os);
+
 // the plugins found, one line per plugin folder: the id, the version, the state,
 // the origin and the reason, then the warnings (EDIT-PLUG-28)
 void dumpPlugins(const QList<PluginEntry>& entries, std::ostream& os);

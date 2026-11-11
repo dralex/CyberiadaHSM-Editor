@@ -300,14 +300,17 @@ void TestWindow::test_menu_refactor()
 			dm.contains(window->actionUpdateGeometry));
 	// the diagram modes, then the text ones: Plain text, Markdown, Code > the languages
 	QList<QAction*> modes = window->menuMode->actions();
-	QCOMPARE(modes.mid(0, 3),
+	QCOMPARE(modes.mid(0, 4),
 			 QList<QAction*>() << window->actionModeHSM << window->actionModeInspection
-							   << window->actionModeFA);
-	QVERIFY(modes.at(3)->isSeparator());
-	QCOMPARE(modes.at(4)->data().toString(), QString(MODE_TEXT));
-	QCOMPARE(modes.at(5)->data().toString(), QString(MODE_MARKDOWN));
+							   << window->actionModeFA << window->actionModeDiff);
+	QVERIFY(modes.at(4)->isSeparator());
+	QCOMPARE(modes.at(5)->data().toString(), QString(MODE_TEXT));
+	QCOMPARE(modes.at(6)->data().toString(), QString(MODE_MARKDOWN));
 	QMenu* code = window->menuMode->findChild<QMenu*>("menuModeCode");
-	QVERIFY(code && modes.at(6) == code->menuAction());
+	QVERIFY(code && modes.at(7) == code->menuAction());
+	// the diff tabs: Compare with..., Geometry, Refresh (EDIT-MODE-10..12)
+	QVERIFY(dm.contains(window->actionCompare) && dm.contains(window->actionGeometry) &&
+			dm.contains(window->actionRefresh));
 	QStringList languages;
 	for (QAction* a : code->actions()) languages << a->data().toString();
 	QCOMPARE(languages, CodeStyle::instance().ids());
