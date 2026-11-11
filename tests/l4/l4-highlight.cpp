@@ -130,7 +130,10 @@ void TestHighlight::test_languages()
 	// an alias, any case
 	QVERIFY(style.find("ARDUINO"));
 	QCOMPARE(style.find("ARDUINO")->name, QString("C++"));
-	QCOMPARE(style.find("ts")->name, QString("JavaScript"));
+	QCOMPARE(style.find("py3")->name, QString("Python"));
+	// the built-in languages are the four of the project (EDIT-TEXT-7)
+	QCOMPARE(style.languages(), QStringList() << "C" << "C++" << "C#" << "Python");
+	QVERIFY(!style.find("java") && !style.find("javascript") && !style.find("ts"));
 	// unknown or empty: plain
 	QVERIFY(!style.find("Cobol"));
 	QVERIFY(!style.find(""));

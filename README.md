@@ -15,7 +15,7 @@ elements (states, pseudostate, transitions, etc.), view management (zoom,
 pan), copy/paste, undo/redo, etc. Several documents are open at once in tabs,
 with the clipboard shared between them. The code in the actions, guards and formal
 comments is highlighted by the `platformLanguage` of the document (C, C++, C#,
-Java, JavaScript, Python; the rules are in `syntax/`), chosen in Document > Language.
+Python; the rules are in `syntax/`), chosen in Document > Language.
 The informal comments in Markdown are highlighted as well (Document > Markup).
 Each tab has a mode (Document > Mode, see `docs/MODES.md`): an HSM diagram, a finite
 automaton (FA) diagram with the automaton tools and the EXT-FA check, or the inspection of
