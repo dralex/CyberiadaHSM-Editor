@@ -8,6 +8,7 @@
       "id": "check",
       "label": "Check",
       "result": "diagnostics",
+      "modes": ["hsm", "fa", "inspection"],
       "toolbar": true,
       "argv": [
         "${plugin_dir}/../../bin/plugin-helper",

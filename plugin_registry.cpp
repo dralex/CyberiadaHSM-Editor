@@ -30,7 +30,10 @@
 #include <QVersionNumber>
 
 #include "plugin_registry.h"
+#include "code_highlighter.h"
+#include "document_mode.h"
 #include "interface_language.h"
+#include "settings_manager.h"
 
 QString PluginEntry::name() const
 {
@@ -215,7 +218,63 @@ void PluginRegistry::scan()
         }
     }
     checkRequirements();
+    loadLanguages();
+    checkModes();
     emit scanned();
+}
+
+void PluginRegistry::loadLanguages()
+{
+    // a language is data: it counts while the plugin is switched on, its actions
+    // usable or not; the batch mode ignores the switch (EDIT-PLUG-60)
+    bool batch = qApp && qApp->property("batchMode").toBool();
+    QList<CodeLanguageFile> files;
+    QList<int> owners;
+    for (int i = 0; i < list.size(); i++) {
+        PluginEntry& e = list[i];
+        if (!e.usable() || e.descriptor.languages.isEmpty()) continue;
+        if (!batch && !SettingsManager::instance().getPluginEnabled(e.descriptor.id)) continue;
+        QString root = QDir::cleanPath(e.folder) + "/";
+        for (const QString& name: e.descriptor.languages) {
+            QString path = QDir::cleanPath(QDir(e.folder).absoluteFilePath(name));
+            if (QDir::isAbsolutePath(name) || !path.startsWith(root)) {
+                e.descriptor.warnings.append(QString("the language file '%1' is outside the plugin directory")
+                                             .arg(name));
+                continue;
+            }
+            CodeLanguageFile file;
+            file.owner = e.descriptor.id;
+            file.name = name;
+            file.path = path;
+            files.append(file);
+            owners.append(i);
+        }
+    }
+    CodeStyle::instance().setPluginLanguages(files);
+    for (int i = 0; i < files.size(); i++) {
+        PluginEntry& e = list[owners.at(i)];
+        if (files.at(i).id.isEmpty()) e.descriptor.warnings.append(files.at(i).warning);
+        else e.languages.append(files.at(i).id);
+    }
+}
+
+void PluginRegistry::checkModes()
+{
+    for (PluginEntry& e: list) {
+        if (!e.usable()) continue;
+        for (const PluginAction& a: e.descriptor.actions) {
+            QString where = QString("%1/%2/").arg(a.session ? "session/actions" : "actions", a.id);
+            bool known = false;
+            for (const QString& mode: a.modes) {
+                if (isKnownMode(mode)) known = true;
+                else e.descriptor.warnings.append(QString("unknown mode '%1modes/%2'").arg(where, mode));
+            }
+            // as an unknown when token: the other actions stay (EDIT-PLUG-56/59)
+            if (!known || a.result == PluginAction::resultUnknown) {
+                e.unavailable.insert(a.id, tr("the action needs a newer editor"));
+            }
+        }
+    }
 }
 
 QString PluginRegistry::pluginsReason(const QStringList& plugins) const

@@ -24,13 +24,17 @@
 #ifndef CYBERIADA_EDITOR_DOCUMENT
 #define CYBERIADA_EDITOR_DOCUMENT
 
+#include <QMap>
 #include <QObject>
+#include <QPointer>
 #include <QString>
 
 #include "document_mode.h"
+#include "plugin_conditions.h"
 
 class QWidget;
 class QUndoStack;
+class PluginRunner;
 
 // One tab of the window (docs/MODES.md): a document in a mode, with the
 // read-only flag of the tab (EDIT-MODE-1/4); the kinds derive from it
@@ -57,6 +61,20 @@ public:
     virtual QString          filePath() const = 0;
     bool                     hasFile() const { return !filePath().isEmpty(); }
     virtual bool             isClean() const = 0;
+    // write the document back to its file (false without one, or with the error)
+    virtual bool             save(QString* error) { Q_UNUSED(error); return false; }
+
+    // the plugin run of the tab, at most one (EDIT-PLUG-21); nullptr when idle
+    PluginRunner*            pluginRun() const;
+    void                     setPluginRun(PluginRunner* run);
+    // the plugin values of an untitled document last for the session (EDIT-PLUG-11),
+    // by "<plugin>/<parameter>"
+    QMap<QString, QString>&  sessionPluginValues() { return m_sessionPluginValues; }
+    // what the when tokens test (EDIT-PLUG-52): the file, the save and git here; a
+    // diagram adds its content and selection, a text has none (EDIT-PLUG-57)
+    virtual PluginDocumentFacts pluginFacts() const;
+    // the git fact is kept for the path until a save or a scan (EDIT-PLUG-55)
+    void                     dropGitFact() { m_gitValid = false; }
 
     // the page of the document stack and the stack of the undo group
     virtual QWidget*         page() const = 0;
@@ -73,6 +91,11 @@ protected:
 
 private:
     bool                     m_readOnly = false;
+    QPointer<PluginRunner>   m_pluginRun;
+    QMap<QString, QString>   m_sessionPluginValues;
+    mutable QString          m_gitPath;
+    mutable bool             m_git = false;
+    mutable bool             m_gitValid = false;
 };
 
 #endif

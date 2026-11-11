@@ -1,0 +1,8 @@
+== plugin
+action: modes:future
+result: log
+state: failed
+exit: -
+error: the action needs a newer editor
+== diagnostics
+count: 0

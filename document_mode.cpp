@@ -61,6 +61,14 @@ bool isTextMode(const QString& id)
     return modeTraits(id).text;
 }
 
+bool isKnownMode(const QString& id)
+{
+    for (const ModeTraits& traits : modes) {
+        if (id == traits.id) return true;
+    }
+    return CodeStyle::instance().findId(id) != nullptr;
+}
+
 QStringList textModes()
 {
     return QStringList() << MODE_TEXT << MODE_MARKDOWN << CodeStyle::instance().ids();
@@ -85,6 +93,13 @@ QString modeForFile(const QString& path)
     if (suffix == "md" || suffix == "markdown") return MODE_MARKDOWN;
     const CodeLanguage* lang = CodeStyle::instance().forExtension("." + suffix);
     return lang ? lang->id : QString(MODE_TEXT);
+}
+
+bool isDocumentFile(const QString& path)
+{
+    QString suffix = QFileInfo(path).suffix().toLower();
+    if (suffix == "graphml" || suffix == "txt" || suffix == "md" || suffix == "markdown") return true;
+    return !suffix.isEmpty() && CodeStyle::instance().forExtension("." + suffix);
 }
 
 QString modeExtension(const QString& id)

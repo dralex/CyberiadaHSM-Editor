@@ -1,0 +1,114 @@
+{
+  "api": 1,
+  "id": "modes",
+  "name": "Modes",
+  "version": "0.1.0",
+  "parameters": [
+    { "id": "revision", "type": "string", "label": "Revision", "default": "HEAD" }
+  ],
+  "actions": [
+    {
+      "id": "default",
+      "label": "Default",
+      "result": "log",
+      "parameters": [],
+      "argv": ["${plugin_dir}/../../bin/plugin-helper", "print", "default"]
+    },
+    {
+      "id": "text",
+      "label": "Text",
+      "result": "replace",
+      "modes": ["text", "markdown"],
+      "parameters": [],
+      "argv": ["${plugin_dir}/../../bin/plugin-helper", "copy", "${input}", "${output}", "--",
+               "replace", "${output}", "three states", "four states", "--", "print", "replaced"]
+    },
+    {
+      "id": "same",
+      "label": "Same",
+      "result": "replace",
+      "modes": ["markdown"],
+      "parameters": [],
+      "argv": ["${plugin_dir}/../../bin/plugin-helper", "copy", "${input}", "${output}"]
+    },
+    {
+      "id": "new-text",
+      "label": "New Text",
+      "result": "new-document",
+      "modes": ["markdown"],
+      "parameters": [],
+      "argv": ["${plugin_dir}/../../bin/plugin-helper", "write", "${output}", "# New\\n"]
+    },
+    {
+      "id": "cat",
+      "label": "Cat",
+      "result": "log",
+      "modes": ["text", "markdown", "cpp"],
+      "parameters": [],
+      "when": ["!sm", "!meta:platformLanguage"],
+      "argv": ["${plugin_dir}/../../bin/plugin-helper", "print", "${input}", "--", "cat", "${input}"]
+    },
+    {
+      "id": "lint",
+      "label": "Lint",
+      "result": "diagnostics",
+      "modes": ["markdown"],
+      "parameters": [],
+      "argv": ["${plugin_dir}/../../bin/plugin-helper", "copy", "${plugin_dir}/lint.json", "${diagnostics}"]
+    },
+    {
+      "id": "inspect",
+      "label": "Inspect",
+      "result": "log",
+      "modes": ["inspection"],
+      "parameters": [],
+      "argv": ["${plugin_dir}/../../bin/plugin-helper", "print", "inspected"]
+    },
+    {
+      "id": "future",
+      "label": "Future",
+      "result": "log",
+      "modes": ["hologram"],
+      "parameters": [],
+      "argv": ["${plugin_dir}/../../bin/plugin-helper", "print", "future"]
+    },
+    {
+      "id": "mixed",
+      "label": "Mixed",
+      "result": "log",
+      "modes": ["hsm", "hologram"],
+      "parameters": [],
+      "argv": ["${plugin_dir}/../../bin/plugin-helper", "print", "mixed"]
+    },
+    {
+      "id": "next",
+      "label": "Next",
+      "result": "teleport",
+      "parameters": [],
+      "argv": ["${plugin_dir}/../../bin/plugin-helper", "print", "next"]
+    },
+    {
+      "id": "base",
+      "label": "Compare with a Base...",
+      "result": "diff",
+      "modes": ["hsm", "fa", "inspection"],
+      "parameters": ["revision"],
+      "argv": ["${plugin_dir}/../../bin/plugin-helper", "copy", "${input}", "${output}", "--",
+               "replace", "${output}", ">node 0-0-1<", ">Idle<", "--", "print", "${param:revision}"]
+    },
+    {
+      "id": "empty-base",
+      "label": "Compare with Nothing",
+      "result": "diff",
+      "parameters": [],
+      "argv": ["${plugin_dir}/../../bin/plugin-helper", "write", "${output}"]
+    },
+    {
+      "id": "no-base",
+      "label": "No Base",
+      "result": "diff",
+      "parameters": [],
+      "argv": ["${plugin_dir}/../../bin/plugin-helper", "print", "nothing"]
+    }
+  ]
+}

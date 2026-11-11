@@ -45,6 +45,8 @@ public:
     QString          mode() const override { return m_mode; }
     // another text mode: the text stays, the highlighting and the marker change
     bool             setMode(const QString& mode);
+    // the languages changed: a language gone leaves Plain text (EDIT-PLUG-60)
+    void             refreshLanguage();
     QString          title() const override;
     QString          filePath() const override { return m_path; }
     bool             isClean() const override;
@@ -53,7 +55,14 @@ public:
 
     // read the file as UTF-8 with a clean history
     bool             load(const QString& path, QString* error);
-    bool             save(QString* error);
+    bool             save(QString* error) override;
+    // and no plugin run locks the text (EDIT-PLUG-22)
+    bool             isEditable() const override { return !isReadOnly() && !m_locked; }
+    void             setLocked(bool on);
+    bool             isLocked() const { return m_locked; }
+    // the whole text replaced as one undo step of the label; false when it is the
+    // same text (EDIT-PLUG-12/57)
+    bool             replaceText(const QString& text, const QString& label);
     // write the text to the file, which becomes the document's
     bool             saveAs(const QString& path, QString* error);
     QString          text() const;
@@ -80,6 +89,9 @@ private:
     QStackedWidget*  m_page;
     QUndoStack*      m_undo;
     CodeHighlighter* m_highlighter = nullptr;
+    bool             m_locked = false;
+    // the name of the next undo step, "typing" when empty
+    QString          m_stepName;
 };
 
 #endif

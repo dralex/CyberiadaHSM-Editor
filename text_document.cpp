@@ -26,6 +26,7 @@
 #include <QSaveFile>
 #include <QStackedWidget>
 #include <QTextBrowser>
+#include <QTextCursor>
 #include <QTextDocument>
 #include <QUndoStack>
 
@@ -36,8 +37,8 @@
 // one edit of the text: the undo stack of the tab drives the text's own history
 class TextEditStep : public QUndoCommand {
 public:
-    TextEditStep(QTextDocument* document):
-        QUndoCommand(QObject::tr("typing")), document(document) {}
+    TextEditStep(QTextDocument* document, const QString& name):
+        QUndoCommand(name.isEmpty() ? QObject::tr("typing") : name), document(document) {}
     void undo() override { document->undo(); }
     // the push redoes the step the text has just done itself
     void redo() override {
@@ -57,7 +58,7 @@ TextDocument::TextDocument(const QString& mode, QObject* parent):
     m_document = m_editor->document();
     m_document->setUndoRedoEnabled(true);
     connect(m_document, &QTextDocument::undoCommandAdded, this,
-            [this]() { m_undo->push(new TextEditStep(m_document)); });
+            [this]() { m_undo->push(new TextEditStep(m_document, m_stepName)); });
     m_rendered = new QTextBrowser();
     m_rendered->setOpenExternalLinks(true);
     m_page = new QStackedWidget();
@@ -86,6 +87,13 @@ bool TextDocument::setMode(const QString& mode)
     applyMode();
     emit modeChanged();
     return true;
+}
+
+void TextDocument::refreshLanguage()
+{
+    if (m_mode == MODE_TEXT || m_mode == MODE_MARKDOWN) return;
+    if (!CodeStyle::instance().findId(m_mode)) setMode(MODE_TEXT);
+    else applyMode();
 }
 
 void TextDocument::applyMode()
@@ -123,8 +131,28 @@ bool TextDocument::showsRendered() const
 
 void TextDocument::applyReadOnlyFlag(bool on)
 {
-    m_editor->setReadOnly(on);
+    m_editor->setReadOnly(on || m_locked);
     showPage();
+}
+
+void TextDocument::setLocked(bool on)
+{
+    m_locked = on;
+    m_editor->setReadOnly(readOnlyFlag() || on);
+}
+
+bool TextDocument::replaceText(const QString& text, const QString& label)
+{
+    if (text == this->text()) return false;
+    m_stepName = label;
+    QTextCursor cursor(m_document);
+    cursor.beginEditBlock();
+    cursor.select(QTextCursor::Document);
+    cursor.insertText(text);
+    cursor.endEditBlock();
+    m_stepName.clear();
+    showPage();
+    return true;
 }
 
 QString TextDocument::title() const
@@ -176,6 +204,7 @@ bool TextDocument::write(const QString& path, QString* error)
 bool TextDocument::save(QString* error)
 {
     if (!hasFile()) return false;
+    dropGitFact();
     if (!write(m_path, error)) return false;
     m_undo->setClean();
     return true;
@@ -183,6 +212,7 @@ bool TextDocument::save(QString* error)
 
 bool TextDocument::saveAs(const QString& path, QString* error)
 {
+    dropGitFact();
     if (!write(path, error)) return false;
     m_path = QFileInfo(path).absoluteFilePath();
     m_undo->setClean();

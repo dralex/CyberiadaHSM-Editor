@@ -349,6 +349,8 @@ void dumpPlugins(const QList<PluginEntry>& entries, std::ostream& os)
 		for (const QString& w: e.descriptor.warnings) {
 			os << "  warning: " << w.toStdString() << std::endl;
 		}
+		// the languages the plugin brings (EDIT-PLUG-60)
+		if (!e.languages.isEmpty()) os << "  languages: " << e.languages.join(", ").toStdString() << std::endl;
 		// the actions off by their requires, in the descriptor order (EDIT-PLUG-54)
 		for (const PluginAction& a: e.descriptor.actions) {
 			if (!e.unavailable.contains(a.id)) continue;
@@ -389,7 +391,7 @@ void dumpPluginRun(const PluginEntry& plugin, const PluginAction& action,
 {
 	static const char* const states[] = { "done", "failed", "cancelled" };
 	os << "action: " << plugin.descriptor.id.toStdString() << ":" << action.id.toStdString() << std::endl;
-	os << "result: " << PluginDescriptor::resultName(action.result).toStdString() << std::endl;
+	os << "result: " << action.resultId().toStdString() << std::endl;
 	static const char* const metaKinds[] = { "set", "kept", "skipped" };
 	for (const PluginMetaNote& note: result.metaNotes) {
 		os << "meta: " << metaKinds[note.kind] << " " << note.key.toStdString();
@@ -404,7 +406,7 @@ void dumpPluginRun(const PluginEntry& plugin, const PluginAction& action,
 	if (result.state == PluginResult::stateDone) {
 		if (action.result == PluginAction::resultReplace) {
 			os << "changes: " << (result.changed ? "yes" : "no") << std::endl;
-		} else if (action.result == PluginAction::resultNewDocument) {
+		} else if (action.result == PluginAction::resultNewDocument || action.result == PluginAction::resultDiff) {
 			os << "tab: " << result.tab << std::endl;
 		} else if (action.result == PluginAction::resultFiles && !result.files.isEmpty()) {
 			os << "files:" << std::endl;

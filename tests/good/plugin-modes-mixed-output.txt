@@ -1,0 +1,9 @@
+== plugin
+action: modes:mixed
+result: log
+state: done
+exit: 0
+stdout:
+  mixed
+== diagnostics
+count: 0

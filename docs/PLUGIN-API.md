@@ -1,6 +1,6 @@
 # The Plugin Interface
 
-**Document version:** 0.11 (2026-11-11), plugin contract `api` 1, session protocol 1. In
+**Document version:** 0.12 (2026-11-11), plugin contract `api` 1, session protocol 1. In
 Russian: `PLUGIN-API-ru.md`.
 
 This is the brief for a plugin author. A plugin gives CyberiadaPro, the Cyberiada HSM editor, a
@@ -250,7 +250,8 @@ argv contains `${request}`:
 ```
 
 `document.format` is the format the document is saved in (`cyberiada`, `yed-ostranna`,
-`yed-berloga`, `lapki`); the input is always CyberiadaML-GraphML 1.0. `meta` holds the document
+`yed-berloga`, `lapki`) — of a text tab its mode (`markdown`, `cpp`); the input of a diagram is
+always CyberiadaML-GraphML 1.0. `meta` holds the document
 metainformation strings except the editor's own view state. Secrets are never in it.
 
 ## Results
@@ -260,9 +261,9 @@ metainformation strings except the editor's own view state. Secrets are never in
 | `replace` | the whole changed document to `${output}` | replaces the document as one undo step "Plugin: <label>" |
 | `new-document` | a document to `${output}` | opens it as a modified unsaved document titled by its document name: in the active tab when that is an empty untitled one, in a new tab otherwise |
 | `diagnostics` | `${diagnostics}` | shows the findings |
-| `files` | files into `${outdir}` (the action's `outdir` parameter) | lists the new and changed files in the output tab; a text file opens in a tab on a click |
+| `files` | files into `${outdir}` (the action's `outdir` parameter) | lists the new and changed files in the output tab; a diagram or a text file of a known mode opens in a tab on a click |
 | `log` | stdout, stderr | nothing more |
-| `diff` | the base document to `${output}`; an empty file is an empty document | opens a diff tab: the base is the output, the target the document as `${input}` had it; the tab is labelled by the values of the action's `string` parameters, else by its label; Refresh runs the action again |
+| `diff` | the base document to `${output}`; an empty file is an empty document | opens a diff tab: the base is the output, the target the document as `${input}` had it; the tab is labelled by the values of the action's `string` parameters, else by its label; Refresh runs the action again on the same tab, and fails when that tab is closed |
 
 * The output document may be CyberiadaML-GraphML 1.0 or a yEd dialect the library reads;
   the document keeps its own save format.
@@ -300,7 +301,7 @@ metainformation strings except the editor's own view state. Secrets are never in
 | `message` | yes | one line for the user; newlines are shown as spaces |
 | `rule` | no | the rule or requirement id |
 | `element` | no | the id of a node, an edge or a state machine; a click on the entry selects it |
-| `line` | no | a line of `${input}` |
+| `line` | no | a line of `${input}`; in a text tab a click goes to it |
 
 Other fields are ignored; a file that is not such an array fails the run. An `element`
 that is not in the document is shown without a link. The entries turn grey once the
@@ -472,7 +473,7 @@ modes an action works in; in a tab of another mode the action is greyed out.
 | `hsm` | an HSM diagram | `input.graphml` |
 | `fa` | a finite automaton diagram (`type/ fa`) | `input.graphml` |
 | `inspection` | a diagram inspected, read-only | `input.graphml` |
-| `diff` | two diagrams compared, read-only | - (no action runs there yet) |
+| `diff` | two diagrams compared, read-only | - (no action runs there) |
 | `text` | a plain text | `input.txt` |
 | `markdown` | a Markdown text | `input.md` |
 | `c`, `cpp`, `csharp`, `python` | a source file of the language | `input.c`, `input.cpp`, `input.cs`, `input.py` |

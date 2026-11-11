@@ -930,7 +930,7 @@ static bool runDocumentVerb(CyberiadaSMEditorWindow* win, const QStringList& tok
 		if (!diff) { *error = cmd + " needs an active diff tab"; return false; }
 		if (cmd == "refresh") {
 			if (tokens.size() != 1) { *error = "refresh takes no argument"; return false; }
-			return win->refreshDiff(diff, error);
+			return win->refreshDiff(diff, error, true);
 		}
 		if (tokens.size() != 2 || (tokens[1] != "on" && tokens[1] != "off")) {
 			*error = "geometry requires on or off";

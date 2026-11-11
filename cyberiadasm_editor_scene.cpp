@@ -110,6 +110,17 @@ CyberiadaSMEditorScene::CyberiadaSMEditorScene(CyberiadaSMModel* _model, QObject
     // gridSnap = true;
     gridPen = QPen(Qt::gray, 0, Qt::DotLine);
     connect(&SettingsManager::instance(), &SettingsManager::gridSettingsChanged, this, &CyberiadaSMEditorScene::slotGridSettingsChanged);
+    // a plugin language came or went: the same value may name another one (EDIT-PLUG-60)
+    connect(&CodeStyle::instance(), &CodeStyle::languagesChanged, this, [this]() {
+        const CodeLanguage* lang = CodeStyle::instance().find(codeLanguageValue);
+        if (lang == codeLanguagePtr) return;
+        codeLanguagePtr = lang;
+        const QList<QGraphicsItem*> all = items();
+        for (QGraphicsItem* item : all) {
+            if (EditableTextItem* text = dynamic_cast<EditableTextItem*>(item)) text->setCodeLanguage(lang);
+        }
+        emit codeLanguageChanged(codeLanguageValue);
+    });
     connect(&SettingsManager::instance(), &SettingsManager::serviceObjectsChanged, this, &CyberiadaSMEditorScene::slotServiceObjectsChanged);
     connect(&SettingsManager::instance(), &SettingsManager::componentCommentsChanged, this, &CyberiadaSMEditorScene::slotComponentCommentsChanged);
     // the underlines follow the texts once the items have taken the change (EDIT-EDGE-21)

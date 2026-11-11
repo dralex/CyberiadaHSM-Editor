@@ -244,7 +244,7 @@ void PluginSessionControls::slotQuestions()
     emit asking();
 }
 
-PluginSessionTab::PluginSessionTab(PluginRunner* run, CyberiadaSMEditorDocument* doc, QWidget* parent):
+PluginSessionTab::PluginSessionTab(PluginRunner* run, EditorDocument* doc, QWidget* parent):
     QWidget(parent), session(run->session()), document(doc)
 {
     QVBoxLayout* layout = new QVBoxLayout(this);
@@ -349,7 +349,8 @@ void PluginSessionTab::finish()
 
 QString PluginSessionTab::elementName(const std::string& id) const
 {
-    const Cyberiada::Element* el = document ? document->model()->idToElement(QString::fromStdString(id)) : nullptr;
+    CyberiadaSMEditorDocument* diagram = qobject_cast<CyberiadaSMEditorDocument*>(document.data());
+    const Cyberiada::Element* el = diagram ? diagram->model()->idToElement(QString::fromStdString(id)) : nullptr;
     if (!el || el->get_name().empty()) return QString::fromStdString(id);
     return QString::fromStdString(el->get_name());
 }
@@ -357,7 +358,8 @@ QString PluginSessionTab::elementName(const std::string& id) const
 // a transition as source -> target, any other element by its name
 QString PluginSessionTab::elementText(const QString& id) const
 {
-    const Cyberiada::Element* el = document ? document->model()->idToElement(id) : nullptr;
+    CyberiadaSMEditorDocument* diagram = qobject_cast<CyberiadaSMEditorDocument*>(document.data());
+    const Cyberiada::Element* el = diagram ? diagram->model()->idToElement(id) : nullptr;
     if (el && el->get_type() == Cyberiada::elementTransition) {
         const Cyberiada::Transition* t = static_cast<const Cyberiada::Transition*>(el);
         return QString("%1 -> %2").arg(elementName(t->source_element_id()), elementName(t->target_element_id()));

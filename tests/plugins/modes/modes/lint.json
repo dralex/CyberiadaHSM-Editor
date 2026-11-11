@@ -1,0 +1,3 @@
+[
+  { "severity": "warning", "rule": "MD013", "line": 3, "message": "the line is long" }
+]

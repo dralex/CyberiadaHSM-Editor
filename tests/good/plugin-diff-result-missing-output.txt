@@ -1,0 +1,10 @@
+== plugin
+action: modes:no-base
+result: diff
+state: failed
+exit: 0
+error: the output document is missing
+stdout:
+  nothing
+== diagnostics
+count: 0

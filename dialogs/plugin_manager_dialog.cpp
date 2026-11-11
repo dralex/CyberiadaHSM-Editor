@@ -29,6 +29,7 @@
 #include <QVBoxLayout>
 
 #include "plugin_manager_dialog.h"
+#include "document_mode.h"
 #include "plugin_parameter_dialog.h"
 #include "plugin_registry.h"
 #include "settings_manager.h"
@@ -100,6 +101,14 @@ void PluginManagerDialog::fill()
             item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
             item->setCheckState(columnName, SettingsManager::instance().getPluginEnabled(e.descriptor.id) ?
                                 Qt::Checked : Qt::Unchecked);
+        }
+        // the languages it brings (EDIT-PLUG-60)
+        if (!e.languages.isEmpty()) {
+            QStringList names;
+            for (const QString& id: e.languages) names.append(modeName(id));
+            QTreeWidgetItem* row = new QTreeWidgetItem(item);
+            row->setText(columnName, tr("Languages"));
+            row->setText(columnState, names.join(", "));
         }
         // the actions off by their requires (EDIT-PLUG-54)
         for (const PluginAction& a: e.descriptor.actions) {

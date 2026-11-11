@@ -1,0 +1,20 @@
+== tabs
+count: 2
+0 notes.md markdown
+1 untitled* markdown active
+== text
+mode: markdown
+file: -
+modified: yes
+rendered: no
+lines: 2
+| # New
+| 
+== plugin
+action: modes:new-text
+result: new-document
+state: done
+exit: 0
+tab: 1
+== diagnostics
+count: 0

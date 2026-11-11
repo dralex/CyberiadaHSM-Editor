@@ -1,0 +1,12 @@
+{
+  "name": "Lua",
+  "aliases": ["lua5.4", "luajit"],
+  "extensions": [".lua"],
+  "lineComment": "--",
+  "blockComment": ["--[[", "]]"],
+  "quotes": "\"'",
+  "keywords": ["and", "break", "do", "else", "elseif", "end", "false", "for", "function",
+               "if", "in", "local", "nil", "not", "or", "repeat", "return", "then", "true",
+               "until", "while"],
+  "types": ["print", "pairs", "ipairs", "string", "table", "math"]
+}

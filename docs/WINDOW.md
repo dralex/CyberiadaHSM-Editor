@@ -1,7 +1,8 @@
 # The Editor Window — Documents and Tabs
 
-**Document version:** 0.11 (2026-11-11) — the modes and the read-only flag are implemented;
-the plugin parts (`modes`, a plugin run as a diff base) follow the stages of `docs/MODES.md`.
+**Document version:** 0.12 (2026-11-11) — the modes, the read-only flag and the plugins in
+the modes (`modes`, the text tabs, a plugin run as a diff base, the plugin languages) are
+implemented; the git compare follows with stage 6 of `docs/MODES.md`.
 
 The window holds several documents at once. The menus, the toolbars, the tab line and the
 docks (the structure tree, the properties, the plugins) are one set; each document brings its

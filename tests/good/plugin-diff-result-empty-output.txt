@@ -1,0 +1,30 @@
+== diff
+base: Compare with Nothing
+target: geometry.graphml
+geometry: no
+changed: 0, added: 16, removed: 0
+meta standardVersion: added (- / -)
+meta transitionOrder: added (- / -)
+meta eventPropagation: added (- / -)
+meta name: added (- / -)
+state machine node 0
+  state machine node 0: added (- / G)
+  state node 0: added (- / node-0)
+  region node-0:: added (- / node-0:)
+  state node 0-0: added (- / node-0-0)
+  region node-0-0:: added (- / node-0-0:)
+  initial: added (- / node-0-0-0)
+  state node 0-0-1: added (- / node-0-0-1)
+  state node 0-0-2: added (- / node-0-0-2)
+  state node 0-1: added (- / node-0-1)
+  transition node 0-0-1 -> node 0-0-1: added (- / edge-0)
+  transition initial -> node 0-0-1: added (- / edge-1)
+  transition node 0-0-1 -> node 0-0-2 [LABEL]: added (- / edge-2)
+== plugin
+action: modes:empty-base
+result: diff
+state: done
+exit: 0
+tab: 1
+== diagnostics
+count: 0

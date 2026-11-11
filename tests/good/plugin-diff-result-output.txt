@@ -1,0 +1,21 @@
+== tabs
+count: 2
+0 geometry.graphml hsm
+1 geometry.graphml ↔ HEAD diff active
+== diff
+base: HEAD
+target: geometry.graphml
+geometry: no
+changed: 1, added: 0, removed: 0
+state machine node 0
+  state node 0-0-1: title (node-0-0-1 / node-0-0-1)
+== plugin
+action: modes:base
+result: diff
+state: done
+exit: 0
+tab: 1
+stdout:
+  HEAD
+== diagnostics
+count: 0

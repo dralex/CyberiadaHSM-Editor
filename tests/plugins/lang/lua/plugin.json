@@ -1,0 +1,12 @@
+{
+  "api": 1,
+  "id": "lua-tools",
+  "name": "Lua",
+  "version": "0.1.0",
+  "languages": ["syntax/lua.json", "syntax/snake.json", "syntax/broken.json", "syntax/none.json",
+                "../outside.json"],
+  "actions": [
+    { "id": "run", "label": "Run the Script", "result": "log", "modes": ["lua"],
+      "argv": ["${plugin_dir}/../../bin/plugin-helper", "print", "${input}", "--", "cat", "${input}"] }
+  ]
+}

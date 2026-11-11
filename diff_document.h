@@ -28,6 +28,7 @@
 
 #include "editor_document.h"
 #include "cyberiadasm_model.h"
+#include "plugin_values.h"
 
 class QLabel;
 class QSplitter;
@@ -39,13 +40,19 @@ struct DiffOrigin {
     enum Kind {
         originTab = 0,      // the snapshot of an open diagram tab
         originFile,         // a file
-        originSaved         // the saved file of a tab
+        originSaved,        // the saved file of a tab
+        originPlugin        // the output of a plugin run on a tab (EDIT-PLUG-58)
     };
     Kind                     kind = originTab;
     QPointer<EditorDocument> tab;
     QString                  path;
-    // the name of the side in the title: a tab title, a file name, "saved"
+    // the name of the side in the title: a tab title, a file name, "saved", the
+    // values of a plugin run
     QString                  label;
+    // a plugin base: the action Refresh runs again with the same values
+    QString                  pluginId;
+    QString                  actionId;
+    PluginValues             values;
 };
 
 // one difference: a row of the change list and of the == diff dump (EDIT-MODE-11)

@@ -41,7 +41,7 @@ class QTreeWidget;
 class QTreeWidgetItem;
 class PluginRunner;
 class PluginSession;
-class CyberiadaSMEditorDocument;
+class EditorDocument;
 
 // the run row of a session (EDIT-PLUG-39): the status, Step with its units, Run
 // with its speeds, Pause, Restart and Stop; the answer bar under it (EDIT-PLUG-43)
@@ -94,7 +94,7 @@ class PluginSessionTab : public QWidget {
     Q_OBJECT
 
 public:
-    PluginSessionTab(PluginRunner* run, CyberiadaSMEditorDocument* doc, QWidget* parent = nullptr);
+    PluginSessionTab(PluginRunner* run, EditorDocument* doc, QWidget* parent = nullptr);
 
     bool          isRunning() const;
     QTreeWidget*  historyList() const { return history; }
@@ -108,7 +108,7 @@ public:
     void          finish();
 
 signals:
-    void          elementActivated(CyberiadaSMEditorDocument* doc, const QString& elementId);
+    void          elementActivated(EditorDocument* doc, const QString& elementId);
     void          message(const QString& text, bool isError);
 
 private slots:
@@ -123,7 +123,7 @@ private:
     QString       elementName(const std::string& id) const;
 
     QPointer<PluginSession> session;
-    QPointer<CyberiadaSMEditorDocument> document;
+    QPointer<EditorDocument> document;
     QComboBox*    events;
     QPushButton*  post;
     QPushButton*  end;

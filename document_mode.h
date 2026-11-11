@@ -57,6 +57,8 @@ const ModeTraits& modeTraits(const QString& id);
 
 // a text mode: text, markdown or a language
 bool isTextMode(const QString& id);
+// a mode id of EDIT-MODE-1 or a language this editor has (EDIT-PLUG-56)
+bool isKnownMode(const QString& id);
 // the text modes in the menu order: Plain text, Markdown, the languages
 QStringList textModes();
 // the menu name of a mode: "HSM diagram", "Plain text", "C++"
@@ -64,6 +66,8 @@ QString modeName(const QString& id);
 // the mode a file opens in by its extension (EDIT-MODE-13): hsm for .graphml,
 // a language, markdown for .md, else text
 QString modeForFile(const QString& path);
+// a file the editor opens in a tab: a diagram or a text of a known mode
+bool isDocumentFile(const QString& path);
 // the extension Save As proposes and a plugin input takes: ".txt", ".md", ".cpp"
 QString modeExtension(const QString& id);
 // the extensions Open names as text, "*.cpp *.md ..."

@@ -32,6 +32,8 @@ diagram side by side, the added, removed and changed elements marked and listed.
 
 The editor supports plugins (see ![The Plugin Interface](docs/PLUGIN-API.md))
 which allow to process HSM diagrams and run controlled by HSM diagrams programs.
+A plugin may also work on the text tabs, bring the programming languages of its tool and
+give a diff tab the base revision of a diagram.
 The most interesting plugins are:
 
 * ![HSM Diagram Maker](https://github.com/dralex/cybersphere-hsm-maker): generating HSM diagrams using LLM;

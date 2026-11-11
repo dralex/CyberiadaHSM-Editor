@@ -993,6 +993,35 @@ add_plugin_test(conditions-git INPUT <work>/repo/sub/hierarchy.graphml
 add_plugin_test(conditions-not-git INPUT <work>/repo/sub/hierarchy.graphml
   SEED diagrams/hierarchy.graphml>repo/sub/hierarchy.graphml MARKERS repo/.git
   PLUGIN git:out PATHS git DUMP_PLUGIN EXPECTED 6)
+# the modes of an action (EDIT-PLUG-56), a text tab (EDIT-PLUG-57), the diff result
+# (EDIT-PLUG-58) and an unknown one (EDIT-PLUG-59)
+add_plugin_test(list-modes LIST PATHS modes)
+add_plugin_test(modes-default-inspect INPUT diagrams/hierarchy.graphml PLUGIN modes:default PATHS modes
+  DUMP_PLUGIN INSPECT EXPECTED 6)
+add_plugin_test(modes-refused INPUT diagrams/hierarchy.graphml PLUGIN modes:text PATHS modes
+  DUMP_PLUGIN EXPECTED 6)
+add_plugin_test(modes-future INPUT diagrams/hierarchy.graphml PLUGIN modes:future PATHS modes
+  DUMP_PLUGIN EXPECTED 6)
+add_plugin_test(modes-mixed INPUT diagrams/hierarchy.graphml PLUGIN modes:mixed PATHS modes DUMP_PLUGIN)
+add_plugin_test(modes-next INPUT diagrams/hierarchy.graphml PLUGIN modes:next PATHS modes
+  DUMP_PLUGIN EXPECTED 6)
+add_plugin_test(modes-inspection INPUT diagrams/hierarchy.graphml PLUGIN modes:inspect PATHS modes
+  DUMP_PLUGIN INSPECT)
+add_plugin_test(modes-text-replace INPUT texts/notes.md PLUGIN modes:text PATHS modes DUMP)
+add_plugin_test(modes-text-same INPUT texts/notes.md PLUGIN modes:same PATHS modes DUMP)
+add_plugin_test(modes-text-new INPUT texts/notes.md PLUGIN modes:new-text PATHS modes DUMP DUMP_TABS)
+add_plugin_test(modes-text-input INPUT texts/blink.cpp PLUGIN modes:cat PATHS modes DUMP_PLUGIN)
+add_plugin_test(diff-result INPUT diagrams/geometry.graphml PLUGIN modes:base PATHS modes DUMP DUMP_TABS)
+add_plugin_test(diff-result-label INPUT diagrams/geometry.graphml PLUGIN modes:base PATHS modes
+  PARAMS revision=v1.0 DUMP)
+add_plugin_test(diff-result-empty INPUT diagrams/geometry.graphml PLUGIN modes:empty-base PATHS modes DUMP)
+add_plugin_test(diff-result-missing INPUT diagrams/geometry.graphml PLUGIN modes:no-base PATHS modes
+  DUMP_PLUGIN EXPECTED 6)
+# the languages of the plugins (EDIT-PLUG-60): a Lua source opens in its mode
+add_plugin_test(list-lang LIST PATHS lang)
+add_plugin_test(lang-open INPUT texts/script.lua PATHS lang DUMP DUMP_TABS)
+add_plugin_test(lang-none INPUT texts/script.lua DUMP_TABS)
+add_plugin_test(lang-run INPUT texts/script.lua PLUGIN lua-tools:run PATHS lang DUMP_PLUGIN)
 add_plugin_test(conditions-git-untitled PLUGIN git:in PATHS git DUMP_PLUGIN EXPECTED 6)
 
 # the plugin core in process: the descriptors, the values and the runner over the helper
@@ -1007,3 +1036,8 @@ target_compile_definitions(l4-plugins PRIVATE
   PLUGIN_TEST_DIR="${PLUGIN_TEST_DIR}"
   PLUGIN_HELPER="${PLUGIN_TEST_DIR}/bin/plugin-helper${CMAKE_EXECUTABLE_SUFFIX}")
 add_dependencies(l4-plugins plugin-helper)
+
+# the plugins in the modes: the text tabs, the diff result, the languages (EDIT-PLUG-56..60)
+add_l4_test(plugin-modes)
+target_compile_definitions(l4-plugin-modes PRIVATE PLUGIN_TEST_DIR="${PLUGIN_TEST_DIR}")
+add_dependencies(l4-plugin-modes plugin-helper)

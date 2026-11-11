@@ -49,7 +49,7 @@
 <context>
     <name>CyberiadaSMEditorScene</name>
     <message>
-        <location filename="../cyberiadasm_editor_scene.cpp" line="+1189"/>
+        <location filename="../cyberiadasm_editor_scene.cpp" line="+1200"/>
         <location line="+35"/>
         <location line="+152"/>
         <location line="+35"/>
@@ -169,7 +169,7 @@
 <context>
     <name>CyberiadaSMEditorWindow</name>
     <message>
-        <location filename="../smeditor_window.cpp" line="+138"/>
+        <location filename="../smeditor_window.cpp" line="+139"/>
         <source>Output panel</source>
         <translation>Панель вывода</translation>
     </message>
@@ -179,7 +179,7 @@
         <translation>Менеджер плагинов...</translation>
     </message>
     <message>
-        <location line="+184"/>
+        <location line="+185"/>
         <source>Close</source>
         <translation>Закрыть</translation>
     </message>
@@ -189,7 +189,7 @@
         <translation>Для документа %1 выполняется плагин. Остановить его и закрыть?</translation>
     </message>
     <message>
-        <location line="+61"/>
+        <location line="+64"/>
         <source>Cannot open %1:
 %2
 </source>
@@ -203,7 +203,7 @@
         <translation>Не задан</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+22"/>
         <source>Plain</source>
         <translation>Обычный текст</translation>
     </message>
@@ -213,7 +213,7 @@
         <translation>Markdown</translation>
     </message>
     <message>
-        <location line="+579"/>
+        <location line="+621"/>
         <source>Undo</source>
         <translation>Отменить</translation>
     </message>
@@ -335,8 +335,8 @@
         <translation>нет документа</translation>
     </message>
     <message>
-        <location line="-1166"/>
-        <location line="+1167"/>
+        <location line="-1184"/>
+        <location line="+1194"/>
         <source>a plugin is running on the document</source>
         <translation>для документа выполняется плагин</translation>
     </message>
@@ -345,8 +345,8 @@
         <translation type="vanished">в режиме инспектора документ доступен только для чтения</translation>
     </message>
     <message>
-        <location line="-1133"/>
-        <location line="+1154"/>
+        <location line="-1160"/>
+        <location line="+1197"/>
         <source>the document cannot be encoded</source>
         <translation>не удалось сериализовать документ</translation>
     </message>
@@ -357,7 +357,7 @@
         <translation>документ не сохранен</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+39"/>
         <source>the plugin &apos;%1&apos; is not found</source>
         <translation>плагин «%1» не найден</translation>
     </message>
@@ -367,49 +367,49 @@
         <translation>у плагина «%1» нет действия «%2»</translation>
     </message>
     <message>
-        <location line="+107"/>
+        <location line="+106"/>
         <source>the document is closed</source>
         <translation>документ закрыт</translation>
     </message>
     <message>
-        <location line="-148"/>
-        <location line="+161"/>
+        <location line="-173"/>
+        <location line="+185"/>
         <source>Plugin: %1</source>
         <translation>Плагин: %1</translation>
     </message>
     <message>
-        <location line="-1510"/>
+        <location line="-1605"/>
         <source>Mode</source>
         <translation>Режим</translation>
     </message>
     <message>
-        <location line="+91"/>
+        <location line="+119"/>
         <source>the mode %1 is not available</source>
         <translation>режим %1 недоступен</translation>
     </message>
     <message>
-        <location line="+1183"/>
+        <location line="+1210"/>
         <source>the inspection tab is read-only</source>
         <translation>вкладка инспекции доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1162"/>
-        <location line="+1163"/>
+        <location line="-1189"/>
+        <location line="+1190"/>
         <source>the tab is read-only</source>
         <translation>вкладка доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1295"/>
+        <location line="-1347"/>
         <source>Text file</source>
         <translation>Текстовый файл</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+75"/>
         <source>Code</source>
         <translation>Код</translation>
     </message>
     <message>
-        <location line="+89"/>
+        <location line="+44"/>
         <source>a text tab cannot become a %1</source>
         <translation>текстовая вкладка не может перейти в режим «%1»</translation>
     </message>
@@ -442,12 +442,12 @@
         <translation>Автомат не нарушает ни одного правила EXT-FA.</translation>
     </message>
     <message>
-        <location line="+274"/>
+        <location line="+289"/>
         <source>%1: not an element of a finite automaton</source>
         <translation>%1: не элемент конечного автомата</translation>
     </message>
     <message>
-        <location line="+299"/>
+        <location line="+302"/>
         <location line="+23"/>
         <location line="+7"/>
         <source>Save Text</source>
@@ -464,13 +464,13 @@
         <translation>%1 (*%2)</translation>
     </message>
     <message>
-        <location line="-401"/>
-        <location line="+401"/>
+        <location line="-404"/>
+        <location line="+404"/>
         <source>All files (*)</source>
         <translation>Все файлы (*)</translation>
     </message>
     <message>
-        <location line="-764"/>
+        <location line="-810"/>
         <source>Refresh</source>
         <translation>Обновить</translation>
     </message>
@@ -485,7 +485,7 @@
         <translation>Изменение</translation>
     </message>
     <message>
-        <location line="+50"/>
+        <location line="+78"/>
         <source>a diff tab is opened by Document &gt; Compare with...</source>
         <translation>вкладку сравнения открывает «Документ &gt; Сравнить с...»</translation>
     </message>
@@ -510,6 +510,11 @@
 %2</source>
         <translation>Не удаётся прочитать %1:
 %2</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>the tab the plugin ran on is closed</source>
+        <translation>вкладка, на которой работал плагин, закрыта</translation>
     </message>
     <message>
         <location line="+26"/>
@@ -549,12 +554,24 @@
         <translation>Граф CyberiadaML (*.graphml)</translation>
     </message>
     <message>
-        <location line="+1125"/>
+        <location line="+893"/>
+        <source>the action works in: %1</source>
+        <translation>действие работает в режимах: %1</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <location line="+31"/>
+        <source>a diff tab gives a plugin no input</source>
+        <translation>вкладка сравнения не даёт плагину входных данных</translation>
+    </message>
+    <message>
+        <location line="+254"/>
+        <location line="+10"/>
         <source>the document is read-only</source>
         <translation>документ доступен только для чтения</translation>
     </message>
     <message>
-        <location line="+33"/>
+        <location line="+73"/>
         <source>Session</source>
         <translation>Сессия</translation>
     </message>
@@ -565,12 +582,12 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+192"/>
+        <location line="+190"/>
         <source>Run</source>
         <translation>Запустить</translation>
     </message>
     <message>
-        <location line="-190"/>
+        <location line="-188"/>
         <source>Pause</source>
         <translation>Пауза</translation>
     </message>
@@ -605,12 +622,12 @@
         <translation>Сохранить журнал...</translation>
     </message>
     <message>
-        <location line="+101"/>
-        <source>the plugin works on the diagram tabs</source>
-        <translation>плагин работает во вкладках диаграмм</translation>
+        <location line="+253"/>
+        <source>Open</source>
+        <translation>Открыть</translation>
     </message>
     <message>
-        <location line="+100"/>
+        <location line="-54"/>
         <source>%1 - Settings</source>
         <translation>%1 - Параметры</translation>
     </message>
@@ -1459,7 +1476,7 @@
         <translation>текст</translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+35"/>
         <source>HSM diagram</source>
         <translation>Диаграмма ПРИМС</translation>
     </message>
@@ -1484,7 +1501,7 @@
         <translation>Простой текст</translation>
     </message>
     <message>
-        <location line="+59"/>
+        <location line="+66"/>
         <source>read-only</source>
         <translation>только чтение</translation>
     </message>
@@ -1647,7 +1664,7 @@
 <context>
     <name>MetaChoiceMenu</name>
     <message>
-        <location filename="../meta_choice_menu.cpp" line="+79"/>
+        <location filename="../meta_choice_menu.cpp" line="+80"/>
         <source>%1 (no highlighting)</source>
         <translation>%1 (без подсветки)</translation>
     </message>
@@ -1865,7 +1882,7 @@
 <context>
     <name>PluginDock</name>
     <message>
-        <location filename="../plugin_dock.cpp" line="+66"/>
+        <location filename="../plugin_dock.cpp" line="+68"/>
         <source>error</source>
         <comment>severity</comment>
         <translation>ошибка</translation>
@@ -1922,7 +1939,7 @@
         <translation type="obsolete">Вывод</translation>
     </message>
     <message>
-        <location line="+37"/>
+        <location line="+39"/>
         <source>%1 output</source>
         <translation>Вывод %1</translation>
     </message>
@@ -1997,7 +2014,7 @@
         <translation>%1 не установлено: в документе нет машины состояний или он только для чтения</translation>
     </message>
     <message>
-        <location line="+30"/>
+        <location line="+62"/>
         <source>%1: running %2:%3</source>
         <translation>%1: выполняется %2:%3</translation>
     </message>
@@ -2022,7 +2039,7 @@
         <translation>ошибка: %1</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+6"/>
         <source>new %1</source>
         <comment>plugin file</comment>
         <translation>новый файл %1</translation>
@@ -2034,12 +2051,12 @@
         <translation>изменен файл %1</translation>
     </message>
     <message>
-        <location line="+19"/>
+        <location line="+21"/>
         <source>%1 (absent)</source>
         <translation>%1 (отсутствует)</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+9"/>
         <source>Diagnostics %1</source>
         <translation>Замечания (%1)</translation>
     </message>
@@ -2047,7 +2064,7 @@
 <context>
     <name>PluginManagerDialog</name>
     <message>
-        <location filename="../dialogs/plugin_manager_dialog.cpp" line="+50"/>
+        <location filename="../dialogs/plugin_manager_dialog.cpp" line="+51"/>
         <source>Plugin Manager</source>
         <translation>Менеджер плагинов</translation>
     </message>
@@ -2077,7 +2094,12 @@
         <translation>Сканировать заново</translation>
     </message>
     <message>
-        <location line="+48"/>
+        <location line="+49"/>
+        <source>Languages</source>
+        <translation>Языки</translation>
+    </message>
+    <message>
+        <location line="+7"/>
         <source>unavailable: %1</source>
         <translation>недоступно: %1</translation>
     </message>
@@ -2093,7 +2115,7 @@
 <context>
     <name>PluginRegistry</name>
     <message>
-        <location filename="../plugin_registry.cpp" line="+53"/>
+        <location filename="../plugin_registry.cpp" line="+56"/>
         <source>enabled</source>
         <comment>plugin status</comment>
         <translation>включен</translation>
@@ -2132,7 +2154,12 @@
         <translation>интерпретатор «%1» не найден</translation>
     </message>
     <message>
-        <location line="+22"/>
+        <location line="+66"/>
+        <source>the action needs a newer editor</source>
+        <translation>действие требует более новой версии редактора</translation>
+    </message>
+    <message>
+        <location line="+12"/>
         <source>the plugin &apos;%1&apos; is not installed</source>
         <translation>плагин «%1» не установлен</translation>
     </message>
@@ -2150,7 +2177,7 @@
 <context>
     <name>PluginRunner</name>
     <message>
-        <location filename="../plugin_runner.cpp" line="+122"/>
+        <location filename="../plugin_runner.cpp" line="+123"/>
         <source>the variable at &apos;%1&apos; is not closed</source>
         <translation>переменная в «%1» не закрыта</translation>
     </message>
@@ -2246,7 +2273,7 @@
         <translation>не удается записать входной документ</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+6"/>
         <source>the document is not saved</source>
         <translation>документ не сохранен</translation>
     </message>
@@ -2288,23 +2315,23 @@
         <translation>код выхода %1 означает ошибку</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+55"/>
         <source>the output document is missing</source>
         <translation>выходной документ отсутствует</translation>
     </message>
     <message>
-        <location line="+4"/>
-        <location line="+31"/>
+        <location line="-13"/>
+        <location line="+17"/>
         <source>the output document cannot be read</source>
         <translation>выходной документ не удается прочитать</translation>
     </message>
     <message>
-        <location line="-26"/>
+        <location line="+10"/>
         <source>the output document is empty</source>
         <translation>выходной документ пуст</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="-42"/>
         <source>the output document has no state machine</source>
         <translation>в выходном документе нет машины состояний</translation>
     </message>
@@ -2324,7 +2351,12 @@
         <translation>выходной документ не является допустимым документом CyberiadaML</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+37"/>
+        <source>the output text is not UTF-8</source>
+        <translation>выходной текст не в кодировке UTF-8</translation>
+    </message>
+    <message>
+        <location line="+17"/>
         <source>the diagnostics file cannot be read</source>
         <translation>файл замечаний не удается прочитать</translation>
     </message>
@@ -2560,7 +2592,7 @@
         <translation>Выход: %1</translation>
     </message>
     <message>
-        <location line="+54"/>
+        <location line="+56"/>
         <source>pending</source>
         <translation>ожидает</translation>
     </message>
@@ -2642,7 +2674,7 @@
         <translation>Панели плагинов</translation>
     </message>
     <message>
-        <location line="+81"/>
+        <location line="+83"/>
         <source>Settings...</source>
         <translation>Параметры...</translation>
     </message>
@@ -2866,7 +2898,7 @@
         <translation>Сбросить положение подписи</translation>
     </message>
     <message>
-        <location filename="../text_document.cpp" line="+40"/>
+        <location filename="../text_document.cpp" line="+41"/>
         <source>typing</source>
         <translation>ввод текста</translation>
     </message>
@@ -3642,7 +3674,7 @@
 <context>
     <name>TextDocument</name>
     <message>
-        <location filename="../text_document.cpp" line="+92"/>
+        <location filename="../text_document.cpp" line="+119"/>
         <source>untitled</source>
         <translation>без имени</translation>
     </message>

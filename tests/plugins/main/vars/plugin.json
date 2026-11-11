@@ -130,6 +130,7 @@
       "id": "fill",
       "label": "Fill",
       "result": "log",
+      "modes": ["hsm", "fa", "inspection"],
       "parameters": [],
       "meta": {
         "platformLanguage": "Python"

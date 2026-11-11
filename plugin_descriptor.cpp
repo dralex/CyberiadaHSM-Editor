@@ -37,7 +37,7 @@ namespace {
 
 const QStringList descriptorFields = {
     "api", "id", "name", "version", "description", "icon", "interpreter", "env",
-    "requires", "parameters", "actions", "session"
+    "requires", "parameters", "actions", "session", "languages"
 };
 const QStringList parameterFields = {
     "id", "type", "label", "description", "default", "scope", "required", "language",
@@ -46,7 +46,7 @@ const QStringList parameterFields = {
 const QStringList actionFields = {
     "id", "label", "description", "icon", "result", "argv", "exit_ok", "timeout",
     "parameters", "outdir", "load", "save", "cwd", "toolbar", "meta", "requires", "when",
-    "reason"
+    "reason", "modes"
 };
 const QStringList loadFields = { "strict", "reconstruct" };
 const QStringList sessionFields = { "version", "actions" };
@@ -54,7 +54,7 @@ const QStringList sessionFields = { "version", "actions" };
 const QStringList sessionActionFields = {
     "id", "label", "description", "icon", "result", "argv", "exit_ok",
     "parameters", "outdir", "save", "cwd", "toolbar", "meta", "replaces", "requires", "when",
-    "reason"
+    "reason", "modes"
 };
 const QStringList requirementFields = { "programs", "env", "plugins" };
 
@@ -62,7 +62,9 @@ const char* const typeNames[] = {
     "string", "text", "int", "double", "bool", "enum", "file", "dir", "secret"
 };
 const char* const scopeNames[] = { "run", "persistent", "document" };
-const char* const resultNames[] = { "replace", "new-document", "diagnostics", "files", "log" };
+const char* const resultNames[] = { "replace", "new-document", "diagnostics", "files", "log", "diff" };
+// the modes a diff action may list: a diagram is the target (EDIT-PLUG-58)
+const QStringList diffModes = { "hsm", "fa", "inspection" };
 
 bool fail(QString* error, const QString& message)
 {
@@ -357,11 +359,32 @@ bool parseAction(const QJsonValue& value, int index, bool session, PluginAction*
     // a session takes back a log, the findings or the files when it ends
     QString result = session ? resultNames[PluginAction::resultLog] : QString();
     if (!readString(o, "result", where, &result, error)) return false;
+    if (result.isEmpty()) return fail(error, QString("the action '%1' has no result").arg(a->id));
+    a->resultText = result;
     int r = indexOfName(resultNames, sizeof(resultNames) / sizeof(resultNames[0]), result);
-    if (r < 0) return fail(error, QString("the action '%1' has an unknown result '%2'").arg(a->id, result));
-    a->result = static_cast<PluginAction::Result>(r);
-    if (session && (a->result == PluginAction::resultReplace || a->result == PluginAction::resultNewDocument)) {
+    if (r < 0) {
+        // the other actions stay (EDIT-PLUG-59)
+        a->result = PluginAction::resultUnknown;
+        warnings->append(QString("unknown result '%1result/%2'").arg(where, result));
+    } else {
+        a->result = static_cast<PluginAction::Result>(r);
+    }
+    if (session && (a->result == PluginAction::resultReplace || a->result == PluginAction::resultNewDocument ||
+                    a->result == PluginAction::resultDiff)) {
         return fail(error, QString("the session action '%1' cannot have the result '%2'").arg(a->id, result));
+    }
+    // an unknown id is the registry's warning: the languages are known after the scan
+    if (o.contains("modes")) {
+        if (!readStrings(o, "modes", where, &a->modes, error)) return false;
+    } else {
+        a->modes = PluginAction::defaultModes();
+    }
+    if (a->result == PluginAction::resultDiff) {
+        for (const QString& m: a->modes) {
+            if (!diffModes.contains(m)) {
+                return fail(error, QString("the diff action '%1' cannot work in the mode '%2'").arg(a->id, m));
+            }
+        }
     }
 
     if (!parseArgv(o.value("argv"), a->id, a, error)) return false;
@@ -553,7 +576,17 @@ bool PluginDescriptor::validId(const QString& id)
 
 QString PluginDescriptor::resultName(PluginAction::Result result)
 {
-    return resultNames[result];
+    return result == PluginAction::resultUnknown ? QString("unknown") : QString(resultNames[result]);
+}
+
+QString PluginAction::resultId() const
+{
+    return result == resultUnknown ? resultText : PluginDescriptor::resultName(result);
+}
+
+QStringList PluginAction::defaultModes()
+{
+    return QStringList() << "hsm" << "fa";
 }
 
 QString PluginDescriptor::typeName(PluginParameter::Type type)
@@ -695,10 +728,13 @@ bool PluginDescriptor::parse(const QByteArray& json, const QString& dir,
         }
     }
 
-    if (!root.value("actions").isArray() || root.value("actions").toArray().isEmpty()) {
-        return fail(error, "the plugin has no actions");
+    if (!readStrings(root, "languages", QString(), &d.languages, error)) return false;
+    // a plugin of languages only may have no action (EDIT-PLUG-60)
+    if (root.contains("actions") && !root.value("actions").isArray()) {
+        return fail(error, "the field 'actions' is not a list");
     }
     QJsonArray actions = root.value("actions").toArray();
+    if (actions.isEmpty() && d.languages.isEmpty()) return fail(error, "the plugin has no actions");
     QSet<QString> actionIds;
     for (int i = 0; i < actions.size(); i++) {
         PluginAction a;

@@ -46,6 +46,7 @@
 #include <QTreeWidget>
 
 #include "smeditor_window.h"
+#include <QTextBlock>
 #include "code_editor.h"
 #include "cyberiadasm_editor_view.h"
 #include "cyberiadasm_editor_subject_item.h"
@@ -143,6 +144,8 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     connect(this, &CyberiadaSMEditorWindow::pluginRunStarted, pluginDockWidget, &PluginDock::runStarted);
     connect(pluginDockWidget, &PluginDock::diagnosticActivated,
             this, &CyberiadaSMEditorWindow::slotDiagnosticActivated);
+    connect(pluginDockWidget, &PluginDock::lineActivated, this, &CyberiadaSMEditorWindow::slotLineActivated);
+    connect(pluginDockWidget, &PluginDock::fileActivated, this, &CyberiadaSMEditorWindow::slotFileActivated);
     connect(&SettingsManager::instance(), &SettingsManager::pluginsChanged,
             this, &CyberiadaSMEditorWindow::slotPluginSettingsChanged);
     connect(&SettingsManager::instance(), &SettingsManager::pluginSwitchesChanged,
@@ -317,9 +320,8 @@ void CyberiadaSMEditorWindow::slotPreviousDocument()
 bool CyberiadaSMEditorWindow::closeDocument(EditorDocument* doc, bool discard)
 {
     if (!doc) return false;
-    CyberiadaSMEditorDocument* diagram = qobject_cast<CyberiadaSMEditorDocument*>(doc);
     // a running plugin is cancelled with its document (EDIT-PLUG-23)
-    if (diagram && diagram->pluginRun() && !discard && !qApp->property("batchMode").toBool() &&
+    if (doc->pluginRun() && !discard && !qApp->property("batchMode").toBool() &&
         QMessageBox::question(this, tr("Close"),
                               tr("A plugin is running on %1. Cancel it and close?").arg(doc->title()),
                               QMessageBox::Yes | QMessageBox::No) != QMessageBox::Yes) {
@@ -343,7 +345,10 @@ bool CyberiadaSMEditorWindow::closeDocument(EditorDocument* doc, bool discard)
     documentStack->removeWidget(doc->page());
     undoGroup->removeStack(doc->undoStack());
     // the result of a closed document is never applied (EDIT-PLUG-23)
-    if (diagram && diagram->pluginRun()) diagram->pluginRun()->abort();
+    if (doc->pluginRun()) doc->pluginRun()->abort();
+    // a stack with steps signals its clean state as it goes
+    doc->undoStack()->disconnect(this);
+    doc->disconnect(this);
     delete doc;
     return true;
 }
@@ -476,15 +481,20 @@ void CyberiadaSMEditorWindow::unbindDocument(CyberiadaSMEditorDocument* doc)
     disconnect(doc->scene(), nullptr, SMView, nullptr);
 }
 
-void CyberiadaSMEditorWindow::initChoiceMenus()
+QList<MetaChoiceMenu::Entry> CyberiadaSMEditorWindow::languageEntries() const
 {
     QList<MetaChoiceMenu::Entry> languages;
     languages.append({tr("Undefined"), QString()});
     for (const QString& name : CodeStyle::instance().languages()) {
         languages.append({name, name});
     }
+    return languages;
+}
+
+void CyberiadaSMEditorWindow::initChoiceMenus()
+{
     // an alias checks its language
-    languageChoice = new MetaChoiceMenu(menuLanguage, languages,
+    languageChoice = new MetaChoiceMenu(menuLanguage, languageEntries(),
         [](const QString& value, bool* known) {
             const CodeLanguage* lang = CodeStyle::instance().find(value);
             *known = lang || value.trimmed().isEmpty();
@@ -529,23 +539,19 @@ void CyberiadaSMEditorWindow::initDocumentMenu()
     modeGroup->addAction(actionModeDiff);
     // the text modes: Plain text, Markdown, Code > the languages (EDIT-MODE-3/13)
     menuMode->addSeparator();
-    QMenu* code = nullptr;
-    QMenu* newText = menuNew->addMenu(tr("Text file"));
-    newText->setObjectName("menuNewText");
-    for (const QString& mode : textModes()) {
-        bool language = mode != MODE_TEXT && mode != MODE_MARKDOWN;
-        if (language && !code) {
-            code = menuMode->addMenu(tr("Code"));
-            code->setObjectName("menuModeCode");
+    menuNewText = menuNew->addMenu(tr("Text file"));
+    menuNewText->setObjectName("menuNewText");
+    rebuildTextModeMenus();
+    // the languages of the plugins come and go with a scan (EDIT-PLUG-60)
+    connect(&CodeStyle::instance(), &CodeStyle::languagesChanged, this, [this]() {
+        rebuildTextModeMenus();
+        if (languageChoice) languageChoice->setEntries(languageEntries());
+        for (EditorDocument* doc : documents) {
+            if (TextDocument* text = qobject_cast<TextDocument*>(doc)) text->refreshLanguage();
         }
-        QAction* action = (language ? code : menuMode)->addAction(modeName(mode));
-        action->setCheckable(true);
-        action->setData(mode);
-        modeGroup->addAction(action);
-        QAction* create = newText->addAction(modeName(mode));
-        create->setData(mode);
-        connect(create, &QAction::triggered, this, [this, mode]() { slotFileNewText(mode); });
-    }
+        syncChoiceMenus();
+        updateModeActions();
+    });
     connect(modeGroup, &QActionGroup::triggered, this, [this](QAction* action) {
         QString error;
         if (active && !setDocumentMode(active, action->data().toString(), &error) &&
@@ -593,6 +599,34 @@ void CyberiadaSMEditorWindow::initDocumentMenu()
     actionFASymbols->setChecked(sm.getShowFASymbols());
     connect(actionFASymbols, &QAction::triggered, &sm, &SettingsManager::setShowFASymbols);
     connect(&sm, &SettingsManager::faSymbolsChanged, actionFASymbols, &QAction::setChecked);
+}
+
+void CyberiadaSMEditorWindow::rebuildTextModeMenus()
+{
+    for (QAction* action : textModeActions) {
+        modeGroup->removeAction(action);
+        delete action;
+    }
+    textModeActions.clear();
+    delete menuMode->findChild<QMenu*>("menuModeCode");
+    menuNewText->clear();
+    QMenu* code = nullptr;
+    for (const QString& mode : textModes()) {
+        bool language = mode != MODE_TEXT && mode != MODE_MARKDOWN;
+        if (language && !code) {
+            code = menuMode->addMenu(tr("Code"));
+            code->setObjectName("menuModeCode");
+        }
+        QAction* action = new QAction(modeName(mode), this);
+        action->setCheckable(true);
+        action->setData(mode);
+        (language ? code : menuMode)->addAction(action);
+        modeGroup->addAction(action);
+        textModeActions.append(action);
+        QAction* create = menuNewText->addAction(modeName(mode));
+        create->setData(mode);
+        connect(create, &QAction::triggered, this, [this, mode]() { slotFileNewText(mode); });
+    }
 }
 
 void CyberiadaSMEditorWindow::updateModeActions()
@@ -863,9 +897,24 @@ bool CyberiadaSMEditorWindow::originBuffer(const DiffOrigin& origin, const std::
     return true;
 }
 
-bool CyberiadaSMEditorWindow::refreshDiff(DiffDocument* diff, QString* error)
+bool CyberiadaSMEditorWindow::refreshDiff(DiffDocument* diff, QString* error, bool wait)
 {
     if (!diff) return false;
+    // a plugin base: the action again on the source tab, the same values (EDIT-PLUG-58)
+    const DiffOrigin& origin = diff->base();
+    if (origin.kind == DiffOrigin::originPlugin) {
+        if (!origin.tab) {
+            if (error) *error = tr("the tab the plugin ran on is closed");
+            return false;
+        }
+        if (!wait) return runPlugin(origin.pluginId, origin.actionId, origin.values, error, origin.tab, diff);
+        PluginResult result = runPluginAndWait(origin.pluginId, origin.actionId, origin.values, origin.tab, diff);
+        if (result.state != PluginResult::stateDone) {
+            if (error) *error = result.error;
+            return false;
+        }
+        return true;
+    }
     std::string base, target;
     if (!originBuffer(diff->base(), diff->baseBuffer(), &base, error)) return false;
     if (!originBuffer(diff->target(), diff->targetBuffer(), &target, error)) return false;
@@ -1068,6 +1117,9 @@ CyberiadaSMEditorWindow::~CyberiadaSMEditorWindow()
     sceneView = nullptr;
     for (EditorDocument* doc : documents) {
         documentStack->removeWidget(doc->page());
+        // a stack with steps signals its clean state as it goes, to a window half gone
+        doc->undoStack()->disconnect(this);
+        doc->disconnect(this);
         delete doc;
     }
     documents.clear();
@@ -1809,7 +1861,7 @@ static QString documentFormatName(const Cyberiada::LocalDocument* root)
 
 QString CyberiadaSMEditorWindow::pluginDisabledReason(const PluginEntry& plugin,
                                                       const PluginAction& action,
-                                                      CyberiadaSMEditorDocument* doc) const
+                                                      EditorDocument* doc) const
 {
     if (plugin.status == PluginEntry::statusDisabled) return plugin.reason;
     if (!plugin.usable()) return tr("the plugin is %1").arg(PluginEntry::statusText(plugin.status));
@@ -1821,6 +1873,15 @@ QString CyberiadaSMEditorWindow::pluginDisabledReason(const PluginEntry& plugin,
     QString unavailable = plugin.unavailable.value(action.id);
     if (!unavailable.isEmpty()) return unavailable;
     if (!doc) return tr("there is no document");
+    // the mode before the when tokens (EDIT-PLUG-56)
+    if (!action.modes.contains(doc->mode())) {
+        QStringList names;
+        for (const QString& mode: action.modes) {
+            if (isKnownMode(mode)) names.append(modeName(mode));
+        }
+        return tr("the action works in: %1").arg(names.join(", "));
+    }
+    if (qobject_cast<DiffDocument*>(doc)) return tr("a diff tab gives a plugin no input");
     if (doc->pluginRun()) return tr("a plugin is running on the document");
     // a replace needs an editable tab (EDIT-PLUG-24); the lock is the run's, checked above
     if (action.changesDocument() && doc->isReadOnly()) {
@@ -1831,23 +1892,37 @@ QString CyberiadaSMEditorWindow::pluginDisabledReason(const PluginEntry& plugin,
     PluginDocumentFacts facts = doc->pluginFacts();
     // the keys fillPluginMeta would write (EDIT-PLUG-34)
     QList<QPair<QString, QString> > fills;
-    if (facts.machines > 0 && !doc->model()->readOnly()) fills = action.meta;
+    CyberiadaSMEditorDocument* diagram = qobject_cast<CyberiadaSMEditorDocument*>(doc);
+    if (diagram && facts.machines > 0 && !diagram->model()->readOnly()) fills = action.meta;
     return PluginConditions::check(action.when, action.reason, facts, fills);
 }
 
-bool CyberiadaSMEditorWindow::pluginContext(CyberiadaSMEditorDocument* doc, PluginRunContext* context,
+bool CyberiadaSMEditorWindow::pluginContext(EditorDocument* doc, PluginRunContext* context,
                                             QString* error) const
 {
-    CyberiadaSMModel* m = doc->model();
+    context->documentPath = doc->hasFile() ? QFileInfo(doc->filePath()).absoluteFilePath() : QString();
+    context->modified = !doc->isClean();
+    // a text: input.<ext> in UTF-8, the format its mode (EDIT-PLUG-57)
+    if (TextDocument* text = qobject_cast<TextDocument*>(doc)) {
+        context->text = true;
+        context->extension = modeExtension(text->mode());
+        context->documentFormat = text->mode();
+        context->input = text->text().toUtf8().toStdString();
+        return true;
+    }
+    CyberiadaSMEditorDocument* diagram = qobject_cast<CyberiadaSMEditorDocument*>(doc);
+    if (!diagram) {
+        if (error) *error = tr("a diff tab gives a plugin no input");
+        return false;
+    }
+    CyberiadaSMModel* m = diagram->model();
     bool ok = true;
     context->input = m->snapshot(&ok);
     if (!ok) {
         if (error) *error = tr("the document cannot be encoded");
         return false;
     }
-    context->documentPath = doc->hasFile() ? QFileInfo(doc->filePath()).absoluteFilePath() : QString();
     context->documentFormat = documentFormatName(m->rootDocument());
-    context->modified = !doc->isClean();
     const Cyberiada::LocalDocument* root = m->rootDocument();
     if (root) {
         const Cyberiada::DocumentMetainformation& meta = root->meta();
@@ -1862,17 +1937,19 @@ bool CyberiadaSMEditorWindow::pluginContext(CyberiadaSMEditorDocument* doc, Plug
             context->meta.append(qMakePair(key, QString::fromStdString(item.second)));
         }
     }
-    context->selection = doc->scene()->selectedIds();
+    context->selection = diagram->scene()->selectedIds();
     return true;
 }
 
-QList<PluginMetaNote> CyberiadaSMEditorWindow::fillPluginMeta(CyberiadaSMEditorDocument* doc,
+QList<PluginMetaNote> CyberiadaSMEditorWindow::fillPluginMeta(EditorDocument* doc,
                                                               const PluginAction& action)
 {
     QList<PluginMetaNote> notes;
     if (action.meta.isEmpty()) return notes;
-    CyberiadaSMModel* m = doc->model();
-    const Cyberiada::LocalDocument* root = m->rootDocument();
+    // a text has no metainformation to fill
+    CyberiadaSMEditorDocument* diagram = qobject_cast<CyberiadaSMEditorDocument*>(doc);
+    CyberiadaSMModel* m = diagram ? diagram->model() : nullptr;
+    const Cyberiada::LocalDocument* root = m ? m->rootDocument() : nullptr;
     // nothing to describe, or nothing to change
     bool usable = root && !root->get_state_machines().empty() && !m->readOnly();
     QList<QPair<QString, QString> > fills;
@@ -1908,7 +1985,7 @@ QList<PluginMetaNote> CyberiadaSMEditorWindow::fillPluginMeta(CyberiadaSMEditorD
     return notes;
 }
 
-bool CyberiadaSMEditorWindow::savePluginDocument(CyberiadaSMEditorDocument* doc, QString* error)
+bool CyberiadaSMEditorWindow::savePluginDocument(EditorDocument* doc, QString* error)
 {
     if (doc->hasFile() && doc->isClean()) return true;
     if (!doc->hasFile()) {
@@ -1928,11 +2005,37 @@ bool CyberiadaSMEditorWindow::savePluginDocument(CyberiadaSMEditorDocument* doc,
     return true;
 }
 
+void CyberiadaSMEditorWindow::setPluginLock(EditorDocument* doc, bool on, bool session)
+{
+    if (CyberiadaSMEditorDocument* diagram = qobject_cast<CyberiadaSMEditorDocument*>(doc)) {
+        diagram->model()->setLocked(on);
+        // a session keeps select and zoom (EDIT-PLUG-41)
+        diagram->view()->setInteractive(!on || session);
+    } else if (TextDocument* text = qobject_cast<TextDocument*>(doc)) {
+        text->setLocked(on);
+    }
+}
+
+QString CyberiadaSMEditorWindow::pluginBaseLabel(const PluginEntry& plugin, const PluginAction& action,
+                                                 const PluginValues& values) const
+{
+    QStringList parts;
+    for (const PluginParameter* p: plugin.descriptor.actionParameters(action)) {
+        if (p->type != PluginParameter::typeString) continue;
+        QString value = values.value(p->id).trimmed();
+        if (!value.isEmpty()) parts.append(value);
+    }
+    if (!parts.isEmpty()) return parts.join(", ");
+    QString label = action.label;
+    if (label.endsWith("...")) label.chop(3);
+    return label;
+}
+
 PluginRunner* CyberiadaSMEditorWindow::runPlugin(const QString& pluginId, const QString& actionId,
                                                  const PluginValues& values, QString* error,
-                                                 CyberiadaSMEditorDocument* doc)
+                                                 EditorDocument* doc, DiffDocument* refresh)
 {
-    if (!doc) doc = current;
+    if (!doc) doc = active;
     const PluginEntry* entry = PluginRegistry::instance().find(pluginId);
     if (!entry) {
         if (error) *error = tr("the plugin '%1' is not found").arg(pluginId);
@@ -1960,15 +2063,15 @@ PluginRunner* CyberiadaSMEditorWindow::runPlugin(const QString& pluginId, const 
     PluginRunner* run = new PluginRunner(*entry, action->id, values, context, this);
     run->mutableResult()->metaNotes = metaNotes;
     doc->setPluginRun(run);
-    pluginRuns.insert(run, QPointer<CyberiadaSMEditorDocument>(doc));
+    pluginRuns.insert(run, QPointer<EditorDocument>(doc));
+    if (refresh) diffRefreshes.insert(run, QPointer<DiffDocument>(refresh));
     if (action->changesDocument()) {
         // the document waits for the result (EDIT-PLUG-22)
-        doc->model()->setLocked(true);
-        doc->view()->setInteractive(false);
+        setPluginLock(doc, true, false);
         updateEditActions();
     } else if (action->session) {
         // a session reads the document as it was: select and zoom, no edits (EDIT-PLUG-41)
-        doc->model()->setLocked(true);
+        setPluginLock(doc, true, true);
         updateEditActions();
         updateUndoActions();
         connectSession(run, doc);
@@ -1982,7 +2085,7 @@ PluginRunner* CyberiadaSMEditorWindow::runPlugin(const QString& pluginId, const 
 
 PluginResult CyberiadaSMEditorWindow::runPluginAndWait(const QString& pluginId, const QString& actionId,
                                                        const PluginValues& values,
-                                                       CyberiadaSMEditorDocument* doc)
+                                                       EditorDocument* doc, DiffDocument* refresh)
 {
     PluginResult result;
     QString error;
@@ -1996,7 +2099,7 @@ PluginResult CyberiadaSMEditorWindow::runPluginAndWait(const QString& pluginId, 
                         result = finished->result();
                         done = true;
                     });
-    run = runPlugin(pluginId, actionId, values, &error, doc);
+    run = runPlugin(pluginId, actionId, values, &error, doc, refresh);
     if (!run) {
         disconnect(taken);
         result.state = PluginResult::stateFailed;
@@ -2025,23 +2128,22 @@ void CyberiadaSMEditorWindow::slotPluginFinished()
 {
     PluginRunner* run = qobject_cast<PluginRunner*>(sender());
     if (!run || !pluginRuns.contains(run)) return;
-    QPointer<CyberiadaSMEditorDocument> doc = pluginRuns.take(run);
-    CyberiadaSMEditorDocument* target = applyPluginResult(run, doc.data());
+    QPointer<EditorDocument> doc = pluginRuns.take(run);
+    EditorDocument* target = applyPluginResult(run, doc.data());
     if (pluginDockWidget) pluginDockWidget->runFinished(run, target);
     emit pluginRunFinished(run);
     run->deleteLater();
 }
 
-CyberiadaSMEditorDocument* CyberiadaSMEditorWindow::applyPluginResult(PluginRunner* run,
-                                                                     CyberiadaSMEditorDocument* doc)
+EditorDocument* CyberiadaSMEditorWindow::applyPluginResult(PluginRunner* run, EditorDocument* doc)
 {
     PluginResult* r = run->mutableResult();
     const PluginAction& action = run->action();
+    QPointer<DiffDocument> refresh = diffRefreshes.take(run);
     if (doc) {
         doc->setPluginRun(nullptr);
         if (action.changesDocument() || action.session) {
-            doc->model()->setLocked(false);
-            doc->view()->setInteractive(true);
+            setPluginLock(doc, false, false);
             updateUndoActions();
         }
     }
@@ -2056,11 +2158,23 @@ CyberiadaSMEditorDocument* CyberiadaSMEditorWindow::applyPluginResult(PluginRunn
     QString logLine = QString("# plugin %1:%2").arg(run->plugin().descriptor.id, action.id);
     GestureLog::instance().logAction(logLine);
 
-    CyberiadaSMEditorDocument* target = doc;
-    if (action.result == PluginAction::resultReplace) {
+    EditorDocument* target = doc;
+    CyberiadaSMEditorDocument* diagram = qobject_cast<CyberiadaSMEditorDocument*>(doc);
+    TextDocument* text = qobject_cast<TextDocument*>(doc);
+    QString step = tr("Plugin: %1").arg(action.label);
+    if (action.result == PluginAction::resultReplace && text) {
+        // the whole text as one step (EDIT-PLUG-57)
+        if (!text->isEditable()) {
+            r->state = PluginResult::stateFailed;
+            r->error = tr("the document is read-only");
+            updateEditActions();
+            return doc;
+        }
+        r->changed = text->replaceText(QString::fromUtf8(r->document.data(), int(r->document.size())), step);
+    } else if (action.result == PluginAction::resultReplace) {
         // the mode may have been switched on during the run (EDIT-PLUG-24)
         bool changed = false;
-        if (!doc->model()->replaceDocument(r->document, tr("Plugin: %1").arg(action.label), &changed)) {
+        if (!diagram->model()->replaceDocument(r->document, step, &changed)) {
             r->state = PluginResult::stateFailed;
             r->error = tr("the document is read-only");
             updateEditActions();
@@ -2070,23 +2184,63 @@ CyberiadaSMEditorDocument* CyberiadaSMEditorWindow::applyPluginResult(PluginRunn
         if (changed && doc == current && GestureLog::instance().isActive()) {
             // a plugin is no script verb: the log goes on from the new document
             GestureLog::instance().endSession();
-            GestureLog::instance().startSession(doc->model());
+            GestureLog::instance().startSession(diagram->model());
         }
+    } else if (action.result == PluginAction::resultNewDocument && text) {
+        // a text of the same mode, in the active empty text tab or a new one
+        TextDocument* untitled = qobject_cast<TextDocument*>(active);
+        TextDocument* created = untitled && untitled->isUntitled() && !untitled->pluginRun() ?
+            untitled : newTextDocument(text->mode());
+        created->setMode(text->mode());
+        created->setText(QString::fromUtf8(r->document.data(), int(r->document.size())));
+        created->undoStack()->resetClean();
+        setCurrentDocument(created);
+        r->changed = true;
+        r->tab = documents.indexOf(created);
+        target = created;
     } else if (action.result == PluginAction::resultNewDocument) {
         // the active clean untitled tab takes it, as Open does (EDIT-PLUG-14)
-        target = current && current->isUntitled() && !current->pluginRun() ? current : newDocument();
-        target->model()->restoreSnapshot(r->document);
-        target->model()->undoStack()->resetClean();
-        setCurrentDocument(target);
+        CyberiadaSMEditorDocument* created = current && current->isUntitled() && !current->pluginRun() ?
+            current : newDocument();
+        created->model()->restoreSnapshot(r->document);
+        created->model()->undoStack()->resetClean();
+        setCurrentDocument(created);
         slotFitContent();
         r->changed = true;
-        r->tab = documents.indexOf(target);
+        r->tab = documents.indexOf(created);
+        target = created;
+    } else if (action.result == PluginAction::resultDiff) {
+        // the output is the base, the run's input the target (EDIT-PLUG-58)
+        DiffDocument* diff = refresh.data();
+        if (!diff) {
+            diff = new DiffDocument(this);
+            diff->base().kind = DiffOrigin::originPlugin;
+            diff->base().tab = doc;
+            diff->base().pluginId = run->plugin().descriptor.id;
+            diff->base().actionId = action.id;
+            diff->base().values = run->values();
+            diff->base().label = pluginBaseLabel(run->plugin(), action, run->values());
+            diff->target().kind = DiffOrigin::originTab;
+            diff->target().tab = doc;
+            diff->target().label = doc->title();
+            diff->setSides(r->document, run->runContext().input);
+            addTab(diff);
+            connect(diff, &DiffDocument::compared, this, [this, diff]() { if (diff == active) fillChangeList(); });
+            setCurrentDocument(diff);
+            QTimer::singleShot(0, diff, &DiffDocument::fit);
+        } else {
+            diff->setSides(r->document, run->runContext().input);
+            if (diff == active) fillChangeList();
+        }
+        r->tab = documents.indexOf(diff);
+        target = diff;
     }
 
     // a finding links to an element the document has (EDIT-PLUG-15)
-    const Cyberiada::LocalDocument* root = target ? target->model()->rootDocument() : nullptr;
+    CyberiadaSMEditorDocument* linked = qobject_cast<CyberiadaSMEditorDocument*>(target);
+    const Cyberiada::LocalDocument* root = linked ? linked->model()->rootDocument() : nullptr;
     for (PluginDiagnostic& d: r->diagnostics) {
-        d.linked = !d.element.isEmpty() && root && target->model()->idToElement(d.element);
+        d.linked = !d.element.isEmpty() && root && linked->model()->idToElement(d.element);
     }
     updateEditActions();
     updateTitle();
@@ -2147,13 +2301,13 @@ void CyberiadaSMEditorWindow::initSessionMenu()
 
 PluginSession* CyberiadaSMEditorWindow::currentSession() const
 {
-    return current && current->pluginRun() ? current->pluginRun()->session() : nullptr;
+    return active && active->pluginRun() ? active->pluginRun()->session() : nullptr;
 }
 
 PluginSessionTab* CyberiadaSMEditorWindow::currentSessionTab() const
 {
     if (!currentSession() || !pluginDockWidget) return nullptr;
-    return pluginDockWidget->sessionTab(current->pluginRun());
+    return pluginDockWidget->sessionTab(active->pluginRun());
 }
 
 void CyberiadaSMEditorWindow::updateSessionActions()
@@ -2172,22 +2326,24 @@ void CyberiadaSMEditorWindow::updateSessionActions()
     actionSessionSave->setEnabled(s && s->canSave());
 }
 
-void CyberiadaSMEditorWindow::connectSession(PluginRunner* run, CyberiadaSMEditorDocument* doc)
+void CyberiadaSMEditorWindow::connectSession(PluginRunner* run, EditorDocument* doc)
 {
     PluginSession* session = run->session();
-    QPointer<CyberiadaSMEditorDocument> target(doc);
+    // the marks and the links need a diagram; a text session has neither
+    QPointer<CyberiadaSMEditorDocument> target(qobject_cast<CyberiadaSMEditorDocument*>(doc));
+    QPointer<EditorDocument> source(doc);
     // the marks go to the document's own scene, whichever tab is active (EDIT-PLUG-40)
     connect(session, &PluginSession::marksChanged, this, [session, target]() {
         if (target) target->scene()->setRunMarks(session->state().active, session->state().fired);
     });
     connect(session, &PluginSession::stateChanged, this, &CyberiadaSMEditorWindow::updateSessionActions);
     connect(session, &PluginSession::modelReceived, this, &CyberiadaSMEditorWindow::updateSessionActions);
-    connect(session, &PluginSession::diagnosticsChanged, this, [this, session, target]() {
+    connect(session, &PluginSession::diagnosticsChanged, this, [this, session, target, source]() {
         QList<PluginDiagnostic> findings = session->diagnostics();
         for (PluginDiagnostic& d: findings) {
             d.linked = target && !d.element.isEmpty() && target->model()->idToElement(d.element);
         }
-        if (pluginDockWidget) pluginDockWidget->showDiagnostics(findings, target);
+        if (pluginDockWidget) pluginDockWidget->showDiagnostics(findings, source);
     });
 }
 
@@ -2195,9 +2351,7 @@ void CyberiadaSMEditorWindow::slotPluginsScanned()
 {
     if (pluginMenu) pluginMenu->rebuild();
     // a .git directory made while the document is open counts after a scan (EDIT-PLUG-55)
-    for (int i = 0; i < documentCount(); i++) {
-        if (documentAt(i)) documentAt(i)->dropGitFact();
-    }
+    for (EditorDocument* doc : documents) doc->dropGitFact();
     updatePluginActions();
 }
 
@@ -2210,9 +2364,7 @@ void CyberiadaSMEditorWindow::updatePluginActions()
         const PluginEntry* entry = PluginRegistry::instance().find(ids.first);
         const PluginAction* action = entry ? entry->descriptor.action(ids.second) : nullptr;
         if (!act || !action) continue;
-        // a plugin gets a diagram: a text tab offers none yet (docs/MODES.md, stage 5)
-        QString reason = (active && !current) ? tr("the plugin works on the diagram tabs")
-                                              : pluginDisabledReason(*entry, *action, current);
+        QString reason = pluginDisabledReason(*entry, *action, active);
         act->setEnabled(reason.isEmpty());
         QString description = action->description.isEmpty() ? entry->descriptor.description
                                                            : action->description;
@@ -2222,7 +2374,7 @@ void CyberiadaSMEditorWindow::updatePluginActions()
 
 PluginValues CyberiadaSMEditorWindow::pluginValues(const PluginEntry& plugin,
                                                    const QList<const PluginParameter*>& parameters,
-                                                   CyberiadaSMEditorDocument* doc,
+                                                   EditorDocument* doc,
                                                    bool* needsDialog) const
 {
     SettingsManager& sm = SettingsManager::instance();
@@ -2260,7 +2412,7 @@ PluginValues CyberiadaSMEditorWindow::pluginValues(const PluginEntry& plugin,
 
 void CyberiadaSMEditorWindow::storePluginValues(const PluginEntry& plugin,
                                                 const QList<const PluginParameter*>& parameters,
-                                                CyberiadaSMEditorDocument* doc,
+                                                EditorDocument* doc,
                                                 const PluginValues& values)
 {
     SettingsManager& sm = SettingsManager::instance();
@@ -2283,10 +2435,10 @@ void CyberiadaSMEditorWindow::slotPluginTriggered(const QString& pluginId, const
 {
     const PluginEntry* entry = PluginRegistry::instance().find(pluginId);
     const PluginAction* action = entry ? entry->descriptor.action(actionId) : nullptr;
-    if (!action || !current) return;
+    if (!action || !active) return;
     QList<const PluginParameter*> parameters = entry->descriptor.actionParameters(*action);
     bool dialog = false;
-    PluginValues values = pluginValues(*entry, parameters, current, &dialog);
+    PluginValues values = pluginValues(*entry, parameters, active, &dialog);
     if (dialog) {
         QString label = action->label;
         if (label.endsWith("...")) label.chop(3);
@@ -2294,7 +2446,7 @@ void CyberiadaSMEditorWindow::slotPluginTriggered(const QString& pluginId, const
                                   values, tr("Run"), this);
         if (dlg.exec() != QDialog::Accepted) return;
         values = dlg.values();
-        storePluginValues(*entry, parameters, current, values);
+        storePluginValues(*entry, parameters, active, values);
     }
     QString error;
     if (!runPlugin(pluginId, actionId, values, &error) && !error.isEmpty()) {
@@ -2310,10 +2462,10 @@ void CyberiadaSMEditorWindow::slotPluginSettings(const QString& pluginId)
     for (const PluginParameter& p: entry->descriptor.parameters) {
         if (p.isStored()) parameters.append(&p);
     }
-    PluginValues values = pluginValues(*entry, parameters, current);
+    PluginValues values = pluginValues(*entry, parameters, active);
     PluginParameterDialog dlg(tr("%1 - Settings").arg(entry->descriptor.name), parameters, values,
                               tr("Save"), this);
-    if (dlg.exec() == QDialog::Accepted) storePluginValues(*entry, parameters, current, dlg.values());
+    if (dlg.exec() == QDialog::Accepted) storePluginValues(*entry, parameters, active, dlg.values());
 }
 
 void CyberiadaSMEditorWindow::updateUndoActions()
@@ -2335,15 +2487,36 @@ void CyberiadaSMEditorWindow::slotPluginManager()
     dlg.exec();
 }
 
-void CyberiadaSMEditorWindow::slotDiagnosticActivated(CyberiadaSMEditorDocument* doc,
+void CyberiadaSMEditorWindow::slotDiagnosticActivated(EditorDocument* doc,
                                                       const QString& elementId)
 {
     if (!doc || !documents.contains(doc)) return;
     setCurrentDocument(doc);
-    if (!model()->rootDocument()) return;
+    if (!current || !model()->rootDocument()) return;
     const Cyberiada::Element* element = model()->idToElement(elementId);
     if (!element) return;
     SMView->select(model()->elementToIndex(element));
     QGraphicsItem* item = scene()->getMap().value(elementId.toStdString(), nullptr);
     if (item && sceneView) sceneView->centerOn(item);
+}
+
+void CyberiadaSMEditorWindow::slotLineActivated(EditorDocument* doc, int line)
+{
+    TextDocument* text = qobject_cast<TextDocument*>(doc);
+    if (!text || !documents.contains(doc)) return;
+    setCurrentDocument(doc);
+    QTextBlock block = text->editor()->document()->findBlockByNumber(line - 1);
+    if (!block.isValid()) return;
+    text->editor()->setTextCursor(QTextCursor(block));
+    text->editor()->centerCursor();
+    text->editor()->setFocus();
+}
+
+void CyberiadaSMEditorWindow::slotFileActivated(const QString& path)
+{
+    // an open file activates its tab (EDIT-DOC-2)
+    QString error;
+    if (!openFile(path, &error) && !qApp->property("batchMode").toBool()) {
+        QMessageBox::warning(this, tr("Open"), error);
+    }
 }

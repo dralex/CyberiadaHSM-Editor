@@ -58,6 +58,8 @@ struct PluginEntry {
     QStringList programArguments;
     // the actions off by their requires, by the action id (EDIT-PLUG-50/51)
     QMap<QString, QString> unavailable;
+    // the ids of the languages the plugin brings in this scan (EDIT-PLUG-60)
+    QStringList languages;
 
     // the descriptor id, or the directory name of a rejected descriptor
     QString name() const;
@@ -104,6 +106,9 @@ private:
     QString pluginsReason(const QStringList& plugins) const;
     // the plugin requires after the scan, then the action requires
     void checkRequirements();
+    // the languages of the plugins switched on, then the modes the actions name
+    void loadLanguages();
+    void checkModes();
     PluginRegistry(const PluginRegistry&) = delete;
     PluginRegistry& operator=(const PluginRegistry&) = delete;
 

@@ -1,6 +1,6 @@
 # The Document Modes — Architecture
 
-**Document version:** 0.6 (2026-11-11) — stages 1 to 4 implemented (see Stages). The requirements are
+**Document version:** 0.7 (2026-11-11) — stages 1 to 5 implemented (see Stages). The requirements are
 `EDIT-MODE-1..16` in `EDITOR-SPEC.md` §4.14, the plugin parts `EDIT-PLUG-56..60`.
 
 A tab holds one document in one **mode**: the format edited, the access, and the tools, the
@@ -258,7 +258,12 @@ File                              Document
    another diagram tab, a file), Geometry, Refresh, the change list in the tree dock, the
    added/removed/changed run marks, the batch `compare`/`geometry`/`refresh` and the
    `== diff` dump; a plugin run as a base comes with stage 5.
-5. The plugin `modes`, the text input, `result: "diff"`, the plugin `languages`.
+5. The plugin `modes`, the text input, `result: "diff"`, the plugin `languages` — done: the
+   plugin bookkeeping in `EditorDocument` (the run, the session values, the git fact), the
+   mode gate before the `when` tokens, `input.<ext>`/`output.<ext>` and the text lock, the
+   `diff` result opening or refreshing a diff tab (`DiffOrigin::originPlugin`), an unknown
+   result or mode as a warning, `CodeStyle::setPluginLanguages` with the language menus
+   rebuilt on `languagesChanged`, the `files` links and the line links of a text tab.
 6. The git plugin: Compare with a Revision....
 
 ## Decisions of 0.1

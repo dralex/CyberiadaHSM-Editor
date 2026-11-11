@@ -183,12 +183,22 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const BatchOptions& options)
 		dumpTabs(&win, std::cout);
 	}
 
+	// the run of a plugin, after the sections of the tab it left active
+	auto dumpPluginSections = [&]() {
+		if (!plugin || !action || !(options.dump || options.dumpPlugin)) return;
+		std::cout << "== plugin" << std::endl;
+		dumpPluginRun(*plugin, *action, pluginResult, std::cout);
+		std::cout << "== diagnostics" << std::endl;
+		dumpDiagnostics(pluginResult, std::cout);
+	};
+
 	// a diff tab dumps its comparison and has nothing to draw or save (EDIT-MODE-16)
 	if (DiffDocument* diff = win.currentDiff()) {
 		if (options.dump) {
 			std::cout << "== diff" << std::endl;
 			dumpDiffDocument(diff, std::cout);
 		}
+		dumpPluginSections();
 		if (!options.exportImage.isEmpty() || options.dumpAudit || options.dumpTextMetrics ||
 			options.dumpUndoStack || !options.save.isEmpty()) {
 			fprintf(stderr, "the active tab is a diff tab\n");
@@ -203,6 +213,7 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const BatchOptions& options)
 			std::cout << "== text" << std::endl;
 			dumpTextDocument(text, std::cout);
 		}
+		dumpPluginSections();
 		if (!options.exportImage.isEmpty() || options.dumpAudit || options.dumpTextMetrics ||
 			options.dumpUndoStack) {
 			fprintf(stderr, "the active tab holds no diagram\n");
@@ -233,12 +244,7 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const BatchOptions& options)
 		}
 	}
 
-	if (plugin && action && (options.dump || options.dumpPlugin)) {
-		std::cout << "== plugin" << std::endl;
-		dumpPluginRun(*plugin, *action, pluginResult, std::cout);
-		std::cout << "== diagnostics" << std::endl;
-		dumpDiagnostics(pluginResult, std::cout);
-	}
+	dumpPluginSections();
 	// the messages of a session both ways (EDIT-PLUG-48)
 	if (action && action->session && (options.dump || options.dumpSession)) {
 		std::cout << "== session" << std::endl;

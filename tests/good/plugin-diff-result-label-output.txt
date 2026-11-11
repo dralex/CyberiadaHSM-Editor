@@ -1,0 +1,17 @@
+== diff
+base: v1.0
+target: geometry.graphml
+geometry: no
+changed: 1, added: 0, removed: 0
+state machine node 0
+  state node 0-0-1: title (node-0-0-1 / node-0-0-1)
+== plugin
+action: modes:base
+result: diff
+state: done
+exit: 0
+tab: 1
+stdout:
+  v1.0
+== diagnostics
+count: 0

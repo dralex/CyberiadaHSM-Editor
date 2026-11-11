@@ -1,0 +1,16 @@
+== tabs
+count: 1
+0 script.lua text active
+== text
+mode: text
+file: script.lua
+modified: no
+rendered: no
+lines: 7
+| -- the light toggles every second
+| local on = false
+| for i = 1, 3 do
+|   on = not on
+|   print(i, on)
+| end
+| 
