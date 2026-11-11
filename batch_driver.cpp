@@ -37,14 +37,14 @@
 #include "interface_language.h"
 
 int runGuiMode(CyberiadaSMEditorApplication& app, const QStringList& files,
-			   bool reconstruct, bool reconstruct_sm, bool strict)
+			   bool reconstruct, bool reconstruct_sm, bool strict, bool inspect)
 {
 	// the texts are set as the window is built, so the translators come first;
 	// the batch mode installs none (EDIT-UI-2)
 	installUiTranslators(app);
 	CyberiadaSMEditorWindow win;
 	QString error;
-	bool ok = win.openFiles(files, &error, reconstruct, reconstruct_sm, strict);
+	bool ok = win.openFiles(files, &error, reconstruct, reconstruct_sm, strict, inspect);
 	win.show();
 	// the failed files are reported once the window is up; the rest are open
 	if (!ok) QMessageBox::warning(&win, QObject::tr("Open State Machine"), error);
@@ -151,7 +151,7 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const BatchOptions& options)
 	// (new-sm) bootstraps it
 	if (!options.fileName.isEmpty() &&
 		!win.openDocument(options.fileName, &error, options.reconstruct, options.reconstruct_sm,
-						  options.strict)) {
+						  options.strict, options.inspect)) {
 		fprintf(stderr, "cannot load %s\n%s\n", qPrintable(options.fileName), qPrintable(error));
 		return batchLoadError;
 	}

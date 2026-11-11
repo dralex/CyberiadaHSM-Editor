@@ -67,9 +67,12 @@ The terms follow ПНСТ 984-2024 (clause 3); a menu or a tool may use the shor
 | metainformation | метаинформация | | |
 | element / document | элемент / документ | | 3.56 |
 | label, polyline | надпись, ломаная | | |
-| platform language (`platformLanguage`) | язык платформы | язык кода (Edit menu) | |
+| platform language (`platformLanguage`) | язык платформы | язык кода (Document menu) | |
 | markup | разметка | | |
-| inspection mode | режим инспекции | | |
+| inspection, HSM inspection (a mode) | инспекция, инспекция ПРИМС | | |
+| inspection tab | вкладка инспекции | | |
+| read-only (the flag of a tab) | только чтение | чтение (the tab marker) | |
+| HSM diagram (a mode) | диаграмма ПРИМС | | |
 | Preferences | Настройки | | |
 | plugin, plugin manager | плагин, менеджер плагинов | | |
 | diagnostics (of a plugin) | замечания | | |

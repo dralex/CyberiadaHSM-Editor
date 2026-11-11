@@ -1,6 +1,6 @@
 == tabs
 count: 1
-0 [Made]* active
+0 [Made]* hsm active
 == plugin
 action: maker:make
 result: new-document

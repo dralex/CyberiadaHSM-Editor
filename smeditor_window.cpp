@@ -112,6 +112,7 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     connect(actionPreviousDocument, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotPreviousDocument);
 
     initChoiceMenus();
+    initDocumentMenu();
     // the first, untitled document (the tools need an active scene)
     setCurrentDocument(newDocument());
     initializeTools();
@@ -179,8 +180,8 @@ CyberiadaSMEditorDocument* CyberiadaSMEditorWindow::newDocument()
 {
     CyberiadaSMEditorDocument* doc = new CyberiadaSMEditorDocument(this);
     documents.append(doc);
-    documentStack->addWidget(doc->view());
-    undoGroup->addStack(doc->model()->undoStack());
+    documentStack->addWidget(doc->page());
+    undoGroup->addStack(doc->undoStack());
     {
         // the bar would activate the new tab itself; setCurrentDocument decides
         QSignalBlocker block(documentTabs);
@@ -202,6 +203,8 @@ CyberiadaSMEditorDocument* CyberiadaSMEditorWindow::newDocument()
                 // a Save As of an unmodified document changes the file, not the clean state
                 if (doc == current) { updateTitle(); updatePluginActions(); }
             });
+    connect(doc, &EditorDocument::modeChanged, this, [this, doc]() { documentStateChanged(doc); });
+    connect(doc, &EditorDocument::readOnlyChanged, this, [this, doc]() { documentStateChanged(doc); });
     connect(doc->scene(), &CyberiadaSMEditorScene::codeLanguageChanged, this,
             [this, doc]() { if (doc == current) syncChoiceMenus(); });
     connect(doc->scene(), &CyberiadaSMEditorScene::markupLanguageChanged, this,
@@ -213,8 +216,29 @@ void CyberiadaSMEditorWindow::updateTabTitle(CyberiadaSMEditorDocument* doc)
 {
     int i = documents.indexOf(doc);
     if (i < 0) return;
-    documentTabs->setTabText(i, doc->title() + (doc->isClean() ? "" : "*"));
+    documentTabs->setTabText(i, doc->title() + doc->modeMarker() + (doc->isClean() ? "" : "*"));
     documentTabs->setTabToolTip(i, doc->filePath());
+}
+
+void CyberiadaSMEditorWindow::documentStateChanged(CyberiadaSMEditorDocument* doc)
+{
+    updateTabTitle(doc);
+    if (doc != current) return;
+    updateTitle();
+    updateEditActions();
+}
+
+CyberiadaSMEditorDocument* CyberiadaSMEditorWindow::findDocument(const QString& fileName,
+                                                                 bool inspection) const
+{
+    QString absolute = QFileInfo(fileName).absoluteFilePath();
+    for (CyberiadaSMEditorDocument* doc : documents) {
+        if (doc->hasFile() && QFileInfo(doc->filePath()).absoluteFilePath() == absolute &&
+            (doc->mode() == MODE_INSPECTION) == inspection) {
+            return doc;
+        }
+    }
+    return nullptr;
 }
 
 void CyberiadaSMEditorWindow::activateDocument(int index)
@@ -269,8 +293,8 @@ bool CyberiadaSMEditorWindow::closeDocument(CyberiadaSMEditorDocument* doc, bool
         QSignalBlocker block(documentTabs);
         documentTabs->removeTab(i);
     }
-    documentStack->removeWidget(doc->view());
-    undoGroup->removeStack(doc->model()->undoStack());
+    documentStack->removeWidget(doc->page());
+    undoGroup->removeStack(doc->undoStack());
     // the result of a closed document is never applied (EDIT-PLUG-23)
     if (doc->pluginRun()) doc->pluginRun()->abort();
     delete doc;
@@ -278,15 +302,14 @@ bool CyberiadaSMEditorWindow::closeDocument(CyberiadaSMEditorDocument* doc, bool
 }
 
 bool CyberiadaSMEditorWindow::openFile(const QString& fileName, QString* error,
-                                       bool reconstruct, bool reconstruct_sm, bool strict)
+                                       bool reconstruct, bool reconstruct_sm, bool strict,
+                                       bool inspect)
 {
-    QString absolute = QFileInfo(fileName).absoluteFilePath();
-    // an open file is activated, not loaded twice
-    for (CyberiadaSMEditorDocument* doc : documents) {
-        if (doc->hasFile() && QFileInfo(doc->filePath()).absoluteFilePath() == absolute) {
-            setCurrentDocument(doc);
-            return true;
-        }
+    // an open file is activated, not loaded twice; its editing and its inspection
+    // tab are counted apart (EDIT-DOC-2, EDIT-MODE-6)
+    if (CyberiadaSMEditorDocument* open = findDocument(fileName, inspect)) {
+        setCurrentDocument(open);
+        return true;
     }
     // a clean untitled active document takes the file, anything else gets a new tab
     CyberiadaSMEditorDocument* fresh = nullptr;
@@ -294,7 +317,7 @@ bool CyberiadaSMEditorWindow::openFile(const QString& fileName, QString* error,
         fresh = newDocument();
         setCurrentDocument(fresh);
     }
-    if (!openDocument(fileName, error, reconstruct, reconstruct_sm, strict)) {
+    if (!openDocument(fileName, error, reconstruct, reconstruct_sm, strict, inspect)) {
         if (fresh) closeDocument(fresh);   // the tab opened for the failed file goes
         return false;
     }
@@ -302,12 +325,13 @@ bool CyberiadaSMEditorWindow::openFile(const QString& fileName, QString* error,
 }
 
 bool CyberiadaSMEditorWindow::openFiles(const QStringList& fileNames, QString* error,
-                                        bool reconstruct, bool reconstruct_sm, bool strict)
+                                        bool reconstruct, bool reconstruct_sm, bool strict,
+                                        bool inspect)
 {
     bool ok = true;
     for (const QString& fileName : fileNames) {
         QString one;
-        if (!openFile(fileName, &one, reconstruct, reconstruct_sm, strict)) {
+        if (!openFile(fileName, &one, reconstruct, reconstruct_sm, strict, inspect)) {
             ok = false;
             if (error) *error += tr("Cannot open %1:\n%2\n").arg(fileName, one);
         }
@@ -322,7 +346,7 @@ void CyberiadaSMEditorWindow::setCurrentDocument(CyberiadaSMEditorDocument* doc)
     if (current) unbindDocument(current);
     current = doc;
     sceneView = doc->view();
-    documentStack->setCurrentWidget(sceneView);
+    documentStack->setCurrentWidget(doc->page());
     {
         QSignalBlocker block(documentTabs);
         documentTabs->setCurrentIndex(documents.indexOf(doc));
@@ -386,7 +410,7 @@ void CyberiadaSMEditorWindow::initChoiceMenus()
             return lang ? lang->name : QString();
         }, this);
     connect(languageChoice, &MetaChoiceMenu::chosen, this, [this](const QString& value) {
-        // refused (inspection): the check goes back
+        // refused (a read-only tab): the check goes back
         if (current && !model()->setPlatformLanguage(value)) syncChoiceMenus();
     });
 
@@ -400,10 +424,6 @@ void CyberiadaSMEditorWindow::initChoiceMenus()
     connect(markupChoice, &MetaChoiceMenu::chosen, this, [this](const QString& value) {
         if (current && !model()->setMarkupLanguage(value)) syncChoiceMenus();
     });
-
-    bool inspector = SettingsManager::instance().getInspectorMode();
-    languageChoice->setEnabled(!inspector);
-    markupChoice->setEnabled(!inspector);
 }
 
 void CyberiadaSMEditorWindow::syncChoiceMenus()
@@ -411,6 +431,112 @@ void CyberiadaSMEditorWindow::syncChoiceMenus()
     if (!languageChoice || !current) return;
     languageChoice->sync(scene()->codeLanguageName());
     markupChoice->sync(scene()->markupLanguageName());
+}
+
+void CyberiadaSMEditorWindow::initDocumentMenu()
+{
+    // one mode per tab, the checked one the active tab's (EDIT-MODE-3)
+    modeGroup = new QActionGroup(this);
+    modeGroup->setExclusive(true);
+    actionModeHSM->setData(QString(MODE_HSM));
+    actionModeInspection->setData(QString(MODE_INSPECTION));
+    modeGroup->addAction(actionModeHSM);
+    modeGroup->addAction(actionModeInspection);
+    connect(modeGroup, &QActionGroup::triggered, this, [this](QAction* action) {
+        QString error;
+        if (current && !setDocumentMode(current, action->data().toString(), &error) &&
+            !error.isEmpty() && !qApp->property("batchMode").toBool()) {
+            QMessageBox::warning(this, tr("Mode"), error);
+        }
+        // a refused switch takes the check back
+        updateModeActions();
+    });
+    connect(actionReadOnly, &QAction::triggered, this, [this](bool on) {
+        if (current) setDocumentReadOnly(current, on);
+        updateModeActions();
+    });
+    connect(actionDocumentProperties, &QAction::triggered,
+            this, &CyberiadaSMEditorWindow::slotDocumentProperties);
+}
+
+void CyberiadaSMEditorWindow::updateModeActions()
+{
+    if (!current || !modeGroup) return;
+    QString mode = current->mode();
+    for (QAction* action : modeGroup->actions()) {
+        action->setChecked(action->data().toString() == mode);
+    }
+    // a read-only mode shows the flag checked and fixed (EDIT-MODE-4)
+    actionReadOnly->setChecked(current->isReadOnly());
+    actionReadOnly->setEnabled(!current->traits().readOnly);
+    // the choices write the document: an editable diagram only (EDIT-TEXT-9/12)
+    languageChoice->setEnabled(!current->isReadOnly());
+    markupChoice->setEnabled(!current->isReadOnly());
+}
+
+bool CyberiadaSMEditorWindow::setDocumentMode(CyberiadaSMEditorDocument* doc, const QString& mode,
+                                              QString* error)
+{
+    if (!doc) return false;
+    if (doc->mode() == mode) return true;
+    if (mode == MODE_INSPECTION) return inspectDocument(doc, error) != nullptr;
+    if (mode != MODE_HSM) {
+        if (error) *error = tr("the mode %1 is not available").arg(mode);
+        return false;
+    }
+    // the file is edited in another tab already: that one is shown (EDIT-DOC-2)
+    CyberiadaSMEditorDocument* editing = doc->hasFile() ? findDocument(doc->filePath(), false) : nullptr;
+    if (editing) {
+        setCurrentDocument(editing);
+        return true;
+    }
+    // the model reset would pull the document from under a run
+    if (doc->pluginRun()) {
+        if (error) *error = tr("a plugin is running on the document");
+        return false;
+    }
+    doc->leaveInspection();
+    return true;
+}
+
+CyberiadaSMEditorDocument* CyberiadaSMEditorWindow::inspectDocument(CyberiadaSMEditorDocument* source,
+                                                                    QString* error)
+{
+    if (!source) return nullptr;
+    if (source->mode() == MODE_INSPECTION) {
+        setCurrentDocument(source);
+        return source;
+    }
+    // a saved document is read from its file, as stored (EDIT-MODE-6)
+    if (source->hasFile() && source->isClean()) {
+        return openFile(source->filePath(), error, false, false, false, true) ? current : nullptr;
+    }
+    // an unsaved one is inspected as it is now, titled as its source
+    bool ok = true;
+    std::string snapshot = source->model()->snapshot(&ok);
+    if (!ok) {
+        if (error) *error = tr("the document cannot be encoded");
+        return nullptr;
+    }
+    QString view = source->view()->viewState();
+    CyberiadaSMEditorDocument* doc = newDocument();
+    setCurrentDocument(doc);
+    doc->inspectSnapshot(snapshot, source->title(), view);
+    QTimer::singleShot(0, this, &CyberiadaSMEditorWindow::restoreSavedView);
+    return doc;
+}
+
+void CyberiadaSMEditorWindow::setDocumentReadOnly(CyberiadaSMEditorDocument* doc, bool on)
+{
+    if (doc) doc->setReadOnlyFlag(on);
+}
+
+void CyberiadaSMEditorWindow::slotDocumentProperties()
+{
+    if (!current || !model()->rootDocument()) return;
+    // the name and the metainformation of the Document element
+    SettingsManager::instance().setShowProperties(true);
+    SMView->select(model()->documentIndex());
 }
 
 void CyberiadaSMEditorWindow::updateEditActions()
@@ -423,8 +549,9 @@ void CyberiadaSMEditorWindow::updateEditActions()
             el = item->getElement();
         }
     }
-    // a document locked by a plugin run is read-only like an inspected one (EDIT-PLUG-22)
-    bool inspector = SettingsManager::instance().getInspectorMode() || model()->isLocked();
+    // a read-only tab (its flag, the inspection) and a plugin lock keep the edits off
+    // (EDIT-MODE-4, EDIT-PLUG-22)
+    bool readOnly = model()->readOnly();
     bool hasElement = (el != nullptr);
     // the Delete action also reaches an element shown in the tree but not on the
     // scene (a component formal comment, possibly without geometry): fall back to
@@ -440,14 +567,15 @@ void CyberiadaSMEditorWindow::updateEditActions()
         deletable = true;
     }
     bool copyable = hasElement && el->get_type() != Cyberiada::elementSM;   // an SM is not copyable
-    actionCut->setEnabled(copyable && !inspector);
-    actionCopy->setEnabled(copyable && !inspector);
-    actionDeleteElement->setEnabled(deletable && !inspector);
-    actionPaste->setEnabled(clipboardElement != nullptr && !inspector);
+    actionCut->setEnabled(copyable && !readOnly);
+    // copying changes nothing: a read-only tab is copied from too
+    actionCopy->setEnabled(copyable);
+    actionDeleteElement->setEnabled(deletable && !readOnly);
+    actionPaste->setEnabled(clipboardElement != nullptr && !readOnly);
     // centring needs a parent frame: never on the top level (EDIT-TOOL-18)
     bool centerable = model()->canCenterInParent(el);
-    actionCenterHorizontally->setEnabled(centerable && !inspector);
-    actionCenterVertically->setEnabled(centerable && !inspector);
+    actionCenterHorizontally->setEnabled(centerable && !readOnly);
+    actionCenterVertically->setEnabled(centerable && !readOnly);
 
     // an entry/exit point needs a container with a border to lie on: an explicit
     // state-machine border or a submachine state. A borderless machine cannot hold
@@ -461,33 +589,33 @@ void CyberiadaSMEditorWindow::updateEditActions()
                 hasContainer = true;
         }
     }
-    actionNewEntryPoint->setEnabled(hasContainer && !inspector);
-    actionNewExitPoint->setEnabled(hasContainer && !inspector);
-    // a document locked by a session keeps its view: the creation tools wait like
-    // in inspection, select, pan and zoom stay (EDIT-PLUG-41)
-    if (!SettingsManager::instance().getInspectorMode()) {
-        for (auto i = toolActMap.constBegin(); i != toolActMap.constEnd(); i++) {
-            if (i.key() != ToolType::Select && i.key() != ToolType::Pan && i.key() != ToolType::Zoom &&
-                i.key() != ToolType::NewEntryPoint && i.key() != ToolType::NewExitPoint) {
-                i.value()->setEnabled(!inspector);
-            }
+    actionNewEntryPoint->setEnabled(hasContainer && !readOnly);
+    actionNewExitPoint->setEnabled(hasContainer && !readOnly);
+    // a read-only tab keeps its view: the creation tools wait, select, pan and zoom
+    // stay (EDIT-INSPECT-1, EDIT-PLUG-41)
+    for (auto i = toolActMap.constBegin(); i != toolActMap.constEnd(); i++) {
+        if (i.key() != ToolType::Select && i.key() != ToolType::Pan && i.key() != ToolType::Zoom &&
+            i.key() != ToolType::NewEntryPoint && i.key() != ToolType::NewExitPoint) {
+            i.value()->setEnabled(!readOnly);
         }
-        if (inspector && currentTool != ToolType::Select && currentTool != ToolType::Pan &&
-            currentTool != ToolType::Zoom) {
-            actionSelectTool->setChecked(true);
-            slotToolSelected(actionSelectTool);
-        }
+    }
+    if (readOnly && currentTool != ToolType::Select && currentTool != ToolType::Pan &&
+        currentTool != ToolType::Zoom) {
+        actionSelectTool->setChecked(true);
+        slotToolSelected(actionSelectTool);
     }
 
     // the file actions follow the document and its modified state (the creation
     // tools stay enabled: the model creates a document lazily on the first edit)
     bool docOpen  = (model()->rootDocument() != nullptr);
     bool modified = docOpen && !model()->undoStack()->isClean();
-    actionReconstructGeometry->setEnabled(docOpen && !inspector);
-    actionUpdateGeometry->setEnabled(docOpen && !inspector);
-    actionSave->setEnabled(docOpen && modified && !inspector);
+    actionReconstructGeometry->setEnabled(docOpen && !readOnly);
+    actionUpdateGeometry->setEnabled(docOpen && !readOnly);
+    actionDocumentProperties->setEnabled(docOpen);
+    actionSave->setEnabled(docOpen && modified && !readOnly);
     actionSaveAs->setEnabled(docOpen);
     actionExport->setEnabled(docOpen);
+    updateModeActions();
     updateUndoActions();
     updatePluginActions();
 }
@@ -532,16 +660,12 @@ void CyberiadaSMEditorWindow::slotCleanChanged(bool clean)
     updateEditActions();   // Save follows the modified state
 }
 
-// the title carries the modified marker; the inspected document is read-only
+// the title carries the mode and the modified markers (EDIT-MODE-2)
 void CyberiadaSMEditorWindow::updateTitle()
 {
     if (!current) return;
     // the title always carries the [*] slot (an unsaved document is "untitled")
-    QString title = current->title() + "[*]";
-    if (SettingsManager::instance().getInspectorMode()) {
-        title += " " + tr("(inspector mode)");
-    }
-    setWindowTitle(title);
+    setWindowTitle(current->title() + current->modeMarker(true) + "[*]");
     setWindowModified(!current->isClean());
 }
 
@@ -676,22 +800,22 @@ void CyberiadaSMEditorWindow::slotFileOpen()
     bool strict = dlg.strictModeEnabled();
 
     if (!fileName.isEmpty()) {
-        SettingsManager::instance().setInspectorMode(inspector);
-
+        // the inspection box opens an inspection tab (EDIT-MODE-6)
         QString error;
-        if (!openFile(fileName, &error, reconstruct, reconstruct_sm, strict)) {
+        if (!openFile(fileName, &error, reconstruct, reconstruct_sm, strict, inspector)) {
             QMessageBox::critical(this, tr("Load State Machine"), error);
         }
     }
 }
 
 bool CyberiadaSMEditorWindow::openDocument(const QString& fileName, QString* error,
-                                           bool reconstruct, bool reconstruct_sm, bool strict)
+                                           bool reconstruct, bool reconstruct_sm, bool strict,
+                                           bool inspect)
 {
-    if (!current->load(fileName, error, reconstruct, reconstruct_sm, strict)) {
+    if (!current->load(fileName, error, reconstruct, reconstruct_sm, strict, inspect)) {
         return false;
     }
-    // an unknown value of a file stays in Edit > Language / Markup for the session
+    // an unknown value of a file stays in Document > Language / Markup for the session
     languageChoice->noteUnknown(scene()->codeLanguageName());
     markupChoice->noteUnknown(scene()->markupLanguageName());
     syncChoiceMenus();
@@ -857,20 +981,6 @@ void CyberiadaSMEditorWindow::initializeTools()
 
     emit toolGroup->triggered(actionSelectTool);
 
-    // the document-mutating, non-tool actions are switched off while the
-    // document is inspected. The creation tools live in the exclusive toolGroup
-    // (an action belongs to one group only); inspector mode disables the whole
-    // element toolbar (slotInspectorModeChanged), which covers them.
-    editGroup = new QActionGroup(this);
-    editGroup->setExclusive(false);
-    editGroup->addAction(actionNew);
-    // save is governed solely by updateEditActions (document open + modified +
-    // inspector); leaving it in editGroup would fight that per-action state
-    // cut/copy/paste/delete are governed by updateEditActions (selection + inspector),
-    // not the bulk editGroup, so they can react to the current selection
-    editGroup->addAction(actionUndo);
-    editGroup->addAction(actionRedo);
-
     // the File > Open Recent submenu, kept in step with the stored list
     recentMenu = new QMenu(tr("Open Recent"), this);
     menuFile->insertMenu(actionSave, recentMenu);
@@ -878,8 +988,6 @@ void CyberiadaSMEditorWindow::initializeTools()
             this, &CyberiadaSMEditorWindow::rebuildRecentMenu);
     rebuildRecentMenu();
 
-    connect(&SettingsManager::instance(), &SettingsManager::inspectorModeChanged,
-            this, &CyberiadaSMEditorWindow::slotInspectorModeChanged);
     // the same setting is reachable from the preferences, so the action follows it
     connect(&SettingsManager::instance(), &SettingsManager::serviceObjectsChanged,
             this, &CyberiadaSMEditorWindow::slotServiceObjectsChanged);
@@ -895,7 +1003,6 @@ void CyberiadaSMEditorWindow::initializeTools()
 
     actionGridVisibility->setChecked(sm.getShowGrid());
     actionTransitionText->setChecked(sm.getShowTransitionText());
-    slotInspectorModeChanged(sm.getInspectorMode());
     actionServiceObjects->setChecked(sm.getShowServiceObjects());
     actionComponentComments->setChecked(sm.getShowComponentComments());
     actionSnapMode->setChecked(sm.getSnapMode());
@@ -1165,36 +1272,6 @@ void CyberiadaSMEditorWindow::slotPaste()
     model()->pasteElement(target, clipboardElement);
 }
 
-void CyberiadaSMEditorWindow::slotInspectorModeTriggered(bool on)
-{
-    SettingsManager::instance().setInspectorMode(on);
-}
-
-void CyberiadaSMEditorWindow::slotInspectorModeChanged(bool on)
-{
-    actionInspectorMode->setChecked(on);
-    editGroup->setEnabled(!on);
-    languageChoice->setEnabled(!on);
-    markupChoice->setEnabled(!on);
-    updateUndoActions();
-    // disable the creation tools while inspecting, but keep select/pan/zoom so
-    // the document can still be navigated
-    for (auto i = toolActMap.constBegin(); i != toolActMap.constEnd(); i++) {
-        if (i.key() != ToolType::Select && i.key() != ToolType::Pan && i.key() != ToolType::Zoom) {
-            i.value()->setEnabled(!on);
-        }
-    }
-    // last, so the entry/exit-point container gating overrides the blanket enable
-    updateEditActions();   // cut/copy/paste/delete follow the inspector state too
-    if (on && currentTool != ToolType::Select && currentTool != ToolType::Pan &&
-        currentTool != ToolType::Zoom) {
-        actionSelectTool->setChecked(true);
-        slotToolSelected(actionSelectTool);
-    }
-
-    updateTitle();
-}
-
 void CyberiadaSMEditorWindow::slotShowTransitionActionTriggered(bool on)
 {
     SettingsManager::instance().setShowTransitionText(on);
@@ -1238,8 +1315,10 @@ QString CyberiadaSMEditorWindow::pluginDisabledReason(const PluginEntry& plugin,
     if (!unavailable.isEmpty()) return unavailable;
     if (!doc) return tr("there is no document");
     if (doc->pluginRun()) return tr("a plugin is running on the document");
-    if (action.changesDocument() && SettingsManager::instance().getInspectorMode()) {
-        return tr("the inspection mode keeps the document read-only");
+    // a replace needs an editable tab (EDIT-PLUG-24); the lock is the run's, checked above
+    if (action.changesDocument() && doc->isReadOnly()) {
+        return doc->mode() == MODE_INSPECTION ? tr("the inspection tab is read-only")
+                                               : tr("the tab is read-only");
     }
     if (action.when.isEmpty()) return QString();
     PluginDocumentFacts facts = doc->pluginFacts();
@@ -1730,7 +1809,7 @@ void CyberiadaSMEditorWindow::slotPluginSettings(const QString& pluginId)
 
 void CyberiadaSMEditorWindow::updateUndoActions()
 {
-    bool blocked = SettingsManager::instance().getInspectorMode() || (model() && model()->isLocked());
+    bool blocked = model() && model()->readOnly();
     actionUndo->setEnabled(!blocked && undoGroup->canUndo());
     actionRedo->setEnabled(!blocked && undoGroup->canRedo());
 }

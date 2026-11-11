@@ -2,7 +2,7 @@
  * CyberiadaPro, the Cyberiada State Machine Editor
  * -----------------------------------------------------------------------------
  *
- * The in-process Edit > Language menu test (see docs/TESTING.md, L4)
+ * The in-process Document > Language menu test (see docs/TESTING.md, L4)
  *
  * Copyright (C) 2026 Alexey Fedoseev <aleksey@fedoseev.net>
  *
@@ -45,7 +45,7 @@ private slots:
 	void test_tabs_follow();
 	void test_unknown_kept();
 	void test_transient_unknown();
-	void test_inspector_disables();
+	void test_read_only_disables();
 	void test_markup_layout();
 	void test_markup_choose();
 	void test_markup_values();
@@ -134,7 +134,6 @@ void TestLanguage::initTestCase()
 {
 	QVERIFY(logRoot.isValid());
 	qputenv("CYBERIADA_SESSION_LOG_DIR", logRoot.path().toUtf8());
-	SettingsManager::instance().setInspectorMode(false);
 	window = new CyberiadaSMEditorWindow();
 	window->resize(1200, 800);
 	window->show();
@@ -149,13 +148,15 @@ void TestLanguage::cleanupTestCase()
 	delete window;
 }
 
-// right after Edit > Tools: Undefined and the supported languages
+// after Document > Read-only: Undefined and the supported languages
 void TestLanguage::test_menu_layout()
 {
-	const QList<QAction*> edit = window->menuEdit->actions();
-	int tools = edit.indexOf(window->menuTools->menuAction());
-	QVERIFY(tools >= 0);
-	QCOMPARE(edit.value(tools + 1), window->menuLanguage->menuAction());
+	const QList<QAction*> document = window->menuDocument->actions();
+	int readOnly = document.indexOf(window->actionReadOnly);
+	QVERIFY(readOnly >= 0);
+	int next = readOnly + 1;
+	while (next < document.size() && document.at(next)->isSeparator()) next++;
+	QCOMPARE(document.value(next), window->menuLanguage->menuAction());
 
 	QStringList texts;
 	const QList<QAction*> actions = window->menuLanguage->actions();
@@ -303,23 +304,24 @@ void TestLanguage::test_transient_unknown()
 	QVERIFY(window->closeDocument(window->currentDocument(), true));
 }
 
-void TestLanguage::test_inspector_disables()
+// the choices write the document: a read-only tab offers none (EDIT-TEXT-9/12)
+void TestLanguage::test_read_only_disables()
 {
-	SettingsManager::instance().setInspectorMode(true);
+	window->setDocumentReadOnly(window->currentDocument(), true);
 	QVERIFY(!window->menuLanguage->menuAction()->isEnabled());
 	QVERIFY(!window->menuMarkup->menuAction()->isEnabled());
-	SettingsManager::instance().setInspectorMode(false);
+	window->setDocumentReadOnly(window->currentDocument(), false);
 	QVERIFY(window->menuLanguage->menuAction()->isEnabled());
 	QVERIFY(window->menuMarkup->menuAction()->isEnabled());
 }
 
-// EDIT-TEXT-12: right after Edit > Language, Plain and Markdown
+// EDIT-TEXT-12: right after Document > Language, Plain and Markdown
 void TestLanguage::test_markup_layout()
 {
-	const QList<QAction*> edit = window->menuEdit->actions();
-	int language = edit.indexOf(window->menuLanguage->menuAction());
+	const QList<QAction*> document = window->menuDocument->actions();
+	int language = document.indexOf(window->menuLanguage->menuAction());
 	QVERIFY(language >= 0);
-	QCOMPARE(edit.value(language + 1), window->menuMarkup->menuAction());
+	QCOMPARE(document.value(language + 1), window->menuMarkup->menuAction());
 	QStringList texts;
 	const QList<QAction*> actions = window->menuMarkup->actions();
 	for (QAction* action : actions) {

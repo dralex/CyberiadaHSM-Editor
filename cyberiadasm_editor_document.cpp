@@ -28,7 +28,7 @@
 #include "plugin_runner.h"
 
 CyberiadaSMEditorDocument::CyberiadaSMEditorDocument(QObject* parent):
-    QObject(parent)
+    EditorDocument(parent)
 {
     m_model = new CyberiadaSMModel(this);
     m_scene = new CyberiadaSMEditorScene(m_model, this);
@@ -49,19 +49,71 @@ CyberiadaSMEditorDocument::~CyberiadaSMEditorDocument()
     delete m_model;
 }
 
-bool CyberiadaSMEditorDocument::load(const QString& path, QString* error,
-                                     bool reconstruct, bool reconstruct_sm, bool strict)
+QString CyberiadaSMEditorDocument::mode() const
 {
-    if (!m_model->loadDocument(path, reconstruct, reconstruct_sm, strict)) {
+    return m_model->inspected() ? MODE_INSPECTION : MODE_HSM;
+}
+
+bool CyberiadaSMEditorDocument::isEditable() const
+{
+    return EditorDocument::isEditable() && !m_model->isLocked();
+}
+
+QWidget* CyberiadaSMEditorDocument::page() const
+{
+    return m_view;
+}
+
+void CyberiadaSMEditorDocument::applyReadOnlyFlag(bool on)
+{
+    m_model->setReadOnlyFlag(on);
+}
+
+bool CyberiadaSMEditorDocument::load(const QString& path, QString* error,
+                                     bool reconstruct, bool reconstruct_sm, bool strict,
+                                     bool inspect)
+{
+    bool wasInspected = m_model->inspected();
+    // the flag goes first: the load itself skips the recovery (EDIT-INSPECT-2)
+    m_model->setInspected(inspect);
+    if (!m_model->loadDocument(path, reconstruct && !inspect, reconstruct_sm && !inspect, strict)) {
         if (error) *error = m_model->loadError();
+        m_model->setInspected(wasInspected);
         return false;
     }
+    m_sourceTitle.clear();
+    if (inspect != wasInspected) emit modeChanged();
     if (m_model->firstSMIndex().isValid()) {
         m_scene->loadScene();
     }
     pendingViewState = m_model->editorView();
     announceTitle();
     return true;
+}
+
+void CyberiadaSMEditorDocument::inspectSnapshot(const std::string& snapshot,
+                                                const QString& sourceTitle,
+                                                const QString& viewState)
+{
+    bool wasInspected = m_model->inspected();
+    m_model->setInspected(true);
+    m_model->restoreSnapshot(snapshot);
+    m_model->undoStack()->clear();
+    m_sourceTitle = sourceTitle;
+    pendingViewState = viewState;
+    if (!wasInspected) emit modeChanged();
+    announceTitle();
+}
+
+void CyberiadaSMEditorDocument::leaveInspection()
+{
+    if (!m_model->inspected()) return;
+    // the model reset reloads the scene in the editing layout, which adopts the regions
+    m_model->leaveInspection();
+    // an unsaved snapshot becomes an untitled document of its own
+    m_sourceTitle.clear();
+    emit modeChanged();
+    announceTitle();
 }
 
 bool CyberiadaSMEditorDocument::save(QString* error)
@@ -115,6 +167,7 @@ QString CyberiadaSMEditorDocument::filePath() const
 QString CyberiadaSMEditorDocument::title() const
 {
     if (hasFile()) return QFileInfo(filePath()).fileName();
+    if (!m_sourceTitle.isEmpty()) return m_sourceTitle;
     QString name = documentName();
     return name.isEmpty() ? tr("untitled") : "[" + name + "]";
 }
@@ -158,6 +211,12 @@ PluginDocumentFacts CyberiadaSMEditorDocument::pluginFacts() const
 bool CyberiadaSMEditorDocument::isClean() const
 {
     return m_model->undoStack()->isClean();
+}
+
+bool CyberiadaSMEditorDocument::isUntitled() const
+{
+    return !hasFile() && isClean() && mode() == MODE_HSM && !readOnlyFlag() &&
+           m_sourceTitle.isEmpty();
 }
 
 bool CyberiadaSMEditorDocument::restoreView()

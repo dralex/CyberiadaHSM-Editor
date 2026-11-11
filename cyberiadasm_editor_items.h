@@ -171,7 +171,7 @@ signals:
     void previousPositionChanged();
 
 private slots:
-    virtual void slotInspectorModeChanged(bool on);
+    virtual void slotInspectedChanged(bool on);
     virtual void slotServiceObjectsChanged(bool on);
     virtual void slotSelectionSettingsChanged();
 

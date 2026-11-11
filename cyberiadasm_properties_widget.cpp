@@ -111,6 +111,8 @@ CyberiadaSMPropertiesWidget::CyberiadaSMPropertiesWidget(QWidget *parent):
     connect(rectManager, SIGNAL(propertyChanged(QtProperty*)), this, SLOT(slotPropertyChanged(QtProperty*)));
     // the composite rows have no editor, their X/Y/W/H sub-rows do
     doubleSpinBoxFactory = new QtDoubleSpinBoxFactory(this);
+    setFactoryForManager(pointManager->subDoublePropertyManager(), doubleSpinBoxFactory);
+    setFactoryForManager(rectManager->subDoublePropertyManager(), doubleSpinBoxFactory);
 	dateManager = new QtDateTimePropertyManager(this);
 
 	boolManager = new QtBoolPropertyManager(this);
@@ -118,11 +120,8 @@ CyberiadaSMPropertiesWidget::CyberiadaSMPropertiesWidget(QWidget *parent):
     checkBoxFactory = new QtCheckBoxFactory(this);
     setFactoryForManager(boolManager, checkBoxFactory);
 
-    connect(&SettingsManager::instance(), &SettingsManager::inspectorModeChanged,
-            this, &CyberiadaSMPropertiesWidget::slotInspectorModeChanged);
     connect(this, &QtAbstractPropertyBrowser::currentItemChanged,
             this, &CyberiadaSMPropertiesWidget::slotCurrentItemChanged);
-    slotInspectorModeChanged(SettingsManager::instance().getInspectorMode());
 
 	QMap<Cyberiada::ActionType, QString> actionTypes = {
 		{Cyberiada::actionTransition, tr("Transition", "Action type")},
@@ -198,8 +197,15 @@ void CyberiadaSMPropertiesWidget::setModel(CyberiadaSMModel* model)
 		disconnect(this->model, nullptr, this, nullptr);
 		clearProperties();
 	}
+	bool retarget = this->model != model;
 	this->model = model;
 	element = NULL;
+	// the editors follow the read-only state of the document: inspected or flagged
+	if (retarget) {
+		connect(model, &CyberiadaSMModel::readOnlyChanged,
+		        this, &CyberiadaSMPropertiesWidget::slotReadOnlyChanged);
+		slotReadOnlyChanged(model->readOnlyDocument());
+	}
 
 	// the type names and icons are filled once
 	if (elementTypesEnumNames.isEmpty()) {
@@ -390,9 +396,11 @@ CyberiadaSMPropertiesWidget::~CyberiadaSMPropertiesWidget()
     unsetFactoryForManager(rectManager->subDoublePropertyManager());
 }
 
-void CyberiadaSMPropertiesWidget::slotInspectorModeChanged(bool on)
+void CyberiadaSMPropertiesWidget::slotReadOnlyChanged(bool on)
 {
-    // the inspected properties are displayed but not edited
+    // the read-only properties are displayed but not edited
+    if (on == editorsOff) return;
+    editorsOff = on;
     if (on) {
         unsetFactoryForManager(stringManager);
         unsetFactoryForManager(multilineStringManager);

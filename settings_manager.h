@@ -68,10 +68,6 @@ public:
     bool getShowText() const { return showText; }
     void setShowText(bool value) { showText = value; }
 
-    // runtime-only, never persisted: the mode belongs to the open document,
-    // every document is opened for the inspection first
-    bool getInspectorMode() const { return inspectorMode; }
-    void setInspectorMode(bool value);
     bool getPrintMode() const { return printMode; }
     void setPrintMode(bool value);
     bool getSnapMode() const { return snapMode; }
@@ -165,7 +161,6 @@ signals:
     void serviceObjectsChanged(bool);
     void componentCommentsChanged(bool);
     void loggingChanged(bool);
-    void inspectorModeChanged(bool);
     void printModeChanged(bool);
     void snapModeChanged(bool);
 
@@ -199,7 +194,6 @@ private:
     bool showText = true;
 
     // modes
-    bool inspectorMode = false;
     bool printMode;
     bool snapMode;
 

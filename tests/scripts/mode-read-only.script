@@ -1,0 +1,4 @@
+# the flag of the tab goes on and off, then the tab is edited again (EDIT-MODE-4)
+read-only on
+read-only off
+rename n0::n0 Renamed

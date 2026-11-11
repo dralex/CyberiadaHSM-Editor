@@ -824,7 +824,7 @@ void CyberiadaSMEditorTransitionItem::migrateLabelToRect()
 {
     // only an explicitly placed point label migrates; auto-placed labels stay auto,
     // rects stay rects, and inspection keeps the original geometry
-    if (!actionItem || SettingsManager::instance().getInspectorMode()) return;
+    if (!actionItem || model->inspected()) return;
     if (!transition->has_geometry_label_point()) return;
 
     Cyberiada::Point lp = transition->get_label_point();   // the label centre

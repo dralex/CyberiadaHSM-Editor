@@ -220,7 +220,7 @@ void CyberiadaSMEditorStateItem::updateRegion()
 {
     Cyberiada::Rect r;
     bool stored = CyberiadaSMModel::regionRect(element, r);
-    bool inspector = SettingsManager::instance().getInspectorMode();
+    bool inspector = model->inspected();
     if (inspector) {
         // the inspected region is the document's, the state rect without one
         if (!stored) r = Cyberiada::Rect(0.0, 0.0, width(), height());
@@ -601,7 +601,7 @@ void CyberiadaSMEditorStateItem::onActionChanged(StateAction* signalOwner)
     model->updateAction(idx, i, QString(), QString(), behavior);
 }
 
-void CyberiadaSMEditorStateItem::slotInspectorModeChanged(bool on)
+void CyberiadaSMEditorStateItem::slotInspectedChanged(bool on)
 {
     if (state->is_composite_state()) {
         // the inspected region follows the document, the edited one follows the text

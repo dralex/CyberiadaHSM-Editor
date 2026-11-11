@@ -34,7 +34,6 @@
 
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_undo.h"
-#include "settings_manager.h"
 #include "gesture_log.h"
 #include "myassert.h"
 #include "cyberiada_constants.h"
@@ -244,9 +243,9 @@ bool CyberiadaSMModel::loadDocument(const QString& path, bool reconstruct, bool 
 	fileFormat = root->get_file_format();
 	// the library's regions are the frames of the nested elements (EDIT-NODE-15)
 	if (reconstruct) markRegionsStored();
-	// recover loose transition endpoints onto their borders (EDIT-EDGE-1); inspect
-	// mode shows the stored geometry as-is, so it is exempt
-	if (!SettingsManager::instance().getInspectorMode()) {
+	// recover loose transition endpoints onto their borders (EDIT-EDGE-1); an
+	// inspected document shows the stored geometry as-is, so it is exempt
+	if (!m_inspected) {
 		recoverTransitionEndpoints();
 	}
 	endResetModel();
@@ -256,7 +255,37 @@ bool CyberiadaSMModel::loadDocument(const QString& path, bool reconstruct, bool 
 
 bool CyberiadaSMModel::readOnly() const
 {
-	return locked || SettingsManager::instance().getInspectorMode();
+	return locked || m_inspected || m_readOnlyFlag;
+}
+
+void CyberiadaSMModel::setInspected(bool on)
+{
+	if (m_inspected == on) return;
+	bool before = readOnlyDocument();
+	m_inspected = on;
+	emit inspectedChanged(on);
+	if (readOnlyDocument() != before) emit readOnlyChanged(readOnlyDocument());
+}
+
+void CyberiadaSMModel::leaveInspection()
+{
+	if (!m_inspected) return;
+	bool before = readOnlyDocument();
+	m_inspected = false;
+	// the scene reloads in the editing layout and adopts the regions (EDIT-NODE-15)
+	beginResetModel();
+	recoverTransitionEndpoints();
+	endResetModel();
+	emit inspectedChanged(false);
+	if (readOnlyDocument() != before) emit readOnlyChanged(readOnlyDocument());
+}
+
+void CyberiadaSMModel::setReadOnlyFlag(bool on)
+{
+	if (m_readOnlyFlag == on) return;
+	bool before = readOnlyDocument();
+	m_readOnlyFlag = on;
+	if (readOnlyDocument() != before) emit readOnlyChanged(readOnlyDocument());
 }
 
 // the snapshot is the Cyberiada 1.0 encoding of the document in memory; an

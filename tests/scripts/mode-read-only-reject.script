@@ -1,0 +1,3 @@
+# a flagged tab refuses the edit: a script error (EDIT-MODE-4)
+read-only on
+rename n0::n0 Renamed

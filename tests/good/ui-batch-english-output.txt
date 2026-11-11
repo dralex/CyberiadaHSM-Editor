@@ -1,7 +1,7 @@
 == tabs
 count: 2
-0 hierarchy.graphml
-1 untitled* active
+0 hierarchy.graphml hsm
+1 untitled* hsm active
 == document
 LocalDocument: {Document: {id: '', name: '', geometry format: qt, meta: {standard version: '1.0', transition order: action first, event propagation: block events}, elements: {State Machine: {id: 'G0', name: 'New State Machine', geometry: (200; 150; 400; 300), elements: {Simple State: {id: 'n0', name: 'New state', geometry: (-50; 0; 200; 100)}}}}, bounding rect: (200; 150; 400; 300)}, format: cyberiada, format_str: 'Cyberiada-GraphML-1.0'}
 == scene

@@ -278,6 +278,40 @@ set_tests_properties(ui-batch-english PROPERTIES
   TIMEOUT 60
   ENVIRONMENT "${UI_ENVIRONMENT}")
 add_tabs_test(undo hierarchy 0)
+
+# the mode tier (EDIT-MODE-*): the Document menu verbs; the dump carries the tab line
+# with the modes, or the script is refused with the exit code
+function(add_mode_test name diagram expected_code)
+  cmake_parse_arguments(M "INSPECT" "" "" ${ARGN})
+  set(_good)
+  if(expected_code EQUAL 0)
+    set(_good -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/mode-${name}.out
+              -DDUMP_GOOD=${CMAKE_CURRENT_SOURCE_DIR}/good/mode-${name}-output.txt)
+  endif()
+  set(_inspect)
+  if(M_INSPECT)
+    set(_inspect -DINSPECT=1)
+  endif()
+  add_test(NAME mode-${name}
+    COMMAND ${CMAKE_COMMAND}
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaPro>
+      -DINPUT=diagrams/${diagram}.graphml
+      -DSCRIPT=scripts/mode-${name}.script
+      -DDUMP_TABS=1
+      -DEXPECTED=${expected_code}
+      -DWORKDIR=${CMAKE_CURRENT_SOURCE_DIR}
+      ${_inspect} ${_good}
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunBatchTest.cmake)
+  set_tests_properties(mode-${name} PROPERTIES
+    TIMEOUT 60
+    ENVIRONMENT "${L0_ENVIRONMENT}")
+endfunction()
+
+add_mode_test(inspection geometry 0)
+add_mode_test(read-only hierarchy 0)
+add_mode_test(read-only-reject hierarchy 4)
+add_mode_test(leave geometry 0 INSPECT)
+add_mode_test(inspection-flag geometry 4 INSPECT)
 add_tabs_test(close-discard hierarchy 0)
 add_tabs_test(close-refused hierarchy 4)
 

@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
 	parser.addOption(reconstructSMOption);
 	QCommandLineOption strictOption("strict", "Check the standard requirements strictly on load.");
 	parser.addOption(strictOption);
-	QCommandLineOption inspectOption("inspect", "Open the document read-only, as the file stores it.");
+	QCommandLineOption inspectOption("inspect", "Open the documents in inspection tabs: read-only, as the files store them.");
 	parser.addOption(inspectOption);
 	QCommandLineOption serviceOption("service", "Draw the service objects: the region borders and the coordinate origins.");
 	parser.addOption(serviceOption);
@@ -138,10 +138,6 @@ int main(int argc, char *argv[])
 	if (parser.isSet(textOption)) {
 		// the tests hide the text by default, the text cases ask it back
 		SettingsManager::instance().setShowText(true);
-	}
-	if (parser.isSet(inspectOption)) {
-		// the GUI turns the mode on through the open dialog
-		SettingsManager::instance().setInspectorMode(true);
 	}
 	if (parser.isSet(serviceOption)) {
 		SettingsManager::instance().overrideShowServiceObjects(true);
@@ -211,6 +207,7 @@ int main(int argc, char *argv[])
 			options.reconstruct = parser.isSet(reconstructOption);
 			options.reconstruct_sm = parser.isSet(reconstructSMOption);
 			options.strict = parser.isSet(strictOption);
+			options.inspect = parser.isSet(inspectOption);
 			options.dumpTextMetrics = parser.isSet(dumpTextOption);
 			options.dumpUndoStack = parser.isSet(dumpStackOption);
 			options.dumpAudit = parser.isSet(dumpAuditOption);
@@ -226,7 +223,8 @@ int main(int argc, char *argv[])
 			return runBatchMode(app, options);
 		}
 		return runGuiMode(app, parser.positionalArguments(), parser.isSet(reconstructOption),
-						  parser.isSet(reconstructSMOption), parser.isSet(strictOption));
+						  parser.isSet(reconstructSMOption), parser.isSet(strictOption),
+						  parser.isSet(inspectOption));
 	} catch(const QString& error) {
 		app.printMessage(error);
 	} catch(...) {

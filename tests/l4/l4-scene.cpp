@@ -370,18 +370,12 @@ void TestScene::test_loop_polyline()
 				   QPointF(t->get_target_point().x, t->get_target_point().y)).length() < 0.01);
 }
 
-// the inspection mode is a shared setting: a failed check must not leave it on
-struct InspectionGuard {
-	~InspectionGuard() { SettingsManager::instance().setInspectorMode(false); }
-};
-
 void TestScene::test_inspector_region()
 {
 	// the inspected region is the document's, the state rect without one
 	// (EDIT-INSPECT-2); leaving the inspection gives a document without the
 	// marker its regions computed from the texts, held as stored (EDIT-INSPECT-4)
-	InspectionGuard guard;
-	SettingsManager::instance().setInspectorMode(true);
+	model->setInspected(true);
 	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
 	scene->loadScene();
 	CyberiadaSMEditorStateItem* state =
@@ -392,7 +386,10 @@ void TestScene::test_inspector_region()
 	QCOMPARE(state->getRegion()->pos(), QPointF(0, 0));
 	QCOMPARE(state->getRegion()->rect(), state->rect());
 
-	SettingsManager::instance().setInspectorMode(false);
+	// the model reset of the leaving reloads the scene: the items are new
+	model->leaveInspection();
+	state = dynamic_cast<CyberiadaSMEditorStateItem*>(scene->getMap().value("node-0"));
+	QVERIFY(state && state->getRegion());
 	QVERIFY(model->regionsStored());
 	QVERIFY(state->getRegion()->pos().y() > 0);   // below the title
 	Cyberiada::Rect r;
@@ -400,9 +397,10 @@ void TestScene::test_inspector_region()
 	QCOMPARE(state->getRegion()->pos(), QPointF(r.x, r.y));
 
 	// the stored region is the inspected one now
-	SettingsManager::instance().setInspectorMode(true);
+	model->setInspected(true);
 	QCOMPARE(state->getRegion()->pos(), QPointF(r.x, r.y));
 	QCOMPARE(state->getRegion()->rect().size(), QSizeF(r.width, r.height));
+	model->setInspected(false);
 }
 
 void TestScene::test_service_objects()
@@ -428,12 +426,11 @@ void TestScene::test_service_objects()
 	QCOMPARE(state->getRegion()->rect(), rect);
 
 	// the inspection shows the stored region, whatever the decoration
-	InspectionGuard guard;
 	SettingsManager::instance().setShowServiceObjects(true);
-	SettingsManager::instance().setInspectorMode(true);
+	model->setInspected(true);
 	QCOMPARE(state->getRegion()->pos(), pos);
 
-	SettingsManager::instance().setInspectorMode(false);
+	model->setInspected(false);
 	SettingsManager::instance().setShowServiceObjects(false);
 	QCOMPARE(state->getRegion()->pos(), pos);
 }

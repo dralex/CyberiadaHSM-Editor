@@ -162,9 +162,6 @@ public slots:
     // void  enableGridSnap(bool on = true);
     void  slotGridSettingsChanged();
     void  slotServiceObjectsChanged();
-    // leaving the inspection gives a document without the marker its computed
-    // regions (EDIT-INSPECT-4)
-    void  slotInspectorModeChanged(bool on);
     // the CGML_COMPONENT comment items follow the visibility preference (EDIT-META-6)
     void  slotComponentCommentsChanged(bool show);
     void  slotSelectionChanged();

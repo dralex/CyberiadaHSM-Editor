@@ -3,6 +3,6 @@ action: edit:rename
 result: replace
 state: failed
 exit: -
-error: the inspection mode keeps the document read-only
+error: the inspection tab is read-only
 == diagnostics
 count: 0

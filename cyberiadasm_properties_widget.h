@@ -62,7 +62,7 @@ public slots:
 	// the element of the view goes with a removed subtree: the view is emptied
 	void slotRowsAboutToBeRemoved(const QModelIndex& parent, int first, int last);
 	void                     slotPropertyChanged(QtProperty* property);
-	void                     slotInspectorModeChanged(bool on);
+	void                     slotReadOnlyChanged(bool on);
 	void                     slotCurrentItemChanged(QtBrowserItem* item);
 
 protected:
@@ -76,6 +76,8 @@ private:
 	void                     scheduleRebuild();
 
 	CyberiadaSMModel*        model;
+	// the editor factories are unset: the document is read-only
+	bool                     editorsOff = false;
 	CyberiadaSMEditorScene*  scene = nullptr;
 	Cyberiada::Element*      element;
 	QString                     builtSubjectsShape;

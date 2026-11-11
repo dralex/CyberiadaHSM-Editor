@@ -1,6 +1,6 @@
 # The Document Modes — Architecture
 
-**Document version:** 0.2 (2026-11-11) — specified, not implemented yet. The requirements are
+**Document version:** 0.3 (2026-11-11) — stage 1 implemented (see Stages). The requirements are
 `EDIT-MODE-1..16` in `EDITOR-SPEC.md` §4.14, the plugin parts `EDIT-PLUG-56..60`.
 
 A tab holds one document in one **mode**: the format edited, the access, and the tools, the
@@ -88,12 +88,12 @@ CyberiadaSMEditorWindow                                                         
  HSM diff (both sides)  no recovery      the stored geometry refused   suspended
 ```
 
-* The model gets `inspected` (set by the load) instead of the global
-  `SettingsManager::inspectorMode`; `readOnly() = locked || inspected || the flag`. The scene
-  and the items listen to the document's `readOnlyChanged` instead of `inspectorModeChanged`.
-* The Open dialog's inspection box and `--inspect` open inspection tabs; nothing is global.
-* Leaving an inspection tab runs the recovery (`recoverTransitionEndpoints`, `adoptRegions`);
-  the undo history starts there.
+* The model holds `inspected` (set before the load, which then skips the recovery) and the
+  flag of the tab; `readOnly() = locked || inspected || the flag`. The items follow its
+  `inspectedChanged`, the properties panel its `readOnlyChanged`; nothing is global.
+* The Open dialog's inspection box and `--inspect` open inspection tabs.
+* Leaving an inspection tab (`leaveInspection`) is one model reset: the recovery of the
+  endpoints, then the scene reloaded in the editing layout adopts the regions; no undo step.
 
 ## The FA mode
 
@@ -236,7 +236,10 @@ File                              Document
 
 ## Stages
 
-1. `EditorDocument`, inspection tabs, the read-only flag, the Document menu.
+1. `EditorDocument`, inspection tabs, the read-only flag, the Document menu — done: the
+   menu has Mode (HSM diagram, HSM inspection), Read-only, Language, Markup, Properties...
+   and the geometry actions; File > New, Check, Compare with..., Geometry and Refresh come
+   with their stages.
 2. The FA mode.
 3. The text tabs (Java and JavaScript leave `syntax/`).
 4. The diff tabs.

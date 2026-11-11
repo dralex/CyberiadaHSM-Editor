@@ -110,7 +110,6 @@ CyberiadaSMEditorScene::CyberiadaSMEditorScene(CyberiadaSMModel* _model, QObject
     gridPen = QPen(Qt::gray, 0, Qt::DotLine);
     connect(&SettingsManager::instance(), &SettingsManager::gridSettingsChanged, this, &CyberiadaSMEditorScene::slotGridSettingsChanged);
     connect(&SettingsManager::instance(), &SettingsManager::serviceObjectsChanged, this, &CyberiadaSMEditorScene::slotServiceObjectsChanged);
-    connect(&SettingsManager::instance(), &SettingsManager::inspectorModeChanged, this, &CyberiadaSMEditorScene::slotInspectorModeChanged);
     connect(&SettingsManager::instance(), &SettingsManager::componentCommentsChanged, this, &CyberiadaSMEditorScene::slotComponentCommentsChanged);
     // the underlines follow the texts once the items have taken the change (EDIT-EDGE-21)
     connect(&SettingsManager::instance(), &SettingsManager::showTransitionTextChanged,
@@ -613,21 +612,15 @@ void CyberiadaSMEditorScene::slotSMSizeChanged(CyberiadaSMEditorAbstractItem::Co
 
 // a document without the marker is drawn with the regions computed from the
 // texts; once the model holds every one of them the document marks them stored
-// (EDIT-NODE-15). The pass runs before the items react to the leaving of the
-// inspection, so none of them takes an unmarked region as stored
+// (EDIT-NODE-15). Leaving the inspection reloads the scene, which adopts them
 void CyberiadaSMEditorScene::adoptRegions()
 {
-    if (SettingsManager::instance().getInspectorMode() || model->regionsStored()) return;
+    if (model->inspected() || model->regionsStored()) return;
     for (QGraphicsItem* item : items()) {
         CyberiadaSMEditorStateItem* state = dynamic_cast<CyberiadaSMEditorStateItem*>(item);
         if (state && state->getRegion()) state->updateRegion();
     }
     model->storeRegions();
-}
-
-void CyberiadaSMEditorScene::slotInspectorModeChanged(bool on)
-{
-    if (!on) adoptRegions();
 }
 
 void CyberiadaSMEditorScene::slotGridSettingsChanged()

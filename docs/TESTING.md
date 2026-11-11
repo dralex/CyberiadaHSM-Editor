@@ -122,9 +122,9 @@ it checks in a comment):
 | INSPECT| `inspect-reject-*` (editing refused under `--inspect`, `EDIT-INSPECT-1`); `inspect-render-*` (stored-geometry render vs a good image, `EDIT-INSPECT-2`) |
 | UI     | `l4-translation` (`EDIT-UI-1/3`: the bundled languages, the Preferences selector, the Russian menus, Qt's buttons, the property labels, the default names, the property lookup), `ui-batch-english` (`EDIT-UI-2`), `l4-window test_pane_toggles/test_pane_persist/test_dock_titles_bold` (`EDIT-UI-6`: the tree and properties docks, their View entries, the close button, the stored choice, the bold dock titles), `l4-plugin-core test_config_data_home` (`EDIT-UI-7`: the ini file under `CYBERIADA_PRO_CONFIG_HOME`, the user plugin folder under `CYBERIADA_PRO_DATA_HOME`) |
 | PLUG   | the `plugin-*` cases: discovery and rejection (`EDIT-PLUG-1..4`), variables and secrets (`EDIT-PLUG-8..11`), the results and failures (`EDIT-PLUG-12..20`), save and cwd (`EDIT-PLUG-25`), the batch contract (`EDIT-PLUG-27/28`); `l4-plugin-core`; `l4-plugins` for the window (`EDIT-PLUG-5..7`, `EDIT-PLUG-15`, `EDIT-PLUG-17`, `EDIT-PLUG-21..24`, `EDIT-PLUG-29..32`, `EDIT-PLUG-35`); the sessions: `list-session`, `session-*` (`EDIT-PLUG-36..38`, `EDIT-PLUG-47/48`), `l4-plugin-core` (the session block, the channel), `l4-plugins` (`EDIT-PLUG-39..46`, `EDIT-PLUG-49`); the conditions: `list-conditions*`, `conditions-*` (`EDIT-PLUG-50..55`; `conditions-git*` with a `.git` directory made by the test), `l4-plugin-core` (their parsing, the tokens, the programs and the variables, the document facts, the `.git` lookup), `l4-plugins test_conditions` (the menu and the plugin manager follow the document, a Save As, a `.git` made after the open) |
-| MODE   | planned with the stages of `docs/MODES.md`: `mode-*` batch scripts with `--dump-tabs` (an inspection tab beside its editing tab, the read-only flag per tab, HSM to FA and its undo, the FA tools refused, a `type/ fa` file opened in FA, a text file opened, edited and saved per mode, a read-only Markdown dump, `compare` of `tests/diagrams` pairs with and without `geometry`), the `plugin-*` cases of a `modes` action and a `diff`-result example plugin (`EDIT-PLUG-56..59`), an example plugin `tests/plugins/lang/` with `syntax/lua.json` (`EDIT-PLUG-60`: the Lua mode and highlighting, a clash with a built-in skipped with a warning, gone after the plugin is switched off and Rescan), `l4-modes` (the traits, the title markers, the text undo proxy, the extension of a mode, the order of the languages) |
+| MODE   | stage 1: `mode-inspection`, `mode-leave` (`EDIT-MODE-6`, `EDIT-INSPECT-4`), `mode-read-only`, `mode-read-only-reject`, `mode-inspection-flag` (`EDIT-MODE-4/16`), `l4-tabs test_inspection_tab/test_inspect_unsaved/test_read_only_flag/test_open_inspected` (`EDIT-MODE-1..6`), `l4-model test_read_only` and the loose endpoint recovered on leaving (`EDIT-INSPECT-4`), `l4-window test_save_enablement` (the Document menu); planned with the later stages of `docs/MODES.md`: `mode-*` batch scripts (HSM to FA and its undo, the FA tools refused, a `type/ fa` file opened in FA, a text file opened, edited and saved per mode, a read-only Markdown dump, `compare` of `tests/diagrams` pairs with and without `geometry`), the `plugin-*` cases of a `modes` action and a `diff`-result example plugin (`EDIT-PLUG-56..59`), an example plugin `tests/plugins/lang/` with `syntax/lua.json` (`EDIT-PLUG-60`: the Lua mode and highlighting, a clash with a built-in skipped with a warning, gone after the plugin is switched off and Rescan), `l4-modes` (the traits, the title markers, the text undo proxy, the extension of a mode, the order of the languages) |
 
-Requirements with **no dedicated case yet** — the gaps to fill: `MODE-1..16` and
+Requirements with **no dedicated case yet** — the gaps to fill: `MODE-5`, `MODE-7..15` and
 `PLUG-56..60` (specified ahead of the code, `docs/MODES.md`), `SEM-1` (one initial per
 level — only the polygon pseudostate drill and the standing law cover it), `TOOL-7` (pan/zoom
 not drivable in batch). The first is held by the polygon; the last awaits the editor additions. `NODE-6` (sibling no-overlap) is now
@@ -244,7 +244,13 @@ across documents, a modified tab prompts (Cancel keeps it, Discard drops it), th
 last tab gives way to a fresh untitled one, Exit activates the dirty background
 document for its prompt, a tab switch restarts the log session, the
 command-line files open as tabs with the failures reported, and an unsaved
-document is titled by its document name in brackets (`EDIT-DOC-10`).
+document is titled by its document name in brackets (`EDIT-DOC-10`). The modes
+(`EDIT-MODE-1..6`): the inspection of a saved file opens a tab of its own, read
+from the file and activated again by a second inspection or an inspected Open,
+HSM on it shows the editing tab of the file or converts it in place; an unsaved
+document is inspected from its snapshot under its title; the read-only flag
+belongs to one tab, marks its title and keeps the edits off; `--inspect` opens
+inspection tabs, counted apart from the editing tab of the same file.
 
 `l4-highlight` checks the code highlighting (`EDIT-TEXT-7/8`): the language
 lookup by name and alias, the code spans of each role, the colours on the
@@ -257,12 +263,12 @@ colour, a fence closed on a later line, the `markdown-comments` diagram on the
 canvas (a `dMarkup` `plain` comment stays plain), a `markupLanguage` removal and
 its undo, and the multiline dialog.
 
-`l4-language` drives Edit > Language (`EDIT-TEXT-9`): the entries after Tools,
+`l4-language` drives Document > Language (`EDIT-TEXT-9`): the entries after Read-only,
 the choice on an empty document (its first state machine, one undo step), the
 choice and Undefined on a loaded file, the properties path with an alias, the
 check following the tabs, an unknown loaded value kept for the session, a
-hand-typed one shown while current, and the menu disabled in inspection mode.
-Edit > Markup (`EDIT-TEXT-12`) follows the same cases: placed after Language,
+hand-typed one shown while current, and the menu disabled in a read-only tab.
+Document > Markup (`EDIT-TEXT-12`) follows the same cases: placed after Language,
 Plain removes the parameter, an explicit `plain` checks Plain, an unknown `html`
 kept in its own session list, the check following the tabs.
 
@@ -323,12 +329,15 @@ independent of `--dump`, so a text case compares that section alone.
 with `good/<name>-stack-output.txt`, after the named script or with none.
 
 `--dump-tabs` writes a `== tabs` section with the tab line: the document
-`count`, then one line per tab with its index, its tab text (the title, `*`
-appended when modified) and `active` on the current one. The tabs cases
+`count`, then one line per tab with its index, its title (`*` appended when
+modified), its mode (`hsm`, `inspection`), `ro` with the read-only flag and
+`active` on the current one (`EDIT-MODE-16`). The tabs cases
 (`tabs-<name>`) pass it with `--dump`, so their good files
 `good/tabs-<name>-output.txt` carry the tab line and the active document; a
 refused script (a plain `close` of a modified document) is checked by its exit
-code alone.
+code alone. The mode cases (`mode-<name>`) drive the Document menu verbs `mode`
+and `read-only` the same way, some from an `--inspect` start; a refused edit of a
+read-only tab and a cleared flag of an inspection tab exit with 4.
 
 `--strict` loads the document with the library's strict standard checks: the
 graph, identifier, marker, name and vertex order requirements are checked in

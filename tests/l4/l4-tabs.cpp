@@ -52,6 +52,10 @@ private slots:
 	void test_log_session_rebinds();
 	void test_open_files();
 	void test_untitled_named();
+	void test_inspection_tab();
+	void test_inspect_unsaved();
+	void test_read_only_flag();
+	void test_open_inspected();
 
 private:
 	// answer the pending modal prompt with the button once it is up
@@ -297,6 +301,124 @@ void TestTabs::test_untitled_named()
 	// the file wins once the document has one
 	QVERIFY(fresh.openDocument("diagrams/geometry.graphml"));
 	QCOMPARE(fresh.currentDocument()->title(), QString("geometry.graphml"));
+}
+
+// EDIT-MODE-2/3/6: the inspection of a saved file is a tab of its own, read from the
+// file; HSM turns it into an editing tab in place, unless the file is edited already
+void TestTabs::test_inspection_tab()
+{
+	CyberiadaSMEditorWindow fresh;
+	QVERIFY(fresh.openFile("diagrams/geometry.graphml"));
+	CyberiadaSMEditorDocument* editing = fresh.currentDocument();
+	QVERIFY(fresh.setDocumentMode(editing, MODE_INSPECTION));
+	QCOMPARE(fresh.documentCount(), 2);
+	CyberiadaSMEditorDocument* inspection = fresh.currentDocument();
+	QVERIFY(inspection != editing);
+	QCOMPARE(inspection->mode(), QString(MODE_INSPECTION));
+	QCOMPARE(editing->mode(), QString(MODE_HSM));
+	QCOMPARE(inspection->title(), QString("geometry.graphml"));
+	QCOMPARE(fresh.tabBar()->tabText(0), QString("geometry.graphml"));
+	QCOMPARE(fresh.tabBar()->tabText(1), QString("geometry.graphml [inspection]"));
+	QVERIFY(fresh.windowTitle().startsWith("geometry.graphml [inspection]"));
+	QVERIFY(fresh.actionModeInspection->isChecked() && !fresh.actionModeHSM->isChecked());
+	// read-only whatever the flag: checked and fixed
+	QVERIFY(fresh.actionReadOnly->isChecked() && !fresh.actionReadOnly->isEnabled());
+	QVERIFY(!fresh.actionNewState->isEnabled() && !fresh.actionReconstructGeometry->isEnabled());
+	QVERIFY(!fresh.menuLanguage->menuAction()->isEnabled());
+	// the tool and the new tab stay global
+	QVERIFY(fresh.actionNew->isEnabled());
+	// the same file again: the inspection tab is activated, from the source as from Open
+	fresh.setCurrentDocument(editing);
+	QVERIFY(fresh.actionModeHSM->isChecked() && fresh.actionNewState->isEnabled());
+	QVERIFY(fresh.inspectDocument(editing) == inspection);
+	QVERIFY(fresh.openFile("diagrams/geometry.graphml", nullptr, false, false, false, true));
+	QCOMPARE(fresh.currentDocument(), inspection);
+	QCOMPARE(fresh.documentCount(), 2);
+	// HSM on it shows the editing tab of the file instead of a second one
+	QVERIFY(fresh.setDocumentMode(inspection, MODE_HSM));
+	QCOMPARE(fresh.currentDocument(), editing);
+	QCOMPARE(inspection->mode(), QString(MODE_INSPECTION));
+	// with the editing tab closed, the inspection tab becomes the editing one
+	QVERIFY(fresh.closeDocument(editing));
+	QVERIFY(fresh.setDocumentMode(inspection, MODE_HSM));
+	QCOMPARE(fresh.documentCount(), 1);
+	QCOMPARE(inspection->mode(), QString(MODE_HSM));
+	QCOMPARE(fresh.tabBar()->tabText(0), QString("geometry.graphml"));
+	QVERIFY(inspection->isClean() && fresh.actionNewState->isEnabled());
+	QVERIFY(!fresh.actionReadOnly->isChecked() && fresh.actionReadOnly->isEnabled());
+}
+
+// EDIT-MODE-6: an unsaved document is inspected from its snapshot, titled as its source
+void TestTabs::test_inspect_unsaved()
+{
+	CyberiadaSMEditorWindow fresh;
+	QVERIFY(fresh.openFile("diagrams/geometry.graphml"));
+	CyberiadaSMEditorDocument* source = fresh.currentDocument();
+	CyberiadaSMModel* m = source->model();
+	QVERIFY(m->updateTitle(m->elementToIndex(m->idToElement("node-0-1")), "Renamed"));
+	CyberiadaSMEditorDocument* inspection = fresh.inspectDocument(source);
+	QVERIFY(inspection && inspection != source);
+	QCOMPARE(fresh.documentCount(), 2);
+	QVERIFY(!inspection->hasFile() && inspection->isClean());
+	QCOMPARE(inspection->title(), QString("geometry.graphml"));
+	QCOMPARE(QString::fromStdString(inspection->model()->idToElement("node-0-1")->get_name()),
+			 QString("Renamed"));
+	QVERIFY(inspection->model()->readOnly());
+	// not a tab a new document may take
+	QVERIFY(!inspection->isUntitled());
+	QVERIFY(!source->isClean());
+	// leaving makes it an untitled document of its own
+	QVERIFY(fresh.setDocumentMode(inspection, MODE_HSM));
+	QCOMPARE(inspection->mode(), QString(MODE_HSM));
+	QVERIFY(inspection->title() != QString("geometry.graphml"));
+	QVERIFY(!inspection->model()->readOnly());
+}
+
+// EDIT-MODE-1/2/4: the flag belongs to its tab; the edits stop, the view and copy stay
+void TestTabs::test_read_only_flag()
+{
+	CyberiadaSMEditorWindow fresh;
+	QVERIFY(fresh.openFiles(QStringList() << "diagrams/geometry.graphml" << "diagrams/hierarchy.graphml"));
+	CyberiadaSMEditorDocument* geometry = fresh.documentAt(0);
+	CyberiadaSMEditorDocument* hierarchy = fresh.documentAt(1);
+	fresh.actionReadOnly->trigger();
+	QVERIFY(hierarchy->readOnlyFlag() && !geometry->readOnlyFlag());
+	QCOMPARE(hierarchy->mode(), QString(MODE_HSM));
+	QCOMPARE(fresh.tabBar()->tabText(1), QString("hierarchy.graphml [ro]"));
+	QVERIFY(fresh.windowTitle().startsWith("hierarchy.graphml [read-only]"));
+	QVERIFY(hierarchy->model()->readOnly());
+	QVERIFY(!fresh.actionNewState->isEnabled() && !fresh.actionPaste->isEnabled());
+	QVERIFY(!fresh.menuLanguage->menuAction()->isEnabled());
+	QVERIFY(!hierarchy->model()->newStateMachine("Another"));
+	// the other tab is untouched and editable
+	fresh.setCurrentDocument(geometry);
+	QVERIFY(!fresh.actionReadOnly->isChecked() && fresh.actionNewState->isEnabled());
+	QCOMPARE(fresh.tabBar()->tabText(0), QString("geometry.graphml"));
+	fresh.setCurrentDocument(hierarchy);
+	QVERIFY(fresh.actionReadOnly->isChecked());
+	fresh.actionReadOnly->trigger();
+	QVERIFY(!hierarchy->readOnlyFlag() && !hierarchy->model()->readOnly());
+	QCOMPARE(fresh.tabBar()->tabText(1), QString("hierarchy.graphml"));
+	// an empty read-only tab does not take an opened file
+	fresh.setCurrentDocument(fresh.newDocument());
+	fresh.setDocumentReadOnly(fresh.currentDocument(), true);
+	QVERIFY(!fresh.currentDocument()->isUntitled());
+	QVERIFY(fresh.openFile("diagrams/choice.graphml"));
+	QCOMPARE(fresh.documentCount(), 4);
+}
+
+// EDIT-MODE-6: the files of --inspect and of the inspection box open inspected
+void TestTabs::test_open_inspected()
+{
+	CyberiadaSMEditorWindow fresh;
+	QVERIFY(fresh.openFiles(QStringList() << "diagrams/geometry.graphml", nullptr, false, false, false, true));
+	QCOMPARE(fresh.documentCount(), 1);
+	QCOMPARE(fresh.currentDocument()->mode(), QString(MODE_INSPECTION));
+	QVERIFY(fresh.getModel()->inspected());
+	// the editing tab of the same file is a tab of its own
+	QVERIFY(fresh.openFile("diagrams/geometry.graphml"));
+	QCOMPARE(fresh.documentCount(), 2);
+	QCOMPARE(fresh.currentDocument()->mode(), QString(MODE_HSM));
 }
 
 QTEST_MAIN(TestTabs)

@@ -1,7 +1,7 @@
 == tabs
 count: 2
-0 hierarchy.graphml
-1 untitled active
+0 hierarchy.graphml hsm
+1 untitled hsm active
 == document
 (empty)
 == scene

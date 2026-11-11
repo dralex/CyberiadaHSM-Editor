@@ -54,20 +54,31 @@ public:
 
     ~CyberiadaSMEditorWindow();
 
-    // load the file into the active document (the batch and test contract)
+    // load the file into the active document (the batch and test contract); an
+    // inspected one is read as stored (EDIT-MODE-6)
     bool                    openDocument(const QString& fileName, QString* error = NULL,
                                          bool reconstruct = false, bool reconstruct_sm = false,
-                                         bool strict = false);
+                                         bool strict = false, bool inspect = false);
     // the tab policy (EDIT-DOC-2): an open file activates its tab, a clean untitled
-    // active document takes the file, anything else opens a new tab
+    // active document takes the file, anything else opens a new tab; the editing
+    // and the inspection tab of a file are counted apart
     bool                    openFile(const QString& fileName, QString* error = NULL,
                                      bool reconstruct = false, bool reconstruct_sm = false,
-                                     bool strict = false);
+                                     bool strict = false, bool inspect = false);
     // the command-line files, in order, the last one active; the failures are
     // collected in error and skipped
     bool                    openFiles(const QStringList& fileNames, QString* error = NULL,
                                       bool reconstruct = false, bool reconstruct_sm = false,
-                                      bool strict = false);
+                                      bool strict = false, bool inspect = false);
+    // MODES (docs/MODES.md): Document > Mode of a tab; the inspection opens a tab of
+    // its own, HSM turns an inspection tab into an editing one (EDIT-MODE-3/6)
+    bool                    setDocumentMode(CyberiadaSMEditorDocument* doc, const QString& mode,
+                                            QString* error = nullptr);
+    // the inspection tab of a document: its file when saved, else its snapshot
+    CyberiadaSMEditorDocument* inspectDocument(CyberiadaSMEditorDocument* source,
+                                               QString* error = nullptr);
+    // Document > Read-only of a tab (EDIT-MODE-4)
+    void                    setDocumentReadOnly(CyberiadaSMEditorDocument* doc, bool on);
     // a new untitled document in a new tab
     CyberiadaSMEditorDocument* newDocument();
     void                    setCurrentDocument(CyberiadaSMEditorDocument* doc);
@@ -143,8 +154,16 @@ private:
     void                    rebuildRecentMenu();
     void                    openRecentFile(const QString& path);
 
-    // the tab text: the title with the modified marker, the path as the tooltip
+    // the tab text: the title with the mode and the modified markers, the path as
+    // the tooltip
     void                    updateTabTitle(CyberiadaSMEditorDocument* doc);
+    // the tab of a file, its editing or its inspection one
+    CyberiadaSMEditorDocument* findDocument(const QString& fileName, bool inspection) const;
+    // the Document menu: the modes, the flag (EDIT-MODE-3/4)
+    void                    initDocumentMenu();
+    void                    updateModeActions();
+    // a mode or a flag changed: the tab, the title and the actions follow
+    void                    documentStateChanged(CyberiadaSMEditorDocument* doc);
     // Edit > Language and Edit > Markup (EDIT-TEXT-9/12) follow the active document
     void                    initChoiceMenus();
     void                    syncChoiceMenus();
@@ -168,7 +187,8 @@ private slots:
     void                    slotUndoTextChanged(const QString& text);
     void                    slotRedoTextChanged(const QString& text);
     void                    slotCleanChanged(bool clean);
-    void                    slotInspectorModeChanged(bool on);
+    // Document > Properties...: the Document element in the tree and the properties
+    void                    slotDocumentProperties();
     void                    slotServiceObjectsChanged(bool on);
     void                    slotComponentCommentsChanged(bool on);
     void                    slotLoggingChanged(bool on);
@@ -177,7 +197,7 @@ private slots:
     void                    slotFileClose();
     void                    slotNextDocument();
     void                    slotPreviousDocument();
-    // enable cut/copy/paste/delete only for a fitting selection (and not in inspector mode)
+    // enable cut/copy/paste/delete only for a fitting selection (and an editable tab)
     void                    updateEditActions();
     void                    slotPluginFinished();
     // the enabled state and the tooltips of the plugin actions (EDIT-PLUG-4)
@@ -187,7 +207,7 @@ private slots:
     void                    slotPluginsScanned();
     // the interpreters or the switches changed: the plugins are scanned again
     void                    slotPluginSettingsChanged();
-    // undo and redo wait for the inspection mode and a plugin lock (EDIT-PLUG-22)
+    // undo and redo wait for a read-only tab and a plugin lock (EDIT-MODE-4, EDIT-PLUG-22)
     void                    updateUndoActions();
 
 public slots:
@@ -204,7 +224,6 @@ public slots:
     void                    slotFileSave();
     void                    slotFileSaveAs();
     void                    slotFileExport();
-    void                    slotInspectorModeTriggered(bool on);
     void                    slotShowTransitionActionTriggered(bool on);
     void                    slotSnapModeTriggered(bool on);
     void                    slotToolSelected(QAction *action);
@@ -251,7 +270,7 @@ private:
     // the tab line over the central area, shown from the second document on
     QTabBar*                documentTabs = nullptr;
     QActionGroup *toolGroup;
-    QActionGroup *editGroup;
+    QActionGroup* modeGroup = nullptr;
     ToolType currentTool = ToolType::Select;
 
     QMenu* recentMenu = nullptr;

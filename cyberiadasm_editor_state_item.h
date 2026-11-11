@@ -135,7 +135,7 @@ private slots:
     void onActionDeleted(StateAction* signalOwner);
     void onActionChanged(StateAction* signalOwner);
 
-    void slotInspectorModeChanged(bool on) override;
+    void slotInspectedChanged(bool on) override;
     void slotServiceObjectsChanged(bool on) override;
 
 protected:

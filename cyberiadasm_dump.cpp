@@ -292,6 +292,8 @@ void dumpTabs(CyberiadaSMEditorWindow* win, std::ostream& os)
 	for (int i = 0; i < win->documentCount(); i++) {
 		CyberiadaSMEditorDocument* doc = win->documentAt(i);
 		os << i << " " << doc->title().toStdString() << (doc->isClean() ? "" : "*");
+		// the mode and the flag (EDIT-MODE-16)
+		os << " " << doc->mode().toStdString() << (doc->readOnlyFlag() ? " ro" : "");
 		if (doc == win->currentDocument()) os << " active";
 		os << std::endl;
 	}

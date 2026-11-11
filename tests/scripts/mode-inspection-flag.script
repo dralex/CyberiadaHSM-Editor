@@ -1,0 +1,2 @@
+# an inspection tab is read-only whatever the flag: off is refused (EDIT-MODE-4)
+read-only off

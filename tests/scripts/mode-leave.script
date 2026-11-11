@@ -1,0 +1,3 @@
+# HSM turns the inspection tab of --inspect into an editing one in place (EDIT-INSPECT-4)
+mode hsm
+rename node-0-0-1 Idle

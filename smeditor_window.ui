@@ -162,6 +162,29 @@
      <addaction name="actionNewExitPoint"/>
      <addaction name="actionNewStateMachine"/>
     </widget>
+    <addaction name="actionCut"/>
+    <addaction name="actionCopy"/>
+    <addaction name="actionPaste"/>
+    <addaction name="actionDeleteElement"/>
+    <addaction name="actionCenterHorizontally"/>
+    <addaction name="actionCenterVertically"/>
+    <addaction name="separator"/>
+    <addaction name="actionUndo"/>
+    <addaction name="actionRedo"/>
+    <addaction name="separator"/>
+    <addaction name="menuTools"/>
+   </widget>
+   <widget class="QMenu" name="menuDocument">
+    <property name="title">
+     <string>&amp;Document</string>
+    </property>
+    <widget class="QMenu" name="menuMode">
+     <property name="title">
+      <string>Mode</string>
+     </property>
+     <addaction name="actionModeHSM"/>
+     <addaction name="actionModeInspection"/>
+    </widget>
     <widget class="QMenu" name="menuLanguage">
      <property name="title">
       <string>Language</string>
@@ -172,23 +195,15 @@
       <string>Markup</string>
      </property>
     </widget>
-    <addaction name="actionCut"/>
-    <addaction name="actionCopy"/>
-    <addaction name="actionPaste"/>
-    <addaction name="actionDeleteElement"/>
-    <addaction name="actionReconstructGeometry"/>
-    <addaction name="actionUpdateGeometry"/>
-    <addaction name="actionCenterHorizontally"/>
-    <addaction name="actionCenterVertically"/>
+    <addaction name="menuMode"/>
+    <addaction name="actionReadOnly"/>
     <addaction name="separator"/>
-    <addaction name="actionUndo"/>
-    <addaction name="actionRedo"/>
-    <addaction name="separator"/>
-    <addaction name="menuTools"/>
     <addaction name="menuLanguage"/>
     <addaction name="menuMarkup"/>
+    <addaction name="actionDocumentProperties"/>
     <addaction name="separator"/>
-    <addaction name="actionInspectorMode"/>
+    <addaction name="actionReconstructGeometry"/>
+    <addaction name="actionUpdateGeometry"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
@@ -219,6 +234,7 @@
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
+   <addaction name="menuDocument"/>
    <addaction name="menuView"/>
    <addaction name="menuHelp"/>
   </widget>
@@ -253,7 +269,7 @@
    <addaction name="actionGridVisibility"/>
    <addaction name="actionSnapMode"/>
    <addaction name="actionServiceObjects"/>
-   <addaction name="actionInspectorMode"/>
+   <addaction name="actionModeInspection"/>
    <addaction name="actionLogSession"/>
   </widget>
   <widget class="QToolBar" name="elementToolBar">
@@ -445,7 +461,15 @@
     <string>Transition text</string>
    </property>
   </action>
-  <action name="actionInspectorMode">
+  <action name="actionModeHSM">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>HSM diagram</string>
+   </property>
+  </action>
+  <action name="actionModeInspection">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -454,7 +478,23 @@
      <normaloff>:/Icons/images/inspector-mode.png</normaloff>:/Icons/images/inspector-mode.png</iconset>
    </property>
    <property name="text">
-    <string>Inspector mode</string>
+    <string>HSM inspection</string>
+   </property>
+   <property name="toolTip">
+    <string>Inspect the document in a tab of its own, as its file stores it</string>
+   </property>
+  </action>
+  <action name="actionReadOnly">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Read-only</string>
+   </property>
+  </action>
+  <action name="actionDocumentProperties">
+   <property name="text">
+    <string>Properties...</string>
    </property>
   </action>
   <action name="actionPreferences">
@@ -918,22 +958,6 @@
    </hints>
   </connection>
   <connection>
-   <sender>actionInspectorMode</sender>
-   <signal>triggered(bool)</signal>
-   <receiver>SMEditorWindow</receiver>
-   <slot>slotInspectorModeTriggered(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>-1</x>
-     <y>-1</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>511</x>
-     <y>383</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>actionSnapMode</sender>
    <signal>triggered(bool)</signal>
    <receiver>SMEditorWindow</receiver>
@@ -1306,7 +1330,6 @@
   <slot>slotFileOpen()</slot>
   <slot>slotFileSave()</slot>
   <slot>slotFileSaveAs()</slot>
-  <slot>slotInspectorModeTriggered(bool)</slot>
   <slot>slotSnapModeTriggered(bool)</slot>
   <slot>slotShowTransitionActionTriggered(bool)</slot>
   <slot>slotServiceObjectsTriggered(bool)</slot>

@@ -145,7 +145,6 @@ void TestPlugins::initTestCase()
 
 void TestPlugins::cleanup()
 {
-    SettingsManager::instance().setInspectorMode(false);
     QSettings().remove("plugins");
     QSettings().remove("plugin-interpreters");
     PluginRegistry::instance().setInterpreterPaths(QMap<QString, QString>());
@@ -399,7 +398,7 @@ void TestPlugins::test_close_cancels()
     QCOMPARE(win.documentCount(), 1);
 }
 
-// the inspection mode disables replace and refuses a late result (EDIT-PLUG-24)
+// a read-only tab disables replace and refuses a late result (EDIT-PLUG-24)
 void TestPlugins::test_inspection()
 {
     CyberiadaSMEditorWindow win;
@@ -407,13 +406,21 @@ void TestPlugins::test_inspection()
     QString before = documentDump(win.getModel());
     PluginRunner* run = win.runPlugin("edit", "rename-late", PluginValues());
     QVERIFY(run);
-    SettingsManager::instance().setInspectorMode(true);
+    win.setDocumentReadOnly(win.currentDocument(), true);
     PluginResult r = waitFor(win, run);
     QCOMPARE(r.state, PluginResult::stateFailed);
     QCOMPARE(documentDump(win.getModel()), before);
     QVERIFY(!win.pluginsMenu()->action("edit", "rename")->isEnabled());
     QVERIFY(win.pluginsMenu()->action("checker", "check")->isEnabled());
     QVERIFY(!win.runPlugin("edit", "rename", PluginValues()));
+
+    // an inspection tab, whatever its flag
+    win.setDocumentReadOnly(win.currentDocument(), false);
+    QVERIFY(win.pluginsMenu()->action("edit", "rename")->isEnabled());
+    QVERIFY(win.setDocumentMode(win.currentDocument(), MODE_INSPECTION));
+    QCOMPARE(win.currentDocument()->mode(), QString(MODE_INSPECTION));
+    QVERIFY(!win.pluginsMenu()->action("edit", "rename")->isEnabled());
+    QVERIFY(win.pluginsMenu()->action("checker", "check")->isEnabled());
 }
 
 // a finding selects its element, an absent one has no link, both grey later (EDIT-PLUG-15)

@@ -219,7 +219,6 @@ void TestWindow::test_tool_cursors()
 
 void TestWindow::test_save_enablement()
 {
-	SettingsManager::instance().setInspectorMode(false);
 	QVERIFY(window->openDocument("diagrams/geometry.graphml"));
 	// a freshly loaded document is clean: Save off, Save As / Export on
 	QVERIFY(!window->actionSave->isEnabled());
@@ -279,12 +278,27 @@ void TestWindow::test_menu_refactor()
 	// #7: delete has left the tool palette
 	QVERIFY(!window->elementToolBar->actions().contains(window->actionDeleteElement));
 
-	// the Edit menu hosts clipboard, delete, the Tools submenu and the inspector
+	// the Edit menu hosts clipboard, delete and the Tools submenu; the Document menu,
+	// right after it, the mode, the flag, the choices and the geometry (docs/MODES.md)
 	QList<QAction*> em = window->menuEdit->actions();
 	QVERIFY(em.contains(window->actionCut) && em.contains(window->actionPaste) &&
-			em.contains(window->actionDeleteElement) && em.contains(window->actionInspectorMode));
+			em.contains(window->actionDeleteElement));
 	QVERIFY(em.contains(window->menuTools->menuAction()));
+	QVERIFY(!em.contains(window->menuLanguage->menuAction()) &&
+			!em.contains(window->actionReconstructGeometry));
 	QVERIFY(window->menuTools->actions().contains(window->actionNewState));
+	QList<QAction*> bar = window->QMainWindow::menuBar()->actions();
+	QCOMPARE(bar.indexOf(window->menuDocument->menuAction()),
+			 bar.indexOf(window->menuEdit->menuAction()) + 1);
+	QList<QAction*> dm = window->menuDocument->actions();
+	QVERIFY(dm.contains(window->menuMode->menuAction()) && dm.contains(window->actionReadOnly) &&
+			dm.contains(window->menuLanguage->menuAction()) &&
+			dm.contains(window->menuMarkup->menuAction()) &&
+			dm.contains(window->actionDocumentProperties) &&
+			dm.contains(window->actionReconstructGeometry) &&
+			dm.contains(window->actionUpdateGeometry));
+	QCOMPARE(window->menuMode->actions(),
+			 QList<QAction*>() << window->actionModeHSM << window->actionModeInspection);
 }
 
 void TestWindow::test_edit_action_gating()
@@ -366,15 +380,15 @@ void TestWindow::test_center_actions()
 	QVERIFY(CyberiadaSMModel::elementRect(m->idToElement("node-0-0-2"), after));
 	QVERIFY(after.almost_equal(before));
 
-	// inspection is read-only
+	// a read-only tab is not centred
 	scene->clearSelection();
 	scene->getMap().value("node-0-0-2")->setSelected(true);
 	QCoreApplication::processEvents();
-	SettingsManager::instance().setInspectorMode(true);
+	window->setDocumentReadOnly(window->currentDocument(), true);
 	QCoreApplication::processEvents();
 	QVERIFY(!window->actionCenterHorizontally->isEnabled());
 	QVERIFY(!window->actionCenterVertically->isEnabled());
-	SettingsManager::instance().setInspectorMode(false);
+	window->setDocumentReadOnly(window->currentDocument(), false);
 	QCoreApplication::processEvents();
 }
 

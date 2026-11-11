@@ -54,8 +54,20 @@ public:
 	                                                   bool round, bool skip_geometry,
 	                                                   bool check_initial, bool strict_actions,
 	                                                   bool skip_empty_behavior);
-	// the inspected or the plugin-locked document is never modified
+	// the inspected, the flagged or the plugin-locked document is never modified
 	bool                                readOnly() const;
+	// the document of an inspection tab, read and drawn as stored (EDIT-INSPECT-2):
+	// set before a load or a snapshot restore, which then skip the recovery
+	bool                                inspected() const { return m_inspected; }
+	void                                setInspected(bool on);
+	// the inspection ends: the recovery and the editing layout, as one model reset
+	// that pushes no undo step (EDIT-INSPECT-4)
+	void                                leaveInspection();
+	// the read-only flag of the tab (EDIT-MODE-4): the editing layout is kept
+	bool                                readOnlyFlag() const { return m_readOnlyFlag; }
+	void                                setReadOnlyFlag(bool on);
+	// inspected or flagged: no editor is offered, a plugin lock aside
+	bool                                readOnlyDocument() const { return m_inspected || m_readOnlyFlag; }
 	void                                saveAsDocument(const QString& path, Cyberiada::DocumentFormat f, bool round = false);
 
 	// DATA REPRESENTATION
@@ -363,6 +375,8 @@ private:
 	// set the marker of the stored regions (EDIT-NODE-15), no signal
 	void                                markRegionsStored();
 	bool                                locked = false;
+	bool                                m_inspected = false;
+	bool                                m_readOnlyFlag = false;
 	// the file identity, restored after a snapshot decode
 	QString                             filePath;
 	Cyberiada::DocumentFormat           fileFormat;
@@ -371,6 +385,11 @@ private:
 	// the greyed SM icon for a state machine not drawn on the scene (EDIT-STRUCT-11)
 	QIcon                              	grayedSMIcon;
 	QMap<Cyberiada::ElementType, QIcon> icons;
+
+signals:
+	void                                inspectedChanged(bool on);
+	// readOnlyDocument() changed
+	void                                readOnlyChanged(bool on);
 };
 
 #endif

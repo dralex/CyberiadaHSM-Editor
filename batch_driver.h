@@ -45,7 +45,8 @@ enum BatchExitCode {
 // library and no other target has to find a copy of it
 // the files open as tabs in order, the last one active (EDIT-DOC-7)
 int runGuiMode(CyberiadaSMEditorApplication& app, const QStringList& files = QStringList(),
-			   bool reconstruct = false, bool reconstruct_sm = false, bool strict = false);
+			   bool reconstruct = false, bool reconstruct_sm = false, bool strict = false,
+			   bool inspect = false);
 
 // the options of a batch run, set from the command line (see docs/TESTING.md)
 struct BatchOptions {
@@ -57,6 +58,8 @@ struct BatchOptions {
 	bool reconstruct = false;
 	bool reconstruct_sm = false;
 	bool strict = false;
+	// the document opens in an inspection tab (EDIT-MODE-6)
+	bool inspect = false;
 	Cyberiada::DocumentFormat saveFormat = Cyberiada::formatCyberiada10;
 	bool dumpTextMetrics = false;
 	bool dumpUndoStack = false;

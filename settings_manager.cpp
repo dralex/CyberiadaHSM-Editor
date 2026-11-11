@@ -290,13 +290,6 @@ void SettingsManager::setLoggingEnabled(bool value) {
     }
 }
 
-void SettingsManager::setInspectorMode(bool value) {
-    if (inspectorMode != value) {
-        inspectorMode = value;
-        emit inspectorModeChanged(value);
-    }
-}
-
 void SettingsManager::setPrintMode(bool value) {
     if (printMode != value) {
         printMode = value;

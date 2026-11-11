@@ -332,8 +332,7 @@ void CyberiadaSMEditorSubjectItem::updatePath()
 bool CyberiadaSMEditorSubjectItem::editable() const
 {
     CyberiadaSMEditorScene* sc = dynamic_cast<CyberiadaSMEditorScene*>(scene());
-    return sc && sc->getCurrentTool() == ToolType::Select && model && !model->readOnly() &&
-        !SettingsManager::instance().getInspectorMode();
+    return sc && sc->getCurrentTool() == ToolType::Select && model && !model->readOnly();
 }
 
 void CyberiadaSMEditorSubjectItem::refreshDots()
@@ -475,7 +474,7 @@ bool CyberiadaSMEditorSubjectItem::deleteSubject()
 void CyberiadaSMEditorSubjectItem::contextMenuEvent(QGraphicsSceneContextMenuEvent* event)
 {
     if (!hasSubject()) return;
-    bool editable = model && !model->readOnly() && !SettingsManager::instance().getInspectorMode();
+    bool editable = model && !model->readOnly();
     const Cyberiada::CommentSubject& s = subject();
     QMenu menu;
     QAction* remove = menu.addAction(tr("Delete Link"));

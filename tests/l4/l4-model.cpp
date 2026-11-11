@@ -411,13 +411,19 @@ void TestModel::test_fragment_reconcile()
 
 void TestModel::test_read_only()
 {
-	// the inspected document refuses every mutation, so an editing handler
-	// missing the mode check still cannot damage the file
+	// a read-only document refuses every mutation, so an editing handler missing
+	// the check still cannot damage the file (EDIT-MODE-4, EDIT-INSPECT-1)
 	QModelIndex state = indexOf("node-0");
 	QVERIFY(state.isValid());
 	QVERIFY(model->flags(state) & Qt::ItemIsEditable);
 
-	SettingsManager::instance().setInspectorMode(true);
+	// an inspected document is read-only as well
+	model->setInspected(true);
+	QVERIFY(model->readOnly() && model->readOnlyDocument());
+	model->setInspected(false);
+	QVERIFY(!model->readOnly());
+
+	model->setReadOnlyFlag(true);
 	QVERIFY(model->readOnly());
 	QString before = documentDump();
 
@@ -444,7 +450,7 @@ void TestModel::test_read_only()
 
 	QCOMPARE(documentDump(), before);
 
-	SettingsManager::instance().setInspectorMode(false);
+	model->setReadOnlyFlag(false);
 	QVERIFY(!model->readOnly());
 	QString title = QString(model->idToElement("node-0")->get_name().c_str());
 	QVERIFY(model->updateTitle(state, "Renamed"));
@@ -525,13 +531,21 @@ void TestModel::test_recover_loose_endpoint()
 	QVERIFY(qAbs(sp.x) <= 150.0 + 0.01 && qAbs(sp.y) <= 75.0 + 0.01);                 // inside the half-extents
 	QVERIFY(qAbs(qAbs(sp.x) - 150.0) < 0.01 || qAbs(qAbs(sp.y) - 75.0) < 0.01);       // and on an edge
 
-	// inspect mode is exempt: the loose point is shown as stored
-	SettingsManager::instance().setInspectorMode(true);
+	// an inspected document is exempt: the loose point is shown as stored
 	CyberiadaSMModel inspected(this);
+	inspected.setInspected(true);
 	QVERIFY(inspected.loadDocument(path));
 	const Cyberiada::Transition* it = static_cast<const Cyberiada::Transition*>(inspected.idToElement("edge-2"));
 	QVERIFY(it && qAbs(it->get_source_point().x - 300.0) < 0.01);
-	SettingsManager::instance().setInspectorMode(false);
+
+	// leaving the inspection recovers it as a load does, with no undo step (EDIT-INSPECT-4)
+	inspected.leaveInspection();
+	QVERIFY(!inspected.inspected() && !inspected.readOnly());
+	it = static_cast<const Cyberiada::Transition*>(inspected.idToElement("edge-2"));
+	QVERIFY(it && it->has_geometry_source_point());
+	Cyberiada::Point lp = it->get_source_point();
+	QVERIFY(qAbs(qAbs(lp.x) - 150.0) < 0.01 || qAbs(qAbs(lp.y) - 75.0) < 0.01);
+	QCOMPARE(inspected.undoStack()->count(), 0);
 }
 
 void TestModel::test_resize_parent_holds_children()

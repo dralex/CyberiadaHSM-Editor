@@ -41,7 +41,7 @@
 <context>
     <name>CyberiadaSMEditorDocument</name>
     <message>
-        <location filename="../cyberiadasm_editor_document.cpp" line="+119"/>
+        <location filename="../cyberiadasm_editor_document.cpp" line="+172"/>
         <source>untitled</source>
         <translation>без имени</translation>
     </message>
@@ -49,7 +49,7 @@
 <context>
     <name>CyberiadaSMEditorScene</name>
     <message>
-        <location filename="../cyberiadasm_editor_scene.cpp" line="+1165"/>
+        <location filename="../cyberiadasm_editor_scene.cpp" line="+1158"/>
         <location line="+35"/>
         <location line="+152"/>
         <location line="+35"/>
@@ -143,7 +143,7 @@
 <context>
     <name>CyberiadaSMEditorSubjectItem</name>
     <message>
-        <location filename="../cyberiadasm_editor_subject_item.cpp" line="+481"/>
+        <location filename="../cyberiadasm_editor_subject_item.cpp" line="+480"/>
         <source>Delete Link</source>
         <translation>Удалить связь с предметом комментирования</translation>
     </message>
@@ -169,7 +169,7 @@
 <context>
     <name>CyberiadaSMEditorWindow</name>
     <message>
-        <location filename="../smeditor_window.cpp" line="+132"/>
+        <location filename="../smeditor_window.cpp" line="+133"/>
         <source>Output panel</source>
         <translation>Панель вывода</translation>
     </message>
@@ -179,7 +179,7 @@
         <translation>Менеджер плагинов...</translation>
     </message>
     <message>
-        <location line="+119"/>
+        <location line="+142"/>
         <source>Close</source>
         <translation>Закрыть</translation>
     </message>
@@ -213,7 +213,7 @@
         <translation>Markdown</translation>
     </message>
     <message>
-        <location line="+124"/>
+        <location line="+228"/>
         <source>Undo</source>
         <translation>Отменить</translation>
     </message>
@@ -235,12 +235,11 @@
         <translation>Повторить: %1</translation>
     </message>
     <message>
-        <location line="+18"/>
         <source>(inspector mode)</source>
-        <translation>(режим инспектора)</translation>
+        <translation type="vanished">(режим инспектора)</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+30"/>
         <source>Unsaved changes</source>
         <translation>Несохраненные изменения</translation>
     </message>
@@ -260,12 +259,12 @@
         <translation>Выполняются плагины. Остановить их и выйти?</translation>
     </message>
     <message>
-        <location line="+111"/>
+        <location line="+110"/>
         <source>Load State Machine</source>
         <translation>Загрузка машины состояний</translation>
     </message>
     <message>
-        <location line="+50"/>
+        <location line="+51"/>
         <source>Clear list</source>
         <translation>Очистить список</translation>
     </message>
@@ -306,12 +305,12 @@
         <translation>Масштаб</translation>
     </message>
     <message>
-        <location line="+36"/>
+        <location line="+22"/>
         <source>Open Recent</source>
         <translation>Недавние файлы</translation>
     </message>
     <message>
-        <location line="+225"/>
+        <location line="+222"/>
         <source>Geometry reconstruction</source>
         <translation>Восстановление геометрии</translation>
     </message>
@@ -321,7 +320,7 @@
         <translation>Построить геометрию всей диаграммы заново? Расположение элементов будет изменено; вернуть ее можно отменой действия.</translation>
     </message>
     <message>
-        <location line="+130"/>
+        <location line="+100"/>
         <source>the plugin is %1</source>
         <translation>плагин %1</translation>
     </message>
@@ -336,17 +335,18 @@
         <translation>нет документа</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="-821"/>
+        <location line="+822"/>
         <source>a plugin is running on the document</source>
         <translation>для документа выполняется плагин</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>the inspection mode keeps the document read-only</source>
-        <translation>в режиме инспектора документ доступен только для чтения</translation>
+        <translation type="vanished">в режиме инспектора документ доступен только для чтения</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="-799"/>
+        <location line="+820"/>
         <source>the document cannot be encoded</source>
         <translation>не удалось сериализовать документ</translation>
     </message>
@@ -378,7 +378,27 @@
         <translation>Плагин: %1</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="-1107"/>
+        <source>Mode</source>
+        <translation type="unfinished">Режим</translation>
+    </message>
+    <message>
+        <location line="+35"/>
+        <source>the mode %1 is not available</source>
+        <translation type="unfinished">режим %1 недоступен</translation>
+    </message>
+    <message>
+        <location line="+836"/>
+        <source>the inspection tab is read-only</source>
+        <translation type="unfinished">вкладка инспекции доступна только для чтения</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>the tab is read-only</source>
+        <translation type="unfinished">вкладка доступна только для чтения</translation>
+    </message>
+    <message>
+        <location line="+237"/>
         <source>the document is read-only</source>
         <translation>документ доступен только для чтения</translation>
     </message>
@@ -447,7 +467,7 @@
 <context>
     <name>CyberiadaSMModel</name>
     <message>
-        <location filename="../cyberiadasm_model.cpp" line="+223"/>
+        <location filename="../cyberiadasm_model.cpp" line="+222"/>
         <source>XML graphml error:
 </source>
         <translation>Ошибка XML в файле graphml:
@@ -468,7 +488,7 @@
 </translation>
     </message>
     <message>
-        <location line="+76"/>
+        <location line="+106"/>
         <source>edit</source>
         <translation>правка</translation>
     </message>
@@ -860,7 +880,7 @@
         <translation>Тип</translation>
     </message>
     <message>
-        <location line="+40"/>
+        <location line="+39"/>
         <source>Transition</source>
         <comment>Action type</comment>
         <translation>Переход</translation>
@@ -980,7 +1000,7 @@
         <translation>yEd Berloga 1.6</translation>
     </message>
     <message>
-        <location line="+30"/>
+        <location line="+37"/>
         <source>Document</source>
         <comment>Element type</comment>
         <translation>Документ</translation>
@@ -1137,9 +1157,27 @@
         <translation>Удалить параметр</translation>
     </message>
     <message>
-        <location line="+128"/>
+        <location line="+130"/>
         <source>Edit text</source>
         <translation>Редакториовать текст</translation>
+    </message>
+</context>
+<context>
+    <name>DocumentMode</name>
+    <message>
+        <location filename="../document_mode.cpp" line="+35"/>
+        <source>inspection</source>
+        <translation type="unfinished">инспекция</translation>
+    </message>
+    <message>
+        <location line="+18"/>
+        <source>read-only</source>
+        <translation type="unfinished">только чтение</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>ro</source>
+        <translation type="unfinished">чтение</translation>
     </message>
 </context>
 <context>
@@ -1331,9 +1369,13 @@
         <translation>Документ открывается только для чтения, в точности как записан в файле</translation>
     </message>
     <message>
-        <location line="+3"/>
         <source>Open in inspector mode</source>
-        <translation>Открыть в режиме инспектора</translation>
+        <translation type="vanished">Открыть в режиме инспектора</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Open for inspection</source>
+        <translation type="unfinished">Открыть для инспекции</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -2542,7 +2584,17 @@
         <translation>Инструменты</translation>
     </message>
     <message>
-        <location line="+19"/>
+        <location line="+31"/>
+        <source>&amp;Document</source>
+        <translation type="unfinished">&amp;Документ</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Mode</source>
+        <translation type="unfinished">Режим</translation>
+    </message>
+    <message>
+        <location line="+7"/>
         <source>Language</source>
         <translatorcomment>Edit &gt; Language: the platformLanguage of the document (EDIT-TEXT-9), not the interface language</translatorcomment>
         <translation>Язык кода</translation>
@@ -2553,7 +2605,7 @@
         <translation>Разметка</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+15"/>
         <source>View</source>
         <translation>Вид</translation>
     </message>
@@ -2563,7 +2615,7 @@
         <translation>Справка</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+12"/>
         <source>Main toolbar</source>
         <translation>Основная панель</translation>
     </message>
@@ -2665,9 +2717,33 @@
         <translation>Текст переходов</translation>
     </message>
     <message>
-        <location line="+12"/>
         <source>Inspector mode</source>
-        <translation>Режим инспектора</translation>
+        <translation type="vanished">Режим инспектора</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>HSM diagram</source>
+        <translation type="unfinished">Диаграмма ПРИМС</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>HSM inspection</source>
+        <translation type="unfinished">Инспекция ПРИМС</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Inspect the document in a tab of its own, as its file stores it</source>
+        <translation type="unfinished">Инспектировать документ в отдельной вкладке, как он записан в файле</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Read-only</source>
+        <translation type="unfinished">Только чтение</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Properties...</source>
+        <translation type="unfinished">Свойства...</translation>
     </message>
     <message>
         <location line="+5"/>

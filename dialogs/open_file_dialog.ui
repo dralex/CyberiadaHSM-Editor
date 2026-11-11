@@ -27,7 +27,7 @@
          <string>The document opens read-only, exactly as written in the file</string>
         </property>
         <property name="text">
-         <string>Open in inspector mode</string>
+         <string>Open for inspection</string>
         </property>
        </widget>
       </item>

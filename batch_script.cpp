@@ -818,10 +818,12 @@ static bool runSettingVerb(const QStringList& tokens, QString* error)
 	return true;
 }
 
-// the document verbs (EDIT-DOC-9): the tab line as the GUI drives it
+// the document verbs (EDIT-DOC-9, EDIT-MODE-16): the tab line and the Document
+// menu as the GUI drives them
 static bool isDocumentVerb(const QString& cmd)
 {
-	return cmd == "open" || cmd == "new-document" || cmd == "switch" || cmd == "close";
+	return cmd == "open" || cmd == "new-document" || cmd == "switch" || cmd == "close" ||
+		cmd == "mode" || cmd == "read-only";
 }
 
 // switch/close address a tab by its index or its title
@@ -852,7 +854,33 @@ static bool runDocumentVerb(CyberiadaSMEditorWindow* win, const QStringList& tok
 		return win->openFile(tokens[1], error, reconstruct, reconstruct_sm, strict);
 	}
 	if (cmd == "new-document") {
+		// new-document [<mode>]: an untitled HSM tab, the one mode a new tab has yet
+		if (tokens.size() > 2) { *error = "new-document takes one mode at most"; return false; }
+		if (tokens.size() == 2 && tokens[1] != MODE_HSM) {
+			*error = "a new document cannot be in the mode " + tokens[1];
+			return false;
+		}
 		win->setCurrentDocument(win->newDocument());
+		return true;
+	}
+	if (cmd == "mode") {
+		// mode <id>: Document > Mode; inspection opens the inspection tab
+		if (tokens.size() != 2) { *error = "mode needs a mode"; return false; }
+		if (win->setDocumentMode(win->currentDocument(), tokens[1], error)) return true;
+		if (error->isEmpty()) *error = "the mode " + tokens[1] + " is refused";
+		return false;
+	}
+	if (cmd == "read-only") {
+		if (tokens.size() != 2 || (tokens[1] != "on" && tokens[1] != "off")) {
+			*error = "read-only requires on or off";
+			return false;
+		}
+		CyberiadaSMEditorDocument* doc = win->currentDocument();
+		if (tokens[1] == "off" && doc->traits().readOnly) {
+			*error = "the mode " + doc->mode() + " is read-only";
+			return false;
+		}
+		win->setDocumentReadOnly(doc, tokens[1] == "on");
 		return true;
 	}
 	if (cmd == "switch") {

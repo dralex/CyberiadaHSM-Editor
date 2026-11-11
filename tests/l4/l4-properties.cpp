@@ -149,7 +149,6 @@ void TestProperties::initTestCase()
 	view->setModel(model);
 	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
 	scene->loadScene();
-	SettingsManager::instance().setInspectorMode(false);
 }
 
 void TestProperties::test_rect_edit()
@@ -282,7 +281,8 @@ void TestProperties::test_inspector_mode()
 	QList<QtProperty*> sub = rows<QtRectFPropertyManager>().first()->subProperties();
 	const Cyberiada::State* state = static_cast<const Cyberiada::State*>(model->idToElement("node-0-0-1"));
 
-	SettingsManager::instance().setInspectorMode(true);
+	// the read-only flag of the tab; an inspected document alike
+	model->setReadOnlyFlag(true);
 	QVERIFY(!view->createEditor(sub.at(0), view));
 	setDouble(sub.at(0), 0);
 	QCOMPARE(state->get_geometry_rect().x, -100.0f);
@@ -291,7 +291,11 @@ void TestProperties::test_inspector_mode()
 	QtProperty* point = rows<QtPointFPropertyManager>().first();
 	QVERIFY(!view->createEditor(point->subProperties().at(0), view));
 
-	SettingsManager::instance().setInspectorMode(false);
+	model->setReadOnlyFlag(false);
+	QVERIFY(view->createEditor(point->subProperties().at(0), view));
+	model->setInspected(true);
+	QVERIFY(!view->createEditor(point->subProperties().at(0), view));
+	model->setInspected(false);
 	QVERIFY(view->createEditor(point->subProperties().at(0), view));
 	select("node-0-0-1");
 	sub = rows<QtRectFPropertyManager>().first()->subProperties();
@@ -450,7 +454,6 @@ void TestProperties::test_multiline_edit()
 // plain parameter keeps the line edit, and a multiline value round-trips (EDIT-TEXT-10)
 void TestProperties::test_meta_description_multiline()
 {
-	SettingsManager::instance().setInspectorMode(false);
 	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
 	scene->loadScene();
 	const Cyberiada::LocalDocument* doc = model->rootDocument();
