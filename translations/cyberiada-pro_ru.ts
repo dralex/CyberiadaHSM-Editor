@@ -380,22 +380,22 @@
     <message>
         <location line="-1107"/>
         <source>Mode</source>
-        <translation type="unfinished">Режим</translation>
+        <translation>Режим</translation>
     </message>
     <message>
         <location line="+35"/>
         <source>the mode %1 is not available</source>
-        <translation type="unfinished">режим %1 недоступен</translation>
+        <translation>режим %1 недоступен</translation>
     </message>
     <message>
         <location line="+836"/>
         <source>the inspection tab is read-only</source>
-        <translation type="unfinished">вкладка инспекции доступна только для чтения</translation>
+        <translation>вкладка инспекции доступна только для чтения</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>the tab is read-only</source>
-        <translation type="unfinished">вкладка доступна только для чтения</translation>
+        <translation>вкладка доступна только для чтения</translation>
     </message>
     <message>
         <location line="+237"/>
@@ -1167,17 +1167,17 @@
     <message>
         <location filename="../document_mode.cpp" line="+35"/>
         <source>inspection</source>
-        <translation type="unfinished">инспекция</translation>
+        <translation>инспекция</translation>
     </message>
     <message>
         <location line="+18"/>
         <source>read-only</source>
-        <translation type="unfinished">только чтение</translation>
+        <translation>только чтение</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>ro</source>
-        <translation type="unfinished">чтение</translation>
+        <translation>только чтение</translation>
     </message>
 </context>
 <context>
@@ -1375,7 +1375,7 @@
     <message>
         <location line="+3"/>
         <source>Open for inspection</source>
-        <translation type="unfinished">Открыть для инспекции</translation>
+        <translation>Открыть для инспекции</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -1485,12 +1485,12 @@
     <message>
         <location line="+3"/>
         <source>the document is not in a git repository</source>
-        <translation type="unfinished">документ не находится в репозитории git</translation>
+        <translation>документ не находится в репозитории git</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>the document is in a git repository</source>
-        <translation type="unfinished">документ находится в репозитории git</translation>
+        <translation>документ находится в репозитории git</translation>
     </message>
     <message>
         <location line="+9"/>
@@ -2586,12 +2586,12 @@
     <message>
         <location line="+31"/>
         <source>&amp;Document</source>
-        <translation type="unfinished">&amp;Документ</translation>
+        <translation>&amp;Документ</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>Mode</source>
-        <translation type="unfinished">Режим</translation>
+        <translation>Режим</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -2723,27 +2723,27 @@
     <message>
         <location line="+8"/>
         <source>HSM diagram</source>
-        <translation type="unfinished">Диаграмма ПРИМС</translation>
+        <translation>Диаграмма ПРИМС</translation>
     </message>
     <message>
         <location line="+12"/>
         <source>HSM inspection</source>
-        <translation type="unfinished">Инспекция ПРИМС</translation>
+        <translation>Инспекция ПРИМС</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Inspect the document in a tab of its own, as its file stores it</source>
-        <translation type="unfinished">Инспектировать документ в отдельной вкладке, как он записан в файле</translation>
+        <translation>Открыть документ для инспекции в отдельной вкладке, как он записан в файле</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>Read-only</source>
-        <translation type="unfinished">Только чтение</translation>
+        <translation>Только чтение</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>Properties...</source>
-        <translation type="unfinished">Свойства...</translation>
+        <translation>Свойства документа...</translation>
     </message>
     <message>
         <location line="+5"/>
