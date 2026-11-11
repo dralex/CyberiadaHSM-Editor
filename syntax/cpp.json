@@ -1,6 +1,7 @@
 {
     "name": "C++",
     "aliases": ["cpp", "c++11", "c++14", "c++17", "c++20", "cxx", "arduino"],
+    "extensions": [".cpp", ".cxx", ".cc", ".h", ".hpp", ".hh", ".ino"],
     "lineComment": "//",
     "blockComment": ["/*", "*/"],
     "quotes": "\"'",

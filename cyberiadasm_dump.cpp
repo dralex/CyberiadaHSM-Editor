@@ -31,7 +31,10 @@
 #include <QStringList>
 #include <QLineF>
 
+#include <QFileInfo>
+
 #include "cyberiadasm_dump.h"
+#include "text_document.h"
 #include "cyberiadasm_editor_subject_item.h"
 #include "plugin_runner.h"
 #include <algorithm>
@@ -290,13 +293,26 @@ void dumpTabs(CyberiadaSMEditorWindow* win, std::ostream& os)
 {
 	os << "count: " << win->documentCount() << std::endl;
 	for (int i = 0; i < win->documentCount(); i++) {
-		CyberiadaSMEditorDocument* doc = win->documentAt(i);
+		EditorDocument* doc = win->tabAt(i);
 		os << i << " " << doc->title().toStdString() << (doc->isClean() ? "" : "*");
 		// the mode and the flag (EDIT-MODE-16)
 		os << " " << doc->mode().toStdString() << (doc->readOnlyFlag() ? " ro" : "");
-		if (doc == win->currentDocument()) os << " active";
+		if (doc == win->currentTab()) os << " active";
 		os << std::endl;
 	}
+}
+
+void dumpTextDocument(const TextDocument* doc, std::ostream& os)
+{
+	os << "mode: " << doc->mode().toStdString() << std::endl;
+	os << "file: " << (doc->hasFile() ? QFileInfo(doc->filePath()).fileName().toStdString() : "-")
+	   << std::endl;
+	os << "modified: " << (doc->isClean() ? "no" : "yes") << std::endl;
+	os << "rendered: " << (doc->showsRendered() ? "yes" : "no") << std::endl;
+	// the lines as they are, each after a bar so an empty one shows
+	const QStringList lines = doc->text().split('\n');
+	os << "lines: " << lines.size() << std::endl;
+	for (const QString& line : lines) os << "| " << line.toStdString() << std::endl;
 }
 
 void dumpPlugins(const QList<PluginEntry>& entries, std::ostream& os)

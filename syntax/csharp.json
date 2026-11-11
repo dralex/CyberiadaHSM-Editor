@@ -1,6 +1,7 @@
 {
     "name": "C#",
     "aliases": ["csharp", "cs", "c#.net"],
+    "extensions": [".cs"],
     "lineComment": "//",
     "blockComment": ["/*", "*/"],
     "quotes": "\"'",

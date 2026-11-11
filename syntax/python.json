@@ -1,6 +1,7 @@
 {
     "name": "Python",
     "aliases": ["python3", "py", "py3", "micropython"],
+    "extensions": [".py", ".pyw"],
     "lineComment": "#",
     "quotes": "\"'",
     "keywords": ["and", "as", "assert", "async", "await", "break", "class", "continue", "def",

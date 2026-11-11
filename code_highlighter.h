@@ -69,8 +69,12 @@ struct CodeSpan {
 
 // one rule set of syntax/<language>.json
 struct CodeLanguage {
+    // the file name without .json: the id of its text mode (EDIT-MODE-1)
+    QString id;
     QString name;
     QStringList aliases;
+    // the file extensions of its sources, lower case with the dot (EDIT-MODE-13)
+    QStringList extensions;
     QString lineComment;
     QString blockOpen;
     QString blockClose;
@@ -97,6 +101,10 @@ public:
     // null for an empty or unknown value
     const CodeLanguage* find(const QString& name) const;
     QStringList languages() const;
+    // the language of a mode id, of a file extension (".cpp", any case); null without one
+    const CodeLanguage* findId(const QString& id) const;
+    const CodeLanguage* forExtension(const QString& extension) const;
+    QStringList ids() const;
     // the language to draw with, null when the switches make the text plain
     const CodeLanguage* effective(const CodeLanguage* lang) const;
     bool isActive() const;

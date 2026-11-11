@@ -832,13 +832,13 @@ static bool isDocumentVerb(const QString& cmd)
 }
 
 // switch/close address a tab by its index or its title
-static CyberiadaSMEditorDocument* documentByToken(CyberiadaSMEditorWindow* win, const QString& token)
+static EditorDocument* documentByToken(CyberiadaSMEditorWindow* win, const QString& token)
 {
 	bool isIndex = false;
 	int index = token.toInt(&isIndex);
-	if (isIndex) return win->documentAt(index);
+	if (isIndex) return win->tabAt(index);
 	for (int i = 0; i < win->documentCount(); i++) {
-		if (win->documentAt(i)->title() == token) return win->documentAt(i);
+		if (win->tabAt(i)->title() == token) return win->tabAt(i);
 	}
 	return nullptr;
 }
@@ -859,8 +859,12 @@ static bool runDocumentVerb(CyberiadaSMEditorWindow* win, const QStringList& tok
 		return win->openFile(tokens[1], error, reconstruct, reconstruct_sm, strict);
 	}
 	if (cmd == "new-document") {
-		// new-document [hsm|fa]: an untitled tab, File > New (EDIT-MODE-5)
+		// new-document [hsm|fa|<text mode>]: an untitled tab, File > New (EDIT-MODE-5/13)
 		if (tokens.size() > 2) { *error = "new-document takes one mode at most"; return false; }
+		if (tokens.size() == 2 && isTextMode(tokens[1])) {
+			win->setCurrentDocument(win->newTextDocument(tokens[1]));
+			return true;
+		}
 		if (tokens.size() == 2 && tokens[1] != MODE_HSM && tokens[1] != MODE_FA) {
 			*error = "a new document cannot be in the mode " + tokens[1];
 			return false;
@@ -873,7 +877,7 @@ static bool runDocumentVerb(CyberiadaSMEditorWindow* win, const QStringList& tok
 	if (cmd == "mode") {
 		// mode <id>: Document > Mode; inspection opens the inspection tab
 		if (tokens.size() != 2) { *error = "mode needs a mode"; return false; }
-		if (win->setDocumentMode(win->currentDocument(), tokens[1], error)) return true;
+		if (win->setDocumentMode(win->currentTab(), tokens[1], error)) return true;
 		if (error->isEmpty()) *error = "the mode " + tokens[1] + " is refused";
 		return false;
 	}
@@ -882,7 +886,7 @@ static bool runDocumentVerb(CyberiadaSMEditorWindow* win, const QStringList& tok
 			*error = "read-only requires on or off";
 			return false;
 		}
-		CyberiadaSMEditorDocument* doc = win->currentDocument();
+		EditorDocument* doc = win->currentTab();
 		if (tokens[1] == "off" && doc->traits().readOnly) {
 			*error = "the mode " + doc->mode() + " is read-only";
 			return false;
@@ -892,7 +896,7 @@ static bool runDocumentVerb(CyberiadaSMEditorWindow* win, const QStringList& tok
 	}
 	if (cmd == "switch") {
 		if (tokens.size() != 2) { *error = "switch needs a tab index or title"; return false; }
-		CyberiadaSMEditorDocument* doc = documentByToken(win, tokens[1]);
+		EditorDocument* doc = documentByToken(win, tokens[1]);
 		if (!doc) { *error = "no document " + tokens[1]; return false; }
 		win->setCurrentDocument(doc);
 		return true;
@@ -901,7 +905,7 @@ static bool runDocumentVerb(CyberiadaSMEditorWindow* win, const QStringList& tok
 	bool discard = tokens.last() == "discard" && tokens.size() > 1;
 	int args = tokens.size() - (discard ? 2 : 1);
 	if (args > 1) { *error = "close takes a tab and the discard word at most"; return false; }
-	CyberiadaSMEditorDocument* doc = args == 1 ? documentByToken(win, tokens[1]) : win->currentDocument();
+	EditorDocument* doc = args == 1 ? documentByToken(win, tokens[1]) : win->currentTab();
 	if (!doc) { *error = "no document " + tokens[1]; return false; }
 	if (!doc->isClean() && !discard) {
 		*error = QString("document %1 has unsaved changes (close ... discard drops them)").arg(doc->title());
@@ -938,6 +942,11 @@ bool runEditScript(CyberiadaSMEditorWindow* win, const QString& path, QString* e
 		bool docVerb = isDocumentVerb(cmd);
 		bool step = !docVerb && !isSettingVerb(cmd) && cmd != "undo" && cmd != "redo" &&
 			!isGesture(cmd);
+		// a text tab takes the document and the setting verbs only (EDIT-MODE-16)
+		if (!model && !docVerb && !isSettingVerb(cmd)) {
+			*error = QString("line %1: the active tab holds no diagram").arg(lineno);
+			return false;
+		}
 		if (step) model->beginUndoStep(cmd);
 		try {
 			if (docVerb) {

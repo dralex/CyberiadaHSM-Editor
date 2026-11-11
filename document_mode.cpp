@@ -22,27 +22,84 @@
  * ----------------------------------------------------------------------------- */
 
 #include <QCoreApplication>
+#include <QFileInfo>
 #include <QStringList>
 
 #include "document_mode.h"
+#include "code_highlighter.h"
 
 const char* const MODE_HSM = "hsm";
 const char* const MODE_INSPECTION = "inspection";
 const char* const MODE_FA = "fa";
+const char* const MODE_TEXT = "text";
+const char* const MODE_MARKDOWN = "markdown";
 
 static const ModeTraits modes[] = {
-    // id               marker                                     readOnly storedGeometry faTools
-    { MODE_HSM,        "",                                           false, false, false },
-    { MODE_INSPECTION, QT_TRANSLATE_NOOP("DocumentMode", "inspection"), true, true, false },
-    { MODE_FA,         QT_TRANSLATE_NOOP("DocumentMode", "FA"),     false, false, true },
+    // id               marker                                     readOnly stored faTools text
+    { MODE_HSM,        "",                                           false, false, false, false },
+    { MODE_INSPECTION, QT_TRANSLATE_NOOP("DocumentMode", "inspection"), true, true, false, false },
+    { MODE_FA,         QT_TRANSLATE_NOOP("DocumentMode", "FA"),     false, false, true, false },
+    { MODE_TEXT,       QT_TRANSLATE_NOOP("DocumentMode", "text"),   false, false, false, true },
+    { MODE_MARKDOWN,   "Markdown",                                   false, false, false, true },
 };
+// a language: the marker is its name
+static const ModeTraits languageTraits = { "", "", false, false, false, true };
 
 const ModeTraits& modeTraits(const QString& id)
 {
     for (const ModeTraits& traits : modes) {
         if (id == traits.id) return traits;
     }
+    if (CodeStyle::instance().findId(id)) return languageTraits;
     return modes[0];
+}
+
+bool isTextMode(const QString& id)
+{
+    return modeTraits(id).text;
+}
+
+QStringList textModes()
+{
+    return QStringList() << MODE_TEXT << MODE_MARKDOWN << CodeStyle::instance().ids();
+}
+
+QString modeName(const QString& id)
+{
+    if (id == MODE_HSM) return QCoreApplication::translate("DocumentMode", "HSM diagram");
+    if (id == MODE_INSPECTION) return QCoreApplication::translate("DocumentMode", "HSM inspection");
+    if (id == MODE_FA) return QCoreApplication::translate("DocumentMode", "FA diagram");
+    if (id == MODE_TEXT) return QCoreApplication::translate("DocumentMode", "Plain text");
+    if (id == MODE_MARKDOWN) return QStringLiteral("Markdown");
+    const CodeLanguage* lang = CodeStyle::instance().findId(id);
+    return lang ? lang->name : id;
+}
+
+QString modeForFile(const QString& path)
+{
+    QString suffix = QFileInfo(path).suffix().toLower();
+    if (suffix == "graphml") return MODE_HSM;
+    if (suffix == "md" || suffix == "markdown") return MODE_MARKDOWN;
+    const CodeLanguage* lang = CodeStyle::instance().forExtension("." + suffix);
+    return lang ? lang->id : QString(MODE_TEXT);
+}
+
+QString modeExtension(const QString& id)
+{
+    if (id == MODE_MARKDOWN) return ".md";
+    const CodeLanguage* lang = CodeStyle::instance().findId(id);
+    if (lang && !lang->extensions.isEmpty()) return lang->extensions.first();
+    return isTextMode(id) ? ".txt" : ".graphml";
+}
+
+QString textFilePatterns()
+{
+    QStringList patterns;
+    patterns << "*.txt" << "*.md";
+    for (const QString& id : CodeStyle::instance().ids()) {
+        for (const QString& e : CodeStyle::instance().findId(id)->extensions) patterns << "*" + e;
+    }
+    return patterns.join(' ');
 }
 
 bool modeHasTool(const QString& mode, ToolType tool)
@@ -67,7 +124,8 @@ QString modeMarker(const QString& mode, bool readOnlyFlag, bool window)
 {
     const ModeTraits& traits = modeTraits(mode);
     QStringList parts;
-    if (*traits.marker) parts << QCoreApplication::translate("DocumentMode", traits.marker);
+    if (&traits == &languageTraits) parts << modeName(mode);
+    else if (*traits.marker) parts << QCoreApplication::translate("DocumentMode", traits.marker);
     // a read-only mode needs no flag in its marker
     if (readOnlyFlag && !traits.readOnly) {
         parts << (window ? QCoreApplication::translate("DocumentMode", "read-only")

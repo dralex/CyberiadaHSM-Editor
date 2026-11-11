@@ -88,7 +88,7 @@ static int runPluginStage(CyberiadaSMEditorWindow& win, const BatchOptions& opti
 	}
 	PluginValues values;
 	QString error;
-	PluginDocumentPaths paths = pluginDocumentPaths(win.currentDocument()->filePath());
+	PluginDocumentPaths paths = pluginDocumentPaths(win.currentTab()->filePath());
 	if (!pluginParseValues(plugin, **action, options.pluginParams, paths, &values, &error)) {
 		fprintf(stderr, "%s\n", qPrintable(error));
 		return batchUsageError;
@@ -181,6 +181,27 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const BatchOptions& options)
 	if (options.dumpTabsLine) {
 		std::cout << "== tabs" << std::endl;
 		dumpTabs(&win, std::cout);
+	}
+
+	// a text tab has its text and no diagram to dump, draw or save as one (EDIT-MODE-16)
+	if (TextDocument* text = win.currentText()) {
+		if (options.dump) {
+			std::cout << "== text" << std::endl;
+			dumpTextDocument(text, std::cout);
+		}
+		if (!options.exportImage.isEmpty() || options.dumpAudit || options.dumpTextMetrics ||
+			options.dumpUndoStack) {
+			fprintf(stderr, "the active tab holds no diagram\n");
+			return batchUsageError;
+		}
+		if (!options.save.isEmpty()) {
+			QString save_error;
+			if (!text->saveAs(options.save, &save_error)) {
+				fprintf(stderr, "cannot save %s\n%s\n", qPrintable(options.save), qPrintable(save_error));
+				return batchInternalError;
+			}
+		}
+		return pluginCode;
 	}
 
 	if (options.dump) {

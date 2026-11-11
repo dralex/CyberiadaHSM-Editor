@@ -1,0 +1,23 @@
+== tabs
+count: 1
+0 blink.cpp cpp active
+== text
+mode: cpp
+file: blink.cpp
+modified: no
+rendered: no
+lines: 14
+| // the blinking LED of the Arduino course
+| #include <Arduino.h>
+| 
+| void setup() {
+|     pinMode(LED_BUILTIN, OUTPUT);
+| }
+| 
+| void loop() {
+|     digitalWrite(LED_BUILTIN, HIGH);
+|     delay(500);
+|     digitalWrite(LED_BUILTIN, LOW);
+|     delay(500);
+| }
+| 

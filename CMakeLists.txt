@@ -140,6 +140,8 @@ add_library(CyberiadaEditorCore STATIC
   smeditor_window.cpp
   document_mode.h document_mode.cpp
   editor_document.h editor_document.cpp
+  text_document.h text_document.cpp
+  code_editor.h code_editor.cpp
   cyberiadasm_editor_document.cpp
   cyberiadasm_properties_widget.cpp
   cyberiadasm_editor_view.cpp

@@ -28,6 +28,7 @@
 #include <QMenuBar>
 #include <QPushButton>
 #include "smeditor_window.h"
+#include "code_highlighter.h"
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_editor_scene.h"
 #include "cyberiadasm_properties_widget.h"
@@ -80,6 +81,9 @@ void TestTranslation::collect(const QList<QAction*>& actions, const QString& pat
 	for (int i = 0; i < actions.size(); i++) {
 		QAction* a = actions.at(i);
 		if (a->isSeparator() || a->text().isEmpty()) continue;
+		// Markdown and the languages are names, as in Document > Language
+		QString mode = a->data().toString();
+		if (mode == MODE_MARKDOWN || CodeStyle::instance().findId(mode)) continue;
 		QString place = QString("%1/%2").arg(path).arg(i);
 		texts.insert(place, a->text());
 		// the code and the markup languages are names, the same in every language

@@ -42,6 +42,7 @@
 #include <QEventLoop>
 
 #include "smeditor_window.h"
+#include "code_editor.h"
 #include "cyberiadasm_editor_view.h"
 #include "cyberiadasm_editor_subject_item.h"
 #include "myassert.h"
@@ -176,9 +177,8 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     updateTitle();   // start as a clean "untitled" document
 }
 
-CyberiadaSMEditorDocument* CyberiadaSMEditorWindow::newDocument()
+void CyberiadaSMEditorWindow::addTab(EditorDocument* doc)
 {
-    CyberiadaSMEditorDocument* doc = new CyberiadaSMEditorDocument(this);
     documents.append(doc);
     documentStack->addWidget(doc->page());
     undoGroup->addStack(doc->undoStack());
@@ -188,8 +188,22 @@ CyberiadaSMEditorDocument* CyberiadaSMEditorWindow::newDocument()
         documentTabs->addTab(doc->title());
     }
     updateTabTitle(doc);
-    connect(doc->model()->undoStack(), &QUndoStack::cleanChanged, this,
+    connect(doc->undoStack(), &QUndoStack::cleanChanged, this,
             [this, doc](bool) { updateTabTitle(doc); });
+    connect(doc, &EditorDocument::titleChanged, this,
+            [this, doc]() {
+                updateTabTitle(doc);
+                // a Save As of an unmodified document changes the file, not the clean state
+                if (doc == active) { updateTitle(); updatePluginActions(); }
+            });
+    connect(doc, &EditorDocument::modeChanged, this, [this, doc]() { documentStateChanged(doc); });
+    connect(doc, &EditorDocument::readOnlyChanged, this, [this, doc]() { documentStateChanged(doc); });
+}
+
+CyberiadaSMEditorDocument* CyberiadaSMEditorWindow::newDocument()
+{
+    CyberiadaSMEditorDocument* doc = new CyberiadaSMEditorDocument(this);
+    addTab(doc);
     // the per-document signals reach the window from the active document only
     connect(doc->scene(), &QGraphicsScene::selectionChanged, this,
             [this, doc]() { if (doc == current) updateEditActions(); });
@@ -197,14 +211,6 @@ CyberiadaSMEditorDocument* CyberiadaSMEditorWindow::newDocument()
             [this, doc](ToolType tool) { if (doc == current) slotSceneToolChanged(tool); });
     connect(doc->view(), &CyberiadaSMGraphicsView::scaleChanged, this,
             [this, doc](qreal scale) { if (doc == current) slotZoomScaleChanged(scale); });
-    connect(doc, &CyberiadaSMEditorDocument::titleChanged, this,
-            [this, doc]() {
-                updateTabTitle(doc);
-                // a Save As of an unmodified document changes the file, not the clean state
-                if (doc == current) { updateTitle(); updatePluginActions(); }
-            });
-    connect(doc, &EditorDocument::modeChanged, this, [this, doc]() { documentStateChanged(doc); });
-    connect(doc, &EditorDocument::readOnlyChanged, this, [this, doc]() { documentStateChanged(doc); });
     connect(doc->scene(), &CyberiadaSMEditorScene::codeLanguageChanged, this,
             [this, doc]() { if (doc == current) syncChoiceMenus(); });
     connect(doc->scene(), &CyberiadaSMEditorScene::markupLanguageChanged, this,
@@ -212,7 +218,42 @@ CyberiadaSMEditorDocument* CyberiadaSMEditorWindow::newDocument()
     return doc;
 }
 
-void CyberiadaSMEditorWindow::updateTabTitle(CyberiadaSMEditorDocument* doc)
+TextDocument* CyberiadaSMEditorWindow::newTextDocument(const QString& mode)
+{
+    TextDocument* doc = new TextDocument(isTextMode(mode) ? mode : QString(MODE_TEXT), this);
+    addTab(doc);
+    // the selection drives Cut and Copy
+    connect(doc->editor(), &QPlainTextEdit::copyAvailable, this,
+            [this, doc](bool) { if (doc == active) updateEditActions(); });
+    return doc;
+}
+
+bool CyberiadaSMEditorWindow::openTextFile(const QString& fileName, QString* error)
+{
+    QString absolute = QFileInfo(fileName).absoluteFilePath();
+    // an open file is activated, not loaded twice (EDIT-DOC-2)
+    for (EditorDocument* doc : documents) {
+        if (qobject_cast<TextDocument*>(doc) && doc->filePath() == absolute) {
+            setCurrentDocument(doc);
+            return true;
+        }
+    }
+    // a clean untitled tab gives way to the file, as Open does
+    EditorDocument* untitled = nullptr;
+    if (current && current->isUntitled()) untitled = current;
+    if (currentText() && currentText()->isUntitled()) untitled = currentText();
+    TextDocument* doc = newTextDocument(modeForFile(fileName));
+    if (!doc->load(fileName, error)) {
+        closeDocument(doc, true);
+        return false;
+    }
+    setCurrentDocument(doc);
+    if (untitled) closeDocument(untitled, true);
+    SettingsManager::instance().addRecentFile(absolute);
+    return true;
+}
+
+void CyberiadaSMEditorWindow::updateTabTitle(EditorDocument* doc)
 {
     int i = documents.indexOf(doc);
     if (i < 0) return;
@@ -220,10 +261,10 @@ void CyberiadaSMEditorWindow::updateTabTitle(CyberiadaSMEditorDocument* doc)
     documentTabs->setTabToolTip(i, doc->filePath());
 }
 
-void CyberiadaSMEditorWindow::documentStateChanged(CyberiadaSMEditorDocument* doc)
+void CyberiadaSMEditorWindow::documentStateChanged(EditorDocument* doc)
 {
     updateTabTitle(doc);
-    if (doc != current) return;
+    if (doc != active) return;
     updateTitle();
     updateEditActions();
 }
@@ -232,8 +273,9 @@ CyberiadaSMEditorDocument* CyberiadaSMEditorWindow::findDocument(const QString& 
                                                                  bool inspection) const
 {
     QString absolute = QFileInfo(fileName).absoluteFilePath();
-    for (CyberiadaSMEditorDocument* doc : documents) {
-        if (doc->hasFile() && QFileInfo(doc->filePath()).absoluteFilePath() == absolute &&
+    for (EditorDocument* tab : documents) {
+        CyberiadaSMEditorDocument* doc = qobject_cast<CyberiadaSMEditorDocument*>(tab);
+        if (doc && doc->hasFile() && QFileInfo(doc->filePath()).absoluteFilePath() == absolute &&
             (doc->mode() == MODE_INSPECTION) == inspection) {
             return doc;
         }
@@ -253,26 +295,27 @@ void CyberiadaSMEditorWindow::closeTab(int index)
 
 void CyberiadaSMEditorWindow::slotFileClose()
 {
-    closeDocument(current);
+    closeDocument(active);
 }
 
 void CyberiadaSMEditorWindow::slotNextDocument()
 {
     int n = documents.size();
-    if (n > 1) activateDocument((documents.indexOf(current) + 1) % n);
+    if (n > 1) activateDocument((documents.indexOf(active) + 1) % n);
 }
 
 void CyberiadaSMEditorWindow::slotPreviousDocument()
 {
     int n = documents.size();
-    if (n > 1) activateDocument((documents.indexOf(current) + n - 1) % n);
+    if (n > 1) activateDocument((documents.indexOf(active) + n - 1) % n);
 }
 
-bool CyberiadaSMEditorWindow::closeDocument(CyberiadaSMEditorDocument* doc, bool discard)
+bool CyberiadaSMEditorWindow::closeDocument(EditorDocument* doc, bool discard)
 {
     if (!doc) return false;
+    CyberiadaSMEditorDocument* diagram = qobject_cast<CyberiadaSMEditorDocument*>(doc);
     // a running plugin is cancelled with its document (EDIT-PLUG-23)
-    if (doc->pluginRun() && !discard && !qApp->property("batchMode").toBool() &&
+    if (diagram && diagram->pluginRun() && !discard && !qApp->property("batchMode").toBool() &&
         QMessageBox::question(this, tr("Close"),
                               tr("A plugin is running on %1. Cancel it and close?").arg(doc->title()),
                               QMessageBox::Yes | QMessageBox::No) != QMessageBox::Yes) {
@@ -282,9 +325,9 @@ bool CyberiadaSMEditorWindow::closeDocument(CyberiadaSMEditorDocument* doc, bool
     // the window always holds a document: the last one gives way to a fresh untitled
     if (documents.size() == 1) setCurrentDocument(newDocument());
     int i = documents.indexOf(doc);
-    if (doc == current) {
+    if (doc == active) {
         // the right neighbour takes over, else the left one
-        CyberiadaSMEditorDocument* next = documents.value(i + 1, nullptr);
+        EditorDocument* next = documents.value(i + 1, nullptr);
         if (!next) next = documents.value(i - 1, nullptr);
         setCurrentDocument(next);
     }
@@ -296,7 +339,7 @@ bool CyberiadaSMEditorWindow::closeDocument(CyberiadaSMEditorDocument* doc, bool
     documentStack->removeWidget(doc->page());
     undoGroup->removeStack(doc->undoStack());
     // the result of a closed document is never applied (EDIT-PLUG-23)
-    if (doc->pluginRun()) doc->pluginRun()->abort();
+    if (diagram && diagram->pluginRun()) diagram->pluginRun()->abort();
     delete doc;
     return true;
 }
@@ -305,6 +348,8 @@ bool CyberiadaSMEditorWindow::openFile(const QString& fileName, QString* error,
                                        bool reconstruct, bool reconstruct_sm, bool strict,
                                        bool inspect)
 {
+    // a text file opens in a text tab of the mode its extension names (EDIT-MODE-13)
+    if (modeForFile(fileName) != MODE_HSM) return openTextFile(fileName, error);
     // an open file is activated, not loaded twice; its editing and its inspection
     // tab are counted apart (EDIT-DOC-2, EDIT-MODE-6)
     if (CyberiadaSMEditorDocument* open = findDocument(fileName, inspect)) {
@@ -313,7 +358,7 @@ bool CyberiadaSMEditorWindow::openFile(const QString& fileName, QString* error,
     }
     // a clean untitled active document takes the file, anything else gets a new tab
     CyberiadaSMEditorDocument* fresh = nullptr;
-    if (!current->isUntitled()) {
+    if (!current || !current->isUntitled()) {
         fresh = newDocument();
         setCurrentDocument(fresh);
     }
@@ -339,42 +384,71 @@ bool CyberiadaSMEditorWindow::openFiles(const QStringList& fileNames, QString* e
     return ok;
 }
 
-void CyberiadaSMEditorWindow::setCurrentDocument(CyberiadaSMEditorDocument* doc)
+void CyberiadaSMEditorWindow::setCurrentDocument(EditorDocument* tab)
 {
-    if (!doc || doc == current) return;
-    bool switched = (current != nullptr);
+    if (!tab || tab == active) return;
+    bool switched = (active != nullptr);
     if (current) unbindDocument(current);
-    current = doc;
-    sceneView = doc->view();
-    documentStack->setCurrentWidget(doc->page());
+    active = tab;
+    current = qobject_cast<CyberiadaSMEditorDocument*>(tab);
+    documentStack->setCurrentWidget(tab->page());
     {
         QSignalBlocker block(documentTabs);
-        documentTabs->setCurrentIndex(documents.indexOf(doc));
+        documentTabs->setCurrentIndex(documents.indexOf(tab));
     }
+    undoGroup->setActiveStack(tab->undoStack());
+    // a text tab has no canvas, no structure and no element tools (EDIT-MODE-15)
+    showDiagramParts(current != nullptr);
 
-    CyberiadaSMModel* m = doc->model();
-    SMView->setModel(m);
-    SMView->setRootIndex(m->rootIndex());
-    propertiesWidget->setModel(m);
-    propertiesWidget->setScene(doc->scene());
-    undoGroup->setActiveStack(m->undoStack());
-    bindDocument(doc);
-
-    // the armed tool and the zoom follow; the tool goes to the scene directly,
-    // so the session log gets no tool line
-    doc->scene()->setCurrentTool(currentTool);
-    sceneView->setCurrentTool(currentTool);
-    slotZoomScaleChanged(sceneView->currentScale());
-    expandAndWidenTree();
+    if (CyberiadaSMEditorDocument* doc = current) {
+        sceneView = doc->view();
+        CyberiadaSMModel* m = doc->model();
+        SMView->setModel(m);
+        SMView->setRootIndex(m->rootIndex());
+        propertiesWidget->setModel(m);
+        propertiesWidget->setScene(doc->scene());
+        bindDocument(doc);
+        // the armed tool and the zoom follow; the tool goes to the scene directly,
+        // so the session log gets no tool line
+        doc->scene()->setCurrentTool(currentTool);
+        sceneView->setCurrentTool(currentTool);
+        slotZoomScaleChanged(sceneView->currentScale());
+        expandAndWidenTree();
+    } else {
+        // no index of a background model stays linked (docs/WINDOW.md)
+        sceneView = nullptr;
+        SMView->setModel(nullptr);
+        propertiesWidget->detachModel();
+    }
     updateTitle();
     updateEditActions();
     syncChoiceMenus();
-    // a log session is bound to one document: a switch starts a new one
+    // a log session is bound to one diagram: a switch starts a new one
     if (switched && GestureLog::instance().isActive()) {
         GestureLog::instance().endSession();
-        GestureLog::instance().startSession(m);
+        if (current) GestureLog::instance().startSession(current->model());
     }
     QTimer::singleShot(0, this, &CyberiadaSMEditorWindow::restoreSavedView);
+}
+
+void CyberiadaSMEditorWindow::showDiagramParts(bool on)
+{
+    if (!on) {
+        if (elementToolBar->isVisible()) {
+            elementToolBar->hide();
+            elementBarHidden = true;
+        }
+        for (QToolBar* bar : toolOptionBars) bar->hide();
+    } else {
+        if (elementBarHidden) elementToolBar->show();
+        elementBarHidden = false;
+        for (auto i = toolOptionBars.constBegin(); i != toolOptionBars.constEnd(); i++) {
+            i.value()->setVisible(i.key() == currentTool);
+        }
+    }
+    const QList<QAction*> zooms = QList<QAction*>() << actionZoomIn << actionZoomOut
+                                                    << actionFitContent << actionZoomToSM;
+    for (QAction* zoom : zooms) zoom->setEnabled(on);
 }
 
 void CyberiadaSMEditorWindow::bindDocument(CyberiadaSMEditorDocument* doc)
@@ -444,9 +518,28 @@ void CyberiadaSMEditorWindow::initDocumentMenu()
     modeGroup->addAction(actionModeHSM);
     modeGroup->addAction(actionModeInspection);
     modeGroup->addAction(actionModeFA);
+    // the text modes: Plain text, Markdown, Code > the languages (EDIT-MODE-3/13)
+    menuMode->addSeparator();
+    QMenu* code = nullptr;
+    QMenu* newText = menuNew->addMenu(tr("Text file"));
+    newText->setObjectName("menuNewText");
+    for (const QString& mode : textModes()) {
+        bool language = mode != MODE_TEXT && mode != MODE_MARKDOWN;
+        if (language && !code) {
+            code = menuMode->addMenu(tr("Code"));
+            code->setObjectName("menuModeCode");
+        }
+        QAction* action = (language ? code : menuMode)->addAction(modeName(mode));
+        action->setCheckable(true);
+        action->setData(mode);
+        modeGroup->addAction(action);
+        QAction* create = newText->addAction(modeName(mode));
+        create->setData(mode);
+        connect(create, &QAction::triggered, this, [this, mode]() { slotFileNewText(mode); });
+    }
     connect(modeGroup, &QActionGroup::triggered, this, [this](QAction* action) {
         QString error;
-        if (current && !setDocumentMode(current, action->data().toString(), &error) &&
+        if (active && !setDocumentMode(active, action->data().toString(), &error) &&
             !error.isEmpty() && !qApp->property("batchMode").toBool()) {
             QMessageBox::warning(this, tr("Mode"), error);
         }
@@ -454,7 +547,7 @@ void CyberiadaSMEditorWindow::initDocumentMenu()
         updateModeActions();
     });
     connect(actionReadOnly, &QAction::triggered, this, [this](bool on) {
-        if (current) setDocumentReadOnly(current, on);
+        if (active) setDocumentReadOnly(active, on);
         updateModeActions();
     });
     connect(actionDocumentProperties, &QAction::triggered,
@@ -470,24 +563,41 @@ void CyberiadaSMEditorWindow::initDocumentMenu()
 
 void CyberiadaSMEditorWindow::updateModeActions()
 {
-    if (!current || !modeGroup) return;
-    QString mode = current->mode();
+    if (!active || !modeGroup) return;
+    QString mode = active->mode();
+    bool text = active->traits().text;
+    // a diagram reaches the diagram modes, a text the text ones (EDIT-MODE-3)
     for (QAction* action : modeGroup->actions()) {
         action->setChecked(action->data().toString() == mode);
+        action->setEnabled(isTextMode(action->data().toString()) == text);
     }
+    if (QMenu* code = menuMode->findChild<QMenu*>("menuModeCode")) code->setEnabled(text);
     // a read-only mode shows the flag checked and fixed (EDIT-MODE-4)
-    actionReadOnly->setChecked(current->isReadOnly());
-    actionReadOnly->setEnabled(!current->traits().readOnly);
+    actionReadOnly->setChecked(active->isReadOnly());
+    actionReadOnly->setEnabled(!active->traits().readOnly);
     // the choices write the document: an editable diagram only (EDIT-TEXT-9/12)
-    languageChoice->setEnabled(!current->isReadOnly());
-    markupChoice->setEnabled(!current->isReadOnly());
+    languageChoice->setEnabled(current && !current->isReadOnly());
+    markupChoice->setEnabled(current && !current->isReadOnly());
 }
 
-bool CyberiadaSMEditorWindow::setDocumentMode(CyberiadaSMEditorDocument* doc, const QString& mode,
+bool CyberiadaSMEditorWindow::setDocumentMode(EditorDocument* tab, const QString& mode,
                                               QString* error)
 {
-    if (!doc) return false;
-    if (doc->mode() == mode) return true;
+    if (!tab) return false;
+    if (tab->mode() == mode) return true;
+    // a text switches between the text modes only: its text stays (EDIT-MODE-13)
+    if (TextDocument* text = qobject_cast<TextDocument*>(tab)) {
+        if (!isTextMode(mode)) {
+            if (error) *error = tr("a text tab cannot become a %1").arg(modeName(mode));
+            return false;
+        }
+        return text->setMode(mode);
+    }
+    CyberiadaSMEditorDocument* doc = static_cast<CyberiadaSMEditorDocument*>(tab);
+    if (isTextMode(mode)) {
+        if (error) *error = tr("a diagram tab cannot become a %1").arg(modeName(mode));
+        return false;
+    }
     if (mode == MODE_INSPECTION) return inspectDocument(doc, error) != nullptr;
     if (mode != MODE_HSM && mode != MODE_FA) {
         if (error) *error = tr("the mode %1 is not available").arg(mode);
@@ -548,9 +658,14 @@ CyberiadaSMEditorDocument* CyberiadaSMEditorWindow::inspectDocument(CyberiadaSME
     return doc;
 }
 
-void CyberiadaSMEditorWindow::setDocumentReadOnly(CyberiadaSMEditorDocument* doc, bool on)
+void CyberiadaSMEditorWindow::setDocumentReadOnly(EditorDocument* doc, bool on)
 {
     if (doc) doc->setReadOnlyFlag(on);
+}
+
+void CyberiadaSMEditorWindow::slotFileNewText(const QString& mode)
+{
+    setCurrentDocument(newTextDocument(mode));
 }
 
 void CyberiadaSMEditorWindow::slotFileNewFA()
@@ -597,9 +712,35 @@ void CyberiadaSMEditorWindow::slotDocumentProperties()
     SMView->select(model()->documentIndex());
 }
 
+void CyberiadaSMEditorWindow::updateTextActions()
+{
+    TextDocument* text = currentText();
+    bool readOnly = text->isReadOnly();
+    // the clipboard actions edit the text; the diagram ones have nothing to act on
+    bool selection = text->editor()->textCursor().hasSelection();
+    actionCut->setEnabled(selection && !readOnly);
+    actionCopy->setEnabled(selection);
+    actionPaste->setEnabled(!readOnly);
+    const QList<QAction*> diagramOnly = QList<QAction*>()
+        << actionDeleteElement << actionCenterHorizontally << actionCenterVertically
+        << actionReconstructGeometry << actionUpdateGeometry << actionDocumentProperties
+        << actionCheck << actionExport;
+    for (QAction* off : diagramOnly) off->setEnabled(false);
+    for (QAction* tool : toolActMap) tool->setEnabled(false);
+    actionSave->setEnabled(!text->isClean() && !readOnly);
+    actionSaveAs->setEnabled(true);
+    updateModeActions();
+    updateUndoActions();
+    updatePluginActions();
+}
+
 void CyberiadaSMEditorWindow::updateEditActions()
 {
-    if (!current) return;   // the documents are gone (destructor)
+    if (!active) return;   // the documents are gone (destructor)
+    if (!current) {
+        updateTextActions();
+        return;
+    }
     Cyberiada::Element* el = nullptr;
     if (!scene()->selectedItems().isEmpty()) {
         if (CyberiadaSMEditorAbstractItem* item =
@@ -701,9 +842,10 @@ CyberiadaSMEditorWindow::~CyberiadaSMEditorWindow()
     pluginRuns.clear();
     if (current) unbindDocument(current);
     current = nullptr;
+    active = nullptr;
     sceneView = nullptr;
-    for (CyberiadaSMEditorDocument* doc : documents) {
-        documentStack->removeWidget(doc->view());
+    for (EditorDocument* doc : documents) {
+        documentStack->removeWidget(doc->page());
         delete doc;
     }
     documents.clear();
@@ -731,18 +873,18 @@ void CyberiadaSMEditorWindow::slotCleanChanged(bool clean)
 // the title carries the mode and the modified markers (EDIT-MODE-2)
 void CyberiadaSMEditorWindow::updateTitle()
 {
-    if (!current) return;
+    if (!active) return;
     // the title always carries the [*] slot (an unsaved document is "untitled")
-    setWindowTitle(current->title() + current->modeMarker(true) + "[*]");
-    setWindowModified(!current->isClean());
+    setWindowTitle(active->title() + active->modeMarker(true) + "[*]");
+    setWindowModified(!active->isClean());
 }
 
 bool CyberiadaSMEditorWindow::confirmDiscard()
 {
-    return confirmDiscard(current);
+    return confirmDiscard(active);
 }
 
-bool CyberiadaSMEditorWindow::confirmDiscard(CyberiadaSMEditorDocument* doc)
+bool CyberiadaSMEditorWindow::confirmDiscard(EditorDocument* doc)
 {
     if (!doc || doc->isClean()) return true;
     setCurrentDocument(doc);   // the user sees the document the prompt is about
@@ -767,7 +909,7 @@ void CyberiadaSMEditorWindow::closeEvent(QCloseEvent* event)
         return;
     }
     // every modified document asks in turn; a cancel keeps the editor open
-    for (CyberiadaSMEditorDocument* doc : documents) {
+    for (EditorDocument* doc : documents) {
         if (!confirmDiscard(doc)) {
             event->ignore();
             return;
@@ -880,6 +1022,12 @@ bool CyberiadaSMEditorWindow::openDocument(const QString& fileName, QString* err
                                            bool reconstruct, bool reconstruct_sm, bool strict,
                                            bool inspect)
 {
+    // a text file goes to a text tab; a diagram needs the active tab to be one
+    if (modeForFile(fileName) != MODE_HSM) return openTextFile(fileName, error);
+    if (!current) {
+        CyberiadaSMEditorDocument* doc = newDocument();
+        setCurrentDocument(doc);
+    }
     if (!current->load(fileName, error, reconstruct, reconstruct_sm, strict, inspect)) {
         return false;
     }
@@ -938,6 +1086,16 @@ void CyberiadaSMEditorWindow::openRecentFile(const QString& path)
 
 void CyberiadaSMEditorWindow::slotFileSave()
 {
+    if (TextDocument* text = currentText()) {
+        if (!text->hasFile()) {
+            slotFileSaveAs();
+            return;
+        }
+        QString error;
+        if (!text->save(&error)) QMessageBox::critical(this, tr("Save Text"), error);
+        return;
+    }
+    if (!current) return;
     if (!current->hasFile()) {
         slotFileSaveAs();
         return;
@@ -951,6 +1109,27 @@ void CyberiadaSMEditorWindow::slotFileSave()
 
 void CyberiadaSMEditorWindow::slotFileSaveAs()
 {
+    // a text proposes the extension of its mode (EDIT-MODE-13)
+    if (TextDocument* text = currentText()) {
+        QString extension = modeExtension(text->mode());
+        QString proposed = text->hasFile() ? text->filePath() :
+            QDir(SettingsManager::instance().getLastDirectory()).filePath(tr("untitled") + extension);
+        QString path = QFileDialog::getSaveFileName(
+            this, tr("Save Text"), proposed,
+            tr("%1 (*%2)").arg(modeName(text->mode()), extension) + ";;" + tr("All files (*)"),
+            nullptr, QFileDialog::DontUseNativeDialog);
+        if (path.isEmpty()) return;
+        if (QFileInfo(path).suffix().isEmpty()) path += extension;
+        QString error;
+        if (!text->saveAs(path, &error)) {
+            QMessageBox::critical(this, tr("Save Text"), error);
+            return;
+        }
+        SettingsManager::instance().addRecentFile(text->filePath());
+        updateTitle();
+        return;
+    }
+    if (!current) return;
     SaveFileDialog dlg(this, model()->rootDocument());
     if (!current->hasFile() && !current->documentName().isEmpty()) {
         // a named unsaved document proposes its name as the file (EDIT-DOC-10)
@@ -977,6 +1156,8 @@ void CyberiadaSMEditorWindow::slotFileSaveAs()
 
 void CyberiadaSMEditorWindow::slotFileExport()
 {
+    // a text tab has no image (EDIT-MODE-15)
+    if (!current) return;
     ExportImageDialog dlg(this);
     // propose the diagram's base name; the dialog's default suffix / filter adds
     // the image extension (mirrors slotFileSaveAs)
@@ -1081,6 +1262,7 @@ void CyberiadaSMEditorWindow::initializeTools()
 
 void CyberiadaSMEditorWindow::slotToolSelected(QAction *action)
 {
+    if (!current) return;   // a text tab has no canvas
     currentTool = toolActMap.key(action, ToolType::Select);
     // the scene is the source of truth; setting it emits nothing, so drive the
     // view and the option bars here
@@ -1107,6 +1289,7 @@ void CyberiadaSMEditorWindow::slotToolSelected(QAction *action)
 }
 
 void CyberiadaSMEditorWindow::slotFitContent() {
+    if (!current) return;   // a text tab has no canvas
     QRectF bounds = scene()->visibleItemsBoundingRect();
     if (bounds.isNull()) return;
     // the target may sit outside the current scene rect (fitInView cannot scroll
@@ -1116,6 +1299,7 @@ void CyberiadaSMEditorWindow::slotFitContent() {
 }
 
 void CyberiadaSMEditorWindow::slotZoomToSM() {
+    if (!current) return;   // a text tab has no canvas
     QRectF bounds = scene()->recentlyModifiedSMRect();
     if (bounds.isNull()) { slotFitContent(); return; }
     scene()->updateSceneRect();
@@ -1132,6 +1316,7 @@ void CyberiadaSMEditorWindow::slotZoomScaleChanged(qreal scale) {
 }
 
 void CyberiadaSMEditorWindow::slotZoomComboActivated() {
+    if (!current) return;   // a text tab has no canvas
     if (!zoomCombo) return;
     QString text = zoomCombo->currentText();
     text.remove('%').remove(' ');
@@ -1188,7 +1373,8 @@ void CyberiadaSMEditorWindow::slotLoggingChanged(bool on)
 {
     actionLogSession->setChecked(on);
     if (on) {
-        GestureLog::instance().startSession(model());
+        // a session records a diagram: a text tab has none to start from
+        if (model()) GestureLog::instance().startSession(model());
     } else {
         GestureLog::instance().endSession();
     }
@@ -1230,6 +1416,7 @@ void CyberiadaSMEditorWindow::slotNewChoise() {}
 
 void CyberiadaSMEditorWindow::slotDeleteElement()
 {
+    if (!current) return;   // a text tab has no canvas
     if (scene()->selectedItems().isEmpty()) {
         // an element shown in the tree but not on the scene (a component formal
         // comment, possibly without geometry) is deleted by its tree index, with
@@ -1271,6 +1458,7 @@ void CyberiadaSMEditorWindow::slotDeleteElement()
 
 void CyberiadaSMEditorWindow::slotReconstructGeometry()
 {
+    if (!current) return;   // a text tab has no canvas
     if (!model()->rootDocument()) return;
     QMessageBox::StandardButton answer = QMessageBox::question(
         this, tr("Geometry reconstruction"),
@@ -1283,6 +1471,7 @@ void CyberiadaSMEditorWindow::slotReconstructGeometry()
 
 void CyberiadaSMEditorWindow::slotUpdateGeometry()
 {
+    if (!current) return;   // a text tab has no canvas
     // the drawn elements stay, so no confirmation: one undo step restores it
     if (!model()->rootDocument()) return;
     model()->updateGeometry();
@@ -1290,6 +1479,7 @@ void CyberiadaSMEditorWindow::slotUpdateGeometry()
 
 void CyberiadaSMEditorWindow::slotCenterElement(Qt::Orientation orientation)
 {
+    if (!current) return;   // a text tab has no canvas
     if (scene()->selectedItems().isEmpty()) return;
     CyberiadaSMEditorAbstractItem* item =
         dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene()->selectedItems().first());
@@ -1299,6 +1489,11 @@ void CyberiadaSMEditorWindow::slotCenterElement(Qt::Orientation orientation)
 
 void CyberiadaSMEditorWindow::slotCopy()
 {
+    // a text tab edits its text through the system clipboard
+    if (TextDocument* text = currentText()) {
+        text->editor()->copy();
+        return;
+    }
     if (scene()->selectedItems().isEmpty()) return;
     CyberiadaSMEditorAbstractItem* item =
         dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene()->selectedItems().first());
@@ -1313,6 +1508,11 @@ void CyberiadaSMEditorWindow::slotCopy()
 
 void CyberiadaSMEditorWindow::slotCut()
 {
+    // a text tab edits its text through the system clipboard
+    if (TextDocument* text = currentText()) {
+        text->editor()->cut();
+        return;
+    }
     if (scene()->selectedItems().isEmpty()) return;
     CyberiadaSMEditorAbstractItem* item =
         dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene()->selectedItems().first());
@@ -1328,6 +1528,11 @@ void CyberiadaSMEditorWindow::slotCut()
 
 void CyberiadaSMEditorWindow::slotPaste()
 {
+    // a text tab edits its text through the system clipboard
+    if (TextDocument* text = currentText()) {
+        text->editor()->paste();
+        return;
+    }
     if (!clipboardElement) return;
     // paste onto the copied element's original hierarchy level if it still exists,
     // else the first state machine
@@ -1772,7 +1977,9 @@ void CyberiadaSMEditorWindow::updatePluginActions()
         const PluginEntry* entry = PluginRegistry::instance().find(ids.first);
         const PluginAction* action = entry ? entry->descriptor.action(ids.second) : nullptr;
         if (!act || !action) continue;
-        QString reason = pluginDisabledReason(*entry, *action, current);
+        // a plugin gets a diagram: a text tab offers none yet (docs/MODES.md, stage 5)
+        QString reason = (active && !current) ? tr("the plugin works on the diagram tabs")
+                                              : pluginDisabledReason(*entry, *action, current);
         act->setEnabled(reason.isEmpty());
         QString description = action->description.isEmpty() ? entry->descriptor.description
                                                            : action->description;
@@ -1878,7 +2085,7 @@ void CyberiadaSMEditorWindow::slotPluginSettings(const QString& pluginId)
 
 void CyberiadaSMEditorWindow::updateUndoActions()
 {
-    bool blocked = model() && model()->readOnly();
+    bool blocked = current ? model()->readOnly() : (active && active->isReadOnly());
     actionUndo->setEnabled(!blocked && undoGroup->canUndo());
     actionRedo->setEnabled(!blocked && undoGroup->canRedo());
 }

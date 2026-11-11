@@ -30,6 +30,7 @@
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_editor_scene.h"
 #include "cyberiadasm_editor_document.h"
+#include "text_document.h"
 #include "plugin_runner.h"
 
 class QToolBar;
@@ -71,31 +72,42 @@ public:
                                       bool reconstruct = false, bool reconstruct_sm = false,
                                       bool strict = false, bool inspect = false);
     // MODES (docs/MODES.md): Document > Mode of a tab; the inspection opens a tab of
-    // its own, HSM turns an inspection tab into an editing one (EDIT-MODE-3/6)
-    bool                    setDocumentMode(CyberiadaSMEditorDocument* doc, const QString& mode,
+    // its own, HSM turns an inspection tab into an editing one, a text tab switches
+    // between the text modes (EDIT-MODE-3/6/13)
+    bool                    setDocumentMode(EditorDocument* doc, const QString& mode,
                                             QString* error = nullptr);
     // the inspection tab of a document: its file when saved, else its snapshot
     CyberiadaSMEditorDocument* inspectDocument(CyberiadaSMEditorDocument* source,
                                                QString* error = nullptr);
     // Document > Read-only of a tab (EDIT-MODE-4)
-    void                    setDocumentReadOnly(CyberiadaSMEditorDocument* doc, bool on);
-    // a new untitled document in a new tab
+    void                    setDocumentReadOnly(EditorDocument* doc, bool on);
+    // a new untitled diagram in a new tab
     CyberiadaSMEditorDocument* newDocument();
-    void                    setCurrentDocument(CyberiadaSMEditorDocument* doc);
+    // a new untitled text tab in a text mode (EDIT-MODE-13)
+    TextDocument*           newTextDocument(const QString& mode);
+    // a text file in a text tab by its extension; a clean untitled tab gives way
+    bool                    openTextFile(const QString& fileName, QString* error = nullptr);
+    void                    setCurrentDocument(EditorDocument* doc);
     // the close prompt first (skipped with discard); the last document is
     // replaced by a fresh untitled one
-    bool                    closeDocument(CyberiadaSMEditorDocument* doc, bool discard = false);
+    bool                    closeDocument(EditorDocument* doc, bool discard = false);
 
-    // the active document and its parts
+    // the active tab; its diagram, null for a text tab, and the diagram's parts
+    EditorDocument*         currentTab() const { return active; }
     CyberiadaSMEditorDocument* currentDocument() const { return current; }
+    TextDocument*           currentText() const { return qobject_cast<TextDocument*>(active); }
     CyberiadaSMModel*       getModel() { return model(); }
     CyberiadaSMEditorScene* getScene() { return scene(); }
     int                     documentCount() const { return documents.size(); }
-    CyberiadaSMEditorDocument* documentAt(int i) const { return documents.value(i, nullptr); }
+    EditorDocument*         tabAt(int i) const { return documents.value(i, nullptr); }
+    // the diagram of a tab, null for a text tab
+    CyberiadaSMEditorDocument* documentAt(int i) const {
+        return qobject_cast<CyberiadaSMEditorDocument*>(documents.value(i, nullptr));
+    }
 
     // the unsaved changes prompt: true when the document may go
     bool                    confirmDiscard();
-    bool                    confirmDiscard(CyberiadaSMEditorDocument* doc);
+    bool                    confirmDiscard(EditorDocument* doc);
 
     // the active document's canvas view (the tests address it by name)
     CyberiadaSMGraphicsView* sceneView = nullptr;
@@ -156,14 +168,20 @@ private:
 
     // the tab text: the title with the mode and the modified markers, the path as
     // the tooltip
-    void                    updateTabTitle(CyberiadaSMEditorDocument* doc);
+    void                    updateTabTitle(EditorDocument* doc);
+    // the tab line, the stack and the undo group take a new document
+    void                    addTab(EditorDocument* doc);
     // the tab of a file, its editing or its inspection one
     CyberiadaSMEditorDocument* findDocument(const QString& fileName, bool inspection) const;
+    // the actions of a text tab (EDIT-MODE-15)
+    void                    updateTextActions();
+    // the canvas tools and docks go with a text tab and come back with a diagram
+    void                    showDiagramParts(bool on);
     // the Document menu: the modes, the flag (EDIT-MODE-3/4)
     void                    initDocumentMenu();
     void                    updateModeActions();
     // a mode or a flag changed: the tab, the title and the actions follow
-    void                    documentStateChanged(CyberiadaSMEditorDocument* doc);
+    void                    documentStateChanged(EditorDocument* doc);
     // Edit > Language and Edit > Markup (EDIT-TEXT-9/12) follow the active document
     void                    initChoiceMenus();
     void                    syncChoiceMenus();
@@ -191,6 +209,8 @@ private slots:
     void                    slotDocumentProperties();
     // File > New > FA diagram: an untitled tab that becomes a finite automaton (EDIT-MODE-5)
     void                    slotFileNewFA();
+    // File > New > Text file > <mode> (EDIT-MODE-13)
+    void                    slotFileNewText(const QString& mode);
     // Document > Check: the EXT-FA findings of an FA tab in Diagnostics (EDIT-MODE-9)
     void                    slotCheck();
     void                    slotServiceObjectsChanged(bool on);
@@ -266,8 +286,12 @@ public slots:
     void                    slotPaste();
 
 private:
-    QList<CyberiadaSMEditorDocument*> documents;
+    QList<EditorDocument*>  documents;
+    // the active tab, and its diagram (null for a text tab)
+    EditorDocument*         active = nullptr;
     CyberiadaSMEditorDocument* current = nullptr;
+    // the element toolbar was hidden for a text tab, not by the user
+    bool                    elementBarHidden = false;
     // the running plugins and the documents they started from
     QMap<PluginRunner*, QPointer<CyberiadaSMEditorDocument> > pluginRuns;
     QUndoGroup*             undoGroup = nullptr;

@@ -318,6 +318,35 @@ add_mode_test(fa-open fa-turnstile 0)
 add_mode_test(fa-tool-reject fa-turnstile 4)
 add_mode_test(new-fa hierarchy 0)
 add_mode_test(fa-inspect fa-turnstile 0 INSPECT)
+
+# the text tabs: a text file of texts/ instead of a diagram (EDIT-MODE-13..16)
+function(add_text_test name input expected_code)
+  set(_good)
+  if(expected_code EQUAL 0)
+    set(_good -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/mode-${name}.out
+              -DDUMP_GOOD=${CMAKE_CURRENT_SOURCE_DIR}/good/mode-${name}-output.txt)
+  endif()
+  add_test(NAME mode-${name}
+    COMMAND ${CMAKE_COMMAND}
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaPro>
+      -DINPUT=${input}
+      -DSCRIPT=scripts/mode-${name}.script
+      -DDUMP_TABS=1
+      -DEXPECTED=${expected_code}
+      -DWORKDIR=${CMAKE_CURRENT_SOURCE_DIR}
+      ${_good}
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunBatchTest.cmake)
+  set_tests_properties(mode-${name} PROPERTIES
+    TIMEOUT 60
+    ENVIRONMENT "${L0_ENVIRONMENT}")
+endfunction()
+
+add_text_test(text-open texts/blink.cpp 0)
+add_text_test(text-switch texts/blink.cpp 0)
+add_text_test(text-reject texts/blink.cpp 4)
+add_text_test(text-edit-reject texts/blink.cpp 4)
+add_text_test(markdown-ro texts/notes.md 0)
+add_text_test(new-text diagrams/hierarchy.graphml 0)
 add_tabs_test(close-discard hierarchy 0)
 add_tabs_test(close-refused hierarchy 4)
 
@@ -696,6 +725,7 @@ add_l4_test(log)
 add_l4_test(tabs)
 add_l4_test(language)
 add_l4_test(translation)
+add_l4_test(modes)
 
 # The plugin layer: the batch plugin stage over the example plugins of
 # plugins/<set>/, which all run one helper with no dependencies (see

@@ -1,6 +1,7 @@
 {
     "name": "C",
     "aliases": ["c", "c99", "c11"],
+    "extensions": [".c"],
     "lineComment": "//",
     "blockComment": ["/*", "*/"],
     "quotes": "\"'",

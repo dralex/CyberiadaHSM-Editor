@@ -23,6 +23,7 @@
 
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -64,8 +65,10 @@ void CodeStyle::loadLanguages()
         QJsonObject o = QJsonDocument::fromJson(f.readAll()).object();
         if (o.value("name").toString().isEmpty()) continue;
         CodeLanguage lang;
+        lang.id = QFileInfo(file).completeBaseName();
         lang.name = o.value("name").toString();
         lang.aliases = jsonStrings(o.value("aliases"));
+        for (const QString& e : jsonStrings(o.value("extensions"))) lang.extensions.append(e.toLower());
         lang.lineComment = o.value("lineComment").toString();
         QStringList block = jsonStrings(o.value("blockComment"));
         if (block.size() == 2) {
@@ -129,6 +132,31 @@ QStringList CodeStyle::languages() const
     QStringList result;
     for (const CodeLanguage& lang : registry) result.append(lang.name);
     return result;
+}
+
+QStringList CodeStyle::ids() const
+{
+    QStringList result;
+    for (const CodeLanguage& lang : registry) result.append(lang.id);
+    return result;
+}
+
+const CodeLanguage* CodeStyle::findId(const QString& id) const
+{
+    for (const CodeLanguage& lang : registry) {
+        if (lang.id == id) return &lang;
+    }
+    return nullptr;
+}
+
+const CodeLanguage* CodeStyle::forExtension(const QString& extension) const
+{
+    QString key = extension.toLower();
+    if (key.isEmpty()) return nullptr;
+    for (const CodeLanguage& lang : registry) {
+        if (lang.extensions.contains(key)) return &lang;
+    }
+    return nullptr;
 }
 
 void CodeStyle::overrideExportPlain(bool on)

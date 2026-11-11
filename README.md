@@ -18,8 +18,10 @@ comments is highlighted by the `platformLanguage` of the document (C, C++, C#,
 Python; the rules are in `syntax/`), chosen in Document > Language.
 The informal comments in Markdown are highlighted as well (Document > Markup).
 Each tab has a mode (Document > Mode, see `docs/MODES.md`): an HSM diagram, a finite
-automaton (FA) diagram with the automaton tools and the EXT-FA check, or the inspection of
-a file exactly as it is stored; any tab can also be made read-only.
+automaton (FA) diagram with the automaton tools and the EXT-FA check, the inspection of
+a file exactly as it is stored, or a text - plain, Markdown or a C, C++, C# or Python
+source, highlighted; any tab can also be made read-only (a read-only Markdown tab shows
+the rendered document).
 
 ![CyberiadaPro. Sample 1](images/gui-sample-1.jpg)
 
