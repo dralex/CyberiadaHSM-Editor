@@ -1,6 +1,6 @@
 # The Plugin Interface
 
-**Document version:** 0.10 (2026-11-10), plugin contract `api` 1, session protocol 1. In
+**Document version:** 0.11 (2026-11-11), plugin contract `api` 1, session protocol 1. In
 Russian: `PLUGIN-API-ru.md`.
 
 This is the brief for a plugin author. A plugin gives CyberiadaPro, the Cyberiada HSM editor, a
@@ -104,8 +104,9 @@ output" tab of the plugin dock.
 | `env` | no | extra environment variables; the values may use `${plugin_dir}` |
 | `parameters` | no | the parameters, shared by the actions (see Parameters) |
 | `requires` | no | the programs, variables and plugins the plugin needs (see Conditions) |
-| `actions` | yes | at least one action; a plugin with session actions keeps one too, so that an editor before the sessions loads it |
+| `actions` | yes | at least one action; a plugin with session actions keeps one too, so that an editor before the sessions loads it; a plugin with `languages` may have none |
 | `session` | no | the session actions (see Sessions); an editor before the sessions ignores it |
+| `languages` | no | the language files the plugin brings (see Languages) |
 
 An action:
 
@@ -475,6 +476,7 @@ modes an action works in; in a tab of another mode the action is greyed out.
 | `text` | a plain text | `input.txt` |
 | `markdown` | a Markdown text | `input.md` |
 | `c`, `cpp`, `csharp`, `python` | a source file of the language | `input.c`, `input.cpp`, `input.cs`, `input.py` |
+| a plugin's language | a source file of that language (see Languages) | `input.<its first extension>` |
 
 * Without `modes` an action works in `hsm` and `fa`: a plugin written before the modes is
   where it was.
@@ -483,6 +485,66 @@ modes an action works in; in a tab of another mode the action is greyed out.
   (`sm`, `initial`, `fa`, `fa-valid`, `meta:`) do not hold in a text tab.
 * An unknown mode is a warning; an action that lists no mode the editor knows is greyed
   out as needing a newer editor. An editor before the modes ignores the field.
+
+## Languages
+
+A plugin may bring the programming languages of its tool: the editor highlights the code of
+a diagram written in them (`platformLanguage`) and opens their source files in a text tab of
+their own mode. No rebuild of the editor is needed.
+
+```json
+{
+  "api": 1,
+  "id": "lua-tools",
+  "name": "Lua",
+  "languages": ["syntax/lua.json"],
+  "actions": [
+    { "id": "run", "label": "Run the Script", "result": "log", "modes": ["lua"],
+      "argv": ["lua", "${input}"] }
+  ]
+}
+```
+
+`syntax/lua.json`, in the plugin directory:
+
+```json
+{
+  "name": "Lua",
+  "aliases": ["lua5.4", "luajit"],
+  "extensions": [".lua"],
+  "lineComment": "--",
+  "blockComment": ["--[[", "]]"],
+  "quotes": "\"'",
+  "keywords": ["and", "break", "do", "else", "elseif", "end", "false", "for", "function",
+               "if", "in", "local", "nil", "not", "or", "repeat", "return", "then", "true",
+               "until", "while"],
+  "types": ["print", "pairs", "ipairs", "string", "table", "math"]
+}
+```
+
+| Key | Required | Meaning |
+|---|---|---|
+| `name` | yes | the name in the menus and in the tab marker, `[Lua]`; matched with `platformLanguage` case-insensitively |
+| `aliases` | no | the other names `platformLanguage` may give |
+| `extensions` | no | the file extensions Open recognises, the first one proposed by Save As and used for `${input}` |
+| `lineComment` | no | the line comment start |
+| `blockComment` | no | the block comment start and end |
+| `quotes` | no | the string quote characters |
+| `preprocessor` | no | `true`: a line starting with `#` is a preprocessor line |
+| `keywords`, `types` | no | the words drawn as keywords and as types |
+
+* The id of the language is the file name without `.json` (`lua`): the mode id that
+  `modes` names.
+* The built-in languages (C, C++, C#, Python) come first, then the plugins in the order of
+  the search path. A language whose id, name or alias another one already has is skipped
+  with a warning in the plugin manager and `--list-plugins`.
+* A language counts while its plugin is enabled in the plugin manager, even when the
+  interpreter or `requires` keep the actions off. A file that is missing or is not a
+  language is a warning; `languages` of a wrong type rejects the descriptor.
+* The languages are read at start and on Rescan. A language gone after a Rescan turns its
+  text tabs into Plain text and its `platformLanguage` into an unknown value.
+* A plugin with `languages` may have no action. An editor before the languages ignores the
+  field, and rejects a plugin without actions.
 
 ## Exit codes, errors, cancel
 

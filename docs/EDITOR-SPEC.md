@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.47 (2026-11-10)
+**Document version:** 0.48 (2026-11-11)
 
 **Related authorities:**
 
@@ -452,9 +452,9 @@ the third is a derived display value the format does not store):
   titles, names, informal comments ─► plain
   ```
 
-  Languages (`syntax/*.json`): C, C++ (Arduino), C#, Python; the value is matched
-  case-insensitively by the name or an alias. The same files are the language modes of the text
-  tabs (`EDIT-MODE-13`).
+  Languages: the built-in ones (`syntax/*.json`: C, C++ (Arduino), C#, Python) and those the
+  plugins bring (`EDIT-PLUG-60`); the value is matched case-insensitively by the name or an
+  alias. The same languages are the language modes of the text tabs (`EDIT-MODE-13`).
 - `EDIT-TEXT-8` SHOULD [A]: the new action and new internal transition dialogs highlight the
   entered text as EDIT-TEXT-7 does; an exported image is plain unless the export preference
   keeps the colours. *design*
@@ -713,7 +713,7 @@ The plugins are external programs run on the active document: the architecture i
 `docs/PLUGINS.md`, the contract a plugin follows is `docs/PLUGIN-API.md` (`api` 1, the
 session protocol 1). `EDIT-PLUG-36..49` are the sessions (plugin level 2), `EDIT-PLUG-50..55`
 the conditions of an action, `EDIT-PLUG-56..59` the modes of an action and the diff result
-(`docs/MODES.md`).
+(`docs/MODES.md`), `EDIT-PLUG-60` the languages a plugin brings.
 
 - `EDIT-PLUG-1` MUST [A]: the plugins are looked up in `--plugin-path` (which replaces the
   rest), `$CYBERIADA_PRO_PLUGIN_PATH`, the user folder (moved by `$CYBERIADA_PRO_DATA_HOME`,
@@ -801,7 +801,8 @@ the conditions of an action, `EDIT-PLUG-56..59` the modes of an action and the d
 - `EDIT-PLUG-29` MUST [A]: the session log records a run as the comment `# plugin <id>:<action>`
   and starts a new session after a `replace` or `new-document` result. *design*
 - `EDIT-PLUG-30` MUST [A]: the plugin manager lists every plugin found with its folder and
-  state; the enable switch is kept, and Rescan rebuilds the menu and the toolbars. *design*
+  state; the enable switch is kept, and Rescan rebuilds the menu, the toolbars and the
+  languages (`EDIT-PLUG-60`). *design*
 - `EDIT-PLUG-31` SHOULD [A]: an interpreter path set in the Preferences takes effect at the
   next scan. *design*
 - `EDIT-PLUG-32` MUST [A]: the plugin dock is hidden until the first run and shows every
@@ -932,6 +933,18 @@ the conditions of an action, `EDIT-PLUG-56..59` the modes of an action and the d
 - `EDIT-PLUG-59` MUST [A]: an action with an unknown `result` is disabled with the reason that
   it needs a newer editor and listed as a warning, the plugin's other actions staying, as an
   unknown `when` token (`EDIT-PLUG-53`). *design*
+- `EDIT-PLUG-60` MUST [A]: the files a descriptor's `languages` names in the plugin directory
+  add languages, each file in the format of `syntax/*.json` with `extensions`, its id the file
+  name without `.json`; they count while the plugin is enabled in the plugin manager, even
+  when its interpreter or `requires` keep its actions off (`EDIT-PLUG-4/50`), for the
+  highlighting (`EDIT-TEXT-7`), Document > Language (`EDIT-TEXT-9`) and the text modes
+  (`EDIT-MODE-1/13`). The built-in languages come first, then the plugins in the search path
+  order; a language whose id, name or alias is taken is skipped with a warning, as is a
+  missing or malformed file; a `languages` that is not a list of strings rejects the
+  descriptor (`EDIT-PLUG-2`). A plugin with `languages` may have no action. The languages are
+  read at start and on Rescan; one gone turns its text tabs into Plain text and its
+  `platformLanguage` values into unknown ones; `--list-plugins` prints a plugin's
+  `languages:`. *design*
 
 ### 4.13 Interface language and preferences — UI
 
@@ -980,9 +993,9 @@ the stages of `docs/MODES.md`.
 
 - `EDIT-MODE-1` MUST [A]: every tab has one mode — `hsm` (HSM diagram), `inspection` (HSM
   inspection), `fa` (FA diagram), `diff` (HSM diff), `text` (Plain text), `markdown`
-  (Markdown) or a language of `syntax/*.json` (`c`, `cpp`, `csharp`, `python`) — and a
-  read-only flag, off in every new or opened tab; changing them in one tab leaves the others
-  as they are (`EDIT-DOC-6`). *design*
+  (Markdown) or a language — a built-in one (`c`, `cpp`, `csharp`, `python`) or one a plugin
+  brings (`EDIT-PLUG-60`) — and a read-only flag, off in every new or opened tab; changing
+  them in one tab leaves the others as they are (`EDIT-DOC-6`). *design*
 - `EDIT-MODE-2` MUST [A]: the tab text and the window title carry the mode after the title —
   nothing for HSM, `[inspection]`, `[FA]`, `[diff]`, `[text]`, `[Markdown]`, `[<language
   name>]` — and the flag as `ro` in the tab, `read-only` in the window: `a.graphml [FA, ro]*`,
@@ -1038,7 +1051,7 @@ the stages of `docs/MODES.md`.
   *design*
 - `EDIT-MODE-13` MUST [A]: File > New > Text file opens an untitled text tab in Plain text,
   Markdown or a language; Open reads a file into a text tab in the mode its extension names
-  (the `extensions` of `syntax/*.json`, `.md`, `.txt`), Plain text for an extension no mode
+  (the `extensions` of the languages, `.md`, `.txt`), Plain text for an extension no mode
   names, a diagram for `.graphml`; the text is UTF-8 and Save writes it back as it is, Save As
   proposing the mode's first extension; Undo and Redo step through the text's own edits; the
   text is highlighted by the language (`EDIT-TEXT-7`) or as Markdown (`EDIT-TEXT-11`), and a

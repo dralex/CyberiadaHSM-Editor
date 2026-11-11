@@ -1,6 +1,6 @@
 # The Plugin System — Architecture
 
-**Document version:** 0.9 (2026-11-10)
+**Document version:** 0.10 (2026-11-11)
 
 A plugin adds a feature to the editor without rebuilding it: a diagram checker, a code
 generator, a compiler front end, an LLM diagram maker. A plugin is a directory with a
@@ -84,6 +84,23 @@ one. The scan runs at start and on Rescan in the plugin manager; it also reads t
 plugin's `i18n/<lang>.json` of the interface language and translates the plugin texts
 (`EDIT-UI-4`). A run gets the language as `${language}`, `CYBERIADA_PRO_LANGUAGE` and
 `language` in `request.json` — `en` in the batch mode (`EDIT-PLUG-33`).
+
+The scan also reads the `languages` of the plugins (`EDIT-PLUG-60`): a new language for
+the highlighting and the text modes needs no rebuild of the editor.
+
+```
+ scan(), Rescan                          CodeStyle (code_highlighter.cpp)
++------------------------------+       +---------------------------------------+
+| a plugin enabled in the      | files | 1 the built-ins, :/Syntax/syntax      |
+| manager (its interpreter or  |------>| 2 the plugin languages, in scan order |
+| requires may still keep its  |       |   a clash of an id, a name or an      |
+| actions off): `languages`    |       |   alias: the earlier wins, the later  |
++------------------------------+       |   is a warning                        |
+                                       +---------------------------------------+
+                                         | styleChanged: the tabs re-highlighted,
+                                         v the language menus rebuilt
+     Document > Mode > Code, File > New > Text file, Document > Language, the Open filter
+```
 
 ## The interface
 
@@ -731,3 +748,14 @@ of hsm-maker and cybersphere-agents.
   still work in an editor before it (from this version on).
 * A generated text file opens from the `files` list; `new-document` stays in the mode of the
   tab it ran in.
+
+## Decisions of 0.10
+
+* A language comes with a plugin, not from a folder of its own: the tool that runs a
+  language brings it, and the plugin manager is the one place to switch it off.
+* A language is data: it counts while its plugin is enabled in the manager, whatever keeps
+  the plugin's actions off.
+* The built-in languages stay compiled in and come first: a plugin adds a language, it
+  never replaces one, so the highlighting of a diagram does not depend on the plugins
+  installed.
+* The languages are read at the scan: at start and on Rescan.

@@ -1,7 +1,7 @@
 # The Document Modes — Architecture
 
-**Document version:** 0.1 (2026-11-10) — specified, not implemented yet. The requirements are
-`EDIT-MODE-1..16` in `EDITOR-SPEC.md` §4.14, the plugin parts `EDIT-PLUG-56..59`.
+**Document version:** 0.2 (2026-11-11) — specified, not implemented yet. The requirements are
+`EDIT-MODE-1..16` in `EDITOR-SPEC.md` §4.14, the plugin parts `EDIT-PLUG-56..60`.
 
 A tab holds one document in one **mode**: the format edited, the access, and the tools, the
 docks and the plugins that come with them — as an image mode of GIMP (Image > Mode). The mode
@@ -41,10 +41,12 @@ CyberiadaSMEditorWindow                                                         
 | HSM diff | `diff` | two canvases | Select, Pan, Zoom | the change list | `[diff]` |
 | Plain text | `text` | CodeEditor | the toolbar hidden | empty | `[text]` |
 | Markdown | `markdown` | CodeEditor; rendered when read-only | the toolbar hidden | empty | `[Markdown]` |
-| a language | `c`, `cpp`, `csharp`, `python` | CodeEditor | the toolbar hidden | empty | `[C++]` ... |
+| a language | `c`, `cpp`, `csharp`, `python`, a plugin's (`lua`) | CodeEditor | the toolbar hidden | empty | `[C++]` ... |
 
-* A language mode is a file of `syntax/` (its stem is the id, its `name` the marker); the file
-  gains `extensions`, the ones Open recognises (`cpp`: `.cpp .cxx .cc .h .hpp .hh .ino`).
+* A language mode is a language file: a built-in one of `syntax/`, or one a plugin brings in
+  its `languages` (`EDIT-PLUG-60`, `PLUGINS.md` Discovery) — a new language needs no rebuild.
+  Its stem is the id, its `name` the marker; the file gains `extensions`, the ones Open
+  recognises (`cpp`: `.cpp .cxx .cc .h .hpp .hh .ino`).
 * The read-only flag adds `ro` to the marker: the tab `a.graphml [FA, ro]*`, the window
   `a.graphml [FA, read-only][*]`; an HSM tab `a.graphml [ro]`.
 * The traits decide which actions and docks a tab gets; the read-only flag, a plugin lock and
@@ -205,6 +207,8 @@ File                              Document
 * `result: "diff"` opens a diff tab with `${output}` as the base (`EDIT-PLUG-58`).
 * An unknown `result` greys out that action only, as an unknown `when` token does
   (`EDIT-PLUG-59`).
+* A plugin's `languages` add language modes and highlighting at the scan; the built-ins come
+  first, a clash is a warning (`EDIT-PLUG-60`). The language menus are rebuilt on Rescan.
 
 ## Batch mode
 
@@ -236,7 +240,7 @@ File                              Document
 2. The FA mode.
 3. The text tabs (Java and JavaScript leave `syntax/`).
 4. The diff tabs.
-5. The plugin `modes`, the text input, `result: "diff"`.
+5. The plugin `modes`, the text input, `result: "diff"`, the plugin `languages`.
 6. The git plugin: Compare with a Revision....
 
 ## Decisions of 0.1
@@ -245,6 +249,11 @@ File                              Document
 * Inspection is a mode of its own, not a read-only HSM: it changes how the document is read.
 * The inspection and the diff open tabs of their own; the source tab is never changed.
 * FA is the meta `type/ fa`, not a view: the file says what it is.
-* A language is a mode; the syntax files are the one list of the languages.
+* A language is a mode; the language files are the one list of the languages.
 * The diff is computed by the editor; a plugin only supplies the base, so the git plugin and
   `Compare with...` show the same pairs.
+
+## Decisions of 0.2
+
+* A new language comes with a plugin (`languages`), not with a rebuild; the built-in ones stay
+  compiled in and are never replaced.
