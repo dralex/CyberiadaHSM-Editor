@@ -60,8 +60,8 @@ The mode of a tab (§4.14, `docs/MODES.md`) decides whether the geometric requir
 enforced:
 
 - **Editing** (an HSM or FA tab, the default): operations mutate the document and the editor's
-  *recovery* keeps it spec-compliant — a container grows to fit its content (`EDIT-NODE-2`), a grown or
-  reparented element pushes its siblings clear (`EDIT-NODE-6`), and the geometry is
+  *recovery* keeps it spec-compliant — a container grows to fit its content (`EDIT-NODE-2`), a grown,
+  dropped or reparented element pushes its siblings clear (`EDIT-NODE-6`), and the geometry is
   reconstructed on request - rebuilt from scratch, or *updated*: the drawn elements keep
   their places and the geometry-less ones are laid out around them. The `[U]` geometric laws hold after every operation because this
   recovery maintains them. The read-only flag of a tab refuses the operations and keeps the
@@ -236,7 +236,11 @@ the third is a derived display value the format does not store):
   relocated. A child without stored geometry is laid out by the scene and is neither counted in the
   content the resize clamps to nor relocated by it, so sizing and holding cover the same children;
   the editor never fabricates a rectangle for such a child (`EDIT-ROBUST-1`). *design*
-- `EDIT-NODE-6` MUST [U]: sibling elements do not overlap. *design*
+- `EDIT-NODE-6` MUST [U]: sibling elements do not overlap. A grown element pushes the siblings it
+  grows into outward by its growth. A dropped element - a drag released within its parent or the
+  `move` verb - stays where it is dropped (`EDIT-NODE-2`) and each sibling it overlaps moves out the
+  shorter way, away from it, to the placement gap. A pushed sibling that lands on another settles
+  in the nearest free slot, and the parent grows to re-contain them. *design*
 - `EDIT-NODE-7` MUST [U]: If an element is separated from parent it should be placed on
   the top level of hierarchy not overlapping the parent and the rest of the elements, but
   close to the parent. *design*

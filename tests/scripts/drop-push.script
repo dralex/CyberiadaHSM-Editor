@@ -1,0 +1,11 @@
+# a state dropped on a sibling stays where it is dropped, the sibling moves out
+# the shorter way to the placement gap (EDIT-NODE-6): a body drag of A into B
+new-state G0 0 0 200 100 A
+new-state G0 300 0 200 100 B
+press 0 -40
+drag 150 -40
+release 150 -40
+# the move verb drops C into D the same way
+new-state G0 0 300 200 100 C
+new-state G0 300 300 200 100 D
+move n2 150 300 200 100

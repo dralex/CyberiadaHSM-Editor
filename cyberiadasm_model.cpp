@@ -1328,6 +1328,39 @@ bool CyberiadaSMModel::clearStateMachineBorder(const QModelIndex& index)
 	return true;
 }
 
+// the box of a sibling that is pushed: a rect element or a point vertex, as centre
+// and half sizes; false for one without geometry
+static bool siblingBox(const Cyberiada::Element* s, double& cx, double& cy, double& hw, double& hh)
+{
+	const Cyberiada::ElementCollection* sc = dynamic_cast<const Cyberiada::ElementCollection*>(s);
+	const Cyberiada::Vertex* sv = dynamic_cast<const Cyberiada::Vertex*>(s);
+	if (sc && sc->has_geometry()) {
+		Cyberiada::Rect r = sc->get_geometry_rect();
+		cx = r.x; cy = r.y; hw = r.width / 2.0; hh = r.height / 2.0;
+		return true;
+	}
+	if (sv && sv->has_point_geometry() && sv->has_geometry()) {
+		Cyberiada::Point p = sv->get_geometry_point();
+		cx = p.x; cy = p.y; hw = hh = VERTEX_POINT_RADIUS;
+		return true;
+	}
+	return false;
+}
+
+// move a pushed sibling of gp towards (x, y), settled in a slot clear of the other
+// children too - a push can shove it into a third sibling (a cascade overlap);
+// freeChildCentre resolves it and is a no-op when the push sufficed
+void CyberiadaSMModel::settleSibling(Cyberiada::ElementCollection* gp, Cyberiada::Element* s,
+									 double hw, double hh, double x, double y)
+{
+	Cyberiada::Point f = freeChildCentre(gp, s, hw * 2.0, hh * 2.0, Cyberiada::Point(x, y));
+	if (s->has_rect_geometry()) {
+		updateGeometry(elementToIndex(s), Cyberiada::Rect(f.x, f.y, hw * 2.0, hh * 2.0), false);
+	} else {
+		updateGeometry(elementToIndex(s), Cyberiada::Point(f.x, f.y), false);
+	}
+}
+
 // pc just grew from oldRect to newRect (same parent-centre frame); shift the
 // siblings it grew into outward by the per-side expansion so they no longer
 // overlap it. Every sibling on a side moves by the same amount, so their mutual
@@ -1352,19 +1385,8 @@ void CyberiadaSMModel::pushSiblingsClear(Cyberiada::Element* pc,
 	Cyberiada::ElementList kids = gp->get_children();
 	for (Cyberiada::ElementList::const_iterator i = kids.begin(); i != kids.end(); i++) {
 		Cyberiada::Element* s = *i;
-		if (s == pc) continue;
-		const Cyberiada::ElementCollection* sc = dynamic_cast<const Cyberiada::ElementCollection*>(s);
-		const Cyberiada::Vertex* sv = dynamic_cast<const Cyberiada::Vertex*>(s);
 		double cx, cy, hw, hh;
-		if (sc && sc->has_geometry()) {
-			Cyberiada::Rect r = sc->get_geometry_rect();
-			cx = r.x; cy = r.y; hw = r.width / 2.0; hh = r.height / 2.0;
-		} else if (sv && sv->has_point_geometry() && sv->has_geometry()) {
-			Cyberiada::Point p = sv->get_geometry_point();
-			cx = p.x; cy = p.y; hw = hh = VERTEX_POINT_RADIUS;
-		} else {
-			continue;
-		}
+		if (s == pc || !siblingBox(s, cx, cy, hw, hh)) continue;
 		double sl = cx - hw, sr = cx + hw, st = cy - hh, sb = cy + hh;
 		// skip a pre-existing overlap (not ours) and a sibling pc never reached
 		bool overOld = sl < oR && oL < sr && st < oB && oT < sb;
@@ -1376,16 +1398,37 @@ void CyberiadaSMModel::pushSiblingsClear(Cyberiada::Element* pc,
 		if (st >= oB)      dy = eB;
 		else if (sb <= oT) dy = -eT;
 		if (dx == 0.0 && dy == 0.0) continue;
-		// push in the cleared direction, then settle to a slot clear of the other
-		// siblings too - a uniform push can shove s into a third sibling (a cascade
-		// overlap); freeChildCentre resolves it and is a no-op when the push sufficed
-		Cyberiada::Point f = freeChildCentre(gp, s, hw * 2.0, hh * 2.0,
-											 Cyberiada::Point(cx + dx, cy + dy));
-		if (sc && sc->has_geometry()) {
-			updateGeometry(elementToIndex(s), Cyberiada::Rect(f.x, f.y, hw * 2.0, hh * 2.0), false);
-		} else {
-			updateGeometry(elementToIndex(s), Cyberiada::Point(f.x, f.y), false);
-		}
+		settleSibling(gp, s, hw, hh, cx + dx, cy + dy);
+	}
+}
+
+// pc was dropped (a drag released within its parent, the move verb): it stays, and
+// each sibling it overlaps moves out the shorter way, away from it, to the placement
+// gap (EDIT-NODE-6); the caller's growToFitChildren re-contains them
+void CyberiadaSMModel::pushOverlappedSiblings(Cyberiada::Element* pc)
+{
+	Cyberiada::Rect pr;
+	if (!pc || !elementRect(pc, pr) || pr.width <= 0.0 || pr.height <= 0.0) return;
+	// the states drop; a comment or a choice is placed as it is (the GUI drop)
+	Cyberiada::ElementType t = pc->get_type();
+	if (t != Cyberiada::elementSimpleState && t != Cyberiada::elementCompositeState &&
+		t != Cyberiada::elementSubmachineState) return;
+	Cyberiada::ElementCollection* gp = dynamic_cast<Cyberiada::ElementCollection*>(pc->get_parent());
+	if (!gp) return;
+	double pL = pr.x - pr.width / 2.0,  pR = pr.x + pr.width / 2.0;
+	double pT = pr.y - pr.height / 2.0, pB = pr.y + pr.height / 2.0;
+	Cyberiada::ElementList kids = gp->get_children();
+	for (Cyberiada::ElementList::const_iterator i = kids.begin(); i != kids.end(); i++) {
+		Cyberiada::Element* s = *i;
+		double cx, cy, hw, hh;
+		if (s == pc || !siblingBox(s, cx, cy, hw, hh)) continue;
+		double sl = cx - hw, sr = cx + hw, st = cy - hh, sb = cy + hh;
+		if (!(sl < pR && pL < sr && st < pB && pT < sb)) continue;
+		double dx = cx >= pr.x ? pR + PLACEMENT_GAP - sl : pL - PLACEMENT_GAP - sr;
+		double dy = cy >= pr.y ? pB + PLACEMENT_GAP - st : pT - PLACEMENT_GAP - sb;
+		if (std::fabs(dx) <= std::fabs(dy)) dy = 0.0;
+		else dx = 0.0;
+		settleSibling(gp, s, hw, hh, cx + dx, cy + dy);
 	}
 }
 
@@ -1633,7 +1676,8 @@ bool CyberiadaSMModel::updateParent(const QModelIndex &index, const Cyberiada::I
     // the parent to re-contain it. On a re-parent the drop may also land on a sibling
     // of the NEW parent, so relocate the incoming child to a free slot (as paste and
     // create do); on a same-parent drag the child stays where the user dropped it (we
-    // never relocate a dragged element) and only the parent grows — EDIT-NODE-2.
+    // never relocate a dragged element), the siblings it overlaps move out of its way
+    // (EDIT-NODE-6) and the parent grows — EDIT-NODE-2.
     if (Cyberiada::Element* moved = idToElement(moved_id.c_str())) {
         if (!same_parent) {
             Cyberiada::Rect r;
@@ -1645,6 +1689,8 @@ bool CyberiadaSMModel::updateParent(const QModelIndex &index, const Cyberiada::I
                                    Cyberiada::Rect(f.x, f.y, r.width, r.height), false);
                 }
             }
+        } else {
+            pushOverlappedSiblings(moved);
         }
         growToFitChildren(moved);
     }

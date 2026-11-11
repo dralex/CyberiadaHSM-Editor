@@ -102,6 +102,7 @@ private slots:
 	void test_reset_discards_edit();
 	void test_grow_cascades_to_ancestors();
 	void test_grow_pushes_siblings();
+	void test_drop_pushes_siblings();
 	void test_reparent_into_descendant();
 	void test_choice_edge_rule();
 	void test_choice_tip_attach();
@@ -2389,6 +2390,32 @@ void TestScene::test_grow_pushes_siblings()
 	// the grandparent grew to still contain the pushed sibling
 	Cyberiada::Rect gr = grand->get_geometry_rect();
 	QVERIFY(std::fabs(sibR.x) + sibR.width / 2.0 <= gr.width / 2.0 + 0.5);
+}
+
+void TestScene::test_drop_pushes_siblings()
+{
+	// a state dropped within its parent onto a sibling stays where it is dropped
+	// and the sibling moves out the shorter way, to the placement gap (NODE-6)
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	Cyberiada::ElementCollection* left =
+		dynamic_cast<Cyberiada::ElementCollection*>(model->idToElement("node-0-0"));
+	Cyberiada::Element* dropped = model->idToElement("node-0-1");
+	QVERIFY(left && dropped);
+	Cyberiada::Rect leftR0 = left->get_geometry_rect();
+	// the release of a body drag: the rect, then the drop onto the same parent
+	Cyberiada::Rect drop(200, 5, 150, 150);
+	QModelIndex index = model->elementToIndex(dropped);
+	QVERIFY(model->updateGeometry(index, drop));
+	QVERIFY(model->updateParent(index, "node-0"));
+
+	Cyberiada::Rect dropR, leftR = left->get_geometry_rect();
+	QVERIFY(CyberiadaSMModel::elementRect(dropped, dropR));
+	QCOMPARE(dropR.x, drop.x);
+	QCOMPARE(dropR.y, drop.y);
+	// out to the left, not up: the overlap is narrower than it is tall
+	QCOMPARE(leftR.y, leftR0.y);
+	QCOMPARE(leftR.x + leftR.width / 2.0, dropR.x - dropR.width / 2.0 - PLACEMENT_GAP);
 }
 
 void TestScene::test_reparent_into_descendant()

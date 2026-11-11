@@ -1,0 +1,16 @@
+== document
+LocalDocument: {Document: {id: '', name: '', geometry format: qt, meta: {standard version: '1.0', geometry: 'full', regionGeometry: 'stored', transition order: action first, event propagation: block events}, elements: {State Machine: {id: 'G0', name: 'SM', elements: {Formal Comment: {id: 'nMeta', name: 'CGML_META', body: 'standardVersion/ 1.0
+
+geometry/ full
+
+regionGeometry/ stored
+
+transitionOrder/ actionFirst
+
+eventPropagation/ block'}, Simple State: {id: 'n0', name: 'A', geometry: (150; 0; 200; 100)}, Simple State: {id: 'n1', name: 'B', geometry: (370; 0; 200; 100)}, Simple State: {id: 'n2', name: 'C', geometry: (150; 300; 200; 100)}, Simple State: {id: 'n3', name: 'D', geometry: (370; 300; 200; 100)}}}}, bounding rect: (260; 150; 420; 400)}, file: 'diagrams/empty.graphml', format: cyberiada, format_str: 'Cyberiada-GraphML-1.0'}
+== scene
+  State Machine: {id: 'G0', pos: (0.00; 0.00), rect: (50.00; -50.00; 420.00; 400.00)}
+    Simple State: {id: 'n0', pos: (150.00; 0.00), rect: (-100.00; -50.00; 200.00; 100.00)}
+    Simple State: {id: 'n1', pos: (370.00; 0.00), rect: (-100.00; -50.00; 200.00; 100.00)}
+    Simple State: {id: 'n2', pos: (150.00; 300.00), rect: (-100.00; -50.00; 200.00; 100.00)}
+    Simple State: {id: 'n3', pos: (370.00; 300.00), rect: (-100.00; -50.00; 200.00; 100.00)}

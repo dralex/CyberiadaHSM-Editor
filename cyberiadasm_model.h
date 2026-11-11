@@ -185,6 +185,11 @@ public:
     void                                pushSiblingsClear(Cyberiada::Element* pc,
                                                           const Cyberiada::Rect& oldRect,
                                                           const Cyberiada::Rect& newRect);
+    // move the siblings a dropped pc overlaps out of its way (EDIT-NODE-6)
+    void                                pushOverlappedSiblings(Cyberiada::Element* pc);
+    // move a pushed sibling towards (x, y), settled clear of the other children
+    void                                settleSibling(Cyberiada::ElementCollection* gp, Cyberiada::Element* s,
+                                                      double hw, double hh, double x, double y);
     // after a state node's rect changed through the model (a move verb, a grow to
     // fit children, a reparent), snap each incident stored transition endpoint back
     // onto the new border so the transition never hangs off it (EDIT-EDGE-1). A

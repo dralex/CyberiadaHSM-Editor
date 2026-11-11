@@ -290,6 +290,8 @@ static bool runCommand(CyberiadaSMModel* model, const QStringList& tokens, QStri
 	} else if (cmd == "move") {
 		if (toNumbers(tokens, 2, 4, v)) {
 			if (!model->updateGeometry(index, Cyberiada::Rect(v[0], v[1], v[2], v[3]))) return false;
+			// a drop: the siblings it overlaps move out of its way (EDIT-NODE-6)
+			model->pushOverlappedSiblings(element);
 			model->growToFitChildren(element);
 			return true;
 		}
