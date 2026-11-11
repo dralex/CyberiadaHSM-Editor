@@ -105,8 +105,14 @@ public:
     // the action a double click on the free space adds, or -1
     int missingActionType() const;
 
+    // the entry action follows View > FA symbols and the FA mode (EDIT-MODE-8)
+    void refreshFASymbols();
+
 private:
     void initializeActions();
+    // an FA document drawn with View > FA symbols: the entry action is its symbol
+    bool faSymbols() const;
+    bool m_faSymbols = false;
     // the bands the texts take in the current font: the header (the title, the
     // entry, the internal transitions) and the footer (the exit)
     void textBands(qreal& top, qreal& bottom) const;
@@ -242,8 +248,9 @@ class StateAction : public EditableTextItem
 {
     Q_OBJECT
 public:
+    // symbol: an entry action drawn as its behaviour alone (EDIT-MODE-8)
     explicit StateAction(const Cyberiada::Action* action,
-                         QGraphicsItem *parent = nullptr);
+                         QGraphicsItem *parent = nullptr, bool symbol = false);
 
     QString getText();
     QString getBehavior();

@@ -41,7 +41,7 @@
 <context>
     <name>CyberiadaSMEditorDocument</name>
     <message>
-        <location filename="../cyberiadasm_editor_document.cpp" line="+172"/>
+        <location filename="../cyberiadasm_editor_document.cpp" line="+187"/>
         <source>untitled</source>
         <translation>без имени</translation>
     </message>
@@ -49,7 +49,7 @@
 <context>
     <name>CyberiadaSMEditorScene</name>
     <message>
-        <location filename="../cyberiadasm_editor_scene.cpp" line="+1158"/>
+        <location filename="../cyberiadasm_editor_scene.cpp" line="+1179"/>
         <location line="+35"/>
         <location line="+152"/>
         <location line="+35"/>
@@ -110,7 +110,7 @@
 <context>
     <name>CyberiadaSMEditorStateItem</name>
     <message>
-        <location filename="../cyberiadasm_editor_state_item.cpp" line="+784"/>
+        <location filename="../cyberiadasm_editor_state_item.cpp" line="+803"/>
         <source>Delete</source>
         <translation>Удалить</translation>
     </message>
@@ -213,7 +213,7 @@
         <translation>Markdown</translation>
     </message>
     <message>
-        <location line="+228"/>
+        <location line="+296"/>
         <source>Undo</source>
         <translation>Отменить</translation>
     </message>
@@ -300,7 +300,7 @@
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="+39"/>
+        <location line="+40"/>
         <source>Zoom</source>
         <translation>Масштаб</translation>
     </message>
@@ -335,8 +335,8 @@
         <translation>нет документа</translation>
     </message>
     <message>
-        <location line="-821"/>
-        <location line="+822"/>
+        <location line="-879"/>
+        <location line="+880"/>
         <source>a plugin is running on the document</source>
         <translation>для документа выполняется плагин</translation>
     </message>
@@ -345,8 +345,8 @@
         <translation type="vanished">в режиме инспектора документ доступен только для чтения</translation>
     </message>
     <message>
-        <location line="-799"/>
-        <location line="+820"/>
+        <location line="-846"/>
+        <location line="+867"/>
         <source>the document cannot be encoded</source>
         <translation>не удалось сериализовать документ</translation>
     </message>
@@ -378,27 +378,56 @@
         <translation>Плагин: %1</translation>
     </message>
     <message>
-        <location line="-1107"/>
+        <location line="-1174"/>
         <source>Mode</source>
         <translation>Режим</translation>
     </message>
     <message>
-        <location line="+35"/>
+        <location line="+42"/>
         <source>the mode %1 is not available</source>
         <translation>режим %1 недоступен</translation>
     </message>
     <message>
-        <location line="+836"/>
+        <location line="+896"/>
         <source>the inspection tab is read-only</source>
         <translation>вкладка инспекции доступна только для чтения</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="-875"/>
+        <location line="+876"/>
         <source>the tab is read-only</source>
         <translation>вкладка доступна только для чтения</translation>
     </message>
     <message>
-        <location line="+237"/>
+        <location line="-872"/>
+        <source>the document type is not changed</source>
+        <translation>тип документа не изменён</translation>
+    </message>
+    <message>
+        <location line="+52"/>
+        <location line="+18"/>
+        <source>Check</source>
+        <translation>Проверка</translation>
+    </message>
+    <message>
+        <location line="-18"/>
+        <source>The automaton is not checked:
+%1</source>
+        <translation>Автомат не проверен:
+%1</translation>
+    </message>
+    <message>
+        <location line="+18"/>
+        <source>The automaton breaks no EXT-FA rule.</source>
+        <translation>Автомат не нарушает ни одного правила EXT-FA.</translation>
+    </message>
+    <message>
+        <location line="+72"/>
+        <source>%1: not an element of a finite automaton</source>
+        <translation>%1: не элемент конечного автомата</translation>
+    </message>
+    <message>
+        <location line="+967"/>
         <source>the document is read-only</source>
         <translation>документ доступен только для чтения</translation>
     </message>
@@ -488,7 +517,7 @@
 </translation>
     </message>
     <message>
-        <location line="+106"/>
+        <location line="+132"/>
         <source>edit</source>
         <translation>правка</translation>
     </message>
@@ -541,7 +570,12 @@
         <translation>геометрия</translation>
     </message>
     <message>
-        <location line="-71"/>
+        <location line="-895"/>
+        <source>document type</source>
+        <translation>тип документа</translation>
+    </message>
+    <message>
+        <location line="+824"/>
         <location line="+18"/>
         <source>label</source>
         <translation>подпись</translation>
@@ -558,12 +592,12 @@
     </message>
     <message>
         <location line="+43"/>
-        <location line="+1636"/>
+        <location line="+1641"/>
         <source>reparent</source>
         <translation>смена родителя</translation>
     </message>
     <message>
-        <location line="-1581"/>
+        <location line="-1586"/>
         <source>comment</source>
         <translation>комментарий</translation>
     </message>
@@ -594,7 +628,7 @@
         <translation>новая машина состояний</translation>
     </message>
     <message>
-        <location line="+28"/>
+        <location line="+33"/>
         <source>new state</source>
         <translation>новое состояние</translation>
     </message>
@@ -1165,12 +1199,17 @@
 <context>
     <name>DocumentMode</name>
     <message>
-        <location filename="../document_mode.cpp" line="+35"/>
+        <location filename="../document_mode.cpp" line="+36"/>
         <source>inspection</source>
         <translation>инспекция</translation>
     </message>
     <message>
-        <location line="+18"/>
+        <location line="+1"/>
+        <source>FA</source>
+        <translation>КА</translation>
+    </message>
+    <message>
+        <location line="+36"/>
         <source>read-only</source>
         <translation>только чтение</translation>
     </message>
@@ -2574,7 +2613,7 @@
         <translation>&amp;Файл</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+22"/>
         <source>&amp;Edit</source>
         <translation>&amp;Правка</translation>
     </message>
@@ -2594,7 +2633,7 @@
         <translation>Режим</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+8"/>
         <source>Language</source>
         <translatorcomment>Edit &gt; Language: the platformLanguage of the document (EDIT-TEXT-9), not the interface language</translatorcomment>
         <translation>Язык кода</translation>
@@ -2605,12 +2644,12 @@
         <translation>Разметка</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+16"/>
         <source>View</source>
         <translation>Вид</translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location line="+22"/>
         <source>Help</source>
         <translation>Справка</translation>
     </message>
@@ -2722,11 +2761,12 @@
     </message>
     <message>
         <location line="+8"/>
+        <location line="+363"/>
         <source>HSM diagram</source>
         <translation>Диаграмма ПРИМС</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="-351"/>
         <source>HSM inspection</source>
         <translation>Инспекция ПРИМС</translation>
     </message>
@@ -2734,6 +2774,42 @@
         <location line="+3"/>
         <source>Inspect the document in a tab of its own, as its file stores it</source>
         <translation>Открыть документ для инспекции в отдельной вкладке, как он записан в файле</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <location line="+8"/>
+        <source>FA diagram</source>
+        <translation>Диаграмма КА</translation>
+    </message>
+    <message>
+        <location line="-5"/>
+        <source>A finite automaton: the metainformation type/ fa, the automaton tools</source>
+        <translation>Конечный автомат: метаинформация type/ fa, инструменты автомата</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>New finite automaton diagram</source>
+        <translation>Новая диаграмма конечного автомата</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Check</source>
+        <translation>Проверить</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Check the finite automaton against the EXT-FA rules</source>
+        <translation>Проверить конечный автомат по правилам EXT-FA</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>FA symbols</source>
+        <translation>Символы КА</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Draw the entry action of an automaton state as its output symbol alone</source>
+        <translation>Показывать действие входа состояния автомата только его выходным символом</translation>
     </message>
     <message>
         <location line="+8"/>
@@ -2912,17 +2988,21 @@
         <translation>Экспорт...</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+15"/>
+        <source>New HSM diagram</source>
+        <translation>Новая диаграмма ПРИМС</translation>
+    </message>
+    <message>
+        <location line="-712"/>
         <source>New</source>
         <translation>Создать</translation>
     </message>
     <message>
-        <location line="+3"/>
         <source>New File</source>
-        <translation>Новый файл</translation>
+        <translation type="vanished">Новый файл</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+727"/>
         <source>Service objects</source>
         <translation>Служебные объекты</translation>
     </message>

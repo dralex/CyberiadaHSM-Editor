@@ -111,12 +111,15 @@ protected:
 private slots:
     // the title of an unsaved document follows its name (a rename, an undo, a reset)
     void                     refreshTitle();
+    // the mode follows the document: type/ fa set or removed, an undo (EDIT-MODE-5)
+    void                     refreshMode();
     void                     dropPluginFacts() { m_pluginFactsValid = false; }
 
 private:
     void                     announceTitle();
 
     QString                  lastTitle;
+    QString                  lastMode;
     QString                  m_sourceTitle;
     CyberiadaSMModel*        m_model;
     CyberiadaSMEditorScene*  m_scene;

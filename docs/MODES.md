@@ -1,6 +1,6 @@
 # The Document Modes — Architecture
 
-**Document version:** 0.3 (2026-11-11) — stage 1 implemented (see Stages). The requirements are
+**Document version:** 0.4 (2026-11-11) — stages 1 and 2 implemented (see Stages). The requirements are
 `EDIT-MODE-1..16` in `EDITOR-SPEC.md` §4.14, the plugin parts `EDIT-PLUG-56..60`.
 
 A tab holds one document in one **mode**: the format edited, the access, and the tools, the
@@ -240,7 +240,10 @@ File                              Document
    menu has Mode (HSM diagram, HSM inspection), Read-only, Language, Markup, Properties...
    and the geometry actions; File > New, Check, Compare with..., Geometry and Refresh come
    with their stages.
-2. The FA mode.
+2. The FA mode — done: Mode > FA diagram writes `type/ fa` as one undo step
+   (`CyberiadaSMModel::setFA`), the tab follows the type, File > New > FA diagram marks the
+   empty document until its first machine, the FA tools (`modeHasTool`, also refused by the
+   batch `tool` gesture), Document > Check into Diagnostics, View > FA symbols.
 3. The text tabs (Java and JavaScript leave `syntax/`).
 4. The diff tabs.
 5. The plugin `modes`, the text input, `result: "diff"`, the plugin `languages`.

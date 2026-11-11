@@ -759,6 +759,11 @@ static bool runGesture(CyberiadaSMEditorScene* scene, const QStringList& tokens,
 		};
 		QMap<QString, ToolType>::const_iterator it = tools.find(tokens.at(1));
 		if (it == tools.end()) { *error = "unknown tool '" + tokens.at(1) + "'"; return false; }
+		// the toolbar of an FA tab has no such tool (EDIT-MODE-7)
+		if (!scene->hasTool(it.value())) {
+			*error = "the tool " + tokens.at(1) + " is not in the FA mode";
+			return false;
+		}
 		scene->setCurrentTool(it.value());
 		return true;
 	}
@@ -854,13 +859,15 @@ static bool runDocumentVerb(CyberiadaSMEditorWindow* win, const QStringList& tok
 		return win->openFile(tokens[1], error, reconstruct, reconstruct_sm, strict);
 	}
 	if (cmd == "new-document") {
-		// new-document [<mode>]: an untitled HSM tab, the one mode a new tab has yet
+		// new-document [hsm|fa]: an untitled tab, File > New (EDIT-MODE-5)
 		if (tokens.size() > 2) { *error = "new-document takes one mode at most"; return false; }
-		if (tokens.size() == 2 && tokens[1] != MODE_HSM) {
+		if (tokens.size() == 2 && tokens[1] != MODE_HSM && tokens[1] != MODE_FA) {
 			*error = "a new document cannot be in the mode " + tokens[1];
 			return false;
 		}
-		win->setCurrentDocument(win->newDocument());
+		CyberiadaSMEditorDocument* doc = win->newDocument();
+		if (tokens.size() == 2 && tokens[1] == MODE_FA) doc->model()->setNewDocumentFA(true);
+		win->setCurrentDocument(doc);
 		return true;
 	}
 	if (cmd == "mode") {

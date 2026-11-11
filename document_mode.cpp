@@ -28,11 +28,13 @@
 
 const char* const MODE_HSM = "hsm";
 const char* const MODE_INSPECTION = "inspection";
+const char* const MODE_FA = "fa";
 
 static const ModeTraits modes[] = {
-    // id               marker                                   readOnly storedGeometry
-    { MODE_HSM,        "",                                       false,   false },
-    { MODE_INSPECTION, QT_TRANSLATE_NOOP("DocumentMode", "inspection"), true, true },
+    // id               marker                                     readOnly storedGeometry faTools
+    { MODE_HSM,        "",                                           false, false, false },
+    { MODE_INSPECTION, QT_TRANSLATE_NOOP("DocumentMode", "inspection"), true, true, false },
+    { MODE_FA,         QT_TRANSLATE_NOOP("DocumentMode", "FA"),     false, false, true },
 };
 
 const ModeTraits& modeTraits(const QString& id)
@@ -41,6 +43,24 @@ const ModeTraits& modeTraits(const QString& id)
         if (id == traits.id) return traits;
     }
     return modes[0];
+}
+
+bool modeHasTool(const QString& mode, ToolType tool)
+{
+    if (!modeTraits(mode).faTools) return true;
+    switch (tool) {
+    case ToolType::NewChoice:
+    case ToolType::NewTerminate:
+    case ToolType::NewShallowHistory:
+    case ToolType::NewDeepHistory:
+    case ToolType::NewSubmachineState:
+    case ToolType::NewEntryPoint:
+    case ToolType::NewExitPoint:
+    case ToolType::NewSM:
+        return false;
+    default:
+        return true;
+    }
 }
 
 QString modeMarker(const QString& mode, bool readOnlyFlag, bool window)

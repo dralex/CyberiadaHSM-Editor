@@ -189,6 +189,10 @@ private slots:
     void                    slotCleanChanged(bool clean);
     // Document > Properties...: the Document element in the tree and the properties
     void                    slotDocumentProperties();
+    // File > New > FA diagram: an untitled tab that becomes a finite automaton (EDIT-MODE-5)
+    void                    slotFileNewFA();
+    // Document > Check: the EXT-FA findings of an FA tab in Diagnostics (EDIT-MODE-9)
+    void                    slotCheck();
     void                    slotServiceObjectsChanged(bool on);
     void                    slotComponentCommentsChanged(bool on);
     void                    slotLoggingChanged(bool on);
@@ -305,6 +309,8 @@ private:
     Cyberiada::ID clipboardParentId;
 
     QMap<ToolType, QAction*> toolActMap;
+    // the tooltips of the tools, back once a mode offers them again
+    QMap<QAction*, QString> toolTips;
     // the contextual tool-options toolbars, shown only while their tool is active
     QMap<ToolType, QToolBar*> toolOptionBars;
     QToolBar* zoomOptionsToolBar = nullptr;

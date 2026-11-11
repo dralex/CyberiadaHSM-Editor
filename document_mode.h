@@ -26,9 +26,12 @@
 
 #include <QString>
 
+#include "cyberiada_constants.h"
+
 // the mode ids of EDIT-MODE-1, also the ids a plugin action lists in its modes
 extern const char* const MODE_HSM;
 extern const char* const MODE_INSPECTION;
+extern const char* const MODE_FA;
 
 // what a mode gives its tab (docs/MODES.md, The modes)
 struct ModeTraits {
@@ -39,10 +42,16 @@ struct ModeTraits {
     bool        readOnly;
     // the document is read as stored: no recovery on load (EDIT-INSPECT-2)
     bool        storedGeometry;
+    // the creation tools are the finite automaton ones (EDIT-MODE-7)
+    bool        faTools;
 };
 
 // the traits of a mode id; the HSM ones for an unknown id
 const ModeTraits& modeTraits(const QString& id);
+
+// the mode offers the tool: an FA tab has no choice, terminate, history,
+// submachine, entry or exit point and no second state machine (EDIT-MODE-7)
+bool modeHasTool(const QString& mode, ToolType tool);
 
 // the marker after a tab or a window title: "", " [inspection]", " [ro]";
 // the window spells the flag out (" [read-only]")

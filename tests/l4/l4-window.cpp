@@ -298,7 +298,13 @@ void TestWindow::test_menu_refactor()
 			dm.contains(window->actionReconstructGeometry) &&
 			dm.contains(window->actionUpdateGeometry));
 	QCOMPARE(window->menuMode->actions(),
-			 QList<QAction*>() << window->actionModeHSM << window->actionModeInspection);
+			 QList<QAction*>() << window->actionModeHSM << window->actionModeInspection
+							   << window->actionModeFA);
+	QVERIFY(dm.contains(window->actionCheck));
+	// File > New: an HSM or an FA diagram (EDIT-MODE-5)
+	QVERIFY(window->menuFile->actions().contains(window->menuNew->menuAction()));
+	QCOMPARE(window->menuNew->actions(), QList<QAction*>() << window->actionNew << window->actionNewFA);
+	QVERIFY(window->menuView->actions().contains(window->actionFASymbols));
 }
 
 void TestWindow::test_edit_action_gating()

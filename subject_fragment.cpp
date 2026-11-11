@@ -109,7 +109,7 @@ int DrawnAction::start(FieldKind kind) const
     }
 }
 
-DrawnAction SubjectFragment::stateAction(const Cyberiada::Action& action)
+DrawnAction SubjectFragment::stateAction(const Cyberiada::Action& action, bool symbol)
 {
     DrawnAction d;
     QString behaviour = QString::fromStdString(action.get_behavior());
@@ -136,7 +136,7 @@ DrawnAction SubjectFragment::stateAction(const Cyberiada::Action& action)
         return d;
     }
     // TODO "exit", "entry" and "/" are constants from cyberiadamlpp
-    if (action.get_type() == Cyberiada::actionEntry) d.text = "entry";
+    if (action.get_type() == Cyberiada::actionEntry && !symbol) d.text = "entry";
     else if (action.get_type() == Cyberiada::actionExit) d.text = "exit";
     if (!d.text.isEmpty()) d.text += ownLine ? "/\n" : "/ ";
     d.behaviour = d.text.length();

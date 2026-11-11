@@ -1,0 +1,19 @@
+== tabs
+count: 1
+0 fa-turnstile.graphml fa active
+== document
+LocalDocument: {Document: {id: '', name: 'Turnstile', geometry format: qt, meta: {standard version: '1.0', type: 'fa', name: 'Turnstile', regionGeometry: 'stored'}, elements: {State Machine: {id: 'G0', name: 'Turnstile', elements: {Formal Comment: {id: 'nMeta', name: 'CGML_META', body: 'standardVersion/ 1.0
+
+type/ fa
+
+name/ Turnstile
+
+regionGeometry/ stored'}, Initial: {id: 'n0', geometry: (0; 0)}, Simple State: {id: 'locked', name: 'Locked', geometry: (110; 0; 100; 60)}, Simple State: {id: 'unlocked', name: 'Unlocked', geometry: (310; 0; 100; 60)}, Transition: {id: 'n0-locked', type: loc, source: 'n0', target: 'locked'}, Transition: {id: 'locked-unlocked', type: loc, source: 'locked', target: 'unlocked', action: {trigger: 'coin'}}, Transition: {id: 'unlocked-locked', type: loc, source: 'unlocked', target: 'locked', action: {trigger: 'push'}}}}}, bounding rect: (180; 0; 360; 60)}, file: 'diagrams/fa-turnstile.graphml', format: cyberiada, format_str: 'Cyberiada-GraphML-1.0'}
+== scene
+  State Machine: {id: 'G0', pos: (0.00; 0.00), rect: (0.00; -30.00; 360.00; 60.00)}
+    Initial: {id: 'n0', pos: (0.00; 0.00), rect: (-10.00; -10.00; 20.00; 20.00)}
+    Simple State: {id: 'locked', pos: (110.00; 0.00), rect: (-50.00; -30.00; 100.00; 60.00)}
+    Simple State: {id: 'unlocked', pos: (310.00; 0.00), rect: (-50.00; -30.00; 100.00; 60.00)}
+    Transition: {id: 'n0-locked', pos: (0.00; 0.00), rect: (0.00; -10.00; 70.00; 20.00)}
+    Transition: {id: 'locked-unlocked', pos: (0.00; 0.00), rect: (150.00; -10.00; 120.00; 20.00)}
+    Transition: {id: 'unlocked-locked', pos: (0.00; 0.00), rect: (150.00; -10.00; 120.00; 20.00)}

@@ -1,7 +1,7 @@
 # The Editor Window — Documents and Tabs
 
-**Document version:** 0.8 (2026-11-11) — the HSM and HSM inspection modes and the read-only
-flag are implemented, the others follow the stages of `docs/MODES.md`.
+**Document version:** 0.9 (2026-11-11) — the HSM, HSM inspection and FA modes and the
+read-only flag are implemented, the others follow the stages of `docs/MODES.md`.
 
 The window holds several documents at once. The menus, the toolbars, the tab line and the
 docks (the structure tree, the properties, the plugins) are one set; each document brings its

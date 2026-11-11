@@ -73,6 +73,8 @@ The terms follow ПНСТ 984-2024 (clause 3); a menu or a tool may use the shor
 | inspection tab | вкладка инспекции | | |
 | read-only (the flag of a tab) | только чтение | | |
 | HSM diagram (a mode) | диаграмма ПРИМС | | |
+| FA, finite automaton (a mode) | конечный автомат | КА | |
+| FA symbols (View) | символы КА | | |
 | Preferences | Настройки | | |
 | plugin, plugin manager | плагин, менеджер плагинов | | |
 | diagnostics (of a plugin) | замечания | | |

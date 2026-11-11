@@ -38,7 +38,22 @@ CyberiadaSMEditorDocument::CyberiadaSMEditorDocument(QObject* parent):
     connect(m_model, &QAbstractItemModel::modelReset, this, &CyberiadaSMEditorDocument::refreshTitle);
     connect(m_model, &QAbstractItemModel::modelReset, this, &CyberiadaSMEditorDocument::dropPluginFacts);
     connect(m_model->undoStack(), &QUndoStack::indexChanged, this, &CyberiadaSMEditorDocument::dropPluginFacts);
+    connect(m_model, &QAbstractItemModel::dataChanged, this, &CyberiadaSMEditorDocument::refreshMode);
+    connect(m_model, &QAbstractItemModel::modelReset, this, &CyberiadaSMEditorDocument::refreshMode);
+    connect(m_model, &QAbstractItemModel::rowsInserted, this, &CyberiadaSMEditorDocument::refreshMode);
+    connect(m_model, &QAbstractItemModel::rowsRemoved, this, &CyberiadaSMEditorDocument::refreshMode);
+    connect(m_model, &CyberiadaSMModel::inspectedChanged, this, &CyberiadaSMEditorDocument::refreshMode);
+    connect(m_model, &CyberiadaSMModel::documentTypeChanged, this, &CyberiadaSMEditorDocument::refreshMode);
     lastTitle = title();
+    lastMode = mode();
+}
+
+void CyberiadaSMEditorDocument::refreshMode()
+{
+    QString now = mode();
+    if (now == lastMode) return;
+    lastMode = now;
+    emit modeChanged();
 }
 
 // the view goes first (it paints the scene), the scene before the model
@@ -51,7 +66,8 @@ CyberiadaSMEditorDocument::~CyberiadaSMEditorDocument()
 
 QString CyberiadaSMEditorDocument::mode() const
 {
-    return m_model->inspected() ? MODE_INSPECTION : MODE_HSM;
+    if (m_model->inspected()) return MODE_INSPECTION;
+    return m_model->isFA() ? MODE_FA : MODE_HSM;
 }
 
 bool CyberiadaSMEditorDocument::isEditable() const
@@ -82,7 +98,7 @@ bool CyberiadaSMEditorDocument::load(const QString& path, QString* error,
         return false;
     }
     m_sourceTitle.clear();
-    if (inspect != wasInspected) emit modeChanged();
+    refreshMode();
     if (m_model->firstSMIndex().isValid()) {
         m_scene->loadScene();
     }
@@ -95,13 +111,12 @@ void CyberiadaSMEditorDocument::inspectSnapshot(const std::string& snapshot,
                                                 const QString& sourceTitle,
                                                 const QString& viewState)
 {
-    bool wasInspected = m_model->inspected();
     m_model->setInspected(true);
     m_model->restoreSnapshot(snapshot);
     m_model->undoStack()->clear();
     m_sourceTitle = sourceTitle;
     pendingViewState = viewState;
-    if (!wasInspected) emit modeChanged();
+    refreshMode();
     announceTitle();
 }
 
@@ -112,7 +127,7 @@ void CyberiadaSMEditorDocument::leaveInspection()
     m_model->leaveInspection();
     // an unsaved snapshot becomes an untitled document of its own
     m_sourceTitle.clear();
-    emit modeChanged();
+    refreshMode();
     announceTitle();
 }
 
@@ -215,7 +230,7 @@ bool CyberiadaSMEditorDocument::isClean() const
 
 bool CyberiadaSMEditorDocument::isUntitled() const
 {
-    return !hasFile() && isClean() && mode() == MODE_HSM && !readOnlyFlag() &&
+    return !hasFile() && isClean() && mode() != MODE_INSPECTION && !readOnlyFlag() &&
            m_sourceTitle.isEmpty();
 }
 

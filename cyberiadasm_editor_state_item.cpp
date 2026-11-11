@@ -71,6 +71,8 @@ CyberiadaSMEditorStateItem::CyberiadaSMEditorStateItem(QObject *parent_object,
     title = new StateTitle(name(), this);
     title->setVisible(SettingsManager::instance().getShowText());
     connect(title, &EditableTextItem::sizeChanged, this, &CyberiadaSMEditorStateItem::onTextItemSizeChanged);
+    connect(&SettingsManager::instance(), &SettingsManager::faSymbolsChanged,
+            this, &CyberiadaSMEditorStateItem::refreshFASymbols);
 
     initializeActions();
     m_headerText = headerText();
@@ -416,8 +418,24 @@ EditableTextItem* CyberiadaSMEditorStateItem::fieldText(const SubjectFragment::F
     const std::vector<Cyberiada::Action>& model_actions = state->get_actions();
     if (field.action < 0 || size_t(field.action) >= actions.size() ||
         size_t(field.action) >= model_actions.size()) return nullptr;
-    *start = SubjectFragment::stateAction(model_actions[size_t(field.action)]).start(field.kind);
+    *start = SubjectFragment::stateAction(model_actions[size_t(field.action)], m_faSymbols).start(field.kind);
     return *start >= 0 ? actions[size_t(field.action)] : nullptr;
+}
+
+bool CyberiadaSMEditorStateItem::faSymbols() const
+{
+    return model->isFA() && SettingsManager::instance().getShowFASymbols();
+}
+
+void CyberiadaSMEditorStateItem::refreshFASymbols()
+{
+    // only an entry action is drawn differently
+    if (faSymbols() == m_faSymbols) return;
+    if (!entry) {
+        m_faSymbols = faSymbols();
+        return;
+    }
+    syncFromModel();
 }
 
 QList<QGraphicsItem*> CyberiadaSMEditorStateItem::ownedChildren() const
@@ -448,9 +466,10 @@ void CyberiadaSMEditorStateItem::initializeActions()
     entry = nullptr;
     exit = nullptr;
 
+    m_faSymbols = faSymbols();
     int actionIndex = 0;
     for (std::vector<Cyberiada::Action>::const_iterator i = state->get_actions().begin(); i != state->get_actions().end(); i++) {
-        StateAction* action = new StateAction(&(*i), this);
+        StateAction* action = new StateAction(&(*i), this, m_faSymbols);
         action->setVisible(SettingsManager::instance().getShowText());
         Cyberiada::ActionType type = i->get_type();
         if (type == Cyberiada::actionEntry) {
@@ -1044,14 +1063,14 @@ void StateRegion::paint(QPainter *painter, const QStyleOptionGraphicsItem *optio
  * State Action Item
  * ----------------------------------------------------------------------------- */
 
-StateAction::StateAction(const Cyberiada::Action* action, QGraphicsItem *parent):
+StateAction::StateAction(const Cyberiada::Action* action, QGraphicsItem *parent, bool symbol):
     EditableTextItem(parent) {
     setFontRole(fontRoleStateAction);
     setTextMargin(30);
 
     // the text and the field places come from one composition, so a fragment
     // can be found on screen (EDIT-EDGE-21)
-    SubjectFragment::DrawnAction drawn = SubjectFragment::stateAction(*action);
+    SubjectFragment::DrawnAction drawn = SubjectFragment::stateAction(*action, symbol);
     // an internal transition reads like an edge label: EVENT [guard] / behaviour;
     // the whole label is editable, so nothing is protected (typeText stays empty);
     // the entry/exit keyword with its separator is

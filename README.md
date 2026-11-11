@@ -17,6 +17,9 @@ with the clipboard shared between them. The code in the actions, guards and form
 comments is highlighted by the `platformLanguage` of the document (C, C++, C#,
 Java, JavaScript, Python; the rules are in `syntax/`), chosen in Document > Language.
 The informal comments in Markdown are highlighted as well (Document > Markup).
+Each tab has a mode (Document > Mode, see `docs/MODES.md`): an HSM diagram, a finite
+automaton (FA) diagram with the automaton tools and the EXT-FA check, or the inspection of
+a file exactly as it is stored; any tab can also be made read-only.
 
 ![CyberiadaPro. Sample 1](images/gui-sample-1.jpg)
 

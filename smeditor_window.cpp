@@ -440,8 +440,10 @@ void CyberiadaSMEditorWindow::initDocumentMenu()
     modeGroup->setExclusive(true);
     actionModeHSM->setData(QString(MODE_HSM));
     actionModeInspection->setData(QString(MODE_INSPECTION));
+    actionModeFA->setData(QString(MODE_FA));
     modeGroup->addAction(actionModeHSM);
     modeGroup->addAction(actionModeInspection);
+    modeGroup->addAction(actionModeFA);
     connect(modeGroup, &QActionGroup::triggered, this, [this](QAction* action) {
         QString error;
         if (current && !setDocumentMode(current, action->data().toString(), &error) &&
@@ -457,6 +459,13 @@ void CyberiadaSMEditorWindow::initDocumentMenu()
     });
     connect(actionDocumentProperties, &QAction::triggered,
             this, &CyberiadaSMEditorWindow::slotDocumentProperties);
+    connect(actionCheck, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotCheck);
+    connect(actionNewFA, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotFileNewFA);
+    // View > FA symbols is a preference of every tab (EDIT-MODE-8)
+    SettingsManager& sm = SettingsManager::instance();
+    actionFASymbols->setChecked(sm.getShowFASymbols());
+    connect(actionFASymbols, &QAction::triggered, &sm, &SettingsManager::setShowFASymbols);
+    connect(&sm, &SettingsManager::faSymbolsChanged, actionFASymbols, &QAction::setChecked);
 }
 
 void CyberiadaSMEditorWindow::updateModeActions()
@@ -480,22 +489,35 @@ bool CyberiadaSMEditorWindow::setDocumentMode(CyberiadaSMEditorDocument* doc, co
     if (!doc) return false;
     if (doc->mode() == mode) return true;
     if (mode == MODE_INSPECTION) return inspectDocument(doc, error) != nullptr;
-    if (mode != MODE_HSM) {
+    if (mode != MODE_HSM && mode != MODE_FA) {
         if (error) *error = tr("the mode %1 is not available").arg(mode);
         return false;
     }
-    // the file is edited in another tab already: that one is shown (EDIT-DOC-2)
-    CyberiadaSMEditorDocument* editing = doc->hasFile() ? findDocument(doc->filePath(), false) : nullptr;
-    if (editing) {
-        setCurrentDocument(editing);
-        return true;
+    if (doc->mode() == MODE_INSPECTION) {
+        // the file is edited in another tab already: that one takes the mode (EDIT-DOC-2)
+        CyberiadaSMEditorDocument* editing =
+            doc->hasFile() ? findDocument(doc->filePath(), false) : nullptr;
+        if (editing) {
+            setCurrentDocument(editing);
+            return setDocumentMode(editing, mode, error);
+        }
+        // the model reset would pull the document from under a run
+        if (doc->pluginRun()) {
+            if (error) *error = tr("a plugin is running on the document");
+            return false;
+        }
+        doc->leaveInspection();
+        if (doc->mode() == mode) return true;
     }
-    // the model reset would pull the document from under a run
-    if (doc->pluginRun()) {
-        if (error) *error = tr("a plugin is running on the document");
+    // HSM <-> FA writes the document: type/ fa, one undo step (EDIT-MODE-5)
+    if (!doc->isEditable()) {
+        if (error) *error = tr("the tab is read-only");
         return false;
     }
-    doc->leaveInspection();
+    if (!doc->model()->setFA(mode == MODE_FA)) {
+        if (error) *error = tr("the document type is not changed");
+        return false;
+    }
     return true;
 }
 
@@ -529,6 +551,42 @@ CyberiadaSMEditorDocument* CyberiadaSMEditorWindow::inspectDocument(CyberiadaSME
 void CyberiadaSMEditorWindow::setDocumentReadOnly(CyberiadaSMEditorDocument* doc, bool on)
 {
     if (doc) doc->setReadOnlyFlag(on);
+}
+
+void CyberiadaSMEditorWindow::slotFileNewFA()
+{
+    CyberiadaSMEditorDocument* doc = newDocument();
+    doc->model()->setNewDocumentFA(true);
+    setCurrentDocument(doc);
+}
+
+void CyberiadaSMEditorWindow::slotCheck()
+{
+    if (!current || current->mode() != MODE_FA || !model()->rootDocument()) return;
+    Cyberiada::FAFindingList findings;
+    try {
+        findings = model()->rootDocument()->check_fa();
+    } catch (const Cyberiada::Exception& e) {
+        QMessageBox::warning(this, tr("Check"), tr("The automaton is not checked:\n%1").arg(e.str().c_str()));
+        return;
+    }
+    // the violations are findings of the document, as a plugin's (EDIT-PLUG-15)
+    QList<PluginDiagnostic> diagnostics;
+    for (const Cyberiada::FAFinding& f : findings) {
+        PluginDiagnostic d;
+        d.severity = "error";
+        d.rule = QString::fromStdString(f.requirement);
+        d.element = QString::fromStdString(f.element);
+        d.message = QString::fromStdString(f.message);
+        d.linked = !d.element.isEmpty() && model()->idToElement(d.element);
+        diagnostics.append(d);
+    }
+    pluginDockWidget->showDiagnostics(diagnostics, current);
+    pluginDockWidget->show();
+    pluginDockWidget->raise();
+    if (diagnostics.isEmpty() && !qApp->property("batchMode").toBool()) {
+        QMessageBox::information(this, tr("Check"), tr("The automaton breaks no EXT-FA rule."));
+    }
 }
 
 void CyberiadaSMEditorWindow::slotDocumentProperties()
@@ -591,16 +649,25 @@ void CyberiadaSMEditorWindow::updateEditActions()
     }
     actionNewEntryPoint->setEnabled(hasContainer && !readOnly);
     actionNewExitPoint->setEnabled(hasContainer && !readOnly);
+    // the order matters: the tool loop below turns off what the mode lacks
     // a read-only tab keeps its view: the creation tools wait, select, pan and zoom
-    // stay (EDIT-INSPECT-1, EDIT-PLUG-41)
+    // stay (EDIT-INSPECT-1, EDIT-PLUG-41); an FA tab has the automaton tools only,
+    // the others say why (EDIT-MODE-7)
+    QString mode = current->mode();
     for (auto i = toolActMap.constBegin(); i != toolActMap.constEnd(); i++) {
-        if (i.key() != ToolType::Select && i.key() != ToolType::Pan && i.key() != ToolType::Zoom &&
-            i.key() != ToolType::NewEntryPoint && i.key() != ToolType::NewExitPoint) {
+        bool offered = modeHasTool(mode, i.key());
+        i.value()->setToolTip(offered ? toolTips.value(i.value())
+                                      : tr("%1: not an element of a finite automaton")
+                                            .arg(toolTips.value(i.value())));
+        if (!offered) {
+            i.value()->setEnabled(false);
+        } else if (i.key() != ToolType::Select && i.key() != ToolType::Pan && i.key() != ToolType::Zoom &&
+                   i.key() != ToolType::NewEntryPoint && i.key() != ToolType::NewExitPoint) {
             i.value()->setEnabled(!readOnly);
         }
     }
-    if (readOnly && currentTool != ToolType::Select && currentTool != ToolType::Pan &&
-        currentTool != ToolType::Zoom) {
+    if ((readOnly && currentTool != ToolType::Select && currentTool != ToolType::Pan &&
+         currentTool != ToolType::Zoom) || !modeHasTool(mode, currentTool)) {
         actionSelectTool->setChecked(true);
         slotToolSelected(actionSelectTool);
     }
@@ -612,6 +679,7 @@ void CyberiadaSMEditorWindow::updateEditActions()
     actionReconstructGeometry->setEnabled(docOpen && !readOnly);
     actionUpdateGeometry->setEnabled(docOpen && !readOnly);
     actionDocumentProperties->setEnabled(docOpen);
+    actionCheck->setEnabled(docOpen && current->mode() == MODE_FA);
     actionSave->setEnabled(docOpen && modified && !readOnly);
     actionSaveAs->setEnabled(docOpen);
     actionExport->setEnabled(docOpen);
@@ -952,6 +1020,7 @@ void CyberiadaSMEditorWindow::initializeTools()
     for (QAction* a : toolActMap.values()) {
         a->setCheckable(true);
         toolGroup->addAction(a);
+        toolTips.insert(a, a->toolTip());
     }
     toolGroup->setExclusive(true);
     actionSelectTool->setChecked(true);

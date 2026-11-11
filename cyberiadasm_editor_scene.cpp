@@ -42,6 +42,7 @@
 #include <cmath>
 #include <cstdio>
 #include "cyberiadasm_editor_scene.h"
+#include "document_mode.h"
 #include "cyberiadasm_editor_items.h"
 #include "cyberiadasm_editor_sm_item.h"
 #include "cyberiadasm_editor_state_item.h"
@@ -439,8 +440,9 @@ void CyberiadaSMEditorScene::refreshLoops(const Cyberiada::ID& stateId)
 void CyberiadaSMEditorScene::slotModelDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight)
 {
     noteModified(topLeft);
-    // a metainformation edit may change the language
+    // a metainformation edit may change the language and the document type
     updateTextLanguages();
+    updateFAMode();
     Cyberiada::Element* element = model->indexToElement(topLeft);
     if (!element) return;
     CyberiadaSMEditorAbstractItem* current_item = dynamic_cast<CyberiadaSMEditorAbstractItem*>(elementIdToItemMap.value(element->get_id()));
@@ -829,9 +831,28 @@ void CyberiadaSMEditorScene::updateTextLanguages()
     if (markupChanged) emit markupLanguageChanged(markup);
 }
 
+bool CyberiadaSMEditorScene::hasTool(ToolType tool) const
+{
+    return !model || !model->isFA() || modeHasTool(MODE_FA, tool);
+}
+
+void CyberiadaSMEditorScene::updateFAMode()
+{
+    bool fa = model && model->isFA();
+    if (fa == faDocument) return;
+    faDocument = fa;
+    const QList<QGraphicsItem*> all = items();
+    for (QGraphicsItem* item : all) {
+        if (CyberiadaSMEditorStateItem* state = dynamic_cast<CyberiadaSMEditorStateItem*>(item)) {
+            state->refreshFASymbols();
+        }
+    }
+}
+
 void CyberiadaSMEditorScene::loadScene(bool fit)
 {
     updateTextLanguages();
+    faDocument = model && model->isFA();
     elementIdToItemMap.clear();
     subjectItems.clear();
 

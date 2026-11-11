@@ -68,6 +68,14 @@ public:
 	void                                setReadOnlyFlag(bool on);
 	// inspected or flagged: no editor is offered, a plugin lock aside
 	bool                                readOnlyDocument() const { return m_inspected || m_readOnlyFlag; }
+	// a finite automaton: type/ fa in the metainformation (EXT-FA 5); an empty
+	// document is one when it is to become one (File > New > FA diagram)
+	bool                                isFA() const;
+	// the empty document gets type/ fa with its first state machine (EDIT-MODE-5)
+	void                                setNewDocumentFA(bool on);
+	// HSM <-> FA: type/ fa written or removed as one undo step; an empty document
+	// only changes what it is to become (EDIT-MODE-5)
+	bool                                setFA(bool on);
 	void                                saveAsDocument(const QString& path, Cyberiada::DocumentFormat f, bool round = false);
 
 	// DATA REPRESENTATION
@@ -377,6 +385,7 @@ private:
 	bool                                locked = false;
 	bool                                m_inspected = false;
 	bool                                m_readOnlyFlag = false;
+	bool                                m_newDocumentFA = false;
 	// the file identity, restored after a snapshot decode
 	QString                             filePath;
 	Cyberiada::DocumentFormat           fileFormat;
@@ -388,6 +397,8 @@ private:
 
 signals:
 	void                                inspectedChanged(bool on);
+	// isFA() of an empty document changed: no model change says it
+	void                                documentTypeChanged();
 	// readOnlyDocument() changed
 	void                                readOnlyChanged(bool on);
 };

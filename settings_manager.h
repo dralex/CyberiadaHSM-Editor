@@ -39,6 +39,9 @@ public:
 
     bool getShowTransitionText() const { return showTransitionText; }
     void setShowTransitionText(bool value);
+    // an FA tab draws a state's entry action as its output symbol alone (EDIT-MODE-8)
+    bool getShowFASymbols() const { return showFASymbols; }
+    void setShowFASymbols(bool value);
 
     // record the session (gestures and model actions) to a replayable script
     bool getLoggingEnabled() const { return loggingEnabled; }
@@ -156,6 +159,7 @@ signals:
 
     void gridSettingsChanged();
     void showTransitionTextChanged(bool);
+    void faSymbolsChanged(bool);
     void structureTreeChanged(bool);
     void propertiesChanged(bool);
     void serviceObjectsChanged(bool);
@@ -186,6 +190,7 @@ private:
 
     // visualisation
     bool showTransitionText;
+    bool showFASymbols = false;
     bool showStructureTree;
     bool showProperties;
     bool showServiceObjects;

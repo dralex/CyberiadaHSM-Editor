@@ -239,6 +239,8 @@ bool CyberiadaSMModel::loadDocument(const QString& path, bool reconstruct, bool 
 		root = NULL;
 	}
 	root = new_doc;
+	// the file says what it is
+	m_newDocumentFA = false;
 	filePath = QString(root->get_file_path().c_str());
 	fileFormat = root->get_file_format();
 	// the library's regions are the frames of the nested elements (EDIT-NODE-15)
@@ -278,6 +280,30 @@ void CyberiadaSMModel::leaveInspection()
 	endResetModel();
 	emit inspectedChanged(false);
 	if (readOnlyDocument() != before) emit readOnlyChanged(readOnlyDocument());
+}
+
+bool CyberiadaSMModel::isFA() const
+{
+	if (root && !root->get_state_machines().empty()) return root->is_fa();
+	return m_newDocumentFA;
+}
+
+void CyberiadaSMModel::setNewDocumentFA(bool on)
+{
+	if (m_newDocumentFA == on) return;
+	m_newDocumentFA = on;
+	emit documentTypeChanged();
+}
+
+bool CyberiadaSMModel::setFA(bool on)
+{
+	if (readOnly()) return false;
+	if (isFA() == on) return true;
+	if (!root || root->get_state_machines().empty()) {
+		setNewDocumentFA(on);
+		return true;
+	}
+	return setDocumentChoice(CYBERIADA_META_TYPE, on ? CYBERIADA_META_TYPE_FA : "", tr("document type"));
 }
 
 void CyberiadaSMModel::setReadOnlyFlag(bool on)
@@ -1815,6 +1841,9 @@ Cyberiada::StateMachine *CyberiadaSMModel::newStateMachine(const Cyberiada::Stri
     if (root == NULL) {
         root = new Cyberiada::LocalDocument();
     }
+    // the first machine of a new FA diagram makes it one (EDIT-MODE-5)
+    bool becomesFA = m_newDocumentFA && root->get_state_machines().empty();
+    if (becomesFA) root->meta().set_string(CYBERIADA_META_TYPE, CYBERIADA_META_TYPE_FA);
 
     // the document's machines carry distinct names (EDIT-META-5): dedupe the default
     // or a colliding name so two machines are never created with the same name
@@ -1823,6 +1852,8 @@ Cyberiada::StateMachine *CyberiadaSMModel::newStateMachine(const Cyberiada::Stri
     beginInsertRows(rootIndex(), row, row);
     Cyberiada::StateMachine* element = root->new_state_machine(name, r);
     endInsertRows();
+    // the meta comment lives in the machine: written once it exists
+    if (becomesFA && element) root->update_metainfo_element();
 
     if (element) {
         QString verb = "new-sm";

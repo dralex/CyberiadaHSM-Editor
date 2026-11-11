@@ -1,0 +1,3 @@
+# the undo of the type takes the tab back to HSM, clean (EDIT-MODE-5)
+mode fa
+undo

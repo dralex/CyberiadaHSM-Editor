@@ -128,7 +128,14 @@
     <property name="title">
      <string>&amp;File</string>
     </property>
-    <addaction name="actionNew"/>
+    <widget class="QMenu" name="menuNew">
+     <property name="title">
+      <string>New</string>
+     </property>
+     <addaction name="actionNew"/>
+     <addaction name="actionNewFA"/>
+    </widget>
+    <addaction name="menuNew"/>
     <addaction name="actionOpen"/>
     <addaction name="separator"/>
     <addaction name="actionSave"/>
@@ -184,6 +191,7 @@
      </property>
      <addaction name="actionModeHSM"/>
      <addaction name="actionModeInspection"/>
+     <addaction name="actionModeFA"/>
     </widget>
     <widget class="QMenu" name="menuLanguage">
      <property name="title">
@@ -202,6 +210,7 @@
     <addaction name="menuMarkup"/>
     <addaction name="actionDocumentProperties"/>
     <addaction name="separator"/>
+    <addaction name="actionCheck"/>
     <addaction name="actionReconstructGeometry"/>
     <addaction name="actionUpdateGeometry"/>
    </widget>
@@ -217,6 +226,7 @@
     <addaction name="actionFitContent"/>
     <addaction name="separator"/>
     <addaction name="actionTransitionText"/>
+    <addaction name="actionFASymbols"/>
     <addaction name="actionGridVisibility"/>
     <addaction name="actionServiceObjects"/>
     <addaction name="actionComponentComments"/>
@@ -482,6 +492,44 @@
    </property>
    <property name="toolTip">
     <string>Inspect the document in a tab of its own, as its file stores it</string>
+   </property>
+  </action>
+  <action name="actionModeFA">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>FA diagram</string>
+   </property>
+   <property name="toolTip">
+    <string>A finite automaton: the metainformation type/ fa, the automaton tools</string>
+   </property>
+  </action>
+  <action name="actionNewFA">
+   <property name="text">
+    <string>FA diagram</string>
+   </property>
+   <property name="toolTip">
+    <string>New finite automaton diagram</string>
+   </property>
+  </action>
+  <action name="actionCheck">
+   <property name="text">
+    <string>Check</string>
+   </property>
+   <property name="toolTip">
+    <string>Check the finite automaton against the EXT-FA rules</string>
+   </property>
+  </action>
+  <action name="actionFASymbols">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>FA symbols</string>
+   </property>
+   <property name="toolTip">
+    <string>Draw the entry action of an automaton state as its output symbol alone</string>
    </property>
   </action>
   <action name="actionReadOnly">
@@ -791,10 +839,10 @@
      <normaloff>:/Icons/images/document-new.png</normaloff>:/Icons/images/document-new.png</iconset>
    </property>
    <property name="text">
-    <string>New</string>
+    <string>HSM diagram</string>
    </property>
    <property name="toolTip">
-    <string>New File</string>
+    <string>New HSM diagram</string>
    </property>
    <property name="shortcut">
     <string notr="true">Ctrl+N</string>

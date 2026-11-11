@@ -23,6 +23,7 @@
 
 #include <QtTest>
 #include <QTabBar>
+#include <QTreeWidget>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QGraphicsItem>
@@ -30,6 +31,9 @@
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_editor_view.h"
 #include "cyberiadasm_editor_scene.h"
+#include "cyberiadasm_editor_state_item.h"
+#include "settings_manager.h"
+#include "plugin_dock.h"
 #include "gesture_log.h"
 
 // the EDIT-DOC laws at the widget level: the tab line, the re-targeting of the
@@ -56,6 +60,10 @@ private slots:
 	void test_inspect_unsaved();
 	void test_read_only_flag();
 	void test_open_inspected();
+	void test_fa_mode();
+	void test_new_fa();
+	void test_fa_check();
+	void test_fa_symbols();
 
 private:
 	// answer the pending modal prompt with the button once it is up
@@ -419,6 +427,120 @@ void TestTabs::test_open_inspected()
 	QVERIFY(fresh.openFile("diagrams/geometry.graphml"));
 	QCOMPARE(fresh.documentCount(), 2);
 	QCOMPARE(fresh.currentDocument()->mode(), QString(MODE_HSM));
+}
+
+// EDIT-MODE-5/7: HSM <-> FA is the type/ fa of the document, one undo step; an FA tab
+// has the automaton tools and says why the others are off
+void TestTabs::test_fa_mode()
+{
+	CyberiadaSMEditorWindow fresh;
+	QVERIFY(fresh.openFile("diagrams/hierarchy.graphml"));
+	CyberiadaSMEditorDocument* doc = fresh.currentDocument();
+	QVERIFY(fresh.actionNewChoise->isEnabled() && !fresh.actionCheck->isEnabled());
+	fresh.actionModeFA->trigger();
+	QCOMPARE(doc->mode(), QString(MODE_FA));
+	QVERIFY(doc->model()->rootDocument()->is_fa());
+	QCOMPARE(fresh.tabBar()->tabText(0), QString("hierarchy.graphml [FA]*"));
+	QVERIFY(fresh.actionModeFA->isChecked());
+	QVERIFY(fresh.actionNewState->isEnabled() && fresh.actionNewFinal->isEnabled() &&
+			fresh.actionNewTransition->isEnabled() && fresh.actionNewComment->isEnabled());
+	QVERIFY(!fresh.actionNewChoise->isEnabled() && !fresh.actionNewTerminate->isEnabled() &&
+			!fresh.actionNewSubmachineState->isEnabled() && !fresh.actionNewStateMachine->isEnabled() &&
+			!fresh.actionNewEntryPoint->isEnabled() && !fresh.actionNewShallowHistory->isEnabled());
+	QVERIFY(fresh.actionNewChoise->toolTip().contains("finite automaton"));
+	QVERIFY(fresh.actionCheck->isEnabled());
+	QVERIFY(!fresh.getScene()->hasTool(ToolType::NewChoice));
+	// the undo is the way back, the tools come back with their tooltips
+	fresh.actionUndo->trigger();
+	QCOMPARE(doc->mode(), QString(MODE_HSM));
+	QVERIFY(doc->isClean());
+	QCOMPARE(fresh.tabBar()->tabText(0), QString("hierarchy.graphml"));
+	QVERIFY(fresh.actionNewChoise->isEnabled() && !fresh.actionCheck->isEnabled());
+	QVERIFY(!fresh.actionNewChoise->toolTip().contains("finite automaton"));
+	// FA to HSM removes the type
+	QVERIFY(fresh.setDocumentMode(doc, MODE_FA));
+	QVERIFY(fresh.setDocumentMode(doc, MODE_HSM));
+	QVERIFY(!doc->model()->rootDocument()->is_fa());
+	// a read-only tab keeps its type
+	fresh.setDocumentReadOnly(doc, true);
+	QVERIFY(!fresh.setDocumentMode(doc, MODE_FA));
+	QCOMPARE(doc->mode(), QString(MODE_HSM));
+}
+
+// EDIT-MODE-5: File > New > FA diagram; the first machine brings type/ fa
+void TestTabs::test_new_fa()
+{
+	CyberiadaSMEditorWindow fresh;
+	fresh.actionNewFA->trigger();
+	QCOMPARE(fresh.documentCount(), 2);
+	CyberiadaSMEditorDocument* doc = fresh.currentDocument();
+	QCOMPARE(doc->mode(), QString(MODE_FA));
+	QVERIFY(doc->isClean() && !doc->model()->rootDocument());
+	QCOMPARE(fresh.tabBar()->tabText(1), tr("untitled") + " [FA]");
+	QVERIFY(!fresh.actionNewChoise->isEnabled());
+	QVERIFY(doc->model()->newStateMachine("Automaton"));
+	QVERIFY(doc->model()->rootDocument()->is_fa());
+	QCOMPARE(doc->mode(), QString(MODE_FA));
+	// its undo leaves an empty FA diagram again
+	doc->model()->undoStack()->undo();
+	QCOMPARE(doc->mode(), QString(MODE_FA));
+	// an opened file says what it is
+	QVERIFY(fresh.openFile("diagrams/hierarchy.graphml"));
+	QCOMPARE(fresh.currentDocument(), doc);
+	QCOMPARE(doc->mode(), QString(MODE_HSM));
+}
+
+// EDIT-MODE-9: Check lists the EXT-FA violations in Diagnostics, linked to their elements
+void TestTabs::test_fa_check()
+{
+	CyberiadaSMEditorWindow fresh;
+	QVERIFY(fresh.openFile("diagrams/fa-empty-event.graphml"));
+	QCOMPARE(fresh.currentDocument()->mode(), QString(MODE_FA));
+	QVERIFY(fresh.actionCheck->isEnabled());
+	fresh.actionCheck->trigger();
+	QTreeWidget* list = fresh.pluginDock()->diagnostics();
+	QVERIFY(list->topLevelItemCount() > 0);
+	QVERIFY(!fresh.pluginDock()->isHidden());
+	bool rule = false;
+	for (int i = 0; i < list->topLevelItemCount(); i++) {
+		for (int c = 0; c < list->columnCount(); c++) {
+			if (list->topLevelItem(i)->text(c).startsWith("CGML-FA")) rule = true;
+		}
+	}
+	QVERIFY(rule);
+}
+
+// EDIT-MODE-8: View > FA symbols draws an FA entry action as its behaviour alone
+void TestTabs::test_fa_symbols()
+{
+	SettingsManager::instance().setShowFASymbols(false);
+	CyberiadaSMEditorWindow fresh;
+	QVERIFY(fresh.openFile("diagrams/fa-turnstile.graphml"));
+	CyberiadaSMModel* m = fresh.getModel();
+	Cyberiada::Element* first = nullptr;
+	std::vector<Cyberiada::Element*> states = m->rootDocument()->find_elements_by_type(Cyberiada::elementSimpleState);
+	QVERIFY(!states.empty());
+	first = states.front();
+	QVERIFY(m->newAction(m->elementToIndex(first), Cyberiada::actionEntry, "entry", "", "unlock"));
+	auto entryText = [&fresh, first]() {
+		QGraphicsItem* item = fresh.getScene()->getMap().value(first->get_id());
+		for (QGraphicsItem* child : item ? item->childItems() : QList<QGraphicsItem*>()) {
+			if (StateAction* a = dynamic_cast<StateAction*>(child)) return a->toPlainText();
+		}
+		return QString();
+	};
+	QVERIFY(entryText().startsWith("entry"));
+	QVERIFY(!fresh.actionFASymbols->isChecked());
+	fresh.actionFASymbols->trigger();
+	QVERIFY(SettingsManager::instance().getShowFASymbols());
+	QCOMPARE(entryText(), QString("unlock"));
+	// an HSM document keeps its prefix, whatever the option
+	QVERIFY(fresh.setDocumentMode(fresh.currentDocument(), MODE_HSM));
+	QVERIFY(entryText().startsWith("entry"));
+	QVERIFY(fresh.setDocumentMode(fresh.currentDocument(), MODE_FA));
+	QCOMPARE(entryText(), QString("unlock"));
+	fresh.actionFASymbols->trigger();
+	QVERIFY(entryText().startsWith("entry"));
 }
 
 QTEST_MAIN(TestTabs)

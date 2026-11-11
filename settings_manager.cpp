@@ -89,6 +89,7 @@ void SettingsManager::load() {
     gridSpacing = s.value("display/gridSpacing", GRID_SPACING_DEFAULT).toInt();
 
     showTransitionText = s.value("display/showTransitionText", true).toBool();
+    showFASymbols = s.value("display/showFASymbols", false).toBool();
     showStructureTree = s.value("display/showStructureTree", true).toBool();
     showProperties = s.value("display/showProperties", true).toBool();
     showServiceObjects = s.value("display/showServiceObjects", false).toBool();
@@ -129,6 +130,7 @@ void SettingsManager::loadDefaults()
     setGridSpacing(GRID_SPACING_DEFAULT);
 
     setShowTransitionText(true);
+    setShowFASymbols(false);
     setShowStructureTree(true);
     setShowProperties(true);
     setShowServiceObjects(false);
@@ -247,6 +249,14 @@ void SettingsManager::setShowTransitionText(bool value) {
         showTransitionText = value;
         QSettings().setValue("display/showTransitionText", value);
         emit showTransitionTextChanged(value);
+    }
+}
+
+void SettingsManager::setShowFASymbols(bool value) {
+    if (showFASymbols != value) {
+        showFASymbols = value;
+        QSettings().setValue("display/showFASymbols", value);
+        emit faSymbolsChanged(value);
     }
 }
 

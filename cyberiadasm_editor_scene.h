@@ -115,6 +115,8 @@ public:
     ToolType getCurrentTool() { return currentTool; }
     // the document is inspected or locked by a plugin run (EDIT-PLUG-41)
     bool  readOnly() const { return model && model->readOnly(); }
+    // the document offers the creation tool: an FA one has a subset (EDIT-MODE-7)
+    bool  hasTool(ToolType tool) const;
     // the elements a plugin session marks, apart from the selection (EDIT-PLUG-40);
     // an id the scene does not show and a state machine are left out
     void  setRunMarks(const QStringList& active, const QStringList& fired);
@@ -215,6 +217,9 @@ private:
     CyberiadaSMModel*              model;
 	Cyberiada::StateMachine*       currentSM;
     QString                        codeLanguageValue;
+    // the document was an FA one at the last look: its entry actions follow (EDIT-MODE-8)
+    bool                           faDocument = false;
+    void                           updateFAMode();
     const CodeLanguage*            codeLanguagePtr = nullptr;
     QString                        markupLanguageValue;
     QMap<Cyberiada::ID, QGraphicsItem*> elementIdToItemMap;

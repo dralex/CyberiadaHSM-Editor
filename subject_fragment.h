@@ -70,8 +70,10 @@ struct DrawnAction {
     int behaviour = -1;
     int start(FieldKind kind) const;
 };
-// a state action: "entry/ behaviour", "EVENT [guard] / behaviour" (EDIT-TEXT-2/6)
-DrawnAction stateAction(const Cyberiada::Action& action);
+// a state action: "entry/ behaviour", "EVENT [guard] / behaviour" (EDIT-TEXT-2/6);
+// with symbol, an entry action is its behaviour alone, the output symbol of an
+// FA state (EDIT-MODE-8)
+DrawnAction stateAction(const Cyberiada::Action& action, bool symbol = false);
 // a transition label: "EVENT [guard] / behaviour"
 DrawnAction transitionLabel(const Cyberiada::Action& action);
 
