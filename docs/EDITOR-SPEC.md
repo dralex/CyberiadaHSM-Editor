@@ -282,8 +282,10 @@ the third is a derived display value the format does not store):
   without it (an earlier editor's or another tool's) is drawn with the regions computed from the
   texts, as it was seen before, and the editor then holds them as stored: a save writes every
   region rect and the marker, so the other tools read the nested elements where the editor drew
-  them. A state promoted to composite gets its computed region. A resize keeps the bands; the
-  region never follows the font or the text visibility. *PNST 1044 6.5.1, 6.9*
+  them. A state promoted to composite gets its computed region. A composite without a rect has no
+  bands: its region is centred on it, so its nested elements are drawn where the model places them.
+  A resize keeps the bands; the region never follows the font or the text visibility. *PNST 1044
+  6.5.1, 6.9*
 
 ```
  a composite        the header band: name, entry, internal transitions

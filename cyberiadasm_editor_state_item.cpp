@@ -226,6 +226,10 @@ void CyberiadaSMEditorStateItem::updateRegion()
     if (inspector) {
         // the inspected region is the document's, the state rect without one
         if (!stored) r = Cyberiada::Rect(0.0, 0.0, width(), height());
+    } else if (!state->has_geometry()) {
+        // a state without a rect has no bands: the children sit where the model
+        // places them, off its centre (EDIT-NODE-15)
+        r = Cyberiada::Rect(0.0, 0.0, width(), height());
     } else if (!stored || !model->regionsStored()) {
         // a region not stored yet is computed from the texts, as it was drawn
         // before, and held as stored (EDIT-NODE-15)
