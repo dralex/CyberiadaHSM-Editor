@@ -82,9 +82,15 @@ class DumpTest(unittest.TestCase):
     def test_scene_geometry(self):
         dump = load("geometry")
         items = dump.scene_items()
-        self.assertEqual(items["node-0-1"].abs_rect, (800.0, 150.0, 150.0, 150.0))
-        self.assertEqual(items["node-0-0-2"].abs_rect, (500.0, 150.0, 150.0, 150.0))
+        # a composite's children sit in its region, 13.5 below the centre
+        self.assertEqual(items["node-0-1"].abs_rect, (800.0, 163.5, 150.0, 150.0))
+        self.assertEqual(items["node-0-0-2"].abs_rect, (500.0, 177.0, 150.0, 150.0))
         self.assertEqual(items["node-0-0-2"].parent.id, "node-0-0")
+        # the texts are in the same frame, within their whole-pixel rounding
+        title = load("geometry-text").text_of("node-0-1", "title")
+        ox, oy = items["node-0-1"].origin
+        self.assertLessEqual(abs(title.abs[0] - ox - title.pos[0]), 1.0)
+        self.assertLessEqual(abs(title.abs[1] - oy - title.pos[1]), 1.0)
 
     def test_stack_and_sections(self):
         text = (GOOD / "add-elements-stack-output.txt").read_text()

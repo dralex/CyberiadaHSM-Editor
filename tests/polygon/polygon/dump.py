@@ -411,6 +411,9 @@ class SceneItem:
     parent: object = field(default=None, repr=False)
     children: list = field(default_factory=list)
     links: list = field(default_factory=list)
+    # the centre of the region holding the children, off the item centre: the
+    # scene dump omits that StateRegion, the document gives it (EDIT-NODE-3)
+    region: tuple = (0.0, 0.0)
 
     @property
     def origin(self):
@@ -418,7 +421,19 @@ class SceneItem:
         x, y = self.pos
         if self.parent is not None:
             px, py = self.parent.origin
-            x, y = x + px, y + py
+            rx, ry = self.parent.region
+            x, y = x + px + rx, y + py + ry
+        return (x, y)
+
+    @property
+    def region_shift(self):
+        """The regions of the ancestors: the offset of the dump frame (the pos
+        chain alone) from the scene frame."""
+        x = y = 0.0
+        node = self.parent
+        while node is not None:
+            x, y = x + node.region[0], y + node.region[1]
+            node = node.parent
         return (x, y)
 
     @property
@@ -745,7 +760,31 @@ def parse_dump(text):
         dump.texts = parse_text(parts["text"])
     if "audit" in parts:
         dump.audit = [l.strip() for l in parts["audit"].splitlines() if l.strip()]
+    if dump.document is not None:
+        _to_scene_frame(dump)
     return dump
+
+
+def _to_scene_frame(dump):
+    """The scene items and the link ends in the frame of the scene, the texts
+    and the render: the regions from the document, the link ends (dumped in the
+    region-less frame of their owner) shifted by the owner's ancestor regions."""
+    regions = {e.id: e.region for e in dump.document.walk() if e.region}
+    items = dump.scene_items()
+    for item in items.values():
+        region = regions.get(item.id)
+        if region and item.kind == KIND_COMPOSITE:
+            item.region = (region[0], region[1])
+    for item in items.values():
+        for link in item.links:
+            sx, sy = item.region_shift
+            link.start = (link.start[0] + sx, link.start[1] + sy)
+            target = items.get(link.target)
+            if target is None:
+                continue
+            tx, ty = target.region_shift
+            link.end = (link.end[0] + tx, link.end[1] + ty)
+            link.underline = [(a + tx, y + ty, b + tx) for a, y, b in link.underline]
 
 
 # --- the description in words ------------------------------------------------

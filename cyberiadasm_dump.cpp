@@ -87,8 +87,9 @@ static QString sceneNumber(double v)
 
 // the == scene accumulation the dump reader applies: the sum of item->pos() over the
 // element and its model ancestors. The children of a composite live in its StateRegion,
-// a non-model item offset below the title, which the reader does not see - so a nested
-// element's reconstructed origin omits that title-band offset.
+// a non-model item offset below the title, which the == scene lines do not show - so a
+// nested element's reconstructed origin omits that title-band offset unless the reader
+// adds the region of the == document.
 static QPointF dumpSceneOrigin(CyberiadaSMEditorScene* scene, const Cyberiada::Element* element)
 {
 	QPointF o;

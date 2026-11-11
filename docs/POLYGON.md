@@ -521,8 +521,7 @@ no dangling reference, the subject targets of `STRUCT-12` with a fragment inside
 field of its target, a drawn fragment link ending at the middle of its first underline
 segment that lies in a text box of the target (`EDGE-21`, the boxes from `== text`), a
 drawn comment link starting on its comment border and, on a choice, ending anywhere on its
-rhombus (`EDGE-17`; the vertices bind only the transitions) (`EDGE-17`, from the `Subject Link` scene lines, which the dump
-emits in the same frame as the element rects so a nested comment's link is not falsely off-border), a
+rhombus (`EDGE-17`; the vertices bind only the transitions) (`EDGE-17`, from the `Subject Link` scene lines), a
 stored transition endpoint lying on its state's border (`EDGE-1`, from the
 `transition_handles` source/target points — an auto endpoint is exempt), a
 self-loop drawn outside its state (`EDGE-22`, its scene rect reaching past the state box), one
@@ -537,6 +536,11 @@ The `[U]` geometric laws are editing-mode invariants (`EDITOR-SPEC` §4.10): the
 recovery maintains them, but an inspection tab suspends it and shows the stored geometry as-is.
 The polygon runs the editor in editing tabs (never `--inspect`), so the laws apply; the dump of
 an inspection or a diff tab is exempt.
+
+The geometry is judged in the frame of the scene, the render and `== text`. The `== scene`
+lines leave out the region a composite places its children in, and the link ends are dumped
+without it; the reader adds the region of the composite from `== document` to its children
+and shifts the link ends by the regions above their owner (`polygon/dump.py`).
 
 ## Expectation language
 
