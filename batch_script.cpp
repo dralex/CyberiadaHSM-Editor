@@ -25,6 +25,7 @@
 #include <QTextStream>
 #include <QRegularExpression>
 #include <QApplication>
+#include <QStyleHints>
 #include <QGraphicsSceneMouseEvent>
 #include <QKeyEvent>
 #include <QTextCursor>
@@ -528,6 +529,9 @@ struct GestureState {
 	bool activated = false;
 	bool pressed = false;
 	Qt::KeyboardModifiers mods = Qt::NoModifier;
+	// the command right before was a click (or a press and release) at clickPos
+	bool clicked = false;
+	QPointF clickPos;
 };
 
 static bool isGesture(const QString& cmd)
@@ -738,6 +742,9 @@ static bool runGesture(CyberiadaSMEditorScene* scene, const QStringList& tokens,
 		QApplication::sendEvent(scene, &activate);
 		state->activated = true;
 	}
+	// only the command right before a double click can be its first click
+	bool clicked = state->clicked;
+	state->clicked = false;
 	if (cmd == "type" || cmd == "key" || cmd == "select-all" || cmd == "commit" ||
 		cmd == "edit-text" || cmd == "edit" || cmd == "comment-selection") {
 		return runTextVerb(scene, tokens, error);
@@ -778,22 +785,36 @@ static bool runGesture(CyberiadaSMEditorScene* scene, const QStringList& tokens,
 		} else {
 			sendMouse(scene, QEvent::GraphicsSceneMouseRelease, pos, Qt::NoButton, state->mods);
 			state->pressed = false;
+			state->clicked = true;
+			state->clickPos = pos;
 		}
 		return true;
 	}
 	Qt::KeyboardModifiers mods;
 	if (!parseModifiers(tokens, 3, &mods, error)) return false;
+	if (state->pressed) { *error = cmd + " while the button is pressed"; return false; }
 	if (cmd == "double-click") {
+		// a GUI double click is press, release, double click, release; the scene
+		// turns a double click on another item than the last grabber into a press,
+		// so the first click is sent unless the command before was it (the gesture
+		// log records it as press and release). The last release ends the grab.
+		if (!clicked || (state->clickPos - pos).manhattanLength() >
+			QGuiApplication::styleHints()->mouseDoubleClickDistance()) {
+			sendMouse(scene, QEvent::GraphicsSceneMousePress, pos, Qt::LeftButton, mods);
+			sendMouse(scene, QEvent::GraphicsSceneMouseRelease, pos, Qt::NoButton, mods);
+		}
 		sendMouse(scene, QEvent::GraphicsSceneMouseDoubleClick, pos, Qt::LeftButton, mods);
+		sendMouse(scene, QEvent::GraphicsSceneMouseRelease, pos, Qt::NoButton, mods);
 		return true;
 	}
-	if (state->pressed) { *error = cmd + " while the button is pressed"; return false; }
 	sendMouse(scene, QEvent::GraphicsSceneMousePress, pos, Qt::LeftButton, mods);
 	if (cmd == "press") {
 		state->pressed = true;
 		state->mods = mods;
 	} else {
 		sendMouse(scene, QEvent::GraphicsSceneMouseRelease, pos, Qt::NoButton, mods);
+		state->clicked = true;
+		state->clickPos = pos;
 	}
 	return true;
 }
@@ -939,6 +960,7 @@ bool runEditScript(CyberiadaSMEditorWindow* win, const QString& path, QString* e
 		bool step = !docVerb && !isSettingVerb(cmd) && cmd != "undo" && cmd != "redo" &&
 			!isGesture(cmd);
 		if (step) model->beginUndoStep(cmd);
+		if (!isGesture(cmd)) gesture.clicked = false;
 		try {
 			if (docVerb) {
 				ok = runDocumentVerb(win, tokens, &message);

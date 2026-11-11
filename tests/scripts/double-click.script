@@ -1,0 +1,14 @@
+# a double click edits the title under it as in the GUI, the cursor at the
+# start: the second one edits its own state, not the one edited before
+double-click 875 238
+type A_
+commit
+double-click 575 252
+type B_
+commit
+# after a click at the point, the form the gesture log records
+click 250 252
+double-click 250 252
+select-all
+type Clicked
+commit

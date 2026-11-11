@@ -454,6 +454,7 @@ function(add_l2_text_test case diagram)
 endfunction()
 
 add_l2_text_test(text-edit geometry)
+add_l2_text_test(double-click geometry)
 add_l2_text_test(subject-fragment comment-transition)
 add_l2_text_test(comment-selection comment-transition)
 
