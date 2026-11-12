@@ -540,7 +540,9 @@ an inspection or a diff tab is exempt.
 The geometry is judged in the frame of the scene, the render and `== text`. The `== scene`
 lines leave out the region a composite places its children in, and the link ends are dumped
 without it; the reader adds the region of the composite from `== document` to its children
-and shifts the link ends by the regions above their owner (`polygon/dump.py`).
+and shifts the link ends by the regions above their owner (`polygon/dump.py`). A `== text`
+section that starts with `mode:` is the text of a text tab, not the canvas texts; it is kept
+apart (`Dump.text_tab`).
 
 ## Expectation language
 

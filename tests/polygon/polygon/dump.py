@@ -541,6 +541,19 @@ def parse_text(text):
     return items
 
 
+def parse_text_tab(text):
+    """The `== text` of a text tab: its `key: value` fields (mode, file, modified,
+    rendered, lines) and its `| ` lines as content."""
+    tab = {"content": []}
+    for line in text.splitlines():
+        if line.startswith("|"):
+            tab["content"].append(line[2:])
+        elif ": " in line:
+            key, value = line.split(": ", 1)
+            tab[key] = value
+    return tab
+
+
 def parse_stack(text):
     stack = Stack()
     for line in text.splitlines():
@@ -701,6 +714,8 @@ class Dump:
     # the == audit section: one line per graphics item no live owner tracks
     # (a handle a rebuild left in the scene), empty when the scene graph is clean
     audit: list = field(default_factory=list)
+    # the == text of a text tab: its fields (mode, file, ...) and content
+    text_tab: dict = None
 
     def scene_items(self):
         return {item.id: item for root in self.scene for item in root.walk()}
@@ -757,7 +772,11 @@ def parse_dump(text):
     if "stack" in parts:
         dump.stack = parse_stack(parts["stack"])
     if "text" in parts:
-        dump.texts = parse_text(parts["text"])
+        # the same name for the text of a text tab (EDIT-MODE-16), told by its fields
+        if parts["text"].lstrip().startswith("mode:"):
+            dump.text_tab = parse_text_tab(parts["text"])
+        else:
+            dump.texts = parse_text(parts["text"])
     if "audit" in parts:
         dump.audit = [l.strip() for l in parts["audit"].splitlines() if l.strip()]
     if dump.document is not None:

@@ -92,6 +92,14 @@ class DumpTest(unittest.TestCase):
         self.assertLessEqual(abs(title.abs[0] - ox - title.pos[0]), 1.0)
         self.assertLessEqual(abs(title.abs[1] - oy - title.pos[1]), 1.0)
 
+    def test_text_tab(self):
+        # a text tab dumps its own == text: fields and lines, no canvas text items
+        dump = D.parse_dump((GOOD / "plugin-lang-open-output.txt").read_text())
+        self.assertEqual(dump.texts, [])
+        self.assertEqual((dump.text_tab["mode"], dump.text_tab["file"]), ("lua", "script.lua"))
+        self.assertEqual(len(dump.text_tab["content"]), int(dump.text_tab["lines"]))
+        self.assertEqual(dump.text_tab["content"][0], "-- the light toggles every second")
+
     def test_stack_and_sections(self):
         text = (GOOD / "add-elements-stack-output.txt").read_text()
         self.assertEqual(D.parse_stack(D.sections(text)["stack"]).index, 5)
