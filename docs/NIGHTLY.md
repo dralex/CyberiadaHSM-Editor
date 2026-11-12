@@ -63,7 +63,9 @@ never commits a fix and never pushes.
    | `run --mission stress` | `--seed N` |
    | `run --mission rebuild` | `--diagram <corpus N+1> --seed N` |
 
-   The register is listed before and after; the difference is the result. A
+   The tour plays only the tool cells not tried yet (`toolcover.json`): once
+   they are exhausted it runs no rounds. The register is listed before and
+   after; the difference is the result. A
    rebuild reproduction (`corpus/<name>-repro-<seed>.graphml`) is moved into
    the run folder, so the source tree stays clean.
 6. **report** - `report.md` holds the update summary, the HEADs, the build, the

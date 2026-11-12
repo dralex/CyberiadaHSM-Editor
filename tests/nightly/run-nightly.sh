@@ -356,7 +356,12 @@ producer() {
     COMMANDS=$((COMMANDS + 1))
     ( cd "$POLY" && timeout "$limit" "$PY" -m polygon --config "$CONFIG" "$@" ) > "$log" 2>&1
     rc=$?
-    line=$(grep -E '(rounds|edits), ' "$log" | tail -n 1 | sed 's#.*/sessions/##')
+    # one summary line per session; a drill prints one per class: add them up
+    line=$(grep -E '(rounds|edits), ' "$log" | sed 's#.*/sessions/##')
+    if [ "$(printf '%s\n' "$line" | grep -c .)" -gt 1 ]; then
+        line=$(printf '%s\n' "$line" | awk '{ for (i = 2; i <= NF; i++) if ($i ~ /^(rounds|accepted|findings|commands),?$/) { k = $i; sub(/,$/, "", k); sum[k] += $(i - 1) } }
+            END { printf "%d sessions: %d rounds, %d accepted, %d findings, %d commands", NR, sum["rounds"], sum["accepted"], sum["findings"], sum["commands"] }')
+    fi
     if [ $rc -ne 0 ]; then
         COMMAND_ERRORS=$((COMMAND_ERRORS + 1))
         line="**failed (rc $rc)**: $(grep -v -i warning "$log" | tail -n 1 | cut -c1-160)"
