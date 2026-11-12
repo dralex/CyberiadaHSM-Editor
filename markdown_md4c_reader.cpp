@@ -22,6 +22,7 @@
  * ----------------------------------------------------------------------------- */
 
 #include <QFontDatabase>
+#include <QFontMetricsF>
 #include <QGuiApplication>
 #include <QPalette>
 #include <QRegularExpression>
@@ -40,11 +41,14 @@
 namespace {
 
 const unsigned MD_FLAGS = MD_DIALECT_GITHUB | MD_FLAG_LATEXMATHSPANS;
-// the values of Qt's reader (QTextMarkdownImporter)
-const int BLOCK_QUOTE_INDENT = 40;
+// the heading sizes of Qt's reader (QTextMarkdownImporter)
 const int HEADING_SIZE_BASE = 4;
-const int PARAGRAPH_MARGIN_NUMERATOR = 2;
-const int PARAGRAPH_MARGIN_DENOMINATOR = 3;
+// the spaces around the blocks in text lines (docs/MARKDOWN.md, Layout); of two
+// neighbouring spaces the larger counts
+const qreal PARAGRAPH_SPACE_LINES = 0.75;
+const qreal HEADING_SPACE_ABOVE_LINES = 1.5;
+const qreal HEADING_SPACE_BELOW_LINES = 0.5;
+const qreal TIGHT_ITEM_SPACE_LINES = 0.15;
 
 QString attribute(const MD_ATTRIBUTE& a)
 {
@@ -65,7 +69,8 @@ public:
     Md4cReader(QTextDocument* document, const QString& base): doc(document), cursor(document), baseDir(base)
     {
         QFont font = doc->defaultFont();
-        paragraphMargin = font.pointSize() * PARAGRAPH_MARGIN_NUMERATOR / PARAGRAPH_MARGIN_DENOMINATOR;
+        lineHeight = QFontMetricsF(font).height();
+        quoteIndent = markdownQuoteIndent(doc);
         monoFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
         if (font.pointSize() == -1) monoFont.setPixelSize(font.pixelSize());
         else monoFont.setPointSize(font.pointSize());
@@ -117,6 +122,9 @@ private:
             QTextCharFormat cf;
             cf.setProperty(QTextFormat::FontSizeAdjustment, HEADING_SIZE_BASE - int(d->level));
             cf.setFontWeight(QFont::Bold);
+            // the first block has no space above it
+            bf.setTopMargin(doc->isEmpty() ? 0 : HEADING_SPACE_ABOVE_LINES * lineHeight);
+            bf.setBottomMargin(HEADING_SPACE_BELOW_LINES * lineHeight);
             needsInsertBlock = false;
             if (doc->isEmpty()) {
                 cursor.setBlockFormat(bf);
@@ -148,11 +156,13 @@ private:
             listFormat.setIndent(lists.count() + 1);
             if (type == MD_BLOCK_UL) {
                 const MD_BLOCK_UL_DETAIL* d = static_cast<const MD_BLOCK_UL_DETAIL*>(detail);
+                tightLists.push(d->is_tight);
                 listFormat.setStyle(d->mark == '*' ? QTextListFormat::ListCircle
                                     : d->mark == '+' ? QTextListFormat::ListSquare
                                                      : QTextListFormat::ListDisc);
             } else {
                 const MD_BLOCK_OL_DETAIL* d = static_cast<const MD_BLOCK_OL_DETAIL*>(detail);
+                tightLists.push(d->is_tight);
                 listFormat.setStyle(QTextListFormat::ListDecimal);
                 listFormat.setNumberSuffix(QString(QChar::fromLatin1(d->mark_delimiter)));
             }
@@ -213,6 +223,7 @@ private:
             if (needsInsertList) lists.push(cursor.createList(listFormat));
             needsInsertList = false;
             if (!lists.isEmpty()) lists.pop();
+            if (!tightLists.isEmpty()) tightLists.pop();
             break;
         case MD_BLOCK_TR: {
             // a run of empty cells joins the filled one before it
@@ -435,11 +446,12 @@ private:
             if (list && list->count() > 0) bf = list->item(list->count() - 1).blockFormat();
         }
         if (blockQuoteDepth > 0) {
+            // the level draws its bars and greys its text (drawMarkdownQuotes)
+            bf.setProperty(MarkdownQuoteLevel, blockQuoteDepth);
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
             bf.setProperty(QTextFormat::BlockQuoteLevel, blockQuoteDepth);
 #endif
-            bf.setLeftMargin(BLOCK_QUOTE_INDENT * blockQuoteDepth);
-            bf.setRightMargin(BLOCK_QUOTE_INDENT);
+            bf.setLeftMargin(quoteIndent * blockQuoteDepth);
         }
         if (codeBlock) {
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
@@ -448,8 +460,10 @@ private:
 #endif
             cf.setFont(monoFont);
         } else {
-            bf.setTopMargin(paragraphMargin);
-            bf.setBottomMargin(paragraphMargin);
+            qreal space = (listItem && !tightLists.isEmpty() && tightLists.top() ? TIGHT_ITEM_SPACE_LINES
+                                                                                  : PARAGRAPH_SPACE_LINES) * lineHeight;
+            bf.setTopMargin(doc->isEmpty() ? 0 : space);
+            bf.setBottomMargin(space);
         }
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
         if (markerType == QTextBlockFormat::MarkerType::NoMarker) bf.clearProperty(QTextFormat::BlockMarker);
@@ -478,7 +492,9 @@ private:
     QTextCursor             cursor;
     QString                 baseDir;
     QFont                   monoFont;
-    qreal                   paragraphMargin = 0;
+    qreal                   lineHeight = 0;
+    qreal                   quoteIndent = 0;
+    QStack<bool>            tightLists;
     QStack<QTextCharFormat> spanFormats;
     QStack<QTextList*>      lists;
     QTextListFormat         listFormat;

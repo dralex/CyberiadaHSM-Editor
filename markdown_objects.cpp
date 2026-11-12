@@ -49,6 +49,13 @@ namespace {
 
 const char* const HANDLERS_PROPERTY = "cyberiadaMarkdownObjects";
 const char* const COLOR_PROPERTY = "cyberiadaMarkdownTextColor";
+const char* const BACKGROUND_PROPERTY = "cyberiadaMarkdownBackground";
+// a quote: the share of the text colour in its grey, its indent and its bar, in lines
+const qreal QUOTE_TEXT_SHARE = 0.55;
+const qreal QUOTE_INDENT_LINES = 1.25;
+const qreal QUOTE_BAR_OFFSET = 0.25;
+const qreal QUOTE_BAR_LINES = 0.2;
+const qreal QUOTE_BAR_MIN_WIDTH = 2.0;
 // the frame of a missing image around its label
 const qreal MISSING_PADDING = 3.0;
 // the probe of the placement of an AlignMiddle object: a small one beside a letter
@@ -338,9 +345,59 @@ void installMarkdownObjects(QTextDocument* doc)
     layout->setProperty(HANDLERS_PROPERTY, true);
 }
 
-void setMarkdownTextColor(QTextDocument* doc, const QColor& color)
+void setMarkdownColors(QTextDocument* doc, const QColor& text, const QColor& background)
 {
-    doc->setProperty(COLOR_PROPERTY, color);
+    doc->setProperty(COLOR_PROPERTY, text);
+    doc->setProperty(BACKGROUND_PROPERTY, background);
+}
+
+QColor markdownQuoteColor(const QTextDocument* doc)
+{
+    QVariant t = doc->property(COLOR_PROPERTY), b = doc->property(BACKGROUND_PROPERTY);
+    QColor text = t.isValid() ? t.value<QColor>() : QGuiApplication::palette().color(QPalette::Text);
+    QColor back = b.isValid() ? b.value<QColor>() : QGuiApplication::palette().color(QPalette::Base);
+    auto mix = [](qreal x, qreal y) { return x * QUOTE_TEXT_SHARE + y * (1 - QUOTE_TEXT_SHARE); };
+    return QColor::fromRgbF(mix(text.redF(), back.redF()), mix(text.greenF(), back.greenF()),
+                            mix(text.blueF(), back.blueF()));
+}
+
+qreal markdownQuoteIndent(const QTextDocument* doc)
+{
+    return QFontMetricsF(doc->defaultFont()).height() * QUOTE_INDENT_LINES;
+}
+
+void drawMarkdownQuotes(QPainter* painter, QTextDocument* doc)
+{
+    qreal line = QFontMetricsF(doc->defaultFont()).height();
+    qreal indent = markdownQuoteIndent(doc);
+    qreal width = qMax(QUOTE_BAR_MIN_WIDTH, line * QUOTE_BAR_LINES);
+    painter->save();
+    painter->setPen(Qt::NoPen);
+    painter->setBrush(markdownQuoteColor(doc));
+    // the bars of a level run on through the following blocks of the same quote
+    int previousLevel = 0;
+    qreal previousBottom = 0;
+    for (QTextBlock b = doc->begin(); b.isValid(); b = b.next()) {
+        int level = b.blockFormat().intProperty(MarkdownQuoteLevel);
+        QTextLayout* layout = b.layout();
+        // the blocks of the document's own frame only: a table keeps its coordinates
+        if (level <= 0 || !layout || layout->lineCount() == 0 ||
+            QTextCursor(b).currentFrame() != doc->rootFrame()) {
+            previousLevel = 0;
+            continue;
+        }
+        QTextLine last = layout->lineAt(layout->lineCount() - 1);
+        qreal top = layout->position().y() + layout->lineAt(0).y();
+        qreal bottom = layout->position().y() + last.y() + last.height();
+        for (int i = 1; i <= level; i++) {
+            qreal from = previousLevel >= i ? previousBottom : top;
+            qreal x = layout->position().x() + (i - 1) * indent + indent * QUOTE_BAR_OFFSET;
+            painter->drawRect(QRectF(x, from, width, bottom - from));
+        }
+        previousLevel = level;
+        previousBottom = bottom;
+    }
+    painter->restore();
 }
 
 #include "markdown_objects.moc"

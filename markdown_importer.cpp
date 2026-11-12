@@ -21,6 +21,8 @@
  *
  * ----------------------------------------------------------------------------- */
 
+#include <QList>
+#include <QPair>
 #include <QRegularExpression>
 #include <QTextBlock>
 #include <QTextCursor>
@@ -55,6 +57,28 @@ void alignDisplayFormulas(QTextDocument* doc)
     }
 }
 
+// the text of a quote in its grey; a link and a text of a colour of its own keep theirs
+void greyQuotes(QTextDocument* doc)
+{
+    QList<QPair<int, int>> runs;
+    for (QTextBlock b = doc->begin(); b.isValid(); b = b.next()) {
+        if (b.blockFormat().intProperty(MarkdownQuoteLevel) <= 0) continue;
+        for (QTextBlock::iterator it = b.begin(); !it.atEnd(); ++it) {
+            QTextFragment f = it.fragment();
+            if (!f.charFormat().hasProperty(QTextFormat::ForegroundBrush))
+                runs.append(qMakePair(f.position(), f.length()));
+        }
+    }
+    QTextCharFormat grey;
+    grey.setForeground(markdownQuoteColor(doc));
+    QTextCursor cursor(doc);
+    for (const QPair<int, int>& run : runs) {
+        cursor.setPosition(run.first);
+        cursor.setPosition(run.first + run.second, QTextCursor::KeepAnchor);
+        cursor.mergeCharFormat(grey);
+    }
+}
+
 } // namespace
 
 bool isForeignTag(const QString& html)
@@ -83,5 +107,6 @@ void importMarkdown(QTextDocument* doc, const QString& text, const QString& base
     doc->setUndoRedoEnabled(false);
     readMarkdownMd4c(doc, text, baseDir);
     alignDisplayFormulas(doc);
+    greyQuotes(doc);
     doc->setUndoRedoEnabled(undo);
 }

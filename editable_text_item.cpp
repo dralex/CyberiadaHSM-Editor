@@ -282,6 +282,8 @@ void EditableTextItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *
 
     if (!isCut()) {
         QGraphicsTextItem::paint(painter, option, widget);
+        // the bars of the rendered quotes (EDIT-TEXT-14)
+        if (rendered) drawMarkdownQuotes(painter, document());
         return;
     }
     // the lines above the last whole one, then the last one short of the mark
@@ -305,6 +307,12 @@ void EditableTextItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *
     painter->drawText(QRectF(markLeft, lastTop, box.right() - markLeft, bottom - lastTop),
                       Qt::AlignLeft | Qt::AlignVCenter, mark);
     painter->restore();
+    if (rendered) {
+        painter->save();
+        painter->setClipRect(QRectF(box.left(), box.top(), box.width(), bottom - box.top()));
+        drawMarkdownQuotes(painter, document());
+        painter->restore();
+    }
 }
 
 void EditableTextItem::setTextAlignment(Qt::Alignment alignment) {
@@ -386,7 +394,8 @@ void EditableTextItem::applyRendering()
     source = toPlainText();
     // the highlighting belongs to the source
     if (highlighter) highlighter->setDocument(nullptr);
-    setMarkdownTextColor(document(), defaultTextColor());
+    // the canvas keeps its colours whatever the theme: a quote greys towards white
+    setMarkdownColors(document(), defaultTextColor(), Qt::white);
     importMarkdown(document(), source, markdownBase);
     rendered = true;
     emit sizeChanged();

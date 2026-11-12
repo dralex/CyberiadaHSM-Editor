@@ -58,6 +58,8 @@ enum CodeTokenKind {
     codeTokenCode,
     codeTokenLink,
     codeTokenMarker,
+    // the text of a quote, beside its marker and inline elements
+    codeTokenQuote,
     codeTokenKindsCount
 };
 

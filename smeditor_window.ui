@@ -284,7 +284,7 @@
    <addaction name="actionGridVisibility"/>
    <addaction name="actionSnapMode"/>
    <addaction name="actionServiceObjects"/>
-   <addaction name="actionModeInspection"/>
+   <addaction name="actionReadOnly"/>
    <addaction name="actionLogSession"/>
   </widget>
   <widget class="QToolBar" name="elementToolBar">
@@ -579,8 +579,15 @@
    <property name="checkable">
     <bool>true</bool>
    </property>
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/inspector-mode.png</normaloff>:/Icons/images/inspector-mode.png</iconset>
+   </property>
    <property name="text">
     <string>Read-only</string>
+   </property>
+   <property name="toolTip">
+    <string>Read-only: the tab takes no edits, a Markdown text shows its rendered document</string>
    </property>
   </action>
   <action name="actionDocumentProperties">

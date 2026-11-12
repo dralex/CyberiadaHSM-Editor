@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.52 (2026-11-12)
+**Document version:** 0.53 (2026-11-12)
 
 **Related authorities:**
 
@@ -503,7 +503,8 @@ the third is a derived display value the format does not store):
 
   ```
   # Heading            ─► heading (the whole line)
-  > quote  - item  1.  ─► the markers
+  > quote              ─► the marker, the rest of the quote and its lazy lines as quote
+  - item  1.           ─► the markers
   ---  ***             ─► a rule
   **strong** *em*      ─► emphasis
   `code`               ─► code
@@ -1056,7 +1057,9 @@ the stages of `docs/MODES.md`.
   (`EDIT-PLUG-22/41`); in a tab that is not, every edit is refused as in `EDIT-INSPECT-1` (a
   text takes no input), Undo, Redo and Save are disabled, and selecting, zooming, scrolling and
   copying keep working. The flag keeps the editing layout and the recovery of a diagram. In an
-  inspection or a diff tab the entry is checked and disabled. *design*
+  inspection or a diff tab the entry is checked and disabled. The main toolbar shows the entry
+  as a toggle button with the inspection icon; the inspection itself is reached through
+  Document > Mode only. *design*
 - `EDIT-MODE-5` MUST [A]: HSM to FA sets the metainformation `type` to `fa`, FA to HSM removes
   it, each as one undo step; the mode follows the document: a loaded document with `type/ fa`
   opens in FA, and an undo, a redo, a properties edit or a plugin result that sets or removes it
@@ -1111,11 +1114,15 @@ the stages of `docs/MODES.md`.
   in red monospace; an image is found relative to the directory of the tab's file (an untitled
   tab has none), an SVG one is drawn as vectors with its markers (the arrowheads), no wider than
   the text, a missing one as its alt text and path; a link opens outside the editor, a
-  `#anchor` scrolls to its heading. *design*
+  `#anchor` scrolls to its heading. A heading has 1.5 text lines of space above it and 0.5
+  below, a paragraph 0.75 above and below (the larger of two neighbouring spaces counts), an
+  item of a tight list 0.15, the first block none; a quote is indented by a level, drawn with a
+  bar at the left of each level and in a grey between the text and the background. *design*
 - `EDIT-MODE-15` MUST [A]: the parts of the window follow the mode of the active tab
   (`docs/MODES.md`, The modes): a text tab hides the element toolbar and disables the zoom,
-  Language, Markup, Properties..., the geometry actions and Export, and the tree and properties
-  docks are empty; Geometry and Refresh act on a diff tab, Check on an FA tab only. *design*
+  Language, Markup, Properties..., the geometry actions, Export and the switches of the canvas
+  view (the grid, the snap, the service objects, the transition text, the FA symbols, the
+  component comments), and the tree and properties docks are empty; Geometry and Refresh act on a diff tab, Check on an FA tab only. *design*
 - `EDIT-MODE-16` MUST [A]: the batch verbs `new-document [<mode>]`, `mode <id>` (`inspection`
   opens the inspection tab), `read-only on|off`, `compare <index|title|file>`, `geometry
   on|off` and `refresh` act as the menus do; `--dump-tabs` prints `i <title>[*] <mode>[ ro]

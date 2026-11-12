@@ -25,6 +25,7 @@
 #include <QDesktopServices>
 #include <QEvent>
 #include <QHash>
+#include <QPainter>
 #include <QScrollBar>
 #include <QTextBlock>
 
@@ -41,8 +42,9 @@ MarkdownView::MarkdownView(QWidget* parent): QTextBrowser(parent)
 
 void MarkdownView::setMarkdownText(const QString& text, const QString& baseDir)
 {
+    m_text = text;
     m_baseDir = baseDir;
-    setMarkdownTextColor(document(), palette().color(QPalette::Text));
+    setMarkdownColors(document(), palette().color(QPalette::Text), palette().color(QPalette::Base));
     importMarkdown(document(), text, baseDir);
 }
 
@@ -78,11 +80,16 @@ bool MarkdownView::scrollToHeading(const QString& anchor)
 
 void MarkdownView::changeEvent(QEvent* event)
 {
-    if (event->type() == QEvent::PaletteChange) {
-        setMarkdownTextColor(document(), palette().color(QPalette::Text));
-        viewport()->update();
-    }
+    if (event->type() == QEvent::PaletteChange) setMarkdownText(m_text, m_baseDir);
     QTextBrowser::changeEvent(event);
+}
+
+void MarkdownView::paintEvent(QPaintEvent* event)
+{
+    QTextBrowser::paintEvent(event);
+    QPainter painter(viewport());
+    painter.translate(-horizontalScrollBar()->value(), -verticalScrollBar()->value());
+    drawMarkdownQuotes(&painter, document());
 }
 
 void MarkdownView::openLink(const QUrl& url)

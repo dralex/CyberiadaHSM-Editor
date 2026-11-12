@@ -388,7 +388,7 @@ void TestHighlight::test_markdown_spans()
 	QVector<CodeSpan> spans = style.markdownSpans(text, nullptr);
 	QCOMPARE(kindAt(spans, text.indexOf("Head")), int(codeTokenHeading));
 	QCOMPARE(kindAt(spans, text.indexOf(">")), int(codeTokenMarker));
-	QCOMPARE(kindAt(spans, text.indexOf("quote")), -1);
+	QCOMPARE(kindAt(spans, text.indexOf("quote")), int(codeTokenQuote));
 	QCOMPARE(kindAt(spans, text.indexOf("- item")), int(codeTokenMarker));
 	QCOMPARE(kindAt(spans, text.indexOf("item")), -1);
 	QCOMPARE(kindAt(spans, text.indexOf("bold")), int(codeTokenEmphasis));
@@ -399,6 +399,17 @@ void TestHighlight::test_markdown_spans()
 	QCOMPARE(kindAt(spans, text.indexOf("1.")), int(codeTokenMarker));
 	QCOMPARE(kindAt(spans, text.indexOf("gone")), int(codeTokenEmphasis));
 	QCOMPARE(kindAt(spans, text.indexOf("<http")), int(codeTokenLink));
+
+	// a quote: the marker, its text and its lazy line in the quote colour, its inline
+	// elements as themselves; a blank line ends it
+	text = "> said **this** to\nthem lazily\n\nafter";
+	spans = style.markdownSpans(text, nullptr);
+	QCOMPARE(kindAt(spans, 0), int(codeTokenMarker));
+	QCOMPARE(kindAt(spans, text.indexOf("said")), int(codeTokenQuote));
+	QCOMPARE(kindAt(spans, text.indexOf("this")), int(codeTokenEmphasis));
+	QCOMPARE(kindAt(spans, text.indexOf(" to") + 1), int(codeTokenQuote));
+	QCOMPARE(kindAt(spans, text.indexOf("them")), int(codeTokenQuote));
+	QCOMPARE(kindAt(spans, text.indexOf("after")), -1);
 
 	// an inline code span hides the emphasis inside it
 	text = "`*x*` and 2*3*4";

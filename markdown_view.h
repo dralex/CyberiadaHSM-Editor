@@ -42,12 +42,16 @@ public:
     bool scrollToHeading(const QString& anchor);
 
 protected:
+    // a palette of another theme renders the text again: the quote grey is mixed from it
     void changeEvent(QEvent* event) override;
+    // the bars of the quotes over the drawn document
+    void paintEvent(QPaintEvent* event) override;
 
 private slots:
     void openLink(const QUrl& url);
 
 private:
+    QString m_text;
     QString m_baseDir;
 };
 

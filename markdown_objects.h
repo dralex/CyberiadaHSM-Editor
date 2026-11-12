@@ -29,6 +29,7 @@
 #include <QTextCharFormat>
 #include <QTextFormat>
 
+class QPainter;
 class QTextDocument;
 
 // the objects the Markdown readers put into a document (docs/MARKDOWN.md)
@@ -44,7 +45,9 @@ enum MarkdownObjectProperty {
     MarkdownImagePath,
     // the image as the text names it, and its alt text
     MarkdownImageSource,
-    MarkdownImageAlt
+    MarkdownImageAlt,
+    // the nesting level of a quote, a property of its blocks
+    MarkdownQuoteLevel
 };
 
 // a formula or an image in the format of the text around it
@@ -59,7 +62,14 @@ QString markdownImagePath(const QString& source, const QString& baseDir);
 // the drawing of the objects on the layout of the document, set once per layout
 void installMarkdownObjects(QTextDocument* doc);
 
-// the colour of the formulas whose text sets none: the text colour of the view
-void setMarkdownTextColor(QTextDocument* doc, const QColor& color);
+// the colours of the view: the text (of a formula whose text sets none) and the
+// background; a quote takes a grey between the two
+void setMarkdownColors(QTextDocument* doc, const QColor& text, const QColor& background);
+QColor markdownQuoteColor(const QTextDocument* doc);
+
+// the indent of a quote level: its bar, then the text (docs/MARKDOWN.md, Layout)
+qreal markdownQuoteIndent(const QTextDocument* doc);
+// the bars at the left of the quotes, the document drawn at the origin of the painter
+void drawMarkdownQuotes(QPainter* painter, QTextDocument* doc);
 
 #endif

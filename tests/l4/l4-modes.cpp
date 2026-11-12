@@ -47,6 +47,7 @@ private slots:
 	void test_text_undo_save();
 	void test_text_modes();
 	void test_markdown_rendered();
+	void test_read_only_button();
 	void test_back_to_diagram();
 	void test_compare_saved();
 	void test_compare_refresh();
@@ -213,6 +214,31 @@ void TestModes::test_markdown_rendered()
 	QVERIFY(rendered->toPlainText().contains("The traffic light"));
 	window.setDocumentReadOnly(text, false);
 	QCOMPARE(page->currentWidget(), (QWidget*)text->editor());
+}
+
+// EDIT-MODE-4/15: the toolbar button with the inspection icon flips the read-only flag, the
+// inspection is left to the Mode menu; a text tab greys the switches of the canvas view
+void TestModes::test_read_only_button()
+{
+	CyberiadaSMEditorWindow window;
+	QVERIFY(window.mainToolBar->actions().contains(window.actionReadOnly));
+	QVERIFY(!window.mainToolBar->actions().contains(window.actionModeInspection));
+	QVERIFY(!window.actionReadOnly->icon().isNull());
+	const QList<QAction*> switches = QList<QAction*>()
+		<< window.actionGridVisibility << window.actionSnapMode << window.actionServiceObjects
+		<< window.actionTransitionText << window.actionFASymbols << window.actionComponentComments;
+	QVERIFY(window.openFile("diagrams/hierarchy.graphml"));
+	for (QAction* a : switches) QVERIFY2(a->isEnabled(), qPrintable(a->text()));
+	QVERIFY(window.openFile("texts/notes.md"));
+	TextDocument* text = window.currentText();
+	for (QAction* a : switches) QVERIFY2(!a->isEnabled(), qPrintable(a->text()));
+	window.actionReadOnly->trigger();
+	QVERIFY(text->showsRendered());
+	QVERIFY(window.actionReadOnly->isChecked());
+	window.actionReadOnly->trigger();
+	QVERIFY(!text->showsRendered());
+	window.setCurrentDocument(window.tabAt(0));
+	for (QAction* a : switches) QVERIFY2(a->isEnabled(), qPrintable(a->text()));
 }
 
 // EDIT-MODE-15: a diagram tab gets its canvas parts back

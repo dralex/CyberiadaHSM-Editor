@@ -63,6 +63,8 @@ private slots:
 	void test_image_paths();
 	void test_inline_baseline();
 	void test_structure();
+	void test_layout();
+	void test_quotes();
 	void test_heading_anchor();
 	void test_tab_rendered();
 	void test_object_sizes();
@@ -100,9 +102,9 @@ QString TestMarkdown::structure(QTextDocument* doc)
 		if (b.textList())
 			line += QString(" list %1/%2 #%3").arg(b.textList()->format().style())
 				.arg(b.textList()->format().indent()).arg(b.textList()->itemNumber(b));
+		if (bf.hasProperty(MarkdownQuoteLevel))
+			line += QString(" quote %1").arg(bf.intProperty(MarkdownQuoteLevel));
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-		if (bf.hasProperty(QTextFormat::BlockQuoteLevel))
-			line += QString(" quote %1").arg(bf.intProperty(QTextFormat::BlockQuoteLevel));
 		if (bf.hasProperty(QTextFormat::BlockCodeLanguage))
 			line += " code " + bf.stringProperty(QTextFormat::BlockCodeLanguage);
 		if (bf.hasProperty(QTextFormat::BlockMarker)) line += QString(" marker %1").arg(int(bf.marker()));
@@ -376,12 +378,12 @@ void TestMarkdown::test_structure()
 		QString drawn = structure(&doc);
 		QString good = read(QString("good/%1-structure-output.txt").arg(examples[i]));
 #if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
-		// no quote level, code language and marker before Qt 5.14: the block headers without them
+		// no code language and marker before Qt 5.14: the block headers without them
 		QStringList goodLines = good.split('\n');
 		for (QString& l : goodLines) {
 			int colon = l.indexOf(':');
 			if (colon > 0)
-				l = l.left(colon).remove(QRegularExpression(" (quote \\d+|code [^ ]*|marker \\d+)")) + l.mid(colon);
+				l = l.left(colon).remove(QRegularExpression(" (code [^ ]*|marker \\d+)")) + l.mid(colon);
 		}
 		good = goodLines.join('\n');
 #endif
@@ -398,6 +400,76 @@ void TestMarkdown::test_structure()
 		QFAIL(qPrintable(QString("%1, line %2:\n drawn: %3\n good:  %4\n (the drawn structure: %5)")
 						 .arg(examples[i]).arg(n + 1).arg(a.value(n), b.value(n), out.fileName())));
 	}
+}
+
+// the space around the blocks in text lines: more above a heading than around a
+// paragraph, less between the items of a tight list, none above the first block
+void TestMarkdown::test_layout()
+{
+	QTextDocument doc;
+	importMarkdown(&doc, "# First\n\nA paragraph.\n\n## Second\n\n- one\n- two\n\n> quoted\n", QString());
+	auto format = [&](const QString& text) {
+		for (QTextBlock b = doc.begin(); b.isValid(); b = b.next())
+			if (b.text() == text) return b.blockFormat();
+		return QTextBlockFormat();
+	};
+	QCOMPARE(format("First").topMargin(), qreal(0));
+	qreal paragraph = format("A paragraph.").topMargin();
+	QVERIFY(paragraph > 0);
+	QCOMPARE(format("A paragraph.").bottomMargin(), paragraph);
+	QVERIFY(format("Second").topMargin() > paragraph);
+	QVERIFY(format("Second").bottomMargin() < paragraph);
+	QVERIFY(format("one").topMargin() < paragraph);
+	QCOMPARE(format("quoted").intProperty(MarkdownQuoteLevel), 1);
+	QCOMPARE(format("quoted").leftMargin(), markdownQuoteIndent(&doc));
+}
+
+// a quote: its levels, its text and formula in the grey, a link in its own colour,
+// a bar drawn at the left of each level (a shape, no glyph)
+void TestMarkdown::test_quotes()
+{
+	QTextDocument doc;
+	doc.setTextWidth(400);
+	setMarkdownColors(&doc, Qt::black, Qt::white);
+	importMarkdown(&doc, "> quoted *words* $x$ and [a link](http://a)\n>> deeper\n\nplain", QString());
+	QColor grey = markdownQuoteColor(&doc);
+	QVERIFY(grey != QColor(Qt::black) && grey != QColor(Qt::white));
+	QTextBlock outer, inner, plain;
+	for (QTextBlock b = doc.begin(); b.isValid(); b = b.next()) {
+		if (b.text().startsWith("quoted")) outer = b;
+		if (b.text() == "deeper") inner = b;
+		if (b.text() == "plain") plain = b;
+	}
+	QVERIFY(outer.isValid() && inner.isValid() && plain.isValid());
+	QCOMPARE(outer.blockFormat().intProperty(MarkdownQuoteLevel), 1);
+	QCOMPARE(inner.blockFormat().intProperty(MarkdownQuoteLevel), 2);
+	QCOMPARE(plain.blockFormat().intProperty(MarkdownQuoteLevel), 0);
+	for (QTextBlock::iterator it = outer.begin(); !it.atEnd(); ++it) {
+		QTextCharFormat f = it.fragment().charFormat();
+		if (f.isAnchor()) QVERIFY(f.foreground().color() != grey);
+		else QCOMPARE(f.foreground().color(), grey);
+	}
+	for (QTextBlock::iterator it = plain.begin(); !it.atEnd(); ++it)
+		QVERIFY(!it.fragment().charFormat().hasProperty(QTextFormat::ForegroundBrush));
+
+	QImage image = draw(&doc);
+	QPainter painter(&image);
+	drawMarkdownQuotes(&painter, &doc);
+	painter.end();
+	qreal indent = markdownQuoteIndent(&doc);
+	// a pixel inside the bar of a level: QUOTE_BAR_OFFSET of markdown_objects.cpp, a pixel in
+	const qreal barOffset = 0.25;
+	const int inside = 1;
+	auto barAt = [&](const QTextBlock& b, int level) {
+		QTextLayout* l = b.layout();
+		int x = int(l->position().x() + (level - 1) * indent + indent * barOffset) + inside;
+		int y = int(l->position().y() + l->lineAt(0).y() + l->lineAt(0).height() / 2);
+		return qAbs(qGray(image.pixel(x, y)) - qGray(grey.rgb())) <= 8;
+	};
+	QVERIFY(barAt(outer, 1));
+	QVERIFY(barAt(inner, 1));
+	QVERIFY(barAt(inner, 2));
+	QVERIFY(!barAt(plain, 1));
 }
 
 void TestMarkdown::test_heading_anchor()

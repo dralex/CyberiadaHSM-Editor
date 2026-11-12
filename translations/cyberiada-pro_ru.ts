@@ -213,7 +213,7 @@
         <translation>Markdown</translation>
     </message>
     <message>
-        <location line="+621"/>
+        <location line="+632"/>
         <source>Undo</source>
         <translation>Отменить</translation>
     </message>
@@ -335,8 +335,8 @@
         <translation>нет документа</translation>
     </message>
     <message>
-        <location line="-1184"/>
-        <location line="+1194"/>
+        <location line="-1195"/>
+        <location line="+1205"/>
         <source>a plugin is running on the document</source>
         <translation>для документа выполняется плагин</translation>
     </message>
@@ -345,8 +345,8 @@
         <translation type="vanished">в режиме инспектора документ доступен только для чтения</translation>
     </message>
     <message>
-        <location line="-1160"/>
-        <location line="+1197"/>
+        <location line="-1171"/>
+        <location line="+1208"/>
         <source>the document cannot be encoded</source>
         <translation>не удалось сериализовать документ</translation>
     </message>
@@ -378,7 +378,7 @@
         <translation>Плагин: %1</translation>
     </message>
     <message>
-        <location line="-1605"/>
+        <location line="-1616"/>
         <source>Mode</source>
         <translation>Режим</translation>
     </message>
@@ -388,18 +388,18 @@
         <translation>режим %1 недоступен</translation>
     </message>
     <message>
-        <location line="+1210"/>
+        <location line="+1221"/>
         <source>the inspection tab is read-only</source>
         <translation>вкладка инспекции доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1189"/>
-        <location line="+1190"/>
+        <location line="-1200"/>
+        <location line="+1201"/>
         <source>the tab is read-only</source>
         <translation>вкладка доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1347"/>
+        <location line="-1358"/>
         <source>Text file</source>
         <translation>Текстовый файл</translation>
     </message>
@@ -442,12 +442,12 @@
         <translation>Автомат не нарушает ни одного правила EXT-FA.</translation>
     </message>
     <message>
-        <location line="+289"/>
+        <location line="+299"/>
         <source>%1: not an element of a finite automaton</source>
         <translation>%1: не элемент конечного автомата</translation>
     </message>
     <message>
-        <location line="+302"/>
+        <location line="+303"/>
         <location line="+23"/>
         <location line="+7"/>
         <source>Save Text</source>
@@ -464,13 +464,13 @@
         <translation>%1 (*%2)</translation>
     </message>
     <message>
-        <location line="-404"/>
-        <location line="+404"/>
+        <location line="-405"/>
+        <location line="+405"/>
         <source>All files (*)</source>
         <translation>Все файлы (*)</translation>
     </message>
     <message>
-        <location line="-810"/>
+        <location line="-821"/>
         <source>Refresh</source>
         <translation>Обновить</translation>
     </message>
@@ -490,7 +490,7 @@
         <translation>вкладку сравнения открывает «Документ &gt; Сравнить с...»</translation>
     </message>
     <message>
-        <location line="+175"/>
+        <location line="+185"/>
         <source>added</source>
         <translation>добавлено</translation>
     </message>
@@ -554,7 +554,7 @@
         <translation>Граф CyberiadaML (*.graphml)</translation>
     </message>
     <message>
-        <location line="+893"/>
+        <location line="+894"/>
         <source>the action works in: %1</source>
         <translation>действие работает в режимах: %1</translation>
     </message>
@@ -2901,7 +2901,7 @@
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../batch_driver.cpp" line="+50"/>
+        <location filename="../batch_driver.cpp" line="+52"/>
         <source>Open State Machine</source>
         <translation>Открытие машины состояний</translation>
     </message>
@@ -3180,12 +3180,12 @@
     </message>
     <message>
         <location line="+8"/>
-        <location line="+401"/>
+        <location line="+408"/>
         <source>HSM diagram</source>
         <translation>Диаграмма ПРИМС</translation>
     </message>
     <message>
-        <location line="-389"/>
+        <location line="-396"/>
         <source>HSM inspection</source>
         <translation>Инспекция ПРИМС</translation>
     </message>
@@ -3271,9 +3271,14 @@
         <translation>Показывать действие входа состояния автомата только его выходным символом</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+12"/>
         <source>Read-only</source>
         <translation>Только чтение</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Read-only: the tab takes no edits, a Markdown text shows its rendered document</source>
+        <translation>Только чтение: вкладка не принимает правок, текст Markdown показывается отформатированным</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -3452,7 +3457,7 @@
         <translation>Новая диаграмма ПРИМС</translation>
     </message>
     <message>
-        <location line="-755"/>
+        <location line="-762"/>
         <source>New</source>
         <translation>Создать</translation>
     </message>
@@ -3461,7 +3466,7 @@
         <translation type="vanished">Новый файл</translation>
     </message>
     <message>
-        <location line="+770"/>
+        <location line="+777"/>
         <source>Service objects</source>
         <translation>Служебные объекты</translation>
     </message>

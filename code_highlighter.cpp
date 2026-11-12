@@ -29,6 +29,7 @@
 #include <QJsonObject>
 #include <QRegularExpression>
 #include <QTextDocument>
+#include <algorithm>
 
 #include "code_highlighter.h"
 #include "settings_manager.h"
@@ -245,7 +246,8 @@ QTextCharFormat CodeStyle::format(CodeTokenKind kind) const
         QColor(0x9e, 0x5a, 0x00),   // emphasis
         QColor(0x06, 0x7d, 0x17),   // code
         QColor(0x17, 0x50, 0xeb),   // link
-        QColor(0x8c, 0x8c, 0x8c)    // marker
+        QColor(0x8c, 0x8c, 0x8c),   // marker
+        QColor(0x5d, 0x6d, 0x7e)    // quote
     };
     QTextCharFormat fmt;
     fmt.setForeground(colors[kind]);
@@ -379,6 +381,22 @@ static void addInlineSpans(QVector<CodeSpan>& result, const QString& part, int b
     }
 }
 
+// the inline elements of a quote's text, the rest of it in the quote colour
+static void addQuoteSpans(QVector<CodeSpan>& result, const QString& part, int base)
+{
+    QVector<CodeSpan> inlines;
+    addInlineSpans(inlines, part, base);
+    std::sort(inlines.begin(), inlines.end(),
+              [](const CodeSpan& a, const CodeSpan& b) { return a.start < b.start; });
+    int at = base;
+    for (const CodeSpan& span : inlines) {
+        if (span.start > at) result.append(CodeSpan{at, span.start - at, codeTokenQuote});
+        result.append(span);
+        at = span.start + span.length;
+    }
+    if (base + part.length() > at) result.append(CodeSpan{at, base + part.length() - at, codeTokenQuote});
+}
+
 QVector<CodeSpan> CodeStyle::markdownSpans(const QString& text, const CodeLanguage* fallback) const
 {
     static const QRegularExpression fence(R"(^ {0,3}(`{3,}|~{3,})\s*([^\s`]*)\s*$)");
@@ -392,6 +410,8 @@ QVector<CodeSpan> CodeStyle::markdownSpans(const QString& text, const CodeLangua
     int pos = 0;
     // the open fence: its marker, its language and where its body starts
     QString fenceMarker;
+    // a quote goes on over its lazy lines until a blank line or another block
+    bool inQuote = false;
     const CodeLanguage* fenceLang = nullptr;
     int bodyStart = -1;
     while (pos <= n) {
@@ -408,28 +428,38 @@ QVector<CodeSpan> CodeStyle::markdownSpans(const QString& text, const CodeLangua
                 bodyStart = -1;
             }
         } else if (f.hasMatch()) {
+            inQuote = false;
             fenceMarker = f.captured(1);
             const CodeLanguage* tagged = find(f.captured(2));
             fenceLang = tagged ? tagged : fallback;
             result.append(CodeSpan{pos, line.length(), codeTokenMarker});
             bodyStart = qMin(eol + 1, n);
         } else if (heading.match(line).hasMatch()) {
+            inQuote = false;
             result.append(CodeSpan{pos, line.length(), codeTokenHeading});
         } else if (rule.match(line).hasMatch()) {
+            inQuote = false;
             result.append(CodeSpan{pos, line.length(), codeTokenMarker});
+        } else if (line.trimmed().isEmpty()) {
+            inQuote = false;
         } else {
             int start = 0;
             QRegularExpressionMatch q = quote.match(line);
             if (q.hasMatch()) {
                 result.append(CodeSpan{pos, q.capturedLength(0), codeTokenMarker});
                 start = q.capturedEnd(0);
+                inQuote = true;
+            } else if (inQuote && list.match(line).hasMatch()) {
+                // a list item starts a block of its own
+                inQuote = false;
             }
             QRegularExpressionMatch l = list.match(line.mid(start));
             if (l.hasMatch()) {
                 result.append(CodeSpan{pos + start + l.capturedStart(1), l.capturedLength(1), codeTokenMarker});
                 start += l.capturedEnd(1);
             }
-            addInlineSpans(result, line.mid(start), pos + start);
+            if (inQuote) addQuoteSpans(result, line.mid(start), pos + start);
+            else addInlineSpans(result, line.mid(start), pos + start);
         }
         if (eol >= n) break;
         pos = eol + 1;

@@ -1,6 +1,6 @@
 # The Markdown Rendering — Architecture
 
-**Document version:** 0.5 (2026-11-12). The requirements are `EDIT-MODE-14`, `EDIT-MODE-17` and
+**Document version:** 0.6 (2026-11-12). The requirements are `EDIT-MODE-14`, `EDIT-MODE-17` and
 `EDIT-TEXT-14` in `EDITOR-SPEC.md`.
 
 The editor renders Markdown itself: a read-only Markdown tab (`docs/MODES.md`, Text tabs) and,
@@ -50,6 +50,33 @@ the images are inserted as objects.
 Qt's own `QTextDocument::setMarkdown` (Qt 5.15) is not used: it reads no formulas, drops an
 image without an alt text, makes one image per piece of a formatted alt text and loses the
 text after a `<br>` or an unknown tag.
+
+## Layout
+
+The spaces around the blocks are measured in text lines (the height of the default font) and
+collapse as in CSS: of a bottom and the next top space the larger one counts.
+
+| Block | Above | Below |
+|---|---|---|
+| heading | 1.5 (none for the first block) | 0.5 |
+| paragraph, loose list item | 0.75 | 0.75 |
+| tight list item | 0.15 | 0.15 |
+
+A quote sets `MarkdownQuoteLevel` on its blocks (Qt's `BlockQuoteLevel` exists from Qt 5.14
+only) and indents them by 1.25 lines a level. Its text and its formulas take
+`markdownQuoteColor`: 55 % of the text colour, 45 % of the background (`setMarkdownColors`); a
+link keeps its colour. `drawMarkdownQuotes` draws a bar of 0.2 lines (2 px at least) a quarter
+into the indent of each level, on through the following blocks of the same quote:
+
+```
+ |  a quote with x^2           <- level 1: grey text, a bar
+ |  on two lines
+ |
+ |  |  and a deeper one        <- level 2: the bar of level 1 goes on
+```
+
+`MarkdownView::paintEvent` draws the bars over its document, `EditableTextItem::paint` over a
+rendered comment body (its colours: the text colour on white, the canvas keeps its colours).
 
 ## Formulas
 
@@ -102,8 +129,8 @@ text after a `<br>` or an unknown tag.
 `MarkdownView` is the page of a read-only Markdown tab: a `QTextBrowser` whose document is
 filled by `importMarkdown`. A link to a file or a site opens outside the editor, a `#anchor`
 scrolls to the heading of that GitHub anchor (`headingAnchor`: lower case, the spaces as `-`,
-no punctuation, a repeated one numbered); Ctrl+wheel zooms; a palette change takes the new
-text colour for the formulas.
+no punctuation, a repeated one numbered); Ctrl+wheel zooms; a palette change renders the
+text again, the formulas and the quotes in the new colours.
 
 ## Comments on the canvas
 
@@ -146,7 +173,8 @@ document of its `EditableTextItem`:
 * `svgPathEnds` and `expandSvgMarkers` on small examples, and the arrowhead of
   `texts/images/arrow.svg` drawn by QtSvg only after the expansion;
 * the image paths and the base directory; the baseline of an inline formula lower and higher
-  than its text; the heading anchors;
+  than its text; the heading anchors; the spaces of the blocks; the quotes - their levels,
+  their grey text and formulas, their bars (shapes, no glyph);
 * the structures of `texts/markdown.md` and `texts/notes.md` against
   `good/markdown-structure-output.txt` and `good/notes-structure-output.txt`;
 * the read-only tab of `texts/markdown.md`: the formulas, the images found next to the file;

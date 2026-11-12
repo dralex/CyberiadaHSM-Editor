@@ -802,11 +802,20 @@ void CyberiadaSMEditorWindow::updateTextActions()
         << actionCheck << actionExport << actionCompare << actionGeometry << actionRefresh;
     for (QAction* off : diagramOnly) off->setEnabled(false);
     for (QAction* tool : toolActMap) tool->setEnabled(false);
+    enableCanvasSwitches(false);
     actionSave->setEnabled(!text->isClean() && !readOnly);
     actionSaveAs->setEnabled(true);
     updateModeActions();
     updateUndoActions();
     updatePluginActions();
+}
+
+void CyberiadaSMEditorWindow::enableCanvasSwitches(bool on)
+{
+    const QList<QAction*> switches = QList<QAction*>()
+        << actionGridVisibility << actionSnapMode << actionServiceObjects
+        << actionTransitionText << actionFASymbols << actionComponentComments;
+    for (QAction* action : switches) action->setEnabled(on);
 }
 
 void CyberiadaSMEditorWindow::updateDiffActions()
@@ -820,6 +829,7 @@ void CyberiadaSMEditorWindow::updateDiffActions()
         << actionSave << actionSaveAs << actionCompare << actionZoomToSM;
     for (QAction* action : off) action->setEnabled(false);
     for (QAction* tool : toolActMap) tool->setEnabled(false);
+    enableCanvasSwitches(true);
     actionZoomIn->setEnabled(true);
     actionZoomOut->setEnabled(true);
     actionFitContent->setEnabled(true);
@@ -1095,6 +1105,7 @@ void CyberiadaSMEditorWindow::updateEditActions()
     actionSave->setEnabled(docOpen && modified && !readOnly);
     actionSaveAs->setEnabled(docOpen);
     actionExport->setEnabled(docOpen);
+    enableCanvasSwitches(true);
     updateModeActions();
     updateUndoActions();
     updatePluginActions();
