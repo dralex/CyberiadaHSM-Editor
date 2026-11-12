@@ -411,6 +411,27 @@ void TestHighlight::test_markdown_spans()
 	QCOMPARE(kindAt(spans, text.indexOf("them")), int(codeTokenQuote));
 	QCOMPARE(kindAt(spans, text.indexOf("after")), -1);
 
+	// a formula where the reader finds one: its dollars as markers, its TeX as math; not an
+	// escaped dollar, money or code; its TeX is no emphasis; a display one over its lines
+	text = "a $x_1$ b, \\$5, $5 and $10, `$y$`, $a_b_c$\n\n$$\n\\frac{a}{b}\n$$";
+	spans = style.markdownSpans(text, nullptr);
+	QCOMPARE(kindAt(spans, text.indexOf("$x_1")), int(codeTokenMarker));
+	QCOMPARE(kindAt(spans, text.indexOf("x_1")), int(codeTokenMath));
+	QCOMPARE(kindAt(spans, text.indexOf(" b,")), -1);
+	QCOMPARE(kindAt(spans, text.indexOf("$5,")), -1);
+	QCOMPARE(kindAt(spans, text.indexOf("$10")), -1);
+	QCOMPARE(kindAt(spans, text.indexOf("$y$")), int(codeTokenCode));
+	QCOMPARE(kindAt(spans, text.indexOf("b_c")), int(codeTokenMath));
+	QCOMPARE(kindAt(spans, text.indexOf("$$")), int(codeTokenMarker));
+	QCOMPARE(kindAt(spans, text.indexOf("\\frac")), int(codeTokenMath));
+	text = "# Title $x$\n> said $y$ here";
+	spans = style.markdownSpans(text, nullptr);
+	QCOMPARE(kindAt(spans, text.indexOf("Title")), int(codeTokenHeading));
+	QCOMPARE(kindAt(spans, text.indexOf("x$")), int(codeTokenMath));
+	QCOMPARE(kindAt(spans, text.indexOf("said")), int(codeTokenQuote));
+	QCOMPARE(kindAt(spans, text.indexOf("y$")), int(codeTokenMath));
+	QCOMPARE(kindAt(spans, text.indexOf("here")), int(codeTokenQuote));
+
 	// an inline code span hides the emphasis inside it
 	text = "`*x*` and 2*3*4";
 	spans = style.markdownSpans(text, nullptr);

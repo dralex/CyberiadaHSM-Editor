@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.53 (2026-11-12)
+**Document version:** 0.54 (2026-11-12)
 
 **Related authorities:**
 
@@ -509,6 +509,8 @@ the third is a derived display value the format does not store):
   **strong** *em*      ─► emphasis
   `code`               ─► code
   [text](url) <url>    ─► link
+  $x^2$  $$ … $$       ─► the dollars as markers, the TeX as a formula, where the reader
+                          finds one (EDIT-MODE-14): not in code, \$ or $ next to a letter
   ```cpp … ```         ─► the fence lines as markers, the body as code
   ```
 - `EDIT-TEXT-12` SHOULD [A]: the Document > Markup menu (after Document > Language) sets the

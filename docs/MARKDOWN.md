@@ -1,6 +1,6 @@
 # The Markdown Rendering — Architecture
 
-**Document version:** 0.6 (2026-11-12). The requirements are `EDIT-MODE-14`, `EDIT-MODE-17` and
+**Document version:** 0.7 (2026-11-12). The requirements are `EDIT-MODE-14`, `EDIT-MODE-17` and
 `EDIT-TEXT-14` in `EDITOR-SPEC.md`.
 
 The editor renders Markdown itself: a read-only Markdown tab (`docs/MODES.md`, Text tabs) and,
@@ -46,6 +46,9 @@ the images are inserted as objects.
   A `<br>` outside other tags is a line separator (Qt 5.12 drops a `<br/>` inserted alone),
   another void element closes itself (`<img ...>` -> `<img .../>`), a tag that is not text
   formatting (`<rundir>`) is shown as text.
+
+The source highlighting (`EDIT-TEXT-11`) finds the formulas with `markdownMathRanges`, the
+same md4c reading, so a formula is coloured exactly where it is rendered.
 
 Qt's own `QTextDocument::setMarkdown` (Qt 5.15) is not used: it reads no formulas, drops an
 image without an alt text, makes one image per piece of a formatted alt text and loses the

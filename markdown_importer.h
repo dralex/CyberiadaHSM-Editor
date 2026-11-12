@@ -25,8 +25,21 @@
 #define CYBERIADA_MARKDOWN_IMPORTER
 
 #include <QString>
+#include <QVector>
 
 class QTextDocument;
+
+// a formula of a Markdown text: [begin, end) with its dollars, [texBegin, texEnd) its TeX
+struct MarkdownMathRange {
+    int begin;
+    int end;
+    int texBegin;
+    int texEnd;
+};
+
+// the formulas md4c reads in the text, as the reader does: never in code, not \$ or a
+// dollar next to a letter or a digit (the source highlighting, EDIT-TEXT-11)
+QVector<MarkdownMathRange> markdownMathRanges(const QString& text);
 
 // a tag of an element that is neither void nor text formatting (<rundir>): text
 bool isForeignTag(const QString& html);

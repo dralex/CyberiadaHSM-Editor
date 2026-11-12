@@ -286,7 +286,9 @@ canvas with the bold prefix kept, a block comment across lines, a
 `platformLanguage` edit and its undo, two documents with their own languages,
 the preference switch, the dialogs, and a plain or coloured export. The Markdown
 cases (`EDIT-TEXT-11`): the markup lookup and the comment override, the spans of
-each element, a fence by its tag, by the document language or in one code
+each element, a whole quote with its lazy line, the formulas where the reader finds
+them (not money, an escaped dollar or code; a display one over its lines; in a heading
+and a quote), a fence by its tag, by the document language or in one code
 colour, a fence closed on a later line, the `markdown-comments` diagram on the
 canvas (a `dMarkup` `plain` comment stays plain), a `markupLanguage` removal and
 its undo, and the multiline dialog.

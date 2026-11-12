@@ -60,6 +60,8 @@ enum CodeTokenKind {
     codeTokenMarker,
     // the text of a quote, beside its marker and inline elements
     codeTokenQuote,
+    // the TeX of a formula between its dollars
+    codeTokenMath,
     codeTokenKindsCount
 };
 
@@ -179,10 +181,17 @@ protected:
     void highlightBlock(const QString& text) override;
 
 private:
+    // the settings changed: the spans are found again
+    void restyle();
+
     CodeRole role;
     // the code language; for the markup role, the fallback of a fenced block
     const CodeLanguage* language;
     CodeMarkup markup;
+    // the spans of the whole text, found once while the text and the settings stay
+    QString cachedText;
+    QVector<CodeSpan> cachedSpans;
+    bool cacheValid = false;
 };
 
 #endif // CODE_HIGHLIGHTER_H
