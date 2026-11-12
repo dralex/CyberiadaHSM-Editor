@@ -799,3 +799,8 @@ to also run the problems from `ctest`:
 ```
 cd ../../build && cmake -DPOLYGON_TESTS=ON . && ctest -R '^polygon-'
 ```
+
+The nightly run (`tests/nightly/run-nightly.sh`, `docs/NIGHTLY.md`) builds the
+current devel out of the tree and runs all of the above unattended: the ctest
+tier, the deterministic producers and the four missions, rotated by the day; it
+only adds to the register and writes its report to `problems/nightly/`.
