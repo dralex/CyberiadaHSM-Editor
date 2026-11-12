@@ -314,7 +314,8 @@ the third is a derived display value the format does not store):
 ### 4.4 Transitions/comment links geometry and layout — EDGES
 
 - `EDIT-EDGE-1` MUST [U]: an endpoint of a rect elements (a state, a comment) lies on the
-  elements border. An endpoint without a stored point lies on the border of its node
+  elements border; the rounded corners of a state are a part of it, so an endpoint released on
+  one stays on its arc (`EDIT-EDGE-15`) and a load keeps it there. An endpoint without a stored point lies on the border of its node
   toward the other end (a vertex at its centre), within tolerance. Resizing a node holds each
   attached endpoint at its absolute position while its border did not move (a point on a
   perpendicular border stays put), and keeps an endpoint whose edge moved attached to the new

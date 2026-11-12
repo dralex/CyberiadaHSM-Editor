@@ -28,6 +28,8 @@
 
 // Geometry constants
 #define ROUNDED_RECT_RADIUS 10
+// how far a point of the drawn (flattened) rounded corner may lie off the true arc
+#define ARC_TOLERANCE       0.5
 #define VERTEX_POINT_RADIUS 10
 #define CHOICE_DEFAULT_SIZE 40
 #define COMMENT_ANGLE_CORNER 10

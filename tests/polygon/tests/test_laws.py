@@ -25,6 +25,7 @@
 fire on an injected violation of each requirement."""
 
 import glob
+import math
 import os
 import unittest
 
@@ -290,6 +291,12 @@ class LawTest(unittest.TestCase):
         self.assertIn("EDGE-1", reqs(d, gated=True))
         t.sp = None                                          # an auto endpoint is exempt
         self.assertNotIn("EDGE-1", reqs(d, gated=True))
+        # a rounded corner is border: node-0-0-1 is 300x150, its arc centred at (140; 65)
+        c = L.CORNER_RADIUS * math.sqrt(0.5)
+        t.sp = (140.0 + c, 65.0 + c)
+        self.assertNotIn("EDGE-1", reqs(d, gated=True))
+        t.sp = (145.0, 70.0)                                 # inside the corner, off the arc
+        self.assertIn("EDGE-1", reqs(d, gated=True))
 
     def test_loop_outside(self):
         # EDGE-22: a self-loop is drawn outside its state; one drawn within the

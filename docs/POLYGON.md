@@ -522,7 +522,7 @@ field of its target, a drawn fragment link ending at the middle of its first und
 segment that lies in a text box of the target (`EDGE-21`, the boxes from `== text`), a
 drawn comment link starting on its comment border and, on a choice, ending anywhere on its
 rhombus (`EDGE-17`; the vertices bind only the transitions) (`EDGE-17`, from the `Subject Link` scene lines), a
-stored transition endpoint lying on its state's border (`EDGE-1`, from the
+stored transition endpoint lying on its state's border, a rounded corner included (`EDGE-1`, from the
 `transition_handles` source/target points — an auto endpoint is exempt), a
 self-loop drawn outside its state (`EDGE-22`, its scene rect reaching past the state box), one
 initial per level, endpoint kinds, containment, sibling no-overlap, the hidden

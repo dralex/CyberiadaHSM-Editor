@@ -26,10 +26,13 @@ predicates that must hold after any operation. Each law reads one parsed dump an
 yields the requirement it enforces and the offending detail; oracles.Round runs
 them every round in every mode. Reference-free — a property, not a prediction."""
 
+import math
+
 from . import dump as D
 from .expectations import RECT_TOLERANCE
 
 TOL = RECT_TOLERANCE
+CORNER_RADIUS = 10.0   # the editor's ROUNDED_RECT_RADIUS: the rounded corners of a state
 
 
 class Violation:
@@ -377,6 +380,18 @@ def no_overlap(dump):                                    # EDIT-NODE-6
                     yield Violation("NODE-6", "siblings %s and %s overlap" % (a.id, b.id))
 
 
+def _on_corner_arc(p, rect, tol=TOL):
+    """A point on a rounded corner of a state, a part of its border (EDIT-EDGE-1/15)."""
+    x, y, w, h = rect
+    hw, hh = w / 2.0, h / 2.0
+    rx, ry = min(CORNER_RADIUS, hw), min(CORNER_RADIUS, hh)
+    ax = abs(p[0] - x - hw) - (hw - rx)
+    ay = abs(p[1] - y - hh) - (hh - ry)
+    if ax <= 0 or ay <= 0:
+        return False
+    return abs(math.hypot(ax / rx, ay / ry) - 1.0) * min(rx, ry) <= tol
+
+
 def endpoint_on_border(dump):                            # EDIT-EDGE-1
     # a STORED transition endpoint on a rect element (a state) lies on its border.
     # An endpoint with no stored point is recomputed on the border every paint
@@ -406,7 +421,7 @@ def endpoint_on_border(dump):                            # EDIT-EDGE-1
             inside = x - TOL <= px <= x + w + TOL and y - TOL <= py <= y + ht + TOL
             on_edge = (abs(px - x) <= TOL or abs(px - x - w) <= TOL or
                        abs(py - y) <= TOL or abs(py - y - ht) <= TOL)
-            if not (inside and on_edge):
+            if not (inside and on_edge) and not _on_corner_arc(p, item.abs_rect):
                 yield Violation("EDGE-1", "the %s endpoint of %s hangs off the border of %s at (%g; %g)"
                                 % (role, t.id, end_id, px, py))
 

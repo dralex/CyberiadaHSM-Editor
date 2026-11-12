@@ -3100,6 +3100,17 @@ void CyberiadaSMModel::reattachLoopBends(Cyberiada::Element* node,
     }
 }
 
+// a point on a rounded corner of a state, the drawn arc an endpoint is released on
+// (EDIT-EDGE-15), is on its border as well as one on a straight edge (EDIT-EDGE-1)
+static bool onRoundedCorner(double x, double y, double hw, double hh)
+{
+    double rx = std::min<double>(ROUNDED_RECT_RADIUS, hw), ry = std::min<double>(ROUNDED_RECT_RADIUS, hh);
+    double ax = qAbs(x) - (hw - rx), ay = qAbs(y) - (hh - ry);
+    if (ax <= 0.0 || ay <= 0.0) return false;    // not in a corner square
+    double d = std::sqrt((ax / rx) * (ax / rx) + (ay / ry) * (ay / ry));
+    return qAbs(d - 1.0) * std::min(rx, ry) <= ARC_TOLERANCE;
+}
+
 // clamp a stored endpoint onto nodeId's border when it is a rect state; returns
 // whether it moved (an on-border point and a non-rect/point node are left alone)
 static bool recoverEndpoint(Cyberiada::Document* root, const Cyberiada::ID& nodeId, Cyberiada::Point& p)
@@ -3114,6 +3125,7 @@ static bool recoverEndpoint(Cyberiada::Document* root, const Cyberiada::ID& node
     if (!c) return false;
     Cyberiada::Rect r = c->get_geometry_rect();
     if (!r.valid || r.width <= 0.0 || r.height <= 0.0) return false;
+    if (onRoundedCorner(p.x, p.y, r.width / 2.0, r.height / 2.0)) return false;
     Cyberiada::Point q = clampPointOntoBorder(p.x, p.y, r.width / 2.0, r.height / 2.0);
     if (logPt(q) == logPt(p)) return false;    // already on the border: no change
     p = q;

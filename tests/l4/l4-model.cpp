@@ -25,11 +25,13 @@
 
 #include <QtTest>
 #include <functional>
+#include <cmath>
 #include <QAbstractItemModelTester>
 #include <QIcon>
 #include <QMimeData>
 #include "cyberiadasm_model.h"
 #include "settings_manager.h"
+#include "cyberiada_constants.h"
 #include "subject_fragment.h"
 
 class TestModel: public QObject {
@@ -61,6 +63,7 @@ private slots:
 	void test_undo_reset();
 	void test_reconstruct_geometry();
 	void test_recover_loose_endpoint();
+	void test_recover_keeps_corner_endpoint();
 	void test_resize_parent_holds_children();
 	void test_sm_not_drawn_mark();
 	void test_tree_drag_flags();
@@ -546,6 +549,30 @@ void TestModel::test_recover_loose_endpoint()
 	Cyberiada::Point lp = it->get_source_point();
 	QVERIFY(qAbs(qAbs(lp.x) - 150.0) < 0.01 || qAbs(qAbs(lp.y) - 75.0) < 0.01);
 	QCOMPARE(inspected.undoStack()->count(), 0);
+}
+
+void TestModel::test_recover_keeps_corner_endpoint()
+{
+	// an endpoint on a rounded corner of a state is on its border: a reload keeps
+	// it on the arc instead of snapping it to the sharp corner (EDIT-EDGE-1/15)
+	QTemporaryDir dir; QVERIFY(dir.isValid());
+	QString path = dir.filePath("corner.graphml");
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	// node-0-0-1 is 300x150: its bottom right arc is centred at (140, 65)
+	QModelIndex e2 = model->elementToIndex(model->idToElement("edge-2"));
+	const Cyberiada::Transition* t = static_cast<const Cyberiada::Transition*>(model->idToElement("edge-2"));
+	Cyberiada::Point tp = t->has_geometry_target_point() ? t->get_target_point() : Cyberiada::Point();
+	double c = ROUNDED_RECT_RADIUS * std::sqrt(0.5);
+	Cyberiada::Point corner(150.0 - ROUNDED_RECT_RADIUS + c, 75.0 - ROUNDED_RECT_RADIUS + c);
+	QVERIFY(model->updateGeometry(e2, corner, tp));
+	model->saveAsDocument(path, Cyberiada::formatCyberiada10, true);
+
+	CyberiadaSMModel reloaded(this);
+	QVERIFY(reloaded.loadDocument(path));
+	const Cyberiada::Transition* rt = static_cast<const Cyberiada::Transition*>(reloaded.idToElement("edge-2"));
+	QVERIFY(rt && rt->has_geometry_source_point());
+	QVERIFY(qAbs(rt->get_source_point().x - corner.x) < 0.01);
+	QVERIFY(qAbs(rt->get_source_point().y - corner.y) < 0.01);
 }
 
 void TestModel::test_resize_parent_holds_children()
