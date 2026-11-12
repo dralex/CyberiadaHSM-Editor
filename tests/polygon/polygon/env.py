@@ -122,8 +122,9 @@ class Env:
         environ = dict(os.environ)
         # always pin the build tree's library and plugin paths so a manual run
         # loads the same libraries ctest does; a stale system libcyberiadaml
-        # otherwise shadows the freshly built one and findings stop reproducing
-        baked = ctest_environment(root / "build")
+        # otherwise shadows the freshly built one and findings stop reproducing.
+        # The tree is the one of the inspected binary, not the in-source build/
+        baked = ctest_environment(binary.parent)
         for key, value in baked.items():
             if key == "LD_LIBRARY_PATH":
                 existing = environ.get(key)

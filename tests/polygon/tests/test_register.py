@@ -21,6 +21,7 @@
 #
 # -----------------------------------------------------------------------------
 
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -86,10 +87,25 @@ class MinimizeTest(unittest.TestCase):
 class EnvReproducibilityTest(unittest.TestCase):
     def test_discover_pins_the_build_library_path(self):
         # a manual run (platform var already set) must still get the build
-        # tree's LD_LIBRARY_PATH, or a stale system library shadows the build
-        env = E.Env.discover()
-        self.assertIn("LD_LIBRARY_PATH", env.environ)
-        self.assertIn("_prefix/lib", env.environ["LD_LIBRARY_PATH"])
+        # tree's LD_LIBRARY_PATH, or a stale system library shadows the build;
+        # the tree is the one of the inspected binary (an out-of-tree build)
+        build = Path(tempfile.mkdtemp())
+        (build / "tests").mkdir()
+        (build / "tests" / "CTestTestfile.cmake").write_text(
+            'set_tests_properties(t PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen;LD_LIBRARY_PATH=/x/lib")\n')
+        saved = {k: os.environ.get(k) for k in (E.BINARY_ENV, "LD_LIBRARY_PATH")}
+        try:
+            os.environ[E.BINARY_ENV] = str(build / E.BINARY_NAME)
+            os.environ["LD_LIBRARY_PATH"] = "/stale/lib"
+            env = E.Env.discover()
+        finally:
+            for k, v in saved.items():
+                if v is None:
+                    os.environ.pop(k, None)
+                else:
+                    os.environ[k] = v
+        self.assertEqual(env.binary, build / E.BINARY_NAME)
+        self.assertEqual(env.environ["LD_LIBRARY_PATH"].split(os.pathsep), ["/x/lib", "/stale/lib"])
 
     def test_env_mismatch_only_fires_on_a_real_difference(self):
         reg = R.Register(Path(tempfile.mkdtemp()) / "problems")
