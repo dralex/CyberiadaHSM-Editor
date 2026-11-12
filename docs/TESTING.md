@@ -269,7 +269,8 @@ diagram tab gets its canvas parts back.
 void and the foreign ones, the order inside the tags, an unclosed one), the SVG markers
 expanded and drawn, the image paths of the base directory, the baseline of an inline formula,
 the heading anchors, the structures of `texts/markdown.md` and `texts/notes.md` against their
-good files, the read-only tab of `texts/markdown.md`, the sizes of its objects, and the
+good files (before Qt 5.14 without the quote level, code language and list marker the
+reader cannot set), the read-only tab of `texts/markdown.md`, the sizes of its objects, and the
 rendered comments of `markdown-render-comments.graphml` - the source kept, shown while
 edited, the fragment links on the border, the preference switched back. No glyph is compared:
 the baseline is a relation, the arrowhead a shape without text. `l2-render-markdown`

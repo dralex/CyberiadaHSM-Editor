@@ -738,6 +738,16 @@ static void sendMouse(QGraphicsScene* scene, QEvent::Type type, const QPointF& p
 	QApplication::sendEvent(scene, &event);
 }
 
+// the hint is Qt 5.14+; before it, the platform theme default is 5
+static int doubleClickDistance()
+{
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+	return QGuiApplication::styleHints()->mouseDoubleClickDistance();
+#else
+	return 5;
+#endif
+}
+
 static bool runGesture(CyberiadaSMEditorScene* scene, const QStringList& tokens,
 					   GestureState* state, QString* error)
 {
@@ -804,8 +814,7 @@ static bool runGesture(CyberiadaSMEditorScene* scene, const QStringList& tokens,
 		// turns a double click on another item than the last grabber into a press,
 		// so the first click is sent unless the command before was it (the gesture
 		// log records it as press and release). The last release ends the grab.
-		if (!clicked || (state->clickPos - pos).manhattanLength() >
-			QGuiApplication::styleHints()->mouseDoubleClickDistance()) {
+		if (!clicked || (state->clickPos - pos).manhattanLength() > doubleClickDistance()) {
 			sendMouse(scene, QEvent::GraphicsSceneMousePress, pos, Qt::LeftButton, mods);
 			sendMouse(scene, QEvent::GraphicsSceneMouseRelease, pos, Qt::NoButton, mods);
 		}

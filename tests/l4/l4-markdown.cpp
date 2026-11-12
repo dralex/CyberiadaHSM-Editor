@@ -26,6 +26,7 @@
 #include <QFile>
 #include <QImage>
 #include <QPainter>
+#include <QRegularExpression>
 #include <QStackedWidget>
 #include <QSvgRenderer>
 #include <QTemporaryDir>
@@ -99,11 +100,13 @@ QString TestMarkdown::structure(QTextDocument* doc)
 		if (b.textList())
 			line += QString(" list %1/%2 #%3").arg(b.textList()->format().style())
 				.arg(b.textList()->format().indent()).arg(b.textList()->itemNumber(b));
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
 		if (bf.hasProperty(QTextFormat::BlockQuoteLevel))
 			line += QString(" quote %1").arg(bf.intProperty(QTextFormat::BlockQuoteLevel));
 		if (bf.hasProperty(QTextFormat::BlockCodeLanguage))
 			line += " code " + bf.stringProperty(QTextFormat::BlockCodeLanguage);
 		if (bf.hasProperty(QTextFormat::BlockMarker)) line += QString(" marker %1").arg(int(bf.marker()));
+#endif
 		if (bf.hasProperty(QTextFormat::BlockTrailingHorizontalRulerWidth)) line += " rule";
 		if (bf.alignment() & Qt::AlignHCenter) line += " centre";
 		line += ":";
@@ -362,6 +365,16 @@ void TestMarkdown::test_structure()
 		importMarkdown(&doc, text, base);
 		QString drawn = structure(&doc);
 		QString good = read(QString("good/%1-structure-output.txt").arg(examples[i]));
+#if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
+		// no quote level, code language and marker before Qt 5.14: the block headers without them
+		QStringList goodLines = good.split('\n');
+		for (QString& l : goodLines) {
+			int colon = l.indexOf(':');
+			if (colon > 0)
+				l = l.left(colon).remove(QRegularExpression(" (quote \\d+|code [^ ]*|marker \\d+)")) + l.mid(colon);
+		}
+		good = goodLines.join('\n');
+#endif
 		if (drawn == good) continue;
 		QTemporaryDir dir;
 		dir.setAutoRemove(false);
