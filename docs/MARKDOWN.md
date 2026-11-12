@@ -1,12 +1,12 @@
 # The Markdown Rendering — Architecture
 
-**Document version:** 0.3 (2026-11-12). The requirements are `EDIT-MODE-14`, `EDIT-MODE-17` and
+**Document version:** 0.4 (2026-11-12). The requirements are `EDIT-MODE-14`, `EDIT-MODE-17` and
 `EDIT-TEXT-14` in `EDITOR-SPEC.md`.
 
 The editor renders Markdown itself: a read-only Markdown tab (`docs/MODES.md`, Text tabs) and,
-when the preference is on, a Markdown comment body on the canvas. A TeX formula is drawn by
-JKQTMathText, an SVG image by QtSvg after its markers are expanded; no browser engine, no TeX
-installation and no network are involved.
+when the preference is on, a Markdown comment body on the canvas. md4c reads the text, a TeX
+formula is drawn by JKQTMathText, an SVG image by QtSvg after its markers are expanded; no
+browser engine, no TeX installation and no network are involved.
 
 ```
  TextDocument::showPage()                    CyberiadaSMEditorCommentItem
@@ -16,16 +16,11 @@ installation and no network are involved.
  MarkdownView : QTextBrowser               EditableTextItem::document()
         \                                           /
          +--------> importMarkdown(doc, text, baseDir) <------+       markdown_importer.*
-                     |                    |
-     CYBERIADA_MD_IMPORTER=QT        CYBERIADA_MD_IMPORTER=MD4C
-                     |                    |
-   scanMarkdown (md4c): the formulas,    md4c callbacks -> QTextCursor   markdown_md4c_reader.cpp
-   the images, the inline tags;          the formulas and the images
-   the text edited for Qt;               inserted as objects
-   QTextDocument::setMarkdown;
-   its images turned into objects
-                     \                    /
-                      v                  v
+                                  |
+            readMarkdownMd4c: md4c callbacks -> QTextCursor       markdown_md4c_reader.cpp
+            the formulas and the images inserted as objects
+                                  |
+                                  v
             QTextDocument: text, blocks, tables + objects
               MarkdownMathObject {tex, display}   MarkdownImageObject {path, source, alt}
                       |                                   |
@@ -39,26 +34,21 @@ installation and no network are involved.
 
 ## Reading
 
-`importMarkdown` fills a `QTextDocument` the same way for both readers (`EDIT-MODE-17`); both
-are compiled when the Qt has `setMarkdown`, the option chooses the one used.
+`readMarkdownMd4c` builds the document from the callbacks of md4c (`MD_DIALECT_GITHUB` with
+the math spans) through a `QTextCursor`, on any Qt the editor builds with (`EDIT-MODE-17`). The
+blocks take the formats of Qt's own reader (`QTextMarkdownImporter`): the heading sizes, the
+margins, the lists and their markers, the quotes, the code font, the tables; the formulas and
+the images are inserted as objects.
 
-| Reader | Qt | How the text gets into the document |
-|---|---|---|
-| `QT` | 5.14+ | `scanMarkdown` reads the text with md4c, the text is edited (below), `QTextDocument::setMarkdown` (GitHub dialect) reads it, and its images, in the document order, become the formula and image objects of the scan |
-| `MD4C` | 5.12+ | the callbacks of md4c (`MD_DIALECT_GITHUB`, the math spans) build the document with a `QTextCursor` as Qt's reader does (the heading sizes, the margins, the lists, the tables, the code font); the formulas and the images are inserted as objects |
+* A header cell takes the alignment of its column, as a body cell does.
+* Raw HTML: the tags are counted and the HTML inserted once they close; inside them every text
+  waits in its order (the code as `<code>`); a block inserts what is still open at its end.
+  A void element closes itself (`<br>` -> `<br/>`), a tag that is not text formatting
+  (`<rundir>`) is shown as text.
 
-The edits for Qt's reader of Qt 5.15, each at the place md4c reports, never in code:
-
-| Written | Edited | Why |
-|---|---|---|
-| `$..$`, `$$..$$` | `![$](cyb-math:N)` | Qt does not read formulas |
-| `![](a.svg)` | `![_](a.svg)` | Qt drops an image without an alt text; the object takes the scanned one |
-| `![a *b*](a.svg)` | — | Qt makes one image per piece of the alt text; the copies are removed |
-| `<br>` | `<br/>` | Qt waits for the closing tag of a void element and loses the text after it |
-| `<rundir>` | `&lt;rundir>` | the same for a tag that is not text formatting: it is shown as text |
-
-The `MD4C` reader closes the void elements and shows the foreign tags as text the same way;
-`l4-markdown` compares the structures of the two readers.
+Qt's own `QTextDocument::setMarkdown` (Qt 5.15) is not used: it reads no formulas, drops an
+image without an alt text, makes one image per piece of a formatted alt text and loses the
+text after a `<br>` or an unknown tag.
 
 ## Formulas
 
@@ -139,8 +129,7 @@ document of its `EditableTextItem`:
 | JKQTMathText of JKQtPlotter 5.0.0-beta2, the parts it needs of JKQTCommon | `3rdparty/jkqtmathtext` | LGPL-2.1+ |
 | XITS fonts | `3rdparty/jkqtmathtext/jkqtmathtext/resources/xits` | OFL-1.1 |
 
-* The options: `CYBERIADA_MD_IMPORTER` (`AUTO`, `QT`, `MD4C`; `QT` with a Qt older than 5.14
-  stops the configuration) and `CYBERIADA_WITH_MATH` (`ON`).
+* The option `CYBERIADA_WITH_MATH` (`ON`): `OFF` builds without JKQTMathText.
 * The vendored code is compiled as it is, as C++11 like the editor, into the static libraries
   `md4c` and `CyberiadaMathText`; `3rdparty/README.md` lists the files and the versions.
 
@@ -148,13 +137,15 @@ document of its `EditableTextItem`:
 
 `l4-markdown` (`docs/TESTING.md`, L4); no glyph is compared, as everywhere in the tests:
 
-* `scanMarkdown`: the formulas never in code, an escaped or a lone dollar, the tables, the
-  UTF-16 offsets; the images without an alt text; the void and the foreign tags;
+* the formulas never in code, an escaped or a lone dollar, the tables; every image one
+  object, without an alt text or with a formatted one; the HTML tags - the void and the
+  foreign ones, the order inside the tags, an unclosed one ending with its paragraph;
 * `svgPathEnds` and `expandSvgMarkers` on small examples, and the arrowhead of
   `texts/images/arrow.svg` drawn by QtSvg only after the expansion;
 * the image paths and the base directory; the baseline of an inline formula lower and higher
   than its text; the heading anchors;
-* the two readers' structures of `texts/markdown.md` and `texts/notes.md`;
+* the structures of `texts/markdown.md` and `texts/notes.md` against
+  `good/markdown-structure-output.txt` and `good/notes-structure-output.txt`;
 * the read-only tab of `texts/markdown.md`: the formulas, the images found next to the file;
   the sizes of its objects - an SVG at its own size or the text width, a missing image as
   its label, a bad formula with its errors, the display formula centred;

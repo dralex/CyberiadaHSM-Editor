@@ -1,0 +1,4 @@
+block h1: {The traffic light b}
+block: {The light has three states: } {red b} {, } {yellow i} { and green.}
+block list -1/1 #0: {the timer switches the states}
+block list -1/1 #1: {the button asks for green}

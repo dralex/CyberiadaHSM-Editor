@@ -46,21 +46,22 @@
 #include "cyberiadasm_editor_comment_item.h"
 
 // the laws of the Markdown rendering (EDIT-MODE-14/17, EDIT-TEXT-14, docs/MARKDOWN.md):
-// the formula spans, the markers, the readers, the baseline, the image paths, the
-// sizes of the objects and the rendered comments; no glyph is compared (docs/TESTING.md)
+// the formula spans, the images, the HTML tags, the markers, the baseline, the image
+// paths, the structure, the sizes of the objects and the rendered comments; no glyph
+// is compared (docs/TESTING.md)
 class TestMarkdown: public QObject {
 	Q_OBJECT
 
 private slots:
-	void test_scan_math();
-	void test_scan_images();
+	void test_math_spans();
+	void test_images_kept();
 	void test_html_tags();
 	void test_path_ends();
 	void test_expand_markers();
 	void test_marker_drawn();
 	void test_image_paths();
 	void test_inline_baseline();
-	void test_readers_same();
+	void test_structure();
 	void test_heading_anchor();
 	void test_tab_rendered();
 	void test_object_sizes();
@@ -69,6 +70,7 @@ private slots:
 private:
 	static QString read(const QString& path);
 	static QString structure(QTextDocument* doc);
+	static QList<QTextCharFormat> objects(const QString& text, int type);
 	static QImage draw(QTextDocument* doc);
 };
 
@@ -79,7 +81,7 @@ QString TestMarkdown::read(const QString& path)
 	return QString::fromUtf8(file.readAll());
 }
 
-// the blocks and the runs of a document with what both readers must agree on
+// the blocks and the runs of a document as a structure good file holds them
 QString TestMarkdown::structure(QTextDocument* doc)
 {
 	QString out;
@@ -142,70 +144,76 @@ QImage TestMarkdown::draw(QTextDocument* doc)
 	return image;
 }
 
+// the objects of a type in a document read from the text, in their order
+QList<QTextCharFormat> TestMarkdown::objects(const QString& text, int type)
+{
+	QTextDocument doc;
+	importMarkdown(&doc, text, QString());
+	QList<QTextCharFormat> found;
+	for (QTextBlock b = doc.begin(); b.isValid(); b = b.next())
+		for (QTextBlock::iterator it = b.begin(); !it.atEnd(); ++it)
+			if (it.fragment().charFormat().objectType() == type)
+				for (int k = 0; k < it.fragment().length(); k++) found.append(it.fragment().charFormat());
+	return found;
+}
+
 // the formulas are where md4c sees them: never in code, an escaped or a lone
-// dollar is money, the offsets count UTF-16 like QString
-void TestMarkdown::test_scan_math()
+// dollar is money
+void TestMarkdown::test_math_spans()
 {
-	QList<MathSpan> m = scanMarkdown("a $x$ b").math;
+	QList<QTextCharFormat> m = objects("a $x$ b", MarkdownMathObject);
 	QCOMPARE(m.size(), 1);
-	QCOMPARE(m.at(0).begin, 2);
-	QCOMPARE(m.at(0).end, 5);
-	QCOMPARE(m.at(0).tex, QString("x"));
-	QVERIFY(!m.at(0).display);
+	QCOMPARE(m.at(0).stringProperty(MarkdownTex), QString("x"));
+	QVERIFY(!m.at(0).boolProperty(MarkdownDisplay));
 
-	m = scanMarkdown("$$\\frac{a}{b}$$").math;
+	m = objects("$$\\frac{a}{b}$$", MarkdownMathObject);
 	QCOMPARE(m.size(), 1);
-	QVERIFY(m.at(0).display);
-	QCOMPARE(m.at(0).begin, 0);
-	QCOMPARE(m.at(0).end, 15);
-	QCOMPARE(m.at(0).tex, QString("\\frac{a}{b}"));
+	QVERIFY(m.at(0).boolProperty(MarkdownDisplay));
+	QCOMPARE(m.at(0).stringProperty(MarkdownTex), QString("\\frac{a}{b}"));
 
-	QCOMPARE(scanMarkdown("`$x$` and\n\n```\n$y$\n```\n").math.size(), 0);
-	QCOMPARE(scanMarkdown("the price is \\$5 and $6").math.size(), 0);
-	QCOMPARE(scanMarkdown("| a | $x^2$ |\n|---|---|\n| $y$ | b |\n").math.size(), 2);
+	QCOMPARE(objects("`$x$` and\n\n```\n$y$\n```\n", MarkdownMathObject).size(), 0);
+	QCOMPARE(objects("the price is \\$5 and $6", MarkdownMathObject).size(), 0);
+	QCOMPARE(objects("| a | $x^2$ |\n|---|---|\n| $y$ | b |\n", MarkdownMathObject).size(), 2);
 
-	m = scanMarkdown(QString::fromUtf8("состояние $s_1$")).math;
+	m = objects(QString::fromUtf8("состояние $s_1$"), MarkdownMathObject);
 	QCOMPARE(m.size(), 1);
-	QCOMPARE(m.at(0).begin, 10);
-	QCOMPARE(m.at(0).tex, QString("s_1"));
+	QCOMPARE(m.at(0).stringProperty(MarkdownTex), QString("s_1"));
 }
 
-// an image without an alt text is found with the place for one (Qt drops it)
-void TestMarkdown::test_scan_images()
+// every image is one object: one without an alt text, one with a formatted alt
+// (Qt's own reader dropped the first and split the second)
+void TestMarkdown::test_images_kept()
 {
-	QList<ImageSpan> images = scanMarkdown("![](a.svg) ![alt *b*](b.png \"t\")").images;
+	QList<QTextCharFormat> images = objects("![](a.svg) ![alt *b*](b.png \"t\")", MarkdownImageObject);
 	QCOMPARE(images.size(), 2);
-	QCOMPARE(images.at(0).source, QString("a.svg"));
-	QCOMPARE(images.at(0).chunks, 0);
-	QCOMPARE(images.at(0).emptyAlt, 2);
-	QCOMPARE(images.at(1).alt, QString("alt b"));
-	QCOMPARE(images.at(1).chunks, 2);
-	QCOMPARE(images.at(1).title, QString("t"));
-	QCOMPARE(images.at(1).emptyAlt, -1);
+	QCOMPARE(images.at(0).stringProperty(MarkdownImageSource), QString("a.svg"));
+	QCOMPARE(images.at(0).stringProperty(MarkdownImageAlt), QString());
+	QCOMPARE(images.at(1).stringProperty(MarkdownImageAlt), QString("alt b"));
+	QCOMPARE(images.at(1).toolTip(), QString("t"));
 }
 
-// a <br> is closed and a foreign tag is text for Qt's reader, which would lose the text after them
+// a <br> breaks the line, a foreign tag is text, the text inside tags keeps its
+// order and an unclosed tag ends with its paragraph: no text is lost after them
 void TestMarkdown::test_html_tags()
 {
-	QVERIFY(isOpenVoidTag("<br>"));
-	QVERIFY(isOpenVoidTag("<img src=\"a.png\">"));
-	QVERIFY(!isOpenVoidTag("<br/>"));
-	QVERIFY(!isOpenVoidTag("<b>"));
 	QCOMPARE(closeVoidTags("<br>"), QString("<br/>"));
 	QCOMPARE(closeVoidTags("<BR >"), QString("<BR/>"));
 	QCOMPARE(closeVoidTags("<b>x</b>"), QString("<b>x</b>"));
-	QCOMPARE(scanMarkdown("a<br>b `<br>`").openVoidTags, QList<int>() << 4);
 	QVERIFY(isForeignTag("<rundir>"));
 	QVERIFY(isForeignTag("</name>"));
 	QVERIFY(!isForeignTag("<sub>"));
 	QVERIFY(!isForeignTag("<br>"));
-	QCOMPARE(scanMarkdown("in <rundir>/x").foreignTags, QList<int>() << 3);
 	QTextDocument doc;
 	importMarkdown(&doc, "| a | b<br>c |\n|---|---|\n| d | e |\n\nthe end", QString());
 	QVERIFY(doc.toPlainText().contains("the end"));
 	QVERIFY(doc.toPlainText().contains("d"));
 	importMarkdown(&doc, "the file <rundir>/input.md and the rest", QString());
 	QVERIFY(doc.toPlainText().contains("<rundir>/input.md and the rest"));
+	importMarkdown(&doc, "a <b>bold `code`</b> c\n\nan <i>open tag\n\nthe last", QString());
+	QString text = doc.toPlainText();
+	QVERIFY2(text.contains("a bold code c"), qPrintable(text));
+	QVERIFY2(text.contains("an open tag"), qPrintable(text));
+	QVERIFY2(text.contains("the last"), qPrintable(text));
 }
 
 // the ends of the path data and the directions there, the arcs and the packed flags
@@ -341,28 +349,32 @@ void TestMarkdown::test_inline_baseline()
 	}
 }
 
-// EDIT-MODE-17: both readers give the same structure
-void TestMarkdown::test_readers_same()
+// EDIT-MODE-17: the examples read into the structure of their reviewed good files;
+// a mismatch keeps the drawn structure for the review
+void TestMarkdown::test_structure()
 {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-	const char* const examples[] = {"texts/markdown.md", "texts/notes.md"};
+	const char* const examples[] = {"markdown", "notes"};
 	QString base = QDir("texts").absolutePath();
 	for (size_t i = 0; i < sizeof(examples) / sizeof(examples[0]); i++) {
-		QString text = read(examples[i]);
+		QString text = read(QString("texts/%1.md").arg(examples[i]));
 		QVERIFY(!text.isEmpty());
-		QTextDocument qt, md4c;
-		readMarkdownQt(&qt, text, base);
-		readMarkdownMd4c(&md4c, text, base);
-		QStringList a = structure(&md4c).split('\n'), b = structure(&qt).split('\n');
-		for (int n = 0; n < qMax(a.size(), b.size()); n++) {
-			QString la = a.value(n), lb = b.value(n);
-			QVERIFY2(la == lb, qPrintable(QString("%1, line %2:\n md4c: %3\n qt:   %4")
-										  .arg(examples[i]).arg(n + 1).arg(la, lb)));
-		}
+		QTextDocument doc;
+		importMarkdown(&doc, text, base);
+		QString drawn = structure(&doc);
+		QString good = read(QString("good/%1-structure-output.txt").arg(examples[i]));
+		if (drawn == good) continue;
+		QTemporaryDir dir;
+		dir.setAutoRemove(false);
+		QFile out(dir.filePath(QString("%1-structure-output.txt").arg(examples[i])));
+		QVERIFY(out.open(QIODevice::WriteOnly));
+		out.write(drawn.toUtf8());
+		out.close();
+		QStringList a = drawn.split('\n'), b = good.split('\n');
+		int n = 0;
+		while (n < qMin(a.size(), b.size()) && a.at(n) == b.at(n)) n++;
+		QFAIL(qPrintable(QString("%1, line %2:\n drawn: %3\n good:  %4\n (the drawn structure: %5)")
+						 .arg(examples[i]).arg(n + 1).arg(a.value(n), b.value(n), out.fileName())));
 	}
-#else
-	QSKIP("Qt's reader came with Qt 5.14");
-#endif
 }
 
 void TestMarkdown::test_heading_anchor()

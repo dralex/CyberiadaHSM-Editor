@@ -82,9 +82,8 @@ cmake --build build
 [docs/TRANSLATION.md](docs/TRANSLATION.md).
 
 Отображение Markdown ([docs/MARKDOWN.md](docs/MARKDOWN.md)) использует библиотеки md4c и
-JKQTMathText из каталога `3rdparty`: параметр `-DCYBERIADA_MD_IMPORTER=AUTO|QT|MD4C`
-выбирает модуль чтения Markdown (`QT` требует Qt 5.14+), а `-DCYBERIADA_WITH_MATH=OFF`
-собирает редактор без формул TeX.
+JKQTMathText из каталога `3rdparty`; параметр `-DCYBERIADA_WITH_MATH=OFF` собирает редактор
+без формул TeX.
 
 Пакет под дистрибутив семейства Debian можно получить командой `cpack -G DEB`
 из директории сборки.

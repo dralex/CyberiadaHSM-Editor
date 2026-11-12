@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.51 (2026-11-12)
+**Document version:** 0.52 (2026-11-12)
 
 **Related authorities:**
 
@@ -1121,10 +1121,11 @@ the stages of `docs/MODES.md`.
   on|off` and `refresh` act as the menus do; `--dump-tabs` prints `i <title>[*] <mode>[ ro]
   [active]`; `--dump` of a text tab prints `== text` (the mode and the lines), of a diff tab
   `== diff` (the base label and the pairs with what differs, by id). *design*
-- `EDIT-MODE-17` MUST [A]: the build option `CYBERIADA_MD_IMPORTER` chooses the Markdown reader
-  of `EDIT-MODE-14` and `EDIT-TEXT-14`: `QT` (Qt's own, Qt 5.14 and newer), `MD4C` (the editor's,
-  any Qt), `AUTO` (`QT` when the Qt has it); both give the same document structure — the
-  headings, paragraphs, lists, quotes, code, tables, links, images and formulas. *design*
+- `EDIT-MODE-17` MUST [A]: the Markdown of `EDIT-MODE-14` and `EDIT-TEXT-14` is read by the
+  editor's md4c reader on any Qt, not by Qt's `setMarkdown`: every image is drawn, one without
+  an alt text or with a formatted one too; a header cell takes its column's alignment; the text
+  inside raw HTML keeps its order, and none is lost after a `<br>`, an unclosed tag or one that
+  is not HTML text formatting (`<rundir>`, shown as text). *design*
 
 ## 5. Coverage
 

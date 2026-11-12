@@ -7,6 +7,8 @@ $$\sum_{i=1}^{n} i = \frac{n(n+1)}{2}$$
 
 A formula the engine cannot read stays as it is: $\badcommand{x}$; the price is \$5 and $6.
 
+Raw HTML keeps its order: <b>bold `code`</b>, H<sub>2</sub>O and a <rundir>.
+
 ## Images
 
 ![The arrow](images/arrow.svg)

@@ -2,7 +2,7 @@
  * CyberiadaPro, the Cyberiada State Machine Editor
  * -----------------------------------------------------------------------------
  *
- * The Markdown readers: the text, the formulas and the images into a document
+ * The Markdown into a document: the text, the formulas and the images
  *
  * Copyright (C) 2026 Alexey Fedoseev <aleksey@fedoseev.net>
  *
@@ -24,58 +24,21 @@
 #ifndef CYBERIADA_MARKDOWN_IMPORTER
 #define CYBERIADA_MARKDOWN_IMPORTER
 
-#include <QList>
 #include <QString>
 
 class QTextDocument;
 
-// a formula of the text: [begin, end) with its dollars, the TeX between them
-struct MathSpan {
-    int     begin = 0;
-    int     end = 0;
-    bool    display = false;
-    QString tex;
-};
-
-// an image of the text in the document order; emptyAlt is the place for an alt
-// text when the image has none and its source is written inline, else -1
-struct ImageSpan {
-    QString source;
-    QString title;
-    QString alt;
-    int     chunks = 0;
-    int     emptyAlt = -1;
-};
-
-struct MarkdownScan {
-    QList<MathSpan>  math;
-    QList<ImageSpan> images;
-    // the '>' of each inline void element written without '/' (<br>) and the '<' of
-    // each tag of an element that is not HTML text formatting (<rundir>): Qt's
-    // reader waits for their closing tags and loses the text after them
-    QList<int>       openVoidTags;
-    QList<int>       foreignTags;
-};
-
-// an HTML void element written as an opening tag (<br>, <img src=x>)
-bool isOpenVoidTag(const QString& html);
-// a tag of an element that is neither void nor text formatting: shown as text
+// a tag of an element that is neither void nor text formatting (<rundir>): text
 bool isForeignTag(const QString& html);
 // the void elements closed (<br> -> <br/>), the other tags as they are
 QString closeVoidTags(const QString& html);
 
-// the formulas and the images as md4c reads them (GitHub dialect, the math
-// spans); the code is never a formula
-MarkdownScan scanMarkdown(const QString& text);
-
-// the readers (docs/MARKDOWN.md, Reading); both give the same structure
+// the md4c reader (docs/MARKDOWN.md, Reading): GitHub dialect with the formulas,
+// the formats of Qt's own reader
 void readMarkdownMd4c(QTextDocument* doc, const QString& text, const QString& baseDir);
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-void readMarkdownQt(QTextDocument* doc, const QString& text, const QString& baseDir);
-#endif
 
-// the document filled by the reader of the build (EDIT-MODE-17), the image paths
-// taken relative to baseDir, a display formula alone in its paragraph centred
+// the document filled by the md4c reader (EDIT-MODE-17), the image paths taken
+// relative to baseDir, a display formula alone in its paragraph centred
 void importMarkdown(QTextDocument* doc, const QString& text, const QString& baseDir);
 
 #endif

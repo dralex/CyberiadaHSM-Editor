@@ -1,0 +1,24 @@
+block h1: {Formulas and images b}
+block: {The automaton [math F = (A, Q, q_0, Q_F, \delta)] has the output function [math g_1\colon Q \times A \to B \cup \{\lambda\}].}
+block centre: {[math \sum_{i=1}^{n} i = \frac{n(n+1)}{2} display]}
+block: {A formula the engine cannot read stays as it is: [math \badcommand{x}]; the price is $5 and $6.}
+block: {Raw HTML keeps its order: } {bold code b} {, H2O and a <rundir>.}
+block h2: {Images b}
+block: {[image images/arrow.svg|The arrow]}
+block cell 0,0/3x3 th: {Element b}
+block cell 0,1/3x3 th centre: {Picture b}
+block cell 0,2/3x3 th: {Note b}
+block cell 1,0/3x3: {Arrow}
+block cell 1,1/3x3 centre: {[image images/arrow.svg|]}
+block cell 1,2/3x3: {bold b} { two lines}
+block cell 2,0/3x3: {Missing}
+block cell 2,1/3x3 centre: {[image images/missing.svg|gone]}
+block cell 2,2/3x3: {code code}
+block:
+block list -1/1 #0: {an item with [math x^2]}
+block list -1/1 #1 marker 2: {a done task}
+block list -4/2 #0: {a nested } {ordered b} { item}
+block quote 1: {a quote with [math \alpha]}
+block code cpp: {int x = 1; // $not a formula$}
+block code cpp:
+block: {Back to the images a=#images} { and } {a site a=https://example.org} {.}

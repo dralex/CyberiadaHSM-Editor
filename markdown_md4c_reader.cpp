@@ -181,12 +181,11 @@ private:
                 QTextCharFormat f = cell.format();
                 f.setFontWeight(QFont::Bold);
                 cell.setFormat(f);
-            } else {
-                // Qt aligns the body cells only
-                QTextBlockFormat bf = cursor.blockFormat();
-                bf.setAlignment(cellAlignment(d->align));
-                cursor.setBlockFormat(bf);
             }
+            // the header cells too, as GitHub aligns them
+            QTextBlockFormat bf = cursor.blockFormat();
+            bf.setAlignment(cellAlignment(d->align));
+            cursor.setBlockFormat(bf);
             break;
         }
         case MD_BLOCK_HR: {
@@ -203,6 +202,8 @@ private:
 
     int onLeaveBlock(MD_BLOCKTYPE type, void*)
     {
+        // the HTML of a block never waits past it, closed or not
+        flushHtml(true);
         switch (type) {
         case MD_BLOCK_P:
             listItem = false;
@@ -337,6 +338,22 @@ private:
             return 0;
         }
         insertPendingBlock();
+        if (type == MD_TEXT_HTML && !isForeignTag(s)) {
+            // the tags are counted and the HTML inserted once they close; a void
+            // element closes itself
+            s = closeVoidTags(s);
+            static const QRegularExpression opening("<[a-zA-Z]");
+            static const QRegularExpression closing("(/>|</)");
+            htmlDepth += s.count(opening) - s.count(closing);
+            htmlBuffer += s;
+            flushHtml(false);
+            return 0;
+        }
+        if (htmlDepth > 0) {
+            // inside the tags every text waits for them in its order
+            htmlBuffer += htmlText(type, s);
+            return 0;
+        }
         switch (type) {
         case MD_TEXT_NULLCHAR:
             s = QString(QChar(QChar::ReplacementCharacter));
@@ -351,32 +368,8 @@ private:
             cursor.insertHtml(s);
             s.clear();
             break;
-        case MD_TEXT_HTML: {
-            // a tag that is not text formatting is text (readMarkdownQt escapes it)
-            if (isForeignTag(s)) break;
-            // the tags are counted and the HTML inserted once they close; a void
-            // element closes itself (readMarkdownQt closes it for Qt's reader)
-            s = closeVoidTags(s);
-            static const QRegularExpression opening("<[a-zA-Z]");
-            static const QRegularExpression closing("(/>|</)");
-            htmlDepth += s.count(opening) - s.count(closing);
-            htmlBuffer += s;
-            s.clear();
-            if (htmlDepth <= 0) {
-                htmlDepth = 0;
-                cursor.insertHtml(htmlBuffer);
-                htmlBuffer.clear();
-                cursor.setCharFormat(spanFormats.isEmpty() ? QTextCharFormat() : spanFormats.top());
-            }
-            break;
-        }
-        case MD_TEXT_NORMAL:
-            if (htmlDepth > 0) {
-                htmlBuffer += s;
-                s.clear();
-            }
-            break;
         default:
+            // a tag that is not text formatting stays as it is written
             break;
         }
         if (!s.isEmpty()) {
@@ -389,6 +382,30 @@ private:
             cursor.setBlockFormat(bf);
         }
         return 0;
+    }
+
+    // a text inside HTML tags as HTML
+    static QString htmlText(MD_TEXTTYPE type, const QString& s)
+    {
+        switch (type) {
+        case MD_TEXT_ENTITY:   return s;
+        case MD_TEXT_BR:       return QString("<br/>");
+        case MD_TEXT_SOFTBR:   return QString(" ");
+        case MD_TEXT_NULLCHAR: return QString(QChar(QChar::ReplacementCharacter));
+        case MD_TEXT_CODE:     return "<code>" + s.toHtmlEscaped() + "</code>";
+        default:               return s.toHtmlEscaped();
+        }
+    }
+
+    // the held HTML inserted when its tags close, or at once when forced
+    void flushHtml(bool force)
+    {
+        if (htmlBuffer.isEmpty() || (htmlDepth > 0 && !force)) return;
+        htmlDepth = 0;
+        cursor.insertHtml(htmlBuffer);
+        htmlBuffer.clear();
+        cursor.setCharFormat(spanFormats.isEmpty() ? QTextCharFormat() : spanFormats.top());
+        markCellFilled();
     }
 
     void markCellFilled()

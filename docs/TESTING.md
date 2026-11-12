@@ -265,10 +265,11 @@ text and refuses a diagram mode; a read-only Markdown tab shows the rendered doc
 diagram tab gets its canvas parts back.
 
 `l4-markdown` checks the Markdown rendering (`EDIT-MODE-14/17`, `EDIT-TEXT-14`,
-`docs/MARKDOWN.md`): the formula spans md4c finds, the images without an alt text, the void
-and the foreign tags, the SVG markers expanded and drawn, the image paths of the base
-directory, the baseline of an inline formula, the heading anchors, the same structure from
-both readers, the read-only tab of `texts/markdown.md`, the sizes of its objects, and the
+`docs/MARKDOWN.md`): the formula spans md4c finds, every image one object, the HTML tags (the
+void and the foreign ones, the order inside the tags, an unclosed one), the SVG markers
+expanded and drawn, the image paths of the base directory, the baseline of an inline formula,
+the heading anchors, the structures of `texts/markdown.md` and `texts/notes.md` against their
+good files, the read-only tab of `texts/markdown.md`, the sizes of its objects, and the
 rendered comments of `markdown-render-comments.graphml` - the source kept, shown while
 edited, the fragment links on the border, the preference switched back. No glyph is compared:
 the baseline is a relation, the arrowhead a shape without text. `l2-render-markdown`
