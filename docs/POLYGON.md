@@ -541,8 +541,8 @@ The geometry is judged in the frame of the scene, the render and `== text`. The 
 lines leave out the region a composite places its children in, and the link ends are dumped
 without it; the reader adds the region of the composite from `== document` to its children
 and shifts the link ends by the regions above their owner (`polygon/dump.py`). A `== text`
-section that starts with `mode:` is the text of a text tab, not the canvas texts; it is kept
-apart (`Dump.text_tab`).
+section whose first line is a text-tab header key (`mode:`, `file:`, ...) is the text of a
+text tab, not the canvas texts; it is kept apart (`Dump.text_tab`, a `TextTab`).
 
 ## Expectation language
 
@@ -770,7 +770,11 @@ tests/polygon/
 `tests/CMakeLists.txt` can run the unit tests of the package as `polygon-unit`
 and include `problems/cases.cmake` for the `polygon-<id>` cases, both under the
 `L0_ENVIRONMENT` of the other tiers with the editor binary in
-`POLYGON_INSPECTOR`. These are **not** part of the default test run: the polygon
+`POLYGON_INSPECTOR`. Every polygon run takes the batch environment (the library
+paths, the fonts, the configuration folders) from the `tests/CTestTestfile.cmake`
+of the build tree that holds the binary in `POLYGON_INSPECTOR`, by default the
+in-source `build/`, so an out-of-tree build is inspected with its own libraries.
+These are **not** part of the default test run: the polygon
 needs Python 3.11+ (`tomllib`) and a configured backend, so it stays a separate
 framework with its own runner. Add its ctest tier with `-DPOLYGON_TESTS=ON`; the
 tests of the harness skip when the framework is not importable, so point
@@ -797,3 +801,8 @@ to also run the problems from `ctest`:
 ```
 cd ../../build && cmake -DPOLYGON_TESTS=ON . && ctest -R '^polygon-'
 ```
+
+The nightly run (`tests/nightly/run-nightly.sh`, `docs/NIGHTLY.md`) builds the
+current devel out of the tree and runs all of the above unattended: the ctest
+tier, the deterministic producers and the four missions, rotated by the day; it
+only adds to the register and writes its report to `problems/nightly/`.

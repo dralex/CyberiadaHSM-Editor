@@ -94,11 +94,16 @@ class DumpTest(unittest.TestCase):
 
     def test_text_tab(self):
         # a text tab dumps its own == text: fields and lines, no canvas text items
-        dump = D.parse_dump((GOOD / "plugin-lang-open-output.txt").read_text())
+        text = (GOOD / "plugin-lang-open-output.txt").read_text()
+        self.assertTrue(D.is_text_tab(D.sections(text)["text"]))
+        dump = D.parse_dump(text)
         self.assertEqual(dump.texts, [])
-        self.assertEqual((dump.text_tab["mode"], dump.text_tab["file"]), ("lua", "script.lua"))
-        self.assertEqual(len(dump.text_tab["content"]), int(dump.text_tab["lines"]))
-        self.assertEqual(dump.text_tab["content"][0], "-- the light toggles every second")
+        tab = dump.text_tab
+        self.assertEqual((tab.mode, tab.file, tab.modified, tab.rendered),
+                         ("lua", "script.lua", False, False))
+        # the "lines: 7" of the header
+        self.assertEqual(len(tab.lines()), 7)
+        self.assertEqual(tab.lines()[0], "-- the light toggles every second")
 
     def test_stack_and_sections(self):
         text = (GOOD / "add-elements-stack-output.txt").read_text()

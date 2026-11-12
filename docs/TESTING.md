@@ -947,6 +947,10 @@ mkdir build && cd build && cmake .. && make
 cd .. && ./run-tests.sh          # or: cd build && ctest --output-on-failure
 ```
 
+The unattended run of the whole suite - the stack update, an out-of-tree build,
+every tier with the polygon one and the polygon producers - is
+`tests/nightly/run-nightly.sh` (`docs/NIGHTLY.md`).
+
 At every run ctest first prints the commit under test (hash, branch, subject
 and a local-changes marker, via `tests/cmake/PrintRevision.cmake`), so a saved
 test log identifies the exact version it exercised.

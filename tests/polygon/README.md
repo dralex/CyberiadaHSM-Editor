@@ -10,8 +10,9 @@ Python 3.11+. The deterministic commands (`fuzz`, `tour`, `drill`, `replay`,
 agent of the cybersphere agents framework and needs `cybersphere-agents`,
 `hsm-dispatcher-py`, `pydantic-ai` and the CyberiadaML binding importable
 (the environment of `cybersphere-agents/README.md`). The editor must be built
-(`build/CyberiadaPro`); the batch environment is read from the build tree,
-so no variables need setting.
+(`build/CyberiadaPro`, or the binary of another build tree in
+`POLYGON_INSPECTOR`); the batch environment is read from the build tree of
+that binary, so no other variables need setting.
 
 ```
 cp polygon.example.toml polygon.toml       # name the backends; never committed

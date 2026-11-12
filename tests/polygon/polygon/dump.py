@@ -541,17 +541,63 @@ def parse_text(text):
     return items
 
 
-def parse_text_tab(text):
-    """The `== text` of a text tab: its `key: value` fields (mode, file, modified,
-    rendered, lines) and its `| ` lines as content."""
-    tab = {"content": []}
+# the header keys of the document text-tab form of the == text section
+# (EDIT-MODE-13..16): the active text document, not the per-element glyphs
+TEXT_TAB_KEYS = ("mode", "file", "modified", "rendered", "lines")
+
+
+@dataclass
+class TextTab:
+    mode: str              # text | markdown | <language> (the text document mode)
+    file: str              # the backing file name, or '' for an untitled tab
+    modified: bool
+    rendered: bool         # a Markdown tab shown read-only rendered
+    content: str           # the tab body, the leading "| " stripped, newlines kept
+
+    def lines(self):
+        return self.content.split("\n") if self.content else []
+
+
+def is_text_tab(text):
+    """The == text section is the document text-tab form when its first
+    non-blank line is a tab header key, not a per-element glyph line."""
     for line in text.splitlines():
-        if line.startswith("|"):
-            tab["content"].append(line[2:])
-        elif ": " in line:
-            key, value = line.split(": ", 1)
-            tab[key] = value
-    return tab
+        if not line.strip():
+            continue
+        key = line.split(":", 1)[0].strip()
+        return key in TEXT_TAB_KEYS
+    return False
+
+
+def parse_text_tab(text):
+    header = {}
+    body = []
+    in_body = False
+    for line in text.splitlines():
+        if not in_body and line.startswith(("| ", "|")) and (
+                line == "|" or line[:2] == "| "):
+            in_body = True
+        if in_body:
+            if line == "|":
+                body.append("")
+            elif line.startswith("| "):
+                body.append(line[2:])
+            elif not line.strip():
+                continue
+            else:
+                raise DumpError("malformed text-tab line: %s" % line)
+            continue
+        if not line.strip():
+            continue
+        key, _, value = line.partition(":")
+        key = key.strip()
+        if key not in TEXT_TAB_KEYS:
+            raise DumpError("malformed text-tab header: %s" % line)
+        header[key] = value.strip()
+    return TextTab(mode=header.get("mode", ""), file=header.get("file", ""),
+                   modified=header.get("modified") == "yes",
+                   rendered=header.get("rendered") == "yes",
+                   content="\n".join(body))
 
 
 def parse_stack(text):
@@ -710,12 +756,13 @@ class Dump:
     scene: list = field(default_factory=list)
     stack: Stack = None
     texts: list = field(default_factory=list)
+    # the document text-tab (EDIT-MODE-13..16) when the == text section carries
+    # the active text document instead of the per-element glyphs; else None
+    text_tab: "TextTab" = None
     text: str = ""
     # the == audit section: one line per graphics item no live owner tracks
     # (a handle a rebuild left in the scene), empty when the scene graph is clean
     audit: list = field(default_factory=list)
-    # the == text of a text tab: its fields (mode, file, ...) and content
-    text_tab: dict = None
 
     def scene_items(self):
         return {item.id: item for root in self.scene for item in root.walk()}
@@ -772,8 +819,7 @@ def parse_dump(text):
     if "stack" in parts:
         dump.stack = parse_stack(parts["stack"])
     if "text" in parts:
-        # the same name for the text of a text tab (EDIT-MODE-16), told by its fields
-        if parts["text"].lstrip().startswith("mode:"):
+        if is_text_tab(parts["text"]):
             dump.text_tab = parse_text_tab(parts["text"])
         else:
             dump.texts = parse_text(parts["text"])
