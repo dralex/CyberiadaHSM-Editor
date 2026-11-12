@@ -28,9 +28,10 @@ Run with the Python the plugins are bound to:
     python check-plugins.py --editor <CyberiadaPro.exe> [--samples DIR] [--log FILE]
                             [--summary FILE] [--language en|ru] [--pause]
 
-Every check prints "ok" or "FAIL" with what to check; the exit code is 0 when
-all pass, 1 otherwise. Only the standard library is used, so the check runs
-even when the packages are missing.
+Every check prints "ok" or "FAIL" with what to check, or "note" for a plugin
+that waits for a program to install (git); the exit code is 0 when no check
+fails, 1 otherwise. Only the standard library is used, so the check runs even
+when the packages are missing.
 """
 
 import argparse
@@ -43,10 +44,12 @@ import subprocess
 import sys
 import tempfile
 
-PLUGINS = ('hsm-to-python', 'hsm-maker')
-MODULES = ('cyberiadaml_py.cml', 'pydantic', 'hsmd', 'gencode', 'hsm_maker')
+PLUGINS = ('hsm-to-python', 'hsm-maker', 'git')
+MODULES = ('cyberiadaml_py.cml', 'pydantic', 'hsmd', 'gencode', 'hsm_maker', 'hsm_git')
 DISTRIBUTIONS = ('cyberiadaml-py', 'pydantic', 'pydantic-core', 'hsm-dispatcher-py',
-                 'hsm-to-python', 'cybersphere-hsm-maker')
+                 'hsm-to-python', 'cybersphere-hsm-maker', 'cybersphere-git-plugin')
+# the plugins the editor enables only with a program on PATH (their 'requires')
+PROGRAMS = {'git': 'git'}
 TIMEOUT = 120
 
 TEXTS = {
@@ -65,6 +68,10 @@ TEXTS = {
         'shadowed-hint': 'an older copy of the plugin in {folder} hides the installed one; '
                          'delete that folder',
         'disabled-hint': 'the editor disables the plugin: {reason}',
+        'program-hint': 'install {program} (Git for Windows, git-scm.com) so that it is on '
+                        'PATH: the editor then enables the plugin',
+        'git-hint': 'git does not make a repository ({detail}); check the Git for Windows '
+                    'installation',
         'runs': 'the plugin {plugin} runs',
         'run-hint': 'the editor could not run the plugin with {python} ({detail}); check that '
                     'this Python is still installed and that an antivirus does not block it',
@@ -88,6 +95,10 @@ TEXTS = {
         'shadowed-hint': 'старая копия модуля в {folder} закрывает установленный; удалите эту '
                          'папку',
         'disabled-hint': 'редактор отключил модуль: {reason}',
+        'program-hint': 'установите {program} (Git для Windows, git-scm.com), чтобы он был '
+                        'в PATH: тогда редактор включит модуль',
+        'git-hint': 'git не создаёт репозиторий ({detail}); проверьте установку Git для '
+                    'Windows',
         'runs': 'модуль {plugin} работает',
         'run-hint': 'редактор не смог запустить модуль через {python} ({detail}); проверьте, '
                     'что этот Python по-прежнему установлен и его не блокирует антивирус',
@@ -110,10 +121,11 @@ class Check:
     def say(self, key, **values):
         return self.text[key].format(**values)
 
-    def result(self, ok, name, hint=None, output=None):
-        line = ('ok   ' if ok else 'FAIL ') + name
+    def result(self, ok, name, hint=None, output=None, note=False):
+        line = ('ok   ' if ok else 'note ' if note else 'FAIL ') + name
         if not ok:
-            self.failures += 1
+            if not note:
+                self.failures += 1
             if hint:
                 line += '\n     ' + hint
         print(line, flush=True)
@@ -123,6 +135,10 @@ class Check:
             if output:
                 self.log.write('     ' + output.replace('\n', '\n     ').rstrip() + '\n')
         return ok
+
+    def note(self, name, hint):
+        """Not a failure: the plugin is installed and waits for the user."""
+        return self.result(False, name, hint, note=True)
 
 
 def run(command, env):
@@ -191,22 +207,29 @@ def check_imports(check):
 
 
 def check_listed(check, editor, env):
-    """The editor lists both plugins, enabled, from the installation."""
+    """The editor lists the plugins, enabled, from the installation; whether
+    all are, and the enabled ones."""
     code, output = run([editor, '--batch', '--list-plugins'], env)
     if code != 0:
         check.result(False, check.say('editor'),
                      check.say('editor-hint', editor=editor,
                                detail='exit {}'.format(code) if code is not None else output),
                      output)
-        return False
+        return False, set()
     check.result(True, check.say('editor'), output=output)
     plugins = listed_plugins(output)
     folder = os.path.join(os.path.dirname(editor), 'share', 'cyberiada-pro', 'plugins')
     ok = True
+    enabled = set()
     for plugin in PLUGINS:
         status, origin, reason = plugins.get(plugin, (None, None, None))
+        program = PROGRAMS.get(plugin)
         if status == 'enabled' and origin == 'system':
             hint = None
+            enabled.add(plugin)
+        elif status == 'disabled' and program and shutil.which(program, path=env.get('PATH')) is None:
+            check.note(check.say('listed', plugin=plugin), check.say('program-hint', program=program))
+            continue
         elif status is None:
             hint = check.say('missing-hint', folder=folder)
         elif origin == 'user' or status == 'shadowed':
@@ -215,7 +238,7 @@ def check_listed(check, editor, env):
         else:
             hint = check.say('disabled-hint', reason=reason or status)
         ok = check.result(hint is None, check.say('listed', plugin=plugin), hint) and ok
-    return ok
+    return ok, enabled
 
 
 def pinned_python(editor, plugin):
@@ -256,6 +279,18 @@ def check_run(check, editor, env, document, action, marks, work):
                                   detail=detail), output)
 
 
+def check_git(check, editor, env, document, work):
+    """The git plugin stages a sample diagram in a new repository."""
+    repo = os.path.join(work, 'repo')
+    code, output = run(['git', 'init', '-q', repo], env)
+    if code != 0:
+        detail = 'exit {}'.format(code) if code is not None else output
+        return check.result(False, check.say('runs', plugin='git'),
+                            check.say('git-hint', detail=detail), output)
+    return check_run(check, editor, env, document, 'git:stage',
+                     ('state: done', 'A  ' + os.path.basename(document)), repo)
+
+
 def main(argv=None):
     here = os.path.dirname(os.path.abspath(__file__))
     parser = argparse.ArgumentParser(description='Check the python plugins of CyberiadaPro.')
@@ -274,7 +309,8 @@ def main(argv=None):
     try:
         env = editor_environment(args.editor)
         imported = check_imports(check)
-        if check_listed(check, args.editor, env) and imported:
+        listed, enabled = check_listed(check, args.editor, env)
+        if listed and imported:
             with tempfile.TemporaryDirectory() as work:
                 check_run(check, args.editor, env,
                           os.path.join(args.samples, 'code_layout.graphml'),
@@ -282,6 +318,9 @@ def main(argv=None):
                 check_run(check, args.editor, env,
                           os.path.join(args.samples, 'lift.graphml'),
                           'hsm-maker:notation', ('state: done', 'machine Lift'), work)
+                if 'git' in enabled:
+                    check_git(check, args.editor, env,
+                              os.path.join(args.samples, 'code_layout.graphml'), work)
         summary = check.say('passed') if not check.failures else check.say(
             'failed', count=check.failures)
         print(summary, flush=True)

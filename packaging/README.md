@@ -115,7 +115,8 @@ the pure-Python `cyberiadaml-py`. A binding for another Python, without the edit
 ### The python tools on Windows
 
 The python packages of the Windows release (`hsm-dispatcher-py`, `hsm-to-python`,
-`cybersphere-hsm-maker`; `cybersphere-agents` is not in it) read the diagrams with
+`cybersphere-hsm-maker`, `cybersphere-git-plugin`; `cybersphere-agents` and
+`lapki-compiler-plugin`, whose Lapki writer is the binding's, are not in it) read the diagrams with
 `cyberiadaml-py`, the pure-Python
 CyberiadaML interface, when the binding is not installed, so on Windows they need no
 binary module of ours and no Python of a particular version, only Python 3.8.1+. On
@@ -125,9 +126,10 @@ below). Their wheels are built by this script or, the same files, on
 Linux in `dist/pyapps/`; pip takes `cyberiadaml-py` and the dispatcher from that
 folder and `pydantic` from PyPI:
 
-    py -3 -m pip install --find-links dist\pyapps hsm-to-python cybersphere-hsm-maker
+    py -3 -m pip install --find-links dist\pyapps hsm-to-python cybersphere-hsm-maker cybersphere-git-plugin
     hsm-run --install-editor-plugin
     hsm-maker --install-editor-plugin
+    hsm-git --install-editor-plugin
 
 The plugins then appear in CyberiadaPro (either Windows build). The binding `.zip` is
 optional: it is faster and reads the legacy yEd diagrams too, for the Python it was
@@ -175,14 +177,18 @@ The installer:
    built before; the build checks its import table. Python 3.8 is the last one for
    Windows 7. The Pythons are found in the PEP 514 registry; the bundled ones are the
    python.org installers of `windows-installer/python.txt`, installed for all users;
-3. installs the python plugins hsm-to-python and hsm-maker (not cybersphere-agents)
+3. installs the python plugins hsm-to-python, hsm-maker and git (not cybersphere-agents,
+   nor lapki-compiler)
    into that Python from the bundled wheels, offline: the plugin packages, the
    pure-Python `cyberiadaml-py` and the pinned pydantic wheels of that Windows. Then
    it binds the plugins of the editor folder to that Python for every user
    (`--install-editor-plugin`);
 4. checks that the editor runs them (`windows-installer/check-plugins.py`) and shows
    the result: every failure with what to check. The check runs again from the
-   Start menu (CyberiadaPro, Check plugins).
+   Start menu (CyberiadaPro, Check plugins). git itself is not bundled: the editor
+   enables the git plugin once Git for Windows is on `PATH` (the check notes it,
+   not a failure); without the binding its Changes Since a Revision... stops with a
+   message, the stage, commit, history and the compare tabs work.
 
 Its pictures, `windows-installer/welcome.bmp` (the Welcome and Finish pages, 164x314) and
 `windows-installer/header.bmp` (the header of the other pages, 150x57), are drawn from the

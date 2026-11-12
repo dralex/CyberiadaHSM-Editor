@@ -186,10 +186,13 @@ pack_editor() {
     # plugin folder (next to the exe); running them needs a Python 3.10+ with the
     # tool wheels (dist/pyapps), which read the diagrams with the pure-Python
     # cyberiadaml-py, so no binary module is needed. The plugin id is the folder
-    # name, which differs from the repo name for the maker. cybersphere-agents is
+    # name, which differs from the repo name for the maker and git. The git plugin
+    # needs git; its diagram text diff needs the binding (the compares do not).
+    # cybersphere-agents and lapki-compiler (its Lapki writer is the binding's) are
     # not in the Windows release.
     plugdir="$stage/share/cyberiada-pro/plugins"
-    for spec in "hsm-to-python:hsm-to-python" "cybersphere-hsm-maker:hsm-maker"; do
+    for spec in "hsm-to-python:hsm-to-python" "cybersphere-hsm-maker:hsm-maker" \
+                "cybersphere-git-plugin:git"; do
         prepo=${spec%%:*}; pid=${spec##*:}
         if [ -d "$SRC/$prepo/editor-plugin" ]; then
             mkdir -p "$plugdir/$pid"
