@@ -1,6 +1,6 @@
 # The Document Modes — Architecture
 
-**Document version:** 0.7 (2026-11-11) — stages 1 to 5 implemented (see Stages). The requirements are
+**Document version:** 0.8 (2026-11-12) — stages 1 to 6 implemented (see Stages). The requirements are
 `EDIT-MODE-1..16` in `EDITOR-SPEC.md` §4.14, the plugin parts `EDIT-PLUG-56..60`.
 
 A tab holds one document in one **mode**: the format edited, the access, and the tools, the
@@ -264,7 +264,9 @@ File                              Document
    `diff` result opening or refreshing a diff tab (`DiffOrigin::originPlugin`), an unknown
    result or mode as a warning, `CodeStyle::setPluginLanguages` with the language menus
    rebuilt on `languagesChanged`, the `files` links and the line links of a text tab.
-6. The git plugin: Compare with a Revision....
+6. The git plugin: Compare with a Revision... — done in cybersphere-git-plugin: `hsm-git
+   revision` writes the base, `modes` on every git action, its text diff hides
+   `regionGeometry` without the geometry as the tab does.
 
 ## Decisions of 0.1
 
