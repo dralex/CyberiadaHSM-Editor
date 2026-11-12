@@ -720,6 +720,11 @@ The window holds several documents; the structure is drawn in `docs/WINDOW.md`.
   window title and the tab text, `untitled` when it has no name; the title follows a rename, an
   undo/redo and a plugin result; a document with a file is titled by the file basename; Save As
   of a named unsaved document proposes `Name.graphml`. *design*
+- `EDIT-DOC-11` MUST [A]: the batch verb `save [<file>]` saves the active tab as Save does, or
+  as `<file>` (relative to the current directory) as Save As does; the tab is no longer
+  modified, so the `saved` token holds (`EDIT-PLUG-52`). It follows the enabling of Save and
+  Save As (`EDIT-IO-7`), except that `save` of an unmodified tab with a file writes nothing;
+  a refused `save` and a failed write are script errors. *design*, *open*
 
 ### 4.12 Plugins — PLUG
 
@@ -727,7 +732,8 @@ The plugins are external programs run on the active document: the architecture i
 `docs/PLUGINS.md`, the contract a plugin follows is `docs/PLUGIN-API.md` (`api` 1, the
 session protocol 1). `EDIT-PLUG-36..49` are the sessions (plugin level 2), `EDIT-PLUG-50..55`
 the conditions of an action, `EDIT-PLUG-56..59` the modes of an action and the diff result
-(`docs/MODES.md`), `EDIT-PLUG-60` the languages a plugin brings.
+(`docs/MODES.md`), `EDIT-PLUG-60` the languages a plugin brings, `EDIT-PLUG-61..64` the plugin
+runs of the batch script, which the plugin polygon drives (`docs/POLYGON-PLUGINS.md`).
 
 - `EDIT-PLUG-1` MUST [A]: the plugins are looked up in `--plugin-path` (which replaces the
   rest), `$CYBERIADA_PRO_PLUGIN_PATH`, the user folder (moved by `$CYBERIADA_PRO_DATA_HOME`,
@@ -961,6 +967,31 @@ the conditions of an action, `EDIT-PLUG-56..59` the modes of an action and the d
   read at start and on Rescan; one gone turns its text tabs into Plain text and its
   `platformLanguage` values into unknown ones; `--list-plugins` prints a plugin's
   `languages:`. *design*
+- `EDIT-PLUG-61` MUST [A]: the batch verb `plugin <id>[:<action>] [<name>=<value> ...]` runs
+  the action on the active tab as `--run-plugin` does (`EDIT-PLUG-27`) and waits for its end:
+  no dialog, the defaults and the values given in the `--plugin-param` syntax, a value holding
+  spaces double-quoted (`\"` and `\\` inside it); the result is applied as in the GUI, a
+  `new-document` or `diff` result activating its tab, and Refresh of a plugin diff tab runs the
+  action again (`EDIT-PLUG-58`). An unknown plugin, action or value and an action disabled on
+  the active tab (`EDIT-PLUG-52..56`, with the reason of `EDIT-PLUG-54`) are script errors; a
+  failed run is not: the script goes on, and the batch exits 6 at its end unless another
+  error ends it. *design*, *open*
+- `EDIT-PLUG-62` MUST [A]: the `plugin` verb of a session action takes the lines up to a line
+  `end` as its session script (`EDIT-PLUG-47`): the session verbs, run in order after the first
+  state, `save FILE` inside the block being the session verb; a failed `expect`, a timeout or a
+  failed session fails the run (`EDIT-PLUG-61`), and a block without `end` is a script error.
+  *design*, *open*
+- `EDIT-PLUG-63` MUST [A]: `--dump-actions` prints `== actions` after the sections of the active
+  tab: every action of every plugin listed `enabled` (`EDIT-PLUG-1`), session actions included,
+  in the search path order, one line each — `<id>:<action> enabled`, or `<id>:<action>
+  disabled: <reason>` with the reason of `EDIT-PLUG-54`; on a diff tab every action is
+  disabled. *design*, *open*
+- `EDIT-PLUG-64` MUST [A]: `--dump` and `--dump-plugin` print `== plugin <n>` and
+  `== diagnostics <n>` for the n-th `plugin` run of the script, and `--dump-session` prints
+  `== session <n>` for a session one, in the formats of `EDIT-PLUG-28/48`, after the sections
+  of the active tab whatever its kind; the `--run-plugin` stage keeps its unnumbered sections,
+  printed last. The numbered sections and `== actions` are deterministic and name no machine
+  path (`EDIT-PLUG-28`). *design*, *open*
 
 ### 4.13 Interface language and preferences — UI
 

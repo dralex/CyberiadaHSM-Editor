@@ -648,6 +648,15 @@ rejections, defects, reproduction). `productivity.json` accumulates the
 totals per backend across campaigns, printed by `report`. The keys never
 enter any of it; only the backend and the model names are recorded.
 
+## Plugins
+
+The plugin polygon (`POLYGON-PLUGINS.md`) extends the producers, the oracles and the register to
+the editor's plugins. A `plugin` line of the script runs an action. The plugin's world (a
+folder, a git repository, a model API behind a record/replay proxy) is rebuilt for every editor
+run, and the plugin laws of `EDITOR-SPEC` §4.12 and the invariants of the plugin's profile
+judge the runs. The tester drives the plugins in the `plugin` mission, and `plugin-campaign`
+judges the diagrams an LLM plugin draws.
+
 ## Problem register
 
 `problems/register.json` follows the `defects.json` convention of the

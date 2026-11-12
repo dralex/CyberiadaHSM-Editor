@@ -93,5 +93,5 @@ The editor has a console test system based on the batch mode and the Qt
 offscreen platform. Build the project, then run `./run-tests.sh` from the
 repository root. See `docs/TESTING.md` for the testing architecture, the
 batch mode contract and the test layers, and `docs/POLYGON.md` for the
-agent-driven test polygon.
+agent-driven test polygon (`docs/POLYGON-PLUGINS.md` for its plugin part).
 
