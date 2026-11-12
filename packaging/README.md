@@ -24,7 +24,8 @@ The **python binding** (`libcyberiadamlpp-py`) is built and packaged as its **ow
 package — `python3-libcyberiadamlpp` (`.deb`) or a `.zip` — and is **never** bundled
 into the editor distribution. It needs the python 3 dev headers and `pybind11`.
 Right after it, the **python packages** (`hsm-dispatcher-py`, `fa-dispatcher-py`,
-`hsm-to-python`, `cybersphere-hsm-maker`, `cybersphere-agents`) are built and tested against it, each
+`hsm-to-python`, `cybersphere-hsm-maker`, `cybersphere-agents`, the plugins
+`cybersphere-git-plugin` and `lapki-compiler-plugin`) are built and tested against it, each
 skipped when the python 3 is older than its `requires-python`; `--wheel-dir DIR`
 adds their `.zip` and pip wheels. Skip the binding and the packages with
 `--no-python`. Their tests see the binding as installed (a throwaway user site in

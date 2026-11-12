@@ -68,7 +68,8 @@ the host user so nothing in the mounted tree becomes root-owned.
     python 3, a separate package (not in the editor);
   - the python packages tested against that binding and that release's libraries:
     `python3-hsm-dispatcher`, `python3-hsm-to-python`,
-    `python3-cybersphere-hsm-maker`, and `python3-cybersphere-agents` from
+    `python3-cybersphere-hsm-maker`, the editor plugins `python3-cybersphere-git`
+    and `python3-lapki-compiler-plugin`, and `python3-cybersphere-agents` from
     python 3.10 on (so not on 20.04);
   - the pure-Python `python3-cyberiadaml` (the CyberiadaML interface of
     `cyberiadaml-py`) where the release ships pydantic 2.6+ (26.04); the python
@@ -110,7 +111,9 @@ Per release, `package-tests.sh` (inside the container):
 3. **checks** as an unprivileged user, headless and offline:
    - the libraries: `cybparser`, `ldd`, and the binding import and read;
    - the tools: the dispatcher, `hsm-gencode`/`hsm-check`/`hsm-run`,
-     `hsm-maker --notation/--render` and `cybersphere check/platform`;
+     `hsm-maker --notation/--render`, `cybersphere check/platform`, `hsm-git
+     textconv/diff` in a scratch repository and `lapki-build` (the Lapki
+     conversion, no compiler);
    - the editor: its `--dump`, text, render, export and save goldens (the inputs
      of `tests/`), a GUI start, and the bundled plugins in `--list-plugins` and
      `--run-plugin`;

@@ -55,18 +55,22 @@ LIBS="libhtreegeom libhtreegeom-dev libcyberiadaml libcyberiadaml-dev libcyberia
       libcyberiadamlpp libcyberiadamlpp-dev"
 APPS="python3-libcyberiadamlpp cyberiada-pro"
 PYAPPS="python3-cyberiadaml python3-hsm-dispatcher python3-hsm-to-python
-        python3-cybersphere-hsm-maker python3-cybersphere-agents"
+        python3-cybersphere-hsm-maker python3-cybersphere-agents
+        python3-cybersphere-git python3-lapki-compiler-plugin"
 # the python packages and their repos (a python floor above the release's python3
 # leaves one out of that release's build)
 PYREPOS="python3-cyberiadaml:cyberiadaml-py
          python3-hsm-dispatcher:hsm-dispatcher-py python3-hsm-to-python:hsm-to-python
          python3-cybersphere-hsm-maker:cybersphere-hsm-maker
-         python3-cybersphere-agents:cybersphere-agents"
+         python3-cybersphere-agents:cybersphere-agents
+         python3-cybersphere-git:cybersphere-git-plugin
+         python3-lapki-compiler-plugin:lapki-compiler-plugin"
 # the packages that need pydantic 2.6+: not built where the release ships pydantic 1
 PYDANTIC2="python3-cyberiadaml"
 # the tool packages and the id of the editor plugin each one installs
 PLUGINS="python3-hsm-to-python:hsm-to-python python3-cybersphere-hsm-maker:hsm-maker
-         python3-cybersphere-agents:cybersphere-agents"
+         python3-cybersphere-agents:cybersphere-agents python3-cybersphere-git:git
+         python3-lapki-compiler-plugin:lapki-compiler"
 
 export DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC
 
@@ -406,6 +410,9 @@ prepare_workdir() {
     fixture cybersphere-hsm-maker/tests/good/lift.graphml          maker/lift.graphml
     fixture cybersphere-agents/examples/develop.graphml            agents/develop.graphml
     fixture cybersphere-agents/examples/mini/mini.graphml          agents/mini/mini.graphml
+    fixture cybersphere-git-plugin/test/diagrams                   git/diagrams
+    fixture cybersphere-git-plugin/test/good/listing-light.txt     git/listing-light.txt
+    fixture lapki-compiler-plugin/tests/diagrams/blinker.graphml   lapki/blinker.graphml
     fixture CyberiadaHSM-Editor/tests/diagrams                     editor/diagrams
     fixture CyberiadaHSM-Editor/tests/good                         editor/good
     fixture CyberiadaHSM-Editor/fonts                              fonts
@@ -445,6 +452,8 @@ if phase checks; then
     H2P=python3-hsm-to-python
     MAKER=python3-cybersphere-hsm-maker
     AGENTS=python3-cybersphere-agents
+    GIT=python3-cybersphere-git
+    LAPKI=python3-lapki-compiler-plugin
     ED=cyberiada-pro
 
     # the system: a consistent dpkg state, every library found, the policy notes
@@ -525,6 +534,33 @@ assert d.finished()" py/01-flat.graphml'
     check agents-platform $AGENTS \
         'cybersphere platform agents/develop.graphml >out/platform.txt &&
          grep -qF "signals: PASSED(), FAILED(code)" out/platform.txt'
+
+    # the git plugin, offline: the listing of a diagram, its diff in a repository
+    gver=$(upstream $GIT)
+    check git-version $GIT "hsm-git --version >out/git-version.txt &&
+                            grep -q 'hsm-git ${gver}' out/git-version.txt"
+    check git-textconv $GIT \
+        'hsm-git textconv git/diagrams/light.graphml >out/listing.txt &&
+         diff -u git/listing-light.txt out/listing.txt'
+    check git-diff $GIT \
+        'git init -q git/repo && cp git/diagrams/light.graphml git/repo/ && cd git/repo &&
+         git add light.graphml && git -c user.name=test -c user.email=test@test commit -qm one &&
+         cp ../diagrams/light-edited.graphml light.graphml &&
+         hsm-git diff light.graphml --revision=HEAD >"$W/out/git-diff.txt" &&
+         grep -q "state Blink" "$W/out/git-diff.txt"'
+
+    # the lapki-compiler plugin, offline: the Lapki dialect by the binding, no compiler
+    lver=$(upstream $LAPKI)
+    check lapki-version $LAPKI "lapki-build --version >out/lapki-version.txt &&
+                                grep -q 'lapki-build ${lver}' out/lapki-version.txt"
+    check lapki-convert $LAPKI \
+        'python3 -c "import sys, tempfile
+from lapki_build import document
+d = document.load(sys.argv[1], tempfile.mkdtemp())
+assert d.platform == \"ArduinoUno\" and d.xml, d.platform" lapki/blinker.graphml'
+    check lapki-no-compiler $LAPKI \
+        'lapki-build code lapki/blinker.graphml --compiler "$W/none" >out/lapki-code.txt 2>&1;
+         [ $? -eq 3 ] && grep -q "no compiler" out/lapki-code.txt'
 
     # the pure-Python CyberiadaML interface, and the tools on it with the binding
     # blocked: the configuration of a machine without the binding (Windows)
@@ -648,6 +684,17 @@ assert d.send('GO').status == 'fired'\" py/01-flat.graphml"
     check editor-agents-platform "$ED $AGENTS" \
         "$B agents/develop.graphml --run-plugin cybersphere-agents:platform --dump-plugin >out/ed-platform.txt &&
          grep -qF 'signals: PASSED(), FAILED(code)' out/ed-platform.txt"
+    # in the repository of the git-diff check: the diff of the edit, a new diagram staged
+    check editor-git-diff "$ED $GIT" \
+        "cd git/repo && $B light.graphml --run-plugin git:diff --dump-plugin >o.txt &&
+         grep -q 'state: done' o.txt && grep -q 'state Blink' o.txt &&
+         cp ../diagrams/light.graphml new.graphml &&
+         $B new.graphml --run-plugin git:stage --dump-plugin >o.txt &&
+         grep -q 'A  new.graphml' o.txt"
+    check editor-lapki-no-compiler "$ED $LAPKI" \
+        "$B lapki/blinker.graphml --run-plugin lapki-compiler:code \
+             --plugin-param compiler=\"\$W/none\" --dump-plugin >out/ed-lapki.txt 2>&1; [ \$? -eq 6 ] &&
+         grep -q 'exit: 3' out/ed-lapki.txt && grep -q 'no compiler' out/ed-lapki.txt"
     # the user install of a plugin shadows the system copy
     check editor-user-plugin "$ED $H2P" \
         "XDG_DATA_HOME=\"\$W/userdata\" hsm-run --install-editor-plugin &&
