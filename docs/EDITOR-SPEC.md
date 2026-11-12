@@ -724,7 +724,7 @@ The window holds several documents; the structure is drawn in `docs/WINDOW.md`.
   as `<file>` (relative to the current directory) as Save As does; the tab is no longer
   modified, so the `saved` token holds (`EDIT-PLUG-52`). It follows the enabling of Save and
   Save As (`EDIT-IO-7`), except that `save` of an unmodified tab with a file writes nothing;
-  a refused `save` and a failed write are script errors. *design*, *open*
+  a refused `save` and a failed write are script errors. *design*
 
 ### 4.12 Plugins — PLUG
 
@@ -975,23 +975,23 @@ runs of the batch script, which the plugin polygon drives (`docs/POLYGON-PLUGINS
   action again (`EDIT-PLUG-58`). An unknown plugin, action or value and an action disabled on
   the active tab (`EDIT-PLUG-52..56`, with the reason of `EDIT-PLUG-54`) are script errors; a
   failed run is not: the script goes on, and the batch exits 6 at its end unless another
-  error ends it. *design*, *open*
+  error ends it. *design*
 - `EDIT-PLUG-62` MUST [A]: the `plugin` verb of a session action takes the lines up to a line
   `end` as its session script (`EDIT-PLUG-47`): the session verbs, run in order after the first
   state, `save FILE` inside the block being the session verb; a failed `expect`, a timeout or a
   failed session fails the run (`EDIT-PLUG-61`), and a block without `end` is a script error.
-  *design*, *open*
-- `EDIT-PLUG-63` MUST [A]: `--dump-actions` prints `== actions` after the sections of the active
-  tab: every action of every plugin listed `enabled` (`EDIT-PLUG-1`), session actions included,
-  in the search path order, one line each — `<id>:<action> enabled`, or `<id>:<action>
-  disabled: <reason>` with the reason of `EDIT-PLUG-54`; on a diff tab every action is
-  disabled. *design*, *open*
+  *design*
+- `EDIT-PLUG-63` MUST [A]: `--dump-actions` prints `== actions` before the plugin sections
+  (`EDIT-PLUG-64`): every action of every plugin listed `enabled` (`EDIT-PLUG-1`), session
+  actions included, in the search path order, one line each — `<id>:<action> enabled`, or
+  `<id>:<action> disabled: <reason>` with the reason of `EDIT-PLUG-54`; on a diff tab every
+  action is disabled. *design*
 - `EDIT-PLUG-64` MUST [A]: `--dump` and `--dump-plugin` print `== plugin <n>` and
   `== diagnostics <n>` for the n-th `plugin` run of the script, and `--dump-session` prints
-  `== session <n>` for a session one, in the formats of `EDIT-PLUG-28/48`, after the sections
-  of the active tab whatever its kind; the `--run-plugin` stage keeps its unnumbered sections,
-  printed last. The numbered sections and `== actions` are deterministic and name no machine
-  path (`EDIT-PLUG-28`). *design*, *open*
+  `== session <n>` for a session one, in the formats of `EDIT-PLUG-28/48`, where the plugin
+  sections stand for every kind of the active tab; the `--run-plugin` stage keeps its
+  unnumbered sections, printed after them. The numbered sections and `== actions` are
+  deterministic and name no machine path (`EDIT-PLUG-28`). *design*
 
 ### 4.13 Interface language and preferences — UI
 

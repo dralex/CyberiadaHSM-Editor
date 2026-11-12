@@ -1,0 +1,3 @@
+# an action disabled on the active tab is a script error (EDIT-PLUG-61)
+rename n0 Changed
+plugin actions:saved

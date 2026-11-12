@@ -1,0 +1,12 @@
+== tabs
+count: 1
+0 saved.graphml hsm active
+== plugin 1
+action: actions:saved
+result: log
+state: done
+exit: 0
+stdout:
+  saved
+== diagnostics 1
+count: 0

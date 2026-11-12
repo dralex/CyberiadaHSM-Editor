@@ -1,0 +1,4 @@
+# a replace run is one undo step of its own (EDIT-PLUG-12/61)
+plugin edit:rename
+undo
+redo

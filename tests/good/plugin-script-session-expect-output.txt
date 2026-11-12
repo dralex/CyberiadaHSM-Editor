@@ -1,0 +1,17 @@
+== plugin 1
+action: stepper:step
+result: log
+state: failed
+exit: 0
+error: line 3: expect-active: idle instead of doors
+== diagnostics 1
+count: 0
+== plugin 2
+action: stepper:run
+result: log
+state: done
+exit: 0
+stdout:
+  one-shot run
+== diagnostics 2
+count: 0

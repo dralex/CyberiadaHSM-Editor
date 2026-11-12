@@ -1,0 +1,2 @@
+# a quoted value needs its closing quote (EDIT-PLUG-61)
+plugin vars:all name="open

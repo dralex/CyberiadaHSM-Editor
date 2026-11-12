@@ -1,0 +1,3 @@
+# the actions follow the active tab (EDIT-PLUG-63)
+plugin modes:base
+switch 0

@@ -213,6 +213,7 @@ add_library(CyberiadaEditorCore STATIC
   plugin_channel.h plugin_channel.cpp
   plugin_session.h plugin_session.cpp
   batch_session.h batch_session.cpp
+  batch_plugin.h batch_plugin.cpp
   plugins_menu.h plugins_menu.cpp
   dialogs/plugin_parameter_dialog.h dialogs/plugin_parameter_dialog.cpp
   dialogs/plugin_manager_dialog.h dialogs/plugin_manager_dialog.cpp

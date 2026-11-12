@@ -118,10 +118,10 @@ it checks in a comment):
 | HIST   | `undo`/`redo-all` layer, `undo-all`, `test_gesture_recording`, `gestures-undo` |
 | IO     | `save-*`, `l1-*` dumps, `reconstruct-*`, export `test_export_image`, default export name `l4-dialog test_export_default_name` (`EDIT-IO-2`), `l3-*` |
 | META   | `l2 update-meta`, `inspect-reject update-meta`, the `meta` diagram; META-1 (node hidden) via the `l1` scene dump; META-6 (CGML_COMPONENT hidden by default) via `l4-scene test_component_comment_hidden` + the `components` `l1` scene dump, and deletable from the tree without a scene item via `l4-window test_delete_component_formal_from_tree`; META-5 distinct machine names via `l4-model test_unique_machine_name` (NewSM dedupes the default name) |
-| DOC    | `tabs-*` (the document verbs with the `== tabs` dump, `EDIT-DOC-2/3/5/9`), `l4-tabs` (the tab line, the re-targeting, the prompts, `EDIT-DOC-1..8,10`) |
+| DOC    | `tabs-*` (the document verbs with the `== tabs` dump, `EDIT-DOC-2/3/5/9`; `tabs-save-*` and `plugin-save*`, `EDIT-DOC-11`), `l4-tabs` (the tab line, the re-targeting, the prompts, `EDIT-DOC-1..8,10`) |
 | INSPECT| `inspect-reject-*` (editing refused under `--inspect`, `EDIT-INSPECT-1`); `inspect-render-*` (stored-geometry render vs a good image, `EDIT-INSPECT-2`) |
 | UI     | `l4-translation` (`EDIT-UI-1/3`: the bundled languages, the Preferences selector, the Russian menus, Qt's buttons, the property labels, the default names, the property lookup), `ui-batch-english` (`EDIT-UI-2`), `l4-window test_pane_toggles/test_pane_persist/test_dock_titles_bold` (`EDIT-UI-6`: the tree and properties docks, their View entries, the close button, the stored choice, the bold dock titles), `l4-plugin-core test_config_data_home` (`EDIT-UI-7`: the ini file under `CYBERIADA_PRO_CONFIG_HOME`, the user plugin folder under `CYBERIADA_PRO_DATA_HOME`) |
-| PLUG   | the `plugin-*` cases: discovery and rejection (`EDIT-PLUG-1..4`), variables and secrets (`EDIT-PLUG-8..11`), the results and failures (`EDIT-PLUG-12..20`), save and cwd (`EDIT-PLUG-25`), the batch contract (`EDIT-PLUG-27/28`); `l4-plugin-core`; `l4-plugins` for the window (`EDIT-PLUG-5..7`, `EDIT-PLUG-15`, `EDIT-PLUG-17`, `EDIT-PLUG-21..24`, `EDIT-PLUG-29..32`, `EDIT-PLUG-35`); the sessions: `list-session`, `session-*` (`EDIT-PLUG-36..38`, `EDIT-PLUG-47/48`), `l4-plugin-core` (the session block, the channel), `l4-plugins` (`EDIT-PLUG-39..46`, `EDIT-PLUG-49`); the conditions: `list-conditions*`, `conditions-*` (`EDIT-PLUG-50..55`; `conditions-git*` with a `.git` directory made by the test), `l4-plugin-core` (their parsing, the tokens, the programs and the variables, the document facts, the `.git` lookup), `l4-plugins test_conditions` (the menu and the plugin manager follow the document, a Save As, a `.git` made after the open) |
+| PLUG   | the `plugin-*` cases: discovery and rejection (`EDIT-PLUG-1..4`), variables and secrets (`EDIT-PLUG-8..11`), the results and failures (`EDIT-PLUG-12..20`), save and cwd (`EDIT-PLUG-25`), the batch contract (`EDIT-PLUG-27/28`); `l4-plugin-core`; `l4-plugins` for the window (`EDIT-PLUG-5..7`, `EDIT-PLUG-15`, `EDIT-PLUG-17`, `EDIT-PLUG-21..24`, `EDIT-PLUG-29..32`, `EDIT-PLUG-35`); the sessions: `list-session`, `session-*` (`EDIT-PLUG-36..38`, `EDIT-PLUG-47/48`), `l4-plugin-core` (the session block, the channel), `l4-plugins` (`EDIT-PLUG-39..46`, `EDIT-PLUG-49`); the conditions: `list-conditions*`, `conditions-*` (`EDIT-PLUG-50..55`; `conditions-git*` with a `.git` directory made by the test), `l4-plugin-core` (their parsing, the tokens, the programs and the variables, the document facts, the `.git` lookup), `l4-plugins test_conditions` (the menu and the plugin manager follow the document, a Save As, a `.git` made after the open); the plugin verb of the script: `plugin-script-*` (`EDIT-PLUG-61/62/64`), `plugin-actions`, `plugin-script-diff*` (`EDIT-PLUG-63`) |
 | MODE   | stage 1: `mode-inspection`, `mode-leave` (`EDIT-MODE-6`, `EDIT-INSPECT-4`), `mode-read-only`, `mode-read-only-reject`, `mode-inspection-flag` (`EDIT-MODE-4/16`), `l4-tabs test_inspection_tab/test_inspect_unsaved/test_read_only_flag/test_open_inspected` (`EDIT-MODE-1..6`), `l4-model test_read_only` and the loose endpoint recovered on leaving (`EDIT-INSPECT-4`), `l4-window test_save_enablement` (the Document menu); stage 2: `mode-fa`, `mode-fa-undo`, `mode-fa-open`, `mode-new-fa`, `mode-fa-inspect` (`EDIT-MODE-5/6`), `mode-fa-tool-reject` (`EDIT-MODE-7`), `l4-tabs test_fa_mode/test_new_fa/test_fa_check/test_fa_symbols` (`EDIT-MODE-5/7/8/9`), `l4-window test_menu_refactor` (File > New, Check, FA symbols); stage 3: `mode-text-open`, `mode-text-switch`, `mode-new-text` (`EDIT-MODE-13/16`), `mode-markdown-ro` (`EDIT-MODE-14`), `l4-markdown` (`EDIT-MODE-14/17`), `mode-text-reject`, `mode-text-edit-reject` (`EDIT-MODE-3/16`), `l4-modes` (`EDIT-MODE-13..15`), `l4-highlight test_languages` (the four built-in languages); stage 4: `mode-compare-saved`, `mode-compare-refresh`, `mode-compare-reject`, `mode-diff-reject` (`EDIT-MODE-10..12/16`), `l4-modes test_compare_saved/test_compare_refresh/test_compare_tab` (the marks, the change list, Geometry, Refresh, a closed source, a tab as the base); stage 5, the set `modes`: `plugin-list-modes` (an unknown mode and result as warnings, a `modes` of a wrong type and a `diff` action in a text mode rejected), `plugin-modes-default-inspect`, `plugin-modes-refused`, `plugin-modes-mixed`, `plugin-modes-inspection` (`EDIT-PLUG-56`), `plugin-modes-future`, `plugin-modes-next` (`EDIT-PLUG-56/59`), `plugin-modes-text-replace`, `plugin-modes-text-same`, `plugin-modes-text-new`, `plugin-modes-text-input` (`EDIT-PLUG-57`), `plugin-diff-result`, `plugin-diff-result-label`, `plugin-diff-result-empty`, `plugin-diff-result-missing` (`EDIT-PLUG-58`); the set `lang`: `plugin-list-lang` (a name clash, a malformed, a missing and an outside file skipped with warnings, a plugin of languages only, a `languages` of a wrong type rejected), `plugin-lang-open`, `plugin-lang-none`, `plugin-lang-run` (`EDIT-PLUG-60`); `l4-plugin-modes` (the gate per tab, the text lock and undo step, the line link, Refresh running the plugin again and failing without its tab, a language switched off and on again with Rescan, the `files` link click) |
 
 Requirements with **no dedicated case yet** — the gaps to fill: `SEM-1` (one initial per
@@ -310,7 +310,7 @@ first.
 code path as the GUI (minus the dialogs) and exits. No dialog is ever shown in
 batch mode; all diagnostics go to stderr. The window is the tabbed one of the
 GUI: the file is its first tab, the document verbs (`open`, `new-document`,
-`switch`, `close`) work the tab line, and the dumps, the save and the export
+`switch`, `close`, `save`) work the tab line, and the dumps, the save and the export
 describe the active tab.
 
 Exit codes:
@@ -323,7 +323,7 @@ Exit codes:
 | 3    | internal error (assertion or exception thrown) |
 | 4    | edit script error (bad command, unknown id)    |
 | 5    | image comparison mismatch                      |
-| 6    | plugin run failed (`--run-plugin`)             |
+| 6    | plugin run failed (`--run-plugin`, `plugin`)   |
 
 Assertion failures are reported with their `file:line` location (`MY_ASSERT`
 throws it as the error message). The error flag is checked after every
@@ -465,6 +465,41 @@ missing or invalid value) 1, a failed run 6. The plugin's stderr goes to the
 editor's stderr; its stdout is captured into the `== plugin` section when a dump
 is asked, and copied to stdout otherwise. `--dump` adds `== plugin` and
 `== diagnostics` after `== scene`; `--dump-plugin` prints these two alone.
+
+The script runs plugins too (`EDIT-PLUG-61..64`): `plugin <id>[:<action>]
+[<name>=<value> ...]` runs the action on the active tab and waits, the values in the
+`--plugin-param` syntax, double-quoted when they hold spaces (`\"` and `\\` inside). An
+unknown plugin, action or value and a disabled action are script errors (4); a failed run
+is not: the script goes on, the reason goes to stderr indented under `the plugin run of
+line N failed`, and the batch exits 6 at the end. A session action takes the lines up to
+`end` as its verbs, so a script edits, saves, runs and edits again:
+
+```
+rename n0 Ready
+save
+plugin git:commit message="rename the idle state"
+plugin git:compare revision=HEAD~1
+switch 0
+plugin git:commit-session
+  answer the second commit
+  wait ended
+end
+```
+
+`--dump` and `--dump-plugin` print `== plugin <n>` and `== diagnostics <n>` for the n-th
+run of the script, `--dump-session` prints `== session <n>` for a session one, whatever the
+active tab; `--dump-actions` prints `== actions` before them, one line per action of the
+enabled plugins on the active tab:
+
+```
+== actions
+actions:sm enabled
+actions:initial disabled: a state machine has no initial state
+actions:fa disabled: Open a finite automaton
+```
+
+The order after the sections of the active tab is `== actions`, the numbered sections,
+then `== plugin` and `== diagnostics` of the `--run-plugin` stage.
 
 A session action (plugin level 2) needs `--session-script <file>`: its verbs drive the
 session (`docs/PLUGINS.md`, Level 2, Batch mode), a failed verb exits 6. `--dump-session`
@@ -620,6 +655,7 @@ newly active document:
 | `new-document` | a new untitled document in a new tab |
 | `switch <index\|title>` | activate the tab by its 0-based index or its title |
 | `close [index\|title] [discard]` | close the active (or the named) tab; a modified document is refused without `discard`; the last tab gives way to a fresh untitled one |
+| `save [<file>]` | Save, or Save As the file with the defaults of the dialog (`EDIT-DOC-11`); an unmodified tab with a file writes nothing; an untitled tab without a file, a read-only one and a diff tab are refused |
 
 The setting verbs change the run, not a document, and open no undo step
 (`EDIT-TOOL-14`):

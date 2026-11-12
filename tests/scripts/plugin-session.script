@@ -1,0 +1,13 @@
+# a session action takes the lines up to end as its verbs (EDIT-PLUG-62)
+plugin asker:run
+  wait waiting
+  expect-active idle
+  answer yes
+  wait running
+  expect-active doors
+  expect-fired t3
+  decline
+  wait finished
+  wait ended
+end
+plugin asker:list

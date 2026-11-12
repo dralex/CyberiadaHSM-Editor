@@ -1,0 +1,3 @@
+# a session block needs its end (EDIT-PLUG-62)
+plugin asker:run
+  answer yes

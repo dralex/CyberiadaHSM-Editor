@@ -78,7 +78,13 @@ bool runSessionStage(CyberiadaSMEditorWindow& win, const QString& pluginId, cons
         return false;
     }
     QStringList lines = QTextStream(&file).readAll().split('\n');
+    return runSessionLines(win, pluginId, actionId, values, lines, 1, result, dump, error);
+}
 
+bool runSessionLines(CyberiadaSMEditorWindow& win, const QString& pluginId, const QString& actionId,
+                     const PluginValues& values, const QStringList& lines, int firstLine,
+                     PluginResult* result, QStringList* dump, QString* error)
+{
     Watch watch;
     QString startError;
     PluginRunner* run = win.runPlugin(pluginId, actionId, values, &startError);
@@ -117,7 +123,7 @@ bool runSessionStage(CyberiadaSMEditorWindow& win, const QString& pluginId, cons
         if (line.isEmpty() || line.startsWith('#')) continue;
         QStringList words = line.simplified().split(' ');
         QString verb = words.takeFirst();
-        QString where = QString("line %1: %2").arg(n + 1).arg(verb);
+        QString where = QString("line %1: %2").arg(n + firstLine).arg(verb);
         auto fail = [&](const QString& message) {
             *error = QString("%1: %2").arg(where, message);
             ok = false;

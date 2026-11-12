@@ -1,0 +1,4 @@
+# Save clears the modified flag, so the saved token holds (EDIT-DOC-11, EDIT-PLUG-52)
+rename n0 Saved
+save
+plugin actions:saved

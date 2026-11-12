@@ -23,7 +23,9 @@
 
 #include <cstdio>
 #include <iostream>
+#include <QFile>
 #include <QMessageBox>
+#include <QTextStream>
 
 #include "batch_driver.h"
 #include "main.h"
@@ -33,7 +35,7 @@
 #include "cyberiadasm_render.h"
 #include "plugin_registry.h"
 #include "plugin_runner.h"
-#include "batch_session.h"
+#include "batch_plugin.h"
 #include "interface_language.h"
 
 int runGuiMode(CyberiadaSMEditorApplication& app, const QStringList& files,
@@ -61,78 +63,29 @@ static bool stageFailed(CyberiadaSMEditorApplication& app)
 
 // the plugin stage (EDIT-PLUG-27): a usage error stops the run, a failed run is
 // reported with the dumps and ends with batchPluginError
-static int runPluginStage(CyberiadaSMEditorWindow& win, const BatchOptions& options,
-						  const PluginEntry** entry, const PluginAction** action, PluginResult* result,
-						  QStringList* sessionDump)
+static int runPluginStage(CyberiadaSMEditorWindow& win, const BatchOptions& options, BatchPluginRun* run)
 {
-	QString id = options.plugin.section(':', 0, 0);
-	QString actionId = options.plugin.section(':', 1);
-	*entry = PluginRegistry::instance().find(id);
-	if (!*entry) {
-		fprintf(stderr, "the plugin %s is not found\n", qPrintable(id));
-		return batchUsageError;
-	}
-	const PluginDescriptor& plugin = (*entry)->descriptor;
-	if (actionId.isEmpty()) {
-		if (plugin.actions.size() != 1) {
-			fprintf(stderr, "the plugin %s has several actions: name one as %s:<action>\n",
-					qPrintable(id), qPrintable(id));
-			return batchUsageError;
-		}
-		actionId = plugin.actions.first().id;
-	}
-	*action = plugin.action(actionId);
-	if (!*action) {
-		fprintf(stderr, "the plugin %s has no action %s\n", qPrintable(id), qPrintable(actionId));
-		return batchUsageError;
-	}
-	PluginValues values;
 	QString error;
-	PluginDocumentPaths paths = pluginDocumentPaths(win.currentTab()->filePath());
-	if (!pluginParseValues(plugin, **action, options.pluginParams, paths, &values, &error)) {
+	if (!findBatchAction(options.plugin, run, &error)) {
 		fprintf(stderr, "%s\n", qPrintable(error));
 		return batchUsageError;
 	}
-	bool dumping = options.dump || options.dumpPlugin;
-	// stderr goes through as it comes; stdout to the dump, or through without one
-	QMetaObject::Connection started = QObject::connect(&win, &CyberiadaSMEditorWindow::pluginRunStarted,
-		[dumping](PluginRunner* run) {
-			QObject::connect(run, &PluginRunner::output, [dumping](const QString& text, bool isError) {
-				if (isError) {
-					fputs(text.toLocal8Bit().constData(), stderr);
-				} else if (!dumping) {
-					fputs(text.toLocal8Bit().constData(), stdout);
-					fflush(stdout);
-				}
-			});
-		});
-	if ((*action)->session) {
-		// a session needs its script (EDIT-PLUG-47)
-		if (options.sessionScript.isEmpty()) {
-			QObject::disconnect(started);
-			fprintf(stderr, "the session action %s:%s needs a --session-script\n", qPrintable(id),
-					qPrintable(actionId));
-			return batchUsageError;
-		}
-		QString scriptError;
-		bool scripted = runSessionStage(win, id, actionId, values, options.sessionScript, result, sessionDump,
-										&scriptError);
-		QObject::disconnect(started);
-		if (!scripted) {
+	QStringList lines;
+	if (run->action->session && !options.sessionScript.isEmpty()) {
+		QFile file(options.sessionScript);
+		if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+			run->result.error = QString("cannot read the session script %1").arg(options.sessionScript);
 			fprintf(stderr, "the session script %s failed\n%s\n", qPrintable(options.sessionScript),
-					qPrintable(scriptError));
+					qPrintable(run->result.error));
 			return batchPluginError;
 		}
-	} else {
-		*result = win.runPluginAndWait(id, actionId, values);
-		QObject::disconnect(started);
+		lines = QTextStream(&file).readAll().split('\n');
 	}
-	if (result->state != PluginResult::stateDone) {
-		fprintf(stderr, "the plugin %s:%s failed\n%s\n", qPrintable(id), qPrintable(actionId),
-				qPrintable(result->error));
-		return batchPluginError;
-	}
-	return batchOK;
+	const QStringList* session = options.sessionScript.isEmpty() ? nullptr : &lines;
+	int code = runBatchAction(win, run, options.pluginParams, session, 1, options.sessionScript,
+							  options.dump || options.dumpPlugin, &error);
+	if (code != batchOK) fprintf(stderr, "%s\n", qPrintable(error));
+	return code;
 }
 
 int runBatchMode(CyberiadaSMEditorApplication& app, const BatchOptions& options)
@@ -156,9 +109,12 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const BatchOptions& options)
 		return batchLoadError;
 	}
 
+	// the plugin verbs of the script (EDIT-PLUG-61): a failed run ends the batch with 6
+	BatchPluginRuns scriptRuns;
+	scriptRuns.dumping = options.dump || options.dumpPlugin;
 	if (!options.script.isEmpty()) {
 		// the scene follows the model through its signals
-		if (!runEditScript(&win, options.script, &error)) {
+		if (!runEditScript(&win, options.script, &error, &scriptRuns)) {
 			fprintf(stderr, "script %s failed\n%s\n", qPrintable(options.script), qPrintable(error));
 			return batchScriptError;
 		}
@@ -167,15 +123,15 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const BatchOptions& options)
 	// the assertions of every stage are caught by notify(); the flag says so
 	if (stageFailed(app)) return batchInternalError;
 
-	const PluginEntry* plugin = nullptr;
-	const PluginAction* action = nullptr;
-	PluginResult pluginResult;
-	QStringList sessionDump;
-	int pluginCode = batchOK;
+	int pluginCode = scriptRuns.failed() ? batchPluginError : batchOK;
+	BatchPluginRun stage;
+	bool staged = false;
 	if (!options.plugin.isEmpty()) {
-		pluginCode = runPluginStage(win, options, &plugin, &action, &pluginResult, &sessionDump);
-		if (pluginCode == batchUsageError) return pluginCode;
+		int code = runPluginStage(win, options, &stage);
+		if (code == batchUsageError) return code;
 		if (stageFailed(app)) return batchInternalError;
+		staged = true;
+		if (code != batchOK) pluginCode = code;
 	}
 
 	if (options.dumpTabsLine) {
@@ -183,13 +139,20 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const BatchOptions& options)
 		dumpTabs(&win, std::cout);
 	}
 
-	// the run of a plugin, after the sections of the tab it left active
+	// after the sections of the active tab: the actions on it (EDIT-PLUG-63), the runs
+	// of the script (EDIT-PLUG-64), then the run of the plugin stage
+	bool dumpingPlugins = options.dump || options.dumpPlugin;
 	auto dumpPluginSections = [&]() {
-		if (!plugin || !action || !(options.dump || options.dumpPlugin)) return;
+		if (options.dumpActions) {
+			std::cout << "== actions" << std::endl;
+			dumpActions(win, std::cout);
+		}
+		dumpPluginRuns(scriptRuns, dumpingPlugins, options.dump || options.dumpSession, std::cout);
+		if (!staged || !dumpingPlugins) return;
 		std::cout << "== plugin" << std::endl;
-		dumpPluginRun(*plugin, *action, pluginResult, std::cout);
+		dumpPluginRun(*stage.plugin, *stage.action, stage.result, std::cout);
 		std::cout << "== diagnostics" << std::endl;
-		dumpDiagnostics(pluginResult, std::cout);
+		dumpDiagnostics(stage.result, std::cout);
 	};
 
 	// a diff tab dumps its comparison and has nothing to draw or save (EDIT-MODE-16)
@@ -246,9 +209,9 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const BatchOptions& options)
 
 	dumpPluginSections();
 	// the messages of a session both ways (EDIT-PLUG-48)
-	if (action && action->session && (options.dump || options.dumpSession)) {
+	if (staged && stage.action->session && (options.dump || options.dumpSession)) {
 		std::cout << "== session" << std::endl;
-		for (const QString& line: sessionDump) std::cout << line.toStdString() << std::endl;
+		for (const QString& line: stage.sessionDump) std::cout << line.toStdString() << std::endl;
 	}
 
 	if (options.dumpTextMetrics) {

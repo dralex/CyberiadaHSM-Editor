@@ -38,4 +38,10 @@ bool runSessionStage(CyberiadaSMEditorWindow& win, const QString& pluginId, cons
                      const PluginValues& values, const QString& script, PluginResult* result,
                      QStringList* dump, QString* error);
 
+// the same with the verbs given, the first one on the line firstLine of its script
+// (EDIT-PLUG-62: the block of a plugin verb)
+bool runSessionLines(CyberiadaSMEditorWindow& win, const QString& pluginId, const QString& actionId,
+                     const PluginValues& values, const QStringList& lines, int firstLine,
+                     PluginResult* result, QStringList* dump, QString* error);
+
 #endif

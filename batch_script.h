@@ -27,10 +27,13 @@
 #include <QString>
 
 class CyberiadaSMEditorWindow;
+struct BatchPluginRuns;
 
 // run the edit commands and the mouse gestures from the script file against
 // the model and the scene of the window; on failure fills error with a
-// "line N: ..." message (see docs/TESTING.md)
-bool runEditScript(CyberiadaSMEditorWindow* win, const QString& path, QString* error);
+// "line N: ..." message (see docs/TESTING.md); the plugin verbs add their runs
+// to plugins (EDIT-PLUG-61)
+bool runEditScript(CyberiadaSMEditorWindow* win, const QString& path, QString* error,
+				   BatchPluginRuns* plugins = nullptr);
 
 #endif

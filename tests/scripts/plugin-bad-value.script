@@ -1,0 +1,2 @@
+# an invalid value is a script error (EDIT-PLUG-61)
+plugin vars:all count=x

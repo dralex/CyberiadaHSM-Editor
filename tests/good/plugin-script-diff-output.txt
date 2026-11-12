@@ -1,0 +1,35 @@
+== tabs
+count: 2
+0 geometry.graphml hsm
+1 geometry.graphml ↔ v2 diff active
+== diff
+base: v2
+target: geometry.graphml
+geometry: no
+changed: 1, added: 0, removed: 0
+state machine node 0
+  state node 0-0-1: title (node-0-0-1 / node-0-0-1)
+== actions
+modes:default disabled: the action works in: HSM diagram, FA diagram
+modes:text disabled: the action works in: Plain text, Markdown
+modes:same disabled: the action works in: Markdown
+modes:new-text disabled: the action works in: Markdown
+modes:cat disabled: the action works in: Plain text, Markdown, C++
+modes:lint disabled: the action works in: Markdown
+modes:inspect disabled: the action works in: HSM inspection
+modes:future disabled: the action needs a newer editor
+modes:mixed disabled: the action works in: HSM diagram
+modes:next disabled: the action needs a newer editor
+modes:base disabled: the action works in: HSM diagram, FA diagram, HSM inspection
+modes:empty-base disabled: the action works in: HSM diagram, FA diagram
+modes:no-base disabled: the action works in: HSM diagram, FA diagram
+== plugin 1
+action: modes:base
+result: diff
+state: done
+exit: 0
+tab: 1
+stdout:
+  v2
+== diagnostics 1
+count: 0

@@ -325,6 +325,13 @@ output tabs, the session log or the settings.
   open, script, **plugin**, tabs, dump, text, stack, export, save. A run without a
   document starts from an empty one.
 * No dialog and no stored values: the defaults and `--plugin-param` only.
+* The `plugin` verb runs an action in the middle of the script, a session action with
+  the verbs up to `end` (`EDIT-PLUG-61/62`): a refused action is a script error, a failed
+  run goes on with the script and exits 6 at the end; `--dump` numbers the sections of
+  these runs, `== plugin <n>` (`EDIT-PLUG-64`). `batch_plugin.cpp` runs both the stage
+  and the verb.
+* `--dump-actions` prints `== actions`, the actions on the active tab with the reasons of
+  the disabled ones (`EDIT-PLUG-63`).
 * The runner is asynchronous in both modes; the batch mode waits for it in a local event
   loop, so the timeout and the kill work as in the GUI.
 * A failed or timed-out run exits 6 (`batchPluginError`); findings do not change the exit
@@ -340,12 +347,12 @@ output tabs, the session log or the settings.
 ## Code layout
 
 ```
-  batch_driver.cpp              plugins_menu.cpp              plugin_dock.cpp
+  batch_plugin.cpp              plugins_menu.cpp              plugin_dock.cpp
  +------------------------+    +------------------------+    +------------------------+
- | the plugin stage after |    | PluginsMenu, plugin    |    | PluginDock             |
- | the script; no dialog; |    | toolbars, the plugin   |    | Diagnostics, outputs,  |
- | exit 6 on a failed run |    | manager; the generated |    | progress and Cancel    |
- |                        |    | PluginParameterDialog  |    |                        |
+ | the plugin stage and   |    | PluginsMenu, plugin    |    | PluginDock             |
+ | the plugin verb of the |    | toolbars, the plugin   |    | Diagnostics, outputs,  |
+ | script; no dialog;     |    | manager; the generated |    | progress and Cancel    |
+ | exit 6 on a failed run |    | PluginParameterDialog  |    |                        |
  +------------------------+    +------------------------+    +------------------------+
              |                              |                             ^
              | id, action, values           | id, action, values          | findings, log

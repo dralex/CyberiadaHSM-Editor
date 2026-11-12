@@ -1,0 +1,23 @@
+== text
+mode: markdown
+file: notes.md
+modified: yes
+rendered: no
+lines: 7
+| # The traffic light
+| 
+| The light has four states: **red**, *yellow* and green.
+| 
+| - the timer switches the states
+| - the button asks for green
+| 
+== plugin 1
+action: modes:text
+result: replace
+state: done
+exit: 0
+changes: yes
+stdout:
+  replaced
+== diagnostics 1
+count: 0

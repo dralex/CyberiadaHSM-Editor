@@ -1,0 +1,5 @@
+# the runs of the script are numbered; a failed one goes on with it (EDIT-PLUG-61/64)
+plugin echo
+plugin edit:exit3
+rename n0 After
+plugin vars:all name="two words \"quoted\""

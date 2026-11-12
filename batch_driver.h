@@ -75,6 +75,8 @@ struct BatchOptions {
 	// a session action runs from this script (EDIT-PLUG-47), the == session dump
 	QString sessionScript;
 	bool dumpSession = false;
+	// == actions: the plugin actions on the active tab (EDIT-PLUG-63)
+	bool dumpActions = false;
 };
 
 int runBatchMode(CyberiadaSMEditorApplication& app, const BatchOptions& options);

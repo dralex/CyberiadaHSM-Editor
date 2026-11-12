@@ -32,6 +32,9 @@
 #include <QTextCursor>
 
 #include "batch_script.h"
+#include "batch_plugin.h"
+#include "batch_driver.h"
+#include "plugin_registry.h"
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_editor_scene.h"
 #include "smeditor_window.h"
@@ -856,13 +859,89 @@ static bool runSettingVerb(const QStringList& tokens, QString* error)
 	return true;
 }
 
-// the document verbs (EDIT-DOC-9, EDIT-MODE-16): the tab line and the Document
+// the document verbs (EDIT-DOC-9/11, EDIT-MODE-16): the tab line and the Document
 // menu as the GUI drives them
 static bool isDocumentVerb(const QString& cmd)
 {
 	return cmd == "open" || cmd == "new-document" || cmd == "switch" || cmd == "close" ||
 		cmd == "mode" || cmd == "read-only" || cmd == "compare" || cmd == "geometry" ||
-		cmd == "refresh";
+		cmd == "refresh" || cmd == "save";
+}
+
+// save [<file>]: Save, or Save As the file with the defaults of its dialog (EDIT-DOC-11)
+static bool saveDocument(CyberiadaSMEditorWindow* win, const QStringList& tokens, QString* error)
+{
+	EditorDocument* doc = win->currentTab();
+	if (win->currentDiff()) {
+		*error = "a diff tab cannot be saved";
+		return false;
+	}
+	if (tokens.size() == 1) {
+		if (!doc->hasFile()) {
+			*error = "the document has no file: save <file> names one";
+			return false;
+		}
+		// Save is enabled for a modified document in an editable tab (EDIT-IO-7)
+		if (doc->isClean()) return true;
+		if (!doc->isEditable()) {
+			*error = "the tab is read-only";
+			return false;
+		}
+		return doc->save(error);
+	}
+	QString path = tokens.mid(1).join(' ');
+	if (TextDocument* text = win->currentText()) return text->saveAs(path, error);
+	CyberiadaSMEditorDocument* diagram = win->currentDocument();
+	return diagram->saveAs(path, Cyberiada::formatCyberiada10, false, false, false, false, false, error);
+}
+
+// plugin <id>[:<action>] [<name>=<value> ...] (EDIT-PLUG-61): a session action takes
+// the lines up to end as its verbs (EDIT-PLUG-62); a failed run goes on with the script
+static bool runPluginVerb(CyberiadaSMEditorWindow* win, const QString& line, QTextStream& in, int* lineno,
+						  BatchPluginRuns* plugins, QString* error)
+{
+	QStringList items;
+	if (!splitPluginItems(line.section(QRegularExpression("\\s+"), 1), &items, error)) return false;
+	if (items.isEmpty()) {
+		*error = "plugin needs an id[:action]";
+		return false;
+	}
+	BatchPluginRun run;
+	if (!findBatchAction(items.takeFirst(), &run, error)) return false;
+	QString reason = win->pluginDisabledReason(*run.plugin, *run.action, win->currentTab());
+	if (!reason.isEmpty()) {
+		*error = QString("%1:%2 is disabled: %3").arg(run.plugin->descriptor.id, run.action->id, reason);
+		return false;
+	}
+	int verbLine = *lineno;
+	QStringList session;
+	if (run.action->session) {
+		bool closed = false;
+		while (!closed && !in.atEnd()) {
+			QString next = in.readLine();
+			(*lineno)++;
+			if (next.trimmed() == "end") closed = true;
+			else session.append(next);
+		}
+		if (!closed) {
+			*error = QString("the session block of line %1 has no end").arg(verbLine);
+			return false;
+		}
+	}
+	QString message;
+	int code = runBatchAction(*win, &run, items, run.action->session ? &session : nullptr, verbLine + 1,
+							  QString("of line %1").arg(verbLine), plugins->dumping, &message);
+	if (code == batchUsageError) {
+		*error = message;
+		return false;
+	}
+	plugins->runs.append(run);
+	if (code != batchOK) {
+		// indented, so no reader takes the reason for a script error of its own line
+		fprintf(stderr, "the plugin run of line %d failed\n  %s\n", verbLine,
+				qPrintable(message.replace('\n', "\n  ")));
+	}
+	return true;
 }
 
 // switch/close address a tab by its index or its title
@@ -880,6 +959,7 @@ static EditorDocument* documentByToken(CyberiadaSMEditorWindow* win, const QStri
 static bool runDocumentVerb(CyberiadaSMEditorWindow* win, const QStringList& tokens, QString* error)
 {
 	const QString& cmd = tokens.first();
+	if (cmd == "save") return saveDocument(win, tokens, error);
 	if (cmd == "open") {
 		// open <file> [reconstruct|reconstruct-sm|strict ...]
 		if (tokens.size() < 2) { *error = "open needs a file"; return false; }
@@ -991,8 +1071,12 @@ static bool runDocumentVerb(CyberiadaSMEditorWindow* win, const QStringList& tok
 	return win->closeDocument(doc, true);
 }
 
-bool runEditScript(CyberiadaSMEditorWindow* win, const QString& path, QString* error)
+bool runEditScript(CyberiadaSMEditorWindow* win, const QString& path, QString* error,
+				   BatchPluginRuns* plugins)
 {
+	// the runs of a caller that keeps none are dropped at the end
+	BatchPluginRuns ownRuns;
+	if (!plugins) plugins = &ownRuns;
 	CyberiadaSMModel* model = win->getModel();
 	CyberiadaSMEditorScene* scene = win->getScene();
 	GestureState gesture;
@@ -1017,18 +1101,21 @@ bool runEditScript(CyberiadaSMEditorWindow* win, const QString& path, QString* e
 		// run, not on a document
 		const QString& cmd = tokens.first();
 		bool docVerb = isDocumentVerb(cmd);
-		bool step = !docVerb && !isSettingVerb(cmd) && cmd != "undo" && cmd != "redo" &&
+		// a plugin run pushes its own step, a replace result (EDIT-PLUG-12)
+		bool pluginVerb = cmd == "plugin";
+		bool step = !docVerb && !pluginVerb && !isSettingVerb(cmd) && cmd != "undo" && cmd != "redo" &&
 			!isGesture(cmd);
-		// a text tab takes the document and the setting verbs only (EDIT-MODE-16)
-		if (!model && !docVerb && !isSettingVerb(cmd)) {
+		// a text tab takes the document, the plugin and the setting verbs only (EDIT-MODE-16)
+		if (!model && !docVerb && !pluginVerb && !isSettingVerb(cmd)) {
 			*error = QString("line %1: the active tab holds no diagram").arg(lineno);
 			return false;
 		}
 		if (step) model->beginUndoStep(cmd);
 		if (!isGesture(cmd)) gesture.clicked = false;
 		try {
-			if (docVerb) {
-				ok = runDocumentVerb(win, tokens, &message);
+			if (docVerb || pluginVerb) {
+				ok = docVerb ? runDocumentVerb(win, tokens, &message)
+							 : runPluginVerb(win, trimmed, in, &lineno, plugins, &message);
 				// the verbs change the active document
 				model = win->getModel();
 				scene = win->getScene();

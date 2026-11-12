@@ -583,6 +583,7 @@ CyberiadaPro --batch --plugin-path . --run-plugin hsm-maker:draw \
 | `--plugin-path <dir>` | look for plugins in `<dir>` only, repeatable; relative to the current directory; also in the GUI |
 | `--list-plugins` | print the plugins found, their state and why a plugin is disabled or rejected; needs no document |
 | `--dump-plugin` | print only the `== plugin` and `== diagnostics` sections |
+| `--dump-actions` | print `== actions`: your actions on the active tab, enabled or disabled with the reason |
 
 Without a document on the command line the run starts from an empty one, which suits a
 `new-document` action. `--dump` adds the `== plugin` section (the action, the state, the
@@ -592,6 +593,21 @@ folders are named by their origin (`plugin-path 1`, `env 1`, `user`, `system`), 
 a path, so the output is the same on every machine. The exit code is 0 for a successful
 run (findings or not), 1 for a usage error (an unknown plugin, a missing or invalid
 value) and 6 for a failed run.
+
+The edit script runs your actions too, between its edits, with the values on the line
+(double-quoted when they hold spaces); `save` gives a document its file, as your `saved`
+and `git` conditions need:
+
+```
+# compare.script, run as: CyberiadaPro --batch light.graphml --plugin-path . \
+#     --script compare.script --dump --dump-tabs
+rename n0 Ready
+save
+plugin git:compare revision=HEAD
+```
+
+Each run gets its own sections, `== plugin 1`, `== plugin 2`, ...; a refused action stops
+the script (exit 4), a failed run does not and the batch exits 6 at the end.
 
 ## Packaging
 
@@ -898,6 +914,8 @@ stop
 * A session action without a script is a usage error (1).
 * `--dump-session` prints every message both ways, one line each; the editor's lines start
   with `sent`.
+* An edit script holds the verbs itself: the lines after `plugin <id>:<session action>` up
+  to `end`, and `--dump-session` prints them as `== session <n>`.
 
 ### A minimal session plugin
 

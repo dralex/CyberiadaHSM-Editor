@@ -353,6 +353,8 @@ add_mode_test(compare-reject geometry 4)
 add_mode_test(diff-reject geometry 4)
 add_tabs_test(close-discard hierarchy 0)
 add_tabs_test(close-refused hierarchy 4)
+add_tabs_test(save-untitled hierarchy 4)
+add_tabs_test(save-diff hierarchy 4)
 
 # The polygon is an optional exploratory framework with its own runner
 # (tests/polygon/run-polygon.sh, python -m polygon). It needs Python 3.11+
@@ -775,12 +777,12 @@ configure_file(plugins/main/echo/plugin.json
 
 # add_plugin_test(<case> [INPUT f] [PLUGIN id[:action]] [PARAMS p...] [PATHS set...]
 #   [SCRIPT f] [SESSION f] [EXPECTED n] [FORBID text] [SEED src>dst] [CONFIG dir] [DATA dir]
-#   [ENV var=value...] [DUMP] [DUMP_PLUGIN] [DUMP_SESSION] [DUMP_STACK] [DUMP_TABS] [LIST]
-#   [NO_DUMP] [SAVE] [INSPECT] [CLEAN] [NOPATH])
+#   [ENV var=value...] [DUMP] [DUMP_PLUGIN] [DUMP_SESSION] [DUMP_STACK] [DUMP_TABS] [DUMP_ACTIONS]
+#   [LIST] [NO_DUMP] [SAVE] [INSPECT] [CLEAN] [NOPATH])
 # compares good/plugin-<case>-output.txt when a section is dumped and
 # good/plugin-<case>-output.graphml with SAVE; the work dir is plugin-work/<case>
 function(add_plugin_test name)
-  cmake_parse_arguments(P "DUMP;DUMP_PLUGIN;DUMP_SESSION;DUMP_STACK;DUMP_TABS;LIST;NO_DUMP;SAVE;INSPECT;CLEAN;NOPATH"
+  cmake_parse_arguments(P "DUMP;DUMP_PLUGIN;DUMP_SESSION;DUMP_STACK;DUMP_TABS;DUMP_ACTIONS;LIST;NO_DUMP;SAVE;INSPECT;CLEAN;NOPATH"
     "INPUT;PLUGIN;SCRIPT;SESSION;EXPECTED;FORBID;SEED;CONFIG;DATA" "PARAMS;PATHS;ENV;MARKERS" ${ARGN})
   if(NOT DEFINED P_EXPECTED)
     set(P_EXPECTED 0)
@@ -813,7 +815,7 @@ function(add_plugin_test name)
   if(P_SESSION)
     list(APPEND _vars "-DSESSION_SCRIPT=${P_SESSION}")
   endif()
-  foreach(_flag DUMP_PLUGIN DUMP_SESSION DUMP_STACK DUMP_TABS INSPECT NO_DUMP)
+  foreach(_flag DUMP_PLUGIN DUMP_SESSION DUMP_STACK DUMP_TABS DUMP_ACTIONS INSPECT NO_DUMP)
     if(P_${_flag})
       list(APPEND _vars -D${_flag}=1)
     endif()
@@ -842,7 +844,8 @@ function(add_plugin_test name)
     endif()
     list(APPEND _vars "-DSEED=${_src}>${_work}/${_dst}")
   endif()
-  if(P_DUMP OR P_DUMP_PLUGIN OR P_DUMP_SESSION OR P_DUMP_STACK OR P_DUMP_TABS OR P_LIST OR P_NO_DUMP)
+  if(P_DUMP OR P_DUMP_PLUGIN OR P_DUMP_SESSION OR P_DUMP_STACK OR P_DUMP_TABS OR P_DUMP_ACTIONS OR P_LIST OR
+     P_NO_DUMP)
     list(APPEND _vars -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/plugin-${name}.out
       -DDUMP_GOOD=${CMAKE_CURRENT_SOURCE_DIR}/good/plugin-${name}-output.txt)
   endif()
@@ -1040,6 +1043,40 @@ add_plugin_test(lang-open INPUT texts/script.lua PATHS lang DUMP DUMP_TABS)
 add_plugin_test(lang-none INPUT texts/script.lua DUMP_TABS)
 add_plugin_test(lang-run INPUT texts/script.lua PLUGIN lua-tools:run PATHS lang DUMP_PLUGIN)
 add_plugin_test(conditions-git-untitled PLUGIN git:in PATHS git DUMP_PLUGIN EXPECTED 6)
+# the plugin verb of the script (EDIT-PLUG-61..64): the runs numbered in the dumps, a
+# session block, the actions on the active tab; the save verb (EDIT-DOC-11)
+add_plugin_test(script-runs INPUT diagrams/hierarchy.graphml SCRIPT scripts/plugin-runs.script
+  DUMP_PLUGIN DUMP_STACK EXPECTED 6)
+add_plugin_test(script-replace INPUT diagrams/hierarchy.graphml SCRIPT scripts/plugin-replace.script
+  DUMP_PLUGIN DUMP_STACK)
+add_plugin_test(script-refused INPUT diagrams/hierarchy.graphml SCRIPT scripts/plugin-refused.script
+  PATHS conditions EXPECTED 4)
+add_plugin_test(script-unknown INPUT diagrams/hierarchy.graphml SCRIPT scripts/plugin-unknown.script
+  EXPECTED 4)
+add_plugin_test(script-bad-value INPUT diagrams/hierarchy.graphml SCRIPT scripts/plugin-bad-value.script
+  EXPECTED 4)
+add_plugin_test(script-unclosed INPUT diagrams/hierarchy.graphml SCRIPT scripts/plugin-unclosed.script
+  EXPECTED 4)
+add_plugin_test(script-session INPUT diagrams/lift.graphml SCRIPT scripts/plugin-session.script
+  PATHS session DUMP_PLUGIN DUMP_SESSION)
+add_plugin_test(script-session-expect INPUT diagrams/lift.graphml SCRIPT scripts/plugin-session-expect.script
+  PATHS session DUMP_PLUGIN EXPECTED 6)
+add_plugin_test(script-session-no-end INPUT diagrams/lift.graphml SCRIPT scripts/plugin-session-no-end.script
+  PATHS session EXPECTED 4)
+add_plugin_test(script-diff INPUT diagrams/geometry.graphml SCRIPT scripts/plugin-diff.script PATHS modes
+  DUMP DUMP_TABS DUMP_ACTIONS)
+add_plugin_test(script-diff-switch INPUT diagrams/geometry.graphml SCRIPT scripts/plugin-diff-switch.script
+  PATHS modes DUMP_PLUGIN DUMP_TABS DUMP_ACTIONS)
+add_plugin_test(script-text INPUT texts/notes.md SCRIPT scripts/plugin-text.script PATHS modes DUMP)
+add_plugin_test(actions INPUT diagrams/hierarchy.graphml PATHS conditions DUMP_PLUGIN DUMP_ACTIONS
+  ENV "CYBERIADA_TEST_TOKEN=")
+add_plugin_test(save INPUT <work>/hierarchy.graphml SEED diagrams/hierarchy.graphml>hierarchy.graphml
+  SCRIPT scripts/plugin-save.script PATHS conditions DUMP_PLUGIN DUMP_TABS)
+# Save As writes into the work dir, so the script is written here with its path
+set(SAVE_AS_SCRIPT ${CMAKE_CURRENT_BINARY_DIR}/scripts/plugin-save-as.script)
+file(WRITE ${SAVE_AS_SCRIPT} "# Save As names the file of an untitled document (EDIT-DOC-11)\n"
+  "new-sm G0\nsave ${CMAKE_CURRENT_BINARY_DIR}/plugin-work/save-as/saved.graphml\nplugin actions:saved\n")
+add_plugin_test(save-as SCRIPT ${SAVE_AS_SCRIPT} PATHS conditions DUMP_PLUGIN DUMP_TABS CLEAN)
 
 # the plugin core in process: the descriptors, the values and the runner over the helper
 add_l4_test(plugin-core)

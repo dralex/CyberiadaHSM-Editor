@@ -1,0 +1,5 @@
+# a failed expect fails the run and the script goes on (EDIT-PLUG-62)
+plugin stepper:step
+  expect-active doors
+end
+plugin stepper:run

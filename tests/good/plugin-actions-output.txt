@@ -1,0 +1,17 @@
+== actions
+actions:sm enabled
+actions:initial disabled: a state machine has no initial state
+actions:fa disabled: Open a finite automaton
+actions:fa-valid disabled: the diagram is not a finite automaton
+actions:not-fa enabled
+actions:saved enabled
+actions:selection enabled
+actions:python disabled: the metainformation has no 'platformLanguage'
+actions:python-fill enabled
+actions:future disabled: the condition 'future-token' needs a newer editor
+actions:helper enabled
+actions:tool disabled: the program 'no-such-tool' is not found
+actions:variable disabled: the environment variable 'CYBERIADA_TEST_TOKEN' is not set
+actions:newer disabled: the requirement 'licence' needs a newer editor
+actions:too-old disabled: the plugin 'actions' is older than 9
+needs-actions:run enabled

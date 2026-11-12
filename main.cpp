@@ -127,6 +127,9 @@ int main(int argc, char *argv[])
 	parser.addOption(sessionScriptOption);
 	QCommandLineOption dumpSessionOption("dump-session", "Print the == session section: the messages of a session.");
 	parser.addOption(dumpSessionOption);
+	QCommandLineOption dumpActionsOption("dump-actions",
+										 "Print the == actions section: the plugin actions on the active tab.");
+	parser.addOption(dumpActionsOption);
 	parser.addPositionalArgument("files", "The CyberiadaML documents to open (one in batch mode).", "[files...]");
 	parser.process(app);
 
@@ -226,6 +229,7 @@ int main(int argc, char *argv[])
 			options.dumpPlugin = parser.isSet(dumpPluginOption);
 			options.sessionScript = parser.value(sessionScriptOption);
 			options.dumpSession = parser.isSet(dumpSessionOption);
+			options.dumpActions = parser.isSet(dumpActionsOption);
 			return runBatchMode(app, options);
 		}
 		return runGuiMode(app, parser.positionalArguments(), parser.isSet(reconstructOption),
