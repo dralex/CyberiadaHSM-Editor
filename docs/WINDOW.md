@@ -7,7 +7,7 @@ implemented, the git compare with them (stage 6 of `docs/MODES.md`).
 The window holds several documents at once. The menus, the toolbars, the tab line and the
 docks (the structure tree, the properties, the plugins) are one set; each document brings its
 own page — a diagram its model, scene and canvas view — and its mode (`docs/MODES.md`). The
-requirements are `EDIT-DOC-1..10` in `EDITOR-SPEC.md` §4.11, `EDIT-MODE-1..16` §4.14 and
+requirements are `EDIT-DOC-1..10` in `EDITOR-SPEC.md` §4.11, `EDIT-MODE-1..17` §4.14 and
 `EDIT-UI-6` for the docks; the plugin parts follow `docs/PLUGINS.md` (`EDIT-PLUG-n`, §4.12), the
 plugin sessions its chapter Level 2 (`EDIT-PLUG-36..49`).
 

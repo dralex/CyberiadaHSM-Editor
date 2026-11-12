@@ -1,7 +1,7 @@
 # The Document Modes — Architecture
 
-**Document version:** 0.8 (2026-11-12) — stages 1 to 6 implemented (see Stages). The requirements are
-`EDIT-MODE-1..16` in `EDITOR-SPEC.md` §4.14, the plugin parts `EDIT-PLUG-56..60`.
+**Document version:** 0.9 (2026-11-12) — stages 1 to 6 implemented (see Stages). The requirements are
+`EDIT-MODE-1..17` in `EDITOR-SPEC.md` §4.14, the plugin parts `EDIT-PLUG-56..60`.
 
 A tab holds one document in one **mode**: the format edited, the access, and the tools, the
 docks and the plugins that come with them — as an image mode of GIMP (Image > Mode). The mode
@@ -164,9 +164,9 @@ The git plugin hands the revision of a diagram to a diff tab:
             | rw                                     | read-only Markdown
             v                                        v
  +----------------------------------+     +-------------------------------+
- | CodeEditor: QPlainTextEdit, the  |     | QTextBrowser::setMarkdown:    |
- | line numbers, CodeHighlighter by |     | the rendered document         |
- | the language or the Markdown     |     |                               |
+ | CodeEditor: QPlainTextEdit, the  |     | MarkdownView: the rendered    |
+ | line numbers, CodeHighlighter by |     | document, the formulas and    |
+ | the language or the Markdown     |     | the SVG images (MARKDOWN.md)  |
  +----------------------------------+     +-------------------------------+
 ```
 

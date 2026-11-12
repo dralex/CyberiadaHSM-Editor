@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.50 (2026-11-11)
+**Document version:** 0.51 (2026-11-12)
 
 **Related authorities:**
 
@@ -519,6 +519,13 @@ the third is a derived display value the format does not store):
 - `EDIT-TEXT-13` MUST [A]: a model reset (a document load, an undo/redo, the geometry
   reconstruction or update) discards an unfinished canvas text edit before the old document is
   freed: nothing is committed and no undo step is added. *design*
+- `EDIT-TEXT-14` SHOULD [A]: with *Render Markdown comments* (Preferences > Text, off by default)
+  a comment body highlighted as Markdown (`EDIT-TEXT-11`) is drawn rendered as `EDIT-MODE-14`
+  draws a tab, the images relative to the directory of the document's file; an edit of the body
+  shows its highlighted source and the end of the edit renders it again; the box, its band and
+  its cut (`EDIT-NODE-16`) measure the rendered text; a fragment link of a rendered body ends on
+  the body; the exports draw it as the canvas does. The option `--render-markdown` and the batch
+  verb `render-markdown on|off` set it for the run without storing it. *design*
 
 ### 4.6 Tools and interaction — TOOL
 
@@ -1067,7 +1074,13 @@ the stages of `docs/MODES.md`.
   text is highlighted by the language (`EDIT-TEXT-7`) or as Markdown (`EDIT-TEXT-11`), and a
   switch between the text modes changes only the highlighting and the marker. *design*
 - `EDIT-MODE-14` SHOULD [A]: a read-only Markdown tab shows the rendered document instead of the
-  source; clearing the flag shows the source again. *design*
+  source; clearing the flag shows the source again. The rendering (`docs/MARKDOWN.md`) reads
+  CommonMark with the GitHub tables, task lists and strikethrough; a TeX formula `$..$` stands
+  on the text baseline, `$$..$$` is a centred line, one the engine cannot read shows its source
+  in red monospace; an image is found relative to the directory of the tab's file (an untitled
+  tab has none), an SVG one is drawn as vectors with its markers (the arrowheads), no wider than
+  the text, a missing one as its alt text and path; a link opens outside the editor, a
+  `#anchor` scrolls to its heading. *design*
 - `EDIT-MODE-15` MUST [A]: the parts of the window follow the mode of the active tab
   (`docs/MODES.md`, The modes): a text tab hides the element toolbar and disables the zoom,
   Language, Markup, Properties..., the geometry actions and Export, and the tree and properties
@@ -1077,6 +1090,10 @@ the stages of `docs/MODES.md`.
   on|off` and `refresh` act as the menus do; `--dump-tabs` prints `i <title>[*] <mode>[ ro]
   [active]`; `--dump` of a text tab prints `== text` (the mode and the lines), of a diff tab
   `== diff` (the base label and the pairs with what differs, by id). *design*
+- `EDIT-MODE-17` MUST [A]: the build option `CYBERIADA_MD_IMPORTER` chooses the Markdown reader
+  of `EDIT-MODE-14` and `EDIT-TEXT-14`: `QT` (Qt's own, Qt 5.14 and newer), `MD4C` (the editor's,
+  any Qt), `AUTO` (`QT` when the Qt has it); both give the same document structure — the
+  headings, paragraphs, lists, quotes, code, tables, links, images and formulas. *design*
 
 ## 5. Coverage
 
