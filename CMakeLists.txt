@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(CyberiadaPro VERSION 1.0.0 LANGUAGES CXX)
+project(CyberiadaPro VERSION 1.0.0 LANGUAGES C CXX)
 
 # the release names: the package, install folder and translation domain, and
 # the vendor and application names that place the settings and the user data
@@ -60,6 +60,27 @@ find_package(Qt5 COMPONENTS Widgets REQUIRED)
 # the Svg module may live outside the Qt5 tree, so it is looked up on its own;
 # the Qt5 components above must be found first, the Svg config depends on them
 find_package(Qt5Svg REQUIRED)
+
+# the Markdown rendering (docs/MARKDOWN.md): the reader (EDIT-MODE-17) and the formulas
+set(CYBERIADA_MD_IMPORTER "AUTO" CACHE STRING "the Markdown reader: AUTO, QT (Qt 5.14+) or MD4C")
+set_property(CACHE CYBERIADA_MD_IMPORTER PROPERTY STRINGS AUTO QT MD4C)
+option(CYBERIADA_WITH_MATH "draw the TeX formulas of Markdown with JKQTMathText" ON)
+set(CYBERIADA_MD_READER ${CYBERIADA_MD_IMPORTER})
+if(CYBERIADA_MD_READER STREQUAL "AUTO")
+  if(Qt5Widgets_VERSION VERSION_LESS 5.14)
+    set(CYBERIADA_MD_READER MD4C)
+  else()
+    set(CYBERIADA_MD_READER QT)
+  endif()
+elseif(CYBERIADA_MD_READER STREQUAL "QT")
+  if(Qt5Widgets_VERSION VERSION_LESS 5.14)
+    message(FATAL_ERROR "CYBERIADA_MD_IMPORTER=QT needs Qt 5.14 or newer, not ${Qt5Widgets_VERSION}")
+  endif()
+elseif(NOT CYBERIADA_MD_READER STREQUAL "MD4C")
+  message(FATAL_ERROR "CYBERIADA_MD_IMPORTER is AUTO, QT or MD4C, not ${CYBERIADA_MD_IMPORTER}")
+endif()
+message(STATUS "Markdown reader: ${CYBERIADA_MD_READER}, TeX formulas: ${CYBERIADA_WITH_MATH}")
+add_subdirectory(3rdparty)
 
 # the interface translations (docs/TRANSLATION.md): English is the source
 # language, each code below has translations/<domain>_<code>.ts
@@ -217,7 +238,13 @@ target_link_libraries(CyberiadaEditorCore PUBLIC
   ${QTPROPERTYBROWSER_LIBRARY}
   ${cyberiadaml_LIBRARIES}
   ${cyberiadamlpp_LIBRARIES}
+  md4c
   )
+target_compile_definitions(CyberiadaEditorCore PUBLIC CYBERIADA_MD_READER_${CYBERIADA_MD_READER})
+if(CYBERIADA_WITH_MATH)
+  target_link_libraries(CyberiadaEditorCore PUBLIC CyberiadaMathText)
+  target_compile_definitions(CyberiadaEditorCore PUBLIC CYBERIADA_WITH_MATH)
+endif()
 
 add_executable(CyberiadaPro
   main.cpp

@@ -124,7 +124,7 @@ document of its `EditableTextItem`:
 * The options: `CYBERIADA_MD_IMPORTER` (`AUTO`, `QT`, `MD4C`; `QT` with a Qt older than 5.14
   stops the configuration) and `CYBERIADA_WITH_MATH` (`ON`).
 * The vendored code is compiled as it is, as C++11 like the editor, into the static library
-  `CyberiadaMathText`; `3rdparty/jkqtmathtext/README.md` lists the files and the version.
+  `CyberiadaMathText`; `3rdparty/README.md` lists the files and the versions.
 
 ## Testing
 
