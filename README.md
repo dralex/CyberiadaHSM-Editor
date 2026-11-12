@@ -15,11 +15,14 @@ elements (states, pseudostate, transitions, etc.), view management (zoom,
 pan), copy/paste, undo/redo, etc. Several documents are open at once in tabs,
 with the clipboard shared between them. The code in the actions, guards and formal
 comments is highlighted by the `platformLanguage` of the document (C, C++, C#,
-Java, JavaScript, Python; the rules are in `syntax/`), chosen in Document > Language.
+Python; the rules are in `syntax/`), chosen in Document > Language.
 The informal comments in Markdown are highlighted as well (Document > Markup).
 Each tab has a mode (Document > Mode, see `docs/MODES.md`): an HSM diagram, a finite
-automaton (FA) diagram with the automaton tools and the EXT-FA check, or the inspection of
-a file exactly as it is stored; any tab can also be made read-only.
+automaton (FA) diagram with the automaton tools and the EXT-FA check, the inspection of
+a file exactly as it is stored, or a text - plain, Markdown or a C, C++, C# or Python
+source, highlighted; any tab can also be made read-only (a read-only Markdown tab shows
+the rendered document). Document > Compare with... opens a diff tab: two revisions of a
+diagram side by side, the added, removed and changed elements marked and listed.
 
 ![CyberiadaPro. Sample 1](images/gui-sample-1.jpg)
 
@@ -29,6 +32,8 @@ a file exactly as it is stored; any tab can also be made read-only.
 
 The editor supports plugins (see ![The Plugin Interface](docs/PLUGIN-API.md))
 which allow to process HSM diagrams and run controlled by HSM diagrams programs.
+A plugin may also work on the text tabs, bring the programming languages of its tool and
+give a diff tab the base revision of a diagram.
 The most interesting plugins are:
 
 * ![HSM Diagram Maker](https://github.com/dralex/cybersphere-hsm-maker): generating HSM diagrams using LLM;

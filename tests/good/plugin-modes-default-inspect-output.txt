@@ -1,0 +1,8 @@
+== plugin
+action: modes:default
+result: log
+state: failed
+exit: -
+error: the action works in: HSM diagram, FA diagram
+== diagnostics
+count: 0

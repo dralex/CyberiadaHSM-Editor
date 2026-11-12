@@ -30,7 +30,10 @@
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_editor_scene.h"
 #include "cyberiadasm_editor_document.h"
+#include "text_document.h"
+#include "diff_document.h"
 #include "plugin_runner.h"
+#include "meta_choice_menu.h"
 
 class QToolBar;
 class QComboBox;
@@ -38,7 +41,8 @@ class QMenu;
 class QUndoGroup;
 class QTabBar;
 class QActionGroup;
-class MetaChoiceMenu;
+class QTreeWidget;
+class QTreeWidgetItem;
 class PluginsMenu;
 class PluginDock;
 class PluginSession;
@@ -71,31 +75,51 @@ public:
                                       bool reconstruct = false, bool reconstruct_sm = false,
                                       bool strict = false, bool inspect = false);
     // MODES (docs/MODES.md): Document > Mode of a tab; the inspection opens a tab of
-    // its own, HSM turns an inspection tab into an editing one (EDIT-MODE-3/6)
-    bool                    setDocumentMode(CyberiadaSMEditorDocument* doc, const QString& mode,
+    // its own, HSM turns an inspection tab into an editing one, a text tab switches
+    // between the text modes (EDIT-MODE-3/6/13)
+    bool                    setDocumentMode(EditorDocument* doc, const QString& mode,
                                             QString* error = nullptr);
     // the inspection tab of a document: its file when saved, else its snapshot
     CyberiadaSMEditorDocument* inspectDocument(CyberiadaSMEditorDocument* source,
                                                QString* error = nullptr);
     // Document > Read-only of a tab (EDIT-MODE-4)
-    void                    setDocumentReadOnly(CyberiadaSMEditorDocument* doc, bool on);
-    // a new untitled document in a new tab
+    void                    setDocumentReadOnly(EditorDocument* doc, bool on);
+    // Document > Compare with...: a new diff tab of the diagram against the base (EDIT-MODE-10)
+    DiffDocument*           compareDocument(CyberiadaSMEditorDocument* source, const DiffOrigin& base,
+                                            QString* error = nullptr);
+    // Document > Refresh: both sides again from their origins (EDIT-MODE-12)
+    // a plugin base runs its action again: wait for the run, or leave it running
+    bool                    refreshDiff(DiffDocument* diff, QString* error = nullptr, bool wait = false);
+    // the change list of a diff tab, in the structure tree dock (EDIT-MODE-11)
+    QTreeWidget*            changeList() const { return m_changeList; }
+    // a new untitled diagram in a new tab
     CyberiadaSMEditorDocument* newDocument();
-    void                    setCurrentDocument(CyberiadaSMEditorDocument* doc);
+    // a new untitled text tab in a text mode (EDIT-MODE-13)
+    TextDocument*           newTextDocument(const QString& mode);
+    // a text file in a text tab by its extension; a clean untitled tab gives way
+    bool                    openTextFile(const QString& fileName, QString* error = nullptr);
+    void                    setCurrentDocument(EditorDocument* doc);
     // the close prompt first (skipped with discard); the last document is
     // replaced by a fresh untitled one
-    bool                    closeDocument(CyberiadaSMEditorDocument* doc, bool discard = false);
+    bool                    closeDocument(EditorDocument* doc, bool discard = false);
 
-    // the active document and its parts
+    // the active tab; its diagram, null for a text tab, and the diagram's parts
+    EditorDocument*         currentTab() const { return active; }
     CyberiadaSMEditorDocument* currentDocument() const { return current; }
+    TextDocument*           currentText() const { return qobject_cast<TextDocument*>(active); }
+    DiffDocument*           currentDiff() const { return qobject_cast<DiffDocument*>(active); }
     CyberiadaSMModel*       getModel() { return model(); }
     CyberiadaSMEditorScene* getScene() { return scene(); }
     int                     documentCount() const { return documents.size(); }
-    CyberiadaSMEditorDocument* documentAt(int i) const { return documents.value(i, nullptr); }
+    EditorDocument*         tabAt(int i) const { return documents.value(i, nullptr); }
+    // the diagram of a tab, null for a text tab
+    CyberiadaSMEditorDocument* documentAt(int i) const {
+        return qobject_cast<CyberiadaSMEditorDocument*>(documents.value(i, nullptr));
+    }
 
     // the unsaved changes prompt: true when the document may go
     bool                    confirmDiscard();
-    bool                    confirmDiscard(CyberiadaSMEditorDocument* doc);
+    bool                    confirmDiscard(EditorDocument* doc);
 
     // the active document's canvas view (the tests address it by name)
     CyberiadaSMGraphicsView* sceneView = nullptr;
@@ -103,25 +127,26 @@ public:
 
     // PLUGINS (docs/PLUGINS.md): start an action on the document, the active one by
     // default; nullptr with the reason when it cannot start; the result is applied
-    // to the document the run started from (EDIT-PLUG-21)
+    // to the document the run started from (EDIT-PLUG-21); a diff result refreshes the
+    // diff tab given (EDIT-PLUG-58)
     PluginRunner*           runPlugin(const QString& pluginId, const QString& actionId,
                                       const PluginValues& values, QString* error = nullptr,
-                                      CyberiadaSMEditorDocument* doc = nullptr);
+                                      EditorDocument* doc = nullptr, DiffDocument* refresh = nullptr);
     // the batch and test form: run, wait in a local event loop, return the result
     PluginResult            runPluginAndWait(const QString& pluginId, const QString& actionId,
                                              const PluginValues& values,
-                                             CyberiadaSMEditorDocument* doc = nullptr);
+                                             EditorDocument* doc = nullptr, DiffDocument* refresh = nullptr);
     // why the action cannot run on the document now; empty when it can
     QString                 pluginDisabledReason(const PluginEntry& plugin, const PluginAction& action,
-                                                 CyberiadaSMEditorDocument* doc) const;
+                                                 EditorDocument* doc) const;
     // the values a GUI run starts from: the defaults, the stored persistent and
     // document values; needsDialog follows the click rule (EDIT-PLUG-7)
     PluginValues            pluginValues(const PluginEntry& plugin,
                                          const QList<const PluginParameter*>& parameters,
-                                         CyberiadaSMEditorDocument* doc, bool* needsDialog = nullptr) const;
+                                         EditorDocument* doc, bool* needsDialog = nullptr) const;
     void                    storePluginValues(const PluginEntry& plugin,
                                               const QList<const PluginParameter*>& parameters,
-                                              CyberiadaSMEditorDocument* doc, const PluginValues& values);
+                                              EditorDocument* doc, const PluginValues& values);
     PluginsMenu*            pluginsMenu() const { return pluginMenu; }
     PluginDock*             pluginDock() const { return pluginDockWidget; }
     // Plugins > Session: the session of the active document (EDIT-PLUG-46)
@@ -132,7 +157,7 @@ public:
     QAction*                actionProperties = nullptr;
 
 signals:
-    void                    pluginRunStarted(PluginRunner* run, CyberiadaSMEditorDocument* doc);
+    void                    pluginRunStarted(PluginRunner* run, EditorDocument* doc);
     // emitted after the result is applied; the runner is deleted later
     void                    pluginRunFinished(PluginRunner* run);
 
@@ -156,29 +181,50 @@ private:
 
     // the tab text: the title with the mode and the modified markers, the path as
     // the tooltip
-    void                    updateTabTitle(CyberiadaSMEditorDocument* doc);
+    void                    updateTabTitle(EditorDocument* doc);
+    // the tab line, the stack and the undo group take a new document
+    void                    addTab(EditorDocument* doc);
     // the tab of a file, its editing or its inspection one
     CyberiadaSMEditorDocument* findDocument(const QString& fileName, bool inspection) const;
+    // the actions of a text tab and of a diff tab (EDIT-MODE-15)
+    void                    updateTextActions();
+    void                    updateDiffActions();
+    // the rows of the active diff tab
+    void                    fillChangeList();
+    // a side of a diff tab as a buffer; a closed source tab keeps the last one
+    bool                    originBuffer(const DiffOrigin& origin, const std::string& last,
+                                         std::string* buffer, QString* error) const;
+    // the canvas tools and docks go with a text tab and come back with a diagram
+    void                    showDiagramParts(bool on);
     // the Document menu: the modes, the flag (EDIT-MODE-3/4)
     void                    initDocumentMenu();
     void                    updateModeActions();
     // a mode or a flag changed: the tab, the title and the actions follow
-    void                    documentStateChanged(CyberiadaSMEditorDocument* doc);
+    void                    documentStateChanged(EditorDocument* doc);
     // Edit > Language and Edit > Markup (EDIT-TEXT-9/12) follow the active document
     void                    initChoiceMenus();
+    QList<MetaChoiceMenu::Entry> languageEntries() const;
+    // Mode > Plain text, Markdown, Code > and File > New > Text file (EDIT-MODE-3/13)
+    void                    rebuildTextModeMenus();
     void                    syncChoiceMenus();
     // the selection links between the tree and the active scene
     void                    bindDocument(CyberiadaSMEditorDocument* doc);
     void                    unbindDocument(CyberiadaSMEditorDocument* doc);
     // the run context of a document (the snapshot, the meta, the selection)
-    bool                    pluginContext(CyberiadaSMEditorDocument* doc, PluginRunContext* context,
+    // a text tab gives its text (EDIT-PLUG-57)
+    bool                    pluginContext(EditorDocument* doc, PluginRunContext* context,
                                           QString* error) const;
     // the declared metainformation fills the keys the document lacks (EDIT-PLUG-34)
-    QList<PluginMetaNote>   fillPluginMeta(CyberiadaSMEditorDocument* doc, const PluginAction& action);
+    QList<PluginMetaNote>   fillPluginMeta(EditorDocument* doc, const PluginAction& action);
     // save, cwd: document need the file to be current (EDIT-PLUG-25)
-    bool                    savePluginDocument(CyberiadaSMEditorDocument* doc, QString* error);
-    // the document the result went to: the run's own, or the new one
-    CyberiadaSMEditorDocument* applyPluginResult(PluginRunner* run, CyberiadaSMEditorDocument* doc);
+    bool                    savePluginDocument(EditorDocument* doc, QString* error);
+    // the document the result went to: the run's own, the new one or the diff tab
+    EditorDocument*         applyPluginResult(PluginRunner* run, EditorDocument* doc);
+    // the tab waits for a replace result, or is read by a session (EDIT-PLUG-22/41)
+    void                    setPluginLock(EditorDocument* doc, bool on, bool session);
+    // the base label of a diff result: the string values, else the action label (EDIT-PLUG-58)
+    QString                 pluginBaseLabel(const PluginEntry& plugin, const PluginAction& action,
+                                            const PluginValues& values) const;
 
 private slots:
     void                    slotModelReset();
@@ -191,6 +237,11 @@ private slots:
     void                    slotDocumentProperties();
     // File > New > FA diagram: an untitled tab that becomes a finite automaton (EDIT-MODE-5)
     void                    slotFileNewFA();
+    // File > New > Text file > <mode> (EDIT-MODE-13)
+    void                    slotFileNewText(const QString& mode);
+    // Document > Compare with...: the base chosen among the tabs, a file, the saved file
+    void                    slotCompare();
+    void                    slotChangeActivated(QTreeWidgetItem* item);
     // Document > Check: the EXT-FA findings of an FA tab in Diagnostics (EDIT-MODE-9)
     void                    slotCheck();
     void                    slotServiceObjectsChanged(bool on);
@@ -220,7 +271,10 @@ public slots:
     void                    slotPluginSettings(const QString& pluginId);
     void                    slotPluginManager();
     // a finding was clicked: select and centre its element (EDIT-PLUG-15)
-    void                    slotDiagnosticActivated(CyberiadaSMEditorDocument* doc, const QString& elementId);
+    void                    slotDiagnosticActivated(EditorDocument* doc, const QString& elementId);
+    void                    slotLineActivated(EditorDocument* doc, int line);
+    // a file of a files result: opened in a tab
+    void                    slotFileActivated(const QString& path);
 
 public slots:
 	void                    slotFileNew();
@@ -266,15 +320,24 @@ public slots:
     void                    slotPaste();
 
 private:
-    QList<CyberiadaSMEditorDocument*> documents;
+    QList<EditorDocument*>  documents;
+    // the active tab, and its diagram (null for a text tab)
+    EditorDocument*         active = nullptr;
     CyberiadaSMEditorDocument* current = nullptr;
+    // the element toolbar was hidden for a text tab, not by the user
+    bool                    elementBarHidden = false;
+    QTreeWidget*            m_changeList = nullptr;
     // the running plugins and the documents they started from
-    QMap<PluginRunner*, QPointer<CyberiadaSMEditorDocument> > pluginRuns;
+    QMap<PluginRunner*, QPointer<EditorDocument> > pluginRuns;
+    // the diff tabs a run refreshes (EDIT-MODE-12)
+    QMap<PluginRunner*, QPointer<DiffDocument> > diffRefreshes;
     QUndoGroup*             undoGroup = nullptr;
     // the tab line over the central area, shown from the second document on
     QTabBar*                documentTabs = nullptr;
     QActionGroup *toolGroup;
     QActionGroup* modeGroup = nullptr;
+    QList<QAction*> textModeActions;
+    QMenu* menuNewText = nullptr;
     ToolType currentTool = ToolType::Select;
 
     QMenu* recentMenu = nullptr;
@@ -294,7 +357,7 @@ private:
     QAction* actionSessionSave = nullptr;
     void initSessionMenu();
     // a session's marks, findings and menu follow it (EDIT-PLUG-40/46/49)
-    void connectSession(PluginRunner* run, CyberiadaSMEditorDocument* doc);
+    void connectSession(PluginRunner* run, EditorDocument* doc);
     // the session tab of the active document's session, else nullptr
     PluginSessionTab* currentSessionTab() const;
     MetaChoiceMenu* markupChoice = nullptr;

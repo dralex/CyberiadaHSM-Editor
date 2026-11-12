@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.48 (2026-11-11)
+**Document version:** 0.50 (2026-11-11)
 
 **Related authorities:**
 
@@ -772,7 +772,7 @@ the conditions of an action, `EDIT-PLUG-56..59` the modes of an action and the d
   grey once the document changes. *design*
 - `EDIT-PLUG-16` MUST [A]: a `files` result lists the new and changed files under the action's
   outdir in the path order; a listed file whose extension a text mode knows (`EDIT-MODE-13`)
-  is a link that opens it in a text tab. *design*
+  is a link that opens it in a text tab, a `.graphml` one in a diagram tab. *design*
 - `EDIT-PLUG-17` MUST [A]: the plugin's stdout and stderr stream during the run into the
   plugin's own output tab ("<plugin> output"), one block per run headed by the action and the
   document, capped per tab; a starting run makes its tab current. *design*
@@ -927,13 +927,15 @@ the conditions of an action, `EDIT-PLUG-56..59` the modes of an action and the d
   with its unsaved edits in UTF-8, `<ext>` the first extension of the tab's mode, and
   `${output}` is `<rundir>/output.<ext>`; a `replace` result replaces the text as one undo step
   (`EDIT-PLUG-12`), a `new-document` result opens a text tab of the same mode; the tokens of
-  `EDIT-PLUG-52` that need a diagram (`sm`, `initial`, `fa`, `fa-valid`, `meta:`) do not hold.
-  *design*
+  `EDIT-PLUG-52` that need a diagram (`sm`, `initial`, `fa`, `fa-valid`, `meta:`) do not hold;
+  the text is locked while a `replace` runs, and a finding with a `line` goes to that line of
+  the text. *design*
 - `EDIT-PLUG-58` MUST [A]: a `diff` result opens a diff tab (`EDIT-MODE-10`): the base is
   `${output}` read in any format the library reads — an empty output is an empty document, not
   a failure — and the target is the run's `${input}`; the base is labelled by the values of the
   action's `string` parameters, else by the action label; the source document is untouched;
-  Refresh of the tab runs the action again with the same values (`EDIT-MODE-12`). A `diff`
+  Refresh of the tab runs the action again with the same values on the tab it ran on, and
+  fails with the reason when that tab is closed (`EDIT-MODE-12`). A `diff`
   action lists only the diagram modes `hsm`, `fa`, `inspection`, else the descriptor is
   rejected. *design*
 - `EDIT-PLUG-59` MUST [A]: an action with an unknown `result` is disabled with the reason that
@@ -1050,7 +1052,8 @@ the stages of `docs/MODES.md`.
   change list in the structure tree dock lists the pairs by state machine with what differs, a
   row selecting and centring the element in both views. The pairs and what differs are the
   library's revision diff with the geometry option of Document > Geometry (off): without it
-  the ids, the geometry and the `cyberiadaEditorView` metainformation are not shown. *design*
+  the ids, the geometry and the `cyberiadaEditorView` and `regionGeometry` metainformation
+  are not shown; a pair is named as the target names it. *design*
 - `EDIT-MODE-12` MUST [A]: Document > Refresh takes both sides of the active diff tab again from
   their origins: the target from its source tab (kept when the tab is closed), the base from
   its tab, its file, the saved file, or a run of its plugin action with the same values.

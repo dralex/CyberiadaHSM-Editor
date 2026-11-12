@@ -88,7 +88,7 @@ static int runPluginStage(CyberiadaSMEditorWindow& win, const BatchOptions& opti
 	}
 	PluginValues values;
 	QString error;
-	PluginDocumentPaths paths = pluginDocumentPaths(win.currentDocument()->filePath());
+	PluginDocumentPaths paths = pluginDocumentPaths(win.currentTab()->filePath());
 	if (!pluginParseValues(plugin, **action, options.pluginParams, paths, &values, &error)) {
 		fprintf(stderr, "%s\n", qPrintable(error));
 		return batchUsageError;
@@ -183,6 +183,52 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const BatchOptions& options)
 		dumpTabs(&win, std::cout);
 	}
 
+	// the run of a plugin, after the sections of the tab it left active
+	auto dumpPluginSections = [&]() {
+		if (!plugin || !action || !(options.dump || options.dumpPlugin)) return;
+		std::cout << "== plugin" << std::endl;
+		dumpPluginRun(*plugin, *action, pluginResult, std::cout);
+		std::cout << "== diagnostics" << std::endl;
+		dumpDiagnostics(pluginResult, std::cout);
+	};
+
+	// a diff tab dumps its comparison and has nothing to draw or save (EDIT-MODE-16)
+	if (DiffDocument* diff = win.currentDiff()) {
+		if (options.dump) {
+			std::cout << "== diff" << std::endl;
+			dumpDiffDocument(diff, std::cout);
+		}
+		dumpPluginSections();
+		if (!options.exportImage.isEmpty() || options.dumpAudit || options.dumpTextMetrics ||
+			options.dumpUndoStack || !options.save.isEmpty()) {
+			fprintf(stderr, "the active tab is a diff tab\n");
+			return batchUsageError;
+		}
+		return pluginCode;
+	}
+
+	// a text tab has its text and no diagram to dump, draw or save as one (EDIT-MODE-16)
+	if (TextDocument* text = win.currentText()) {
+		if (options.dump) {
+			std::cout << "== text" << std::endl;
+			dumpTextDocument(text, std::cout);
+		}
+		dumpPluginSections();
+		if (!options.exportImage.isEmpty() || options.dumpAudit || options.dumpTextMetrics ||
+			options.dumpUndoStack) {
+			fprintf(stderr, "the active tab holds no diagram\n");
+			return batchUsageError;
+		}
+		if (!options.save.isEmpty()) {
+			QString save_error;
+			if (!text->saveAs(options.save, &save_error)) {
+				fprintf(stderr, "cannot save %s\n%s\n", qPrintable(options.save), qPrintable(save_error));
+				return batchInternalError;
+			}
+		}
+		return pluginCode;
+	}
+
 	if (options.dump) {
 		std::cout << "== document" << std::endl;
 		dumpDocument(win.getModel(), std::cout);
@@ -198,12 +244,7 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const BatchOptions& options)
 		}
 	}
 
-	if (plugin && action && (options.dump || options.dumpPlugin)) {
-		std::cout << "== plugin" << std::endl;
-		dumpPluginRun(*plugin, *action, pluginResult, std::cout);
-		std::cout << "== diagnostics" << std::endl;
-		dumpDiagnostics(pluginResult, std::cout);
-	}
+	dumpPluginSections();
 	// the messages of a session both ways (EDIT-PLUG-48)
 	if (action && action->session && (options.dump || options.dumpSession)) {
 		std::cout << "== session" << std::endl;

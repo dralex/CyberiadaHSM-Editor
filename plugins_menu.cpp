@@ -90,6 +90,8 @@ void PluginsMenu::rebuild()
         for (const PluginAction& a: d.actions) {
             if (!a.hidden) shown++;
         }
+        // a plugin of languages only has no entry (EDIT-PLUG-60)
+        if (shown == 0 && !d.hasStoredParameters()) continue;
         bool single = shown == 1 && !d.hasStoredParameters();
         QMenu* target = pluginsMenu;
         if (!single) {

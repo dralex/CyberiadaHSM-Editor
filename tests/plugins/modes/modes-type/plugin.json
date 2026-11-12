@@ -1,0 +1,8 @@
+{
+  "api": 1,
+  "id": "modes-type",
+  "name": "Modes Type",
+  "actions": [
+    { "id": "run", "label": "Run", "result": "log", "modes": "hsm", "argv": ["${plugin_dir}/../../bin/plugin-helper", "print", "x"] }
+  ]
+}

@@ -53,6 +53,8 @@ public:
 
     // check the entry of the active document's value
     void sync(const QString& value);
+    // the fixed entries again: the languages changed (EDIT-PLUG-60)
+    void setEntries(const QList<Entry>& entries);
     // an unknown value stays in the menu until the editor exits
     void noteUnknown(const QString& value);
     void setEnabled(bool on);
@@ -65,7 +67,7 @@ private slots:
     void onTriggered(QAction* action);
 
 private:
-    QAction* addEntry(const QString& text, const QString& value);
+    QAction* addEntry(const QString& text, const QString& value, QAction* before = nullptr);
 
     QMenu* menu;
     QActionGroup* group;
@@ -74,6 +76,7 @@ private:
     QString currentValue;
     QStringList sessionValues;
     QList<QAction*> extraActions;
+    QList<QAction*> fixedActions;
 };
 
 #endif // META_CHOICE_MENU_H

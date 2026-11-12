@@ -49,9 +49,18 @@ void dumpText(CyberiadaSMEditorScene* scene, CyberiadaSMModel* model, std::ostre
 // the undo stack: the step count, the current index and the clean state
 void dumpStack(CyberiadaSMModel* model, std::ostream& os);
 
-// the tab line: the count, then one line per tab with the index, the tab text
-// (the title with the modified marker) and the active mark
+// the tab line: the count, then one line per tab with the index, the title with
+// the modified marker, the mode, the read-only flag and the active mark
 void dumpTabs(CyberiadaSMEditorWindow* win, std::ostream& os);
+
+class TextDocument;
+// the active text tab: its mode, its file, its state and its lines (EDIT-MODE-16)
+void dumpTextDocument(const TextDocument* doc, std::ostream& os);
+
+class DiffDocument;
+// the active diff tab: its sides, the geometry option, the counts and the rows
+// by state machine, each with its change and the ids of its sides (EDIT-MODE-16)
+void dumpDiffDocument(const DiffDocument* doc, std::ostream& os);
 
 // the plugins found, one line per plugin folder: the id, the version, the state,
 // the origin and the reason, then the warnings (EDIT-PLUG-28)

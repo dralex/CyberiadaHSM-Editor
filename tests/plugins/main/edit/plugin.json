@@ -8,6 +8,7 @@
       "id": "rename",
       "label": "Rename",
       "result": "replace",
+      "modes": ["hsm", "fa", "inspection"],
       "argv": [
         "${plugin_dir}/../../bin/plugin-helper",
         "copy",

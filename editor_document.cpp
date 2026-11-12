@@ -22,6 +22,31 @@
  * ----------------------------------------------------------------------------- */
 
 #include "editor_document.h"
+#include "plugin_runner.h"
+
+PluginRunner* EditorDocument::pluginRun() const
+{
+    return m_pluginRun.data();
+}
+
+void EditorDocument::setPluginRun(PluginRunner* run)
+{
+    m_pluginRun = run;
+}
+
+PluginDocumentFacts EditorDocument::pluginFacts() const
+{
+    PluginDocumentFacts facts;
+    if (!m_gitValid || filePath() != m_gitPath) {
+        m_gitPath = filePath();
+        m_git = PluginConditions::readGit(m_gitPath);
+        m_gitValid = true;
+    }
+    facts.git = m_git;
+    facts.file = hasFile();
+    facts.saved = hasFile() && isClean();
+    return facts;
+}
 
 void EditorDocument::setReadOnlyFlag(bool on)
 {

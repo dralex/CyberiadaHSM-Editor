@@ -1,0 +1,20 @@
+== plugin
+action: modes:cat
+result: log
+state: done
+exit: 0
+stdout:
+  <rundir>/input.cpp
+  // the blinking LED of the Arduino course
+  #include <Arduino.h>
+  void setup() {
+      pinMode(LED_BUILTIN, OUTPUT);
+  }
+  void loop() {
+      digitalWrite(LED_BUILTIN, HIGH);
+      delay(500);
+      digitalWrite(LED_BUILTIN, LOW);
+      delay(500);
+  }
+== diagnostics
+count: 0

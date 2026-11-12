@@ -69,8 +69,12 @@ struct CodeSpan {
 
 // one rule set of syntax/<language>.json
 struct CodeLanguage {
+    // the file name without .json: the id of its text mode (EDIT-MODE-1)
+    QString id;
     QString name;
     QStringList aliases;
+    // the file extensions of its sources, lower case with the dot (EDIT-MODE-13)
+    QStringList extensions;
     QString lineComment;
     QString blockOpen;
     QString blockClose;
@@ -78,6 +82,17 @@ struct CodeLanguage {
     bool preprocessor = false;
     QSet<QString> keywords;
     QSet<QString> types;
+    // the plugin that brings it, empty for a built-in one (EDIT-PLUG-60)
+    QString owner;
+};
+
+// a language file of a plugin: the input of setPluginLanguages and what became of it
+struct CodeLanguageFile {
+    QString owner;     // the plugin id
+    QString name;      // as the descriptor names it
+    QString path;      // absolute
+    QString id;        // the language added, empty when skipped
+    QString warning;   // why it is skipped
 };
 
 // the languages and the switches; the language itself belongs to a document
@@ -87,6 +102,7 @@ class CodeStyle : public QObject {
 public:
     CodeStyle(CodeStyle &other) = delete;
     void operator=(const CodeStyle &) = delete;
+    ~CodeStyle();
 
     static CodeStyle& instance() {
         static CodeStyle instance;
@@ -97,6 +113,14 @@ public:
     // null for an empty or unknown value
     const CodeLanguage* find(const QString& name) const;
     QStringList languages() const;
+    // the language of a mode id, of a file extension (".cpp", any case); null without one
+    const CodeLanguage* findId(const QString& id) const;
+    const CodeLanguage* forExtension(const QString& extension) const;
+    QStringList ids() const;
+    // the languages of the plugins after the built-in ones, in the order given; a file
+    // that is missing, malformed or whose id, name or alias is taken is skipped. A
+    // language replaced stays allocated, so a pointer held to it never dangles
+    void setPluginLanguages(QList<CodeLanguageFile>& files);
     // the language to draw with, null when the switches make the text plain
     const CodeLanguage* effective(const CodeLanguage* lang) const;
     bool isActive() const;
@@ -120,12 +144,17 @@ public:
 
 signals:
     void styleChanged();
+    // the plugin languages changed: the holders of a language look it up again
+    void languagesChanged();
 
 private:
     CodeStyle();
     void loadLanguages();
+    // the id, the name or an alias another language has, empty when none
+    QString clash(const CodeLanguage& lang) const;
 
-    QVector<CodeLanguage> registry;
+    QVector<CodeLanguage*> registry;
+    QVector<CodeLanguage*> retired;
     bool exportPlain = false;
 };
 

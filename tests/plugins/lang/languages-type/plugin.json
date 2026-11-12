@@ -1,0 +1,7 @@
+{
+  "api": 1,
+  "id": "languages-type",
+  "name": "Languages Type",
+  "languages": "syntax/lua.json",
+  "actions": [ { "id": "run", "label": "Run", "result": "log", "argv": ["${plugin_dir}/../../bin/plugin-helper", "print", "x"] } ]
+}

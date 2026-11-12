@@ -31,7 +31,11 @@
 #include <QStringList>
 #include <QLineF>
 
+#include <QFileInfo>
+
 #include "cyberiadasm_dump.h"
+#include "text_document.h"
+#include "diff_document.h"
 #include "cyberiadasm_editor_subject_item.h"
 #include "plugin_runner.h"
 #include <algorithm>
@@ -291,12 +295,47 @@ void dumpTabs(CyberiadaSMEditorWindow* win, std::ostream& os)
 {
 	os << "count: " << win->documentCount() << std::endl;
 	for (int i = 0; i < win->documentCount(); i++) {
-		CyberiadaSMEditorDocument* doc = win->documentAt(i);
+		EditorDocument* doc = win->tabAt(i);
 		os << i << " " << doc->title().toStdString() << (doc->isClean() ? "" : "*");
 		// the mode and the flag (EDIT-MODE-16)
 		os << " " << doc->mode().toStdString() << (doc->readOnlyFlag() ? " ro" : "");
-		if (doc == win->currentDocument()) os << " active";
+		if (doc == win->currentTab()) os << " active";
 		os << std::endl;
+	}
+}
+
+void dumpTextDocument(const TextDocument* doc, std::ostream& os)
+{
+	os << "mode: " << doc->mode().toStdString() << std::endl;
+	os << "file: " << (doc->hasFile() ? QFileInfo(doc->filePath()).fileName().toStdString() : "-")
+	   << std::endl;
+	os << "modified: " << (doc->isClean() ? "no" : "yes") << std::endl;
+	os << "rendered: " << (doc->showsRendered() ? "yes" : "no") << std::endl;
+	// the lines as they are, each after a bar so an empty one shows
+	const QStringList lines = doc->text().split('\n');
+	os << "lines: " << lines.size() << std::endl;
+	for (const QString& line : lines) os << "| " << line.toStdString() << std::endl;
+}
+
+void dumpDiffDocument(const DiffDocument* doc, std::ostream& os)
+{
+	DiffDocument* diff = const_cast<DiffDocument*>(doc);
+	os << "base: " << diff->base().label.toStdString() << std::endl;
+	os << "target: " << diff->target().label.toStdString() << std::endl;
+	os << "geometry: " << (doc->geometry() ? "yes" : "no") << std::endl;
+	if (!doc->error().isEmpty()) os << "error: " << doc->error().toStdString() << std::endl;
+	os << "changed: " << doc->changed() << ", added: " << doc->added() << ", removed: "
+	   << doc->removed() << std::endl;
+	QString machine;
+	for (const DiffRow& row : doc->rows()) {
+		if (row.machine != machine) {
+			machine = row.machine;
+			if (!machine.isEmpty()) os << machine.toStdString() << std::endl;
+		}
+		os << (row.machine.isEmpty() ? "" : "  ") << row.element.toStdString() << ": "
+		   << row.change.toStdString() << " ("
+		   << (row.first.isEmpty() ? "-" : row.first.toStdString()) << " / "
+		   << (row.second.isEmpty() ? "-" : row.second.toStdString()) << ")" << std::endl;
 	}
 }
 
@@ -311,6 +350,8 @@ void dumpPlugins(const QList<PluginEntry>& entries, std::ostream& os)
 		for (const QString& w: e.descriptor.warnings) {
 			os << "  warning: " << w.toStdString() << std::endl;
 		}
+		// the languages the plugin brings (EDIT-PLUG-60)
+		if (!e.languages.isEmpty()) os << "  languages: " << e.languages.join(", ").toStdString() << std::endl;
 		// the actions off by their requires, in the descriptor order (EDIT-PLUG-54)
 		for (const PluginAction& a: e.descriptor.actions) {
 			if (!e.unavailable.contains(a.id)) continue;
@@ -351,7 +392,7 @@ void dumpPluginRun(const PluginEntry& plugin, const PluginAction& action,
 {
 	static const char* const states[] = { "done", "failed", "cancelled" };
 	os << "action: " << plugin.descriptor.id.toStdString() << ":" << action.id.toStdString() << std::endl;
-	os << "result: " << PluginDescriptor::resultName(action.result).toStdString() << std::endl;
+	os << "result: " << action.resultId().toStdString() << std::endl;
 	static const char* const metaKinds[] = { "set", "kept", "skipped" };
 	for (const PluginMetaNote& note: result.metaNotes) {
 		os << "meta: " << metaKinds[note.kind] << " " << note.key.toStdString();
@@ -366,7 +407,7 @@ void dumpPluginRun(const PluginEntry& plugin, const PluginAction& action,
 	if (result.state == PluginResult::stateDone) {
 		if (action.result == PluginAction::resultReplace) {
 			os << "changes: " << (result.changed ? "yes" : "no") << std::endl;
-		} else if (action.result == PluginAction::resultNewDocument) {
+		} else if (action.result == PluginAction::resultNewDocument || action.result == PluginAction::resultDiff) {
 			os << "tab: " << result.tab << std::endl;
 		} else if (action.result == PluginAction::resultFiles && !result.files.isEmpty()) {
 			os << "files:" << std::endl;

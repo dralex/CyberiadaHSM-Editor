@@ -1,0 +1,8 @@
+== plugin
+action: modes:text
+result: replace
+state: failed
+exit: -
+error: the action works in: Plain text, Markdown
+== diagnostics
+count: 0

@@ -1,0 +1,7 @@
+# Refresh takes the target again from its tab (EDIT-MODE-12)
+rename node-0-0-1 Idle
+compare saved
+switch 0
+rename node-0-1 Second
+switch 1
+refresh

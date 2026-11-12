@@ -23,6 +23,7 @@
 
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -47,6 +48,34 @@ static QStringList jsonStrings(const QJsonValue& value)
     return result;
 }
 
+// a syntax file (docs/PLUGIN-API.md, Languages); false when it is not a language
+static bool readLanguage(const QByteArray& json, const QString& id, CodeLanguage* lang)
+{
+    QJsonParseError pe;
+    QJsonDocument doc = QJsonDocument::fromJson(json, &pe);
+    if (pe.error != QJsonParseError::NoError || !doc.isObject()) return false;
+    QJsonObject o = doc.object();
+    if (!o.value("name").isString() || o.value("name").toString().trimmed().isEmpty()) return false;
+    lang->id = id;
+    lang->name = o.value("name").toString().trimmed();
+    lang->aliases = jsonStrings(o.value("aliases"));
+    lang->aliases.removeAll(QString());
+    for (const QString& e : jsonStrings(o.value("extensions"))) {
+        if (!e.isEmpty()) lang->extensions.append(e.toLower());
+    }
+    lang->lineComment = o.value("lineComment").toString();
+    QStringList block = jsonStrings(o.value("blockComment"));
+    if (block.size() == 2) {
+        lang->blockOpen = block[0];
+        lang->blockClose = block[1];
+    }
+    lang->quotes = o.value("quotes").toString();
+    lang->preprocessor = o.value("preprocessor").toBool();
+    for (const QString& k : jsonStrings(o.value("keywords"))) lang->keywords.insert(k);
+    for (const QString& t : jsonStrings(o.value("types"))) lang->types.insert(t);
+    return true;
+}
+
 CodeStyle::CodeStyle()
 {
     initSyntaxResource();
@@ -55,39 +84,79 @@ CodeStyle::CodeStyle()
             this, &CodeStyle::styleChanged);
 }
 
+CodeStyle::~CodeStyle()
+{
+    qDeleteAll(registry);
+    qDeleteAll(retired);
+}
+
 void CodeStyle::loadLanguages()
 {
     QDir dir(":/Syntax/syntax");
     for (const QString& file : dir.entryList(QStringList("*.json"), QDir::Files, QDir::Name)) {
         QFile f(dir.filePath(file));
         if (!f.open(QIODevice::ReadOnly)) continue;
-        QJsonObject o = QJsonDocument::fromJson(f.readAll()).object();
-        if (o.value("name").toString().isEmpty()) continue;
-        CodeLanguage lang;
-        lang.name = o.value("name").toString();
-        lang.aliases = jsonStrings(o.value("aliases"));
-        lang.lineComment = o.value("lineComment").toString();
-        QStringList block = jsonStrings(o.value("blockComment"));
-        if (block.size() == 2) {
-            lang.blockOpen = block[0];
-            lang.blockClose = block[1];
+        CodeLanguage* lang = new CodeLanguage();
+        if (readLanguage(f.readAll(), QFileInfo(file).completeBaseName(), lang)) registry.append(lang);
+        else delete lang;
+    }
+}
+
+QString CodeStyle::clash(const CodeLanguage& lang) const
+{
+    // the fixed modes share the ids of the languages (EDIT-MODE-1)
+    static const QStringList reserved = { "hsm", "inspection", "fa", "diff", "text", "markdown" };
+    if (reserved.contains(lang.id) || findId(lang.id)) return QString("the id '%1'").arg(lang.id);
+    if (find(lang.name)) return QString("the name '%1'").arg(lang.name);
+    for (const QString& alias : lang.aliases) {
+        if (find(alias)) return QString("the alias '%1'").arg(alias);
+    }
+    return QString();
+}
+
+void CodeStyle::setPluginLanguages(QList<CodeLanguageFile>& files)
+{
+    bool had = false;
+    for (int i = registry.size() - 1; i >= 0; i--) {
+        if (registry.at(i)->owner.isEmpty()) continue;
+        retired.append(registry.takeAt(i));
+        had = true;
+    }
+    for (CodeLanguageFile& file : files) {
+        file.id.clear();
+        file.warning.clear();
+        QFile f(file.path);
+        if (!f.open(QIODevice::ReadOnly)) {
+            file.warning = QString("the language file '%1' is missing").arg(file.name);
+            continue;
         }
-        lang.quotes = o.value("quotes").toString();
-        lang.preprocessor = o.value("preprocessor").toBool();
-        for (const QString& k : jsonStrings(o.value("keywords"))) lang.keywords.insert(k);
-        for (const QString& t : jsonStrings(o.value("types"))) lang.types.insert(t);
+        CodeLanguage* lang = new CodeLanguage();
+        lang->owner = file.owner;
+        if (!readLanguage(f.readAll(), QFileInfo(file.path).completeBaseName(), lang)) {
+            file.warning = QString("the language file '%1' is not a language").arg(file.name);
+            delete lang;
+            continue;
+        }
+        QString taken = clash(*lang);
+        if (!taken.isEmpty()) {
+            file.warning = QString("the language file '%1' is skipped: %2 is taken").arg(file.name, taken);
+            delete lang;
+            continue;
+        }
+        file.id = lang->id;
         registry.append(lang);
     }
+    if (had || !files.isEmpty()) emit languagesChanged();
 }
 
 const CodeLanguage* CodeStyle::find(const QString& name) const
 {
     QString key = name.trimmed();
     if (key.isEmpty()) return nullptr;
-    for (const CodeLanguage& lang : registry) {
-        if (lang.name.compare(key, Qt::CaseInsensitive) == 0) return &lang;
-        for (const QString& alias : lang.aliases) {
-            if (alias.compare(key, Qt::CaseInsensitive) == 0) return &lang;
+    for (const CodeLanguage* lang : registry) {
+        if (lang->name.compare(key, Qt::CaseInsensitive) == 0) return lang;
+        for (const QString& alias : lang->aliases) {
+            if (alias.compare(key, Qt::CaseInsensitive) == 0) return lang;
         }
     }
     return nullptr;
@@ -127,8 +196,33 @@ QString CodeStyle::markupValue(CodeMarkup markup)
 QStringList CodeStyle::languages() const
 {
     QStringList result;
-    for (const CodeLanguage& lang : registry) result.append(lang.name);
+    for (const CodeLanguage* lang : registry) result.append(lang->name);
     return result;
+}
+
+QStringList CodeStyle::ids() const
+{
+    QStringList result;
+    for (const CodeLanguage* lang : registry) result.append(lang->id);
+    return result;
+}
+
+const CodeLanguage* CodeStyle::findId(const QString& id) const
+{
+    for (const CodeLanguage* lang : registry) {
+        if (lang->id == id) return lang;
+    }
+    return nullptr;
+}
+
+const CodeLanguage* CodeStyle::forExtension(const QString& extension) const
+{
+    QString key = extension.toLower();
+    if (key.isEmpty()) return nullptr;
+    for (const CodeLanguage* lang : registry) {
+        if (lang->extensions.contains(key)) return lang;
+    }
+    return nullptr;
 }
 
 void CodeStyle::overrideExportPlain(bool on)

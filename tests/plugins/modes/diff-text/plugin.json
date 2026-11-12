@@ -1,0 +1,9 @@
+{
+  "api": 1,
+  "id": "diff-text",
+  "name": "Diff Text",
+  "actions": [
+    { "id": "run", "label": "Run", "result": "diff", "modes": ["hsm", "text"],
+      "argv": ["${plugin_dir}/../../bin/plugin-helper", "write", "${output}"] }
+  ]
+}

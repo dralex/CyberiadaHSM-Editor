@@ -25,11 +25,15 @@
 
 #include "open_file_dialog.h"
 #include "ui_open_file_dialog.h"
+#include "document_mode.h"
 
 
 OpenFileDialog::OpenFileDialog(QWidget *parent)
-    : CyberiadaFileDialog(parent, tr("Open a diagram file"),
-                          tr("CyberiadaML graph (*.graphml)"))
+    : CyberiadaFileDialog(parent, tr("Open a file"),
+                          // a text file opens in a text tab of its mode (EDIT-MODE-13)
+                          tr("CyberiadaML graph (*.graphml)") + ";;" +
+                          tr("Text files (%1)").arg(textFilePatterns()) + ";;" +
+                          tr("All files (*)"))
     , ui(new Ui::OpenFileOptions)
     , options(new QWidget(this))
 {

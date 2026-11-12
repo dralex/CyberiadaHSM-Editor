@@ -45,6 +45,8 @@ public:
 	~CyberiadaSMPropertiesWidget();
 
 	void                     setModel(CyberiadaSMModel* model);
+	// a text tab is active: no model, no rows (EDIT-MODE-15)
+	void                     detachModel();
 	// the scene supplies the graphics item for an element so a geometry edit can
 	// clamp to content and re-base the nested states, as the border drag does
 	void                     setScene(CyberiadaSMEditorScene* scene);

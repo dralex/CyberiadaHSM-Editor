@@ -31,6 +31,7 @@
 #include <QLabel>
 #include <QMenu>
 #include <QMessageBox>
+#include <QMouseEvent>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QTabBar>
@@ -45,6 +46,7 @@
 #include "plugin_session.h"
 #include "plugin_session_view.h"
 #include "cyberiadasm_editor_document.h"
+#include "document_mode.h"
 
 #define TICK_MS              1000
 #define OUTPUT_BLOCK_LIMIT   20000
@@ -116,6 +118,8 @@ QPlainTextEdit* PluginDock::outputTab(const QString& pluginId)
     tab.text = new QPlainTextEdit(tabWidget);
     tab.text->setReadOnly(true);
     tab.text->setMaximumBlockCount(OUTPUT_BLOCK_LIMIT);
+    tab.text->viewport()->installEventFilter(this);
+    tab.text->viewport()->setMouseTracking(true);
     tab.text->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(tab.text, &QWidget::customContextMenuRequested, this, [this, pluginId](const QPoint& pos) {
         QMenu* menu = createOutputMenu(pluginId);
@@ -235,7 +239,7 @@ PluginSessionTab* PluginDock::sessionTab(PluginRunner* run) const
     return rows.contains(run) ? rows[run].tab : nullptr;
 }
 
-void PluginDock::runStarted(PluginRunner* run, CyberiadaSMEditorDocument* doc)
+void PluginDock::runStarted(PluginRunner* run, EditorDocument* doc)
 {
     const PluginDescriptor& plugin = run->plugin().descriptor;
     QString id = plugin.id;
@@ -317,6 +321,38 @@ void PluginDock::append(const QString& pluginId, const QString& text, bool isErr
     edit->ensureCursorVisible();
 }
 
+void PluginDock::appendLink(const QString& pluginId, const QString& text, const QString& path)
+{
+    QPlainTextEdit* edit = outputTab(pluginId);
+    QTextCharFormat format;
+    format.setAnchor(true);
+    format.setAnchorHref(path);
+    format.setForeground(palette().link());
+    format.setFontUnderline(true);
+    format.setToolTip(QDir::toNativeSeparators(path));
+    QTextCursor cursor(edit->document());
+    cursor.movePosition(QTextCursor::End);
+    if (!edit->document()->isEmpty()) cursor.insertBlock();
+    cursor.insertText(text, format);
+    edit->ensureCursorVisible();
+}
+
+bool PluginDock::eventFilter(QObject* watched, QEvent* event)
+{
+    QPlainTextEdit* edit = qobject_cast<QPlainTextEdit*>(watched->parent());
+    if (!edit || (event->type() != QEvent::MouseButtonRelease && event->type() != QEvent::MouseMove)) {
+        return QDockWidget::eventFilter(watched, event);
+    }
+    QMouseEvent* mouse = static_cast<QMouseEvent*>(event);
+    QString href = edit->anchorAt(mouse->pos());
+    if (event->type() == QEvent::MouseMove) {
+        edit->viewport()->setCursor(href.isEmpty() ? Qt::IBeamCursor : Qt::PointingHandCursor);
+    } else if (mouse->button() == Qt::LeftButton && !href.isEmpty() && !edit->textCursor().hasSelection()) {
+        emit fileActivated(href);
+    }
+    return QDockWidget::eventFilter(watched, event);
+}
+
 void PluginDock::slotTick()
 {
     for (QMap<PluginRunner*, Row>::const_iterator i = rows.begin(); i != rows.end(); i++) {
@@ -330,7 +366,7 @@ void PluginDock::slotTick()
     }
 }
 
-void PluginDock::runFinished(PluginRunner* run, CyberiadaSMEditorDocument* doc)
+void PluginDock::runFinished(PluginRunner* run, EditorDocument* doc)
 {
     if (rows.contains(run)) {
         Row row = rows.take(run);
@@ -353,15 +389,18 @@ void PluginDock::runFinished(PluginRunner* run, CyberiadaSMEditorDocument* doc)
         break;
     }
     if (r.state != PluginResult::stateDone) return;
+    // a file the editor opens is a link (docs/MODES.md, Plugins)
     for (const PluginFileChange& f: r.files) {
-        append(id, (f.isNew ? tr("new %1", "plugin file") : tr("changed %1", "plugin file")).arg(f.path),
-               false);
+        QString line = (f.isNew ? tr("new %1", "plugin file") : tr("changed %1", "plugin file")).arg(f.path);
+        QString path = QDir(r.outdir).filePath(f.path);
+        if (isDocumentFile(path)) appendLink(id, line, path);
+        else append(id, line, false);
     }
     if (r.diagnostics.isEmpty() && run->action().result != PluginAction::resultDiagnostics) return;
     showDiagnostics(r.diagnostics, doc);
 }
 
-void PluginDock::showDiagnostics(const QList<PluginDiagnostic>& diagnostics, CyberiadaSMEditorDocument* doc)
+void PluginDock::showDiagnostics(const QList<PluginDiagnostic>& diagnostics, EditorDocument* doc)
 {
     // the findings of this run replace the previous ones
     diagnosticsList->clear();
@@ -374,7 +413,10 @@ void PluginDock::showDiagnostics(const QList<PluginDiagnostic>& diagnostics, Cyb
         item->setText(columnRule, d.rule);
         item->setText(columnElement, d.element.isEmpty() ? QString() :
                       (d.linked ? d.element : tr("%1 (absent)").arg(d.element)));
-        if (d.line > 0) item->setText(columnLine, QString::number(d.line));
+        if (d.line > 0) {
+            item->setText(columnLine, QString::number(d.line));
+            item->setData(columnLine, Qt::UserRole, d.line);
+        }
         item->setText(columnMessage, d.message);
         if (d.linked) item->setData(columnElement, Qt::UserRole, d.element);
     }
@@ -382,7 +424,7 @@ void PluginDock::showDiagnostics(const QList<PluginDiagnostic>& diagnostics, Cyb
                           tr("Diagnostics %1").arg(diagnostics.size()));
     if (!diagnostics.isEmpty()) tabWidget->setCurrentWidget(diagnosticsList);
     if (doc) {
-        documentChanged = connect(doc->model()->undoStack(), &QUndoStack::indexChanged,
+        documentChanged = connect(doc->undoStack(), &QUndoStack::indexChanged,
                                   this, &PluginDock::slotDocumentChanged);
     }
 }
@@ -406,7 +448,13 @@ void PluginDock::markStale()
 
 void PluginDock::slotItemActivated(QTreeWidgetItem* item, int)
 {
-    QString id = item ? item->data(columnElement, Qt::UserRole).toString() : QString();
-    if (id.isEmpty() || !diagnosticsDocument) return;
-    emit diagnosticActivated(diagnosticsDocument.data(), id);
+    if (!item || !diagnosticsDocument) return;
+    QString id = item->data(columnElement, Qt::UserRole).toString();
+    if (!id.isEmpty()) {
+        emit diagnosticActivated(diagnosticsDocument.data(), id);
+        return;
+    }
+    // a line of a diagram is one of its file, not of the canvas
+    int line = item->data(columnLine, Qt::UserRole).toInt();
+    if (line > 0 && diagnosticsDocument->traits().text) emit lineActivated(diagnosticsDocument.data(), line);
 }

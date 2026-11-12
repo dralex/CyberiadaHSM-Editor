@@ -1,0 +1,9 @@
+== plugin
+action: modes:inspect
+result: log
+state: done
+exit: 0
+stdout:
+  inspected
+== diagnostics
+count: 0

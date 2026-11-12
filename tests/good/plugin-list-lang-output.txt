@@ -1,0 +1,10 @@
+== plugins
+languages-type - rejected plugin-path 1: the field 'languages' is not a list
+lua-tools 0.1.0 enabled plugin-path 1
+  warning: the language file '../outside.json' is outside the plugin directory
+  warning: the language file 'syntax/snake.json' is skipped: the name 'Python' is taken
+  warning: the language file 'syntax/broken.json' is not a language
+  warning: the language file 'syntax/none.json' is missing
+  languages: lua
+words 0.1.0 enabled plugin-path 1
+  languages: words

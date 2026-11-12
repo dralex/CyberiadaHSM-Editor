@@ -38,8 +38,9 @@
 #include "plugin_session.h"
 #include "version.h"
 
-#define INPUT_FILE        "input.graphml"
-#define OUTPUT_FILE       "output.graphml"
+#define INPUT_NAME        "input"
+#define OUTPUT_NAME       "output"
+#define DIAGRAM_EXTENSION ".graphml"
 #define DIAGNOSTICS_FILE  "diagnostics.json"
 #define REQUEST_FILE      "request.json"
 
@@ -354,7 +355,7 @@ void PluginRunner::writeRequest(const QString& path) const
         params.insert(p->id, runValues.value(p->id));
     }
     QJsonObject outputs;
-    outputs.insert("output", QDir(runPath).filePath(OUTPUT_FILE));
+    outputs.insert("output", outputPath());
     outputs.insert("diagnostics", QDir(runPath).filePath(DIAGNOSTICS_FILE));
     outputs.insert("outdir", outdir);
     QJsonObject request;
@@ -363,7 +364,7 @@ void PluginRunner::writeRequest(const QString& path) const
     request.insert("action", actionId);
     request.insert("editor_version", CYBERIADA_VERSION);
     request.insert("language", PluginRegistry::instance().language());
-    request.insert("input", QDir(runPath).filePath(INPUT_FILE));
+    request.insert("input", inputPath());
     request.insert("document", document);
     request.insert("meta", meta);
     request.insert("selection", selection);
@@ -383,18 +384,19 @@ bool PluginRunner::stage(QString* error)
     runPath = QDir(runDir->path()).canonicalPath();
     res.runDir = runPath;
 
-    if (!writeFile(QDir(runPath).filePath(INPUT_FILE), QByteArray::fromStdString(context.input))) {
+    if (!writeFile(inputPath(), QByteArray::fromStdString(context.input))) {
         return fail(error, PluginRunner::tr("cannot write the input document"));
     }
     if (!prepareOutdir(error)) return false;
+    res.outdir = outdir;
 
     PluginDocumentPaths doc = pluginDocumentPaths(context.documentPath);
     if (a.cwdDocument && doc.untitled()) return fail(error, PluginRunner::tr("the document is not saved"));
     workDir = a.cwdDocument ? doc.dir : runPath;
 
     QMap<QString, QString> variables;
-    variables.insert("input", QDir(runPath).filePath(INPUT_FILE));
-    variables.insert("output", QDir(runPath).filePath(OUTPUT_FILE));
+    variables.insert("input", inputPath());
+    variables.insert("output", outputPath());
     variables.insert("diagnostics", QDir(runPath).filePath(DIAGNOSTICS_FILE));
     variables.insert("request", QDir(runPath).filePath(REQUEST_FILE));
     variables.insert("outdir", outdir);
@@ -659,11 +661,54 @@ void PluginRunner::slotFinished(int exitCode, QProcess::ExitStatus status)
     validate();
 }
 
+QString PluginRunner::inputPath() const
+{
+    return QDir(runPath).filePath(INPUT_NAME + (context.text ? context.extension : QString(DIAGRAM_EXTENSION)));
+}
+
+QString PluginRunner::outputPath() const
+{
+    return QDir(runPath).filePath(OUTPUT_NAME + (context.text ? context.extension : QString(DIAGRAM_EXTENSION)));
+}
+
+bool PluginRunner::checkDocument(const std::string& buffer, bool machines, std::string* encoded)
+{
+    const PluginAction& a = action();
+    // decoded before anything is touched (EDIT-PLUG-19)
+    try {
+        Cyberiada::LocalDocument doc;
+        Cyberiada::DocumentFormat format = Cyberiada::formatDetect;
+        Cyberiada::String format_str;
+        doc.decode(buffer, format, format_str, Cyberiada::geometryFormatQt,
+                   a.loadReconstruct, a.loadReconstruct, false, false, false, a.loadStrict);
+        if (machines && doc.get_state_machines().empty()) {
+            finish(PluginResult::stateFailed, PluginRunner::tr("the output document has no state machine"));
+            return false;
+        }
+        if (encoded) doc.encode(*encoded, Cyberiada::formatCyberiada10);
+    } catch (const Cyberiada::XMLException&) {
+        // the library's own text names its source line, not the document
+        finish(PluginResult::stateFailed, PluginRunner::tr("the output document is not well-formed XML"));
+        return false;
+    } catch (const Cyberiada::MetainformationException&) {
+        finish(PluginResult::stateFailed, PluginRunner::tr("the output document has invalid metainformation"));
+        return false;
+    } catch (const Cyberiada::CybMLException&) {
+        finish(PluginResult::stateFailed, PluginRunner::tr("the output document is not a valid CyberiadaML document"));
+        return false;
+    } catch (const Cyberiada::Exception&) {
+        finish(PluginResult::stateFailed, PluginRunner::tr("the output document cannot be read"));
+        return false;
+    }
+    return true;
+}
+
 void PluginRunner::validate()
 {
     const PluginAction& a = action();
-    if (a.result == PluginAction::resultReplace || a.result == PluginAction::resultNewDocument) {
-        QFile f(QDir(runPath).filePath(OUTPUT_FILE));
+    bool document = a.result == PluginAction::resultReplace || a.result == PluginAction::resultNewDocument;
+    if (document || a.result == PluginAction::resultDiff) {
+        QFile f(outputPath());
         if (!f.exists()) {
             finish(PluginResult::stateFailed, PluginRunner::tr("the output document is missing"));
             return;
@@ -672,35 +717,25 @@ void PluginRunner::validate()
             finish(PluginResult::stateFailed, PluginRunner::tr("the output document cannot be read"));
             return;
         }
-        std::string buffer = f.readAll().toStdString();
-        if (buffer.empty()) {
+        QByteArray bytes = f.readAll();
+        std::string buffer = bytes.toStdString();
+        if (a.result == PluginAction::resultDiff) {
+            // the base of a diff tab: an empty one is an empty document (EDIT-PLUG-58)
+            if (!buffer.empty() && !checkDocument(buffer, false, nullptr)) return;
+            res.document = buffer;
+        } else if (buffer.empty()) {
             finish(PluginResult::stateFailed, PluginRunner::tr("the output document is empty"));
             return;
-        }
-        // decoded before anything is touched (EDIT-PLUG-19)
-        try {
-            Cyberiada::LocalDocument doc;
-            Cyberiada::DocumentFormat format = Cyberiada::formatDetect;
-            Cyberiada::String format_str;
-            doc.decode(buffer, format, format_str, Cyberiada::geometryFormatQt,
-                       a.loadReconstruct, a.loadReconstruct, false, false, false, a.loadStrict);
-            if (doc.get_state_machines().empty()) {
-                finish(PluginResult::stateFailed, PluginRunner::tr("the output document has no state machine"));
+        } else if (context.text) {
+            // the text of a text tab comes back in UTF-8 (EDIT-PLUG-57)
+            QTextCodec::ConverterState state;
+            QTextCodec::codecForName("UTF-8")->toUnicode(bytes.constData(), bytes.size(), &state);
+            if (state.invalidChars > 0) {
+                finish(PluginResult::stateFailed, PluginRunner::tr("the output text is not UTF-8"));
                 return;
             }
-            doc.encode(res.document, Cyberiada::formatCyberiada10);
-        } catch (const Cyberiada::XMLException&) {
-            // the library's own text names its source line, not the document
-            finish(PluginResult::stateFailed, PluginRunner::tr("the output document is not well-formed XML"));
-            return;
-        } catch (const Cyberiada::MetainformationException&) {
-            finish(PluginResult::stateFailed, PluginRunner::tr("the output document has invalid metainformation"));
-            return;
-        } catch (const Cyberiada::CybMLException&) {
-            finish(PluginResult::stateFailed, PluginRunner::tr("the output document is not a valid CyberiadaML document"));
-            return;
-        } catch (const Cyberiada::Exception&) {
-            finish(PluginResult::stateFailed, PluginRunner::tr("the output document cannot be read"));
+            res.document = buffer;
+        } else if (!checkDocument(buffer, true, &res.document)) {
             return;
         }
     }

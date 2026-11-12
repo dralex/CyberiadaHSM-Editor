@@ -92,7 +92,10 @@ struct PluginAction {
         resultNewDocument,
         resultDiagnostics,
         resultFiles,
-        resultLog
+        resultLog,
+        resultDiff,
+        // a result this editor does not know: the action needs a newer one (EDIT-PLUG-59)
+        resultUnknown
     };
 
     QString id;
@@ -100,6 +103,10 @@ struct PluginAction {
     QString description;
     QString icon;
     Result result = resultLog;
+    // the result as the descriptor names it
+    QString resultText;
+    // the mode ids of the tabs the action works in (EDIT-PLUG-56)
+    QStringList modes;
     QList<PluginArgument> argv;
     QList<int> exitOk;
     int timeout = PLUGIN_TIMEOUT_DEFAULT;
@@ -127,6 +134,10 @@ struct PluginAction {
     QString reason;
 
     bool changesDocument() const { return result == resultReplace; }
+    // the result name of the dumps: the descriptor's own for an unknown one
+    QString resultId() const;
+    // the modes of an action without modes
+    static QStringList defaultModes();
     // save and cwd: document need the document file to be current
     bool needsSavedDocument() const { return save || cwdDocument; }
 };
@@ -145,6 +156,8 @@ struct PluginDescriptor {
     // the system the whole plugin needs (EDIT-PLUG-50/51)
     PluginRequirements requirements;
     QList<PluginParameter> parameters;
+    // the language files, relative to the plugin directory (EDIT-PLUG-60)
+    QStringList languages;
     // the one-shot actions, then the session actions
     QList<PluginAction> actions;
     // the session.version of the session actions kept, 0 without them

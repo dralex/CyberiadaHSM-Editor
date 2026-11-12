@@ -26,6 +26,7 @@
 #include <QMenu>
 #include <cmath>
 #include "smeditor_window.h"
+#include "code_highlighter.h"
 #include "plugin_dock.h"
 #include "settings_manager.h"
 #include "cyberiadasm_model.h"
@@ -297,13 +298,30 @@ void TestWindow::test_menu_refactor()
 			dm.contains(window->actionDocumentProperties) &&
 			dm.contains(window->actionReconstructGeometry) &&
 			dm.contains(window->actionUpdateGeometry));
-	QCOMPARE(window->menuMode->actions(),
+	// the diagram modes, then the text ones: Plain text, Markdown, Code > the languages
+	QList<QAction*> modes = window->menuMode->actions();
+	QCOMPARE(modes.mid(0, 4),
 			 QList<QAction*>() << window->actionModeHSM << window->actionModeInspection
-							   << window->actionModeFA);
+							   << window->actionModeFA << window->actionModeDiff);
+	QVERIFY(modes.at(4)->isSeparator());
+	QCOMPARE(modes.at(5)->data().toString(), QString(MODE_TEXT));
+	QCOMPARE(modes.at(6)->data().toString(), QString(MODE_MARKDOWN));
+	QMenu* code = window->menuMode->findChild<QMenu*>("menuModeCode");
+	QVERIFY(code && modes.at(7) == code->menuAction());
+	// the diff tabs: Compare with..., Geometry, Refresh (EDIT-MODE-10..12)
+	QVERIFY(dm.contains(window->actionCompare) && dm.contains(window->actionGeometry) &&
+			dm.contains(window->actionRefresh));
+	QStringList languages;
+	for (QAction* a : code->actions()) languages << a->data().toString();
+	QCOMPARE(languages, CodeStyle::instance().ids());
 	QVERIFY(dm.contains(window->actionCheck));
-	// File > New: an HSM or an FA diagram (EDIT-MODE-5)
+	// File > New: an HSM or an FA diagram, a text file of a mode (EDIT-MODE-5/13)
 	QVERIFY(window->menuFile->actions().contains(window->menuNew->menuAction()));
-	QCOMPARE(window->menuNew->actions(), QList<QAction*>() << window->actionNew << window->actionNewFA);
+	QList<QAction*> news = window->menuNew->actions();
+	QCOMPARE(news.mid(0, 2), QList<QAction*>() << window->actionNew << window->actionNewFA);
+	QMenu* newText = window->menuNew->findChild<QMenu*>("menuNewText");
+	QVERIFY(newText && news.value(2) == newText->menuAction());
+	QCOMPARE(newText->actions().size(), textModes().size());
 	QVERIFY(window->menuView->actions().contains(window->actionFASymbols));
 }
 

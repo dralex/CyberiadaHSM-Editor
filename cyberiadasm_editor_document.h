@@ -69,8 +69,7 @@ public:
                                              const QString& viewState);
     // HSM on an inspection tab: the editing layout and the recovery (EDIT-INSPECT-4)
     void                     leaveInspection();
-    // write the document back to its file (false without one, or with the error)
-    bool                     save(QString* error);
+    bool                     save(QString* error) override;
     bool                     saveAs(const QString& path, Cyberiada::DocumentFormat format,
                                     bool round, bool skip_geometry, bool check_initial,
                                     bool strict_actions, bool skip_empty_behavior,
@@ -93,17 +92,8 @@ public:
     bool                     restoreView();
     bool                     hasPendingView() const { return !pendingViewState.isEmpty(); }
 
-    // the plugin run of the document, at most one (EDIT-PLUG-21); nullptr when idle
-    PluginRunner*            pluginRun() const;
-    void                     setPluginRun(PluginRunner* run);
-    // the plugin values of an untitled document last for the session (EDIT-PLUG-11),
-    // by "<plugin>/<parameter>"
-    QMap<QString, QString>&  sessionPluginValues() { return m_sessionPluginValues; }
-    // what the when tokens test (EDIT-PLUG-52): the content is kept until the document
-    // changes, the file, the save and the selection are read each time
-    PluginDocumentFacts      pluginFacts() const;
-    // the git fact is kept for the path until a save or a scan (EDIT-PLUG-55)
-    void                     dropGitFact() { m_gitValid = false; }
+    // the content is kept until the document changes, the selection is read each time
+    PluginDocumentFacts      pluginFacts() const override;
 
 protected:
     void                     applyReadOnlyFlag(bool on) override;
@@ -125,13 +115,8 @@ private:
     CyberiadaSMEditorScene*  m_scene;
     CyberiadaSMGraphicsView* m_view;
     QString                  pendingViewState;
-    QPointer<PluginRunner>   m_pluginRun;
-    QMap<QString, QString>   m_sessionPluginValues;
     mutable PluginDocumentFacts m_pluginFacts;
     mutable bool             m_pluginFactsValid = false;
-    mutable QString          m_gitPath;
-    mutable bool             m_git = false;
-    mutable bool             m_gitValid = false;
 };
 
 #endif

@@ -110,6 +110,17 @@ CyberiadaSMEditorScene::CyberiadaSMEditorScene(CyberiadaSMModel* _model, QObject
     // gridSnap = true;
     gridPen = QPen(Qt::gray, 0, Qt::DotLine);
     connect(&SettingsManager::instance(), &SettingsManager::gridSettingsChanged, this, &CyberiadaSMEditorScene::slotGridSettingsChanged);
+    // a plugin language came or went: the same value may name another one (EDIT-PLUG-60)
+    connect(&CodeStyle::instance(), &CodeStyle::languagesChanged, this, [this]() {
+        const CodeLanguage* lang = CodeStyle::instance().find(codeLanguageValue);
+        if (lang == codeLanguagePtr) return;
+        codeLanguagePtr = lang;
+        const QList<QGraphicsItem*> all = items();
+        for (QGraphicsItem* item : all) {
+            if (EditableTextItem* text = dynamic_cast<EditableTextItem*>(item)) text->setCodeLanguage(lang);
+        }
+        emit codeLanguageChanged(codeLanguageValue);
+    });
     connect(&SettingsManager::instance(), &SettingsManager::serviceObjectsChanged, this, &CyberiadaSMEditorScene::slotServiceObjectsChanged);
     connect(&SettingsManager::instance(), &SettingsManager::componentCommentsChanged, this, &CyberiadaSMEditorScene::slotComponentCommentsChanged);
     // the underlines follow the texts once the items have taken the change (EDIT-EDGE-21)
@@ -696,6 +707,16 @@ void CyberiadaSMEditorScene::setRunMarks(const QStringList& active, const QStrin
     mark(active, CyberiadaSMEditorAbstractItem::runMarkActive);
     // a state of an internal transition is fired over active
     mark(fired, CyberiadaSMEditorAbstractItem::runMarkFired);
+}
+
+void CyberiadaSMEditorScene::setDiffMarks(const QMap<QString, CyberiadaSMEditorAbstractItem::RunMark>& marks)
+{
+    for (QGraphicsItem* item : items()) {
+        CyberiadaSMEditorAbstractItem* element = dynamic_cast<CyberiadaSMEditorAbstractItem*>(item);
+        if (!element || !element->getElement()) continue;
+        QString id = QString::fromStdString(element->getElement()->get_id());
+        element->setRunMark(marks.value(id, CyberiadaSMEditorAbstractItem::runMarkNone));
+    }
 }
 
 QGraphicsItem* CyberiadaSMEditorScene::addElementItem(Cyberiada::Element* child, QGraphicsItem* new_parent)

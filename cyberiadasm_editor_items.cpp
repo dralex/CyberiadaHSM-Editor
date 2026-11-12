@@ -149,6 +149,9 @@ QColor CyberiadaSMEditorAbstractItem::runMarkColor() const
 {
     if (currentRunMark == runMarkActive) return QColor(RUN_ACTIVE_COLOR);
     if (currentRunMark == runMarkFired) return QColor(RUN_FIRED_COLOR);
+    if (currentRunMark == runMarkAdded) return QColor(DIFF_ADDED_COLOR);
+    if (currentRunMark == runMarkRemoved) return QColor(DIFF_REMOVED_COLOR);
+    if (currentRunMark == runMarkChanged) return QColor(DIFF_CHANGED_COLOR);
     return QColor();
 }
 

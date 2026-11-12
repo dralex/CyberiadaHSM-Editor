@@ -40,7 +40,7 @@ class QVBoxLayout;
 class PluginRunner;
 class PluginSessionControls;
 class PluginSessionTab;
-class CyberiadaSMEditorDocument;
+class EditorDocument;
 struct PluginDiagnostic;
 
 // under the canvas, hidden until the first run (EDIT-PLUG-32): one row per
@@ -54,8 +54,8 @@ class PluginDock : public QDockWidget {
 public:
     PluginDock(QWidget* parent = nullptr);
 
-    void          runStarted(PluginRunner* run, CyberiadaSMEditorDocument* doc);
-    void          runFinished(PluginRunner* run, CyberiadaSMEditorDocument* doc);
+    void          runStarted(PluginRunner* run, EditorDocument* doc);
+    void          runFinished(PluginRunner* run, EditorDocument* doc);
 
     QTreeWidget*  diagnostics() const { return diagnosticsList; }
     // the output tab of a plugin; nullptr while it is closed
@@ -71,10 +71,14 @@ public:
     PluginSessionControls* sessionControls(PluginRunner* run) const;
     PluginSessionTab* sessionTab(PluginRunner* run) const;
     // the findings of a running session replace the shown ones (EDIT-PLUG-49)
-    void          showDiagnostics(const QList<PluginDiagnostic>& diagnostics, CyberiadaSMEditorDocument* doc);
+    void          showDiagnostics(const QList<PluginDiagnostic>& diagnostics, EditorDocument* doc);
 
 signals:
-    void          diagnosticActivated(CyberiadaSMEditorDocument* doc, const QString& elementId);
+    void          diagnosticActivated(EditorDocument* doc, const QString& elementId);
+    // a finding of a text tab by its line (EDIT-PLUG-57)
+    void          lineActivated(EditorDocument* doc, int line);
+    // a file a files result lists, by its absolute path
+    void          fileActivated(const QString& path);
 
 private slots:
     void          slotTick();
@@ -103,6 +107,12 @@ private:
     QPlainTextEdit* outputTab(const QString& pluginId);
     QString       pluginIdOf(const QWidget* tab) const;
     void          append(const QString& pluginId, const QString& text, bool isError);
+    // a line that opens the file on a click
+    void          appendLink(const QString& pluginId, const QString& text, const QString& path);
+protected:
+    // a click on a file line of an output tab
+    bool          eventFilter(QObject* watched, QEvent* event) override;
+private:
     void          askClear(const QString& pluginId);
     void          askSave(const QString& pluginId);
     void          markStale();
@@ -113,7 +123,7 @@ private:
     QMap<QString, OutputTab> outputs;
     QMap<PluginRunner*, Row> rows;
     QTimer        ticker;
-    QPointer<CyberiadaSMEditorDocument> diagnosticsDocument;
+    QPointer<EditorDocument> diagnosticsDocument;
     QMetaObject::Connection documentChanged;
     bool          stale = false;
 };

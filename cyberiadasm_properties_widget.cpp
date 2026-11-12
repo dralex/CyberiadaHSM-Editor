@@ -189,6 +189,15 @@ void CyberiadaSMPropertiesWidget::setScene(CyberiadaSMEditorScene* scene)
 	this->scene = scene;
 }
 
+void CyberiadaSMPropertiesWidget::detachModel()
+{
+	if (model) disconnect(model, nullptr, this, nullptr);
+	clearProperties();
+	model = NULL;
+	scene = nullptr;
+	element = NULL;
+}
+
 void CyberiadaSMPropertiesWidget::setModel(CyberiadaSMModel* model)
 {
 	MY_ASSERT(model);

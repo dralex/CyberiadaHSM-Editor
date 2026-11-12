@@ -1,6 +1,6 @@
 # The Plugin System — Architecture
 
-**Document version:** 0.10 (2026-11-11)
+**Document version:** 0.11 (2026-11-11)
 
 A plugin adds a feature to the editor without rebuilding it: a diagram checker, a code
 generator, a compiler front end, an LLM diagram maker. A plugin is a directory with a
@@ -759,3 +759,19 @@ of hsm-maker and cybersphere-agents.
   never replaces one, so the highlighting of a diagram does not depend on the plugins
   installed.
 * The languages are read at the scan: at start and on Rescan.
+
+## Decisions of 0.11
+
+* The run belongs to the tab, not to the diagram: `EditorDocument` holds the run, the session
+  values and the git fact, so a text tab runs a plugin as a diagram does. A diff tab runs none.
+* The mode is checked before the `when` tokens; the registry checks the modes after the
+  languages, so a mode a plugin language names is known at the same scan.
+* A language replaced by a scan stays allocated until the editor exits: the scenes, the text
+  tabs and the highlighters look the language up again on `languagesChanged`, and no pointer
+  they hold dangles.
+* Refresh of a plugin base runs the action on the tab it ran on: the plugin may read the
+  document file, so a closed tab fails the Refresh instead of reusing the last input.
+* A `files` link opens what the editor opens: a diagram, a text of a known mode; any other
+  file stays a plain line.
+* The test plugins that ran in an inspection tab before the modes declare
+  `["hsm", "fa", "inspection"]`: the default leaves the inspection tabs out.

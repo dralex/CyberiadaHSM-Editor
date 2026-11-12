@@ -51,6 +51,10 @@ struct PluginRunContext {
     bool modified = false;
     QList<QPair<QString, QString> > meta;
     QStringList selection;
+    // a text tab: the input is the text in UTF-8, the files take the mode's extension
+    // (".md"); a diagram is input.graphml (EDIT-PLUG-57)
+    bool text = false;
+    QString extension;
 };
 
 struct PluginDiagnostic {
@@ -101,7 +105,8 @@ struct PluginResult {
     QStringList stderrTail;
     // the declared metainformation, filled by the window before the run
     QList<PluginMetaNote> metaNotes;
-    // replace, new-document: the output re-encoded as Cyberiada 1.0
+    // replace, new-document: the output re-encoded as Cyberiada 1.0, or the text in
+    // UTF-8; diff: the base as written, empty for an empty document
     std::string document;
     QList<PluginDiagnostic> diagnostics;
     QList<PluginFileChange> files;
@@ -109,6 +114,8 @@ struct PluginResult {
     QString runDir;
     QString pluginDir;
     QString documentDir;
+    // the outdir of the files, absolute: a listed file opens on a click
+    QString outdir;
     // set by the window when the result is applied
     bool changed = false;
     int tab = -1;
@@ -133,6 +140,8 @@ public:
     const PluginAction&  action() const;
     const PluginValues&  values() const { return runValues; }
     const PluginResult&  result() const { return res; }
+    // what the run started from: a diff result compares its output with the input
+    const PluginRunContext& runContext() const { return context; }
     // the window completes the result when it applies it
     PluginResult*        mutableResult() { return &res; }
     bool                 isFinished() const { return finishedFlag; }
@@ -191,6 +200,10 @@ private:
     void                 writeRequest(const QString& path) const;
     QString              decode(const QByteArray& bytes, QTextDecoder** decoder);
     void                 validate();
+    // the output decodes; the re-encoded document when asked; false: the run failed
+    bool                 checkDocument(const std::string& buffer, bool machines, std::string* encoded);
+    QString              inputPath() const;
+    QString              outputPath() const;
     void                 finish(PluginResult::State state, const QString& error = QString());
     QMap<QString, QPair<qint64, qint64> > listOutdir() const;
 

@@ -34,16 +34,17 @@ MetaChoiceMenu::MetaChoiceMenu(QMenu* menu, const QList<Entry>& entries, Resolve
     group = new QActionGroup(this);
     group->setExclusive(true);
     for (const Entry& entry : entries) {
-        addEntry(entry.text, entry.value);
+        fixedActions.append(addEntry(entry.text, entry.value));
     }
     separator = menu->addSeparator();
     separator->setVisible(false);
     connect(group, &QActionGroup::triggered, this, &MetaChoiceMenu::onTriggered);
 }
 
-QAction* MetaChoiceMenu::addEntry(const QString& text, const QString& value)
+QAction* MetaChoiceMenu::addEntry(const QString& text, const QString& value, QAction* before)
 {
-    QAction* action = menu->addAction(text);
+    QAction* action = new QAction(text, menu);
+    menu->insertAction(before, action);
     action->setCheckable(true);
     action->setData(value);
     group->addAction(action);
@@ -87,6 +88,28 @@ void MetaChoiceMenu::sync(const QString& value)
             break;
         }
     }
+}
+
+void MetaChoiceMenu::setEntries(const QList<Entry>& entries)
+{
+    for (QAction* action : fixedActions) {
+        group->removeAction(action);
+        menu->removeAction(action);
+        action->deleteLater();
+    }
+    fixedActions.clear();
+    for (const Entry& entry : entries) {
+        fixedActions.append(addEntry(entry.text, entry.value, separator));
+    }
+    // a value met as unknown may be a language now
+    QStringList unknown;
+    for (const QString& value : sessionValues) {
+        bool known = false;
+        resolve(value, &known);
+        if (!known) unknown.append(value);
+    }
+    sessionValues = unknown;
+    sync(currentValue);
 }
 
 void MetaChoiceMenu::setEnabled(bool on)

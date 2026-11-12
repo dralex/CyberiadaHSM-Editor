@@ -112,11 +112,15 @@ public:
 
     void setHighlighted(bool on);
 
-    // the mark of a plugin session, apart from the selection (EDIT-PLUG-40)
+    // the mark of a plugin session, apart from the selection (EDIT-PLUG-40), and
+    // the marks of a diff tab (EDIT-MODE-11)
     enum RunMark {
         runMarkNone = 0,
         runMarkActive,
-        runMarkFired
+        runMarkFired,
+        runMarkAdded,
+        runMarkRemoved,
+        runMarkChanged
     };
     void setRunMark(RunMark mark);
     RunMark runMark() const { return currentRunMark; }

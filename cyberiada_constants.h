@@ -97,6 +97,10 @@
 #define RUN_MARK_INTERVAL_MS     50
 #define RUN_ACTIVE_COLOR         "#2e7d32"
 #define RUN_FIRED_COLOR          "#ef6c00"
+// the marks of a diff tab (EDIT-MODE-11)
+#define DIFF_ADDED_COLOR         "#2e7d32"
+#define DIFF_REMOVED_COLOR       "#c62828"
+#define DIFF_CHANGED_COLOR       "#1565c0"
 #define RUN_MARK_WIDTH           4
 #define RUN_MARK_FILL_ALPHA      40
 // the JSON-RPC errors the editor sends

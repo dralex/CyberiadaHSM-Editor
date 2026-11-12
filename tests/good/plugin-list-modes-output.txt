@@ -1,0 +1,9 @@
+== plugins
+diff-text - rejected plugin-path 1: the diff action 'run' cannot work in the mode 'text'
+modes 0.1.0 enabled plugin-path 1
+  warning: unknown result 'actions/next/result/teleport'
+  warning: unknown mode 'actions/future/modes/hologram'
+  warning: unknown mode 'actions/mixed/modes/hologram'
+  unavailable: future: the action needs a newer editor
+  unavailable: next: the action needs a newer editor
+modes-type - rejected plugin-path 1: the field 'actions/run/modes' is not a list

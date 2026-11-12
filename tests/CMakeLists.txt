@@ -318,6 +318,39 @@ add_mode_test(fa-open fa-turnstile 0)
 add_mode_test(fa-tool-reject fa-turnstile 4)
 add_mode_test(new-fa hierarchy 0)
 add_mode_test(fa-inspect fa-turnstile 0 INSPECT)
+
+# the text tabs: a text file of texts/ instead of a diagram (EDIT-MODE-13..16)
+function(add_text_test name input expected_code)
+  set(_good)
+  if(expected_code EQUAL 0)
+    set(_good -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/mode-${name}.out
+              -DDUMP_GOOD=${CMAKE_CURRENT_SOURCE_DIR}/good/mode-${name}-output.txt)
+  endif()
+  add_test(NAME mode-${name}
+    COMMAND ${CMAKE_COMMAND}
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaPro>
+      -DINPUT=${input}
+      -DSCRIPT=scripts/mode-${name}.script
+      -DDUMP_TABS=1
+      -DEXPECTED=${expected_code}
+      -DWORKDIR=${CMAKE_CURRENT_SOURCE_DIR}
+      ${_good}
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunBatchTest.cmake)
+  set_tests_properties(mode-${name} PROPERTIES
+    TIMEOUT 60
+    ENVIRONMENT "${L0_ENVIRONMENT}")
+endfunction()
+
+add_text_test(text-open texts/blink.cpp 0)
+add_text_test(text-switch texts/blink.cpp 0)
+add_text_test(text-reject texts/blink.cpp 4)
+add_text_test(text-edit-reject texts/blink.cpp 4)
+add_text_test(markdown-ro texts/notes.md 0)
+add_text_test(new-text diagrams/hierarchy.graphml 0)
+add_mode_test(compare-saved geometry 0)
+add_mode_test(compare-refresh geometry 0)
+add_mode_test(compare-reject geometry 4)
+add_mode_test(diff-reject geometry 4)
 add_tabs_test(close-discard hierarchy 0)
 add_tabs_test(close-refused hierarchy 4)
 
@@ -698,6 +731,7 @@ add_l4_test(log)
 add_l4_test(tabs)
 add_l4_test(language)
 add_l4_test(translation)
+add_l4_test(modes)
 
 # The plugin layer: the batch plugin stage over the example plugins of
 # plugins/<set>/, which all run one helper with no dependencies (see
@@ -961,6 +995,35 @@ add_plugin_test(conditions-git INPUT <work>/repo/sub/hierarchy.graphml
 add_plugin_test(conditions-not-git INPUT <work>/repo/sub/hierarchy.graphml
   SEED diagrams/hierarchy.graphml>repo/sub/hierarchy.graphml MARKERS repo/.git
   PLUGIN git:out PATHS git DUMP_PLUGIN EXPECTED 6)
+# the modes of an action (EDIT-PLUG-56), a text tab (EDIT-PLUG-57), the diff result
+# (EDIT-PLUG-58) and an unknown one (EDIT-PLUG-59)
+add_plugin_test(list-modes LIST PATHS modes)
+add_plugin_test(modes-default-inspect INPUT diagrams/hierarchy.graphml PLUGIN modes:default PATHS modes
+  DUMP_PLUGIN INSPECT EXPECTED 6)
+add_plugin_test(modes-refused INPUT diagrams/hierarchy.graphml PLUGIN modes:text PATHS modes
+  DUMP_PLUGIN EXPECTED 6)
+add_plugin_test(modes-future INPUT diagrams/hierarchy.graphml PLUGIN modes:future PATHS modes
+  DUMP_PLUGIN EXPECTED 6)
+add_plugin_test(modes-mixed INPUT diagrams/hierarchy.graphml PLUGIN modes:mixed PATHS modes DUMP_PLUGIN)
+add_plugin_test(modes-next INPUT diagrams/hierarchy.graphml PLUGIN modes:next PATHS modes
+  DUMP_PLUGIN EXPECTED 6)
+add_plugin_test(modes-inspection INPUT diagrams/hierarchy.graphml PLUGIN modes:inspect PATHS modes
+  DUMP_PLUGIN INSPECT)
+add_plugin_test(modes-text-replace INPUT texts/notes.md PLUGIN modes:text PATHS modes DUMP)
+add_plugin_test(modes-text-same INPUT texts/notes.md PLUGIN modes:same PATHS modes DUMP)
+add_plugin_test(modes-text-new INPUT texts/notes.md PLUGIN modes:new-text PATHS modes DUMP DUMP_TABS)
+add_plugin_test(modes-text-input INPUT texts/blink.cpp PLUGIN modes:cat PATHS modes DUMP_PLUGIN)
+add_plugin_test(diff-result INPUT diagrams/geometry.graphml PLUGIN modes:base PATHS modes DUMP DUMP_TABS)
+add_plugin_test(diff-result-label INPUT diagrams/geometry.graphml PLUGIN modes:base PATHS modes
+  PARAMS revision=v1.0 DUMP)
+add_plugin_test(diff-result-empty INPUT diagrams/geometry.graphml PLUGIN modes:empty-base PATHS modes DUMP)
+add_plugin_test(diff-result-missing INPUT diagrams/geometry.graphml PLUGIN modes:no-base PATHS modes
+  DUMP_PLUGIN EXPECTED 6)
+# the languages of the plugins (EDIT-PLUG-60): a Lua source opens in its mode
+add_plugin_test(list-lang LIST PATHS lang)
+add_plugin_test(lang-open INPUT texts/script.lua PATHS lang DUMP DUMP_TABS)
+add_plugin_test(lang-none INPUT texts/script.lua DUMP_TABS)
+add_plugin_test(lang-run INPUT texts/script.lua PLUGIN lua-tools:run PATHS lang DUMP_PLUGIN)
 add_plugin_test(conditions-git-untitled PLUGIN git:in PATHS git DUMP_PLUGIN EXPECTED 6)
 
 # the plugin core in process: the descriptors, the values and the runner over the helper
@@ -975,3 +1038,8 @@ target_compile_definitions(l4-plugins PRIVATE
   PLUGIN_TEST_DIR="${PLUGIN_TEST_DIR}"
   PLUGIN_HELPER="${PLUGIN_TEST_DIR}/bin/plugin-helper${CMAKE_EXECUTABLE_SUFFIX}")
 add_dependencies(l4-plugins plugin-helper)
+
+# the plugins in the modes: the text tabs, the diff result, the languages (EDIT-PLUG-56..60)
+add_l4_test(plugin-modes)
+target_compile_definitions(l4-plugin-modes PRIVATE PLUGIN_TEST_DIR="${PLUGIN_TEST_DIR}")
+add_dependencies(l4-plugin-modes plugin-helper)

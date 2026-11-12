@@ -1,0 +1,11 @@
+== tabs
+count: 2
+0 geometry.graphml* hsm
+1 geometry.graphml ↔ saved diff active
+== diff
+base: saved
+target: geometry.graphml
+geometry: no
+changed: 1, added: 0, removed: 0
+state machine node 0
+  state Idle: title (node-0-0-1 / node-0-0-1)

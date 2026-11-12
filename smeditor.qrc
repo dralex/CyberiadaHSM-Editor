@@ -57,8 +57,6 @@
         <file>syntax/c.json</file>
         <file>syntax/cpp.json</file>
         <file>syntax/csharp.json</file>
-        <file>syntax/java.json</file>
-        <file>syntax/javascript.json</file>
         <file>syntax/python.json</file>
     </qresource>
     <qresource prefix="/Fonts">

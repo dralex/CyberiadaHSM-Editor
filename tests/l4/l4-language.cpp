@@ -227,8 +227,8 @@ void TestLanguage::test_properties_path()
 	QCOMPARE(meta(), QString("Arduino"));
 	QCOMPARE(model->undoStack()->count(), steps);
 
-	QVERIFY(setMeta("java"));
-	QCOMPARE(checkedText(), QString("Java"));
+	QVERIFY(setMeta("py3"));
+	QCOMPARE(checkedText(), QString("Python"));
 	QVERIFY(setMeta(""));
 	QCOMPARE(checkedText(), QString("Undefined"));
 	QVERIFY(setMeta("C++"));

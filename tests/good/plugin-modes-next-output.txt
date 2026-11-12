@@ -1,0 +1,8 @@
+== plugin
+action: modes:next
+result: teleport
+state: failed
+exit: -
+error: the action needs a newer editor
+== diagnostics
+count: 0
