@@ -1,6 +1,6 @@
 # The Markdown Rendering — Architecture
 
-**Document version:** 0.1 (2026-11-12). The requirements are `EDIT-MODE-14`, `EDIT-MODE-17` and
+**Document version:** 0.2 (2026-11-12). The requirements are `EDIT-MODE-14`, `EDIT-MODE-17` and
 `EDIT-TEXT-14` in `EDITOR-SPEC.md`.
 
 The editor renders Markdown itself: a read-only Markdown tab (`docs/MODES.md`, Text tabs) and,
@@ -19,35 +19,46 @@ installation and no network are involved.
                      |                    |
      CYBERIADA_MD_IMPORTER=QT        CYBERIADA_MD_IMPORTER=MD4C
                      |                    |
-   scanMath (md4c) -> $..$ to        md4c callbacks -> QTextCursor     markdown_md4c_reader.cpp
-   ![](cyb-math:N); setMarkdown;     formulas and SVG images inserted
-   images cyb-math:N / *.svg turned  as objects directly
-   into objects
+   scanMarkdown (md4c): the formulas,    md4c callbacks -> QTextCursor   markdown_md4c_reader.cpp
+   the images, the inline tags;          the formulas and the images
+   the text edited for Qt;               inserted as objects
+   QTextDocument::setMarkdown;
+   its images turned into objects
                      \                    /
                       v                  v
             QTextDocument: text, blocks, tables + objects
-              MarkdownMathObject {tex, display}   MarkdownSvgObject {path, alt}
+              MarkdownMathObject {tex, display}   MarkdownImageObject {path, source, alt}
                       |                                   |
      installMarkdownObjects(doc): the layout handlers          markdown_objects.*
                       v                                   v
-        MathObjectHandler                      SvgObjectHandler
-          MathRenderer -> JKQTMathText            expandSvgMarkers -> QSvgRenderer
-          a QPicture per (tex, font, colour)      a renderer per file (cached)
+        MathObjectHandler                      ImageObjectHandler
+          MathRenderer -> JKQTMathText            SVG: expandSvgMarkers -> QSvgRenderer
+          a QPicture per (tex, font, colour)      other: QImageReader; read once per file
           math_renderer.*                         svg_markers.*
 ```
 
 ## Reading
 
-`importMarkdown` fills a `QTextDocument` the same way for both readers (`EDIT-MODE-17`):
+`importMarkdown` fills a `QTextDocument` the same way for both readers (`EDIT-MODE-17`); both
+are compiled when the Qt has `setMarkdown`, the option chooses the one used.
 
-| Reader | Qt | How a formula and an SVG image get into the document |
+| Reader | Qt | How the text gets into the document |
 |---|---|---|
-| `QT` | 5.14+ | `scanMath` finds the spans with md4c (`MD_FLAG_LATEXMATHSPANS`; code is never math), each is replaced by the image `![](cyb-math:N)`, `QTextDocument::setMarkdown` (GitHub dialect) reads the text, and a pass over the fragments turns the `cyb-math:N` and `*.svg` images into objects |
-| `MD4C` | 5.12+ | the callbacks of md4c (`MD_DIALECT_GITHUB`, the math spans) build the document with a `QTextCursor`, the formulas and the SVG images as objects |
+| `QT` | 5.14+ | `scanMarkdown` reads the text with md4c, the text is edited (below), `QTextDocument::setMarkdown` (GitHub dialect) reads it, and its images, in the document order, become the formula and image objects of the scan |
+| `MD4C` | 5.12+ | the callbacks of md4c (`MD_DIALECT_GITHUB`, the math spans) build the document with a `QTextCursor` as Qt's reader does (the heading sizes, the margins, the lists, the tables, the code font); the formulas and the images are inserted as objects |
 
-`AUTO` takes `QT` when the Qt has `setMarkdown`. The `MD4C` reader gives the blocks the formats
-Qt's reader gives (the heading sizes, the list indents, the code font), so the two documents
-have the same structure; `l4-markdown` compares them.
+The edits for Qt's reader of Qt 5.15, each at the place md4c reports, never in code:
+
+| Written | Edited | Why |
+|---|---|---|
+| `$..$`, `$$..$$` | `![$](cyb-math:N)` | Qt does not read formulas |
+| `![](a.svg)` | `![_](a.svg)` | Qt drops an image without an alt text; the object takes the scanned one |
+| `![a *b*](a.svg)` | — | Qt makes one image per piece of the alt text; the copies are removed |
+| `<br>` | `<br/>` | Qt waits for the closing tag of a void element and loses the text after it |
+| `<rundir>` | `&lt;rundir>` | the same for a tag that is not text formatting: it is shown as text |
+
+The `MD4C` reader closes the void elements and shows the foreign tags as text the same way;
+`l4-markdown` compares the structures of the two readers.
 
 ## Formulas
 
@@ -57,18 +68,23 @@ have the same structure; `l4-markdown` compares them.
   text around it, in its colour (the palette text colour in a tab). `\colon` reads as `:`.
 * A formula is recorded once into a `QPicture` with its width, ascent and descent and replayed
   on every paint, on the screen and in an export alike.
-* The baseline: Qt places an `AlignMiddle` object with the ascent `(h + x/2) / 2`, `x` the
-  x-height of the font; the handler makes `h = max(2a - x/2, 2d + x/2)` for the formula's
-  ascent `a` and descent `d` and draws its baseline at `(h + x/2) / 2`, the text's baseline.
+* The baseline. An `AlignMiddle` object of height `h` gets `(h + x/2) / 2` above the baseline
+  and `(h - x/2) / 2` below it, `x` the x-height of the font, so the handler makes
+  `h = max(2a - x/2, 2d + x/2)` for the formula's ascent `a` and descent `d`: the line holds the
+  formula. Qt draws the object in the middle of its line, so the handler finds the baseline
+  from the line of the object: `top - (line height - h) / 2 + line ascent`.
 * A formula JKQTMathText reports errors for is drawn as its source in red monospace, the errors
   in its tooltip. Built with `CYBERIADA_WITH_MATH=OFF`, every formula is drawn so.
 
-## SVG images
+## Images
 
-* An image path is relative to the base directory — the directory of the tab's file or of the
-  diagram; an untitled document has none, so only an absolute path is found.
-* Qt 5 draws SVG Tiny 1.2, which has no markers, so `expandSvgMarkers` adds them before
-  `QSvgRenderer` reads the file:
+* Every image is an object. Its path is relative to the base directory — the directory of the
+  tab's file or of the diagram; an untitled document has none, so only an absolute path is
+  found; a URL that is not a file is not read.
+* An image is drawn at its own size, scaled down to the text width; a missing or unreadable
+  one as its alt text and path in a dashed frame.
+* A file is read once and again when it changes. Qt 5 draws SVG Tiny 1.2, which has no
+  markers, so `expandSvgMarkers` adds them before `QSvgRenderer` reads an SVG:
 
 ```
  <path d=".." style="..;stroke-width:w;marker-end:url(#m)" transform="T"/>
@@ -78,22 +94,23 @@ have the same structure; `l4-markdown` compares them.
 
   * `marker-start` and `marker-end` of `path`, `line`, `polyline`, `polygon` (the elements
     SVG marks), set by an attribute, by `style` or inherited from a group;
-  * the end point and the angle come from the path data (`M L H V C S Q T A Z`, absolute and
-    relative) built into a `QPainterPath`; `orient="auto"`, a number of degrees, or
+  * `svgPathEnds` reads the path data (`M L H V C S Q T A Z`, absolute and relative, the
+    packed numbers and arc flags): the end points and the directions of the nearest segments
+    of non-zero length, an arc's from its centre form; `orient="auto"`, a number of degrees, or
     `auto-start-reverse`;
   * `markerUnits="strokeWidth"` (the default) scales by the stroke width,
     `userSpaceOnUse` does not; a `viewBox` with `markerWidth`/`markerHeight` scales to fit;
-  * `marker-mid` is not drawn.
-* An image is drawn at its own size, scaled down to the text width; a missing or unreadable
-  one as its alt text and path in a frame.
-* An image that is not SVG stays a Qt image, found by the same base directory.
+    the copies lose the ids of the marker;
+  * `marker-mid` is not drawn, a file in another encoding than UTF-8 stays as it is.
+* The fonts an SVG names must be installed; another font is taken otherwise, as a browser does.
 
 ## The view
 
 `MarkdownView` is the page of a read-only Markdown tab: a `QTextBrowser` whose document is
 filled by `importMarkdown`. A link to a file or a site opens outside the editor, a `#anchor`
-scrolls to the heading of that name; Ctrl+wheel zooms; a palette change renders the document
-again for the new text colour.
+scrolls to the heading of that GitHub anchor (`headingAnchor`: lower case, the spaces as `-`,
+no punctuation, a repeated one numbered); Ctrl+wheel zooms; a palette change takes the new
+text colour for the formulas.
 
 ## Comments on the canvas
 
@@ -123,13 +140,19 @@ document of its `EditableTextItem`:
 
 * The options: `CYBERIADA_MD_IMPORTER` (`AUTO`, `QT`, `MD4C`; `QT` with a Qt older than 5.14
   stops the configuration) and `CYBERIADA_WITH_MATH` (`ON`).
-* The vendored code is compiled as it is, as C++11 like the editor, into the static library
-  `CyberiadaMathText`; `3rdparty/README.md` lists the files and the versions.
+* The vendored code is compiled as it is, as C++11 like the editor, into the static libraries
+  `md4c` and `CyberiadaMathText`; `3rdparty/README.md` lists the files and the versions.
 
 ## Testing
 
-* `l4-markdown`: `scanMath` (code spans and blocks, `\$`, `$$`, tables, the money text `$5
-  and $6`), `expandSvgMarkers` (the XML of the examples), the two readers' structures, the
-  baseline of an inline formula, the base directory.
-* The render tests draw `tests/texts/*.md` and compare the images with the good files.
-* The render test of `markdown-comments.graphml` with `--render-markdown`.
+`l4-markdown` (`docs/TESTING.md`, L4):
+
+* `scanMarkdown`: the formulas never in code, an escaped or a lone dollar, the tables, the
+  UTF-16 offsets; the images without an alt text; the void and the foreign tags;
+* `svgPathEnds` and `expandSvgMarkers` on small examples, and the arrowhead of
+  `texts/images/arrow.svg` drawn by QtSvg only after the expansion;
+* the image paths and the base directory; the baseline of an inline formula lower and higher
+  than its text; the heading anchors;
+* the two readers' structures of `texts/markdown.md` and `texts/notes.md`;
+* the read-only tab of `texts/markdown.md`: the formulas, the images found next to the file;
+* `texts/markdown.md` drawn and compared with `good/markdown-render.png`.

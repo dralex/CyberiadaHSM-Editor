@@ -27,9 +27,9 @@
 #include "editor_document.h"
 
 class QStackedWidget;
-class QTextBrowser;
 class QTextDocument;
 class CodeEditor;
+class MarkdownView;
 class CodeHighlighter;
 
 // A text tab (docs/MODES.md, Text tabs): the text in UTF-8, highlighted by its
@@ -85,7 +85,7 @@ private:
     QString          m_path;
     QTextDocument*   m_document;
     CodeEditor*      m_editor;
-    QTextBrowser*    m_rendered;
+    MarkdownView*    m_rendered;
     QStackedWidget*  m_page;
     QUndoStack*      m_undo;
     CodeHighlighter* m_highlighter = nullptr;

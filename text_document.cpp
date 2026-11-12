@@ -25,7 +25,6 @@
 #include <QFileInfo>
 #include <QSaveFile>
 #include <QStackedWidget>
-#include <QTextBrowser>
 #include <QTextCursor>
 #include <QTextDocument>
 #include <QUndoStack>
@@ -33,6 +32,7 @@
 #include "text_document.h"
 #include "code_editor.h"
 #include "code_highlighter.h"
+#include "markdown_view.h"
 
 // one edit of the text: the undo stack of the tab drives the text's own history
 class TextEditStep : public QUndoCommand {
@@ -59,8 +59,7 @@ TextDocument::TextDocument(const QString& mode, QObject* parent):
     m_document->setUndoRedoEnabled(true);
     connect(m_document, &QTextDocument::undoCommandAdded, this,
             [this]() { m_undo->push(new TextEditStep(m_document, m_stepName)); });
-    m_rendered = new QTextBrowser();
-    m_rendered->setOpenExternalLinks(true);
+    m_rendered = new MarkdownView();
     m_page = new QStackedWidget();
     m_page->addWidget(m_editor);
     m_page->addWidget(m_rendered);
@@ -112,12 +111,8 @@ void TextDocument::applyMode()
 void TextDocument::showPage()
 {
     if (showsRendered()) {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-        m_rendered->setMarkdown(text());
-#else
-        // the Markdown reader came with Qt 5.14: the source stands in for it
-        m_rendered->setPlainText(text());
-#endif
+        // the images are found next to the file (EDIT-MODE-14)
+        m_rendered->setMarkdownText(text(), hasFile() ? QFileInfo(m_path).absolutePath() : QString());
         m_page->setCurrentWidget(m_rendered);
     } else {
         m_page->setCurrentWidget(m_editor);
@@ -185,8 +180,9 @@ bool TextDocument::load(const QString& path, QString* error)
         if (error) *error = tr("Cannot read %1:\n%2").arg(path, file.errorString());
         return false;
     }
-    setText(QString::fromUtf8(file.readAll()));
+    // the path first: a rendered page finds its images next to the file
     m_path = QFileInfo(path).absoluteFilePath();
+    setText(QString::fromUtf8(file.readAll()));
     emit titleChanged();
     return true;
 }
@@ -216,6 +212,7 @@ bool TextDocument::saveAs(const QString& path, QString* error)
     if (!write(path, error)) return false;
     m_path = QFileInfo(path).absoluteFilePath();
     m_undo->setClean();
+    showPage();
     emit titleChanged();
     return true;
 }
