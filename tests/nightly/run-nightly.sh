@@ -92,16 +92,18 @@ done
 mkdir -p "$WORK" || exit 4
 WORK=$(cd "$WORK" && pwd)
 
-# the update switches the branches of the editor: run from a copy in <work>
+# the update switches the branches of the editor: run from a copy in <work>,
+# renamed into place (a running copy keeps its file) under the lock that the
+# copy inherits through exec
 if [ -z "${NIGHTLY_EDITOR_DIR:-}" ]; then
-    cp "$(readlink -f "$0")" "$WORK/run-nightly.sh" || exit 4
+    exec 9>"$WORK/nightly.lock"
+    if ! flock -n 9; then
+        echo "another nightly run holds $WORK/nightly.lock"
+        exit 5
+    fi
+    copy=$(mktemp "$WORK/run-nightly.XXXXXX") &&
+        cp "$(readlink -f "$0")" "$copy" && mv -f "$copy" "$WORK/run-nightly.sh" || exit 4
     NIGHTLY_EDITOR_DIR=$EDITOR_DIR exec bash "$WORK/run-nightly.sh" "${ARGS[@]}"
-fi
-
-exec 9>"$WORK/nightly.lock"
-if ! flock -n 9; then
-    echo "another nightly run holds $WORK/nightly.lock"
-    exit 5
 fi
 
 # cron has no login shell: the API key comes from the env file
