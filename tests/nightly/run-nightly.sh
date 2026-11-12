@@ -29,6 +29,7 @@ BACKEND=deepseek
 POLY_CONFIG=
 ENV_FILE=$HOME/.profile
 CLEAN=
+ACK=
 JOBS=$(nproc 2>/dev/null || echo 2)
 
 # the time limits of one step, seconds
@@ -61,6 +62,7 @@ The nightly run of the editor test suite and the polygon, see docs/NIGHTLY.md.
   --env-file FILE        sourced for the API key (default: $ENV_FILE)
   --clean                remove the build trees and the prefix first
   --jobs N               parallel build jobs (default: $JOBS)
+  --ack                  print the notice of the failed runs and remove it
   -h, --help             print this help and exit
 
 Exit status: 0 green, 1 found problems or failures, 2 blocked by the update,
@@ -83,11 +85,24 @@ while [ $# -gt 0 ]; do
         --env-file) ENV_FILE=$2; shift ;;
         --clean) CLEAN=yes ;;
         --jobs) JOBS=$2; shift ;;
+        --ack) ACK=yes ;;
         -h | --help) usage; exit 0 ;;
         *) echo "unknown option: $1" >&2; usage >&2; exit 4 ;;
     esac
     shift
 done
+
+# the runs that need attention pile up here until acknowledged (a login shows it)
+NOTICE=$EDITOR_DIR/tests/polygon/problems/nightly/NOTICE
+if [ -n "$ACK" ]; then
+    if [ -s "$NOTICE" ]; then
+        cat "$NOTICE"
+        rm -f "$NOTICE"
+    else
+        echo "no notice"
+    fi
+    exit 0
+fi
 
 mkdir -p "$WORK" || exit 4
 WORK=$(cd "$WORK" && pwd)
@@ -140,6 +155,10 @@ finish() {
     raise "$1"
     rep ""
     rep "Exit status: $STATUS"
+    if [ "$STATUS" -ne 0 ]; then
+        { echo "nightly $STAMP: exit $STATUS"
+          printf '  %s\n' "${SUMMARY[@]}" "report: $REPORT"; } >> "$NOTICE"
+    fi
     echo "nightly $STAMP: exit $STATUS"
     printf '%s\n' "${SUMMARY[@]}"
     echo "report: $REPORT"

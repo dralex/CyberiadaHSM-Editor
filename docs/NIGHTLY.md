@@ -89,6 +89,7 @@ never commits a fix and never pushes.
 | `--env-file FILE` | `~/.profile` | sourced for the API key (cron has no login shell) |
 | `--clean` | | remove the build trees first |
 | `--jobs N` | `nproc` | parallel build jobs |
+| `--ack` | | print the notice and remove it, run nothing |
 
 The LLM missions are skipped, and the report says why, when the harness does
 not import or the key variable of the backend is empty.
@@ -103,6 +104,24 @@ not import or the key variable of the backend is empty.
 | 3 | the build failed |
 | 4 | a setup error |
 | 5 | another run holds the lock |
+
+## Notice
+
+A run that ends with a nonzero status appends its summary to
+`tests/polygon/problems/nightly/NOTICE`, so the runs nobody has looked at pile
+up there; `run-nightly.sh --ack` prints the file and removes it. A login shell
+shows it with these lines at the end of `~/.bashrc` (after its interactive
+guard):
+
+```
+nightly_notice=$HOME/sources/CyberiadaHSM-Editor/tests/polygon/problems/nightly/NOTICE
+if [ -s "$nightly_notice" ]; then
+    echo "== the Cyberiada nightly run needs attention:"
+    cat "$nightly_notice"
+    echo "(read the reports, then: run-nightly.sh --ack)"
+fi
+unset nightly_notice
+```
 
 ## Scheduling
 
