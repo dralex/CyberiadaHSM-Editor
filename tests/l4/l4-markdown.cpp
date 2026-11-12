@@ -129,7 +129,15 @@ QString TestMarkdown::structure(QTextDocument* doc)
 			if (cf.isAnchor()) attrs += " a=" + cf.anchorHref();
 			if (attrs != lastAttrs) flush();
 			lastAttrs = attrs;
-			run += text;
+			// a line break is a mark of its own: the run Qt draws it in differs by version
+			const QStringList pieces = text.split(QChar::LineSeparator);
+			for (int k = 0; k < pieces.size(); k++) {
+				if (k > 0) {
+					flush();
+					line += " <br>";
+				}
+				run += pieces.at(k);
+			}
 		}
 		flush();
 		out += line + "\n";
@@ -208,6 +216,8 @@ void TestMarkdown::test_html_tags()
 	QVERIFY(!isForeignTag("<br>"));
 	QTextDocument doc;
 	importMarkdown(&doc, "| a | b<br>c |\n|---|---|\n| d | e |\n\nthe end", QString());
+	// a line separator, which toPlainText() gives as a newline
+	QVERIFY(doc.toPlainText().contains("b\nc"));
 	QVERIFY(doc.toPlainText().contains("the end"));
 	QVERIFY(doc.toPlainText().contains("d"));
 	importMarkdown(&doc, "the file <rundir>/input.md and the rest", QString());

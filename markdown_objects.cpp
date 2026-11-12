@@ -36,6 +36,7 @@
 #include <QSharedPointer>
 #include <QSvgRenderer>
 #include <QTextBlock>
+#include <QTextCursor>
 #include <QTextDocument>
 #include <QTextLayout>
 #include <QUrl>
@@ -50,6 +51,10 @@ const char* const HANDLERS_PROPERTY = "cyberiadaMarkdownObjects";
 const char* const COLOR_PROPERTY = "cyberiadaMarkdownTextColor";
 // the frame of a missing image around its label
 const qreal MISSING_PADDING = 3.0;
+// the probe of the placement of an AlignMiddle object: a small one beside a letter
+const int   PROBE_OBJECT = QTextFormat::UserObject + 100;
+const qreal PROBE_WIDTH = 4.0;
+const qreal PROBE_HEIGHT = 2.0;
 
 QColor textColor(QTextDocument* doc, const QTextCharFormat& format)
 {
@@ -72,10 +77,61 @@ qreal halfXHeight(const QTextCharFormat& f)
     return QFontMetrics(f.font()).xHeight() / 2.0;
 }
 
-// but draws it in the middle of its line (QTextLine::draw): the baseline is found
-// from the line, top + (height - h) / 2 being the top of the object
+// and draws it (QTextLine::draw) at that ascent above the baseline up to Qt 5.15.0,
+// in the middle of its line in the later 5.15 releases
+enum MiddlePlacement { middleUnknown, middleByAscent, middleInLine };
+MiddlePlacement middlePlacement = middleUnknown;
+
+class PlacementProbe : public QObject, public QTextObjectInterface {
+    Q_OBJECT
+    Q_INTERFACES(QTextObjectInterface)
+public:
+    explicit PlacementProbe(QObject* parent): QObject(parent) {}
+    QSizeF intrinsicSize(QTextDocument*, int, const QTextFormat&) override
+    {
+        return QSizeF(PROBE_WIDTH, PROBE_HEIGHT);
+    }
+    void drawObject(QPainter*, const QRectF& rect, QTextDocument*, int, const QTextFormat&) override
+    {
+        top = rect.top();
+        drawn = true;
+    }
+    qreal top = 0;
+    bool  drawn = false;
+};
+
+// the placement of this Qt, from where it draws a probe: the nearer of the two
+MiddlePlacement findMiddlePlacement()
+{
+    QTextDocument doc;
+    PlacementProbe* probe = new PlacementProbe(doc.documentLayout());
+    doc.documentLayout()->registerHandler(PROBE_OBJECT, probe);
+    QTextCursor cursor(&doc);
+    cursor.insertText("x");
+    QTextCharFormat f;
+    f.setObjectType(PROBE_OBJECT);
+    f.setVerticalAlignment(QTextCharFormat::AlignMiddle);
+    cursor.insertText(QString(QChar::ObjectReplacementCharacter), f);
+    QImage image(doc.size().toSize().expandedTo(QSize(1, 1)), QImage::Format_ARGB32);
+    QPainter painter(&image);
+    doc.drawContents(&painter);
+    painter.end();
+    QTextLayout* layout = doc.begin().layout();
+    QTextLine line = layout ? layout->lineAt(0) : QTextLine();
+    if (!probe->drawn || !line.isValid()) return middleByAscent;
+    qreal leading = line.leadingIncluded() ? qMax(line.leading(), qreal(0)) : 0;
+    qreal lineTop = layout->position().y() + line.y();
+    qreal byAscent = lineTop + line.ascent() + leading -
+                     (PROBE_HEIGHT + QFontMetrics(doc.defaultFont()).xHeight() / 2.0) / 2;
+    qreal inLine = lineTop + (line.ascent() + line.descent() + leading - PROBE_HEIGHT) / 2;
+    return qAbs(probe->top - inLine) < qAbs(probe->top - byAscent) ? middleInLine : middleByAscent;
+}
+
+// the baseline of the text an AlignMiddle object of the rect stands in; in the middle
+// of its line top + (height - h) / 2 is the top of the object
 qreal objectBaseline(QTextDocument* doc, int position, const QRectF& rect, qreal halfX)
 {
+    if (middlePlacement != middleInLine) return rect.top() + (rect.height() + halfX) / 2;
     QTextBlock block = doc->findBlock(position);
     QTextLayout* layout = block.isValid() ? block.layout() : nullptr;
     QTextLine line = layout ? layout->lineForTextPosition(position - block.position()) : QTextLine();
@@ -273,6 +329,8 @@ QString markdownImagePath(const QString& source, const QString& baseDir)
 
 void installMarkdownObjects(QTextDocument* doc)
 {
+    // found before any drawing, so the probe paints outside a paint
+    if (middlePlacement == middleUnknown) middlePlacement = findMiddlePlacement();
     QAbstractTextDocumentLayout* layout = doc->documentLayout();
     if (layout->property(HANDLERS_PROPERTY).toBool()) return;
     layout->registerHandler(MarkdownMathObject, new MathObjectHandler(layout));

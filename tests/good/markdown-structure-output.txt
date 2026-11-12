@@ -10,7 +10,7 @@ block cell 0,1/3x3 th centre: {Picture b}
 block cell 0,2/3x3 th: {Note b}
 block cell 1,0/3x3: {Arrow}
 block cell 1,1/3x3 centre: {[image images/arrow.svg|]}
-block cell 1,2/3x3: {bold b} { two lines}
+block cell 1,2/3x3: {bold b} <br> {two lines}
 block cell 2,0/3x3: {Missing}
 block cell 2,1/3x3 centre: {[image images/missing.svg|gone]}
 block cell 2,2/3x3: {code code}

@@ -339,6 +339,13 @@ private:
         }
         insertPendingBlock();
         if (type == MD_TEXT_HTML && !isForeignTag(s)) {
+            // a <br> between texts is a line separator: Qt 5.12 drops a <br/> alone
+            static const QRegularExpression lineBreak("^<br\\b[^>]*>$", QRegularExpression::CaseInsensitiveOption);
+            if (htmlDepth == 0 && lineBreak.match(s).hasMatch()) {
+                cursor.insertText(QString(QChar::LineSeparator));
+                markCellFilled();
+                return 0;
+            }
             // the tags are counted and the HTML inserted once they close; a void
             // element closes itself
             s = closeVoidTags(s);

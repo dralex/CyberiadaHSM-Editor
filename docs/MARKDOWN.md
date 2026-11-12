@@ -1,6 +1,6 @@
 # The Markdown Rendering — Architecture
 
-**Document version:** 0.4 (2026-11-12). The requirements are `EDIT-MODE-14`, `EDIT-MODE-17` and
+**Document version:** 0.5 (2026-11-12). The requirements are `EDIT-MODE-14`, `EDIT-MODE-17` and
 `EDIT-TEXT-14` in `EDITOR-SPEC.md`.
 
 The editor renders Markdown itself: a read-only Markdown tab (`docs/MODES.md`, Text tabs) and,
@@ -43,8 +43,9 @@ the images are inserted as objects.
 * A header cell takes the alignment of its column, as a body cell does.
 * Raw HTML: the tags are counted and the HTML inserted once they close; inside them every text
   waits in its order (the code as `<code>`); a block inserts what is still open at its end.
-  A void element closes itself (`<br>` -> `<br/>`), a tag that is not text formatting
-  (`<rundir>`) is shown as text.
+  A `<br>` outside other tags is a line separator (Qt 5.12 drops a `<br/>` inserted alone),
+  another void element closes itself (`<img ...>` -> `<img .../>`), a tag that is not text
+  formatting (`<rundir>`) is shown as text.
 
 Qt's own `QTextDocument::setMarkdown` (Qt 5.15) is not used: it reads no formulas, drops an
 image without an alt text, makes one image per piece of a formatted alt text and loses the
@@ -61,8 +62,10 @@ text after a `<br>` or an unknown tag.
 * The baseline. An `AlignMiddle` object of height `h` gets `(h + x/2) / 2` above the baseline
   and `(h - x/2) / 2` below it, `x` the x-height of the font, so the handler makes
   `h = max(2a - x/2, 2d + x/2)` for the formula's ascent `a` and descent `d`: the line holds the
-  formula. Qt draws the object in the middle of its line, so the handler finds the baseline
-  from the line of the object: `top - (line height - h) / 2 + line ascent`.
+  formula. Qt draws the object at that ascent above the baseline up to 5.15.0 (baseline
+  `top + (h + x/2) / 2`) and in the middle of its line in the later 5.15 releases (baseline
+  `top - (line height - h) / 2 + line ascent`, from the line of the object); a probe document
+  tells once which this Qt does.
 * A formula JKQTMathText reports errors for is drawn as its source in red monospace, the errors
   in its tooltip. Built with `CYBERIADA_WITH_MATH=OFF`, every formula is drawn so.
 
