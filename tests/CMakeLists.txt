@@ -491,6 +491,20 @@ add_l2_text_test(text-edit geometry)
 add_l2_text_test(double-click geometry)
 add_l2_text_test(subject-fragment comment-transition)
 add_l2_text_test(comment-selection comment-transition)
+add_l2_text_test(render-markdown markdown-render-comments)
+
+# a setting verb with a wrong argument is a script error (EDIT-TEXT-14)
+add_test(NAME l2-render-markdown-reject
+  COMMAND ${CMAKE_COMMAND}
+    -DBATCH_BIN=$<TARGET_FILE:CyberiadaPro>
+    -DINPUT=diagrams/markdown-render-comments.graphml
+    -DSCRIPT=scripts/render-markdown-reject.script
+    -DEXPECTED=4
+    -DWORKDIR=${CMAKE_CURRENT_SOURCE_DIR}
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunBatchTest.cmake)
+set_tests_properties(l2-render-markdown-reject PROPERTIES
+  TIMEOUT 60
+  ENVIRONMENT "${L0_ENVIRONMENT}")
 
 # The undo test suite: a script edits and undoes (or redoes) through the
 # batch verbs, and the dump must equal an EXISTING good file - the untouched

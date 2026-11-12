@@ -822,10 +822,11 @@ static bool runGesture(CyberiadaSMEditorScene* scene, const QStringList& tokens,
 	return true;
 }
 
-// the run settings (EDIT-TOOL-14): snap on|off and grid <n>, never persisted
+// the run settings (EDIT-TOOL-14, EDIT-TEXT-14): snap on|off, grid <n> and
+// render-markdown on|off, never persisted
 static bool isSettingVerb(const QString& cmd)
 {
-	return cmd == "snap" || cmd == "grid";
+	return cmd == "snap" || cmd == "grid" || cmd == "render-markdown";
 }
 
 static bool runSettingVerb(const QStringList& tokens, QString* error)
@@ -838,6 +839,14 @@ static bool runSettingVerb(const QStringList& tokens, QString* error)
 			return false;
 		}
 		sm.overrideSnapMode(tokens.at(1) == "on");
+		return true;
+	}
+	if (tokens.first() == "render-markdown") {
+		if (tokens.at(1) != "on" && tokens.at(1) != "off") {
+			*error = "render-markdown requires on or off";
+			return false;
+		}
+		sm.overrideRenderMarkdownComments(tokens.at(1) == "on");
 		return true;
 	}
 	bool ok = false;

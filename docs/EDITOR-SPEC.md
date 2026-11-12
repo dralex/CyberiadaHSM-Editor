@@ -523,8 +523,8 @@ the third is a derived display value the format does not store):
   a comment body highlighted as Markdown (`EDIT-TEXT-11`) is drawn rendered as `EDIT-MODE-14`
   draws a tab, the images relative to the directory of the document's file; an edit of the body
   shows its highlighted source and the end of the edit renders it again; the box, its band and
-  its cut (`EDIT-NODE-16`) measure the rendered text; a fragment link of a rendered body ends on
-  the body; the exports draw it as the canvas does. The option `--render-markdown` and the batch
+  its cut (`EDIT-NODE-16`) measure the rendered text; a fragment link to a rendered body ends on
+  the target border as for an edited one (`EDIT-EDGE-21`); the exports draw it as the canvas does. The option `--render-markdown` and the batch
   verb `render-markdown on|off` set it for the run without storing it. *design*
 
 ### 4.6 Tools and interaction — TOOL

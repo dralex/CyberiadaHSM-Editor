@@ -22,6 +22,7 @@
  * ----------------------------------------------------------------------------- */
 
 #include <QtTest>
+#include <QAbstractTextDocumentLayout>
 #include <QFile>
 #include <QImage>
 #include <QPainter>
@@ -39,10 +40,14 @@
 #include "svg_markers.h"
 #include "text_document.h"
 #include "smeditor_window.h"
-#include "cyberiadasm_render.h"
+#include "settings_manager.h"
+#include "editable_text_item.h"
+#include "cyberiadasm_editor_scene.h"
+#include "cyberiadasm_editor_comment_item.h"
 
-// the laws of the Markdown rendering (EDIT-MODE-14, EDIT-MODE-17, docs/MARKDOWN.md):
-// the formula spans, the markers, the readers, the baseline, the image paths
+// the laws of the Markdown rendering (EDIT-MODE-14/17, EDIT-TEXT-14, docs/MARKDOWN.md):
+// the formula spans, the markers, the readers, the baseline, the image paths, the
+// sizes of the objects and the rendered comments; no glyph is compared (docs/TESTING.md)
 class TestMarkdown: public QObject {
 	Q_OBJECT
 
@@ -58,7 +63,8 @@ private slots:
 	void test_readers_same();
 	void test_heading_anchor();
 	void test_tab_rendered();
-	void test_render();
+	void test_object_sizes();
+	void test_comment_rendered();
 
 private:
 	static QString read(const QString& path);
@@ -307,7 +313,12 @@ void TestMarkdown::test_image_paths()
 // higher than the text
 void TestMarkdown::test_inline_baseline()
 {
+	// without the engine a formula is its source, whose braces go below the baseline
+#ifdef CYBERIADA_WITH_MATH
 	const char* const examples[] = {"x $x$ x", "x $x^{2^{2^{2}}}$ x"};
+#else
+	const char* const examples[] = {"x $x$ x"};
+#endif
 	for (size_t i = 0; i < sizeof(examples) / sizeof(examples[0]); i++) {
 		QTextDocument doc;
 		doc.setTextWidth(400);
@@ -392,20 +403,118 @@ void TestMarkdown::test_tab_rendered()
 	QCOMPARE(found, 2);
 }
 
-// the rendered example matches its good image (fonts of the test fontconfig)
-void TestMarkdown::test_render()
+// the objects of the example take their sizes from the files and the formulas,
+// whatever the glyphs: an SVG at its own size or the text width, a missing image
+// as its label, a bad formula with its errors, a display formula centred (the
+// widths are measured outside the tables, whose cell lines span the column)
+void TestMarkdown::test_object_sizes()
 {
+	auto objectWidth = [](const QTextBlock& b, int position) {
+		QTextLine line = b.layout()->lineForTextPosition(position - b.position());
+		return line.cursorToX(position - b.position() + 1) - line.cursorToX(position - b.position());
+	};
 	QTextDocument doc;
 	doc.setTextWidth(640);
-	setMarkdownTextColor(&doc, Qt::black);
 	importMarkdown(&doc, read("texts/markdown.md"), QDir("texts").absolutePath());
-	QTemporaryDir dir;
-	QString out = dir.filePath("markdown-render.png");
-	QVERIFY(draw(&doc).save(out));
-	QString report;
-	int res = compareImages(out, "good/markdown-render.png", 8, 0, &report);
-	if (res != 0) dir.setAutoRemove(false);
-	QVERIFY2(res == 0, qPrintable(report + " (the drawn image: " + out + ")"));
+	doc.documentLayout()->documentSize();
+	int svgs = 0, missing = 0, bad = 0, centred = 0;
+	for (QTextBlock b = doc.begin(); b.isValid(); b = b.next()) {
+		bool inTable = QTextCursor(b).currentTable() != nullptr;
+		for (QTextBlock::iterator it = b.begin(); !it.atEnd(); ++it) {
+			QTextCharFormat f = it.fragment().charFormat();
+			int position = it.fragment().position();
+			if (f.objectType() == MarkdownImageObject && QFileInfo(f.stringProperty(MarkdownImagePath)).isFile()) {
+				if (!inTable) QCOMPARE(objectWidth(b, position), qreal(120));
+				svgs++;
+			} else if (f.objectType() == MarkdownImageObject) {
+				missing++;
+			} else if (f.objectType() == MarkdownMathObject && f.stringProperty(MarkdownTex).contains("badcommand")) {
+				QVERIFY(!f.toolTip().isEmpty());
+				bad++;
+			} else if (f.objectType() == MarkdownMathObject && f.boolProperty(MarkdownDisplay)) {
+				QVERIFY(b.blockFormat().alignment() & Qt::AlignHCenter);
+				QVERIFY(objectWidth(b, position) > 0);
+				centred++;
+			}
+		}
+	}
+	QCOMPARE(svgs, 2);
+	QCOMPARE(missing, 1);
+	QCOMPARE(bad, 1);
+	QCOMPARE(centred, 1);
+
+	// a narrow text scales the image down to its width
+	QTextDocument narrow;
+	narrow.setTextWidth(80);
+	importMarkdown(&narrow, "![arrow](images/arrow.svg)", QDir("texts").absolutePath());
+	narrow.documentLayout()->documentSize();
+	QVERIFY(objectWidth(narrow.begin(), 0) <= 80 - 2 * narrow.documentMargin() + 0.5);
+
+	// a missing image is as wide as its label in a frame
+	QTextDocument gone;
+	gone.setTextWidth(640);
+	importMarkdown(&gone, "![gone](images/missing.svg)", QDir("texts").absolutePath());
+	gone.documentLayout()->documentSize();
+	QFontMetricsF metrics(gone.begin().begin().fragment().charFormat().font());
+	QVERIFY(objectWidth(gone.begin(), 0) > metrics.horizontalAdvance("gone (images/missing.svg)"));
+}
+
+// EDIT-TEXT-14: a Markdown comment body is drawn rendered with the preference, its
+// source kept for the model and shown while edited; a plain one stays plain
+void TestMarkdown::test_comment_rendered()
+{
+	SettingsManager& sm = SettingsManager::instance();
+	sm.overrideRenderMarkdownComments(false);
+	CyberiadaSMEditorWindow window;
+	QVERIFY(window.openFile("diagrams/markdown-render-comments.graphml"));
+	CyberiadaSMEditorScene* scene = window.getScene();
+	QVERIFY(scene);
+	CyberiadaSMEditorCommentItem* notes = dynamic_cast<CyberiadaSMEditorCommentItem*>(scene->getMap().value("notes"));
+	CyberiadaSMEditorCommentItem* plain = dynamic_cast<CyberiadaSMEditorCommentItem*>(scene->getMap().value("plain"));
+	QVERIFY(notes && plain);
+	SubjectFragment::Field field;
+	field.kind = SubjectFragment::fieldBody;
+	int start = -1;
+	EditableTextItem* body = notes->fieldText(field, &start);
+	EditableTextItem* plainBody = plain->fieldText(field, &start);
+	QVERIFY(body && plainBody);
+	const QString source = body->toPlainText();
+	const QString plainSource = plainBody->toPlainText();
+	QVERIFY(source.startsWith("## The output"));
+	QVERIFY(!body->isRendered());
+
+	sm.overrideRenderMarkdownComments(true);
+	QVERIFY(body->isRendered());
+	QVERIFY(!plainBody->isRendered());
+	QCOMPARE(plainBody->toPlainText(), plainSource);
+	QCOMPARE(body->sourceText(), source);
+	QVERIFY(!body->toPlainText().contains("##"));
+	int formulas = 0;
+	QString image;
+	for (QTextBlock b = body->document()->begin(); b.isValid(); b = b.next())
+		for (QTextBlock::iterator it = b.begin(); !it.atEnd(); ++it) {
+			QTextCharFormat f = it.fragment().charFormat();
+			if (f.objectType() == MarkdownMathObject) formulas++;
+			if (f.objectType() == MarkdownImageObject) image = f.stringProperty(MarkdownImagePath);
+		}
+	QCOMPARE(formulas, 1);
+	QCOMPARE(image, QFileInfo("texts/images/arrow.svg").absoluteFilePath());
+	// a fragment link has no offsets in a rendered body
+	QVERIFY(!notes->fieldText(field, &start));
+
+	// an edit shows the source, its end renders again and changes nothing
+	body->startEditing();
+	QVERIFY(!body->isRendered());
+	QCOMPARE(body->toPlainText(), source);
+	QFocusEvent out(QEvent::FocusOut);
+	scene->sendEvent(body, &out);
+	QVERIFY(body->isRendered());
+	QVERIFY(window.getModel()->undoStack()->isClean());
+
+	sm.overrideRenderMarkdownComments(false);
+	QVERIFY(!body->isRendered());
+	QCOMPARE(body->toPlainText(), source);
+	QVERIFY(notes->fieldText(field, &start) == body);
 }
 
 QTEST_MAIN(TestMarkdown)

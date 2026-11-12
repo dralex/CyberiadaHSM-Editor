@@ -110,6 +110,7 @@ void SettingsManager::load() {
     boldTransitionEventName = s.value("display/boldTransitionEventName", true).toBool();
     highlightCode = s.value("display/highlightCode", true).toBool();
     highlightInExports = s.value("export/highlightCode", false).toBool();
+    renderMarkdownComments = s.value("display/renderMarkdownComments", false).toBool();
 
     lastDirectory = s.value("files/lastDirectory", QDir::currentPath()).toString();
     recentFiles = s.value("files/recentFiles").toStringList();
@@ -150,6 +151,7 @@ void SettingsManager::loadDefaults()
     setBoldTransitionEventName(true);
     setHighlightCode(true);
     setHighlightInExports(false);
+    setRenderMarkdownComments(false);
 
     setSelectionColor(QColor(Qt::red));
     setSelectionBorderWidth(2);
@@ -223,6 +225,22 @@ void SettingsManager::setHighlightInExports(bool value)
         highlightInExports = value;
         QSettings().setValue("export/highlightCode", value);
         emit highlightSettingsChanged();
+    }
+}
+
+void SettingsManager::setRenderMarkdownComments(bool value)
+{
+    if (renderMarkdownComments != value) {
+        QSettings().setValue("display/renderMarkdownComments", value);
+        overrideRenderMarkdownComments(value);
+    }
+}
+
+void SettingsManager::overrideRenderMarkdownComments(bool value)
+{
+    if (renderMarkdownComments != value) {
+        renderMarkdownComments = value;
+        emit renderMarkdownCommentsChanged(value);
     }
 }
 

@@ -1,0 +1,16 @@
+== document
+LocalDocument: {Document: {id: '', name: 'test-markdown-render-comments', geometry format: qt, meta: {standard version: '1.0', name: 'test-markdown-render-comments', markupLanguage: 'markdown', regionGeometry: 'stored'}, elements: {State Machine: {id: 'G', name: 'rendered notes', elements: {Formal Comment: {id: 'nMeta', name: 'CGML_META', body: 'standardVersion/ 1.0
+
+name/ test-markdown-render-comments
+
+markupLanguage/ markdown
+
+regionGeometry/ stored'}, Simple State: {id: 'idle', name: 'idle', geometry: (200; 150; 200; 100)}, Comment: {id: 'notes', body: '## The output
+$g_1\colon Q \times A \to B$
+
+![arrow](../texts/images/arrow.svg)', geometry: (550; 180; 300; 160)}, Comment: {id: 'plain', body: '## not a heading here, $x$ stays', geometry: (550; 330; 300; 60)}}}}, bounding rect: (400; 230; 600; 260)}, file: 'diagrams/markdown-render-comments.graphml', format: cyberiada, format_str: 'Cyberiada-GraphML-1.0'}
+== scene
+  State Machine: {id: 'G', pos: (0.00; 0.00), rect: (100.00; 100.00; 600.00; 260.00)}
+    Simple State: {id: 'idle', pos: (200.00; 150.00), rect: (-100.00; -50.00; 200.00; 100.00)}
+    Comment: {id: 'notes', pos: (550.00; 180.00), rect: (-150.00; -80.00; 300.00; 160.00)}
+    Comment: {id: 'plain', pos: (550.00; 330.00), rect: (-150.00; -30.00; 300.00; 60.00)}

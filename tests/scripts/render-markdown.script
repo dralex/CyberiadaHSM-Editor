@@ -1,0 +1,4 @@
+# the Markdown comment bodies drawn rendered change nothing saved (EDIT-TEXT-14)
+render-markdown on
+render-markdown off
+render-markdown on

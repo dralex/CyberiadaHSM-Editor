@@ -24,6 +24,7 @@
 #include <QDebug>
 #include <QPainter>
 #include <QColor>
+#include <QFileInfo>
 #include "cyberiadasm_editor_comment_item.h"
 #include "myassert.h"
 #include "cyberiada_constants.h"
@@ -71,6 +72,13 @@ CyberiadaSMEditorCommentItem::CyberiadaSMEditorCommentItem(QObject *parent_objec
     applyBodyRole();
     body->setTextAlignment(Qt::AlignLeft);
     body->setTextMargin(2 * COMMENT_TEXT_MARGIN);
+    // the preference switched: the body is drawn again and the box follows it
+    connect(&SettingsManager::instance(), &SettingsManager::renderMarkdownCommentsChanged, this, [this]() {
+        prepareGeometryChange();
+        applyBodyRole();
+        setTextPosition();
+        update();
+    });
 
     commentBrush = QBrush(QColor(0xff, 0xcc, 0));
 
@@ -160,7 +168,7 @@ void CyberiadaSMEditorCommentItem::paint(QPainter* painter, const QStyleOptionGr
 
 void CyberiadaSMEditorCommentItem::onBodyChanged()
 {
-    model->updateCommentBody(model->elementToIndex(element), body->toPlainText());
+    model->updateCommentBody(model->elementToIndex(element), body->sourceText());
 }
 
 void CyberiadaSMEditorCommentItem::onTitleChanged()
@@ -194,13 +202,18 @@ void CyberiadaSMEditorCommentItem::applyBodyRole()
     } else {
         body->setCodeRole(codeRoleFormalComment);
     }
+    // a Markdown body is drawn rendered when the preference asks (EDIT-TEXT-14)
+    QString path = model ? model->documentPath() : QString();
+    body->setMarkdownRendering(SettingsManager::instance().getRenderMarkdownComments(),
+                               path.isEmpty() ? QString() : QFileInfo(path).absolutePath());
 }
 
 EditableTextItem* CyberiadaSMEditorCommentItem::fieldText(const SubjectFragment::Field& field, int* start) const
 {
     *start = 0;
     if (field.kind == SubjectFragment::fieldName) return title;
-    return field.kind == SubjectFragment::fieldBody ? body : nullptr;
+    // a rendered body has no source offsets: the link ends on the border (EDIT-TEXT-14)
+    return field.kind == SubjectFragment::fieldBody && !body->isRendered() ? body : nullptr;
 }
 
 QList<QGraphicsItem*> CyberiadaSMEditorCommentItem::ownedChildren() const
@@ -225,7 +238,7 @@ void CyberiadaSMEditorCommentItem::syncFromModel()
     // refresh the body too, so the auto-sized box re-lays-out when the body changes
     // (otherwise a stale box survives an edit and disagrees on save/reopen)
     QString bodyText = QString::fromStdString(comment->get_body());
-    if (body->toPlainText() != bodyText) body->setPlainText(bodyText);
+    if (body->sourceText() != bodyText) body->setSourceText(bodyText);
     applyBodyRole();
     body->setVisible(SettingsManager::instance().getShowText());
     setTextPosition();

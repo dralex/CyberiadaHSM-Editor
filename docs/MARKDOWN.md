@@ -1,6 +1,6 @@
 # The Markdown Rendering — Architecture
 
-**Document version:** 0.2 (2026-11-12). The requirements are `EDIT-MODE-14`, `EDIT-MODE-17` and
+**Document version:** 0.3 (2026-11-12). The requirements are `EDIT-MODE-14`, `EDIT-MODE-17` and
 `EDIT-TEXT-14` in `EDITOR-SPEC.md`.
 
 The editor renders Markdown itself: a read-only Markdown tab (`docs/MODES.md`, Text tabs) and,
@@ -127,7 +127,8 @@ document of its `EditableTextItem`:
 
 * The item keeps the body text: the write-back and the refresh compare it, never the rendered
   `toPlainText()`.
-* A fragment link (`dChunk`) of a rendered body ends on the body box.
+* A fragment link (`dChunk`) to a rendered body has no source offsets to underline: it ends on
+  the border of the comment, as while the body is edited (`EDIT-EDGE-21`).
 * The setting off draws the canvas exactly as before; the good files of the render tests stay.
 
 ## Build
@@ -145,7 +146,7 @@ document of its `EditableTextItem`:
 
 ## Testing
 
-`l4-markdown` (`docs/TESTING.md`, L4):
+`l4-markdown` (`docs/TESTING.md`, L4); no glyph is compared, as everywhere in the tests:
 
 * `scanMarkdown`: the formulas never in code, an escaped or a lone dollar, the tables, the
   UTF-16 offsets; the images without an alt text; the void and the foreign tags;
@@ -155,4 +156,8 @@ document of its `EditableTextItem`:
   than its text; the heading anchors;
 * the two readers' structures of `texts/markdown.md` and `texts/notes.md`;
 * the read-only tab of `texts/markdown.md`: the formulas, the images found next to the file;
-* `texts/markdown.md` drawn and compared with `good/markdown-render.png`.
+  the sizes of its objects - an SVG at its own size or the text width, a missing image as
+  its label, a bad formula with its errors, the display formula centred;
+* the comments of `diagrams/markdown-render-comments.graphml` with the preference on and off.
+
+`l2-render-markdown` runs the batch verb: the dump and the saved document stay as they are.

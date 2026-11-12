@@ -110,7 +110,7 @@
 <context>
     <name>CyberiadaSMEditorStateItem</name>
     <message>
-        <location filename="../cyberiadasm_editor_state_item.cpp" line="+803"/>
+        <location filename="../cyberiadasm_editor_state_item.cpp" line="+807"/>
         <source>Delete</source>
         <translation>Удалить</translation>
     </message>
@@ -730,18 +730,18 @@
         <translation>удаление границы</translation>
     </message>
     <message>
-        <location line="+241"/>
+        <location line="+284"/>
         <source>center</source>
         <translation>центрирование</translation>
     </message>
     <message>
         <location line="+43"/>
-        <location line="+1641"/>
+        <location line="+1656"/>
         <source>reparent</source>
         <translation>смена родителя</translation>
     </message>
     <message>
-        <location line="-1586"/>
+        <location line="-1598"/>
         <source>comment</source>
         <translation>комментарий</translation>
     </message>
@@ -826,7 +826,7 @@
         <translation>удаление</translation>
     </message>
     <message>
-        <location line="+739"/>
+        <location line="+751"/>
         <source>paste</source>
         <translation>вставка</translation>
     </message>
@@ -1514,7 +1514,7 @@
 <context>
     <name>EditableTextItem</name>
     <message>
-        <location filename="../editable_text_item.cpp" line="+151"/>
+        <location filename="../editable_text_item.cpp" line="+156"/>
         <source>Copy</source>
         <translation>Копировать</translation>
     </message>
@@ -1659,6 +1659,19 @@
         <location line="+3"/>
         <source>Underlined in: %1.</source>
         <translation>Подчёркнуто в: %1.</translation>
+    </message>
+</context>
+<context>
+    <name>MathRenderer</name>
+    <message>
+        <location filename="../math_renderer.cpp" line="+114"/>
+        <source>The formula cannot be read</source>
+        <translation>Формулу не удаётся прочитать</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>The editor is built without the TeX formulas</source>
+        <translation>Редактор собран без формул TeX</translation>
     </message>
 </context>
 <context>
@@ -2850,6 +2863,11 @@
         <translation>Сохранять подсветку кода в экспортируемых изображениях</translation>
     </message>
     <message>
+        <location line="+7"/>
+        <source>Render Markdown comments</source>
+        <translation>Показывать комментарии Markdown отформатированными</translation>
+    </message>
+    <message>
         <location filename="../dialogs/preferences_dialog.cpp" line="+28"/>
         <source>Plugin interpreters (empty: looked up in PATH)</source>
         <translation>Интерпретаторы плагинов (пусто: поиск в PATH)</translation>
@@ -3674,7 +3692,7 @@
 <context>
     <name>TextDocument</name>
     <message>
-        <location filename="../text_document.cpp" line="+119"/>
+        <location filename="../text_document.cpp" line="+114"/>
         <source>untitled</source>
         <translation>без имени</translation>
     </message>
@@ -3686,7 +3704,7 @@
 %2</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+14"/>
         <source>Cannot write %1:
 %2</source>
         <translation>Не удаётся записать %1:

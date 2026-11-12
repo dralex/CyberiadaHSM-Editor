@@ -144,6 +144,7 @@ void PreferencesDialog::loadFromSettings()
     ui->boldTransitionEventNameCheckBox->setChecked(sm.getBoldTransitionEventName());
     ui->highlightCodeCheckBox->setChecked(sm.getHighlightCode());
     ui->highlightInExportsCheckBox->setChecked(sm.getHighlightInExports());
+    ui->renderMarkdownCommentsCheckBox->setChecked(sm.getRenderMarkdownComments());
 
     // plugins: the configured interpreters, python3 always offered, a free row last
     QMap<QString, QString> paths = sm.getInterpreterPaths();
@@ -191,6 +192,7 @@ void PreferencesDialog::saveSettings()
     sm.setBoldTransitionEventName(ui->boldTransitionEventNameCheckBox->isChecked());
     sm.setHighlightCode(ui->highlightCodeCheckBox->isChecked());
     sm.setHighlightInExports(ui->highlightInExportsCheckBox->isChecked());
+    sm.setRenderMarkdownComments(ui->renderMarkdownCommentsCheckBox->isChecked());
 
     // plugins: a row without a program removes the entry
     QMap<QString, QString> old = sm.getInterpreterPaths();

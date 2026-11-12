@@ -48,6 +48,8 @@
 #include "cyberiada_constants.h"
 #include "settings_manager.h"
 #include "gesture_log.h"
+#include "markdown_importer.h"
+#include "markdown_objects.h"
 
 
 EditableTextItem::EditableTextItem(QGraphicsItem *parent):
@@ -109,6 +111,8 @@ void EditableTextItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) {
 }
 
 void EditableTextItem::startEditing() {
+    // a rendered Markdown text is edited as its source (EDIT-TEXT-14)
+    showSource();
     setTextInteractionFlags(Qt::TextEditorInteraction);
     setFocus();
     setEditing(true);
@@ -130,6 +134,7 @@ void EditableTextItem::focusOutEvent(QFocusEvent *event) {
     if (CyberiadaSMEditorScene* sc = dynamic_cast<CyberiadaSMEditorScene*>(scene())) sc->updateSubjectLinks();
     if (CyberiadaSMEditorScene::discardsEdits(this)) return;
     emit editingFinished();
+    applyRendering();
 }
 
 void EditableTextItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event) {
@@ -227,7 +232,7 @@ void EditableTextItem::setBandHeight(qreal height)
         prepareGeometryChange();
         bandHeight = height;
     }
-    setToolTip(isCut() ? toPlainText() : QString());
+    setToolTip(isCut() ? sourceText() : QString());
 }
 
 bool EditableTextItem::isCut() const
@@ -349,6 +354,52 @@ void EditableTextItem::applyMarkup()
 {
     if (!highlighter) return;
     highlighter->setMarkup(CodeStyle::commentMarkup(markupOverride, documentMarkup));
+    applyRendering();
+}
+
+void EditableTextItem::setMarkdownRendering(bool on, const QString& baseDir)
+{
+    if (on == renderMarkdown && baseDir == markdownBase) return;
+    renderMarkdown = on;
+    markdownBase = baseDir;
+    // another base directory finds the images again
+    showSource();
+    applyRendering();
+}
+
+void EditableTextItem::setSourceText(const QString& text)
+{
+    showSource();
+    setPlainText(text);
+    applyRendering();
+}
+
+void EditableTextItem::applyRendering()
+{
+    bool wanted = renderMarkdown && !isEdit && getCodeMarkup() == codeMarkupMarkdown;
+    if (wanted == rendered) return;
+    if (!wanted) {
+        showSource();
+        return;
+    }
+    prepareGeometryChange();
+    source = toPlainText();
+    // the highlighting belongs to the source
+    if (highlighter) highlighter->setDocument(nullptr);
+    setMarkdownTextColor(document(), defaultTextColor());
+    importMarkdown(document(), source, markdownBase);
+    rendered = true;
+    emit sizeChanged();
+}
+
+void EditableTextItem::showSource()
+{
+    if (!rendered) return;
+    prepareGeometryChange();
+    rendered = false;
+    setPlainText(source);
+    if (highlighter) highlighter->setDocument(document());
+    emit sizeChanged();
 }
 
 CodeMarkup EditableTextItem::sceneMarkup(QGraphicsScene* s)

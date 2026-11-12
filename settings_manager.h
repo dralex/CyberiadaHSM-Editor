@@ -103,6 +103,11 @@ public:
     void setHighlightCode(bool value);
     bool getHighlightInExports() const { return highlightInExports; }
     void setHighlightInExports(bool value);
+    // the Markdown comment bodies drawn rendered (EDIT-TEXT-14), off by default; the
+    // command line and the batch verb set it for the run: signalled, not stored
+    bool getRenderMarkdownComments() const { return renderMarkdownComments; }
+    void setRenderMarkdownComments(bool value);
+    void overrideRenderMarkdownComments(bool value);
 
     // the interface language code (EDIT-UI-1): empty = the system one; read at
     // the start only, so a change applies at the next start
@@ -170,6 +175,7 @@ signals:
 
     void fontSettingsChanged();
     void highlightSettingsChanged();
+    void renderMarkdownCommentsChanged(bool);
 
     void selectionSettingsChanged();
 
@@ -208,6 +214,7 @@ private:
     bool boldTransitionEventName = true;
     bool highlightCode = true;
     bool highlightInExports = false;
+    bool renderMarkdownComments = false;
     QString fontFamily;
     int fontSizes[fontRolesCount];
 

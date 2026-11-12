@@ -55,6 +55,13 @@ public:
     void setDocumentMarkup(CodeMarkup markup);
     CodeMarkup getCodeMarkup() const { return highlighter ? highlighter->getMarkup() : codeMarkupPlain; }
     static CodeMarkup sceneMarkup(QGraphicsScene* s);
+    // a Markdown text drawn rendered while it is not edited (EDIT-TEXT-14), its
+    // images relative to baseDir; the owner turns it on for a comment body
+    void setMarkdownRendering(bool on, const QString& baseDir);
+    bool isRendered() const { return rendered; }
+    // the text as written, also while it is drawn rendered
+    QString sourceText() const { return rendered ? source : toPlainText(); }
+    void setSourceText(const QString& text);
     // the wrap width follows the parent box, refreshed after a resize
     void updateTextWidth();
     // the height of the whole text, uncut by its band (EDIT-NODE-16)
@@ -125,6 +132,14 @@ protected:
 
 private:
     void applyMarkup();
+    // rendered when asked, not edited and Markdown; the source otherwise
+    void applyRendering();
+    void showSource();
+
+    bool renderMarkdown = false;
+    bool rendered = false;
+    QString source;
+    QString markdownBase;
 };
 
 

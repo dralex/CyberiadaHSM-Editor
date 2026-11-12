@@ -74,6 +74,11 @@ folder (`qttranslations5-l10n` on Debian/Ubuntu); `-DQT_TRANSLATIONS_DIR=<dir>`
 names another one. The interface translations are described in
 [docs/TRANSLATION.md](docs/TRANSLATION.md).
 
+The Markdown rendering ([docs/MARKDOWN.md](docs/MARKDOWN.md)) uses md4c and
+JKQTMathText, kept in `3rdparty`: `-DCYBERIADA_MD_IMPORTER=AUTO|QT|MD4C` chooses the
+Markdown reader (`QT` needs Qt 5.14+) and `-DCYBERIADA_WITH_MATH=OFF` builds the editor
+without the TeX formulas.
+
 Build a Debian package with `cpack -G DEB` from the build directory.
 
 To build on Windows, see [docs/BUILDING-WINDOWS.md](docs/BUILDING-WINDOWS.md).

@@ -93,6 +93,8 @@ int main(int argc, char *argv[])
 	parser.addOption(showComponentsOption);
 	QCommandLineOption snapOption("snap", "Snap the gestures to the grid in batch mode (off by default).");
 	parser.addOption(snapOption);
+	QCommandLineOption renderMarkdownOption("render-markdown", "Draw the Markdown comment bodies rendered for the run.");
+	parser.addOption(renderMarkdownOption);
 	QCommandLineOption gridOption("grid", "The grid spacing in batch mode.", "n",
 								  QString::number(GRID_SPACING_DEFAULT));
 	parser.addOption(gridOption);
@@ -144,6 +146,10 @@ int main(int argc, char *argv[])
 	}
 	if (parser.isSet(showComponentsOption)) {
 		SettingsManager::instance().overrideShowComponentComments(true);
+	}
+	// a batch run never inherits the GUI preference either (EDIT-TEXT-14)
+	if (batch || parser.isSet(renderMarkdownOption)) {
+		SettingsManager::instance().overrideRenderMarkdownComments(parser.isSet(renderMarkdownOption));
 	}
 	if (batch) {
 		// a batch run never inherits the GUI snap state (EDIT-TOOL-14)
