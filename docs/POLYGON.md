@@ -768,7 +768,11 @@ tests/polygon/
 `tests/CMakeLists.txt` can run the unit tests of the package as `polygon-unit`
 and include `problems/cases.cmake` for the `polygon-<id>` cases, both under the
 `L0_ENVIRONMENT` of the other tiers with the editor binary in
-`POLYGON_INSPECTOR`. These are **not** part of the default test run: the polygon
+`POLYGON_INSPECTOR`. Every polygon run takes the batch environment (the library
+paths, the fonts, the configuration folders) from the `tests/CTestTestfile.cmake`
+of the build tree that holds the binary in `POLYGON_INSPECTOR`, by default the
+in-source `build/`, so an out-of-tree build is inspected with its own libraries.
+These are **not** part of the default test run: the polygon
 needs Python 3.11+ (`tomllib`) and a configured backend, so it stays a separate
 framework with its own runner. Add its ctest tier with `-DPOLYGON_TESTS=ON`; the
 tests of the harness skip when the framework is not importable, so point
