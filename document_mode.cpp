@@ -110,10 +110,15 @@ QString modeExtension(const QString& id)
     return isTextMode(id) ? ".txt" : ".graphml";
 }
 
+QString markdownFilePatterns()
+{
+    return "*.md *.markdown";
+}
+
 QString textFilePatterns()
 {
     QStringList patterns;
-    patterns << "*.txt" << "*.md";
+    patterns << "*.txt" << markdownFilePatterns();
     for (const QString& id : CodeStyle::instance().ids()) {
         for (const QString& e : CodeStyle::instance().findId(id)->extensions) patterns << "*" + e;
     }

@@ -70,7 +70,8 @@ QString modeForFile(const QString& path);
 bool isDocumentFile(const QString& path);
 // the extension Save As proposes and a plugin input takes: ".txt", ".md", ".cpp"
 QString modeExtension(const QString& id);
-// the extensions Open names as text, "*.cpp *.md ..."
+// the extensions Open names as Markdown, "*.md *.markdown", and as text, "*.txt *.md ... *.cpp"
+QString markdownFilePatterns();
 QString textFilePatterns();
 
 // the mode offers the tool: an FA tab has no choice, terminate, history,

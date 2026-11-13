@@ -32,6 +32,7 @@ OpenFileDialog::OpenFileDialog(QWidget *parent)
     : CyberiadaFileDialog(parent, tr("Open a file"),
                           // a text file opens in a text tab of its mode (EDIT-MODE-13)
                           tr("CyberiadaML graph (*.graphml)") + ";;" +
+                          tr("Markdown files (%1)").arg(markdownFilePatterns()) + ";;" +
                           tr("Text files (%1)").arg(textFilePatterns()) + ";;" +
                           tr("All files (*)"))
     , ui(new Ui::OpenFileOptions)

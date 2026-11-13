@@ -1501,7 +1501,7 @@
         <translation>Простой текст</translation>
     </message>
     <message>
-        <location line="+66"/>
+        <location line="+71"/>
         <source>read-only</source>
         <translation>только чтение</translation>
     </message>
@@ -1697,6 +1697,11 @@
         <location line="+2"/>
         <source>CyberiadaML graph (*.graphml)</source>
         <translation>Диаграмма CyberiadaML (*.graphml)</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Markdown files (%1)</source>
+        <translation>Файлы Markdown (%1)</translation>
     </message>
     <message>
         <location line="+1"/>

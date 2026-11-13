@@ -219,7 +219,8 @@ name the model refuses reverts once the row is left.
 
 `l4-dialog` checks the file dialogs. The open dialog: the file browser and the
 option check boxes really share one window (the options are injected into the
-dialog grid layout), the inspection is opt-in (the box is off), and the inspected
+dialog grid layout), the file types (the graphs first, then the Markdown files,
+the text files and all files, `EDIT-MODE-13`), the inspection is opt-in (the box is off), and the inspected
 document is never given the geometry it does not have - the reconstruction box
 is unchecked and disabled while the inspector box is checked. The save dialog:
 every writable format is offered, the yEd formats are disabled with the reason
