@@ -22,6 +22,7 @@
  * ----------------------------------------------------------------------------- */
 
 #include <QtTest>
+#include <QFileDialog>
 #include <QStackedWidget>
 #include <QSyntaxHighlighter>
 #include <QTabBar>
@@ -49,6 +50,7 @@ private slots:
 	void test_markdown_rendered();
 	void test_read_only_button();
 	void test_new_markdown_button();
+	void test_markdown_export();
 	void test_back_to_diagram();
 	void test_compare_saved();
 	void test_compare_refresh();
@@ -255,6 +257,38 @@ void TestModes::test_new_markdown_button()
 	TextDocument* text = window.currentText();
 	QVERIFY(text && text->mode() == "markdown" && text->isUntitled());
 	QCOMPARE(window.tabBar()->tabText(window.tabBar()->currentIndex()), tr("untitled") + " [Markdown]");
+}
+
+// EDIT-MODE-15/18: File > Export of a Markdown tab saves its rendered PDF under the name of
+// the file; another text tab has nothing to export until it becomes Markdown
+void TestModes::test_markdown_export()
+{
+	CyberiadaSMEditorWindow window;
+	QVERIFY(window.openFile("texts/markdown.md"));
+	QVERIFY(window.actionExport->isEnabled());
+	QTemporaryDir dir;
+	QString proposed;
+	QStringList filters;
+	QTimer::singleShot(50, [&]() {
+		QFileDialog* dlg = qobject_cast<QFileDialog*>(QApplication::activeModalWidget());
+		if (!dlg) return;
+		filters = dlg->nameFilters();
+		proposed = QFileInfo(dlg->selectedFiles().value(0)).completeBaseName();
+		// the proposed name in another directory, the suffix added
+		dlg->setDirectory(dir.path());
+		QMetaObject::invokeMethod(dlg, "accept");
+	});
+	window.actionExport->trigger();
+	QCOMPARE(filters, QStringList() << "PDF (*.pdf)");
+	QCOMPARE(proposed, QString("markdown"));
+	QFile file(dir.filePath("markdown.pdf"));
+	QVERIFY(file.open(QIODevice::ReadOnly));
+	QVERIFY(file.read(4) == "%PDF");
+
+	QVERIFY(window.openFile("texts/blink.cpp"));
+	QVERIFY(!window.actionExport->isEnabled());
+	QVERIFY(window.setDocumentMode(window.currentText(), MODE_MARKDOWN));
+	QVERIFY(window.actionExport->isEnabled());
 }
 
 // EDIT-MODE-15: a diagram tab gets its canvas parts back

@@ -213,7 +213,7 @@
         <translation>Markdown</translation>
     </message>
     <message>
-        <location line="+639"/>
+        <location line="+641"/>
         <source>Undo</source>
         <translation>Отменить</translation>
     </message>
@@ -259,7 +259,7 @@
         <translation>Выполняются плагины. Остановить их и выйти?</translation>
     </message>
     <message>
-        <location line="+110"/>
+        <location line="+112"/>
         <source>Load State Machine</source>
         <translation>Загрузка машины состояний</translation>
     </message>
@@ -295,12 +295,13 @@
 </translation>
     </message>
     <message>
-        <location line="+22"/>
+        <location line="+26"/>
+        <location line="+19"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <location line="+40"/>
+        <location line="+39"/>
         <source>Zoom</source>
         <translation>Масштаб</translation>
     </message>
@@ -335,8 +336,8 @@
         <translation>нет документа</translation>
     </message>
     <message>
-        <location line="-1195"/>
-        <location line="+1205"/>
+        <location line="-1221"/>
+        <location line="+1231"/>
         <source>a plugin is running on the document</source>
         <translation>для документа выполняется плагин</translation>
     </message>
@@ -345,8 +346,8 @@
         <translation type="vanished">в режиме инспектора документ доступен только для чтения</translation>
     </message>
     <message>
-        <location line="-1171"/>
-        <location line="+1208"/>
+        <location line="-1197"/>
+        <location line="+1234"/>
         <source>the document cannot be encoded</source>
         <translation>не удалось сериализовать документ</translation>
     </message>
@@ -378,7 +379,7 @@
         <translation>Плагин: %1</translation>
     </message>
     <message>
-        <location line="-1623"/>
+        <location line="-1649"/>
         <source>Mode</source>
         <translation>Режим</translation>
     </message>
@@ -388,18 +389,18 @@
         <translation>режим %1 недоступен</translation>
     </message>
     <message>
-        <location line="+1221"/>
+        <location line="+1247"/>
         <source>the inspection tab is read-only</source>
         <translation>вкладка инспекции доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1200"/>
-        <location line="+1201"/>
+        <location line="-1226"/>
+        <location line="+1227"/>
         <source>the tab is read-only</source>
         <translation>вкладка доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1365"/>
+        <location line="-1391"/>
         <source>Text file</source>
         <translation>Текстовый файл</translation>
     </message>
@@ -442,12 +443,12 @@
         <translation>Автомат не нарушает ни одного правила EXT-FA.</translation>
     </message>
     <message>
-        <location line="+299"/>
+        <location line="+301"/>
         <source>%1: not an element of a finite automaton</source>
         <translation>%1: не элемент конечного автомата</translation>
     </message>
     <message>
-        <location line="+303"/>
+        <location line="+305"/>
         <location line="+23"/>
         <location line="+7"/>
         <source>Save Text</source>
@@ -464,13 +465,13 @@
         <translation>%1 (*%2)</translation>
     </message>
     <message>
-        <location line="-405"/>
-        <location line="+405"/>
+        <location line="-407"/>
+        <location line="+407"/>
         <source>All files (*)</source>
         <translation>Все файлы (*)</translation>
     </message>
     <message>
-        <location line="-828"/>
+        <location line="-832"/>
         <source>Refresh</source>
         <translation>Обновить</translation>
     </message>
@@ -490,7 +491,7 @@
         <translation>вкладку сравнения открывает «Документ &gt; Сравнить с...»</translation>
     </message>
     <message>
-        <location line="+185"/>
+        <location line="+187"/>
         <source>added</source>
         <translation>добавлено</translation>
     </message>
@@ -554,7 +555,17 @@
         <translation>Граф CyberiadaML (*.graphml)</translation>
     </message>
     <message>
-        <location line="+894"/>
+        <location line="+473"/>
+        <source>Export the rendered text as PDF</source>
+        <translation>Экспорт отображённого текста в PDF</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Export</source>
+        <translation>Экспортировать</translation>
+    </message>
+    <message>
+        <location line="+442"/>
         <source>the action works in: %1</source>
         <translation>действие работает в режимах: %1</translation>
     </message>
@@ -1659,6 +1670,15 @@
         <location line="+3"/>
         <source>Underlined in: %1.</source>
         <translation>Подчёркнуто в: %1.</translation>
+    </message>
+</context>
+<context>
+    <name>MarkdownPdf</name>
+    <message>
+        <location filename="../markdown_pdf.cpp" line="+61"/>
+        <location line="+36"/>
+        <source>cannot write the PDF %1</source>
+        <translation>не удается записать PDF %1</translation>
     </message>
 </context>
 <context>
@@ -2906,7 +2926,7 @@
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../batch_driver.cpp" line="+52"/>
+        <location filename="../batch_driver.cpp" line="+54"/>
         <source>Open State Machine</source>
         <translation>Открытие машины состояний</translation>
     </message>
@@ -2921,7 +2941,7 @@
         <translation>Сбросить положение подписи</translation>
     </message>
     <message>
-        <location filename="../text_document.cpp" line="+41"/>
+        <location filename="../text_document.cpp" line="+42"/>
         <source>typing</source>
         <translation>ввод текста</translation>
     </message>
@@ -3712,7 +3732,7 @@
 <context>
     <name>TextDocument</name>
     <message>
-        <location filename="../text_document.cpp" line="+114"/>
+        <location filename="../text_document.cpp" line="+124"/>
         <source>untitled</source>
         <translation>без имени</translation>
     </message>

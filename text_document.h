@@ -70,6 +70,10 @@ public:
     CodeEditor*      editor() const { return m_editor; }
     // the rendered view of a read-only Markdown tab is shown
     bool             showsRendered() const;
+    // the directory of the file, where the Markdown images are found; empty without a file
+    QString          baseDir() const;
+    // the rendered Markdown text saved as a PDF (EDIT-MODE-18)
+    bool             exportPdf(const QString& path, QString* error) const;
     // an empty unmodified tab a file may take
     bool             isUntitled() const { return !hasFile() && isClean() && text().isEmpty(); }
 

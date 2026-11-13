@@ -808,6 +808,8 @@ void CyberiadaSMEditorWindow::updateTextActions()
         << actionReconstructGeometry << actionUpdateGeometry << actionDocumentProperties
         << actionCheck << actionExport << actionCompare << actionGeometry << actionRefresh;
     for (QAction* off : diagramOnly) off->setEnabled(false);
+    // a Markdown text exports its rendered pages (EDIT-MODE-18)
+    actionExport->setEnabled(text->mode() == MODE_MARKDOWN);
     for (QAction* tool : toolActMap) tool->setEnabled(false);
     enableCanvasSwitches(false);
     actionSave->setEnabled(!text->isClean() && !readOnly);
@@ -1450,7 +1452,11 @@ void CyberiadaSMEditorWindow::slotFileSaveAs()
 
 void CyberiadaSMEditorWindow::slotFileExport()
 {
-    // a text tab has no image (EDIT-MODE-15)
+    // a Markdown tab exports its rendered text (EDIT-MODE-18), another text tab nothing
+    if (TextDocument* text = currentText()) {
+        if (text->mode() == MODE_MARKDOWN) exportMarkdown(text);
+        return;
+    }
     if (!current) return;
     ExportImageDialog dlg(this);
     // propose the diagram's base name; the dialog's default suffix / filter adds
@@ -1466,6 +1472,24 @@ void CyberiadaSMEditorWindow::slotFileExport()
         if (!renderScene(scene(), fileName, &error, dlg.dpi(), dlg.fontFamily())) {
             QMessageBox::critical(this, tr("Error"), error);
         }
+    }
+}
+
+void CyberiadaSMEditorWindow::exportMarkdown(TextDocument* text)
+{
+    // format names only, never translated, as in the image export
+    CyberiadaFileDialog dlg(this, tr("Export the rendered text as PDF"), QString("PDF (*.pdf)"));
+    dlg.setFileMode(QFileDialog::AnyFile);
+    dlg.setAcceptMode(QFileDialog::AcceptSave);
+    dlg.setLabelText(QFileDialog::Accept, tr("Export"));
+    dlg.setDefaultSuffix("pdf");
+    if (text->hasFile()) dlg.selectFile(QFileInfo(text->filePath()).completeBaseName());
+    if (dlg.exec() != QDialog::Accepted) return;
+    QString fileName = dlg.selectedFile();
+    if (fileName.isEmpty()) return;
+    QString error;
+    if (!text->exportPdf(fileName, &error)) {
+        QMessageBox::critical(this, tr("Error"), error);
     }
 }
 

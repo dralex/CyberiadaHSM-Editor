@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.58 (2026-11-13)
+**Document version:** 0.59 (2026-11-13)
 
 **Related authorities:**
 
@@ -1127,19 +1127,27 @@ the stages of `docs/MODES.md`.
   bar at the left of each level and in a grey between the text and the background. *design*
 - `EDIT-MODE-15` MUST [A]: the parts of the window follow the mode of the active tab
   (`docs/MODES.md`, The modes): a text tab hides the element toolbar and disables the zoom,
-  Language, Markup, Properties..., the geometry actions, Export and the switches of the canvas
+  Language, Markup, Properties..., the geometry actions, Export (a Markdown tab exports its
+  rendered PDF, `EDIT-MODE-18`) and the switches of the canvas
   view (the grid, the snap, the service objects, the transition text, the FA symbols, the
   component comments), and the tree and properties docks are empty; Geometry and Refresh act on a diff tab, Check on an FA tab only. *design*
 - `EDIT-MODE-16` MUST [A]: the batch verbs `new-document [<mode>]`, `mode <id>` (`inspection`
   opens the inspection tab), `read-only on|off`, `compare <index|title|file>`, `geometry
   on|off` and `refresh` act as the menus do; `--dump-tabs` prints `i <title>[*] <mode>[ ro]
   [active]`; `--dump` of a text tab prints `== text` (the mode and the lines), of a diff tab
-  `== diff` (the base label and the pairs with what differs, by id). *design*
+  `== diff` (the base label and the pairs with what differs, by id); `--export <file>.pdf` of a
+  Markdown tab writes its rendered PDF (`EDIT-MODE-18`), any other export of a text tab is a
+  usage error. *design*
 - `EDIT-MODE-17` MUST [A]: the Markdown of `EDIT-MODE-14` and `EDIT-TEXT-14` is read by the
   editor's md4c reader on any Qt, not by Qt's `setMarkdown`: every image is drawn, one without
   an alt text or with a formatted one too; a header cell takes its column's alignment; the text
   inside raw HTML keeps its order, and none is lost after a `<br>`, an unclosed tag or one that
   is not HTML text formatting (`<rundir>`, shown as text). *design*
+- `EDIT-MODE-18` MUST [A]: File > Export in a Markdown tab, read-only or not, saves the
+  rendered current text as a PDF (`docs/MARKDOWN.md`, PDF): A4 portrait pages, 20 mm margins,
+  the page number centred at the bottom; black text on white whatever the theme, the formulas,
+  the images and the quote bars as on the rendered page, at its font and resolution; a line
+  never splits between two pages; the images are found next to the file. *design*
 
 ## 5. Coverage
 

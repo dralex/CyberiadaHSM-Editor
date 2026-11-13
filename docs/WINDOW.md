@@ -1,9 +1,9 @@
 # The Editor Window — Documents and Tabs
 
-**Document version:** 0.14 (2026-11-13) — the modes, the read-only flag and the plugins in
+**Document version:** 0.15 (2026-11-13) — the modes, the read-only flag and the plugins in
 the modes (`modes`, the text tabs, a plugin run as a diff base, the plugin languages) are
 implemented, the git compare with them (stage 6 of `docs/MODES.md`); a switch keeps the dock
-sizes.
+sizes; a Markdown tab exports its rendered PDF.
 
 The window holds several documents at once. The menus, the toolbars, the tab line and the
 docks (the structure tree, the properties, the plugins) are one set; each document brings its
@@ -82,7 +82,7 @@ setCurrentDocument(doc)
 | Document > Check, Geometry, Refresh | document | Check on an FA tab, Geometry and Refresh on a diff tab (`EDIT-MODE-9..12`) |
 | Armed tool | global | pushed to the active scene on a switch; a scene's own tool change is honoured only from the active scene |
 | Clipboard | global | paste into the active document (`EDIT-DOC-5`) |
-| Close (Ctrl+W), Save, Save As, Export | document | the active one; Save, Save As and Export enabling as `EDIT-IO-7` |
+| Close (Ctrl+W), Save, Save As, Export | document | the active one; Save, Save As and Export enabling as `EDIT-IO-7`; Export of a Markdown tab saves its rendered PDF (`EDIT-MODE-18`) |
 | Undo, Redo | document | the active stack of the `QUndoGroup`; a text tab's stack proxies its `QTextDocument` |
 | Cut, Copy, Delete | document | the active scene's selection, or the active text editor's |
 | Document > Reconstruct geometry, Update geometry | document | the active diagram; disabled in a tab that is not editable (`EDIT-MODE-4`) |

@@ -33,6 +33,7 @@
 #include "code_editor.h"
 #include "code_highlighter.h"
 #include "markdown_view.h"
+#include "markdown_pdf.h"
 
 // one edit of the text: the undo stack of the tab drives the text's own history
 class TextEditStep : public QUndoCommand {
@@ -112,7 +113,7 @@ void TextDocument::showPage()
 {
     if (showsRendered()) {
         // the images are found next to the file (EDIT-MODE-14)
-        m_rendered->setMarkdownText(text(), hasFile() ? QFileInfo(m_path).absolutePath() : QString());
+        m_rendered->setMarkdownText(text(), baseDir());
         m_page->setCurrentWidget(m_rendered);
     } else {
         m_page->setCurrentWidget(m_editor);
@@ -122,6 +123,16 @@ void TextDocument::showPage()
 bool TextDocument::showsRendered() const
 {
     return m_mode == MODE_MARKDOWN && readOnlyFlag();
+}
+
+QString TextDocument::baseDir() const
+{
+    return hasFile() ? QFileInfo(m_path).absolutePath() : QString();
+}
+
+bool TextDocument::exportPdf(const QString& path, QString* error) const
+{
+    return exportMarkdownPdf(text(), baseDir(), title(), path, error) > 0;
 }
 
 void TextDocument::applyReadOnlyFlag(bool on)

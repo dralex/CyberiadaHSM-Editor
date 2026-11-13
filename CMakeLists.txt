@@ -148,6 +148,7 @@ add_library(CyberiadaEditorCore STATIC
   editor_document.h editor_document.cpp
   text_document.h text_document.cpp
   markdown_view.h markdown_view.cpp
+  markdown_pdf.h markdown_pdf.cpp
   markdown_importer.h markdown_importer.cpp
   markdown_md4c_reader.cpp
   markdown_objects.h markdown_objects.cpp

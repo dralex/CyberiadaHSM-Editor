@@ -346,6 +346,30 @@ add_text_test(text-switch texts/blink.cpp 0)
 add_text_test(text-reject texts/blink.cpp 4)
 add_text_test(text-edit-reject texts/blink.cpp 4)
 add_text_test(markdown-ro texts/notes.md 0)
+
+# the export of a text tab: a Markdown text to PDF only (EDIT-MODE-16/18)
+function(add_text_export_test name input output expected_code)
+  set(_magic)
+  if(expected_code EQUAL 0)
+    set(_magic -DPDF_MAGIC=1)
+  endif()
+  add_test(NAME mode-${name}
+    COMMAND ${CMAKE_COMMAND}
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaPro>
+      -DINPUT=${input}
+      -DEXPECTED=${expected_code}
+      -DWORKDIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DIMAGE_OUT=${CMAKE_CURRENT_BINARY_DIR}/mode-${name}.${output}
+      ${_magic}
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunBatchTest.cmake)
+  set_tests_properties(mode-${name} PROPERTIES
+    TIMEOUT 60
+    ENVIRONMENT "${L0_ENVIRONMENT}")
+endfunction()
+
+add_text_export_test(markdown-pdf texts/markdown.md pdf 0)
+add_text_export_test(markdown-export-reject texts/markdown.md png 1)
+add_text_export_test(text-export-reject texts/blink.cpp pdf 1)
 add_text_test(new-text diagrams/hierarchy.graphml 0)
 add_mode_test(compare-saved geometry 0)
 add_mode_test(compare-refresh geometry 0)

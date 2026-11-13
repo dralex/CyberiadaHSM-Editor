@@ -191,6 +191,8 @@ private:
     void                    updateDiffActions();
     // the switches of the canvas view: off in a text tab (EDIT-MODE-15)
     void                    enableCanvasSwitches(bool on);
+    // the rendered text of a Markdown tab saved as a PDF (EDIT-MODE-18)
+    void                    exportMarkdown(TextDocument* text);
     // the rows of the active diff tab
     void                    fillChangeList();
     // a side of a diff tab as a buffer; a closed source tab keeps the last one
