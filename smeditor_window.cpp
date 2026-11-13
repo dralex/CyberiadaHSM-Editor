@@ -594,6 +594,9 @@ void CyberiadaSMEditorWindow::initDocumentMenu()
     connect(m_changeList, &QTreeWidget::itemActivated, this, &CyberiadaSMEditorWindow::slotChangeActivated);
     connect(m_changeList, &QTreeWidget::itemClicked, this, &CyberiadaSMEditorWindow::slotChangeActivated);
     connect(actionNewFA, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotFileNewFA);
+    // the toolbar button of a new Markdown text, also its entry in File > New > Text file
+    actionNewMarkdown->setData(QString(MODE_MARKDOWN));
+    connect(actionNewMarkdown, &QAction::triggered, this, [this]() { slotFileNewText(MODE_MARKDOWN); });
     // View > FA symbols is a preference of every tab (EDIT-MODE-8)
     SettingsManager& sm = SettingsManager::instance();
     actionFASymbols->setChecked(sm.getShowFASymbols());
@@ -623,6 +626,10 @@ void CyberiadaSMEditorWindow::rebuildTextModeMenus()
         (language ? code : menuMode)->addAction(action);
         modeGroup->addAction(action);
         textModeActions.append(action);
+        if (mode == MODE_MARKDOWN) {
+            menuNewText->addAction(actionNewMarkdown);
+            continue;
+        }
         QAction* create = menuNewText->addAction(modeName(mode));
         create->setData(mode);
         connect(create, &QAction::triggered, this, [this, mode]() { slotFileNewText(mode); });

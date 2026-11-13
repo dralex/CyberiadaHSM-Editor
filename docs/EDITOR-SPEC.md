@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.54 (2026-11-12)
+**Document version:** 0.55 (2026-11-13)
 
 **Related authorities:**
 
@@ -1103,7 +1103,8 @@ the stages of `docs/MODES.md`.
   its tab, its file, the saved file, or a run of its plugin action with the same values.
   *design*
 - `EDIT-MODE-13` MUST [A]: File > New > Text file opens an untitled text tab in Plain text,
-  Markdown or a language; Open reads a file into a text tab in the mode its extension names
+  Markdown or a language, the Markdown one also by the main toolbar button after New HSM
+  diagram; Open reads a file into a text tab in the mode its extension names
   (the `extensions` of the languages, `.md`, `.txt`), Plain text for an extension no mode
   names, a diagram for `.graphml`; the text is UTF-8 and Save writes it back as it is, Save As
   proposing the mode's first extension; Undo and Redo step through the text's own edits; the

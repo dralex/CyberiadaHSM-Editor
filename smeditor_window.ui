@@ -264,6 +264,7 @@
     <bool>false</bool>
    </attribute>
    <addaction name="actionNew"/>
+   <addaction name="actionNewMarkdown"/>
    <addaction name="actionOpen"/>
    <addaction name="actionSave"/>
    <addaction name="actionExport"/>
@@ -896,6 +897,18 @@
    </property>
    <property name="shortcut">
     <string notr="true">Ctrl+N</string>
+   </property>
+  </action>
+  <action name="actionNewMarkdown">
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/document-new-md.png</normaloff>:/Icons/images/document-new-md.png</iconset>
+   </property>
+   <property name="text">
+    <string>Markdown</string>
+   </property>
+   <property name="toolTip">
+    <string>New Markdown text</string>
    </property>
   </action>
   <action name="actionServiceObjects">

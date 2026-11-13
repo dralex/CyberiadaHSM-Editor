@@ -213,7 +213,7 @@
         <translation>Markdown</translation>
     </message>
     <message>
-        <location line="+632"/>
+        <location line="+639"/>
         <source>Undo</source>
         <translation>Отменить</translation>
     </message>
@@ -378,12 +378,12 @@
         <translation>Плагин: %1</translation>
     </message>
     <message>
-        <location line="-1616"/>
+        <location line="-1623"/>
         <source>Mode</source>
         <translation>Режим</translation>
     </message>
     <message>
-        <location line="+119"/>
+        <location line="+126"/>
         <source>the mode %1 is not available</source>
         <translation>режим %1 недоступен</translation>
     </message>
@@ -399,17 +399,17 @@
         <translation>вкладка доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1358"/>
+        <location line="-1365"/>
         <source>Text file</source>
         <translation>Текстовый файл</translation>
     </message>
     <message>
-        <location line="+75"/>
+        <location line="+78"/>
         <source>Code</source>
         <translation>Код</translation>
     </message>
     <message>
-        <location line="+44"/>
+        <location line="+48"/>
         <source>a text tab cannot become a %1</source>
         <translation>текстовая вкладка не может перейти в режим «%1»</translation>
     </message>
@@ -470,7 +470,7 @@
         <translation>Все файлы (*)</translation>
     </message>
     <message>
-        <location line="-821"/>
+        <location line="-828"/>
         <source>Refresh</source>
         <translation>Обновить</translation>
     </message>
@@ -485,7 +485,7 @@
         <translation>Изменение</translation>
     </message>
     <message>
-        <location line="+78"/>
+        <location line="+85"/>
         <source>a diff tab is opened by Document &gt; Compare with...</source>
         <translation>вкладку сравнения открывает «Документ &gt; Сравнить с...»</translation>
     </message>
@@ -3078,7 +3078,7 @@
         <translation>Основная панель</translation>
     </message>
     <message>
-        <location line="+34"/>
+        <location line="+35"/>
         <source>Elements</source>
         <translation>Элементы</translation>
     </message>
@@ -3457,7 +3457,17 @@
         <translation>Новая диаграмма ПРИМС</translation>
     </message>
     <message>
-        <location line="-762"/>
+        <location line="+12"/>
+        <source>Markdown</source>
+        <translation>Markdown</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>New Markdown text</source>
+        <translation>Новый текст Markdown</translation>
+    </message>
+    <message>
+        <location line="-778"/>
         <source>New</source>
         <translation>Создать</translation>
     </message>
@@ -3466,7 +3476,7 @@
         <translation type="vanished">Новый файл</translation>
     </message>
     <message>
-        <location line="+777"/>
+        <location line="+790"/>
         <source>Service objects</source>
         <translation>Служебные объекты</translation>
     </message>

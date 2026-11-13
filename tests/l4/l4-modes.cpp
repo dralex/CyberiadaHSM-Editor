@@ -48,6 +48,7 @@ private slots:
 	void test_text_modes();
 	void test_markdown_rendered();
 	void test_read_only_button();
+	void test_new_markdown_button();
 	void test_back_to_diagram();
 	void test_compare_saved();
 	void test_compare_refresh();
@@ -239,6 +240,21 @@ void TestModes::test_read_only_button()
 	QVERIFY(!text->showsRendered());
 	window.setCurrentDocument(window.tabAt(0));
 	for (QAction* a : switches) QVERIFY2(a->isEnabled(), qPrintable(a->text()));
+}
+
+// EDIT-MODE-13: the toolbar button after New HSM diagram opens an untitled Markdown text; it
+// is the Markdown entry of File > New > Text file
+void TestModes::test_new_markdown_button()
+{
+	CyberiadaSMEditorWindow window;
+	QList<QAction*> tools = window.mainToolBar->actions();
+	QCOMPARE(tools.indexOf(window.actionNewMarkdown), tools.indexOf(window.actionNew) + 1);
+	QVERIFY(!window.actionNewMarkdown->icon().isNull());
+	QVERIFY(window.menuNew->findChild<QMenu*>("menuNewText")->actions().contains(window.actionNewMarkdown));
+	window.actionNewMarkdown->trigger();
+	TextDocument* text = window.currentText();
+	QVERIFY(text && text->mode() == "markdown" && text->isUntitled());
+	QCOMPARE(window.tabBar()->tabText(window.tabBar()->currentIndex()), tr("untitled") + " [Markdown]");
 }
 
 // EDIT-MODE-15: a diagram tab gets its canvas parts back
