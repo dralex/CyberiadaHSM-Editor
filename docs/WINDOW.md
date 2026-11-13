@@ -1,8 +1,9 @@
 # The Editor Window — Documents and Tabs
 
-**Document version:** 0.13 (2026-11-12) — the modes, the read-only flag and the plugins in
+**Document version:** 0.14 (2026-11-13) — the modes, the read-only flag and the plugins in
 the modes (`modes`, the text tabs, a plugin run as a diff base, the plugin languages) are
-implemented, the git compare with them (stage 6 of `docs/MODES.md`).
+implemented, the git compare with them (stage 6 of `docs/MODES.md`); a switch keeps the dock
+sizes.
 
 The window holds several documents at once. The menus, the toolbars, the tab line and the
 docks (the structure tree, the properties, the plugins) are one set; each document brings its
@@ -59,6 +60,7 @@ setCurrentDocument(doc)
   apply ModeTraits(doc.mode) and the read-only flag: tools, docks, Document menu, actions
   SMView.setModel(doc.model) + setRootIndex   propertiesWidget.setModel/setScene(doc)
                                  (a diagram; a text tab empties them, a diff tab lists changes)
+  expand the tree; widen its dock to the contents (grow-only, the docks keep their sizes)
   undoGroup.setActiveStack(doc.model.undoStack())   -> undo/redo actions and texts
   bind the new document          scene.elementSelected -> SMView.select
                                  SMView.currentIndexActivated -> scene.slotElementSelected
@@ -117,3 +119,5 @@ setCurrentDocument(doc)
   bar signals blocked and set the active document explicitly.
 - The tree and the properties hold a diagram's model and scene: a text or a diff tab drops them
   before its page shows, so no index of a background model stays linked.
+- The last column of the tree is stretched over its viewport: the dock widening measures the
+  contents (`sizeHintForColumn`), the column width would grow the dock on every activation.

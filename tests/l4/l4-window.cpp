@@ -54,6 +54,7 @@ private slots:
 	void test_pane_toggles();
 	void test_pane_persist();
 	void test_dock_titles_bold();
+	void test_dock_sizes_on_switch();
 
 private:
 	CyberiadaSMEditorWindow* window;
@@ -526,6 +527,46 @@ void TestWindow::test_dock_titles_bold()
 	}
 	QVERIFY(!window->SMView->font().bold());
 	QVERIFY(!window->propertiesWidget->font().bold());
+}
+
+// EDIT-UI-6: a tab switch keeps the dock sizes (the element toolbar comes and goes),
+// the tree widens to fit once
+void TestWindow::test_dock_sizes_on_switch()
+{
+	window->show();
+	QVERIFY(QTest::qWaitForWindowExposed(window));
+	QVERIFY(window->getModel());
+	EditorDocument* first = window->currentTab();
+	QVERIFY(window->openFile("diagrams/hierarchy.graphml"));
+	EditorDocument* second = window->currentTab();
+	QVERIFY(window->openFile("texts/notes.md"));
+	EditorDocument* text = window->currentTab();
+	QVERIFY(first != second && second != text && !window->getModel());
+	// a narrow tree: the next diagram activation widens it
+	window->resizeDocks(QList<QDockWidget*>() << window->treeDock, QList<int>() << 120, Qt::Horizontal);
+	QTest::qWait(50);
+	const QList<EditorDocument*> tabs = QList<EditorDocument*>() << first << second << text;
+	QList<QList<int>> rounds;
+	QString log;
+	for (int round = 0; round < 6; round++) {
+		QList<int> sizes;
+		for (EditorDocument* doc : tabs) {
+			window->setCurrentDocument(doc);
+			QTest::qWait(50);
+			sizes << window->treeDock->width() << window->propertiesDock->width()
+			      << window->centralWidget()->width();
+		}
+		rounds << sizes;
+		for (int size : sizes) log += QString::number(size) + " ";
+		log += "| ";
+	}
+	QVERIFY2(rounds.first().first() > 120, qPrintable(log));
+	for (int round = 1; round < rounds.size(); round++) {
+		QVERIFY2(rounds.at(round) == rounds.first(), qPrintable(log));
+	}
+	window->setCurrentDocument(first);
+	QVERIFY(window->closeDocument(text, true));
+	QVERIFY(window->closeDocument(second, true));
 }
 
 QTEST_MAIN(TestWindow)

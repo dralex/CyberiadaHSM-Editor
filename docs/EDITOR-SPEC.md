@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.57 (2026-11-13)
+**Document version:** 0.58 (2026-11-13)
 
 **Related authorities:**
 
@@ -1024,7 +1024,8 @@ The interface translations and their workflow are in `docs/TRANSLATION.md`.
   with a checkable View entry — *Structure tree*, *Properties* — both shown by default; closing a
   dock unchecks its entry and the entry shows it again; the choice is kept per user between
   sessions; a hidden tree or panel keeps following the active document and the canvas
-  selection, so showing it again needs no refresh. *design*
+  selection, so showing it again needs no refresh; a tab switch keeps the sizes of the docks,
+  the tree only grows once to fit a wider structure. *design*
 - `EDIT-UI-7` MUST [A]: `CYBERIADA_PRO_CONFIG_HOME` keeps the preferences in the ini file
   `<folder>/Cyberiada/CyberiadaPro.ini` and `CYBERIADA_PRO_DATA_HOME` the user data, the user
   plugin folder `<folder>/Cyberiada/CyberiadaPro/plugins`, instead of the places of the system

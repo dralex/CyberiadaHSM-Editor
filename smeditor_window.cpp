@@ -1228,7 +1228,9 @@ void CyberiadaSMEditorWindow::expandAndWidenTree()
     SMView->expandAll();
     SMView->resizeColumnToContents(0);
     if (treeDock->isHidden() || treeDock->isFloating()) return;
-    int treeWidth = SMView->columnWidth(0) + 2 * SMView->frameWidth() +
+    // the contents, not the column: the last column is stretched over the viewport
+    int contents = static_cast<QAbstractItemView*>(SMView)->sizeHintForColumn(0);
+    int treeWidth = contents + 2 * SMView->frameWidth() +
                     SMView->verticalScrollBar()->sizeHint().width() + 8;
     int width = treeDock->width();
     int right = qMin(treeWidth, width + centralWidget()->width() - 100);
