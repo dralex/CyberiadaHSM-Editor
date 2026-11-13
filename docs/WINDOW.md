@@ -1,15 +1,15 @@
 # The Editor Window — Documents and Tabs
 
-**Document version:** 0.15 (2026-11-13) — the modes, the read-only flag and the plugins in
+**Document version:** 0.16 (2026-11-13) — the modes, the read-only flag and the plugins in
 the modes (`modes`, the text tabs, a plugin run as a diff base, the plugin languages) are
 implemented, the git compare with them (stage 6 of `docs/MODES.md`); a switch keeps the dock
-sizes; a Markdown tab exports its rendered PDF.
+sizes; a Markdown tab exports its rendered PDF; the find bar (`docs/FIND.md`).
 
 The window holds several documents at once. The menus, the toolbars, the tab line and the
 docks (the structure tree, the properties, the plugins) are one set; each document brings its
 own page — a diagram its model, scene and canvas view — and its mode (`docs/MODES.md`). The
 requirements are `EDIT-DOC-1..10` in `EDITOR-SPEC.md` §4.11, `EDIT-MODE-1..17` §4.14 and
-`EDIT-UI-6` for the docks; the plugin parts follow `docs/PLUGINS.md` (`EDIT-PLUG-n`, §4.12), the
+`EDIT-UI-6` for the docks, `EDIT-FIND-1..9` §4.15 for the find bar; the plugin parts follow `docs/PLUGINS.md` (`EDIT-PLUG-n`, §4.12), the
 plugin sessions its chapter Level 2 (`EDIT-PLUG-36..49`).
 
 ## Structure
@@ -32,6 +32,8 @@ CyberiadaSMEditorWindow (QMainWindow)                                   GLOBAL
  |  |   a canvas, two canvases (diff) or   | | |   propertiesWidget              |
  |  |   a CodeEditor (text)                | | |   (re-targeted on switch)       |
  |  +--------------------------------------+ | +---------------------------------+
+ |  | findBar : FindBar  hidden until Find | |
+ |  +--------------------------------------+ |
  |  View > Structure tree / Properties: the docks' toggle actions, kept in the settings
  +-------------------------------------------+-------------------------------------
  | pluginDock (QDockWidget, bottom, full width, hidden until the first run)   pluginRuns
@@ -85,6 +87,7 @@ setCurrentDocument(doc)
 | Close (Ctrl+W), Save, Save As, Export | document | the active one; Save, Save As and Export enabling as `EDIT-IO-7`; Export of a Markdown tab saves its rendered PDF (`EDIT-MODE-18`) |
 | Undo, Redo | document | the active stack of the `QUndoGroup`; a text tab's stack proxies its `QTextDocument` |
 | Cut, Copy, Delete | document | the active scene's selection, or the active text editor's |
+| Find bar, Find, Find Next, Find Previous | global | one bar and query; the marks are the active tab's, dropped on a switch and searched again in the new tab; disabled in a diff tab (`EDIT-FIND-9`, `docs/FIND.md`) |
 | Document > Reconstruct geometry, Update geometry | document | the active diagram; disabled in a tab that is not editable (`EDIT-MODE-4`) |
 | Zoom in/out, Fit, Zoom to SM, zoom combo | document | the active view; disabled in a text tab |
 | Document > Language, code highlighting | document | the checked entry is the active document's `platformLanguage`; each tab is highlighted by its own (`EDIT-TEXT-9`); the list of unknown values met is global |

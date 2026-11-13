@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.59 (2026-11-13)
+**Document version:** 0.60 (2026-11-13)
 
 **Related authorities:**
 
@@ -1148,6 +1148,50 @@ the stages of `docs/MODES.md`.
   the page number centred at the bottom; black text on white whatever the theme, the formulas,
   the images and the quote bars as on the rendered page, at its font and resolution; a line
   never splits between two pages; the images are found next to the file. *design*
+
+### 4.15 Find — FIND
+
+The find bar searches the text the active tab shows and marks the matches over it; the
+document is never changed. The architecture is `docs/FIND.md`. Specified in 0.60.
+
+- `EDIT-FIND-1` MUST [A]: Edit > Find (Ctrl+F) shows the find bar under the document area with
+  the focus in its field, all of it selected; the text selected in the active tab fills it when
+  it is one line. Esc in the bar or its close button hides it, drops the marks and gives the
+  focus back to the page. *design*
+- `EDIT-FIND-2` MUST [A]: every change of the field or of an option searches the active tab
+  again: the field as written in any case unless *Match case* is on; *Whole words* takes a match
+  with no letter, digit or `_` right before or after it; *Regular expression* reads the field
+  as a Perl-compatible expression, an invalid one matching nothing; an empty match is never
+  taken. The bar shows `n of m` (`m+` past 10000 matches), or `No matches` with the field
+  tinted red. *design*
+- `EDIT-FIND-3` MUST [A]: Find Next (F3, Enter in the field, the down arrow) and Find Previous
+  (Shift+F3, Shift+Enter, the up arrow) make the next or the previous match current, the last
+  wrapping to the first and back; with the bar hidden they show it first. A new search makes
+  current the first match at or after the current one, else after the text cursor of a text
+  tab or the first selected element of a diagram, else the first match. *design*
+- `EDIT-FIND-4` MUST [A]: every match is marked by a yellow background (`#ffeb3b`), the current
+  one by an orange one (`#ff9800`), under the glyphs drawn black; the marks are not a part of
+  the document: its text, its undo history, its modified state and every export stay as they
+  are. *design*
+- `EDIT-FIND-5` MUST [A]: a text tab searches the page it shows: the source, or the rendered
+  document of a read-only Markdown tab (`EDIT-MODE-14`), whose formulas and images are not
+  searched. The current match is scrolled into view; hiding the bar leaves it selected. *design*
+- `EDIT-FIND-6` MUST [A]: a diagram tab (HSM, FA, inspection) searches the texts its canvas
+  draws — the names, the actions, the transition labels, the comment titles and bodies, a
+  rendered comment by its rendered text — in the order of `--dump-text`: the document tree,
+  the texts of an element top-down. A text the canvas does not draw (the transition text off,
+  a hidden component comment, the metainformation) is not searched. *design*
+- `EDIT-FIND-7` MUST [A]: on the canvas the mark is a box behind the matched characters, one per
+  line of a wrapped match; a match hidden beyond the ellipsis of a cut text (`EDIT-NODE-16`)
+  marks the ellipsis. The element of the current match is selected and its mark scrolled into
+  view at the current zoom. *design*
+- `EDIT-FIND-8` MUST [A]: the marks follow the text: an edit, an undo or redo, a reload, a plugin
+  result, a change of the mode, of the font or of the drawn texts searches again; the current
+  match becomes the first at or after its old place, and the view, the selection and the text
+  cursor stay where they are. *design*
+- `EDIT-FIND-9` MUST [A]: the bar and its query are global (`docs/WINDOW.md`): a tab switch drops
+  the marks of the tab left and searches the new one. In a diff tab Find, Find Next and Find
+  Previous are disabled and the bar is greyed. *design*
 
 ## 5. Coverage
 
