@@ -169,7 +169,7 @@
 <context>
     <name>CyberiadaSMEditorWindow</name>
     <message>
-        <location filename="../smeditor_window.cpp" line="+139"/>
+        <location filename="../smeditor_window.cpp" line="+166"/>
         <source>Output panel</source>
         <translation>Панель вывода</translation>
     </message>
@@ -179,7 +179,7 @@
         <translation>Менеджер плагинов...</translation>
     </message>
     <message>
-        <location line="+185"/>
+        <location line="+189"/>
         <source>Close</source>
         <translation>Закрыть</translation>
     </message>
@@ -198,7 +198,7 @@
 </translation>
     </message>
     <message>
-        <location line="+97"/>
+        <location line="+101"/>
         <source>Undefined</source>
         <translation>Не задан</translation>
     </message>
@@ -213,7 +213,7 @@
         <translation>Markdown</translation>
     </message>
     <message>
-        <location line="+641"/>
+        <location line="+682"/>
         <source>Undo</source>
         <translation>Отменить</translation>
     </message>
@@ -336,8 +336,8 @@
         <translation>нет документа</translation>
     </message>
     <message>
-        <location line="-1221"/>
-        <location line="+1231"/>
+        <location line="-1262"/>
+        <location line="+1272"/>
         <source>a plugin is running on the document</source>
         <translation>для документа выполняется плагин</translation>
     </message>
@@ -346,8 +346,8 @@
         <translation type="vanished">в режиме инспектора документ доступен только для чтения</translation>
     </message>
     <message>
-        <location line="-1197"/>
-        <location line="+1234"/>
+        <location line="-1238"/>
+        <location line="+1275"/>
         <source>the document cannot be encoded</source>
         <translation>не удалось сериализовать документ</translation>
     </message>
@@ -379,7 +379,7 @@
         <translation>Плагин: %1</translation>
     </message>
     <message>
-        <location line="-1649"/>
+        <location line="-1690"/>
         <source>Mode</source>
         <translation>Режим</translation>
     </message>
@@ -389,18 +389,18 @@
         <translation>режим %1 недоступен</translation>
     </message>
     <message>
-        <location line="+1247"/>
+        <location line="+1288"/>
         <source>the inspection tab is read-only</source>
         <translation>вкладка инспекции доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1226"/>
-        <location line="+1227"/>
+        <location line="-1267"/>
+        <location line="+1268"/>
         <source>the tab is read-only</source>
         <translation>вкладка доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1391"/>
+        <location line="-1432"/>
         <source>Text file</source>
         <translation>Текстовый файл</translation>
     </message>
@@ -443,7 +443,7 @@
         <translation>Автомат не нарушает ни одного правила EXT-FA.</translation>
     </message>
     <message>
-        <location line="+301"/>
+        <location line="+342"/>
         <source>%1: not an element of a finite automaton</source>
         <translation>%1: не элемент конечного автомата</translation>
     </message>
@@ -465,13 +465,13 @@
         <translation>%1 (*%2)</translation>
     </message>
     <message>
-        <location line="-407"/>
-        <location line="+407"/>
+        <location line="-408"/>
+        <location line="+408"/>
         <source>All files (*)</source>
         <translation>Все файлы (*)</translation>
     </message>
     <message>
-        <location line="-832"/>
+        <location line="-873"/>
         <source>Refresh</source>
         <translation>Обновить</translation>
     </message>
@@ -491,7 +491,7 @@
         <translation>вкладку сравнения открывает «Документ &gt; Сравнить с...»</translation>
     </message>
     <message>
-        <location line="+187"/>
+        <location line="+227"/>
         <source>added</source>
         <translation>добавлено</translation>
     </message>
@@ -555,7 +555,7 @@
         <translation>Граф CyberiadaML (*.graphml)</translation>
     </message>
     <message>
-        <location line="+473"/>
+        <location line="+474"/>
         <source>Export the rendered text as PDF</source>
         <translation>Экспорт отображённого текста в PDF</translation>
     </message>
@@ -1561,6 +1561,54 @@
         <location line="+10"/>
         <source>Font:</source>
         <translation>Шрифт:</translation>
+    </message>
+</context>
+<context>
+    <name>FindBar</name>
+    <message>
+        <location filename="../find_bar.cpp" line="+41"/>
+        <source>Find:</source>
+        <translation>Найти:</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Match case</source>
+        <translation>С учётом регистра</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Whole words</source>
+        <translation>Слова целиком</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Regular expression</source>
+        <translation>Регулярное выражение</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Find Previous</source>
+        <translation>Найти предыдущее</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Find Next</source>
+        <translation>Найти следующее</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Close</source>
+        <translation>Закрыть</translation>
+    </message>
+    <message>
+        <location line="+45"/>
+        <source>No matches</source>
+        <translation>Нет совпадений</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>%1 of %2</source>
+        <translation>%1 из %2</translation>
     </message>
 </context>
 <context>
@@ -2941,7 +2989,7 @@
         <translation>Сбросить положение подписи</translation>
     </message>
     <message>
-        <location filename="../text_document.cpp" line="+42"/>
+        <location filename="../text_document.cpp" line="+45"/>
         <source>typing</source>
         <translation>ввод текста</translation>
     </message>
@@ -3067,7 +3115,7 @@
         <translation>Инструменты</translation>
     </message>
     <message>
-        <location line="+31"/>
+        <location line="+35"/>
         <source>&amp;Document</source>
         <translation>&amp;Документ</translation>
     </message>
@@ -3118,7 +3166,22 @@
         <translation>Повторить</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+8"/>
+        <source>Find...</source>
+        <translation>Найти...</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Find Next</source>
+        <translation>Найти следующее</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Find Previous</source>
+        <translation>Найти предыдущее</translation>
+    </message>
+    <message>
+        <location line="+9"/>
         <source>&amp;Open...</source>
         <translation>&amp;Открыть...</translation>
     </message>
@@ -3492,7 +3555,7 @@
         <translation>Новый текст Markdown</translation>
     </message>
     <message>
-        <location line="-778"/>
+        <location line="-797"/>
         <source>New</source>
         <translation>Создать</translation>
     </message>
@@ -3501,7 +3564,7 @@
         <translation type="vanished">Новый файл</translation>
     </message>
     <message>
-        <location line="+790"/>
+        <location line="+809"/>
         <source>Service objects</source>
         <translation>Служебные объекты</translation>
     </message>
@@ -3732,7 +3795,7 @@
 <context>
     <name>TextDocument</name>
     <message>
-        <location filename="../text_document.cpp" line="+124"/>
+        <location filename="../text_document.cpp" line="+129"/>
         <source>untitled</source>
         <translation>без имени</translation>
     </message>

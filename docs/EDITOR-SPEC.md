@@ -1160,7 +1160,8 @@ document is never changed. The architecture is `docs/FIND.md`. Specified in 0.60
   focus back to the page. *design*
 - `EDIT-FIND-2` MUST [A]: every change of the field or of an option searches the active tab
   again: the field as written in any case unless *Match case* is on; *Whole words* takes a match
-  with no letter, digit or `_` right before or after it; *Regular expression* reads the field
+  whose ends cut no word (`/reset` in `entry/reset()`, not `LED` in `LED_BUILTIN`), a word
+  being letters, digits and `_` of any script; *Regular expression* reads the field
   as a Perl-compatible expression, an invalid one matching nothing; an empty match is never
   taken. The bar shows `n of m` (`m+` past 10000 matches), or `No matches` with the field
   tinted red. *design*

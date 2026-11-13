@@ -155,6 +155,8 @@ add_library(CyberiadaEditorCore STATIC
   math_renderer.h math_renderer.cpp
   svg_markers.h svg_markers.cpp
   code_editor.h code_editor.cpp
+  find_query.h find_query.cpp
+  find_bar.h find_bar.cpp
   diff_document.h diff_document.cpp
   cyberiadasm_editor_document.cpp
   cyberiadasm_properties_widget.cpp

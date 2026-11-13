@@ -45,6 +45,7 @@ class QTreeWidget;
 class QTreeWidgetItem;
 class PluginsMenu;
 class PluginDock;
+class FindBar;
 class PluginSession;
 class PluginSessionTab;
 
@@ -124,6 +125,8 @@ public:
     // the active document's canvas view (the tests address it by name)
     CyberiadaSMGraphicsView* sceneView = nullptr;
     QTabBar*                tabBar() const { return documentTabs; }
+    // the find bar under the documents (EDIT-FIND-1, docs/FIND.md)
+    FindBar*                findBar() const { return m_findBar; }
 
     // PLUGINS (docs/PLUGINS.md): start an action on the document, the active one by
     // default; nullptr with the reason when it cannot start; the result is applied
@@ -191,6 +194,8 @@ private:
     void                    updateDiffActions();
     // the switches of the canvas view: off in a text tab (EDIT-MODE-15)
     void                    enableCanvasSwitches(bool on);
+    // Find, Find Next and Find Previous and the bar follow the active tab (EDIT-FIND-9)
+    void                    updateFindActions();
     // the rendered text of a Markdown tab saved as a PDF (EDIT-MODE-18)
     void                    exportMarkdown(TextDocument* text);
     // the rows of the active diff tab
@@ -268,6 +273,11 @@ private slots:
     void                    slotPluginSettingsChanged();
     // undo and redo wait for a read-only tab and a plugin lock (EDIT-MODE-4, EDIT-PLUG-22)
     void                    updateUndoActions();
+    // Edit > Find, Find Next, Find Previous and the bar (EDIT-FIND-1..3)
+    void                    slotFind();
+    void                    slotFindStep(int step);
+    void                    slotFindQueryChanged(const FindQuery& query);
+    void                    slotFindClosed();
 
 public slots:
     // a click on a plugin action: the dialog when needed, then the run
@@ -331,6 +341,7 @@ private:
     // the element toolbar was hidden for a text tab, not by the user
     bool                    elementBarHidden = false;
     QTreeWidget*            m_changeList = nullptr;
+    FindBar*                m_findBar = nullptr;
     // the running plugins and the documents they started from
     QMap<PluginRunner*, QPointer<EditorDocument> > pluginRuns;
     // the diff tabs a run refreshes (EDIT-MODE-12)

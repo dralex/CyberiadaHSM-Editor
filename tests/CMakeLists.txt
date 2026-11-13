@@ -773,6 +773,7 @@ add_l4_test(language)
 add_l4_test(translation)
 add_l4_test(modes)
 add_l4_test(markdown)
+add_l4_test(find)
 
 # The plugin layer: the batch plugin stage over the example plugins of
 # plugins/<set>/, which all run one helper with no dependencies (see

@@ -17,7 +17,7 @@ or its exports.
                  | queryChanged(FindQuery) / nextRequested / previousRequested / closed
                  v
  CyberiadaSMEditorWindow --- active EditorDocument ---------- editor_document.h
-                 |   setFindQuery(q)  moveFind(+-1)  clearFind(keep)  findSeed()
+                 |   setFindQuery(q, navigate)  moveFind(+-1)  clearFind(keep)  findSeed()
                  |   <- findResultChanged(current, total, more)
        +---------+-------------------------------+
        v                                         v
@@ -43,7 +43,7 @@ word characters of the Cyrillic letters count:
 |---|---|
 | plain | `QRegularExpression::escape(text)` |
 | Regular expression | `text` as written; an invalid one matches nothing |
-| Whole words | `(?<!\w)(?:` ... `)(?!\w)` around either; a field that starts with `/` still matches |
+| Whole words | `E(?:` ... `)E`, `E` = `(?:(?<!\w)\|(?!\w))`: an end never falls inside a word, so `/reset` matches `entry/reset()` |
 | Match case off | `CaseInsensitiveOption` |
 
 `findRanges()` lists the non-empty matches `[from, to)` of a text, at most the limit
@@ -60,10 +60,12 @@ the first:
 |---|---|
 | field or option changed | the current match, else the text cursor / the first selected element |
 | the text changed (`EDIT-FIND-8`) | the current match; nothing is navigated |
+| tab switch | the text cursor / the first selected element; nothing is navigated |
 | Find Next / Previous | the match after / before the current one |
 
-A diagram place is the triple (element number in the walk, text number in the element, offset);
-an element gone keeps its old number. Only the field, an option and Next/Previous navigate:
+A text place is a `QTextCursor` at the start of the current match, which the edits move with
+the text. A diagram place is the triple (element number in the walk, text number in the
+element, offset); an element gone keeps its old number. Only the field, an option and Next/Previous navigate:
 a text tab moves its cursor to the match, a diagram selects the element and scrolls. A search
 after an edit must not move the cursor or the selection, which would end the edit of a canvas
 text.
@@ -110,10 +112,10 @@ An export clears the marks for its rendering (`FindMarksGuard`, beside `RunMarks
 | Event | Effect |
 |---|---|
 | Find | the bar shown, the field filled by `findSeed()` (one selected line), focused and selected |
-| field or option changed | `active->setFindQuery(q)`, the counter from `findResultChanged` |
+| field or option changed | `active->setFindQuery(q, true)`, the counter from `findResultChanged` |
 | Find Next / Previous | the bar shown if hidden; `active->moveFind(+1 / -1)` |
 | Esc, close | `active->clearFind(true)`, the bar hidden, the focus to the page |
-| tab switch | `old->clearFind(false)`, `new->setFindQuery(q)` while the bar is shown |
+| tab switch | `old->clearFind(false)`, `new->setFindQuery(q, false)` while the bar is shown |
 | diff tab | `canFind()` false: the actions disabled, the bar greyed |
 
 ## Code layout

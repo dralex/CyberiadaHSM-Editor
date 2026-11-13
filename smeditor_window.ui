@@ -179,6 +179,10 @@
     <addaction name="actionUndo"/>
     <addaction name="actionRedo"/>
     <addaction name="separator"/>
+    <addaction name="actionFind"/>
+    <addaction name="actionFindNext"/>
+    <addaction name="actionFindPrevious"/>
+    <addaction name="separator"/>
     <addaction name="menuTools"/>
    </widget>
    <widget class="QMenu" name="menuDocument">
@@ -342,6 +346,21 @@
    </property>
    <property name="shortcut">
     <string notr="true">Ctrl+Shift+Z</string>
+   </property>
+  </action>
+  <action name="actionFind">
+   <property name="text">
+    <string>Find...</string>
+   </property>
+  </action>
+  <action name="actionFindNext">
+   <property name="text">
+    <string>Find Next</string>
+   </property>
+  </action>
+  <action name="actionFindPrevious">
+   <property name="text">
+    <string>Find Previous</string>
    </property>
   </action>
   <action name="actionOpen">
