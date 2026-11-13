@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.56 (2026-11-13)
+**Document version:** 0.57 (2026-11-13)
 
 **Related authorities:**
 
@@ -511,6 +511,7 @@ the third is a derived display value the format does not store):
   [text](url) <url>    ─► link
   $x^2$  $$ … $$       ─► the dollars as markers, the TeX as a formula, where the reader
                           finds one (EDIT-MODE-14): not in code, \$ or $ next to a letter
+  [text]: #  <!-- … --> ─► comment: the lines a rendered document does not show
   ```cpp … ```         ─► the fence lines as markers, the body as code
   ```
 - `EDIT-TEXT-12` SHOULD [A]: the Document > Markup menu (after Document > Language) sets the
@@ -1117,8 +1118,9 @@ the stages of `docs/MODES.md`.
   on the text baseline, `$$..$$` is a centred line, one the engine cannot read shows its source
   in red monospace; an image is found relative to the directory of the tab's file (an untitled
   tab has none), an SVG one is drawn as vectors with its markers (the arrowheads), no wider than
-  the text, a missing one as its alt text and path; a link opens outside the editor, a
-  `#anchor` scrolls to its heading. A heading has 1.5 text lines of space above it and 0.5
+  the text, a missing one as its alt text and path; a comment (`[text]: #`, `<!-- … -->` over
+  its lines too) shows nothing; a link opens outside the editor, a `#anchor` scrolls to its
+  heading. A heading has 1.5 text lines of space above it and 0.5
   below, a paragraph 0.75 above and below (the larger of two neighbouring spaces counts), an
   item of a tight list 0.15, the first block none; a quote is indented by a level, drawn with a
   bar at the left of each level and in a grey between the text and the background. *design*

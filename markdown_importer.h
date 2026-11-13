@@ -24,6 +24,7 @@
 #ifndef CYBERIADA_MARKDOWN_IMPORTER
 #define CYBERIADA_MARKDOWN_IMPORTER
 
+#include <QPair>
 #include <QString>
 #include <QVector>
 
@@ -37,9 +38,15 @@ struct MarkdownMathRange {
     int texEnd;
 };
 
-// the formulas md4c reads in the text, as the reader does: never in code, not \$ or a
-// dollar next to a letter or a digit (the source highlighting, EDIT-TEXT-11)
-QVector<MarkdownMathRange> markdownMathRanges(const QString& text);
+// the parts of a Markdown text md4c reads as the reader does (the source highlighting,
+// EDIT-TEXT-11): the formulas, never in code, not \$ or a dollar next to a letter or a
+// digit; the HTML comments, [begin, end) with their <!-- and --> (to the end of their
+// block when unclosed)
+struct MarkdownSourceRanges {
+    QVector<MarkdownMathRange> math;
+    QVector<QPair<int, int>> comments;
+};
+MarkdownSourceRanges markdownSourceRanges(const QString& text);
 
 // a tag of an element that is neither void nor text formatting (<rundir>): text
 bool isForeignTag(const QString& html);

@@ -432,6 +432,21 @@ void TestHighlight::test_markdown_spans()
 	QCOMPARE(kindAt(spans, text.indexOf("y$")), int(codeTokenMath));
 	QCOMPARE(kindAt(spans, text.indexOf("here")), int(codeTokenQuote));
 
+	// a comment: a link definition to nothing, an HTML comment over its lines, where the
+	// reader hides them; a definition to a link, the text after the comment and code are none
+	text = "[a remark]: #\n[//]: # (a note)\n[ref]: http://x\n\ntext <!-- inline --> more\n\n"
+		"<!-- first\nsecond -->\n\n`<!-- code -->`";
+	spans = style.markdownSpans(text, nullptr);
+	QCOMPARE(kindAt(spans, 0), int(codeTokenComment));
+	QCOMPARE(kindAt(spans, text.indexOf("[//]")), int(codeTokenComment));
+	QVERIFY(kindAt(spans, text.indexOf("[ref]")) != int(codeTokenComment));
+	QCOMPARE(kindAt(spans, text.indexOf("<!-- inline")), int(codeTokenComment));
+	QCOMPARE(kindAt(spans, text.indexOf("--> more") + 2), int(codeTokenComment));
+	QCOMPARE(kindAt(spans, text.indexOf(" more") + 1), -1);
+	QCOMPARE(kindAt(spans, text.indexOf("first")), int(codeTokenComment));
+	QCOMPARE(kindAt(spans, text.indexOf("second")), int(codeTokenComment));
+	QCOMPARE(kindAt(spans, text.indexOf("`<!--")), int(codeTokenCode));
+
 	// an inline code span hides the emphasis inside it
 	text = "`*x*` and 2*3*4";
 	spans = style.markdownSpans(text, nullptr);

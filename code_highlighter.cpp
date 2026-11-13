@@ -357,13 +357,19 @@ static void addFenceBody(QVector<CodeSpan>& result, const QString& text, int fro
     }
 }
 
-// the parts of [from, to) the formulas hold: their dollars as markers, their TeX as math;
-// the holes they make in the range, absolute
-static QVector<QPair<int, int>> addMathSpans(QVector<CodeSpan>& result,
-                                             const QVector<MarkdownMathRange>& math, int from, int to)
+// the parts of [from, to) the formulas and the HTML comments hold: the dollars as markers,
+// the TeX as math, a comment as comment; the holes they make in the range, absolute, in order
+static QVector<QPair<int, int>> addSourceSpans(QVector<CodeSpan>& result,
+                                               const MarkdownSourceRanges& src, int from, int to)
 {
     QVector<QPair<int, int>> holes;
-    for (const MarkdownMathRange& m : math) {
+    for (const QPair<int, int>& c : src.comments) {
+        int b = qMax(from, c.first), e = qMin(to, c.second);
+        if (b >= e) continue;
+        holes.append(qMakePair(b, e));
+        result.append(CodeSpan{b, e - b, codeTokenComment});
+    }
+    for (const MarkdownMathRange& m : src.math) {
         int b = qMax(from, m.begin), e = qMin(to, m.end);
         if (b >= e) continue;
         holes.append(qMakePair(b, e));
@@ -376,6 +382,7 @@ static QVector<QPair<int, int>> addMathSpans(QVector<CodeSpan>& result,
         piece(m.texBegin, m.texEnd, codeTokenMath);
         piece(m.texEnd, m.end, codeTokenMarker);
     }
+    std::sort(holes.begin(), holes.end());
     return holes;
 }
 
@@ -420,12 +427,13 @@ static void addInlineSpans(QVector<CodeSpan>& result, const QString& part, int b
     }
 }
 
-// the inline elements and the formulas of a quote's text, the rest of it in the quote colour
+// the inline elements, the formulas and the comments of a quote's text, the rest of it in
+// the quote colour
 static void addQuoteSpans(QVector<CodeSpan>& result, const QString& part, int base,
-                          const QVector<MarkdownMathRange>& math)
+                          const MarkdownSourceRanges& src)
 {
     QVector<CodeSpan> inlines;
-    QVector<QPair<int, int>> holes = addMathSpans(inlines, math, base, base + part.length());
+    QVector<QPair<int, int>> holes = addSourceSpans(inlines, src, base, base + part.length());
     addInlineSpans(inlines, part, base, holes);
     std::sort(inlines.begin(), inlines.end(),
               [](const CodeSpan& a, const CodeSpan& b) { return a.start < b.start; });
@@ -445,6 +453,8 @@ QVector<CodeSpan> CodeStyle::markdownSpans(const QString& text, const CodeLangua
     static const QRegularExpression rule(R"(^ {0,3}([-*_])( *\1){2,} *$)");
     static const QRegularExpression quote(R"(^ {0,3}(> ?)+)");
     static const QRegularExpression list(R"(^\s*([-*+]|\d{1,9}[.)])(\s|$))");
+    // a link definition to nothing, the Markdown comment: [text]: #, [//]: # (text), [//]: <>
+    static const QRegularExpression remark(R"(^ {0,3}\[[^\]]+\]:\s*(#|<>)(\s.*)?$)");
 
     QVector<CodeSpan> result;
     int n = text.length();
@@ -453,8 +463,14 @@ QVector<CodeSpan> CodeStyle::markdownSpans(const QString& text, const CodeLangua
     QString fenceMarker;
     // a quote goes on over its lazy lines until a blank line or another block
     bool inQuote = false;
-    // the formulas as the reader finds them (EDIT-TEXT-11)
-    const QVector<MarkdownMathRange> math = markdownMathRanges(text);
+    // the formulas and the HTML comments as the reader finds them (EDIT-TEXT-11)
+    const MarkdownSourceRanges src = markdownSourceRanges(text);
+    auto holds = [&](int from, int to) {
+        if (from >= to) return false;
+        for (const MarkdownMathRange& m : src.math) if (m.begin <= from && m.end >= to) return true;
+        for (const QPair<int, int>& c : src.comments) if (c.first <= from && c.second >= to) return true;
+        return false;
+    };
     const CodeLanguage* fenceLang = nullptr;
     int bodyStart = -1;
     while (pos <= n) {
@@ -477,13 +493,15 @@ QVector<CodeSpan> CodeStyle::markdownSpans(const QString& text, const CodeLangua
             fenceLang = tagged ? tagged : fallback;
             result.append(CodeSpan{pos, line.length(), codeTokenMarker});
             bodyStart = qMin(eol + 1, n);
-        } else if (std::any_of(math.begin(), math.end(), [&](const MarkdownMathRange& m) {
-                       return m.begin <= pos && m.end >= eol && pos < eol; })) {
-            // a line of a display formula
-            addMathSpans(result, math, pos, eol);
+        } else if (holds(pos, eol)) {
+            // a line of a display formula or of a comment
+            addSourceSpans(result, src, pos, eol);
+        } else if (remark.match(line).hasMatch()) {
+            inQuote = false;
+            result.append(CodeSpan{pos, line.length(), codeTokenComment});
         } else if (heading.match(line).hasMatch()) {
             inQuote = false;
-            addAround(result, addMathSpans(result, math, pos, eol), pos, eol, codeTokenHeading);
+            addAround(result, addSourceSpans(result, src, pos, eol), pos, eol, codeTokenHeading);
         } else if (rule.match(line).hasMatch()) {
             inQuote = false;
             result.append(CodeSpan{pos, line.length(), codeTokenMarker});
@@ -506,9 +524,9 @@ QVector<CodeSpan> CodeStyle::markdownSpans(const QString& text, const CodeLangua
                 start += l.capturedEnd(1);
             }
             if (inQuote) {
-                addQuoteSpans(result, line.mid(start), pos + start, math);
+                addQuoteSpans(result, line.mid(start), pos + start, src);
             } else {
-                QVector<QPair<int, int>> holes = addMathSpans(result, math, pos + start, eol);
+                QVector<QPair<int, int>> holes = addSourceSpans(result, src, pos + start, eol);
                 addInlineSpans(result, line.mid(start), pos + start, holes);
             }
         }

@@ -224,6 +224,11 @@ void TestMarkdown::test_html_tags()
 	QVERIFY(doc.toPlainText().contains("d"));
 	importMarkdown(&doc, "the file <rundir>/input.md and the rest", QString());
 	QVERIFY(doc.toPlainText().contains("<rundir>/input.md and the rest"));
+	// a comment shows nothing, over its lines too
+	importMarkdown(&doc, "[a remark]: #\n\n<!-- first\nsecond -->\n\nx <!-- in\nline --> y", QString());
+	QVERIFY2(!doc.toPlainText().contains("remark") && !doc.toPlainText().contains("second") &&
+			 !doc.toPlainText().contains("line"), qPrintable(doc.toPlainText()));
+	QVERIFY(doc.toPlainText().contains("x") && doc.toPlainText().contains("y"));
 	importMarkdown(&doc, "a <b>bold `code`</b> c\n\nan <i>open tag\n\nthe last", QString());
 	QString text = doc.toPlainText();
 	QVERIFY2(text.contains("a bold code c"), qPrintable(text));

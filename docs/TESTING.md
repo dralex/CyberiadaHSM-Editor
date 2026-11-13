@@ -270,7 +270,7 @@ canvas parts back.
 
 `l4-markdown` checks the Markdown rendering (`EDIT-MODE-14/17`, `EDIT-TEXT-14`,
 `docs/MARKDOWN.md`): the formula spans md4c finds, every image one object, the HTML tags (the
-void and the foreign ones, the order inside the tags, an unclosed one), the SVG markers
+void and the foreign ones, the order inside the tags, an unclosed one, a comment over its lines), the SVG markers
 expanded and drawn, the image paths of the base directory, the baseline of an inline formula,
 the spaces of the blocks, the quotes (levels, grey text, bars), the heading anchors, the
 structures of `texts/markdown.md` and `texts/notes.md` against their good files (before Qt
@@ -290,7 +290,8 @@ the preference switch, the dialogs, and a plain or coloured export. The Markdown
 cases (`EDIT-TEXT-11`): the markup lookup and the comment override, the spans of
 each element, a whole quote with its lazy line, the formulas where the reader finds
 them (not money, an escaped dollar or code; a display one over its lines; in a heading
-and a quote), a fence by its tag, by the document language or in one code
+and a quote), the comments (a link definition to nothing, an HTML comment over its lines,
+not one in code), a fence by its tag, by the document language or in one code
 colour, a fence closed on a later line, the `markdown-comments` diagram on the
 canvas (a `dMarkup` `plain` comment stays plain), a `markupLanguage` removal and
 its undo, and the multiline dialog.

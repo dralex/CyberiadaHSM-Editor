@@ -1,6 +1,6 @@
 # The Markdown Rendering — Architecture
 
-**Document version:** 0.7 (2026-11-12). The requirements are `EDIT-MODE-14`, `EDIT-MODE-17` and
+**Document version:** 0.8 (2026-11-13). The requirements are `EDIT-MODE-14`, `EDIT-MODE-17` and
 `EDIT-TEXT-14` in `EDITOR-SPEC.md`.
 
 The editor renders Markdown itself: a read-only Markdown tab (`docs/MODES.md`, Text tabs) and,
@@ -43,12 +43,15 @@ the images are inserted as objects.
 * A header cell takes the alignment of its column, as a body cell does.
 * Raw HTML: the tags are counted and the HTML inserted once they close; inside them every text
   waits in its order (the code as `<code>`); a block inserts what is still open at its end.
+  A comment `<!-- … -->` waits for its end over its lines and shows nothing, as a link
+  definition to nothing (`[text]: #`, the Markdown comment) does.
   A `<br>` outside other tags is a line separator (Qt 5.12 drops a `<br/>` inserted alone),
   another void element closes itself (`<img ...>` -> `<img .../>`), a tag that is not text
   formatting (`<rundir>`) is shown as text.
 
-The source highlighting (`EDIT-TEXT-11`) finds the formulas with `markdownMathRanges`, the
-same md4c reading, so a formula is coloured exactly where it is rendered.
+The source highlighting (`EDIT-TEXT-11`) finds the formulas and the HTML comments with
+`markdownSourceRanges`, the same md4c reading, so a formula is coloured exactly where it is
+rendered and a comment where it is hidden.
 
 Qt's own `QTextDocument::setMarkdown` (Qt 5.15) is not used: it reads no formulas, drops an
 image without an alt text, makes one image per piece of a formatted alt text and loses the
