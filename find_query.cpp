@@ -44,6 +44,16 @@ bool FindQuery::operator==(const FindQuery& other) const
         wholeWords == other.wholeWords && regexp == other.regexp;
 }
 
+QString findSeedOf(const QString& selected)
+{
+    // QTextCursor::selectedText() breaks the lines with these
+    if (selected.contains(QChar::ParagraphSeparator) || selected.contains(QChar::LineSeparator) ||
+        selected.contains('\n')) {
+        return QString();
+    }
+    return selected;
+}
+
 FindRanges findRanges(const QString& text, const QRegularExpression& expression, int limit,
                       bool* more)
 {

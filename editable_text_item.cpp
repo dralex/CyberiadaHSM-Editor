@@ -50,6 +50,7 @@
 #include "gesture_log.h"
 #include "markdown_importer.h"
 #include "markdown_objects.h"
+#include "edge_geometry.h"
 
 
 EditableTextItem::EditableTextItem(QGraphicsItem *parent):
@@ -59,6 +60,7 @@ EditableTextItem::EditableTextItem(QGraphicsItem *parent):
     setTextInteractionFlags(Qt::NoTextInteraction);
     setFont(FontManager::instance().font(fontRole));
     connect(&FontManager::instance(), &FontManager::fontsChanged, this, &EditableTextItem::applyFont);
+    connect(document(), &QTextDocument::contentsChanged, this, &EditableTextItem::reportTextsChanged);
 }
 
 EditableTextItem::EditableTextItem(const QString &text, QGraphicsItem *parent):
@@ -68,6 +70,12 @@ EditableTextItem::EditableTextItem(const QString &text, QGraphicsItem *parent):
     setTextInteractionFlags(Qt::NoTextInteraction);
     setFont(FontManager::instance().font(fontRole));
     connect(&FontManager::instance(), &FontManager::fontsChanged, this, &EditableTextItem::applyFont);
+    connect(document(), &QTextDocument::contentsChanged, this, &EditableTextItem::reportTextsChanged);
+}
+
+void EditableTextItem::reportTextsChanged()
+{
+    if (CyberiadaSMEditorScene* sc = dynamic_cast<CyberiadaSMEditorScene*>(scene())) sc->noteTextsChanged();
 }
 
 void EditableTextItem::mousePressEvent(QGraphicsSceneMouseEvent *event) {
@@ -277,8 +285,85 @@ static void bandLines(const QTextDocument* document, qreal height, qreal& bottom
     }
 }
 
+bool EditableTextItem::cutParts(QPainterPath* shown, QRectF* ellipsis) const
+{
+    if (!isCut()) return false;
+    qreal bottom, lastTop;
+    bandLines(document(), bandHeight, bottom, lastTop);
+    QRectF box = QGraphicsTextItem::boundingRect();
+    qreal markLeft = box.right() - document()->documentMargin() -
+        QFontMetricsF(font()).horizontalAdvance(QChar(0x2026));
+    // the lines above the last whole one, then the last one short of the mark
+    QPainterPath path;
+    path.addRect(QRectF(box.left(), box.top(), box.width(), lastTop - box.top()));
+    path.addRect(QRectF(box.left(), lastTop, markLeft - box.left(), bottom - lastTop));
+    *shown = path.simplified();
+    *ellipsis = QRectF(markLeft, lastTop, box.right() - markLeft, bottom - lastTop);
+    return true;
+}
+
+bool EditableTextItem::rangeHidden(int from, int to, const QPainterPath& shown) const
+{
+    for (const QRectF& r : EdgeGeometry::textRangeRects(this, from, to)) {
+        QRectF inner = r.adjusted(GEOMETRY_TOLERANCE, GEOMETRY_TOLERANCE, -GEOMETRY_TOLERANCE, -GEOMETRY_TOLERANCE);
+        if (!shown.contains(inner)) return true;
+    }
+    return false;
+}
+
+void EditableTextItem::setFindRanges(const FindRanges& ranges, int current)
+{
+    if (ranges.isEmpty() && findMarks.isEmpty()) return;
+    findMarks = ranges;
+    findCurrentMark = current;
+    update();
+}
+
+QRectF EditableTextItem::findRangeBounds(int from, int to) const
+{
+    QPainterPath shown;
+    QRectF ellipsis;
+    if (cutParts(&shown, &ellipsis) && rangeHidden(from, to, shown)) return ellipsis;
+    QRectF bounds;
+    for (const QRectF& r : EdgeGeometry::textRangeRects(this, from, to)) bounds |= r;
+    return bounds;
+}
+
+// behind the glyphs; a cut text clips the boxes as it clips its lines, a range not
+// wholly shown marks the ellipsis too (EDIT-FIND-7)
+void EditableTextItem::paintFindMarks(QPainter* painter) const
+{
+    if (findMarks.isEmpty()) return;
+    CyberiadaSMEditorScene* sc = dynamic_cast<CyberiadaSMEditorScene*>(scene());
+    if (sc && !sc->findMarksShown()) return;
+    QPainterPath shown;
+    QRectF ellipsis;
+    bool cut = cutParts(&shown, &ellipsis);
+    painter->save();
+    painter->setPen(Qt::NoPen);
+    if (cut) painter->setClipPath(shown, Qt::IntersectClip);
+    int hidden = -1;
+    for (int i = 0; i < findMarks.size(); i++) {
+        bool current = (i == findCurrentMark);
+        painter->setBrush(QColor(current ? FIND_CURRENT_COLOR : FIND_MATCH_COLOR));
+        for (const QRectF& r : EdgeGeometry::textRangeRects(this, findMarks[i].from, findMarks[i].to)) {
+            painter->drawRect(r);
+        }
+        if (cut && (hidden < 0 || current) && rangeHidden(findMarks[i].from, findMarks[i].to, shown)) {
+            hidden = i;
+        }
+    }
+    painter->setClipping(false);
+    if (hidden >= 0) {
+        painter->setBrush(QColor(hidden == findCurrentMark ? FIND_CURRENT_COLOR : FIND_MATCH_COLOR));
+        painter->drawRect(ellipsis);
+    }
+    painter->restore();
+}
+
 void EditableTextItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) {
     painter->setFont(QFont(font()));
+    paintFindMarks(painter);
 
     if (!isCut()) {
         QGraphicsTextItem::paint(painter, option, widget);
@@ -435,6 +520,8 @@ QVariant EditableTextItem::itemChange(GraphicsItemChange change, const QVariant&
         setCodeLanguage(sceneCodeLanguage(s));
         setDocumentMarkup(sceneMarkup(s));
     }
+    // a text joining the scene or shown again may be searched (EDIT-FIND-8)
+    if (change == ItemSceneHasChanged || change == ItemVisibleHasChanged) reportTextsChanged();
     return QGraphicsTextItem::itemChange(change, value);
 }
 

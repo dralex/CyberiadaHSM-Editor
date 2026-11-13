@@ -42,6 +42,8 @@ FindBar::FindBar(QWidget* parent):
     m_field = new QLineEdit(this);
     m_field->setClearButtonEnabled(true);
     m_field->setMinimumWidth(m_field->fontMetrics().averageCharWidth() * FIND_FIELD_CHARS);
+    // the field keeps its width whatever the counter says
+    m_field->setSizePolicy(QSizePolicy::Preferred, m_field->sizePolicy().verticalPolicy());
     m_field->installEventFilter(this);
     m_fieldPalette = m_field->palette();
     layout->addWidget(m_field);

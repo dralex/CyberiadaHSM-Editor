@@ -90,6 +90,9 @@ QPointF nearestOnPath(const QPainterPath& path, const QPointF& p, qreal endMargi
 // the underline of the characters [from, to) of a text item in scene coordinates,
 // one segment per laid-out line the range covers (a fragment, EDIT-EDGE-21)
 QVector<QLineF> textRangeLines(const QGraphicsTextItem* item, int from, int to);
+// the boxes of the same characters in the item coordinates, one per line (a find
+// mark, EDIT-FIND-7)
+QVector<QRectF> textRangeRects(const QGraphicsTextItem* item, int from, int to);
 
 }
 

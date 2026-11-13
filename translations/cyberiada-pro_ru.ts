@@ -41,7 +41,7 @@
 <context>
     <name>CyberiadaSMEditorDocument</name>
     <message>
-        <location filename="../cyberiadasm_editor_document.cpp" line="+187"/>
+        <location filename="../cyberiadasm_editor_document.cpp" line="+214"/>
         <source>untitled</source>
         <translation>без имени</translation>
     </message>
@@ -49,7 +49,7 @@
 <context>
     <name>CyberiadaSMEditorScene</name>
     <message>
-        <location filename="../cyberiadasm_editor_scene.cpp" line="+1200"/>
+        <location filename="../cyberiadasm_editor_scene.cpp" line="+1211"/>
         <location line="+35"/>
         <location line="+152"/>
         <location line="+35"/>
@@ -1525,7 +1525,7 @@
 <context>
     <name>EditableTextItem</name>
     <message>
-        <location filename="../editable_text_item.cpp" line="+156"/>
+        <location filename="../editable_text_item.cpp" line="+164"/>
         <source>Copy</source>
         <translation>Копировать</translation>
     </message>
@@ -1571,7 +1571,7 @@
         <translation>Найти:</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+9"/>
         <source>Match case</source>
         <translation>С учётом регистра</translation>
     </message>
@@ -2984,7 +2984,7 @@
         <translation>Предупреждение</translation>
     </message>
     <message>
-        <location filename="../cyberiadasm_editor_transition_item.cpp" line="+445"/>
+        <location filename="../cyberiadasm_editor_transition_item.cpp" line="+446"/>
         <source>Reset label position</source>
         <translation>Сбросить положение подписи</translation>
     </message>
@@ -3072,12 +3072,12 @@
 <context>
     <name>Render</name>
     <message>
-        <location filename="../cyberiadasm_render.cpp" line="+106"/>
+        <location filename="../cyberiadasm_render.cpp" line="+117"/>
         <source>the scene is empty, nothing to export</source>
         <translation>сцена пуста, экспортировать нечего</translation>
     </message>
     <message>
-        <location line="+28"/>
+        <location line="+29"/>
         <location line="+22"/>
         <source>cannot write the image %1</source>
         <translation>не удается записать изображение %1</translation>

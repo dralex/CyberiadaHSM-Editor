@@ -99,6 +99,17 @@ struct RunMarksGuard {
 	~RunMarksGuard() { scene->setRunMarks(active, fired); }
 };
 
+// nor the find marks (EDIT-FIND-4)
+struct FindMarksGuard {
+	CyberiadaSMEditorScene* scene;
+	bool shown;
+	explicit FindMarksGuard(CyberiadaSMEditorScene* s): scene(s), shown(s->findMarksShown())
+	{
+		scene->setFindMarksShown(false);
+	}
+	~FindMarksGuard() { scene->setFindMarksShown(shown); }
+};
+
 bool renderScene(CyberiadaSMEditorScene* scene, const QString& path, QString* error, int dpi,
 				 const QString& fontFamily)
 {
@@ -109,6 +120,7 @@ bool renderScene(CyberiadaSMEditorScene* scene, const QString& path, QString* er
 	// exported images must not show the editing selection or the aids
 	scene->clearSelection();
 	RunMarksGuard marks(scene);
+	FindMarksGuard finds(scene);
 	ExportGuard guard(fontFamily);
 	// the image is the diagram's own size: the union of the visible items (the SM
 	// border, or the document bounding geometry across several machines) with no

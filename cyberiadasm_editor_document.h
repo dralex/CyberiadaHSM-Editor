@@ -37,6 +37,7 @@
 #include "editor_document.h"
 
 class PluginRunner;
+class DiagramFind;
 
 // A diagram tab of the window (docs/WINDOW.md): the model owns the undo stack
 // and the file identity, the scene draws it, the view is the page of the
@@ -95,6 +96,15 @@ public:
     // the content is kept until the document changes, the selection is read each time
     PluginDocumentFacts      pluginFacts() const override;
 
+    // the drawn texts are searched (EDIT-FIND-6..8, docs/FIND.md)
+    bool                     canFind() const override { return true; }
+    void                     setFindQuery(const FindQuery& query, bool navigate) override;
+    void                     moveFind(int step) override;
+    void                     clearFind(bool keep) override;
+    // the selection of a canvas text being edited
+    QString                  findSeed() const override;
+    DiagramFind*             diagramFind() const { return m_find; }
+
 protected:
     void                     applyReadOnlyFlag(bool on) override;
 
@@ -114,6 +124,7 @@ private:
     CyberiadaSMModel*        m_model;
     CyberiadaSMEditorScene*  m_scene;
     CyberiadaSMGraphicsView* m_view;
+    DiagramFind*             m_find;
     QString                  pendingViewState;
     mutable PluginDocumentFacts m_pluginFacts;
     mutable bool             m_pluginFactsValid = false;

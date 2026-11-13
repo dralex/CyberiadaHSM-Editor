@@ -33,9 +33,15 @@
 #include "diff_document.h"
 #include "find_bar.h"
 #include "find_query.h"
+#include "diagram_find.h"
+#include "editable_text_item.h"
+#include "cyberiadasm_editor_scene.h"
+#include "cyberiadasm_render.h"
+#include "settings_manager.h"
 #include "cyberiada_constants.h"
 
 // the EDIT-FIND laws (docs/FIND.md): the matcher, the bar, the marks of the text tabs
+// and of the canvas
 class TestFind: public QObject {
 	Q_OBJECT
 
@@ -48,13 +54,54 @@ private slots:
 	void test_text_follows_edit();
 	void test_rendered();
 	void test_switch_and_diff();
+	void test_canvas_marks();
+	void test_canvas_paint_and_export();
+	void test_canvas_follows_edit();
+	void test_canvas_hidden_text();
+	void test_cut_text();
+	void test_canvas_switch();
 
 private:
 	static int count(const QString& text, const FindQuery& query);
 	static FindQuery plain(const QString& text);
 	static void search(CyberiadaSMEditorWindow& window, const QString& text);
 	static QString markColor(const QTextEdit::ExtraSelection& mark);
+	// the pixels of the colour in the scene rect drawn as on the screen
+	static int pixels(QGraphicsScene* scene, const QRectF& rect, const QColor& color);
+	static int pixels(const QImage& image, const QColor& color);
+	static QList<EditableTextItem*> marked(QGraphicsScene* scene);
 };
+
+int TestFind::pixels(const QImage& image, const QColor& color)
+{
+	int n = 0;
+	for (int y = 0; y < image.height(); y++) {
+		for (int x = 0; x < image.width(); x++) {
+			if (QColor(image.pixel(x, y)).rgb() == color.rgb()) n++;
+		}
+	}
+	return n;
+}
+
+int TestFind::pixels(QGraphicsScene* scene, const QRectF& rect, const QColor& color)
+{
+	QImage image(rect.size().toSize(), QImage::Format_ARGB32);
+	image.fill(Qt::white);
+	QPainter painter(&image);
+	scene->render(&painter, QRectF(QPointF(0, 0), rect.size()), rect);
+	painter.end();
+	return pixels(image, color);
+}
+
+QList<EditableTextItem*> TestFind::marked(QGraphicsScene* scene)
+{
+	QList<EditableTextItem*> texts;
+	for (QGraphicsItem* item : scene->items()) {
+		EditableTextItem* text = dynamic_cast<EditableTextItem*>(item);
+		if (text && !text->getFindRanges().isEmpty()) texts.append(text);
+	}
+	return texts;
+}
 
 int TestFind::count(const QString& text, const FindQuery& query)
 {
@@ -357,6 +404,205 @@ void TestFind::test_switch_and_diff()
 	window.setCurrentDocument(blink);
 	QVERIFY(window.actionFind->isEnabled() && window.findBar()->isEnabled());
 	QCOMPARE(window.findBar()->counterText(), QString("1 of 2"));
+}
+
+// EDIT-FIND-6/7: the drawn texts in the --dump-text order, the current element selected
+void TestFind::test_canvas_marks()
+{
+	CyberiadaSMEditorWindow window;
+	QVERIFY(window.openFile("diagrams/code-highlight.graphml"));
+	CyberiadaSMEditorDocument* doc = window.currentDocument();
+	CyberiadaSMEditorScene* scene = doc->scene();
+	DiagramFind* find = doc->diagramFind();
+	QVERIFY(window.actionFind->isEnabled());
+	scene->clearSelection();
+	search(window, "re");
+	// "// reset" and "return" of idle, "shared" of the formal comment, "[ready]" of the
+	// transition
+	QCOMPARE(find->matches().size(), 4);
+	QCOMPARE(find->matches()[0].element, QString("idle"));
+	QCOMPARE(find->matches()[1].element, QString("idle"));
+	QCOMPARE(find->matches()[2].element, QString("code"));
+	QCOMPARE(find->matches()[3].element, QString("idle-busy"));
+	QVERIFY(find->matches()[0].textNumber < find->matches()[1].textNumber);
+	QCOMPARE(window.findBar()->counterText(), QString("1 of 4"));
+	QCOMPARE(scene->selectedIds(), QStringList() << "idle");
+	QCOMPARE(marked(scene).size(), 4);
+	EditableTextItem* first = find->matches()[0].text;
+	QCOMPARE(first->getFindRanges().size(), 1);
+	QCOMPARE(first->getFindCurrent(), 0);
+	QCOMPARE(first->toPlainText().mid(first->getFindRanges()[0].from, 2), QString("re"));
+	QCOMPARE(find->matches()[1].text->getFindCurrent(), -1);
+
+	window.actionFindNext->trigger();
+	QCOMPARE(first->getFindCurrent(), -1);
+	QCOMPARE(find->matches()[1].text->getFindCurrent(), 0);
+	window.actionFindNext->trigger();
+	QCOMPARE(window.findBar()->counterText(), QString("3 of 4"));
+	QCOMPARE(scene->selectedIds(), QStringList() << "code");
+	window.actionFindNext->trigger();
+	QCOMPARE(window.findBar()->counterText(), QString("4 of 4"));
+	QCOMPARE(scene->selectedIds(), QStringList() << "idle-busy");
+	window.actionFindNext->trigger();
+	QCOMPARE(window.findBar()->counterText(), QString("1 of 4"));
+	QCOMPARE(scene->selectedIds(), QStringList() << "idle");
+
+	// a new search starts at the first selected element
+	window.findBar()->field()->clear();
+	QCOMPARE(marked(scene).size(), 0);
+	scene->clearSelection();
+	scene->getMap().value("busy")->setSelected(true);
+	window.findBar()->field()->setText("re");
+	QCOMPARE(window.findBar()->counterText(), QString("3 of 4"));
+
+	// the bar closed: no marks, the element stays selected
+	window.findBar()->closeButton()->click();
+	QCOMPARE(marked(scene).size(), 0);
+	QCOMPARE(scene->selectedIds(), QStringList() << "code");
+	QVERIFY(doc->isClean());
+}
+
+// EDIT-FIND-4/7: the boxes are drawn, yellow and the current one orange; an export has none
+void TestFind::test_canvas_paint_and_export()
+{
+	CyberiadaSMEditorWindow window;
+	QVERIFY(window.openFile("diagrams/code-highlight.graphml"));
+	CyberiadaSMEditorScene* scene = window.currentDocument()->scene();
+	DiagramFind* find = window.currentDocument()->diagramFind();
+	search(window, "re");
+	QCOMPARE(find->matches().size(), 4);
+	const DiagramFind::Match& current = find->matches()[0];
+	QRectF box = current.text->mapRectToScene(current.text->findRangeBounds(current.from, current.to));
+	QVERIFY(!box.isEmpty());
+	QVERIFY(pixels(scene, box, QColor(FIND_CURRENT_COLOR)) > 0);
+	const DiagramFind::Match& other = find->matches()[1];
+	QRectF otherBox = other.text->mapRectToScene(other.text->findRangeBounds(other.from, other.to));
+	QVERIFY(pixels(scene, otherBox, QColor(FIND_MATCH_COLOR)) > 0);
+	QCOMPARE(pixels(scene, otherBox, QColor(FIND_CURRENT_COLOR)), 0);
+	// a transition label paints its own background, the marks over it
+	const DiagramFind::Match& label = find->matches()[3];
+	QCOMPARE(label.element, QString("idle-busy"));
+	QRectF labelBox = label.text->mapRectToScene(label.text->findRangeBounds(label.from, label.to));
+	QVERIFY(pixels(scene, labelBox, QColor(FIND_MATCH_COLOR)) > 0);
+
+	QTemporaryDir dir;
+	QString path = dir.filePath("find.png");
+	QString error;
+	QVERIFY2(renderScene(scene, path, &error), qPrintable(error));
+	QImage image(path);
+	QVERIFY(!image.isNull());
+	QCOMPARE(pixels(image, QColor(FIND_CURRENT_COLOR)), 0);
+	QCOMPARE(pixels(image, QColor(FIND_MATCH_COLOR)), 0);
+	QVERIFY(scene->findMarksShown());
+	QCOMPARE(marked(scene).size(), 4);
+
+	// so does the name of a pseudostate
+	QVERIFY(window.openFile("diagrams/lift.graphml"));
+	scene = window.currentDocument()->scene();
+	find = window.currentDocument()->diagramFind();
+	QCoreApplication::processEvents();
+	QCOMPARE(find->matches().size(), 0);
+	window.findBar()->field()->setText("init");
+	QCOMPARE(find->matches().size(), 1);
+	QCOMPARE(find->matches()[0].element, QString("n0"));
+	const DiagramFind::Match& name = find->matches()[0];
+	QRectF nameBox = name.text->mapRectToScene(name.text->findRangeBounds(name.from, name.to));
+	QVERIFY(pixels(scene, nameBox, QColor(FIND_CURRENT_COLOR)) > 0);
+}
+
+// EDIT-FIND-8: an edit and an undo search again; nothing is navigated
+void TestFind::test_canvas_follows_edit()
+{
+	CyberiadaSMEditorWindow window;
+	QVERIFY(window.openFile("diagrams/code-highlight.graphml"));
+	CyberiadaSMEditorScene* scene = window.currentDocument()->scene();
+	CyberiadaSMModel* m = window.getModel();
+	DiagramFind* find = window.currentDocument()->diagramFind();
+	search(window, "re");
+	window.actionFindPrevious->trigger();
+	QCOMPARE(window.findBar()->counterText(), QString("4 of 4"));
+	scene->clearSelection();
+	QVERIFY(m->updateTitle(m->elementToIndex(m->idToElement("busy")), "rebusy"));
+	QCoreApplication::processEvents();
+	QCOMPARE(find->matches().size(), 5);
+	QCOMPARE(find->matches()[2].element, QString("busy"));
+	// the transition label is still current, and nothing got selected
+	QCOMPARE(window.findBar()->counterText(), QString("5 of 5"));
+	QCOMPARE(find->matches()[find->current()].element, QString("idle-busy"));
+	QVERIFY(scene->selectedIds().isEmpty());
+	QCOMPARE(marked(scene).size(), 5);
+	window.actionUndo->trigger();
+	QCoreApplication::processEvents();
+	QCOMPARE(find->matches().size(), 4);
+	QCOMPARE(window.findBar()->counterText(), QString("4 of 4"));
+	QCOMPARE(marked(scene).size(), 4);
+	QVERIFY(scene->selectedIds().isEmpty());
+}
+
+// EDIT-FIND-6: a text the canvas does not draw is not searched
+void TestFind::test_canvas_hidden_text()
+{
+	CyberiadaSMEditorWindow window;
+	QVERIFY(window.openFile("diagrams/code-highlight.graphml"));
+	DiagramFind* find = window.currentDocument()->diagramFind();
+	search(window, "re");
+	QCOMPARE(find->matches().size(), 4);
+	SettingsManager::instance().setShowTransitionText(false);
+	QCoreApplication::processEvents();
+	QCOMPARE(find->matches().size(), 3);
+	QCOMPARE(window.findBar()->counterText(), QString("1 of 3"));
+	SettingsManager::instance().setShowTransitionText(true);
+	QCoreApplication::processEvents();
+	QCOMPARE(find->matches().size(), 4);
+}
+
+// EDIT-FIND-7: a range hidden by the cut of a text marks its ellipsis
+void TestFind::test_cut_text()
+{
+	QGraphicsScene scene;
+	EditableTextItem* text = new EditableTextItem("one\ntwo\nthree");
+	scene.addItem(text);
+	QTextDocument* doc = text->document();
+	QRectF second = doc->documentLayout()->blockBoundingRect(doc->findBlockByNumber(1));
+	text->setBandHeight(second.bottom() + 1.0);
+	QVERIFY(text->isCut());
+	QRectF one = text->findRangeBounds(0, 3);
+	QVERIFY(one.bottom() <= second.top() + 1.0);
+	// "three" is below the band: the box is the ellipsis at the end of the last line
+	QRectF three = text->findRangeBounds(8, 13);
+	QVERIFY(qAbs(three.top() - second.top()) < 1.0);
+	QVERIFY(qAbs(three.right() - text->boundingRect().right()) < 1.0);
+	QVERIFY(three.width() < text->boundingRect().width() / 2);
+	FindRanges ranges;
+	FindRange hidden = { 8, 13 };
+	ranges.append(hidden);
+	text->setFindRanges(ranges, 0);
+	QVERIFY(pixels(&scene, text->mapRectToScene(three), QColor(FIND_CURRENT_COLOR)) > 0);
+	QCOMPARE(pixels(&scene, text->mapRectToScene(one), QColor(FIND_CURRENT_COLOR)), 0);
+	FindRange shown = { 0, 3 };
+	ranges.prepend(shown);
+	text->setFindRanges(ranges, 1);
+	QVERIFY(pixels(&scene, text->mapRectToScene(one), QColor(FIND_MATCH_COLOR)) > 0);
+	text->setFindRanges(FindRanges(), -1);
+	QCOMPARE(pixels(&scene, text->mapRectToScene(three), QColor(FIND_CURRENT_COLOR)), 0);
+}
+
+// EDIT-FIND-9: the diagram marks go with a switch and come back without a navigation
+void TestFind::test_canvas_switch()
+{
+	CyberiadaSMEditorWindow window;
+	QVERIFY(window.openFile("diagrams/code-highlight.graphml"));
+	CyberiadaSMEditorDocument* doc = window.currentDocument();
+	search(window, "re");
+	QCOMPARE(marked(doc->scene()).size(), 4);
+	QVERIFY(window.openFile("texts/blink.cpp"));
+	QCOMPARE(marked(doc->scene()).size(), 0);
+	QCOMPARE(window.findBar()->counterText(), QString("No matches"));
+	doc->scene()->clearSelection();
+	window.setCurrentDocument(doc);
+	QCOMPARE(marked(doc->scene()).size(), 4);
+	QCOMPARE(window.findBar()->counterText(), QString("1 of 4"));
+	QVERIFY(doc->scene()->selectedIds().isEmpty());
 }
 
 QTEST_MAIN(TestFind)

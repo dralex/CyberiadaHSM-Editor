@@ -187,6 +187,8 @@ void CyberiadaSMEditorScene::slotModelReset()
         if (item) item->setSelected(true);
     }
     selectedBeforeReset.clear();
+    // an empty document leaves no text to join the scene
+    noteTextsChanged();
 }
 
 CyberiadaSMEditorScene::~CyberiadaSMEditorScene()
@@ -434,6 +436,15 @@ void CyberiadaSMEditorScene::slotRowsRemoved(const QModelIndex& parent, int, int
     }
     rebuildSubjectLinks();
     refreshLoops();
+    // the texts of the removed elements went with their items
+    noteTextsChanged();
+}
+
+void CyberiadaSMEditorScene::setFindMarksShown(bool on)
+{
+    if (on == findMarksOn) return;
+    findMarksOn = on;
+    update();
 }
 
 void CyberiadaSMEditorScene::refreshLoops(const Cyberiada::ID& stateId)

@@ -157,6 +157,7 @@ add_library(CyberiadaEditorCore STATIC
   code_editor.h code_editor.cpp
   find_query.h find_query.cpp
   find_bar.h find_bar.cpp
+  diagram_find.h diagram_find.cpp
   diff_document.h diff_document.cpp
   cyberiadasm_editor_document.cpp
   cyberiadasm_properties_widget.cpp

@@ -322,6 +322,7 @@ void VertexTitle::paint(QPainter *painter, const QStyleOptionGraphicsItem *o, QW
         painter->setPen(Qt::NoPen);
         painter->drawRect(boundingRect());
     }
+    paintFindMarks(painter);
     QGraphicsTextItem::paint(painter, o, w);
 }
 

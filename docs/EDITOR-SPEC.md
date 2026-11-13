@@ -1171,9 +1171,9 @@ document is never changed. The architecture is `docs/FIND.md`. Specified in 0.60
   current the first match at or after the current one, else after the text cursor of a text
   tab or the first selected element of a diagram, else the first match. *design*
 - `EDIT-FIND-4` MUST [A]: every match is marked by a yellow background (`#ffeb3b`), the current
-  one by an orange one (`#ff9800`), under the glyphs drawn black; the marks are not a part of
-  the document: its text, its undo history, its modified state and every export stay as they
-  are. *design*
+  one by an orange one (`#ff9800`), under the glyphs, which a text tab draws black; the marks
+  are not a part of the document: its text, its undo history, its modified state and every
+  export stay as they are. *design*
 - `EDIT-FIND-5` MUST [A]: a text tab searches the page it shows: the source, or the rendered
   document of a read-only Markdown tab (`EDIT-MODE-14`), whose formulas and images are not
   searched. The current match is scrolled into view; hiding the bar leaves it selected. *design*

@@ -377,9 +377,5 @@ int TextDocument::findPlace() const
 
 QString TextDocument::findSeed() const
 {
-    QString selected = shownCursor().selectedText();
-    if (selected.contains(QChar::ParagraphSeparator) || selected.contains(QChar::LineSeparator)) {
-        return QString();
-    }
-    return selected;
+    return findSeedOf(shownCursor().selectedText());
 }

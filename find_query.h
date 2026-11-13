@@ -54,4 +54,7 @@ typedef QVector<FindRange> FindRanges;
 FindRanges findRanges(const QString& text, const QRegularExpression& expression, int limit,
                       bool* more = nullptr);
 
+// the selected text that fills the field: one line, else empty (EDIT-FIND-1)
+QString findSeedOf(const QString& selected);
+
 #endif

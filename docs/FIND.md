@@ -94,10 +94,12 @@ drawn over the extra selections in the palette colour, so the orange would not s
          --> item->setFindRanges(its ranges, the current one or -1)
 ```
 
-`EditableTextItem::paint()` fills the boxes before `QGraphicsTextItem::paint()` draws the
-glyphs; the rects come from the item's layout (`EdgeGeometry::textRangeRects`, the line walk of
-`textRangeLines`), so a move, a resize or a wrap needs no new search. A cut text is clipped as
-its glyphs are; a range not wholly in the visible part puts its box over the ellipsis.
+`EditableTextItem::paintFindMarks()` fills the boxes before `QGraphicsTextItem::paint()` draws
+the glyphs; a label with its own background box (`TransitionAction`, `VertexTitle`) calls it
+between the two. The rects come from the item's layout (`EdgeGeometry::textRangeRects`, the
+line walk of `textRangeLines`), so a move, a resize or a wrap needs no new search. A cut text
+is clipped as its glyphs are; a range not wholly in the visible part puts its box over the
+ellipsis.
 
 The scene says when the drawn texts may have changed: `EditableTextItem` reports its
 `contentsChanged`, its joining a scene and its visibility, the scene its removed rows and its
@@ -127,7 +129,9 @@ An export clears the marks for its rendering (`FindMarksGuard`, beside `RunMarks
 | `editor_document.h` | the find interface of a tab: `canFind`, `setFindQuery`, `moveFind`, `clearFind`, `findSeed`, `findResultChanged` |
 | `text_document.*` | the text tab search and its extra selections |
 | `diagram_find.*` | `DiagramFind`: the walk, the matches, the place, the navigation |
-| `editable_text_item.*` | `setFindRanges`, the boxes in `paint()` |
+| `cyberiadasm_editor_document.*` | the find interface of a diagram tab, its `DiagramFind` |
+| `editable_text_item.*` | `setFindRanges`, `findRangeBounds`, the boxes in `paintFindMarks()` |
+| `cyberiadasm_editor_transition_item.cpp`, `cyberiadasm_editor_vertex_item.cpp` | the marks over the label background |
 | `edge_geometry.*` | `textRangeRects` |
 | `cyberiadasm_editor_scene.*` | `textsChanged()`, `findMarksShown()` |
 | `cyberiadasm_render.cpp` | `FindMarksGuard` |
