@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.63 (2026-11-14)
+**Document version:** 0.64 (2026-11-14)
 
 **Related authorities:**
 
@@ -957,9 +957,10 @@ runs of the batch script, which the plugin polygon drives (`docs/POLYGON-PLUGINS
   a failure — and the target is the run's `${input}`; the base is labelled by the values of the
   action's `string` parameters, else by the action label; the source document is untouched;
   Refresh of the tab runs the action again with the same values on the tab it ran on, and
-  fails with the reason when that tab is closed (`EDIT-MODE-12`). A `diff`
-  action lists only the diagram modes `hsm`, `fa`, `inspection`, else the descriptor is
-  rejected. *design*
+  fails with the reason when that tab is closed (`EDIT-MODE-12`). In a text mode the base
+  is `${output}` read as UTF-8 text and the tab is a text diff tab (`EDIT-MODE-19`, 0.64). A
+  `diff` action lists only the diagram modes `hsm`, `fa`, `inspection` and the text modes,
+  else the descriptor is rejected. *design*
 - `EDIT-PLUG-59` MUST [A]: an action with an unknown `result` is disabled with the reason that
   it needs a newer editor and listed as a warning, the plugin's other actions staying, as an
   unknown `when` token (`EDIT-PLUG-53`). *design*
@@ -1048,24 +1049,25 @@ has a read-only flag; the architecture is `docs/MODES.md`. Specified in 0.47, im
 the stages of `docs/MODES.md`.
 
 - `EDIT-MODE-1` MUST [A]: every tab has one mode — `hsm` (HSM diagram), `inspection` (HSM
-  inspection), `fa` (FA diagram), `diff` (HSM diff), `text` (Plain text), `markdown`
+  inspection), `fa` (FA diagram), `diff` (HSM diff), `text-diff` (Text diff, 0.64), `text` (Plain text), `markdown`
   (Markdown) or a language — a built-in one (`c`, `cpp`, `csharp`, `python`) or one a plugin
   brings (`EDIT-PLUG-60`) — and a read-only flag, off in every new or opened tab; changing
   them in one tab leaves the others as they are (`EDIT-DOC-6`). *design*
 - `EDIT-MODE-2` MUST [A]: the tab text and the window title carry the mode after the title —
-  nothing for HSM, `[inspection]`, `[FA]`, `[diff]`, `[text]`, `[Markdown]`, `[<language
+  nothing for HSM, `[inspection]`, `[FA]`, `[diff]`, `[text diff]`, `[text]`, `[Markdown]`, `[<language
   name>]` — and the flag as `ro` in the tab, `read-only` in the window: `a.graphml [FA, ro]*`,
   `a.graphml [FA, read-only][*]`, `a.graphml [ro]` for HSM. *design*
 - `EDIT-MODE-3` MUST [A]: Document > Mode lists the modes, the active tab's checked; an entry
   the tab cannot reach is disabled: an HSM or FA tab reaches HSM, FA and HSM inspection
-  (`EDIT-MODE-6`), an inspection tab HSM and FA, a text tab every text mode, a diff tab none.
+  (`EDIT-MODE-6`), an inspection tab HSM and FA, a text tab every text mode, a diff or a text
+  diff tab none.
   *design*
 - `EDIT-MODE-4` MUST [A]: Document > Read-only sets the flag of the active tab. A tab is
   *editable* when it is HSM, FA or a text mode without the flag and not locked by a plugin
   (`EDIT-PLUG-22/41`); in a tab that is not, every edit is refused as in `EDIT-INSPECT-1` (a
   text takes no input), Undo, Redo and Save are disabled, and selecting, zooming, scrolling and
   copying keep working. The flag keeps the editing layout and the recovery of a diagram. In an
-  inspection or a diff tab the entry is checked and disabled. The main toolbar shows the entry
+  inspection, a diff or a text diff tab the entry is checked and disabled. The main toolbar shows the entry
   as a toggle button with the inspection icon; the inspection itself is reached through
   Document > Mode only. *design*
 - `EDIT-MODE-5` MUST [A]: HSM to FA sets the metainformation `type` to `fa`, FA to HSM removes
@@ -1096,7 +1098,7 @@ the stages of `docs/MODES.md`.
   file when it is modified; a plugin opens one with a `diff` result (`EDIT-PLUG-58`). Both
   sides are read as inspected (`EDIT-INSPECT-2`) in any format the library reads, an empty base
   being an empty document; the tab is titled `<target> ↔ <base>`; the source tabs are
-  untouched. *design*
+  untouched. On a text tab it opens a text diff tab (`EDIT-MODE-19`). *design*
 - `EDIT-MODE-11` MUST [A]: a diff tab shows the base and the target side by side, read-only,
   their elements marked added (the target only), removed (the base only) and changed, a state
   machine by its border and title tab; in a changed pair the drawn text of what differs is
@@ -1109,8 +1111,8 @@ the stages of `docs/MODES.md`.
   library's revision diff with the geometry option of Document > Geometry (off): without it
   the ids, the geometry and the `cyberiadaEditorView` and `regionGeometry` metainformation
   are not shown; a pair is named as the target names it. *design*
-- `EDIT-MODE-12` MUST [A]: Document > Refresh takes both sides of the active diff tab again from
-  their origins: the target from its source tab (kept when the tab is closed), the base from
+- `EDIT-MODE-12` MUST [A]: Document > Refresh takes both sides of the active diff or text diff
+  tab again from their origins: the target from its source tab (kept when the tab is closed), the base from
   its tab, its file, the saved file, or a run of its plugin action with the same values.
   *design*
 - `EDIT-MODE-13` MUST [A]: File > New > Text file opens an untitled text tab in Plain text,
@@ -1139,10 +1141,14 @@ the stages of `docs/MODES.md`.
   Language, Markup, Properties..., the geometry actions, Export (a Markdown tab exports its
   rendered PDF, `EDIT-MODE-18`) and the switches of the canvas
   view (the grid, the snap, the service objects, the transition text, the FA symbols, the
-  component comments), and the tree and properties docks are empty; Geometry and Refresh act on a diff tab, Check on an FA tab only. *design*
+  component comments), and the tree and properties docks are empty; Geometry and Refresh act on a diff tab, Check on an FA tab only. A text diff
+  tab hides the element toolbar, disables the zoom and Geometry, shows its change list in the
+  tree dock and enables Refresh, Next Change, Previous Change and Ignore Whitespace (0.64).
+  *design*
 - `EDIT-MODE-16` MUST [A]: the batch verbs `new-document [<mode>]`, `mode <id>` (`inspection`
   opens the inspection tab), `read-only on|off`, `compare <index|title|file>`, `geometry
-  on|off` and `refresh` act as the menus do; `--dump-tabs` prints `i <title>[*] <mode>[ ro]
+  on|off` and `refresh` act as the menus do, `compare` on a text tab opening a text diff tab
+  (`EDIT-MODE-25`); `--dump-tabs` prints `i <title>[*] <mode>[ ro]
   [active]`; `--dump` of a text tab prints `== text` (the mode and the lines), of a diff tab
   `== diff` (the base label and the pairs with what differs, by id); `--export <file>.pdf` of a
   Markdown tab writes its rendered PDF (`EDIT-MODE-18`), any other export of a text tab is a
@@ -1157,6 +1163,46 @@ the stages of `docs/MODES.md`.
   the page number centred at the bottom; black text on white whatever the theme, the formulas,
   the images and the quote bars as on the rendered page, at its font and resolution; a line
   never splits between two pages; the images are found next to the file. *design*
+- `EDIT-MODE-19` MUST [A]: Document > Compare with... on a text tab opens a text diff tab: the
+  target is the tab's text with its unsaved edits, the base the tab's saved file when it is
+  modified, another text tab, or a file read as UTF-8 — a missing or an empty one an empty
+  text; a plugin opens one with a `diff` result in a text mode (`EDIT-PLUG-58`). The tab is
+  titled `<target> ↔ <base>`, highlights both sides by the mode of the target tab, and leaves
+  the source tabs untouched; Refresh takes the sides again as `EDIT-MODE-12`. Specified in
+  0.64. *design*
+- `EDIT-MODE-20` MUST [A]: a text diff tab shows the base on the left and the target on the
+  right, read-only, each under a label naming it. The lines are compared as `git diff` does
+  by default (the Myers difference); in a run of changed lines the base and the target lines
+  pair in order while they are similar — at least half of their characters in common — and
+  the others are removed (the base) or added (the target). A line and its pair stand on one
+  row; the side without a line of a row has an empty filler row without a number; each side
+  numbers the lines of its own text; a text without a final line feed loses no line. *design*
+- `EDIT-MODE-21` MUST [A]: the removed lines are marked red on the base, the added ones green on
+  the target, the pairs blue on both sides with their changed characters, extended to whole
+  words, in a stronger blue; the language highlighting stays under the marks. The sides
+  scroll together, vertically and horizontally; an overview ruler at the right of the target
+  shows where the changes lie in the whole text, a click scrolling both sides there.
+  *design*
+- `EDIT-MODE-22` MUST [A]: the change list in the tree dock lists the hunks of a text diff tab —
+  a run of rows that are not equal — as `<base lines> → <target lines>` with what they are:
+  `changed <n> → <m>`, `removed <n>`, `added <m>`; a row scrolls both sides to its hunk and
+  makes it current. Document > Next Change (`Alt+Down`) and Previous Change (`Alt+Up`) make
+  the next or the previous row of the change list current, in a text diff and in a diff tab,
+  showing it as a click does; they stop at the ends. *design*
+- `EDIT-MODE-23` SHOULD [A]: Document > Ignore Whitespace (off, per tab, not stored) compares
+  the lines with their runs of spaces and tabs as one space and none at their ends; the lines
+  are shown as they are, and the changed characters ignore the spaces too. *design*
+- `EDIT-MODE-24` MUST [A]: in a text diff tab Copy and Select All act on the side the focus was
+  in last, and Find searches that side — the target before any focus — marking its matches
+  over the diff marks (`EDIT-FIND-5`). *design*
+- `EDIT-MODE-25` MUST [A]: the batch verbs `compare <index|title|file>` on a text tab,
+  `next-change`, `previous-change` and `ignore-whitespace on|off` act as the menus do;
+  `--dump-tabs` prints the tab as `text-diff ro`; `--dump` of a text diff tab prints `== text
+  diff`: `base <label>`, `target <label>`, `changes <n>: +<added> -<removed> ~<changed>`
+  (lines), `current <n>` (0 without a current hunk), then each hunk as `@@ <base lines> |
+  <target lines>` and its rows `<base number> <target number> <mark> <text>` — the marks `=`
+  equal, `-` removed, `+` added, `~` a pair as `<base text> | <target text>`, `.` the number
+  of a filler side; the equal rows are printed only the 3 next to a hunk. *design*
 
 ### 4.15 Find — FIND
 
@@ -1201,7 +1247,8 @@ document is never changed. The architecture is `docs/FIND.md`. Specified in 0.60
   cursor stay where they are. *design*
 - `EDIT-FIND-9` MUST [A]: the bar and its query are global (`docs/WINDOW.md`): a tab switch drops
   the marks of the tab left and searches the new one. In a diff tab Find, Find Next and Find
-  Previous are disabled and the bar is greyed. *design*
+  Previous are disabled and the bar is greyed; a text diff tab searches one side
+  (`EDIT-MODE-24`). *design*
 
 ### 4.16 Keyboard shortcuts — KEYS
 

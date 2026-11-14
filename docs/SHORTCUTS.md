@@ -1,6 +1,6 @@
 # Keyboard Shortcuts — Architecture
 
-**Document version:** 0.1 (2026-11-14). The requirements are `EDIT-KEYS-1..12` in
+**Document version:** 0.2 (2026-11-14). The requirements are `EDIT-KEYS-1..12` in
 `EDITOR-SPEC.md` §4.16.
 
 Every built-in action of the window has a name, a list of default keys and, perhaps, the
@@ -66,6 +66,7 @@ have before 0.62.
 | | Preferences | `Ctrl+I` | |
 | Document | Properties | `Alt+Return` | *new* |
 | | Check | `F7` | *new* |
+| | Next Change, Previous Change | `Alt+Down`, `Alt+Up` | *new* (0.2) |
 | Plugins > Session | Step, Run, Pause, Stop | `F10`, `F5`, `F6`, `Shift+F5` | |
 
 Without a default key: the other element tools (terminate, the histories, the submachine

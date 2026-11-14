@@ -1,6 +1,6 @@
 # The Editor Window — Documents and Tabs
 
-**Document version:** 0.17 (2026-11-14) — the modes, the read-only flag and the plugins in
+**Document version:** 0.18 (2026-11-14) — the modes, the read-only flag and the plugins in
 the modes (`modes`, the text tabs, a plugin run as a diff base, the plugin languages) are
 implemented, the git compare with them (stage 6 of `docs/MODES.md`); a switch keeps the dock
 sizes; a Markdown tab exports its rendered PDF; the find bar (`docs/FIND.md`); the shortcuts
@@ -27,11 +27,11 @@ CyberiadaSMEditorWindow (QMainWindow)                                   GLOBAL
  |  +--------------------------------------+ | +---------------------------------+
  |  | documentTabs : QTabBar  hidden < 2   | | | treeDock "Structure tree" [_][x]|
  |  | [ a.graphml ][ a.graphml [FA]* ]     | | |   SMView (structure tree);      |
- |  +--------------------------------------+ | |   a diff tab: the change list   |
+ |  +--------------------------------------+ | |   a (text) diff tab: the changes|
  |  | documentStack : QStackedWidget       | | +---------------------------------+
  |  |   page i = documents[i]->page()      | | | propertiesDock "Properties"[_][x]|
- |  |   a canvas, two canvases (diff) or   | | |   propertiesWidget              |
- |  |   a CodeEditor (text)                | | |   (re-targeted on switch)       |
+ |  |   a canvas, two canvases (diff), a   | | |   propertiesWidget              |
+ |  |   CodeEditor (text), two (text diff) | | |   (re-targeted on switch)       |
  |  +--------------------------------------+ | +---------------------------------+
  |  | findBar : FindBar  hidden until Find | |
  |  +--------------------------------------+ |
@@ -82,13 +82,14 @@ setCurrentDocument(doc)
 | New, Open, Open Recent, Exit, Preferences, About | global | New > HSM diagram, FA diagram, Text file = a new tab in that mode; Open = replace a clean untitled tab, else a new tab, the mode by the file (`EDIT-MODE-5/13`), the inspection box an inspection tab; an open path activates its tab; the interface language of the Preferences applies at the next start (`EDIT-UI-1`) |
 | Grid, Snap, Service objects, Transition text, FA symbols, Log session | global | settings; every scene listens to `SettingsManager` |
 | Document > Mode, Read-only | document | the mode and the flag of the active tab (`EDIT-DOC-6`, `EDIT-MODE-1..7`); HSM inspection and Compare with... open tabs of their own |
-| Document > Check, Geometry, Refresh | document | Check on an FA tab, Geometry and Refresh on a diff tab (`EDIT-MODE-9..12`) |
+| Document > Check, Geometry, Refresh | document | Check on an FA tab, Geometry and Refresh on a diff tab (`EDIT-MODE-9..12`), Refresh on a text diff tab |
+| Document > Next Change, Previous Change, Ignore Whitespace | document | the current row of the change list of a diff or text diff tab; Ignore Whitespace on a text diff tab (`EDIT-MODE-22/23`) |
 | Armed tool | global | pushed to the active scene on a switch; a scene's own tool change is honoured only from the active scene |
 | Clipboard | global | paste into the active document (`EDIT-DOC-5`) |
 | Close (Ctrl+W), Save, Save As, Export | document | the active one; Save, Save As and Export enabling as `EDIT-IO-7`; Export of a Markdown tab saves its rendered PDF (`EDIT-MODE-18`) |
 | Undo, Redo | document | the active stack of the `QUndoGroup`; a text tab's stack proxies its `QTextDocument` |
 | Cut, Copy, Delete | document | the active scene's selection, or the active text editor's |
-| Find bar, Find, Find Next, Find Previous | global | one bar and query; the marks are the active tab's, dropped on a switch and searched again in the new tab; disabled in a diff tab (`EDIT-FIND-9`, `docs/FIND.md`) |
+| Find bar, Find, Find Next, Find Previous | global | one bar and query; the marks are the active tab's, dropped on a switch and searched again in the new tab; disabled in a diff tab, one side of a text diff tab (`EDIT-FIND-9`, `EDIT-MODE-24`, `docs/FIND.md`) |
 | Go to Line | document | the cursor of the active text tab; disabled elsewhere (`EDIT-KEYS-7`) |
 | Shortcuts | global | one set of keys for the window, changed in the Preferences; the focused text takes its keys first (`EDIT-KEYS-1..12`, `docs/SHORTCUTS.md`) |
 | Autoreplace | global | the switch and the rules are settings; each text follows them by its kind (`EDIT-AUTO-1..8`, `docs/AUTOREPLACE.md`) |

@@ -1,7 +1,8 @@
 # The Document Modes — Architecture
 
-**Document version:** 0.10 (2026-11-13) — stages 1 to 6 implemented (see Stages). The requirements are
-`EDIT-MODE-1..17` in `EDITOR-SPEC.md` §4.14, the plugin parts `EDIT-PLUG-56..60`.
+**Document version:** 0.11 (2026-11-14) — stages 1 to 6 implemented, stage 7 specified (see
+Stages). The requirements are `EDIT-MODE-1..25` in `EDITOR-SPEC.md` §4.14, the plugin parts
+`EDIT-PLUG-56..60`.
 
 A tab holds one document in one **mode**: the format edited, the access, and the tools, the
 docks and the plugins that come with them — as an image mode of GIMP (Image > Mode). The mode
@@ -25,8 +26,11 @@ CyberiadaSMEditorWindow                                                         
  +-- CyberiadaSMEditorDocument           hsm | fa          rw (default) | ro
  |     model + scene + view (as now)     inspection        ro always
  |     model.readOnly() = locked || inspected || the flag
- +-- DiffDocument                        diff              ro always
- |     base, target: CyberiadaSMModel read as inspected; Document::diff
+ +-- ComparisonDocument (abstract)       the origins, Refresh, the change list rows
+ |   +-- DiffDocument                    diff              ro always
+ |   |     base, target: CyberiadaSMModel read as inspected; Document::diff
+ |   +-- TextDiffDocument                text-diff         ro always
+ |         base, target: UTF-8 texts; text_diff (the editor's line diff)
  +-- TextDocument                        text | markdown | <language>    rw (default) | ro
        QTextDocument; page: CodeEditor, a rendered view for a read-only Markdown
 ```
@@ -156,6 +160,52 @@ The git plugin hands the revision of a diagram to a diff tab:
    editor: a diff tab "light.graphml ↔ HEAD", base = ${output}, target = ${input}
 ```
 
+## The text diff tab
+
+```
+ Compare with... (a text tab)               a plugin action in a text mode, result: diff
+   the saved file | a text tab | a file       ${output} = the base, UTF-8, empty = no text
+             \                                 /
+              v                               v
+ +-----------------------------------------------------------------------------+
+ | TextDiffDocument : ComparisonDocument                                       |
+ |  target <- the text of the source tab       base <- its DiffOrigin          |
+ |  the mode of the source tab: the highlighting of both sides                 |
+ |  TextDiff = diffLines(base lines, target lines, ignoreWhitespace)           |
+ +-----------------------------------------------------------------------------+
+        | rows, hunks                                   | rows
+        v                                               v
+ +--------------------------+    +-------------------------------------------+---+
+ | the change list (tree    |    | base pane          | target pane          | r |
+ | dock): 13-13 -> 13-14    |--->| DiffTextPane       | DiffTextPane         | u |
+ |   changed 1 -> 2         |    | (CodeEditor, ro,   | fillers have no      | l |
+ | Next/Previous Change     |    |  lineLabel)        | number               | e |
+ +--------------------------+    +-------------------------------------------+---+
+                                   one scroll for both: equal rows share a line
+```
+
+```
+ text_diff.{h,cpp} (no widgets)
+   lines A, B --normalise (Ignore Whitespace)--> Myers O(ND) --> equal / delete / insert runs
+   a delete+insert run --pair in order while similar (>= 1/2 of the characters)--> ~ rows
+   a ~ row --character diff, extended to the word bounds--> the changed ranges of each side
+   rows --> hunks (runs of rows that are not =) --> the change list, the dump, the ruler
+```
+
+* The engine is the editor's own, as the diagram pairs are the library's: no library of the
+  stack compares texts, and the git plugin hands over the base only, so Compare with... and the
+  plugin show the same hunks. Myers is the default algorithm of `git diff`.
+* The panes are `CodeEditor`s read-only: the line numbers come from `lineLabel(block)`, which
+  a pane maps to the line of its own text or to nothing for a filler; the highlighting is the
+  `CodeHighlighter` of the mode, the diff marks are `ExtraSelection`s under the find marks.
+* `ComparisonDocument` holds what both diff tabs share — the origins, `setSides`, the rows of
+  the change list, the current row — so the window's Compare, Refresh, plugin result and
+  change list code is one path; Geometry stays on `DiffDocument`, Ignore Whitespace goes on
+  `TextDiffDocument`.
+* No tabs inside a tab: one comparison is one tab, the tree dock is its navigator. A
+  repository change set (all the staged files) would list files and their hunks in the same
+  dock over one page.
+
 ## Text tabs
 
 ```
@@ -275,6 +325,11 @@ File                              Document
 6. The git plugin: Compare with a Revision... — done in cybersphere-git-plugin: `hsm-git
    revision` writes the base, `modes` on every git action, its text diff hides
    `regionGeometry` without the geometry as the tab does.
+7. The text diff tab — specified (0.11, `EDIT-MODE-19..25`, `EDIT-PLUG-58` in the text modes):
+   `text_diff` and its tests, `ComparisonDocument` taken out of `DiffDocument`,
+   `TextDiffDocument` with its panes and ruler, Compare with... on a text tab, Next and
+   Previous Change, Ignore Whitespace, the batch verbs and `== text diff`; then the git plugin
+   compares texts.
 
 ## Decisions of 0.1
 
@@ -290,3 +345,11 @@ File                              Document
 
 * A new language comes with a plugin (`languages`), not with a rebuild; the built-in ones stay
   compiled in and are never replaced.
+
+## Decisions of 0.11
+
+* A text comparison is a tab of its own mode, `text-diff`, beside the HSM `diff`: read-only
+  always, no new flag and no tabs inside a tab.
+* Two columns only, the base on the left; the equal lines aligned by filler rows.
+* The line diff is the editor's (Myers, as `git diff`); the plugins supply the base text only.
+* One comparison per file; a repository change set is a later stage.
