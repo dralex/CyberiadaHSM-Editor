@@ -148,12 +148,16 @@ add_library(CyberiadaEditorCore STATIC
   editor_document.h editor_document.cpp
   text_document.h text_document.cpp
   markdown_view.h markdown_view.cpp
+  markdown_pdf.h markdown_pdf.cpp
   markdown_importer.h markdown_importer.cpp
   markdown_md4c_reader.cpp
   markdown_objects.h markdown_objects.cpp
   math_renderer.h math_renderer.cpp
   svg_markers.h svg_markers.cpp
   code_editor.h code_editor.cpp
+  find_query.h find_query.cpp
+  find_bar.h find_bar.cpp
+  diagram_find.h diagram_find.cpp
   diff_document.h diff_document.cpp
   cyberiadasm_editor_document.cpp
   cyberiadasm_properties_widget.cpp

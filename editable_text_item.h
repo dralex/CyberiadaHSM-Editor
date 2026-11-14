@@ -28,6 +28,7 @@
 
 #include "cyberiada_constants.h"
 #include "code_highlighter.h"
+#include "find_query.h"
 
 class CyberiadaSMEditorAbstractItem;
 
@@ -87,6 +88,13 @@ public:
     // after the owner sets the text; a plain text item has none
     virtual void applyRichFormat() {}
 
+    // the find marks (EDIT-FIND-7): boxes behind the ranges, the current one orange
+    void setFindRanges(const FindRanges& ranges, int current);
+    const FindRanges& getFindRanges() const { return findMarks; }
+    int getFindCurrent() const { return findCurrentMark; }
+    // the box of a range, or the ellipsis when the cut hides a part of it
+    QRectF findRangeBounds(int from, int to) const;
+
 protected:
     // the items are built before they join the scene of their document
     QVariant itemChange(GraphicsItemChange change, const QVariant& value) override;
@@ -100,6 +108,8 @@ protected:
     void hoverMoveEvent(QGraphicsSceneHoverEvent *event) override;
 
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
+    // the find marks behind the glyphs: a label with its own background paints them over it
+    void paintFindMarks(QPainter* painter) const;
 
     // weight the leading [0, length) characters bold or normal (idempotent)
     void setBoldRange(int length, bool bold);
@@ -131,6 +141,13 @@ protected:
     CodeMarkup documentMarkup = codeMarkupPlain;
 
 private:
+    // the shown part of a cut text and its ellipsis; false when it is not cut
+    bool cutParts(QPainterPath* shown, QRectF* ellipsis) const;
+    // a part of the range is not in the shown part of a cut text
+    bool rangeHidden(int from, int to, const QPainterPath& shown) const;
+    // the drawn text changed: the scene tells the find (EDIT-FIND-8)
+    void reportTextsChanged();
+
     void applyMarkup();
     // rendered when asked, not edited and Markdown; the source otherwise
     void applyRendering();
@@ -140,6 +157,8 @@ private:
     bool rendered = false;
     QString source;
     QString markdownBase;
+    FindRanges findMarks;
+    int findCurrentMark = -1;
 };
 
 

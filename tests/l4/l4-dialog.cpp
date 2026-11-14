@@ -45,6 +45,7 @@ class TestDialog: public QObject {
 private slots:
 	void test_options_injected();
 	void test_default_options();
+	void test_open_filters();
 	void test_selected_file();
 	void test_save_formats();
 	void test_save_options();
@@ -69,6 +70,19 @@ void TestDialog::test_options_injected()
 	QVERIFY(dlg.findChild<QCheckBox*>("reconstructCheckBox"));
 	QVERIFY(dlg.findChild<QCheckBox*>("reconstructSMCheckBox"));
 	QVERIFY(dlg.findChild<QCheckBox*>("strictCheckBox"));
+}
+
+// EDIT-MODE-13: the graphs first, then the Markdown files of their own, the text files, all
+void TestDialog::test_open_filters()
+{
+	OpenFileDialog dlg;
+	QStringList filters = dlg.nameFilters();
+	QCOMPARE(filters.size(), 4);
+	QVERIFY(filters.at(0).contains("*.graphml"));
+	QVERIFY(filters.at(1).contains("*.md *.markdown"));
+	QVERIFY(filters.at(2).contains("*.txt") && filters.at(2).contains("*.markdown"));
+	QVERIFY(filters.at(3).contains("(*)"));
+	QCOMPARE(dlg.selectedNameFilter(), filters.at(0));
 }
 
 void TestDialog::test_default_options()

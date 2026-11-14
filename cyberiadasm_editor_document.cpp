@@ -25,6 +25,8 @@
 #include <QScrollBar>
 
 #include "cyberiadasm_editor_document.h"
+#include "diagram_find.h"
+#include "editable_text_item.h"
 #include "plugin_runner.h"
 
 CyberiadaSMEditorDocument::CyberiadaSMEditorDocument(QObject* parent):
@@ -34,6 +36,8 @@ CyberiadaSMEditorDocument::CyberiadaSMEditorDocument(QObject* parent):
     m_scene = new CyberiadaSMEditorScene(m_model, this);
     m_view = new CyberiadaSMGraphicsView();
     m_view->setScene(m_scene);
+    m_find = new DiagramFind(m_model, m_scene, this);
+    connect(m_find, &DiagramFind::resultChanged, this, &EditorDocument::findResultChanged);
     connect(m_model, &QAbstractItemModel::dataChanged, this, &CyberiadaSMEditorDocument::refreshTitle);
     connect(m_model, &QAbstractItemModel::modelReset, this, &CyberiadaSMEditorDocument::refreshTitle);
     connect(m_model, &QAbstractItemModel::modelReset, this, &CyberiadaSMEditorDocument::dropPluginFacts);
@@ -59,9 +63,32 @@ void CyberiadaSMEditorDocument::refreshMode()
 // the view goes first (it paints the scene), the scene before the model
 CyberiadaSMEditorDocument::~CyberiadaSMEditorDocument()
 {
+    delete m_find;
     delete m_view;
     delete m_scene;
     delete m_model;
+}
+
+void CyberiadaSMEditorDocument::setFindQuery(const FindQuery& query, bool navigate)
+{
+    m_find->setQuery(query, navigate);
+}
+
+void CyberiadaSMEditorDocument::moveFind(int step)
+{
+    m_find->move(step);
+}
+
+void CyberiadaSMEditorDocument::clearFind(bool keep)
+{
+    m_find->clear(keep);
+}
+
+QString CyberiadaSMEditorDocument::findSeed() const
+{
+    EditableTextItem* text = dynamic_cast<EditableTextItem*>(m_scene->focusItem());
+    if (!text || !text->isEditing()) return QString();
+    return findSeedOf(text->textCursor().selectedText());
 }
 
 QString CyberiadaSMEditorDocument::mode() const

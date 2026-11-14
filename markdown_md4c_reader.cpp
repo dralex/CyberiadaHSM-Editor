@@ -349,6 +349,13 @@ private:
             return 0;
         }
         insertPendingBlock();
+        if (type == MD_TEXT_HTML && (htmlComment || s.contains("<!--"))) {
+            // a comment goes on over its lines until its end: none of it is drawn
+            htmlBuffer += s;
+            htmlComment = htmlBuffer.lastIndexOf("<!--") > htmlBuffer.lastIndexOf("-->");
+            if (!htmlComment) flushHtml(false);
+            return 0;
+        }
         if (type == MD_TEXT_HTML && !isForeignTag(s)) {
             // a <br> between texts is a line separator: Qt 5.12 drops a <br/> alone
             static const QRegularExpression lineBreak("^<br\\b[^>]*>$", QRegularExpression::CaseInsensitiveOption);
@@ -367,7 +374,7 @@ private:
             flushHtml(false);
             return 0;
         }
-        if (htmlDepth > 0) {
+        if (htmlDepth > 0 || htmlComment) {
             // inside the tags every text waits for them in its order
             htmlBuffer += htmlText(type, s);
             return 0;
@@ -418,8 +425,9 @@ private:
     // the held HTML inserted when its tags close, or at once when forced
     void flushHtml(bool force)
     {
-        if (htmlBuffer.isEmpty() || (htmlDepth > 0 && !force)) return;
+        if (htmlBuffer.isEmpty() || ((htmlDepth > 0 || htmlComment) && !force)) return;
         htmlDepth = 0;
+        htmlComment = false;
         cursor.insertHtml(htmlBuffer);
         htmlBuffer.clear();
         cursor.setCharFormat(spanFormats.isEmpty() ? QTextCharFormat() : spanFormats.top());
@@ -522,6 +530,7 @@ private:
     bool                    mathDisplay = false;
     QString                 mathTex;
     int                     htmlDepth = 0;
+    bool                    htmlComment = false;
     QString                 htmlBuffer;
 };
 

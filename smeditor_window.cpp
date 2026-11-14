@@ -67,12 +67,24 @@
 #include "plugin_dock.h"
 #include "plugin_session.h"
 #include "plugin_session_view.h"
+#include "find_bar.h"
 #include "dialogs/plugin_manager_dialog.h"
 #include "dialogs/plugin_parameter_dialog.h"
 
 
 // the initial width of the tree and the properties docks
 static const int PANE_DOCK_WIDTH = 300;
+
+// the key first, then the platform keys of the standard one without a repeat (EDIT-FIND-3)
+static QList<QKeySequence> findKeys(const QKeySequence& key, QKeySequence::StandardKey standard)
+{
+    QList<QKeySequence> keys;
+    keys << key;
+    for (const QKeySequence& other : QKeySequence::keyBindings(standard)) {
+        if (!keys.contains(other)) keys << other;
+    }
+    return keys;
+}
 
 // a bold dock title; the contents keep the inherited weight (EDIT-UI-6)
 static void setBoldDockTitle(QDockWidget* dock)
@@ -116,6 +128,21 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     connect(actionClose, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotFileClose);
     connect(actionNextDocument, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotNextDocument);
     connect(actionPreviousDocument, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotPreviousDocument);
+
+    // the find bar under the documents, hidden until Find (EDIT-FIND-1, docs/FIND.md)
+    m_findBar = new FindBar(centralwidget);
+    centralLayout->addWidget(m_findBar);
+    m_findBar->hide();
+    actionFind->setShortcuts(QKeySequence::Find);
+    actionFindNext->setShortcuts(findKeys(QKeySequence(Qt::Key_F3), QKeySequence::FindNext));
+    actionFindPrevious->setShortcuts(findKeys(QKeySequence(Qt::SHIFT + Qt::Key_F3), QKeySequence::FindPrevious));
+    connect(actionFind, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotFind);
+    connect(actionFindNext, &QAction::triggered, this, [this]() { slotFindStep(1); });
+    connect(actionFindPrevious, &QAction::triggered, this, [this]() { slotFindStep(-1); });
+    connect(m_findBar, &FindBar::queryChanged, this, &CyberiadaSMEditorWindow::slotFindQueryChanged);
+    connect(m_findBar, &FindBar::nextRequested, this, [this]() { slotFindStep(1); });
+    connect(m_findBar, &FindBar::previousRequested, this, [this]() { slotFindStep(-1); });
+    connect(m_findBar, &FindBar::closed, this, &CyberiadaSMEditorWindow::slotFindClosed);
 
     initChoiceMenus();
     initDocumentMenu();
@@ -197,6 +224,10 @@ void CyberiadaSMEditorWindow::addTab(EditorDocument* doc)
     updateTabTitle(doc);
     connect(doc->undoStack(), &QUndoStack::cleanChanged, this,
             [this, doc](bool) { updateTabTitle(doc); });
+    connect(doc, &EditorDocument::findResultChanged, this,
+            [this, doc](int current, int total, bool more) {
+                if (doc == active) m_findBar->setResult(current, total, more);
+            });
     connect(doc, &EditorDocument::titleChanged, this,
             [this, doc]() {
                 updateTabTitle(doc);
@@ -398,6 +429,9 @@ void CyberiadaSMEditorWindow::setCurrentDocument(EditorDocument* tab)
     if (!tab || tab == active) return;
     bool switched = (active != nullptr);
     if (current) unbindDocument(current);
+    // the marks are the active tab's: the one left drops them (EDIT-FIND-9)
+    bool finding = m_findBar && !m_findBar->isHidden();
+    if (active && finding) active->clearFind(false);
     active = tab;
     current = qobject_cast<CyberiadaSMEditorDocument*>(tab);
     documentStack->setCurrentWidget(tab->page());
@@ -434,6 +468,7 @@ void CyberiadaSMEditorWindow::setCurrentDocument(EditorDocument* tab)
     }
     updateTitle();
     updateEditActions();
+    if (finding && active->canFind()) active->setFindQuery(m_findBar->query(), false);
     syncChoiceMenus();
     // a log session is bound to one diagram: a switch starts a new one
     if (switched && GestureLog::instance().isActive()) {
@@ -594,6 +629,9 @@ void CyberiadaSMEditorWindow::initDocumentMenu()
     connect(m_changeList, &QTreeWidget::itemActivated, this, &CyberiadaSMEditorWindow::slotChangeActivated);
     connect(m_changeList, &QTreeWidget::itemClicked, this, &CyberiadaSMEditorWindow::slotChangeActivated);
     connect(actionNewFA, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotFileNewFA);
+    // the toolbar button of a new Markdown text, also its entry in File > New > Text file
+    actionNewMarkdown->setData(QString(MODE_MARKDOWN));
+    connect(actionNewMarkdown, &QAction::triggered, this, [this]() { slotFileNewText(MODE_MARKDOWN); });
     // View > FA symbols is a preference of every tab (EDIT-MODE-8)
     SettingsManager& sm = SettingsManager::instance();
     actionFASymbols->setChecked(sm.getShowFASymbols());
@@ -623,6 +661,10 @@ void CyberiadaSMEditorWindow::rebuildTextModeMenus()
         (language ? code : menuMode)->addAction(action);
         modeGroup->addAction(action);
         textModeActions.append(action);
+        if (mode == MODE_MARKDOWN) {
+            menuNewText->addAction(actionNewMarkdown);
+            continue;
+        }
         QAction* create = menuNewText->addAction(modeName(mode));
         create->setData(mode);
         connect(create, &QAction::triggered, this, [this, mode]() { slotFileNewText(mode); });
@@ -801,6 +843,8 @@ void CyberiadaSMEditorWindow::updateTextActions()
         << actionReconstructGeometry << actionUpdateGeometry << actionDocumentProperties
         << actionCheck << actionExport << actionCompare << actionGeometry << actionRefresh;
     for (QAction* off : diagramOnly) off->setEnabled(false);
+    // a Markdown text exports its rendered pages (EDIT-MODE-18)
+    actionExport->setEnabled(text->mode() == MODE_MARKDOWN);
     for (QAction* tool : toolActMap) tool->setEnabled(false);
     enableCanvasSwitches(false);
     actionSave->setEnabled(!text->isClean() && !readOnly);
@@ -816,6 +860,46 @@ void CyberiadaSMEditorWindow::enableCanvasSwitches(bool on)
         << actionGridVisibility << actionSnapMode << actionServiceObjects
         << actionTransitionText << actionFASymbols << actionComponentComments;
     for (QAction* action : switches) action->setEnabled(on);
+}
+
+void CyberiadaSMEditorWindow::updateFindActions()
+{
+    bool on = active && active->canFind();
+    actionFind->setEnabled(on);
+    actionFindNext->setEnabled(on);
+    actionFindPrevious->setEnabled(on);
+    if (m_findBar) m_findBar->setSearchable(on);
+}
+
+void CyberiadaSMEditorWindow::slotFind()
+{
+    if (!active || !active->canFind()) return;
+    bool shown = !m_findBar->isHidden();
+    QString before = m_findBar->query().text;
+    m_findBar->start(active->findSeed());
+    // an unchanged field emits nothing: a bar shown again searches here
+    if (!shown && m_findBar->query().text == before) slotFindQueryChanged(m_findBar->query());
+}
+
+void CyberiadaSMEditorWindow::slotFindStep(int step)
+{
+    if (!active || !active->canFind()) return;
+    // a hidden bar is shown first, its search making the match after the place current
+    if (m_findBar->isHidden()) {
+        slotFind();
+        return;
+    }
+    active->moveFind(step);
+}
+
+void CyberiadaSMEditorWindow::slotFindQueryChanged(const FindQuery& query)
+{
+    if (active && active->canFind() && !m_findBar->isHidden()) active->setFindQuery(query, true);
+}
+
+void CyberiadaSMEditorWindow::slotFindClosed()
+{
+    if (active && active->canFind()) active->clearFind(true);
 }
 
 void CyberiadaSMEditorWindow::updateDiffActions()
@@ -1012,6 +1096,7 @@ void CyberiadaSMEditorWindow::slotCompare()
 void CyberiadaSMEditorWindow::updateEditActions()
 {
     if (!active) return;   // the documents are gone (destructor)
+    updateFindActions();
     if (!current) {
         if (currentText()) updateTextActions();
         else updateDiffActions();
@@ -1221,7 +1306,9 @@ void CyberiadaSMEditorWindow::expandAndWidenTree()
     SMView->expandAll();
     SMView->resizeColumnToContents(0);
     if (treeDock->isHidden() || treeDock->isFloating()) return;
-    int treeWidth = SMView->columnWidth(0) + 2 * SMView->frameWidth() +
+    // the contents, not the column: the last column is stretched over the viewport
+    int contents = static_cast<QAbstractItemView*>(SMView)->sizeHintForColumn(0);
+    int treeWidth = contents + 2 * SMView->frameWidth() +
                     SMView->verticalScrollBar()->sizeHint().width() + 8;
     int width = treeDock->width();
     int right = qMin(treeWidth, width + centralWidget()->width() - 100);
@@ -1441,7 +1528,11 @@ void CyberiadaSMEditorWindow::slotFileSaveAs()
 
 void CyberiadaSMEditorWindow::slotFileExport()
 {
-    // a text tab has no image (EDIT-MODE-15)
+    // a Markdown tab exports its rendered text (EDIT-MODE-18), another text tab nothing
+    if (TextDocument* text = currentText()) {
+        if (text->mode() == MODE_MARKDOWN) exportMarkdown(text);
+        return;
+    }
     if (!current) return;
     ExportImageDialog dlg(this);
     // propose the diagram's base name; the dialog's default suffix / filter adds
@@ -1457,6 +1548,24 @@ void CyberiadaSMEditorWindow::slotFileExport()
         if (!renderScene(scene(), fileName, &error, dlg.dpi(), dlg.fontFamily())) {
             QMessageBox::critical(this, tr("Error"), error);
         }
+    }
+}
+
+void CyberiadaSMEditorWindow::exportMarkdown(TextDocument* text)
+{
+    // format names only, never translated, as in the image export
+    CyberiadaFileDialog dlg(this, tr("Export the rendered text as PDF"), QString("PDF (*.pdf)"));
+    dlg.setFileMode(QFileDialog::AnyFile);
+    dlg.setAcceptMode(QFileDialog::AcceptSave);
+    dlg.setLabelText(QFileDialog::Accept, tr("Export"));
+    dlg.setDefaultSuffix("pdf");
+    if (text->hasFile()) dlg.selectFile(QFileInfo(text->filePath()).completeBaseName());
+    if (dlg.exec() != QDialog::Accepted) return;
+    QString fileName = dlg.selectedFile();
+    if (fileName.isEmpty()) return;
+    QString error;
+    if (!text->exportPdf(fileName, &error)) {
+        QMessageBox::critical(this, tr("Error"), error);
     }
 }
 

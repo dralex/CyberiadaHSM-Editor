@@ -27,6 +27,7 @@
 #include "editor_document.h"
 
 class QStackedWidget;
+class QTextCursor;
 class QTextDocument;
 class CodeEditor;
 class MarkdownView;
@@ -70,8 +71,21 @@ public:
     CodeEditor*      editor() const { return m_editor; }
     // the rendered view of a read-only Markdown tab is shown
     bool             showsRendered() const;
+    // the directory of the file, where the Markdown images are found; empty without a file
+    QString          baseDir() const;
+    // the rendered Markdown text saved as a PDF (EDIT-MODE-18)
+    bool             exportPdf(const QString& path, QString* error) const;
     // an empty unmodified tab a file may take
     bool             isUntitled() const { return !hasFile() && isClean() && text().isEmpty(); }
+
+    // the shown page is searched, the editor or the rendered view (EDIT-FIND-5)
+    bool             canFind() const override { return true; }
+    void             setFindQuery(const FindQuery& query, bool navigate) override;
+    void             moveFind(int step) override;
+    void             clearFind(bool keep) override;
+    QString          findSeed() const override;
+    const FindRanges& findMatches() const { return m_findMatches; }
+    int              findCurrent() const { return m_findCurrent; }
 
 protected:
     void             applyReadOnlyFlag(bool on) override;
@@ -80,6 +94,19 @@ private:
     void             applyMode();
     void             showPage();
     bool             write(const QString& path, QString* error);
+    // the editor or the rendered view, the one the stack shows
+    QTextDocument*   shownDocument() const;
+    QTextCursor      shownCursor() const;
+    void             setShownCursor(const QTextCursor& cursor);
+    // the start of the current match as the edits move it; -1 without one
+    int              findPlace() const;
+    void             setFindCurrent(int index);
+    // search the shown page, the first match at or after place current; navigate
+    // moves the cursor to it, a search after an edit does not (EDIT-FIND-8)
+    void             runFind(int place, bool navigate);
+    void             scheduleFind();
+    void             markFind();
+    void             showFindMatch();
 
     QString          m_mode;
     QString          m_path;
@@ -92,6 +119,12 @@ private:
     bool             m_locked = false;
     // the name of the next undo step, "typing" when empty
     QString          m_stepName;
+    FindQuery        m_findQuery;
+    FindRanges       m_findMatches;
+    int              m_findCurrent = -1;
+    bool             m_findMore = false;
+    bool             m_findPending = false;
+    QTextCursor*     m_findPlace = nullptr;
 };
 
 #endif

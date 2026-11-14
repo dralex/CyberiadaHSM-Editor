@@ -120,9 +120,10 @@ it checks in a comment):
 | META   | `l2 update-meta`, `inspect-reject update-meta`, the `meta` diagram; META-1 (node hidden) via the `l1` scene dump; META-6 (CGML_COMPONENT hidden by default) via `l4-scene test_component_comment_hidden` + the `components` `l1` scene dump, and deletable from the tree without a scene item via `l4-window test_delete_component_formal_from_tree`; META-5 distinct machine names via `l4-model test_unique_machine_name` (NewSM dedupes the default name) |
 | DOC    | `tabs-*` (the document verbs with the `== tabs` dump, `EDIT-DOC-2/3/5/9`; `tabs-save-*` and `plugin-save*`, `EDIT-DOC-11`), `l4-tabs` (the tab line, the re-targeting, the prompts, `EDIT-DOC-1..8,10`) |
 | INSPECT| `inspect-reject-*` (editing refused under `--inspect`, `EDIT-INSPECT-1`); `inspect-render-*` (stored-geometry render vs a good image, `EDIT-INSPECT-2`) |
-| UI     | `l4-translation` (`EDIT-UI-1/3`: the bundled languages, the Preferences selector, the Russian menus, Qt's buttons, the property labels, the default names, the property lookup), `ui-batch-english` (`EDIT-UI-2`), `l4-window test_pane_toggles/test_pane_persist/test_dock_titles_bold` (`EDIT-UI-6`: the tree and properties docks, their View entries, the close button, the stored choice, the bold dock titles), `l4-plugin-core test_config_data_home` (`EDIT-UI-7`: the ini file under `CYBERIADA_PRO_CONFIG_HOME`, the user plugin folder under `CYBERIADA_PRO_DATA_HOME`) |
+| UI     | `l4-translation` (`EDIT-UI-1/3`: the bundled languages, the Preferences selector, the Russian menus, Qt's buttons, the property labels, the default names, the property lookup), `ui-batch-english` (`EDIT-UI-2`), `l4-window test_pane_toggles/test_pane_persist/test_dock_titles_bold/test_dock_sizes_on_switch` (`EDIT-UI-6`: the tree and properties docks, their View entries, the close button, the stored choice, the bold dock titles, the dock sizes kept over the tab switches), `l4-plugin-core test_config_data_home` (`EDIT-UI-7`: the ini file under `CYBERIADA_PRO_CONFIG_HOME`, the user plugin folder under `CYBERIADA_PRO_DATA_HOME`) |
 | PLUG   | the `plugin-*` cases: discovery and rejection (`EDIT-PLUG-1..4`), variables and secrets (`EDIT-PLUG-8..11`), the results and failures (`EDIT-PLUG-12..20`), save and cwd (`EDIT-PLUG-25`), the batch contract (`EDIT-PLUG-27/28`); `l4-plugin-core`; `l4-plugins` for the window (`EDIT-PLUG-5..7`, `EDIT-PLUG-15`, `EDIT-PLUG-17`, `EDIT-PLUG-21..24`, `EDIT-PLUG-29..32`, `EDIT-PLUG-35`); the sessions: `list-session`, `session-*` (`EDIT-PLUG-36..38`, `EDIT-PLUG-47/48`), `l4-plugin-core` (the session block, the channel), `l4-plugins` (`EDIT-PLUG-39..46`, `EDIT-PLUG-49`); the conditions: `list-conditions*`, `conditions-*` (`EDIT-PLUG-50..55`; `conditions-git*` with a `.git` directory made by the test), `l4-plugin-core` (their parsing, the tokens, the programs and the variables, the document facts, the `.git` lookup), `l4-plugins test_conditions` (the menu and the plugin manager follow the document, a Save As, a `.git` made after the open); the plugin verb of the script: `plugin-script-*` (`EDIT-PLUG-61/62/64`), `plugin-actions`, `plugin-script-diff*` (`EDIT-PLUG-63`) |
-| MODE   | stage 1: `mode-inspection`, `mode-leave` (`EDIT-MODE-6`, `EDIT-INSPECT-4`), `mode-read-only`, `mode-read-only-reject`, `mode-inspection-flag` (`EDIT-MODE-4/16`), `l4-tabs test_inspection_tab/test_inspect_unsaved/test_read_only_flag/test_open_inspected` (`EDIT-MODE-1..6`), `l4-model test_read_only` and the loose endpoint recovered on leaving (`EDIT-INSPECT-4`), `l4-window test_save_enablement` (the Document menu); stage 2: `mode-fa`, `mode-fa-undo`, `mode-fa-open`, `mode-new-fa`, `mode-fa-inspect` (`EDIT-MODE-5/6`), `mode-fa-tool-reject` (`EDIT-MODE-7`), `l4-tabs test_fa_mode/test_new_fa/test_fa_check/test_fa_symbols` (`EDIT-MODE-5/7/8/9`), `l4-window test_menu_refactor` (File > New, Check, FA symbols); stage 3: `mode-text-open`, `mode-text-switch`, `mode-new-text` (`EDIT-MODE-13/16`), `mode-markdown-ro` (`EDIT-MODE-14`), `l4-markdown` (`EDIT-MODE-14/17`), `l4-modes test_read_only_button` (`EDIT-MODE-4/15`), `mode-text-reject`, `mode-text-edit-reject` (`EDIT-MODE-3/16`), `l4-modes` (`EDIT-MODE-13..15`), `l4-highlight test_languages` (the four built-in languages); stage 4: `mode-compare-saved`, `mode-compare-refresh`, `mode-compare-reject`, `mode-diff-reject` (`EDIT-MODE-10..12/16`), `l4-modes test_compare_saved/test_compare_refresh/test_compare_tab` (the marks, the change list, Geometry, Refresh, a closed source, a tab as the base); stage 5, the set `modes`: `plugin-list-modes` (an unknown mode and result as warnings, a `modes` of a wrong type and a `diff` action in a text mode rejected), `plugin-modes-default-inspect`, `plugin-modes-refused`, `plugin-modes-mixed`, `plugin-modes-inspection` (`EDIT-PLUG-56`), `plugin-modes-future`, `plugin-modes-next` (`EDIT-PLUG-56/59`), `plugin-modes-text-replace`, `plugin-modes-text-same`, `plugin-modes-text-new`, `plugin-modes-text-input` (`EDIT-PLUG-57`), `plugin-diff-result`, `plugin-diff-result-label`, `plugin-diff-result-empty`, `plugin-diff-result-missing` (`EDIT-PLUG-58`); the set `lang`: `plugin-list-lang` (a name clash, a malformed, a missing and an outside file skipped with warnings, a plugin of languages only, a `languages` of a wrong type rejected), `plugin-lang-open`, `plugin-lang-none`, `plugin-lang-run` (`EDIT-PLUG-60`); `l4-plugin-modes` (the gate per tab, the text lock and undo step, the line link, Refresh running the plugin again and failing without its tab, a language switched off and on again with Rescan, the `files` link click) |
+| MODE   | stage 1: `mode-inspection`, `mode-leave` (`EDIT-MODE-6`, `EDIT-INSPECT-4`), `mode-read-only`, `mode-read-only-reject`, `mode-inspection-flag` (`EDIT-MODE-4/16`), `l4-tabs test_inspection_tab/test_inspect_unsaved/test_read_only_flag/test_open_inspected` (`EDIT-MODE-1..6`), `l4-model test_read_only` and the loose endpoint recovered on leaving (`EDIT-INSPECT-4`), `l4-window test_save_enablement` (the Document menu); stage 2: `mode-fa`, `mode-fa-undo`, `mode-fa-open`, `mode-new-fa`, `mode-fa-inspect` (`EDIT-MODE-5/6`), `mode-fa-tool-reject` (`EDIT-MODE-7`), `l4-tabs test_fa_mode/test_new_fa/test_fa_check/test_fa_symbols` (`EDIT-MODE-5/7/8/9`), `l4-window test_menu_refactor` (File > New, Check, FA symbols); stage 3: `mode-text-open`, `mode-text-switch`, `mode-new-text` (`EDIT-MODE-13/16`), `mode-markdown-ro` (`EDIT-MODE-14`), `l4-markdown` (`EDIT-MODE-14/17`), `mode-markdown-pdf`, `mode-markdown-export-reject`, `mode-text-export-reject` (`EDIT-MODE-16/18`), `l4-markdown test_pdf`, `l4-modes test_markdown_export` (`EDIT-MODE-15/18`), `l4-modes test_read_only_button` (`EDIT-MODE-4/15`), `l4-modes test_new_markdown_button` (`EDIT-MODE-13`), `mode-text-reject`, `mode-text-edit-reject` (`EDIT-MODE-3/16`), `l4-modes` (`EDIT-MODE-13..15`), `l4-highlight test_languages` (the four built-in languages); stage 4: `mode-compare-saved`, `mode-compare-refresh`, `mode-compare-reject`, `mode-diff-reject` (`EDIT-MODE-10..12/16`), `l4-modes test_compare_saved/test_compare_refresh/test_compare_tab` (the marks, the change list, Geometry, Refresh, a closed source, a tab as the base); stage 5, the set `modes`: `plugin-list-modes` (an unknown mode and result as warnings, a `modes` of a wrong type and a `diff` action in a text mode rejected), `plugin-modes-default-inspect`, `plugin-modes-refused`, `plugin-modes-mixed`, `plugin-modes-inspection` (`EDIT-PLUG-56`), `plugin-modes-future`, `plugin-modes-next` (`EDIT-PLUG-56/59`), `plugin-modes-text-replace`, `plugin-modes-text-same`, `plugin-modes-text-new`, `plugin-modes-text-input` (`EDIT-PLUG-57`), `plugin-diff-result`, `plugin-diff-result-label`, `plugin-diff-result-empty`, `plugin-diff-result-missing` (`EDIT-PLUG-58`); the set `lang`: `plugin-list-lang` (a name clash, a malformed, a missing and an outside file skipped with warnings, a plugin of languages only, a `languages` of a wrong type rejected), `plugin-lang-open`, `plugin-lang-none`, `plugin-lang-run` (`EDIT-PLUG-60`); `l4-plugin-modes` (the gate per tab, the text lock and undo step, the line link, Refresh running the plugin again and failing without its tab, a language switched off and on again with Rescan, the `files` link click) |
+| FIND   | `l4-find`: the matcher and its options (`EDIT-FIND-2`), the bar, its keys and the counter (`EDIT-FIND-1/3`), the text-tab marks, the rendered page and the selection left (`EDIT-FIND-4/5`), the canvas walk, the boxes, the cut text and the navigation (`EDIT-FIND-6/7`), the marks after an edit and an undo (`EDIT-FIND-8`), an export without the marks (`EDIT-FIND-4`), the tab switch and the diff tab (`EDIT-FIND-9`) |
 
 Requirements with **no dedicated case yet** — the gaps to fill: `SEM-1` (one initial per
 level — only the polygon pseudostate drill and the standing law cover it), `TOOL-7` (pan/zoom
@@ -204,7 +205,9 @@ follow the stack (enabled state, text, effect), the tree follows a restored
 document, the modified marker follows the clean state, a clean document
 closes without the unsaved changes prompt, and the tree and properties docks
 follow their View entries and close buttons, the choice reaching the next
-window, and every dock title is bold over the regular contents (`EDIT-UI-6`).
+window, every dock title is bold over the regular contents, and six rounds
+of switches over two diagrams and a Markdown tab keep the dock and canvas
+widths, a narrowed tree widened once to its contents (`EDIT-UI-6`).
 
 `l4-properties` checks the property view: an edited rect, point, endpoint or
 polyline row writes the model and the scene item in the same call (the state
@@ -219,7 +222,8 @@ name the model refuses reverts once the row is left.
 
 `l4-dialog` checks the file dialogs. The open dialog: the file browser and the
 option check boxes really share one window (the options are injected into the
-dialog grid layout), the inspection is opt-in (the box is off), and the inspected
+dialog grid layout), the file types (the graphs first, then the Markdown files,
+the text files and all files, `EDIT-MODE-13`), the inspection is opt-in (the box is off), and the inspected
 document is never given the geometry it does not have - the reconstruction box
 is unchecked and disabled while the inspector box is checked. The save dialog:
 every writable format is offered, the yEd formats are disabled with the reason
@@ -263,19 +267,22 @@ tab gives way to it; New > Text file, the edits through the window's Undo and Re
 As in UTF-8, the read-only flag of a text; the switch between the text modes keeps the
 text and refuses a diagram mode; a read-only Markdown tab shows the rendered document; the
 toolbar button with the inspection icon flips the read-only flag while the inspection leaves
-the toolbar, and a text tab greys the switches of the canvas view; a diagram tab gets its
+the toolbar, and a text tab greys the switches of the canvas view; the toolbar button after New
+HSM diagram opens an untitled Markdown text; a diagram tab gets its
 canvas parts back.
 
-`l4-markdown` checks the Markdown rendering (`EDIT-MODE-14/17`, `EDIT-TEXT-14`,
+`l4-markdown` checks the Markdown rendering (`EDIT-MODE-14/17/18`, `EDIT-TEXT-14`,
 `docs/MARKDOWN.md`): the formula spans md4c finds, every image one object, the HTML tags (the
-void and the foreign ones, the order inside the tags, an unclosed one), the SVG markers
+void and the foreign ones, the order inside the tags, an unclosed one, a comment over its lines), the SVG markers
 expanded and drawn, the image paths of the base directory, the baseline of an inline formula,
 the spaces of the blocks, the quotes (levels, grey text, bars), the heading anchors, the
 structures of `texts/markdown.md` and `texts/notes.md` against their good files (before Qt
 5.14 without the code language and the list marker the reader cannot set), the read-only tab
 of `texts/markdown.md`, the sizes of its objects, and the rendered comments of
 `markdown-render-comments.graphml` - the source kept, shown while edited, the fragment links
-on the border, the preference switched back. No glyph is compared: the baseline is a
+on the border, the preference switched back, and the PDF of `texts/markdown.md` (a PDF file
+of A4 pages, more pages for a longer text, the formulas and the images drawn on its pages).
+No glyph is compared: the baseline is a
 relation, the arrowhead and the quote bars are shapes without text. `l2-render-markdown`
 switches the verb on and off: the dump and the saved document stay those of the source
 (`l2-render-markdown-reject`: a wrong argument is a script error).
@@ -288,7 +295,8 @@ the preference switch, the dialogs, and a plain or coloured export. The Markdown
 cases (`EDIT-TEXT-11`): the markup lookup and the comment override, the spans of
 each element, a whole quote with its lazy line, the formulas where the reader finds
 them (not money, an escaped dollar or code; a display one over its lines; in a heading
-and a quote), a fence by its tag, by the document language or in one code
+and a quote), the comments (a link definition to nothing, an HTML comment over its lines,
+not one in code), a fence by its tag, by the document language or in one code
 colour, a fence closed on a later line, the `markdown-comments` diagram on the
 canvas (a `dMarkup` `plain` comment stays plain), a `markupLanguage` removal and
 its undo, and the multiline dialog.

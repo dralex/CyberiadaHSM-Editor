@@ -105,6 +105,12 @@
 #define DIFF_CHANGED_COLOR       "#1565c0"
 #define RUN_MARK_WIDTH           4
 #define RUN_MARK_FILL_ALPHA      40
+// the find bar (EDIT-FIND-2/4, docs/FIND.md): the marks, the field without a match
+#define FIND_MATCH_COLOR         "#ffeb3b"
+#define FIND_CURRENT_COLOR       "#ff9800"
+#define FIND_NO_MATCH_COLOR      "#ffcdd2"
+// the matches marked in a tab at most
+#define FIND_MATCH_LIMIT         10000
 // the JSON-RPC errors the editor sends
 #define JSONRPC_METHOD_NOT_FOUND (-32601)
 

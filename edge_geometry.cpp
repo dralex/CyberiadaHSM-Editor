@@ -343,13 +343,20 @@ QPointF EdgeGeometry::linkBorderNearest(const CyberiadaSMEditorAbstractItem* ite
     return rhombusNearest(p - r.center(), r.width() / 2.0, r.height() / 2.0) + r.center();
 }
 
-QVector<QLineF> EdgeGeometry::textRangeLines(const QGraphicsTextItem* item, int from, int to)
+// a part of a character range on one laid-out line, in the item coordinates
+struct RangeLine {
+    qreal left;
+    qreal right;
+    qreal top;
+    qreal ascent;
+    qreal height;
+};
+
+static QVector<RangeLine> rangeLines(const QGraphicsTextItem* item, int from, int to)
 {
-    QVector<QLineF> lines;
+    QVector<RangeLine> lines;
     if (!item || from >= to) return lines;
     QTextDocument* doc = item->document();
-    // the underline sits where the font draws its own, below the baseline
-    qreal under = QFontMetricsF(item->font()).underlinePos();
     for (QTextBlock block = doc->findBlock(from); block.isValid() && block.position() < to; block = block.next()) {
         // the block bounding rect lays the block out first
         doc->documentLayout()->blockBoundingRect(block);
@@ -366,10 +373,32 @@ QVector<QLineF> EdgeGeometry::textRangeLines(const QGraphicsTextItem* item, int 
             qreal x2 = line.cursorToX(b - bp);
             // a range holding only a line break or a wrap space draws nothing
             if (x2 - x1 < 0.5) continue;
-            qreal y = line.y() + line.ascent() + under;
-            lines.append(QLineF(item->mapToScene(origin + QPointF(x1, y)),
-                                item->mapToScene(origin + QPointF(x2, y))));
+            RangeLine part = { origin.x() + x1, origin.x() + x2, origin.y() + line.y(),
+                               line.ascent(), line.height() };
+            lines.append(part);
         }
     }
     return lines;
+}
+
+QVector<QLineF> EdgeGeometry::textRangeLines(const QGraphicsTextItem* item, int from, int to)
+{
+    QVector<QLineF> lines;
+    // the underline sits where the font draws its own, below the baseline
+    qreal under = item ? QFontMetricsF(item->font()).underlinePos() : 0.0;
+    for (const RangeLine& part : rangeLines(item, from, to)) {
+        qreal y = part.top + part.ascent + under;
+        lines.append(QLineF(item->mapToScene(QPointF(part.left, y)),
+                            item->mapToScene(QPointF(part.right, y))));
+    }
+    return lines;
+}
+
+QVector<QRectF> EdgeGeometry::textRangeRects(const QGraphicsTextItem* item, int from, int to)
+{
+    QVector<QRectF> rects;
+    for (const RangeLine& part : rangeLines(item, from, to)) {
+        rects.append(QRectF(part.left, part.top, part.right - part.left, part.height));
+    }
+    return rects;
 }

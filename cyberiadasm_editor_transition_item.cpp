@@ -1708,6 +1708,7 @@ void TransitionAction::paint(QPainter *painter, const QStyleOptionGraphicsItem *
         }
         painter->drawRect(boundingRect());
     }
+    paintFindMarks(painter);
     QGraphicsTextItem::paint(painter, o, w);
 }
 

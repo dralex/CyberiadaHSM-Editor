@@ -24,6 +24,7 @@
 #include <cstdio>
 #include <iostream>
 #include <QFile>
+#include <QFileInfo>
 #include <QMessageBox>
 #include <QTextStream>
 
@@ -33,6 +34,7 @@
 #include "cyberiadasm_dump.h"
 #include "batch_script.h"
 #include "cyberiadasm_render.h"
+#include "document_mode.h"
 #include "plugin_registry.h"
 #include "plugin_runner.h"
 #include "batch_plugin.h"
@@ -177,10 +179,25 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const BatchOptions& options)
 			dumpTextDocument(text, std::cout);
 		}
 		dumpPluginSections();
-		if (!options.exportImage.isEmpty() || options.dumpAudit || options.dumpTextMetrics ||
-			options.dumpUndoStack) {
+		// a Markdown text exports its rendered PDF, nothing else (EDIT-MODE-18)
+		bool pdf = text->mode() == MODE_MARKDOWN &&
+				   QFileInfo(options.exportImage).suffix().toLower() == "pdf";
+		if (!options.exportImage.isEmpty() && !pdf && text->mode() == MODE_MARKDOWN) {
+			fprintf(stderr, "a Markdown text exports to PDF only\n");
+			return batchUsageError;
+		}
+		if ((!options.exportImage.isEmpty() && !pdf) || options.dumpAudit ||
+			options.dumpTextMetrics || options.dumpUndoStack) {
 			fprintf(stderr, "the active tab holds no diagram\n");
 			return batchUsageError;
+		}
+		if (pdf) {
+			QString pdf_error;
+			if (!text->exportPdf(options.exportImage, &pdf_error)) {
+				fprintf(stderr, "cannot export %s\n%s\n", qPrintable(options.exportImage),
+						qPrintable(pdf_error));
+				return batchInternalError;
+			}
 		}
 		if (!options.save.isEmpty()) {
 			QString save_error;

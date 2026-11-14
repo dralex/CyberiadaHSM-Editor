@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.54 (2026-11-12)
+**Document version:** 0.60 (2026-11-13)
 
 **Related authorities:**
 
@@ -511,6 +511,7 @@ the third is a derived display value the format does not store):
   [text](url) <url>    ─► link
   $x^2$  $$ … $$       ─► the dollars as markers, the TeX as a formula, where the reader
                           finds one (EDIT-MODE-14): not in code, \$ or $ next to a letter
+  [text]: #  <!-- … --> ─► comment: the lines a rendered document does not show
   ```cpp … ```         ─► the fence lines as markers, the body as code
   ```
 - `EDIT-TEXT-12` SHOULD [A]: the Document > Markup menu (after Document > Language) sets the
@@ -1023,7 +1024,8 @@ The interface translations and their workflow are in `docs/TRANSLATION.md`.
   with a checkable View entry — *Structure tree*, *Properties* — both shown by default; closing a
   dock unchecks its entry and the entry shows it again; the choice is kept per user between
   sessions; a hidden tree or panel keeps following the active document and the canvas
-  selection, so showing it again needs no refresh. *design*
+  selection, so showing it again needs no refresh; a tab switch keeps the sizes of the docks,
+  the tree only grows once to fit a wider structure. *design*
 - `EDIT-UI-7` MUST [A]: `CYBERIADA_PRO_CONFIG_HOME` keeps the preferences in the ini file
   `<folder>/Cyberiada/CyberiadaPro.ini` and `CYBERIADA_PRO_DATA_HOME` the user data, the user
   plugin folder `<folder>/Cyberiada/CyberiadaPro/plugins`, instead of the places of the system
@@ -1103,9 +1105,11 @@ the stages of `docs/MODES.md`.
   its tab, its file, the saved file, or a run of its plugin action with the same values.
   *design*
 - `EDIT-MODE-13` MUST [A]: File > New > Text file opens an untitled text tab in Plain text,
-  Markdown or a language; Open reads a file into a text tab in the mode its extension names
-  (the `extensions` of the languages, `.md`, `.txt`), Plain text for an extension no mode
-  names, a diagram for `.graphml`; the text is UTF-8 and Save writes it back as it is, Save As
+  Markdown or a language, the Markdown one also by the main toolbar button after New HSM
+  diagram; Open reads a file into a text tab in the mode its extension names
+  (the `extensions` of the languages, `.md` and `.markdown`, `.txt`), Plain text for an
+  extension no mode names, a diagram for `.graphml`, its dialog offering the CyberiadaML
+  graphs, the Markdown files, the text files and all files; the text is UTF-8 and Save writes it back as it is, Save As
   proposing the mode's first extension; Undo and Redo step through the text's own edits; the
   text is highlighted by the language (`EDIT-TEXT-7`) or as Markdown (`EDIT-TEXT-11`), and a
   switch between the text modes changes only the highlighting and the marker. *design*
@@ -1115,26 +1119,80 @@ the stages of `docs/MODES.md`.
   on the text baseline, `$$..$$` is a centred line, one the engine cannot read shows its source
   in red monospace; an image is found relative to the directory of the tab's file (an untitled
   tab has none), an SVG one is drawn as vectors with its markers (the arrowheads), no wider than
-  the text, a missing one as its alt text and path; a link opens outside the editor, a
-  `#anchor` scrolls to its heading. A heading has 1.5 text lines of space above it and 0.5
+  the text, a missing one as its alt text and path; a comment (`[text]: #`, `<!-- … -->` over
+  its lines too) shows nothing; a link opens outside the editor, a `#anchor` scrolls to its
+  heading. A heading has 1.5 text lines of space above it and 0.5
   below, a paragraph 0.75 above and below (the larger of two neighbouring spaces counts), an
   item of a tight list 0.15, the first block none; a quote is indented by a level, drawn with a
   bar at the left of each level and in a grey between the text and the background. *design*
 - `EDIT-MODE-15` MUST [A]: the parts of the window follow the mode of the active tab
   (`docs/MODES.md`, The modes): a text tab hides the element toolbar and disables the zoom,
-  Language, Markup, Properties..., the geometry actions, Export and the switches of the canvas
+  Language, Markup, Properties..., the geometry actions, Export (a Markdown tab exports its
+  rendered PDF, `EDIT-MODE-18`) and the switches of the canvas
   view (the grid, the snap, the service objects, the transition text, the FA symbols, the
   component comments), and the tree and properties docks are empty; Geometry and Refresh act on a diff tab, Check on an FA tab only. *design*
 - `EDIT-MODE-16` MUST [A]: the batch verbs `new-document [<mode>]`, `mode <id>` (`inspection`
   opens the inspection tab), `read-only on|off`, `compare <index|title|file>`, `geometry
   on|off` and `refresh` act as the menus do; `--dump-tabs` prints `i <title>[*] <mode>[ ro]
   [active]`; `--dump` of a text tab prints `== text` (the mode and the lines), of a diff tab
-  `== diff` (the base label and the pairs with what differs, by id). *design*
+  `== diff` (the base label and the pairs with what differs, by id); `--export <file>.pdf` of a
+  Markdown tab writes its rendered PDF (`EDIT-MODE-18`), any other export of a text tab is a
+  usage error. *design*
 - `EDIT-MODE-17` MUST [A]: the Markdown of `EDIT-MODE-14` and `EDIT-TEXT-14` is read by the
   editor's md4c reader on any Qt, not by Qt's `setMarkdown`: every image is drawn, one without
   an alt text or with a formatted one too; a header cell takes its column's alignment; the text
   inside raw HTML keeps its order, and none is lost after a `<br>`, an unclosed tag or one that
   is not HTML text formatting (`<rundir>`, shown as text). *design*
+- `EDIT-MODE-18` MUST [A]: File > Export in a Markdown tab, read-only or not, saves the
+  rendered current text as a PDF (`docs/MARKDOWN.md`, PDF): A4 portrait pages, 20 mm margins,
+  the page number centred at the bottom; black text on white whatever the theme, the formulas,
+  the images and the quote bars as on the rendered page, at its font and resolution; a line
+  never splits between two pages; the images are found next to the file. *design*
+
+### 4.15 Find — FIND
+
+The find bar searches the text the active tab shows and marks the matches over it; the
+document is never changed. The architecture is `docs/FIND.md`. Specified in 0.60.
+
+- `EDIT-FIND-1` MUST [A]: Edit > Find (Ctrl+F) shows the find bar under the document area with
+  the focus in its field, all of it selected; the text selected in the active tab fills it when
+  it is one line. Esc in the bar or its close button hides it, drops the marks and gives the
+  focus back to the page. *design*
+- `EDIT-FIND-2` MUST [A]: every change of the field or of an option searches the active tab
+  again: the field as written in any case unless *Match case* is on; *Whole words* takes a match
+  whose ends cut no word (`/reset` in `entry/reset()`, not `LED` in `LED_BUILTIN`), a word
+  being letters, digits and `_` of any script; *Regular expression* reads the field
+  as a Perl-compatible expression, an invalid one matching nothing; an empty match is never
+  taken. The bar shows `n of m` (`m+` past 10000 matches), or `No matches` with the field
+  tinted red. *design*
+- `EDIT-FIND-3` MUST [A]: Find Next (F3, Enter in the field, the down arrow) and Find Previous
+  (Shift+F3, Shift+Enter, the up arrow) make the next or the previous match current, the last
+  wrapping to the first and back; with the bar hidden they show it first. A new search makes
+  current the first match at or after the current one, else after the text cursor of a text
+  tab or the first selected element of a diagram, else the first match. *design*
+- `EDIT-FIND-4` MUST [A]: every match is marked by a yellow background (`#ffeb3b`), the current
+  one by an orange one (`#ff9800`), under the glyphs, which a text tab draws black; the marks
+  are not a part of the document: its text, its undo history, its modified state and every
+  export stay as they are. *design*
+- `EDIT-FIND-5` MUST [A]: a text tab searches the page it shows: the source, or the rendered
+  document of a read-only Markdown tab (`EDIT-MODE-14`), whose formulas and images are not
+  searched. The current match is scrolled into view; hiding the bar leaves it selected. *design*
+- `EDIT-FIND-6` MUST [A]: a diagram tab (HSM, FA, inspection) searches the texts its canvas
+  draws — the names, the actions, the transition labels, the comment titles and bodies, a
+  rendered comment by its rendered text — in the order of `--dump-text`: the document tree,
+  the texts of an element top-down. A text the canvas does not draw (the transition text off,
+  a hidden component comment, the metainformation) is not searched. *design*
+- `EDIT-FIND-7` MUST [A]: on the canvas the mark is a box behind the matched characters, one per
+  line of a wrapped match; a match hidden beyond the ellipsis of a cut text (`EDIT-NODE-16`)
+  marks the ellipsis. The element of the current match is selected and its mark scrolled into
+  view at the current zoom. *design*
+- `EDIT-FIND-8` MUST [A]: the marks follow the text: an edit, an undo or redo, a reload, a plugin
+  result, a change of the mode, of the font or of the drawn texts searches again; the current
+  match becomes the first at or after its old place, and the view, the selection and the text
+  cursor stay where they are. *design*
+- `EDIT-FIND-9` MUST [A]: the bar and its query are global (`docs/WINDOW.md`): a tab switch drops
+  the marks of the tab left and searches the new one. In a diff tab Find, Find Next and Find
+  Previous are disabled and the bar is greyed. *design*
 
 ## 5. Coverage
 

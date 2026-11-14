@@ -124,6 +124,11 @@ public:
     void  setDiffMarks(const QMap<QString, CyberiadaSMEditorAbstractItem::RunMark>& marks);
     const QStringList& runActive() const { return runMarkedActive; }
     const QStringList& runFired() const { return runMarkedFired; }
+    // a drawn text changed, joined or left the scene: the find searches again (EDIT-FIND-8)
+    void  noteTextsChanged() { emit textsChanged(); }
+    // the find marks are drawn; an export turns them off (EDIT-FIND-4)
+    bool  findMarksShown() const { return findMarksOn; }
+    void  setFindMarksShown(bool on);
     // a tool for one gesture: the select tool is back with the mouse release
     void  beginTransientTool(ToolType tool);
 
@@ -153,6 +158,7 @@ signals:
     void  elementSelected(const QModelIndex& index);
     void  codeLanguageChanged(const QString& value);
     void  markupLanguageChanged(const QString& value);
+    void  textsChanged();
 
 public slots:
 	void  slotElementSelected(const QModelIndex& index);
@@ -227,6 +233,7 @@ private:
     QMap<Cyberiada::ID, QGraphicsItem*> elementIdToItemMap;
     QStringList                    runMarkedActive;
     QStringList                    runMarkedFired;
+    bool                           findMarksOn = true;
     QMultiMap<Cyberiada::ID, CyberiadaSMEditorSubjectItem*> subjectItems;
 	
     // int                            gridSize;

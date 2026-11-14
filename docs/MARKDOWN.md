@@ -1,7 +1,7 @@
 # The Markdown Rendering — Architecture
 
-**Document version:** 0.7 (2026-11-12). The requirements are `EDIT-MODE-14`, `EDIT-MODE-17` and
-`EDIT-TEXT-14` in `EDITOR-SPEC.md`.
+**Document version:** 0.9 (2026-11-13). The requirements are `EDIT-MODE-14`, `EDIT-MODE-17`,
+`EDIT-MODE-18` and `EDIT-TEXT-14` in `EDITOR-SPEC.md`.
 
 The editor renders Markdown itself: a read-only Markdown tab (`docs/MODES.md`, Text tabs) and,
 when the preference is on, a Markdown comment body on the canvas. md4c reads the text, a TeX
@@ -43,12 +43,15 @@ the images are inserted as objects.
 * A header cell takes the alignment of its column, as a body cell does.
 * Raw HTML: the tags are counted and the HTML inserted once they close; inside them every text
   waits in its order (the code as `<code>`); a block inserts what is still open at its end.
+  A comment `<!-- … -->` waits for its end over its lines and shows nothing, as a link
+  definition to nothing (`[text]: #`, the Markdown comment) does.
   A `<br>` outside other tags is a line separator (Qt 5.12 drops a `<br/>` inserted alone),
   another void element closes itself (`<img ...>` -> `<img .../>`), a tag that is not text
   formatting (`<rundir>`) is shown as text.
 
-The source highlighting (`EDIT-TEXT-11`) finds the formulas with `markdownMathRanges`, the
-same md4c reading, so a formula is coloured exactly where it is rendered.
+The source highlighting (`EDIT-TEXT-11`) finds the formulas and the HTML comments with
+`markdownSourceRanges`, the same md4c reading, so a formula is coloured exactly where it is
+rendered and a comment where it is hidden.
 
 Qt's own `QTextDocument::setMarkdown` (Qt 5.15) is not used: it reads no formulas, drops an
 image without an alt text, makes one image per piece of a formatted alt text and loses the
@@ -135,6 +138,38 @@ scrolls to the heading of that GitHub anchor (`headingAnchor`: lower case, the s
 no punctuation, a repeated one numbered); Ctrl+wheel zooms; a palette change renders the
 text again, the formulas and the quotes in the new colours.
 
+## PDF
+
+File > Export in a Markdown tab (and `--export <file>.pdf` in batch mode) renders the current
+text once more, into a document of its own laid out on pages (`EDIT-MODE-18`):
+
+```
+ slotFileExport / batch --export x.pdf
+                     |
+                     v
+ TextDocument::exportPdf(path): the text, the dir and the name of the file
+                     |
+                     v
+ exportMarkdownPdf(text, baseDir, title, path)                     markdown_pdf.*
+   QPdfWriter: A4 portrait, margins 20 mm, the resolution of the screen
+   QTextDocument: laid out for the writer, no margin of its own,
+     setPageSize(the paint rect less a band for the number)
+     setMarkdownColors(black, white) + importMarkdown(text, baseDir)
+                     |
+                     v
+   page i of pageCount():  translate(0, -i * h), clip to page i
+     layout()->draw(palette text black) + drawMarkdownQuotes
+     i + 1 centred in the band; newPage()
+```
+
+* `QTextDocument::print()` would draw a clone without the object handlers and the quote bars:
+  the pages are drawn here, from the same `importMarkdown` as the view.
+* The writer takes the resolution of the screen, the one the formula pictures are recorded at,
+  so the text, the formulas and the images keep their sizes of the rendered page; the PDF keeps
+  the text as text and the SVG images and the formulas as vectors.
+* The layout of a paged document moves a line that would cross the page end to the next page.
+* The text and the formulas are black on white whatever the theme; a link keeps the link colour.
+
 ## Comments on the canvas
 
 With `renderMarkdownComments` (Preferences > Text, `--render-markdown`, the batch verb
@@ -183,6 +218,10 @@ document of its `EditableTextItem`:
 * the read-only tab of `texts/markdown.md`: the formulas, the images found next to the file;
   the sizes of its objects - an SVG at its own size or the text width, a missing image as
   its label, a bad formula with its errors, the display formula centred;
-* the comments of `diagrams/markdown-render-comments.graphml` with the preference on and off.
+* the comments of `diagrams/markdown-render-comments.graphml` with the preference on and off;
+* the PDF of `texts/markdown.md`: a PDF file of A4 pages, a long text on more pages than a
+  short one, its objects drawn on the pages.
 
 `l2-render-markdown` runs the batch verb: the dump and the saved document stay as they are.
+`mode-markdown-pdf` exports `texts/markdown.md` to PDF in batch mode; `mode-markdown-export-reject`
+(a PNG of a Markdown text) and `mode-text-export-reject` (a PDF of a C++ text) are usage errors.

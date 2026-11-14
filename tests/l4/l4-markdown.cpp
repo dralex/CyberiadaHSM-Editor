@@ -25,6 +25,7 @@
 #include <QAbstractTextDocumentLayout>
 #include <QFile>
 #include <QImage>
+#include <QPageSize>
 #include <QPainter>
 #include <QRegularExpression>
 #include <QStackedWidget>
@@ -37,6 +38,7 @@
 #include <QTextTable>
 #include "markdown_importer.h"
 #include "markdown_objects.h"
+#include "markdown_pdf.h"
 #include "markdown_view.h"
 #include "svg_markers.h"
 #include "text_document.h"
@@ -48,8 +50,8 @@
 
 // the laws of the Markdown rendering (EDIT-MODE-14/17, EDIT-TEXT-14, docs/MARKDOWN.md):
 // the formula spans, the images, the HTML tags, the markers, the baseline, the image
-// paths, the structure, the sizes of the objects and the rendered comments; no glyph
-// is compared (docs/TESTING.md)
+// paths, the structure, the sizes of the objects, the rendered comments and the PDF; no
+// glyph is compared (docs/TESTING.md)
 class TestMarkdown: public QObject {
 	Q_OBJECT
 
@@ -69,12 +71,14 @@ private slots:
 	void test_tab_rendered();
 	void test_object_sizes();
 	void test_comment_rendered();
+	void test_pdf();
 
 private:
 	static QString read(const QString& path);
 	static QString structure(QTextDocument* doc);
 	static QList<QTextCharFormat> objects(const QString& text, int type);
 	static QImage draw(QTextDocument* doc);
+	static QByteArray pdfFile(const QString& text, const QString& baseDir, int* pages);
 };
 
 QString TestMarkdown::read(const QString& path)
@@ -224,6 +228,11 @@ void TestMarkdown::test_html_tags()
 	QVERIFY(doc.toPlainText().contains("d"));
 	importMarkdown(&doc, "the file <rundir>/input.md and the rest", QString());
 	QVERIFY(doc.toPlainText().contains("<rundir>/input.md and the rest"));
+	// a comment shows nothing, over its lines too
+	importMarkdown(&doc, "[a remark]: #\n\n<!-- first\nsecond -->\n\nx <!-- in\nline --> y", QString());
+	QVERIFY2(!doc.toPlainText().contains("remark") && !doc.toPlainText().contains("second") &&
+			 !doc.toPlainText().contains("line"), qPrintable(doc.toPlainText()));
+	QVERIFY(doc.toPlainText().contains("x") && doc.toPlainText().contains("y"));
 	importMarkdown(&doc, "a <b>bold `code`</b> c\n\nan <i>open tag\n\nthe last", QString());
 	QString text = doc.toPlainText();
 	QVERIFY2(text.contains("a bold code c"), qPrintable(text));
@@ -625,4 +634,63 @@ void TestMarkdown::test_comment_rendered()
 }
 
 QTEST_MAIN(TestMarkdown)
+// the PDF of the text, its pages counted by the export
+QByteArray TestMarkdown::pdfFile(const QString& text, const QString& baseDir, int* pages)
+{
+	QTemporaryDir dir;
+	QString path = dir.filePath("text.pdf"), error;
+	*pages = exportMarkdownPdf(text, baseDir, "text.md", path, &error);
+	if (!*pages) qWarning("%s", qPrintable(error));
+	QFile file(path);
+	return file.open(QIODevice::ReadOnly) ? file.readAll() : QByteArray();
+}
+
+// EDIT-MODE-18: the rendered text on A4 pages, a longer text on more of them, the formulas
+// (their font) and the images (a raster one an image object) drawn on the pages
+void TestMarkdown::test_pdf()
+{
+	QRegularExpression page("/Type /Page\\b");
+	QRegularExpression box("/MediaBox \\[0 0 ([0-9.]+) ([0-9.]+)\\]");
+	int pages = 0;
+	QByteArray pdf = pdfFile(read("texts/markdown.md"), QDir("texts").absolutePath(), &pages);
+	QVERIFY(pdf.startsWith("%PDF"));
+	QCOMPARE(pages, 1);
+	// the whole file: the compressed streams hold zero bytes
+	QString raw = QString::fromLatin1(pdf.constData(), pdf.size());
+	QCOMPARE(raw.count(page), pages);
+	QSize a4 = QPageSize(QPageSize::A4).sizePoints();
+	QRegularExpressionMatchIterator boxes = box.globalMatch(raw);
+	QVERIFY(boxes.hasNext());
+	while (boxes.hasNext()) {
+		QRegularExpressionMatch m = boxes.next();
+		QCOMPARE(qRound(m.captured(1).toDouble()), a4.width());
+		QCOMPARE(qRound(m.captured(2).toDouble()), a4.height());
+	}
+#ifdef CYBERIADA_WITH_MATH
+	QVERIFY(raw.contains("XITS"));
+#endif
+
+	// the paragraphs of a long text, as many as the lines of some pages, go on to the next pages
+	const int LONG_TEXT_PAGES = 4;
+	QString paragraphs;
+	for (int i = 0; i < LONG_TEXT_PAGES * a4.height() / QFontMetrics(QFont()).height(); i++)
+		paragraphs += QString("Paragraph %1 with $x_{%1}$.\n\n").arg(i);
+	int longPages = 0;
+	QByteArray longPdf = pdfFile(paragraphs, QString(), &longPages);
+	QString longRaw = QString::fromLatin1(longPdf.constData(), longPdf.size());
+	QVERIFY(longPages > pages);
+	QCOMPARE(longRaw.count(page), longPages);
+
+	// a raster image is an image object of the file
+	QTemporaryDir dir;
+	QImage image(QSize(8, 8), QImage::Format_RGB32);
+	image.fill(Qt::darkCyan);
+	QVERIFY(image.save(dir.filePath("dot.png")));
+	QByteArray imagePdf = pdfFile("![dot](dot.png)\n", dir.path(), &pages);
+	QString withImage = QString::fromLatin1(imagePdf.constData(), imagePdf.size());
+	QCOMPARE(pages, 1);
+	QVERIFY(withImage.contains("/Subtype /Image"));
+	QVERIFY(!longRaw.contains("/Subtype /Image"));
+}
+
 #include "l4-markdown.moc"

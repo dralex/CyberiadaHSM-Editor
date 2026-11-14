@@ -1,6 +1,6 @@
 # The Document Modes — Architecture
 
-**Document version:** 0.9 (2026-11-12) — stages 1 to 6 implemented (see Stages). The requirements are
+**Document version:** 0.10 (2026-11-13) — stages 1 to 6 implemented (see Stages). The requirements are
 `EDIT-MODE-1..17` in `EDITOR-SPEC.md` §4.14, the plugin parts `EDIT-PLUG-56..60`.
 
 A tab holds one document in one **mode**: the format edited, the access, and the tools, the
@@ -173,6 +173,8 @@ The git plugin hands the revision of a diagram to a diff tab:
 * The proxy step lets the window's Undo and Redo, bound to the `QUndoGroup`, drive the text's own
   undo, and the stack's clean state gives the `*` of the title.
 * Save writes the text as it is, in UTF-8; Save As proposes the mode's first extension.
+* File > Export of a Markdown tab saves the rendered text as a PDF (`MARKDOWN.md`, PDF); the
+  other text tabs have nothing to export.
 
 ## The menus
 
@@ -226,6 +228,7 @@ File                              Document
 | `--inspect` | the command-line files open in inspection tabs |
 | `--dump-tabs` | `i <title>[*] <mode>[ ro] [active]` |
 | `--dump` | a text tab: `== text`; a diff tab: `== diff` (the pairs and their flags) |
+| `--export <file>.pdf` | a Markdown tab: the rendered PDF; another export of a text tab is a usage error |
 
 ## Code layout
 

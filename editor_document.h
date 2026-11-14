@@ -30,6 +30,7 @@
 #include <QString>
 
 #include "document_mode.h"
+#include "find_query.h"
 #include "plugin_conditions.h"
 
 class QWidget;
@@ -80,10 +81,24 @@ public:
     virtual QWidget*         page() const = 0;
     virtual QUndoStack*      undoStack() const = 0;
 
+    // the find bar searches the shown text of a kind that can (EDIT-FIND-1..9, docs/FIND.md)
+    virtual bool             canFind() const { return false; }
+    // mark the matches and make the one at or after the place current; navigate goes
+    // to it (the bar), a tab switch does not
+    virtual void             setFindQuery(const FindQuery& query, bool navigate) { Q_UNUSED(query); Q_UNUSED(navigate); }
+    // the next (+1) or the previous (-1) match current, wrapping, navigated to
+    virtual void             moveFind(int step) { Q_UNUSED(step); }
+    // drop the marks; keep leaves the current match selected (the bar closed)
+    virtual void             clearFind(bool keep) { Q_UNUSED(keep); }
+    // the selected text when it is one line, else empty
+    virtual QString          findSeed() const { return QString(); }
+
 signals:
     void                     titleChanged();
     void                     modeChanged();
     void                     readOnlyChanged(bool on);
+    // every search: the current match from 0 (-1 without one), the count, more past the limit
+    void                     findResultChanged(int current, int total, bool more);
 
 protected:
     // the kind applies the flag to its parts

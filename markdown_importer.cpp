@@ -77,7 +77,7 @@ QVector<int> utf16Offsets(const QByteArray& utf8)
     return map;
 }
 
-// the byte ranges of the TeX of the formulas md4c reports
+// the byte ranges of the TeX of the formulas and of the HTML comments md4c reports
 struct MathScan {
     const char* doc = nullptr;
     int size = 0;
@@ -86,10 +86,23 @@ struct MathScan {
     int first = -1;
     int last = -1;
     QVector<QPair<int, int>> tex;
+    int commentStart = -1;
+    int htmlEnd = -1;
+    QVector<QPair<int, int>> comments;
 };
 
 int mathEnterBlock(MD_BLOCKTYPE, void*, void*) { return 0; }
-int mathLeaveBlock(MD_BLOCKTYPE, void*, void*) { return 0; }
+
+// an unclosed comment ends with its block, as the reader drops it there
+int mathLeaveBlock(MD_BLOCKTYPE, void*, void* user)
+{
+    MathScan* st = static_cast<MathScan*>(user);
+    if (st->commentStart >= 0) {
+        st->comments.append(qMakePair(st->commentStart, st->htmlEnd));
+        st->commentStart = -1;
+    }
+    return 0;
+}
 
 int mathEnterSpan(MD_SPANTYPE type, void*, void* user)
 {
@@ -116,6 +129,25 @@ int mathLeaveSpan(MD_SPANTYPE type, void*, void* user)
 int mathText(MD_TEXTTYPE type, const MD_CHAR* text, MD_SIZE size, void* user)
 {
     MathScan* st = static_cast<MathScan*>(user);
+    if (type == MD_TEXT_HTML && text >= st->doc && text < st->doc + st->size) {
+        QByteArray chunk(text, int(size));
+        int base = int(text - st->doc), at = 0;
+        while (at < chunk.size()) {
+            if (st->commentStart < 0) {
+                int open = chunk.indexOf("<!--", at);
+                if (open < 0) break;
+                st->commentStart = base + open;
+                at = open + 4;
+            }
+            int close = chunk.indexOf("-->", at);
+            if (close < 0) break;
+            st->comments.append(qMakePair(st->commentStart, base + close + 3));
+            st->commentStart = -1;
+            at = close + 3;
+        }
+        st->htmlEnd = base + int(size);
+        return 0;
+    }
     if (st->inMath && type == MD_TEXT_LATEXMATH && text >= st->doc && text < st->doc + st->size) {
         int b = int(text - st->doc);
         if (st->first < 0 || b < st->first) st->first = b;
@@ -153,7 +185,7 @@ void greyQuotes(QTextDocument* doc)
 
 } // namespace
 
-QVector<MarkdownMathRange> markdownMathRanges(const QString& text)
+MarkdownSourceRanges markdownSourceRanges(const QString& text)
 {
     QByteArray bytes = text.toUtf8();
     MathScan st;
@@ -163,7 +195,8 @@ QVector<MarkdownMathRange> markdownMathRanges(const QString& text)
                         mathText, nullptr, nullptr};
     md_parse(bytes.constData(), MD_SIZE(bytes.size()), &parser, &st);
     QVector<int> offsets = utf16Offsets(bytes);
-    QVector<MarkdownMathRange> ranges;
+    MarkdownSourceRanges ranges;
+    for (const QPair<int, int>& c : st.comments) ranges.comments.append(qMakePair(offsets.at(c.first), offsets.at(c.second)));
     for (const QPair<int, int>& t : st.tex) {
         // the dollars around the TeX, a display one perhaps on lines of their own
         int open = t.first, close = t.second;
@@ -171,7 +204,7 @@ QVector<MarkdownMathRange> markdownMathRanges(const QString& text)
         for (int k = 0; k < 2 && open > 0 && bytes.at(open - 1) == '$'; k++) open--;
         while (close < bytes.size() && isSpace(bytes.at(close))) close++;
         for (int k = 0; k < 2 && close < bytes.size() && bytes.at(close) == '$'; k++) close++;
-        ranges.append(MarkdownMathRange{offsets.at(open), offsets.at(close), offsets.at(t.first), offsets.at(t.second)});
+        ranges.math.append(MarkdownMathRange{offsets.at(open), offsets.at(close), offsets.at(t.first), offsets.at(t.second)});
     }
     return ranges;
 }
