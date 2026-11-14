@@ -146,8 +146,10 @@ public:
 
     // the coloured spans of the whole text
     static QVector<CodeSpan> spans(const QString& text, CodeRole role, const CodeLanguage& lang);
-    // the Markdown spans; a fenced block by the language of its tag, else by the fallback
-    QVector<CodeSpan> markdownSpans(const QString& text, const CodeLanguage* fallback) const;
+    // the Markdown spans; a fenced block by the language of its tag, else by the fallback;
+    // the targets of the links given apart when asked (EDIT-MODE-28)
+    QVector<CodeSpan> markdownSpans(const QString& text, const CodeLanguage* fallback,
+                                    QVector<CodeSpan>* targets = nullptr) const;
 
 signals:
     void styleChanged();
@@ -181,6 +183,8 @@ public:
     void setMarkup(CodeMarkup newMarkup);
     // the colors of a text editor's scheme instead of CodeStyle's (EDIT-COLOR-1)
     void setScheme(const TextScheme& scheme);
+    // the Markdown link targets underlined, their format an anchor of the target (EDIT-MODE-28)
+    void setOpenLinks(bool on);
 
 protected:
     void highlightBlock(const QString& text) override;
@@ -201,7 +205,9 @@ private:
     // the spans of the whole text, found once while the text and the settings stay
     QString cachedText;
     QVector<CodeSpan> cachedSpans;
+    QVector<CodeSpan> cachedTargets;
     bool cacheValid = false;
+    bool openLinks = false;
     // the earlier lines to re-highlight, [from, end), from -1 when none
     int staleFrom = -1;
     int staleEnd = -1;

@@ -54,6 +54,16 @@
     </message>
 </context>
 <context>
+    <name>CodeEditor</name>
+    <message>
+        <location filename="../code_editor.cpp" line="+264"/>
+        <source>%1
+Ctrl+click to open</source>
+        <translation>%1
+Ctrl+щелчок — открыть</translation>
+    </message>
+</context>
+<context>
     <name>CyberiadaFileDialog</name>
     <message>
         <location filename="../dialogs/file_dialog.cpp" line="+56"/>
@@ -202,7 +212,7 @@
         <translation>Менеджер плагинов...</translation>
     </message>
     <message>
-        <location line="+250"/>
+        <location line="+253"/>
         <source>Close</source>
         <translation>Закрыть</translation>
     </message>
@@ -3160,7 +3170,7 @@
         <translation>Сбросить положение подписи</translation>
     </message>
     <message>
-        <location filename="../text_document.cpp" line="+48"/>
+        <location filename="../text_document.cpp" line="+53"/>
         <source>typing</source>
         <translation>ввод текста</translation>
     </message>
@@ -4097,12 +4107,12 @@
 <context>
     <name>TextDocument</name>
     <message>
-        <location filename="../text_document.cpp" line="+117"/>
+        <location filename="../text_document.cpp" line="+119"/>
         <source>Line %1, column %2: %3</source>
         <translation>Строка %1, столбец %2: %3</translation>
     </message>
     <message>
-        <location line="+100"/>
+        <location line="+144"/>
         <source>untitled</source>
         <translation>без имени</translation>
     </message>

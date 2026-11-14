@@ -55,8 +55,8 @@ QTextCharFormat markdownMathFormat(const QTextCharFormat& base, const QString& t
 QTextCharFormat markdownImageFormat(const QTextCharFormat& base, const QString& source,
                                     const QString& alt, const QString& baseDir);
 
-// the absolute path of an image the text names, relative to baseDir; empty for a
-// URL that is not a file and for a relative path without a base directory
+// the absolute path of a file the text names (an image, a link target), relative to
+// baseDir; empty for a URL that is not a file and for a relative path without a base directory
 QString markdownImagePath(const QString& source, const QString& baseDir);
 
 // the drawing of the objects on the layout of the document, set once per layout

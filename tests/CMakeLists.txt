@@ -800,6 +800,12 @@ endforeach()
 # the descriptors call ${plugin_dir}/../../bin/plugin-helper: the sets sit next to it
 file(GLOB_RECURSE _plugin_files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/plugins
   ${CMAKE_CURRENT_SOURCE_DIR}/plugins/*)
+# a reused build keeps no fixture renamed or removed in the sources: it would join its set
+file(GLOB _plugin_copies ${PLUGIN_TEST_DIR}/*)
+list(REMOVE_ITEM _plugin_copies ${PLUGIN_TEST_DIR}/bin)
+if(_plugin_copies)
+  file(REMOVE_RECURSE ${_plugin_copies})
+endif()
 foreach(_file ${_plugin_files})
   configure_file(plugins/${_file} ${PLUGIN_TEST_DIR}/${_file} COPYONLY)
 endforeach()

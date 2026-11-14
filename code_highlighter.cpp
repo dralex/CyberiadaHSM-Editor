@@ -392,15 +392,33 @@ struct InlinePiece {
     bool quote;
 };
 
+// the target of a link match: the destination of [text](dest) without its <>, the address of
+// <url>, a bare URL itself; [from, to) in the matched text, empty when none
+static QPair<int, int> linkTarget(const QRegularExpressionMatch& m)
+{
+    int from = m.capturedStart(1), to = m.capturedEnd(1);
+    if (from >= 0) {
+        const QString dest = m.captured(1);
+        if (dest.length() > 2 && dest.startsWith('<') && dest.endsWith('>')) {
+            from++;
+            to--;
+        }
+        return qMakePair(from, to);
+    }
+    if (m.capturedStart(3) >= 0) return qMakePair(m.capturedStart(3), m.capturedEnd(3));
+    return qMakePair(m.capturedStart(0), m.capturedEnd(0));
+}
+
 // the inline elements, the formulas and the comments of the lines of a paragraph: the rules
 // match over the lines joined by a line feed, an element is cut back to its lines; an earlier
 // element wins an overlap, a formula or a comment wins them all; the rest of a quote's line
-// in the quote colour
+// in the quote colour; the link targets apart when asked
 static void addParagraphSpans(QVector<CodeSpan>& result, const QVector<InlinePiece>& pieces,
-                              const MarkdownSourceRanges& src)
+                              const MarkdownSourceRanges& src, QVector<CodeSpan>* targets)
 {
     static const QRegularExpression code(R"((`+)(.+?)\1)", QRegularExpression::DotMatchesEverythingOption);
-    static const QRegularExpression link(R"(!?\[[^\]]*\]\([^)\s]*(\s+"[^"]*")?\)|<(https?|ftp|mailto):[^>\s]+>|\bhttps?://[^\s<>()]+)");
+    // the groups: 1 the destination, 2 the title, 3 the address of <url>
+    static const QRegularExpression link(R"(!?\[[^\]]*\]\(([^)\s]*)(\s+"[^"]*")?\)|<((?:https?|ftp|mailto):[^>\s]+)>|\bhttps?://[^\s<>()]+)");
     static const QRegularExpression strong(R"((\*\*|__|~~)(?=\S)(.+?)(?<=\S)\1)",
                                            QRegularExpression::DotMatchesEverythingOption);
     static const QRegularExpression em(R"((?<![*\w])\*(?=[^\s*])(.+?)(?<=[^\s*])\*(?!\*)|(?<![_\w])_(?=[^\s_])(.+?)(?<=[^\s_])_(?![_\w]))",
@@ -412,6 +430,13 @@ static void addParagraphSpans(QVector<CodeSpan>& result, const QVector<InlinePie
     QVector<int> at;
     QVector<QPair<int, int>> taken;
     QVector<CodeSpan> found;
+    // [from, to) of the joined text cut to the lines, absolute
+    auto cut = [&](QVector<CodeSpan>& into, int from, int to, CodeTokenKind kind) {
+        for (int i = 0; i < pieces.size(); i++) {
+            int b = qMax(from, at[i]), e = qMin(to, at[i] + pieces.at(i).text.length());
+            if (b < e) into.append(CodeSpan{pieces.at(i).start + b - at[i], e - b, kind});
+        }
+    };
     for (int i = 0; i < pieces.size(); i++) {
         const InlinePiece& p = pieces.at(i);
         if (i > 0) joined += QChar('\n');
@@ -432,9 +457,10 @@ static void addParagraphSpans(QVector<CodeSpan>& result, const QVector<InlinePie
             }
             if (overlaps) continue;
             taken.append(qMakePair(from, to));
-            for (int i = 0; i < pieces.size(); i++) {
-                int b = qMax(from, at[i]), e = qMin(to, at[i] + pieces.at(i).text.length());
-                if (b < e) found.append(CodeSpan{pieces.at(i).start + b - at[i], e - b, kinds[r]});
+            cut(found, from, to, kinds[r]);
+            if (targets && rules[r] == &link) {
+                QPair<int, int> target = linkTarget(m);
+                cut(*targets, target.first, target.second, codeTokenLink);
             }
         }
     }
@@ -453,8 +479,10 @@ static void addParagraphSpans(QVector<CodeSpan>& result, const QVector<InlinePie
     }
 }
 
-QVector<CodeSpan> CodeStyle::markdownSpans(const QString& text, const CodeLanguage* fallback) const
+QVector<CodeSpan> CodeStyle::markdownSpans(const QString& text, const CodeLanguage* fallback,
+                                           QVector<CodeSpan>* targets) const
 {
+    if (targets) targets->clear();
     static const QRegularExpression fence(R"(^ {0,3}(`{3,}|~{3,})\s*([^\s`]*)\s*$)");
     static const QRegularExpression heading(R"(^ {0,3}#{1,6}(\s|$))");
     static const QRegularExpression rule(R"(^ {0,3}([-*_])( *\1){2,} *$)");
@@ -482,7 +510,7 @@ QVector<CodeSpan> CodeStyle::markdownSpans(const QString& text, const CodeLangua
     // the inline text of a block, so an element broken by it is found whole
     QVector<InlinePiece> pieces;
     auto flush = [&]() {
-        if (!pieces.isEmpty()) addParagraphSpans(result, pieces, src);
+        if (!pieces.isEmpty()) addParagraphSpans(result, pieces, src, targets);
         pieces.clear();
     };
     int run = 0;
@@ -612,6 +640,14 @@ QTextCharFormat CodeHighlighter::format(CodeTokenKind kind) const
     return fmt;
 }
 
+void CodeHighlighter::setOpenLinks(bool on)
+{
+    if (openLinks == on) return;
+    openLinks = on;
+    // the targets are found with the spans, only their format changes
+    rehighlight();
+}
+
 void CodeHighlighter::restyle()
 {
     cacheValid = false;
@@ -657,8 +693,11 @@ void CodeHighlighter::highlightBlock(const QString& text)
         bool edited = cacheValid;
         QVector<CodeSpan> before;
         before.swap(cachedSpans);
+        cachedTargets.clear();
         if (role == codeRoleMarkup) {
-            if (markup == codeMarkupMarkdown && style.isActive()) cachedSpans = style.markdownSpans(whole, language);
+            if (markup == codeMarkupMarkdown && style.isActive()) {
+                cachedSpans = style.markdownSpans(whole, language, &cachedTargets);
+            }
         } else if (const CodeLanguage* lang = style.effective(language)) {
             cachedSpans = CodeStyle::spans(whole, role, *lang);
         }
@@ -686,6 +725,19 @@ void CodeHighlighter::highlightBlock(const QString& text)
         if (span.start + span.length > blockEnd) {
             tail = tail * 31 + uint(span.start - blockEnd) * 7 + uint(span.length) * 3 + uint(span.kind);
         }
+    }
+    // the targets underlined, each its own anchor for the editor (EDIT-MODE-28); an underline
+    // keeps the layout
+    for (int i = 0; openLinks && i < cachedTargets.size(); i++) {
+        const CodeSpan& target = cachedTargets.at(i);
+        int from = qMax(target.start, blockStart);
+        int to = qMin(target.start + target.length, blockEnd);
+        if (from >= to) continue;
+        QTextCharFormat fmt = format(codeTokenLink);
+        fmt.setFontUnderline(true);
+        fmt.setAnchor(true);
+        fmt.setAnchorHref(cachedText.mid(target.start, target.length));
+        setFormat(from - blockStart, to - from, fmt);
     }
     setCurrentBlockState(int(tail & 0x7fffffff));
 }

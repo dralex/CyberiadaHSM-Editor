@@ -22,7 +22,9 @@
  * ----------------------------------------------------------------------------- */
 
 #include <QtTest>
+#include <QDesktopServices>
 #include <QFileDialog>
+#include <QMouseEvent>
 #include <QHeaderView>
 #include <QPainter>
 #include <QStyleOptionGraphicsItem>
@@ -48,6 +50,15 @@
 
 // the EDIT-MODE laws of the text tabs at the widget level: the modes, the page,
 // the window parts that follow, the undo, the save and the rendered Markdown
+// the URLs the desktop services are asked to open
+class UrlRecorder: public QObject {
+	Q_OBJECT
+public:
+	QList<QUrl> urls;
+public slots:
+	void open(const QUrl& url) { urls << url; }
+};
+
 class TestModes: public QObject {
 	Q_OBJECT
 
@@ -62,6 +73,7 @@ private slots:
 	void test_read_only_button();
 	void test_new_markdown_button();
 	void test_markdown_export();
+	void test_markdown_links();
 	void test_back_to_diagram();
 	void test_compare_saved();
 	void test_compare_refresh();
@@ -314,6 +326,76 @@ void TestModes::test_new_markdown_button()
 
 // EDIT-MODE-15/18: File > Export of a Markdown tab saves its rendered PDF under the name of
 // the file; another text tab has nothing to export until it becomes Markdown
+void TestModes::test_markdown_links()
+{
+	QTemporaryDir dir;
+	const QStringList names = { "links.md", "pic.png", "other.md" };
+	const QList<QByteArray> contents = {
+		"# Links\n\nA [site](http://example.org/a) and ![pic](pic.png),\n"
+		"[other](other.md), [up](#second-heading).\n\n## Second heading\n",
+		QByteArray(), "# Other\n" };
+	for (int i = 0; i < names.size(); i++) {
+		QFile f(dir.filePath(names[i]));
+		QVERIFY(f.open(QIODevice::WriteOnly));
+		f.write(contents[i]);
+	}
+	// nothing leaves the test: the sites and the files are recorded
+	UrlRecorder recorder;
+	QDesktopServices::setUrlHandler("http", &recorder, "open");
+	QDesktopServices::setUrlHandler("file", &recorder, "open");
+
+	CyberiadaSMEditorWindow window;
+	window.resize(1000, 600);
+	window.show();
+	QVERIFY(QTest::qWaitForWindowExposed(&window));
+	QVERIFY(window.openFile(dir.filePath("links.md")));
+	TextDocument* text = window.currentText();
+	QVERIFY(text && !text->showsRendered());
+	CodeEditor* editor = text->editor();
+	QWidget* viewport = editor->viewport();
+	// a point in the second glyph of a part of the text
+	auto at = [&](const QString& part) {
+		QTextCursor c(editor->document());
+		c.setPosition(editor->document()->toPlainText().indexOf(part) + 1);
+		QRect gap = editor->cursorRect(c);
+		return QPoint(gap.left() + 2, gap.center().y());
+	};
+	QCOMPARE(editor->linkAt(at("example.org")), QString("http://example.org/a"));
+	QVERIFY(editor->linkAt(at("site")).isEmpty());
+
+	// a plain click edits: the cursor there, nothing opened
+	QTest::mouseClick(viewport, Qt::LeftButton, Qt::NoModifier, at("example.org"));
+	QVERIFY(recorder.urls.isEmpty());
+	QCOMPARE(editor->textCursor().position(), editor->document()->toPlainText().indexOf("example.org") + 1);
+	// Ctrl+click: the site, the image beside the text
+	QTest::mouseClick(viewport, Qt::LeftButton, Qt::ControlModifier, at("example.org"));
+	QCOMPARE(recorder.urls, QList<QUrl>() << QUrl("http://example.org/a"));
+	QTest::mouseClick(viewport, Qt::LeftButton, Qt::ControlModifier, at("pic.png"));
+	QString base = QFileInfo(text->filePath()).absolutePath();
+	QCOMPARE(recorder.urls.value(1), QUrl::fromLocalFile(base + "/pic.png"));
+	// a #anchor: the cursor on its heading's line
+	QTest::mouseClick(viewport, Qt::LeftButton, Qt::ControlModifier, at("#second-heading"));
+	QCOMPARE(editor->textCursor().block().text(), QString("## Second heading"));
+	// a text the editor opens: its own tab, nothing for the system
+	QTest::mouseClick(viewport, Qt::LeftButton, Qt::ControlModifier, at("other.md"));
+	QTRY_VERIFY(window.currentText() && window.currentText()->filePath().endsWith("other.md"));
+	QCOMPARE(recorder.urls.size(), 2);
+
+	// the hand with Ctrl over a target, the editor's pointer elsewhere
+	QVERIFY(window.openFile(dir.filePath("links.md")));
+	QCOMPARE(window.currentText(), text);
+	Qt::CursorShape shape = viewport->cursor().shape();
+	QMouseEvent over(QEvent::MouseMove, at("example.org"), Qt::NoButton, Qt::NoButton, Qt::ControlModifier);
+	QApplication::sendEvent(viewport, &over);
+	QCOMPARE(viewport->cursor().shape(), Qt::PointingHandCursor);
+	QMouseEvent away(QEvent::MouseMove, at("Links"), Qt::NoButton, Qt::NoButton, Qt::ControlModifier);
+	QApplication::sendEvent(viewport, &away);
+	QCOMPARE(viewport->cursor().shape(), shape);
+
+	QDesktopServices::unsetUrlHandler("http");
+	QDesktopServices::unsetUrlHandler("file");
+}
+
 void TestModes::test_markdown_export()
 {
 	CyberiadaSMEditorWindow window;

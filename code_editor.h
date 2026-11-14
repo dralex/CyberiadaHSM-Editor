@@ -24,6 +24,7 @@
 #ifndef CYBERIADA_CODE_EDITOR
 #define CYBERIADA_CODE_EDITOR
 
+#include <QCursor>
 #include <QPlainTextEdit>
 #include "autoreplace.h"
 
@@ -54,14 +55,24 @@ public:
     // the bar, 0 high without a message
     int  errorBarHeight() const;
     void paintErrorBar(QPaintEvent* event);
+    // the link target under a point of the viewport: the anchor of the highlighter's format
+    // under the glyph there, empty when none (EDIT-MODE-28)
+    QString linkAt(const QPoint& pos) const;
 
 signals:
     // the bar is clicked
     void errorClicked();
+    // a link target is Ctrl+clicked
+    void linkActivated(const QString& target);
 
 protected:
     bool event(QEvent* event) override;
+    bool viewportEvent(QEvent* event) override;
     void keyPressEvent(QKeyEvent* event) override;
+    void keyReleaseEvent(QKeyEvent* event) override;
+    void mousePressEvent(QMouseEvent* event) override;
+    void mouseMoveEvent(QMouseEvent* event) override;
+    void mouseReleaseEvent(QMouseEvent* event) override;
     void inputMethodEvent(QInputMethodEvent* event) override;
     void contextMenuEvent(QContextMenuEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
@@ -76,6 +87,8 @@ private:
     // the tab stop and the margins, measured in the font
     void applyFontMetrics();
     void placeLineNumbers();
+    // the hand over a link target while Ctrl is held, the editor's pointer elsewhere
+    void updateLinkPointer(const QPoint& pos, bool ctrl);
 
     QWidget* lineNumbers;
     QWidget* errorBar;
@@ -83,6 +96,10 @@ private:
     QString m_errorMessage;
     AutoreplaceKind m_kind = autoreplaceNone;
     Autoreplacer m_replacer;
+    // the target a Ctrl+press started on, opened when released over it
+    QString m_pressedLink;
+    bool m_linkPointer = false;
+    QCursor m_textPointer;
 };
 
 #endif
