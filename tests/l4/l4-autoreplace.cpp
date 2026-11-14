@@ -22,7 +22,11 @@
  * ----------------------------------------------------------------------------- */
 
 #include <QtTest>
+#include <QCheckBox>
+#include <QDialogButtonBox>
+#include <QPushButton>
 #include <QSettings>
+#include <QTableWidget>
 #include <QTemporaryDir>
 #include <QUndoStack>
 #include "smeditor_window.h"
@@ -37,6 +41,8 @@
 #include "cyberiadasm_editor_transition_item.h"
 #include "cyberiadasm_editor_view.h"
 #include "settings_manager.h"
+#include "dialogs/preferences_dialog.h"
+#include "dialogs/autoreplace_page.h"
 
 // the EDIT-AUTO laws (docs/AUTOREPLACE.md): the rules, the texts they act in, the
 // Markdown exclusions, the typing only, the characters given back
@@ -54,6 +60,7 @@ private slots:
 	void test_markdown_tab();
 	void test_other_tabs();
 	void test_settings();
+	void test_page();
 
 private:
 	static QString u(const char* text) { return QString::fromUtf8(text); }
@@ -367,6 +374,89 @@ void TestAutoreplace::test_settings()
 	QCOMPARE(sm.getAutoreplaceRules(), defaultAutoreplaceRules());
 	sm.setAutoreplaceEnabled(false);
 	sm.loadDefaults();
+	QVERIFY(sm.getAutoreplaceEnabled());
+}
+
+// EDIT-AUTO-7: the switch and the table of the Preferences on a copy, Apply, Cancel,
+// Restore defaults and Reset
+void TestAutoreplace::test_page()
+{
+	SettingsManager& sm = SettingsManager::instance();
+	sm.loadDefaults();
+	const AutoreplaceRules defaults = defaultAutoreplaceRules();
+	CyberiadaSMEditorWindow window;
+	activate(window);
+	CodeEditor* editor = textTab(window, MODE_MARKDOWN);
+	{
+		PreferencesDialog dialog(&window);
+		AutoreplacePage* page = dialog.autoreplacePage();
+		QVERIFY(page);
+		QTableWidget* table = dialog.findChild<QTableWidget*>("autoreplaceTable");
+		QCheckBox* enabled = dialog.findChild<QCheckBox*>("autoreplaceEnabled");
+		QVERIFY(table && enabled);
+		QVERIFY(enabled->isChecked());
+		// the rules and a free row
+		QCOMPARE(table->rowCount(), defaults.size() + 1);
+		QCOMPARE(page->rules(), defaults);
+		QCOMPARE(table->item(0, 0)->text(), QString("--"));
+		QCOMPARE(table->item(0, 0)->checkState(), Qt::Checked);
+
+		// a rule switched off, one changed, one added in the free row, which is kept last
+		table->item(0, 0)->setCheckState(Qt::Unchecked);
+		table->item(2, 1)->setText("<");
+		int last = table->rowCount() - 1;
+		table->item(last, 1)->setText(u("\u263a"));
+		table->item(last, 0)->setText(":)");
+		QCOMPARE(table->rowCount(), defaults.size() + 2);
+		QVERIFY(table->item(last + 1, 0)->text().isEmpty());
+		// a pattern is never twice: the row stays free, the first one is shown
+		table->item(last + 1, 0)->setText("--");
+		QCOMPARE(table->rowCount(), defaults.size() + 2);
+		QVERIFY(table->item(last + 1, 0)->text().isEmpty());
+		QCOMPARE(table->currentRow(), 0);
+		// a pattern emptied drops its row
+		table->item(1, 0)->setText(QString());
+		QCOMPARE(table->rowCount(), defaults.size() + 1);
+		AutoreplaceRules edited = page->rules();
+		QCOMPARE(edited.size(), defaults.size());
+		QCOMPARE(edited[0], AutoreplaceRule("--", defaults[0].to, false));
+		QCOMPARE(edited[1], AutoreplaceRule("<<", "<"));
+		QCOMPARE(edited.last(), AutoreplaceRule(":)", u("\u263a")));
+
+		// the settings keep theirs until Apply, which acts on the open text at once
+		QCOMPARE(sm.getAutoreplaceRules(), defaults);
+		dialog.findChild<QDialogButtonBox*>()->button(QDialogButtonBox::Apply)->click();
+		QCOMPARE(sm.getAutoreplaceRules(), edited);
+		QCOMPARE(QSettings().value("autoreplace/rules/size").toInt(), edited.size());
+		QTest::keyClicks(editor, "a -- :)");
+		QCOMPARE(window.currentText()->text(), u("a -- \u263a"));
+
+		// Cancel: the switch turned off is dropped
+		enabled->setChecked(false);
+		QVERIFY(!table->isEnabled());
+	}
+	QVERIFY(sm.getAutoreplaceEnabled());
+	{
+		PreferencesDialog dialog(&window);
+		QVERIFY(dialog.autoreplacePage()->isEnabledChecked());
+		QCOMPARE(dialog.autoreplacePage()->rules(), sm.getAutoreplaceRules());
+		dialog.findChild<QCheckBox*>("autoreplaceEnabled")->setChecked(false);
+		dialog.findChild<QPushButton*>("autoreplaceDefaults")->click();
+		QCOMPARE(dialog.autoreplacePage()->rules(), defaults);
+		dialog.findChild<QDialogButtonBox*>()->button(QDialogButtonBox::Ok)->click();
+	}
+	QVERIFY(!sm.getAutoreplaceEnabled());
+	QCOMPARE(sm.getAutoreplaceRules(), defaults);
+	QVERIFY(QSettings().allKeys().filter("autoreplace/rules").isEmpty());
+	QTest::keyClicks(editor, " (c)");
+	QVERIFY(window.currentText()->text().endsWith(" (c)"));
+	{
+		// Reset of the Preferences turns the switch on again
+		PreferencesDialog dialog(&window);
+		QVERIFY(!dialog.autoreplacePage()->isEnabledChecked());
+		dialog.findChild<QDialogButtonBox*>()->button(QDialogButtonBox::Reset)->click();
+		QVERIFY(dialog.autoreplacePage()->isEnabledChecked());
+	}
 	QVERIFY(sm.getAutoreplaceEnabled());
 }
 

@@ -112,9 +112,10 @@ The rules are written when they differ from the defaults, removed when they equa
 | Event | Effect |
 |---|---|
 | *Replace as you type* | the switch |
-| a cell edited | the pattern or its replacement; the check box of a row switches the rule |
+| a cell edited | the pattern or its replacement; the check box beside a pattern switches the rule |
 | the last, empty row filled | a new rule; a row with an empty pattern is dropped |
-| a pattern written twice | the later row is refused, the first one shown |
+| a pattern written twice | the later cell is emptied, the first row shown |
+| *Replace as you type* off | the table greyed |
 | Restore defaults | the default rules |
 | Ok, Apply | the rules stored, the open texts follow at once |
 | Cancel | nothing changes |
@@ -130,5 +131,6 @@ The rules are written when they differ from the defaults, removed when they equa
 | `batch_script.cpp` | `edit-text` as written |
 | `dialogs/multilinetextdialog.*` | planned: a prose or Markdown text |
 | `cyberiadasm_properties_widget.*`, `cyberiadasm_view.*` | planned: the name rows and the tree rename |
-| `dialogs/preferences_dialog.*` | planned: the Autoreplace page |
+| `dialogs/autoreplace_page.*` | `AutoreplacePage`: the switch, the table, the copy of the rules |
+| `dialogs/preferences_dialog.*` | the page as a tab, its load and apply |
 | `tests/l4/l4-autoreplace.cpp`, `tests/scripts/auto-type.script` | the cases `EDIT-AUTO-1..8` |

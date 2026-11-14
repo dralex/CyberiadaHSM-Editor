@@ -31,6 +31,29 @@
     </message>
 </context>
 <context>
+    <name>AutoreplacePage</name>
+    <message>
+        <location filename="../dialogs/autoreplace_page.cpp" line="+42"/>
+        <source>Replace as you type</source>
+        <translation>Заменять при вводе</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Replace</source>
+        <translation>Заменять</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>With</source>
+        <translation>На</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Restore defaults</source>
+        <translation>Восстановить стандартные</translation>
+    </message>
+</context>
+<context>
     <name>CyberiadaFileDialog</name>
     <message>
         <location filename="../dialogs/file_dialog.cpp" line="+56"/>
@@ -49,7 +72,7 @@
 <context>
     <name>CyberiadaSMEditorScene</name>
     <message>
-        <location filename="../cyberiadasm_editor_scene.cpp" line="+1211"/>
+        <location filename="../cyberiadasm_editor_scene.cpp" line="+1232"/>
         <location line="+35"/>
         <location line="+152"/>
         <location line="+35"/>
@@ -179,7 +202,7 @@
         <translation>Менеджер плагинов...</translation>
     </message>
     <message>
-        <location line="+236"/>
+        <location line="+250"/>
         <source>Close</source>
         <translation>Закрыть</translation>
     </message>
@@ -198,7 +221,7 @@
 </translation>
     </message>
     <message>
-        <location line="+101"/>
+        <location line="+102"/>
         <source>Undefined</source>
         <translation>Не задан</translation>
     </message>
@@ -213,7 +236,7 @@
         <translation>Markdown</translation>
     </message>
     <message>
-        <location line="+695"/>
+        <location line="+699"/>
         <source>Undo</source>
         <translation>Отменить</translation>
     </message>
@@ -249,7 +272,7 @@
         <translation>В документе есть несохраненные изменения. Сохранить их?</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+14"/>
         <source>Exit</source>
         <translation>Выход</translation>
     </message>
@@ -259,7 +282,7 @@
         <translation>Выполняются плагины. Остановить их и выйти?</translation>
     </message>
     <message>
-        <location line="+114"/>
+        <location line="+115"/>
         <source>Load State Machine</source>
         <translation>Загрузка машины состояний</translation>
     </message>
@@ -281,21 +304,21 @@
 </translation>
     </message>
     <message>
-        <location line="+22"/>
-        <location line="+45"/>
+        <location line="+25"/>
+        <location line="+46"/>
         <source>Save State Machine</source>
         <translation>Сохранение машины состояний</translation>
     </message>
     <message>
-        <location line="-44"/>
-        <location line="+45"/>
+        <location line="-45"/>
+        <location line="+46"/>
         <source>Cannot save the document:
 </source>
         <translation>Не удалось сохранить документ:
 </translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+27"/>
         <location line="+19"/>
         <source>Error</source>
         <translation>Ошибка</translation>
@@ -311,7 +334,7 @@
         <translation>Недавние файлы</translation>
     </message>
     <message>
-        <location line="+233"/>
+        <location line="+235"/>
         <source>Geometry reconstruction</source>
         <translation>Восстановление геометрии</translation>
     </message>
@@ -321,7 +344,7 @@
         <translation>Построить геометрию всей диаграммы заново? Расположение элементов будет изменено; вернуть ее можно отменой действия.</translation>
     </message>
     <message>
-        <location line="+117"/>
+        <location line="+118"/>
         <source>the plugin is %1</source>
         <translation>плагин %1</translation>
     </message>
@@ -336,8 +359,8 @@
         <translation>нет документа</translation>
     </message>
     <message>
-        <location line="-1277"/>
-        <location line="+1287"/>
+        <location line="-1290"/>
+        <location line="+1300"/>
         <source>a plugin is running on the document</source>
         <translation>для документа выполняется плагин</translation>
     </message>
@@ -346,8 +369,8 @@
         <translation type="vanished">в режиме инспектора документ доступен только для чтения</translation>
     </message>
     <message>
-        <location line="-1253"/>
-        <location line="+1290"/>
+        <location line="-1266"/>
+        <location line="+1303"/>
         <source>the document cannot be encoded</source>
         <translation>не удалось сериализовать документ</translation>
     </message>
@@ -379,7 +402,7 @@
         <translation>Плагин: %1</translation>
     </message>
     <message>
-        <location line="-1705"/>
+        <location line="-1718"/>
         <source>Mode</source>
         <translation>Режим</translation>
     </message>
@@ -389,23 +412,23 @@
         <translation>режим %1 недоступен</translation>
     </message>
     <message>
-        <location line="+1303"/>
+        <location line="+1316"/>
         <source>the inspection tab is read-only</source>
         <translation>вкладка инспекции доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1282"/>
-        <location line="+1283"/>
+        <location line="-1295"/>
+        <location line="+1296"/>
         <source>the tab is read-only</source>
         <translation>вкладка доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1447"/>
+        <location line="-1461"/>
         <source>Text file</source>
         <translation>Текстовый файл</translation>
     </message>
     <message>
-        <location line="+78"/>
+        <location line="+79"/>
         <source>Code</source>
         <translation>Код</translation>
     </message>
@@ -425,7 +448,7 @@
         <translation>тип документа не изменён</translation>
     </message>
     <message>
-        <location line="+57"/>
+        <location line="+59"/>
         <location line="+18"/>
         <source>Check</source>
         <translation>Проверка</translation>
@@ -443,13 +466,13 @@
         <translation>Автомат не нарушает ни одного правила EXT-FA.</translation>
     </message>
     <message>
-        <location line="+355"/>
+        <location line="+356"/>
         <source>%1: not an element of a finite automaton</source>
         <translation>%1: не элемент конечного автомата</translation>
     </message>
     <message>
-        <location line="+307"/>
-        <location line="+23"/>
+        <location line="+310"/>
+        <location line="+26"/>
         <location line="+7"/>
         <source>Save Text</source>
         <translation>Сохранение текста</translation>
@@ -465,13 +488,13 @@
         <translation>%1 (*%2)</translation>
     </message>
     <message>
-        <location line="-410"/>
-        <location line="+410"/>
+        <location line="-416"/>
+        <location line="+416"/>
         <source>All files (*)</source>
         <translation>Все файлы (*)</translation>
     </message>
     <message>
-        <location line="-888"/>
+        <location line="-897"/>
         <source>Refresh</source>
         <translation>Обновить</translation>
     </message>
@@ -491,7 +514,7 @@
         <translation>вкладку сравнения открывает «Документ &gt; Сравнить с...»</translation>
     </message>
     <message>
-        <location line="+172"/>
+        <location line="+174"/>
         <source>Go to Line</source>
         <translation>Перейти к строке</translation>
     </message>
@@ -533,7 +556,7 @@
         <translation>в активной вкладке нет диаграммы</translation>
     </message>
     <message>
-        <location line="+30"/>
+        <location line="+31"/>
         <source>saved</source>
         <translation>сохранённый</translation>
     </message>
@@ -565,7 +588,7 @@
         <translation>Граф CyberiadaML (*.graphml)</translation>
     </message>
     <message>
-        <location line="+476"/>
+        <location line="+483"/>
         <source>Export the rendered text as PDF</source>
         <translation>Экспорт отображённого текста в PDF</translation>
     </message>
@@ -575,7 +598,7 @@
         <translation>Экспортировать</translation>
     </message>
     <message>
-        <location line="+442"/>
+        <location line="+445"/>
         <source>the action works in: %1</source>
         <translation>действие работает в режимах: %1</translation>
     </message>
@@ -603,12 +626,12 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+195"/>
+        <location line="+196"/>
         <source>Run</source>
         <translation>Запустить</translation>
     </message>
     <message>
-        <location line="-193"/>
+        <location line="-194"/>
         <source>Pause</source>
         <translation>Пауза</translation>
     </message>
@@ -643,7 +666,7 @@
         <translation>Сохранить журнал...</translation>
     </message>
     <message>
-        <location line="+250"/>
+        <location line="+251"/>
         <source>Open</source>
         <translation>Открыть</translation>
     </message>
@@ -1535,7 +1558,7 @@
 <context>
     <name>EditableTextItem</name>
     <message>
-        <location filename="../editable_text_item.cpp" line="+164"/>
+        <location filename="../editable_text_item.cpp" line="+215"/>
         <source>Copy</source>
         <translation>Копировать</translation>
     </message>
@@ -2951,7 +2974,7 @@
         <translation>Показывать комментарии Markdown отформатированными</translation>
     </message>
     <message>
-        <location filename="../dialogs/preferences_dialog.cpp" line="+31"/>
+        <location filename="../dialogs/preferences_dialog.cpp" line="+32"/>
         <source>Plugin interpreters (empty: looked up in PATH)</source>
         <translation>Интерпретаторы плагинов (пусто: поиск в PATH)</translation>
     </message>
@@ -2969,6 +2992,11 @@
         <location line="+6"/>
         <source>Plugins</source>
         <translation>Плагины</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Autoreplace</source>
+        <translation>Автозамена</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -3817,7 +3845,7 @@
 <context>
     <name>StateAction</name>
     <message>
-        <location filename="../cyberiadasm_editor_state_item.cpp" line="+348"/>
+        <location filename="../cyberiadasm_editor_state_item.cpp" line="+352"/>
         <source>Delete</source>
         <translation>Удалить</translation>
     </message>
@@ -3865,7 +3893,7 @@
 <context>
     <name>StateTitle</name>
     <message>
-        <location filename="../cyberiadasm_editor_state_item.cpp" line="-317"/>
+        <location filename="../cyberiadasm_editor_state_item.cpp" line="-321"/>
         <source>The name &quot;%1&quot; already exists at this hierarchy level.</source>
         <translation>Имя «%1» уже есть на этом уровне иерархии.</translation>
     </message>
@@ -3873,7 +3901,7 @@
 <context>
     <name>TextDocument</name>
     <message>
-        <location filename="../text_document.cpp" line="+149"/>
+        <location filename="../text_document.cpp" line="+160"/>
         <source>untitled</source>
         <translation>без имени</translation>
     </message>

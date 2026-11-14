@@ -18,6 +18,7 @@
 #include "interface_language.h"
 #include "shortcut_map.h"
 #include "shortcuts_page.h"
+#include "autoreplace_page.h"
 
 PreferencesDialog::PreferencesDialog(QWidget *parent, ShortcutMap* keys) :
     QDialog(parent),
@@ -38,6 +39,8 @@ PreferencesDialog::PreferencesDialog(QWidget *parent, ShortcutMap* keys) :
     interpreters->verticalHeader()->hide();
     pluginsLayout->addWidget(interpreters);
     ui->tabWidget->addTab(pluginsTab, tr("Plugins"));
+    autoreplace = new AutoreplacePage(this);
+    ui->tabWidget->addTab(autoreplace, tr("Autoreplace"));
     if (shortcutMap) {
         shortcuts = new ShortcutsPage(shortcutMap, this);
         ui->tabWidget->addTab(shortcuts, tr("Shortcuts"));
@@ -167,6 +170,7 @@ void PreferencesDialog::loadFromSettings()
     }
     interpreters->insertRow(interpreters->rowCount());
     if (shortcuts) shortcuts->load();
+    autoreplace->load();
 }
 
 void PreferencesDialog::saveSettings()
@@ -220,4 +224,5 @@ void PreferencesDialog::saveSettings()
         if (!kept.contains(i.key())) sm.setInterpreterPath(i.key(), QString());
     }
     if (shortcuts) shortcuts->apply();
+    autoreplace->apply();
 }

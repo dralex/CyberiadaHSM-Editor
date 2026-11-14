@@ -6,6 +6,7 @@
 class QTableWidget;
 class ShortcutMap;
 class ShortcutsPage;
+class AutoreplacePage;
 
 namespace Ui {
 class PreferencesDialog;
@@ -38,7 +39,9 @@ private:
     QTableWidget* interpreters = nullptr;
     ShortcutMap* shortcutMap = nullptr;
     ShortcutsPage* shortcuts = nullptr;
+    AutoreplacePage* autoreplace = nullptr;
 public:
+    AutoreplacePage* autoreplacePage() const { return autoreplace; }
     QTableWidget* interpreterTable() const { return interpreters; }
     ShortcutsPage* shortcutsPage() const { return shortcuts; }
 };
