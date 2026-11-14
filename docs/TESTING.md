@@ -594,7 +594,8 @@ plain C++ with no dependencies) whose arguments are a list of operations, so the
 cases need no interpreter. Its `session <file>` operation is a session plugin answering
 from the file: a turn `on <method>` (`control:<command>`, `reply` for the answers) lists
 what the k-th such message gets back — `result`, `error`, `send`, `ask`, `print`, `exit`.
-CMake copies the sets into the build tree next to the helper; the descriptors call it
+CMake mirrors the sets into the build tree next to the helper on every configure (a fixture
+renamed or removed in the sources doesn't linger there); the descriptors call it
 as `${plugin_dir}/../../bin/plugin-helper`. The settings are isolated (`CYBERIADA_PRO_CONFIG_HOME`, `CYBERIADA_PRO_DATA_HOME`, which work on
 Windows too; `XDG_CONFIG_HOME`, `XDG_DATA_HOME` as well) and
 `CYBERIADA_PRO_PLUGIN_PATH` is empty, so only `--plugin-path` folders are seen. The
