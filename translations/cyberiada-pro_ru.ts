@@ -72,7 +72,7 @@
 <context>
     <name>CyberiadaSMEditorScene</name>
     <message>
-        <location filename="../cyberiadasm_editor_scene.cpp" line="+1232"/>
+        <location filename="../cyberiadasm_editor_scene.cpp" line="+1240"/>
         <location line="+35"/>
         <location line="+152"/>
         <location line="+35"/>
@@ -192,7 +192,7 @@
 <context>
     <name>CyberiadaSMEditorWindow</name>
     <message>
-        <location filename="../smeditor_window.cpp" line="+152"/>
+        <location filename="../smeditor_window.cpp" line="+154"/>
         <source>Output panel</source>
         <translation>Панель вывода</translation>
     </message>
@@ -236,7 +236,7 @@
         <translation>Markdown</translation>
     </message>
     <message>
-        <location line="+699"/>
+        <location line="+849"/>
         <source>Undo</source>
         <translation>Отменить</translation>
     </message>
@@ -344,7 +344,7 @@
         <translation>Построить геометрию всей диаграммы заново? Расположение элементов будет изменено; вернуть ее можно отменой действия.</translation>
     </message>
     <message>
-        <location line="+118"/>
+        <location line="+122"/>
         <source>the plugin is %1</source>
         <translation>плагин %1</translation>
     </message>
@@ -359,8 +359,8 @@
         <translation>нет документа</translation>
     </message>
     <message>
-        <location line="-1290"/>
-        <location line="+1300"/>
+        <location line="-1428"/>
+        <location line="+1438"/>
         <source>a plugin is running on the document</source>
         <translation>для документа выполняется плагин</translation>
     </message>
@@ -369,8 +369,8 @@
         <translation type="vanished">в режиме инспектора документ доступен только для чтения</translation>
     </message>
     <message>
-        <location line="-1266"/>
-        <location line="+1303"/>
+        <location line="-1404"/>
+        <location line="+1441"/>
         <source>the document cannot be encoded</source>
         <translation>не удалось сериализовать документ</translation>
     </message>
@@ -402,38 +402,38 @@
         <translation>Плагин: %1</translation>
     </message>
     <message>
-        <location line="-1718"/>
+        <location line="-1870"/>
         <source>Mode</source>
         <translation>Режим</translation>
     </message>
     <message>
-        <location line="+126"/>
+        <location line="+140"/>
         <source>the mode %1 is not available</source>
         <translation>режим %1 недоступен</translation>
     </message>
     <message>
-        <location line="+1316"/>
+        <location line="+1454"/>
         <source>the inspection tab is read-only</source>
         <translation>вкладка инспекции доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1295"/>
-        <location line="+1296"/>
+        <location line="-1433"/>
+        <location line="+1434"/>
         <source>the tab is read-only</source>
         <translation>вкладка доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1461"/>
+        <location line="-1613"/>
         <source>Text file</source>
         <translation>Текстовый файл</translation>
     </message>
     <message>
-        <location line="+79"/>
+        <location line="+92"/>
         <source>Code</source>
         <translation>Код</translation>
     </message>
     <message>
-        <location line="+48"/>
+        <location line="+49"/>
         <source>a text tab cannot become a %1</source>
         <translation>текстовая вкладка не может перейти в режим «%1»</translation>
     </message>
@@ -466,12 +466,12 @@
         <translation>Автомат не нарушает ни одного правила EXT-FA.</translation>
     </message>
     <message>
-        <location line="+356"/>
+        <location line="+486"/>
         <source>%1: not an element of a finite automaton</source>
         <translation>%1: не элемент конечного автомата</translation>
     </message>
     <message>
-        <location line="+310"/>
+        <location line="+314"/>
         <location line="+26"/>
         <location line="+7"/>
         <source>Save Text</source>
@@ -488,18 +488,19 @@
         <translation>%1 (*%2)</translation>
     </message>
     <message>
-        <location line="-416"/>
-        <location line="+416"/>
+        <location line="-475"/>
+        <location line="+55"/>
+        <location line="+420"/>
         <source>All files (*)</source>
         <translation>Все файлы (*)</translation>
     </message>
     <message>
-        <location line="-897"/>
+        <location line="-1045"/>
         <source>Refresh</source>
         <translation>Обновить</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+17"/>
         <source>Element</source>
         <translation>Элемент</translation>
     </message>
@@ -509,12 +510,12 @@
         <translation>Изменение</translation>
     </message>
     <message>
-        <location line="+85"/>
+        <location line="+89"/>
         <source>a diff tab is opened by Document &gt; Compare with...</source>
         <translation>вкладку сравнения открывает «Документ &gt; Сравнить с...»</translation>
     </message>
     <message>
-        <location line="+174"/>
+        <location line="+178"/>
         <source>Go to Line</source>
         <translation>Перейти к строке</translation>
     </message>
@@ -524,7 +525,7 @@
         <translation>Номер строки:</translation>
     </message>
     <message>
-        <location line="+68"/>
+        <location line="+80"/>
         <source>added</source>
         <translation>добавлено</translation>
     </message>
@@ -534,7 +535,7 @@
         <translation>удалено</translation>
     </message>
     <message>
-        <location line="+43"/>
+        <location line="+81"/>
         <source>the document %1 cannot be encoded</source>
         <translation>документ %1 не удаётся закодировать</translation>
     </message>
@@ -556,29 +557,41 @@
         <translation>в активной вкладке нет диаграммы</translation>
     </message>
     <message>
+        <location line="+21"/>
+        <source>the active tab holds no text</source>
+        <translation type="unfinished">в активной вкладке нет текста</translation>
+    </message>
+    <message>
         <location line="+31"/>
+        <location line="+55"/>
         <source>saved</source>
         <translation>сохранённый</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="-54"/>
+        <location line="+55"/>
         <source>The saved file</source>
         <translation>Сохранённый файл</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="-42"/>
+        <location line="+55"/>
         <source>A file...</source>
         <translation>Файл...</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="-53"/>
+        <location line="+8"/>
+        <location line="+11"/>
+        <location line="+36"/>
         <location line="+8"/>
         <location line="+11"/>
         <source>Compare with</source>
         <translation>Сравнить с</translation>
     </message>
     <message>
-        <location line="-19"/>
+        <location line="-74"/>
+        <location line="+55"/>
         <source>The base of the comparison:</source>
         <translation>База сравнения:</translation>
     </message>
@@ -588,7 +601,7 @@
         <translation>Граф CyberiadaML (*.graphml)</translation>
     </message>
     <message>
-        <location line="+483"/>
+        <location line="+487"/>
         <source>Export the rendered text as PDF</source>
         <translation>Экспорт отображённого текста в PDF</translation>
     </message>
@@ -598,7 +611,7 @@
         <translation>Экспортировать</translation>
     </message>
     <message>
-        <location line="+445"/>
+        <location line="+449"/>
         <source>the action works in: %1</source>
         <translation>действие работает в режимах: %1</translation>
     </message>
@@ -1379,7 +1392,7 @@
         <translation>Удалить параметр</translation>
     </message>
     <message>
-        <location line="+130"/>
+        <location line="+134"/>
         <source>Edit text</source>
         <translation>Редакториовать текст</translation>
     </message>
@@ -1387,7 +1400,7 @@
 <context>
     <name>DiffDocument</name>
     <message>
-        <location filename="../diff_document.cpp" line="+100"/>
+        <location filename="../diff_document.cpp" line="+96"/>
         <source>Base: %1</source>
         <translation>База: %1</translation>
     </message>
@@ -1397,7 +1410,7 @@
         <translation>Сравниваемый: %1</translation>
     </message>
     <message>
-        <location line="+39"/>
+        <location line="+60"/>
         <source>region %1</source>
         <translation>регион %1</translation>
     </message>
@@ -1492,7 +1505,7 @@
         <translation>метаинформация %1</translation>
     </message>
     <message>
-        <location line="+34"/>
+        <location line="+35"/>
         <source>link of %1</source>
         <translation>связь %1</translation>
     </message>
@@ -1500,7 +1513,7 @@
 <context>
     <name>DocumentMode</name>
     <message>
-        <location filename="../document_mode.cpp" line="+41"/>
+        <location filename="../document_mode.cpp" line="+42"/>
         <source>inspection</source>
         <translation>инспекция</translation>
     </message>
@@ -1513,6 +1526,11 @@
         <location line="+1"/>
         <source>diff</source>
         <translation>сравнение</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>text diff</source>
+        <translation type="unfinished">сравнение текстов</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -1538,6 +1556,11 @@
         <location line="+1"/>
         <source>HSM diff</source>
         <translation>Сравнение ПРИМС</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Text diff</source>
+        <translation type="unfinished">Сравнение текстов</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -3037,7 +3060,7 @@
         <translation>ввод текста</translation>
     </message>
     <message>
-        <location filename="../diff_document.cpp" line="-132"/>
+        <location filename="../diff_document.cpp" line="-133"/>
         <source>state machine</source>
         <translation>машина состояний</translation>
     </message>
@@ -3168,7 +3191,7 @@
         <translation>Режим</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+10"/>
         <source>Language</source>
         <translatorcomment>Edit &gt; Language: the platformLanguage of the document (EDIT-TEXT-9), not the interface language</translatorcomment>
         <translation>Язык кода</translation>
@@ -3179,7 +3202,7 @@
         <translation>Разметка</translation>
     </message>
     <message>
-        <location line="+20"/>
+        <location line="+23"/>
         <source>View</source>
         <translation>Вид</translation>
     </message>
@@ -3316,12 +3339,12 @@
     </message>
     <message>
         <location line="+8"/>
-        <location line="+384"/>
+        <location line="+422"/>
         <source>HSM diagram</source>
         <translation>Диаграмма ПРИМС</translation>
     </message>
     <message>
-        <location line="-372"/>
+        <location line="-410"/>
         <source>HSM inspection</source>
         <translation>Инспекция ПРИМС</translation>
     </message>
@@ -3332,12 +3355,12 @@
     </message>
     <message>
         <location line="+8"/>
-        <location line="+46"/>
+        <location line="+84"/>
         <source>FA diagram</source>
         <translation>Диаграмма КА</translation>
     </message>
     <message>
-        <location line="-43"/>
+        <location line="-81"/>
         <source>A finite automaton: the metainformation type/ fa, the automaton tools</source>
         <translation>Конечный автомат: метаинформация type/ fa, инструменты автомата</translation>
     </message>
@@ -3350,6 +3373,46 @@
         <location line="+3"/>
         <source>Two revisions of a diagram side by side: opened by Compare with...</source>
         <translation>Две ревизии диаграммы рядом: открывается командой «Сравнить с...»</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Text diff</source>
+        <translation type="unfinished">Сравнение текстов</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Two texts side by side, line by line: opened by Compare with... on a text tab</source>
+        <translation type="unfinished">Два текста рядом, построчно: открывается командой «Сравнить с...» в текстовой вкладке</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Next Change</source>
+        <translation type="unfinished">Следующее изменение</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Show the next change of the comparison</source>
+        <translation type="unfinished">Показать следующее изменение сравнения</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Previous Change</source>
+        <translation type="unfinished">Предыдущее изменение</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Show the previous change of the comparison</source>
+        <translation type="unfinished">Показать предыдущее изменение сравнения</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Ignore Whitespace</source>
+        <translation type="unfinished">Без учёта пробелов</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Compare the lines of the texts without their runs of spaces and tabs</source>
+        <translation type="unfinished">Сравнивать строки текстов без учёта пробелов и табуляций</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -3603,7 +3666,7 @@
         <translation>Новый текст Markdown</translation>
     </message>
     <message>
-        <location line="-761"/>
+        <location line="-803"/>
         <source>New</source>
         <translation>Создать</translation>
     </message>
@@ -3612,7 +3675,7 @@
         <translation type="vanished">Новый файл</translation>
     </message>
     <message>
-        <location line="+773"/>
+        <location line="+815"/>
         <source>Service objects</source>
         <translation>Служебные объекты</translation>
     </message>
@@ -3896,6 +3959,34 @@
         <location filename="../cyberiadasm_editor_state_item.cpp" line="-321"/>
         <source>The name &quot;%1&quot; already exists at this hierarchy level.</source>
         <translation>Имя «%1» уже есть на этом уровне иерархии.</translation>
+    </message>
+</context>
+<context>
+    <name>TextDiffDocument</name>
+    <message>
+        <location filename="../text_diff_document.cpp" line="+125"/>
+        <source>Base: %1</source>
+        <translation type="unfinished">База: %1</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Target: %1</source>
+        <translation type="unfinished">Сравниваемый: %1</translation>
+    </message>
+    <message>
+        <location line="+118"/>
+        <source>changed %1 → %2</source>
+        <translation type="unfinished">изменено %1 → %2</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>removed %1</source>
+        <translation type="unfinished">удалено %1</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>added %1</source>
+        <translation type="unfinished">добавлено %1</translation>
     </message>
 </context>
 <context>
