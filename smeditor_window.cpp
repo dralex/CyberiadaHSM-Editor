@@ -200,6 +200,13 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     updateTitle();   // start as a clean "untitled" document
 }
 
+// the text typed on the canvas goes into the document before an action reads or
+// replaces it (EDIT-KEYS-10)
+void CyberiadaSMEditorWindow::commitPendingEdit()
+{
+    if (current) scene()->commitTextEdit();
+}
+
 // the titles of the menus over an action, "Edit > Tools"
 static QString menuPath(const QStringList& titles)
 {
@@ -278,6 +285,12 @@ CyberiadaSMEditorDocument* CyberiadaSMEditorWindow::newDocument()
     addTab(doc);
     // the per-document signals reach the window from the active document only
     connect(doc->scene(), &QGraphicsScene::selectionChanged, this,
+            [this, doc]() { if (doc == current) updateEditActions(); });
+    // Save is there for the text being typed (EDIT-IO-7): an edit began, or ended
+    // with the focus
+    connect(doc->scene(), &CyberiadaSMEditorScene::textEditChanged, this,
+            [this, doc]() { if (doc == current) updateEditActions(); });
+    connect(doc->scene(), &QGraphicsScene::focusItemChanged, this,
             [this, doc]() { if (doc == current) updateEditActions(); });
     connect(doc->scene(), &CyberiadaSMEditorScene::toolChanged, this,
             [this, doc](ToolType tool) { if (doc == current) slotSceneToolChanged(tool); });
@@ -384,6 +397,7 @@ void CyberiadaSMEditorWindow::slotPreviousDocument()
 
 bool CyberiadaSMEditorWindow::closeDocument(EditorDocument* doc, bool discard)
 {
+    commitPendingEdit();
     if (!doc) return false;
     // a running plugin is cancelled with its document (EDIT-PLUG-23)
     if (doc->pluginRun() && !discard && !qApp->property("batchMode").toBool() &&
@@ -460,6 +474,7 @@ bool CyberiadaSMEditorWindow::openFiles(const QStringList& fileNames, QString* e
 
 void CyberiadaSMEditorWindow::setCurrentDocument(EditorDocument* tab)
 {
+    commitPendingEdit();
     if (!tab || tab == active) return;
     bool switched = (active != nullptr);
     if (current) unbindDocument(current);
@@ -622,6 +637,7 @@ void CyberiadaSMEditorWindow::initDocumentMenu()
         updateModeActions();
     });
     connect(modeGroup, &QActionGroup::triggered, this, [this](QAction* action) {
+        commitPendingEdit();
         QString error;
         if (active && !setDocumentMode(active, action->data().toString(), &error) &&
             !error.isEmpty() && !qApp->property("batchMode").toBool()) {
@@ -821,6 +837,7 @@ void CyberiadaSMEditorWindow::slotFileNewText(const QString& mode)
 
 void CyberiadaSMEditorWindow::slotFileNewFA()
 {
+    commitPendingEdit();
     CyberiadaSMEditorDocument* doc = newDocument();
     doc->model()->setNewDocumentFA(true);
     setCurrentDocument(doc);
@@ -828,6 +845,7 @@ void CyberiadaSMEditorWindow::slotFileNewFA()
 
 void CyberiadaSMEditorWindow::slotCheck()
 {
+    commitPendingEdit();
     if (!current || current->mode() != MODE_FA || !model()->rootDocument()) return;
     Cyberiada::FAFindingList findings;
     try {
@@ -1092,6 +1110,7 @@ DiffDocument* CyberiadaSMEditorWindow::compareDocument(CyberiadaSMEditorDocument
 
 void CyberiadaSMEditorWindow::slotCompare()
 {
+    commitPendingEdit();
     if (!current) return;
     QStringList labels;
     QList<DiffOrigin> origins;
@@ -1234,7 +1253,7 @@ void CyberiadaSMEditorWindow::updateEditActions()
     actionGeometry->setEnabled(false);
     actionGeometry->setChecked(false);
     actionRefresh->setEnabled(false);
-    actionSave->setEnabled(docOpen && modified && !readOnly);
+    actionSave->setEnabled(docOpen && (modified || scene()->textEdited()) && !readOnly);
     actionSaveAs->setEnabled(docOpen);
     actionExport->setEnabled(docOpen);
     enableCanvasSwitches(true);
@@ -1319,6 +1338,7 @@ bool CyberiadaSMEditorWindow::confirmDiscard(EditorDocument* doc)
 
 void CyberiadaSMEditorWindow::closeEvent(QCloseEvent* event)
 {
+    commitPendingEdit();
     if (!pluginRuns.isEmpty() &&
         QMessageBox::question(this, tr("Exit"), tr("Plugins are running. Cancel them and exit?"),
                               QMessageBox::Yes | QMessageBox::No) != QMessageBox::Yes) {
@@ -1421,6 +1441,7 @@ void CyberiadaSMEditorWindow::slotFileNew()
 
 void CyberiadaSMEditorWindow::slotFileOpen()
 {
+    commitPendingEdit();
     OpenFileDialog dlg(this);
     if (dlg.exec() != QDialog::Accepted) { return; }
 
@@ -1507,6 +1528,7 @@ void CyberiadaSMEditorWindow::openRecentFile(const QString& path)
 
 void CyberiadaSMEditorWindow::slotFileSave()
 {
+    commitPendingEdit();
     if (TextDocument* text = currentText()) {
         if (!text->hasFile()) {
             slotFileSaveAs();
@@ -1521,6 +1543,8 @@ void CyberiadaSMEditorWindow::slotFileSave()
         slotFileSaveAs();
         return;
     }
+    // an edit that changed nothing leaves nothing to save
+    if (current->isClean()) return;
     QString error;
     if (!current->save(&error)) {
         QMessageBox::critical(this, tr("Save State Machine"),
@@ -1530,6 +1554,7 @@ void CyberiadaSMEditorWindow::slotFileSave()
 
 void CyberiadaSMEditorWindow::slotFileSaveAs()
 {
+    commitPendingEdit();
     // a text proposes the extension of its mode (EDIT-MODE-13)
     if (TextDocument* text = currentText()) {
         QString extension = modeExtension(text->mode());
@@ -1577,6 +1602,7 @@ void CyberiadaSMEditorWindow::slotFileSaveAs()
 
 void CyberiadaSMEditorWindow::slotFileExport()
 {
+    commitPendingEdit();
     // a Markdown tab exports its rendered text (EDIT-MODE-18), another text tab nothing
     if (TextDocument* text = currentText()) {
         if (text->mode() == MODE_MARKDOWN) exportMarkdown(text);
@@ -1871,6 +1897,12 @@ void CyberiadaSMEditorWindow::slotNewChoise() {}
 void CyberiadaSMEditorWindow::slotDeleteElement()
 {
     if (!current) return;   // a text tab has no canvas
+    // a focused point goes, not the transition selected with it (EDIT-KEYS-9)
+    DotSignal* point = dynamic_cast<DotSignal*>(scene()->focusItem());
+    if (point && point->isVisible() && point->isDeleteable()) {
+        point->deleteDot();
+        return;
+    }
     if (scene()->selectedItems().isEmpty()) {
         // an element shown in the tree but not on the scene (a component formal
         // comment, possibly without geometry) is deleted by its tree index, with
@@ -1903,15 +1935,11 @@ void CyberiadaSMEditorWindow::slotDeleteElement()
         model()->deleteElement(model()->elementToIndex(el));
         return;
     }
-    DotSignal* dotToDelete = dynamic_cast<DotSignal*>(scene()->focusItem());
-    if(dotToDelete) {
-        dotToDelete->deleteDot();
-        return;
-    }
 }
 
 void CyberiadaSMEditorWindow::slotReconstructGeometry()
 {
+    commitPendingEdit();
     if (!current) return;   // a text tab has no canvas
     if (!model()->rootDocument()) return;
     QMessageBox::StandardButton answer = QMessageBox::question(
@@ -1925,6 +1953,7 @@ void CyberiadaSMEditorWindow::slotReconstructGeometry()
 
 void CyberiadaSMEditorWindow::slotUpdateGeometry()
 {
+    commitPendingEdit();
     if (!current) return;   // a text tab has no canvas
     // the drawn elements stay, so no confirmation: one undo step restores it
     if (!model()->rootDocument()) return;
@@ -2608,6 +2637,7 @@ void CyberiadaSMEditorWindow::storePluginValues(const PluginEntry& plugin,
 
 void CyberiadaSMEditorWindow::slotPluginTriggered(const QString& pluginId, const QString& actionId)
 {
+    commitPendingEdit();
     const PluginEntry* entry = PluginRegistry::instance().find(pluginId);
     const PluginAction* action = entry ? entry->descriptor.action(actionId) : nullptr;
     if (!action || !active) return;

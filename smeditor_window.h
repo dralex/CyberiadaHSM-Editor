@@ -348,6 +348,7 @@ private:
     FindBar*                m_findBar = nullptr;
     ShortcutMap*            m_shortcuts = nullptr;
     void                    initShortcuts();
+    void                    commitPendingEdit();
     void                    registerKeys(QAction* action, const QString& path);
     void                    registerMenuKeys(QMenu* menu, const QStringList& titles);
     // the running plugins and the documents they started from

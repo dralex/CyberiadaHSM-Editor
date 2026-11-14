@@ -32,6 +32,7 @@
 #include <QLineEdit>
 #include <QSettings>
 #include <QTemporaryDir>
+#include <QUndoStack>
 #include <QTimer>
 #include <QToolBar>
 #include "smeditor_window.h"
@@ -43,6 +44,12 @@
 #include "dialogs/shortcuts_page.h"
 #include "cyberiadasm_editor_view.h"
 #include "settings_manager.h"
+#include "cyberiadasm_model.h"
+#include "cyberiadasm_editor_scene.h"
+#include "cyberiadasm_editor_state_item.h"
+#include "cyberiadasm_editor_transition_item.h"
+#include "editable_text_item.h"
+#include "dotsignal.h"
 
 // the EDIT-KEYS laws (docs/SHORTCUTS.md): the default keys, the stored changes, the
 // keys a text takes, Go to Line; the keys go through the shortcuts of the window
@@ -58,6 +65,10 @@ private slots:
 	void test_text_takes_keys();
 	void test_find_bar_esc();
 	void test_go_to_line();
+	void test_delete_point();
+	void test_save_commits_edit();
+	void test_escape_cancels_edit();
+	void test_undo_keys_in_text();
 	void test_page();
 	void test_page_conflict();
 	void test_page_reset();
@@ -70,6 +81,8 @@ private:
 	static void answer(QMessageBox::StandardButton button);
 	static void type(QDialog& dialog, const char* text);
 	static void click(QDialog& dialog, const char* button);
+	// the first text of the kind on the scene, in edit mode with all of it selected
+	template <class Text> static Text* edit(CyberiadaSMEditorWindow& window);
 	QTemporaryDir settings;
 };
 
@@ -313,6 +326,182 @@ void TestKeys::click(QDialog& dialog, const char* button)
 	QPushButton* b = dialog.findChild<QPushButton*>(button);
 	QVERIFY2(b && b->isEnabled(), button);
 	b->click();
+}
+
+template <class Text> Text* TestKeys::edit(CyberiadaSMEditorWindow& window)
+{
+	window.sceneView->setFocus();
+	for (QGraphicsItem* item : window.getScene()->items()) {
+		Text* text = dynamic_cast<Text*>(item);
+		if (!text || !text->isVisible() || text->toPlainText().isEmpty()) continue;
+		text->startEditing();
+		QTextCursor cursor = text->textCursor();
+		cursor.movePosition(QTextCursor::End);
+		text->setTextCursor(cursor);
+		return text;
+	}
+	return nullptr;
+}
+
+// EDIT-KEYS-9: Del on a focused point removes the point, the transition stays
+void TestKeys::test_delete_point()
+{
+	CyberiadaSMEditorWindow window;
+	QVERIFY(window.openFile("diagrams/polyline.graphml"));
+	activate(window);
+	CyberiadaSMEditorScene* scene = window.getScene();
+	CyberiadaSMEditorTransitionItem* tr =
+		dynamic_cast<CyberiadaSMEditorTransitionItem*>(scene->getMap().value("t0"));
+	QVERIFY(tr);
+	const Cyberiada::Transition* t =
+		static_cast<const Cyberiada::Transition*>(window.getModel()->idToElement("t0"));
+	size_t before = t->get_geometry_polyline().size();
+	QVERIFY(before >= 1);
+	scene->clearSelection();
+	tr->setSelected(true);
+	DotSignal* vertex = tr->getDot(1);
+	QVERIFY(vertex);
+	vertex->setVisible(true);
+	window.sceneView->setFocus();
+	vertex->setFocus();
+	QCOMPARE(scene->focusItem(), static_cast<QGraphicsItem*>(vertex));
+	QVERIFY(window.actionDeleteElement->isEnabled());
+	QTest::keyClick(window.sceneView, Qt::Key_Delete);
+	QVERIFY(window.getModel()->idToElement("t0"));
+	t = static_cast<const Cyberiada::Transition*>(window.getModel()->idToElement("t0"));
+	QCOMPARE(t->get_geometry_polyline().size(), before - 1);
+	// with no point focused Del removes the selected transition
+	scene->setFocusItem(nullptr);
+	tr = dynamic_cast<CyberiadaSMEditorTransitionItem*>(scene->getMap().value("t0"));
+	scene->clearSelection();
+	tr->setSelected(true);
+	QTest::keyClick(window.sceneView, Qt::Key_Delete);
+	QVERIFY(!window.getModel()->idToElement("t0"));
+}
+
+// EDIT-KEYS-10: Save during a canvas edit saves the text typed
+void TestKeys::test_save_commits_edit()
+{
+	QTemporaryDir dir;
+	QString path = dir.filePath("edit.graphml");
+	QVERIFY(QFile::copy("diagrams/hierarchy.graphml", path));
+	QVERIFY(QFile::setPermissions(path, QFile::ReadOwner | QFile::WriteOwner));
+	CyberiadaSMEditorWindow window;
+	QVERIFY(window.openFile(path));
+	activate(window);
+	// Save is there for a clean document while a text is edited (EDIT-IO-7)
+	QVERIFY(!window.actionSave->isEnabled());
+	StateTitle* title = edit<StateTitle>(window);
+	QVERIFY(title);
+	QVERIFY(window.actionSave->isEnabled());
+	QTest::keyClicks(window.sceneView, "Typed");
+	QVERIFY(title->isEditing());
+	QVERIFY(title->toPlainText().endsWith("Typed"));
+	QTest::keyClick(window.sceneView, Qt::Key_S, Qt::ControlModifier);
+	QFile saved(path);
+	QVERIFY(saved.open(QIODevice::ReadOnly));
+	QVERIFY(saved.readAll().contains("Typed"));
+	QVERIFY(window.currentDocument()->isClean());
+	QVERIFY(!window.actionSave->isEnabled());
+
+	// an edit left by Esc, or one that changed nothing, enables nothing
+	title = edit<StateTitle>(window);
+	QVERIFY(window.actionSave->isEnabled());
+	QTest::keyClick(window.sceneView, Qt::Key_Escape);
+	QVERIFY(!window.actionSave->isEnabled());
+	title = edit<StateTitle>(window);
+	QDateTime written = QFileInfo(path).lastModified();
+	QTest::keyClick(window.sceneView, Qt::Key_S, Qt::ControlModifier);
+	QVERIFY(!title->isEditing());
+	QCOMPARE(QFileInfo(path).lastModified(), written);
+	QVERIFY(!window.actionSave->isEnabled());
+}
+
+// EDIT-KEYS-5/11: a tool letter is typed into the text edited; Esc abandons the edit
+void TestKeys::test_escape_cancels_edit()
+{
+	CyberiadaSMEditorWindow window;
+	QVERIFY(window.openFile("diagrams/hierarchy.graphml"));
+	activate(window);
+	QUndoStack* undo = window.currentDocument()->undoStack();
+	int steps = undo->count();
+
+	StateTitle* title = edit<StateTitle>(window);
+	QVERIFY(title);
+	const QString name = title->toPlainText();
+	QTest::keyClick(window.sceneView, 's');
+	QTest::keyClick(window.sceneView, 'C', Qt::ShiftModifier);
+	QCOMPARE(title->toPlainText(), name + "sC");
+	QVERIFY(window.actionSelectTool->isChecked());
+	QTest::keyClick(window.sceneView, Qt::Key_Escape);
+	QVERIFY(!title->isEditing());
+	QCOMPARE(title->toPlainText(), name);
+	QCOMPARE(undo->count(), steps);
+	QVERIFY(window.currentDocument()->isClean());
+
+	// an action and a transition label alike
+	QVERIFY(window.openFile("diagrams/internal-transition.graphml"));
+	undo = window.currentDocument()->undoStack();
+	steps = undo->count();
+	StateAction* action = edit<StateAction>(window);
+	QVERIFY(action);
+	const QString code = action->toPlainText();
+	QTest::keyClicks(window.sceneView, "x");
+	QVERIFY(action->toPlainText() != code);
+	QTest::keyClick(window.sceneView, Qt::Key_Escape);
+	QVERIFY(!action->isEditing());
+	QCOMPARE(action->toPlainText(), code);
+	QVERIFY(window.openFile("diagrams/lift.graphml"));
+	undo = window.currentDocument()->undoStack();
+	steps = undo->count();
+	TransitionAction* label = edit<TransitionAction>(window);
+	QVERIFY(label);
+	const QString event = label->toPlainText();
+	QTest::keyClicks(window.sceneView, "x");
+	QTest::keyClick(window.sceneView, Qt::Key_Escape);
+	QVERIFY(!label->isEditing());
+	QCOMPARE(label->toPlainText(), event);
+	QCOMPARE(undo->count(), steps);
+
+	// Esc with no edit is the Select tool again
+	QTest::keyClick(window.sceneView, Qt::Key_T);
+	QVERIFY(window.actionNewTransition->isChecked());
+	QTest::keyClick(window.sceneView, Qt::Key_Escape);
+	QVERIFY(window.actionSelectTool->isChecked());
+}
+
+// EDIT-KEYS-12: the keys of Undo and Redo, whichever they are, drive the window's
+void TestKeys::test_undo_keys_in_text()
+{
+	CyberiadaSMEditorWindow window;
+	QVERIFY(window.openFile("texts/blink.cpp"));
+	activate(window);
+	TextDocument* text = window.currentText();
+	CodeEditor* editor = text->editor();
+	const QString source = text->text();
+	editor->setFocus();
+	editor->setTextCursor(QTextCursor(editor->document()));
+	QTest::keyClick(editor, 'a');
+	QCOMPARE(text->text(), "a" + source);
+	QTest::keyClick(editor, Qt::Key_Z, Qt::ControlModifier);
+	QCOMPARE(text->text(), source);
+	QTest::keyClick(editor, Qt::Key_Y, Qt::ControlModifier);
+	QCOMPARE(text->text(), "a" + source);
+	QVERIFY(text->undoStack()->canUndo());
+
+	// other keys: the old ones do nothing, the new ones drive the same stack
+	window.shortcuts()->setKeys("actionUndo", one("Ctrl+U"));
+	window.shortcuts()->setKeys("actionRedo", one("Ctrl+Shift+Backspace"));
+	QTest::keyClick(editor, Qt::Key_Z, Qt::ControlModifier);
+	QCOMPARE(text->text(), "a" + source);
+	QTest::keyClick(editor, Qt::Key_U, Qt::ControlModifier);
+	QCOMPARE(text->text(), source);
+	QVERIFY(!text->undoStack()->canUndo());
+	QTest::keyClick(editor, Qt::Key_Y, Qt::ControlModifier);
+	QCOMPARE(text->text(), source);
+	QTest::keyClick(editor, Qt::Key_Backspace, Qt::ControlModifier | Qt::ShiftModifier);
+	QCOMPARE(text->text(), "a" + source);
+	window.shortcuts()->resetAll();
 }
 
 // EDIT-KEYS-2: the rows by the menus, the filter, Assign, Add and Clear on a copy,

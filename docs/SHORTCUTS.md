@@ -18,10 +18,6 @@ edited takes its keys first.
         | setShortcuts(keys)         | shortcuts/<id>, only the changes
         v            v
    QAction        SettingsManager (QSettings)      settings_manager.*
-        |
-        | changed()
-        v
- CyberiadaSMEditorWindow -> CodeEditor::setWindowKeys(Undo keys + Redo keys)
 ```
 
 ## The actions
@@ -84,7 +80,7 @@ A window key reaches its action only when the focused widget does not take it:
 | Focus | Takes |
 |---|---|
 | a canvas text being edited | the typing and editing keys, the clipboard and its own Undo, `Esc` (abandons the edit, `EDIT-KEYS-11`) |
-| a text tab | the typing and editing keys; the keys bound to Undo and Redo are left to the window (`EDIT-KEYS-12`) |
+| a text tab | the typing and editing keys; the platform keys of Undo and Redo are refused, so they and any other key of Undo and Redo reach the window (`EDIT-KEYS-12`) |
 | the find field | the typing and editing keys, `Enter`, `Shift+Enter`, `Esc` (`EDIT-FIND-1/3`) |
 | a line or a table of a dock or a dialog | the typing and editing keys |
 | a focused point of a transition | `Del` removes the point (`EDIT-KEYS-9`) |
@@ -127,7 +123,11 @@ text tabs that show their source.
 `CyberiadaSMEditorScene::commitTextEdit()` ends the edit of the focused text as a focus-out
 does. The window calls it before New, Open, Save, Save as, Export, Close, Exit, a tab
 switch, a mode change, Check, Compare, the geometry entries, a plugin run and a session
-start, so that they see the text typed (`EDIT-KEYS-10`).
+start, so that they see the text typed (`EDIT-KEYS-10`). Save is enabled while a text is
+edited (`textEdited()`, `textEditChanged`), as the text may differ from the document.
+
+`EditableTextItem::cancelEditing()` puts back the text of `startEditing()` and ends the edit
+through `abandonTextEdit()`, under the discard flag a model reset uses: no focus-out commits.
 
 ## Code layout
 
@@ -138,9 +138,8 @@ start, so that they see the text typed (`EDIT-KEYS-10`).
 | `smeditor_window.*` | `initShortcuts()`, the action names, Go to Line, `commitPendingEdit()`, Del on a point |
 | `dialogs/shortcuts_page.*` | `ShortcutsPage`: the tree, the key field, the copy of the keys |
 | `dialogs/preferences_dialog.*` | the page as a tab, its load, apply and reset |
-| `code_editor.*` | the window keys left to the window |
 | `editable_text_item.*`, `cyberiadasm_editor_state_item.cpp` | `commitEditing()`, `cancelEditing()`, `Esc` |
-| `cyberiadasm_editor_scene.*` | `commitTextEdit()` |
+| `cyberiadasm_editor_scene.*` | `commitTextEdit()`, `abandonTextEdit()`, `textEdited()` |
 | `find_bar.*` | `Esc` ahead of the window |
 | `text_document.*` | `goToLine()` |
 | `tests/l4/l4-keys.cpp` | the cases `EDIT-KEYS-1..12` |

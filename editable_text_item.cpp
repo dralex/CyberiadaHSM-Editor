@@ -121,17 +121,46 @@ void EditableTextItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) {
 void EditableTextItem::startEditing() {
     // a rendered Markdown text is edited as its source (EDIT-TEXT-14)
     showSource();
+    editOrigin = toPlainText();
     setTextInteractionFlags(Qt::TextEditorInteraction);
     setFocus();
     setEditing(true);
     // a fragment underlined in this text gives way while it is edited (EDIT-EDGE-21)
-    if (CyberiadaSMEditorScene* sc = dynamic_cast<CyberiadaSMEditorScene*>(scene())) sc->updateSubjectLinks();
+    if (CyberiadaSMEditorScene* sc = dynamic_cast<CyberiadaSMEditorScene*>(scene())) {
+        sc->updateSubjectLinks();
+        sc->noteTextEdit();
+    }
 }
 
 void EditableTextItem::keyPressEvent(QKeyEvent *event) {
+    if (isEdit && event->key() == Qt::Key_Escape) {
+        cancelEditing();
+        return;
+    }
     if (isEdit) {
         QGraphicsTextItem::keyPressEvent(event);
     }
+}
+
+bool EditableTextItem::sceneEvent(QEvent* event)
+{
+    if (isEdit && event->type() == QEvent::ShortcutOverride &&
+        static_cast<QKeyEvent*>(event)->key() == Qt::Key_Escape) {
+        event->accept();
+        return true;
+    }
+    return QGraphicsTextItem::sceneEvent(event);
+}
+
+void EditableTextItem::cancelEditing()
+{
+    CyberiadaSMEditorScene* sc = dynamic_cast<CyberiadaSMEditorScene*>(scene());
+    if (!isEdit || !sc) return;
+    setPlainText(editOrigin);
+    sc->abandonTextEdit();
+    // the focus-out of an abandoned edit leaves the text bare
+    applyRichFormat();
+    applyRendering();
 }
 
 void EditableTextItem::focusOutEvent(QFocusEvent *event) {

@@ -644,8 +644,8 @@ the third is a derived display value the format does not store):
 - `EDIT-IO-6` MUST [A]: an exported image is the diagram's own size — the visible items'
   bounding rect padded by 1px, with no scene margin — and the `export frame` is reported on stderr
   in batch mode only (silent in the interactive editor). *design*
-- `EDIT-IO-7` MUST [A]: Save is enabled only for an open, modified document in an editable tab
-  (`EDIT-MODE-4`); Save-As is enabled in every tab but a diff tab, Export in every diagram tab.
+- `EDIT-IO-7` MUST [A]: Save is enabled only for an open document in an editable tab
+  (`EDIT-MODE-4`) that is modified or has a canvas text being edited (`EDIT-KEYS-10`); Save-As is enabled in every tab but a diff tab, Export in every diagram tab.
   *design*
 
 ### 4.9 Metainformation — META
@@ -1232,7 +1232,8 @@ keys first. The architecture and the default keys are in `docs/SHORTCUTS.md`. Sp
 - `EDIT-KEYS-10` MUST [A]: an action that reads or replaces the document — New, Open, Save,
   Save as, Export, Close, Exit, a tab switch, a mode change, Check, Compare, the geometry
   entries, a plugin run, a session start — first ends the edit of a canvas text as a click
-  outside does, so the text typed is in the document it works on. *design*
+  outside does, so the text typed is in the document it works on; a Save after an edit that
+  changed nothing writes nothing. *design*
 - `EDIT-KEYS-11` MUST [I]: Esc in a canvas text being edited abandons the edit: the text is as
   it was before, the document and its undo history unchanged. Esc there, and in the find bar
   (`EDIT-FIND-1`), does not reach the action it is a key of. *design*

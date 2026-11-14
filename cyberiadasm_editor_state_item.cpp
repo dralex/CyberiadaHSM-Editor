@@ -1124,6 +1124,10 @@ QString StateAction::getGuard()
 void StateAction::keyPressEvent(QKeyEvent *event)
 {
     if (!isEdit) return;
+    if (event->key() == Qt::Key_Escape) {
+        cancelEditing();
+        return;
+    }
 
     QTextCursor cursor = textCursor();
     const int protectedLen = typeText.length();

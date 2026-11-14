@@ -171,6 +171,27 @@ bool CyberiadaSMEditorScene::discardsEdits(const QGraphicsItem* item)
     return sc && sc->discardingEdits;
 }
 
+bool CyberiadaSMEditorScene::textEdited() const
+{
+    EditableTextItem* text = dynamic_cast<EditableTextItem*>(focusItem());
+    return text && text->isEditing();
+}
+
+void CyberiadaSMEditorScene::commitTextEdit()
+{
+    EditableTextItem* text = dynamic_cast<EditableTextItem*>(focusItem());
+    if (text && text->isEditing()) text->clearFocus();
+}
+
+void CyberiadaSMEditorScene::abandonTextEdit()
+{
+    EditableTextItem* text = dynamic_cast<EditableTextItem*>(focusItem());
+    if (!text || !text->isEditing()) return;
+    discardingEdits = true;
+    text->clearFocus();
+    discardingEdits = false;
+}
+
 void CyberiadaSMEditorScene::slotModelReset()
 {
     updateTextLanguages();

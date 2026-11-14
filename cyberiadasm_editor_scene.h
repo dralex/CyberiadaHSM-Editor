@@ -110,6 +110,13 @@ public:
     // true while a model reset takes the editing focus: the focus-out of a text
     // item discards its unfinished edit (the document is about to be freed)
     static bool discardsEdits(const QGraphicsItem* item);
+    // end the edit of the focused text as a click outside does (EDIT-KEYS-10), or
+    // leaving the document as it is (EDIT-KEYS-11)
+    void  commitTextEdit();
+    void  abandonTextEdit();
+    // a text of the canvas is being edited: it may hold what the document has not
+    bool  textEdited() const;
+    void  noteTextEdit() { emit textEditChanged(); }
 
     void  setCurrentTool(ToolType tool);
     ToolType getCurrentTool() { return currentTool; }
@@ -159,6 +166,8 @@ signals:
     void  codeLanguageChanged(const QString& value);
     void  markupLanguageChanged(const QString& value);
     void  textsChanged();
+    // an edit of a text began or ended
+    void  textEditChanged();
 
 public slots:
 	void  slotElementSelected(const QModelIndex& index);

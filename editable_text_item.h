@@ -82,6 +82,9 @@ public:
     // enter edit mode programmatically (a double click on the owner, say)
     void startEditing();
     bool isEditing() const { return isEdit; }
+    // leave the edit mode with the text as it was at its start, the document
+    // untouched (EDIT-KEYS-11)
+    void cancelEditing();
     // the leading characters an edit may not touch (the action type)
     virtual int protectedLength() const { return 0; }
     // re-apply per-character formatting (a bold prefix) after the font changes or
@@ -102,6 +105,8 @@ protected:
     void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
     void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) override;
     void keyPressEvent(QKeyEvent *event);
+    // Esc is the edit's ahead of the action it is a key of
+    bool sceneEvent(QEvent* event) override;
     // while editing: Copy and Comment the Selection (EDIT-TOOL-17)
     void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
     void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
@@ -156,6 +161,8 @@ private:
     bool renderMarkdown = false;
     bool rendered = false;
     QString source;
+    // the text at the start of the edit, which Esc gives back
+    QString editOrigin;
     QString markdownBase;
     FindRanges findMarks;
     int findCurrentMark = -1;
