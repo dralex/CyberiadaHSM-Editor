@@ -453,6 +453,40 @@ void TestHighlight::test_markdown_spans()
 	QCOMPARE(spans.size(), 1);
 	QCOMPARE(spans[0].kind, codeTokenCode);
 
+	// an element over the line feeds of its paragraph, as the reader joins them
+	text = "an *em\nphasis* and **str\nong** with [link\ntext](http://u) and `co\nde`";
+	spans = style.markdownSpans(text, nullptr);
+	QCOMPARE(kindAt(spans, text.indexOf("*em")), int(codeTokenEmphasis));
+	QCOMPARE(kindAt(spans, text.indexOf("phasis")), int(codeTokenEmphasis));
+	QCOMPARE(kindAt(spans, text.indexOf(" and **")), -1);
+	QCOMPARE(kindAt(spans, text.indexOf("**str")), int(codeTokenEmphasis));
+	QCOMPARE(kindAt(spans, text.indexOf("ong**")), int(codeTokenEmphasis));
+	QCOMPARE(kindAt(spans, text.indexOf("[link")), int(codeTokenLink));
+	QCOMPARE(kindAt(spans, text.indexOf("text](")), int(codeTokenLink));
+	QCOMPARE(kindAt(spans, text.indexOf("`co")), int(codeTokenCode));
+	QCOMPARE(kindAt(spans, text.indexOf("de`")), int(codeTokenCode));
+	// in a quote the marker between keeps its colour; a list item goes on over its indent
+	text = "> a *b\n> c* d";
+	spans = style.markdownSpans(text, nullptr);
+	QCOMPARE(kindAt(spans, text.indexOf("a *")), int(codeTokenQuote));
+	QCOMPARE(kindAt(spans, text.indexOf("*b")), int(codeTokenEmphasis));
+	QCOMPARE(kindAt(spans, text.indexOf("> c")), int(codeTokenMarker));
+	QCOMPARE(kindAt(spans, text.indexOf("c*")), int(codeTokenEmphasis));
+	QCOMPARE(kindAt(spans, text.indexOf(" d") + 1), int(codeTokenQuote));
+	text = "- *a\n  b* c";
+	spans = style.markdownSpans(text, nullptr);
+	QCOMPARE(kindAt(spans, text.indexOf("*a")), int(codeTokenEmphasis));
+	QCOMPARE(kindAt(spans, text.indexOf("b*")), int(codeTokenEmphasis));
+	QCOMPARE(kindAt(spans, text.indexOf(" c") + 1), -1);
+	// not over a blank line, two list items, the rows of a table, a heading and its next line
+	const QStringList apart = { "*a\n\nb*", "- *a\n- b*", "| *a | x |\n|---|---|\n| b* | y |",
+	                            "# *a\nb*" };
+	for (const QString& t : apart) {
+		spans = style.markdownSpans(t, nullptr);
+		QVERIFY2(kindAt(spans, t.indexOf("b*")) == -1, qPrintable(t));
+		QVERIFY2(kindAt(spans, t.indexOf("*a")) != int(codeTokenEmphasis), qPrintable(t));
+	}
+
 	// a fence by its tag, else by the fallback, else one code colour
 	const CodeLanguage* python = style.find("Python");
 	text = "```cpp\nreturn 0;\n```\n```\nreturn None\n```\n~~~lua\nlocal x\n~~~";
@@ -487,6 +521,25 @@ void TestHighlight::test_markdown_fence_lines()
 	cursor.insertText("```\n");
 	y = doc.toPlainText().indexOf("y");
 	QVERIFY(colorAt(&doc, y) != kindColor(codeTokenCode));
+
+	// an emphasis closed on a later line re-highlights the earlier one, opened again too
+	doc.setPlainText("*a\nb");
+	int a = doc.toPlainText().indexOf("a");
+	QVERIFY(colorAt(&doc, a) != kindColor(codeTokenEmphasis));
+	cursor = QTextCursor(&doc);
+	cursor.movePosition(QTextCursor::End);
+	cursor.insertText("*");
+	QCOMPARE(colorAt(&doc, a), kindColor(codeTokenEmphasis));
+	cursor.deletePreviousChar();
+	QVERIFY(colorAt(&doc, a) != kindColor(codeTokenEmphasis));
+	// a display formula closed on a later line
+	doc.setPlainText("$$\nx\n");
+	int x = doc.toPlainText().indexOf("x");
+	QVERIFY(colorAt(&doc, x) != kindColor(codeTokenMath));
+	cursor = QTextCursor(&doc);
+	cursor.movePosition(QTextCursor::End);
+	cursor.insertText("$$");
+	QCOMPARE(colorAt(&doc, x), kindColor(codeTokenMath));
 
 	// a plain markup draws nothing
 	highlighter.setMarkup(codeMarkupPlain);

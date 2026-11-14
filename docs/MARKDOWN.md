@@ -1,6 +1,6 @@
 # The Markdown Rendering — Architecture
 
-**Document version:** 0.9 (2026-11-13). The requirements are `EDIT-MODE-14`, `EDIT-MODE-17`,
+**Document version:** 0.10 (2026-11-14). The requirements are `EDIT-MODE-14`, `EDIT-MODE-17`,
 `EDIT-MODE-18` and `EDIT-TEXT-14` in `EDITOR-SPEC.md`.
 
 The editor renders Markdown itself: a read-only Markdown tab (`docs/MODES.md`, Text tabs) and,
@@ -51,7 +51,20 @@ the images are inserted as objects.
 
 The source highlighting (`EDIT-TEXT-11`) finds the formulas and the HTML comments with
 `markdownSourceRanges`, the same md4c reading, so a formula is coloured exactly where it is
-rendered and a comment where it is hidden.
+rendered and a comment where it is hidden. The same reading gives the runs of inline text of
+the paragraphs, headings, list items and table cells: the lines a run crosses are matched as
+one text, so an element broken by a line feed is coloured whole.
+
+```
+ markdownSourceRanges(text): math, comments, inlines (a run of text md4c reads in one block)
+ markdownSpans: the lines one by one (fence, heading, rule, quote and list markers)
+   > said *this        piece "said *this"    -+ the line feed lies in an inline run:
+   > and that* ok      piece "and that* ok"  -+ joined "said *this\nand that* ok"
+   the rules over the joined text, each match cut back to its pieces: "*this" and
+   "and that*" emphasis, the second "> " a marker; a table row stays alone
+ CodeHighlighter: an edit that changes the colours before the edited line (a closing *
+   typed on a later line) re-highlights the lines from the first change
+```
 
 Qt's own `QTextDocument::setMarkdown` (Qt 5.15) is not used: it reads no formulas, drops an
 image without an alt text, makes one image per piece of a formatted alt text and loses the

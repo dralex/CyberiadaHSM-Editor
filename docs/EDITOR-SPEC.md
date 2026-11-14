@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.60 (2026-11-13)
+**Document version:** 0.61 (2026-11-14)
 
 **Related authorities:**
 
@@ -492,8 +492,10 @@ the third is a derived display value the format does not store):
   Markdown, anything else keeps it code (EDIT-TEXT-7); the reserved `CGML_META` and
   `CGML_COMPONENT` comments are always code. `markdown` (alias `md`) colours the elements below; a
   fenced block is highlighted by the language of its tag (EDIT-TEXT-7 names and aliases), else by
-  the document `platformLanguage`, else in one code colour. Colour only, as EDIT-TEXT-7: the text
-  and its size are not changed. *PNST 1044 9.3; compat spec 1.9 CGML-9.3-1/3*
+  the document `platformLanguage`, else in one code colour. An inline element goes on over the
+  line feeds of its paragraph as the reader joins them, not over a blank line, a table row or
+  another block; an edit re-colours the earlier lines it changes. Colour only, as EDIT-TEXT-7: the
+  text and its size are not changed. *PNST 1044 9.3; compat spec 1.9 CGML-9.3-1/3*
 
   ```
   informal   own dMarkup ─► markupLanguage ─► plain
@@ -509,6 +511,8 @@ the third is a derived display value the format does not store):
   **strong** *em*      ─► emphasis
   `code`               ─► code
   [text](url) <url>    ─► link
+  *over a              ─► one element over the lines of a paragraph; the quote markers
+  > line* [a⏎b](url)      and the indents between them keep their colours
   $x^2$  $$ … $$       ─► the dollars as markers, the TeX as a formula, where the reader
                           finds one (EDIT-MODE-14): not in code, \$ or $ next to a letter
   [text]: #  <!-- … --> ─► comment: the lines a rendered document does not show

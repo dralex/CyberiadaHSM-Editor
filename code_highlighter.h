@@ -183,6 +183,8 @@ protected:
 private:
     // the settings changed: the spans are found again
     void restyle();
+    // after an edit: the lines before it whose colours it changed
+    void reformatEarlier();
 
     CodeRole role;
     // the code language; for the markup role, the fallback of a fenced block
@@ -192,6 +194,9 @@ private:
     QString cachedText;
     QVector<CodeSpan> cachedSpans;
     bool cacheValid = false;
+    // the earlier lines to re-highlight, [from, end), from -1 when none
+    int staleFrom = -1;
+    int staleEnd = -1;
 };
 
 #endif // CODE_HIGHLIGHTER_H

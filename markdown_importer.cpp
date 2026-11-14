@@ -77,7 +77,8 @@ QVector<int> utf16Offsets(const QByteArray& utf8)
     return map;
 }
 
-// the byte ranges of the TeX of the formulas and of the HTML comments md4c reports
+// the byte ranges of the TeX of the formulas, of the HTML comments and of the inline texts
+// md4c reports
 struct MathScan {
     const char* doc = nullptr;
     int size = 0;
@@ -89,14 +90,26 @@ struct MathScan {
     int commentStart = -1;
     int htmlEnd = -1;
     QVector<QPair<int, int>> comments;
+    // the open blocks; a block entered or left ends the run of inline text
+    QVector<MD_BLOCKTYPE> blocks;
+    bool inRun = false;
+    QVector<QPair<int, int>> inlines;
 };
 
-int mathEnterBlock(MD_BLOCKTYPE, void*, void*) { return 0; }
+int mathEnterBlock(MD_BLOCKTYPE type, void*, void* user)
+{
+    MathScan* st = static_cast<MathScan*>(user);
+    st->blocks.append(type);
+    st->inRun = false;
+    return 0;
+}
 
 // an unclosed comment ends with its block, as the reader drops it there
 int mathLeaveBlock(MD_BLOCKTYPE, void*, void* user)
 {
     MathScan* st = static_cast<MathScan*>(user);
+    if (!st->blocks.isEmpty()) st->blocks.removeLast();
+    st->inRun = false;
     if (st->commentStart >= 0) {
         st->comments.append(qMakePair(st->commentStart, st->htmlEnd));
         st->commentStart = -1;
@@ -126,9 +139,33 @@ int mathLeaveSpan(MD_SPANTYPE type, void*, void* user)
     return 0;
 }
 
+// the text of a block holding inline elements, not of a code or an HTML block
+void addInlineText(MathScan* st, int begin, int end)
+{
+    if (st->blocks.isEmpty()) return;
+    switch (st->blocks.last()) {
+    case MD_BLOCK_P: case MD_BLOCK_H: case MD_BLOCK_LI: case MD_BLOCK_TH: case MD_BLOCK_TD:
+        break;
+    default:
+        return;
+    }
+    if (st->inRun) {
+        QPair<int, int>& run = st->inlines.last();
+        run.first = qMin(run.first, begin);
+        run.second = qMax(run.second, end);
+    } else {
+        st->inlines.append(qMakePair(begin, end));
+        st->inRun = true;
+    }
+}
+
 int mathText(MD_TEXTTYPE type, const MD_CHAR* text, MD_SIZE size, void* user)
 {
     MathScan* st = static_cast<MathScan*>(user);
+    if (text >= st->doc && text < st->doc + st->size) {
+        int b = int(text - st->doc);
+        addInlineText(st, b, qMin(b + int(size), st->size));
+    }
     if (type == MD_TEXT_HTML && text >= st->doc && text < st->doc + st->size) {
         QByteArray chunk(text, int(size));
         int base = int(text - st->doc), at = 0;
@@ -197,6 +234,7 @@ MarkdownSourceRanges markdownSourceRanges(const QString& text)
     QVector<int> offsets = utf16Offsets(bytes);
     MarkdownSourceRanges ranges;
     for (const QPair<int, int>& c : st.comments) ranges.comments.append(qMakePair(offsets.at(c.first), offsets.at(c.second)));
+    for (const QPair<int, int>& r : st.inlines) ranges.inlines.append(qMakePair(offsets.at(r.first), offsets.at(r.second)));
     for (const QPair<int, int>& t : st.tex) {
         // the dollars around the TeX, a display one perhaps on lines of their own
         int open = t.first, close = t.second;

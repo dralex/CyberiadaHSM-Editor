@@ -297,7 +297,10 @@ each element, a whole quote with its lazy line, the formulas where the reader fi
 them (not money, an escaped dollar or code; a display one over its lines; in a heading
 and a quote), the comments (a link definition to nothing, an HTML comment over its lines,
 not one in code), a fence by its tag, by the document language or in one code
-colour, a fence closed on a later line, the `markdown-comments` diagram on the
+colour, a fence closed on a later line, an element over the lines of its paragraph
+(emphasis, a link text, a code span, in a quote and a list item; not over a blank line,
+table rows or a heading), an emphasis or a formula closed on a later line re-colouring
+the earlier one, the `markdown-comments` diagram on the
 canvas (a `dMarkup` `plain` comment stays plain), a `markupLanguage` removal and
 its undo, and the multiline dialog.
 

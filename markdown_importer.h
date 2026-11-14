@@ -41,10 +41,12 @@ struct MarkdownMathRange {
 // the parts of a Markdown text md4c reads as the reader does (the source highlighting,
 // EDIT-TEXT-11): the formulas, never in code, not \$ or a dollar next to a letter or a
 // digit; the HTML comments, [begin, end) with their <!-- and --> (to the end of their
-// block when unclosed)
+// block when unclosed); the inline texts, [first, end of last) of each run of text in a
+// paragraph, a heading, a list item or a table cell, in order
 struct MarkdownSourceRanges {
     QVector<MarkdownMathRange> math;
     QVector<QPair<int, int>> comments;
+    QVector<QPair<int, int>> inlines;
 };
 MarkdownSourceRanges markdownSourceRanges(const QString& text);
 

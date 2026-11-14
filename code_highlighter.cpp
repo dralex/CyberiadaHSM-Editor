@@ -398,21 +398,44 @@ static void addAround(QVector<CodeSpan>& result, const QVector<QPair<int, int>>&
     if (to > at) result.append(CodeSpan{at, to - at, kind});
 }
 
-// the inline elements of a line part starting at base; an earlier element wins an overlap,
-// a formula (reserved, absolute) wins them all
-static void addInlineSpans(QVector<CodeSpan>& result, const QString& part, int base,
-                           const QVector<QPair<int, int>>& reserved = QVector<QPair<int, int>>())
+// a line of a paragraph after its markers: where it starts, its text, a quote's or not
+struct InlinePiece {
+    int start;
+    QString text;
+    bool quote;
+};
+
+// the inline elements, the formulas and the comments of the lines of a paragraph: the rules
+// match over the lines joined by a line feed, an element is cut back to its lines; an earlier
+// element wins an overlap, a formula or a comment wins them all; the rest of a quote's line
+// in the quote colour
+static void addParagraphSpans(QVector<CodeSpan>& result, const QVector<InlinePiece>& pieces,
+                              const MarkdownSourceRanges& src)
 {
-    static const QRegularExpression code(R"((`+)(.+?)\1)");
+    static const QRegularExpression code(R"((`+)(.+?)\1)", QRegularExpression::DotMatchesEverythingOption);
     static const QRegularExpression link(R"(!?\[[^\]]*\]\([^)\s]*(\s+"[^"]*")?\)|<(https?|ftp|mailto):[^>\s]+>|\bhttps?://[^\s<>()]+)");
-    static const QRegularExpression strong(R"((\*\*|__|~~)(?=\S)(.+?)(?<=\S)\1)");
-    static const QRegularExpression em(R"((?<![*\w])\*(?=[^\s*])(.+?)(?<=[^\s*])\*(?!\*)|(?<![_\w])_(?=[^\s_])(.+?)(?<=[^\s_])_(?![_\w]))");
+    static const QRegularExpression strong(R"((\*\*|__|~~)(?=\S)(.+?)(?<=\S)\1)",
+                                           QRegularExpression::DotMatchesEverythingOption);
+    static const QRegularExpression em(R"((?<![*\w])\*(?=[^\s*])(.+?)(?<=[^\s*])\*(?!\*)|(?<![_\w])_(?=[^\s_])(.+?)(?<=[^\s_])_(?![_\w]))",
+                                       QRegularExpression::DotMatchesEverythingOption);
     const QRegularExpression* rules[] = { &code, &link, &strong, &em };
     const CodeTokenKind kinds[] = { codeTokenCode, codeTokenLink, codeTokenEmphasis, codeTokenEmphasis };
+    // the joined text, where each line starts in it, the parts taken in it
+    QString joined;
+    QVector<int> at;
     QVector<QPair<int, int>> taken;
-    for (const QPair<int, int>& r : reserved) taken.append(qMakePair(r.first - base, r.second - base));
+    QVector<CodeSpan> found;
+    for (int i = 0; i < pieces.size(); i++) {
+        const InlinePiece& p = pieces.at(i);
+        if (i > 0) joined += QChar('\n');
+        at.append(joined.length());
+        joined += p.text;
+        for (const QPair<int, int>& h : addSourceSpans(found, src, p.start, p.start + p.text.length())) {
+            taken.append(qMakePair(h.first - p.start + at[i], h.second - p.start + at[i]));
+        }
+    }
     for (size_t r = 0; r < sizeof(rules) / sizeof(rules[0]); r++) {
-        QRegularExpressionMatchIterator it = rules[r]->globalMatch(part);
+        QRegularExpressionMatchIterator it = rules[r]->globalMatch(joined);
         while (it.hasNext()) {
             QRegularExpressionMatch m = it.next();
             int from = m.capturedStart(0), to = m.capturedEnd(0);
@@ -422,28 +445,25 @@ static void addInlineSpans(QVector<CodeSpan>& result, const QString& part, int b
             }
             if (overlaps) continue;
             taken.append(qMakePair(from, to));
-            result.append(CodeSpan{base + from, to - from, kinds[r]});
+            for (int i = 0; i < pieces.size(); i++) {
+                int b = qMax(from, at[i]), e = qMin(to, at[i] + pieces.at(i).text.length());
+                if (b < e) found.append(CodeSpan{pieces.at(i).start + b - at[i], e - b, kinds[r]});
+            }
         }
     }
-}
-
-// the inline elements, the formulas and the comments of a quote's text, the rest of it in
-// the quote colour
-static void addQuoteSpans(QVector<CodeSpan>& result, const QString& part, int base,
-                          const MarkdownSourceRanges& src)
-{
-    QVector<CodeSpan> inlines;
-    QVector<QPair<int, int>> holes = addSourceSpans(inlines, src, base, base + part.length());
-    addInlineSpans(inlines, part, base, holes);
-    std::sort(inlines.begin(), inlines.end(),
+    std::sort(found.begin(), found.end(),
               [](const CodeSpan& a, const CodeSpan& b) { return a.start < b.start; });
-    int at = base;
-    for (const CodeSpan& span : inlines) {
-        if (span.start > at) result.append(CodeSpan{at, span.start - at, codeTokenQuote});
-        result.append(span);
-        at = span.start + span.length;
+    int k = 0;
+    for (const InlinePiece& p : pieces) {
+        int end = p.start + p.text.length();
+        int pos = p.start;
+        for (; k < found.size() && found[k].start < end; k++) {
+            if (p.quote && found[k].start > pos) result.append(CodeSpan{pos, found[k].start - pos, codeTokenQuote});
+            result.append(found[k]);
+            pos = found[k].start + found[k].length;
+        }
+        if (p.quote && end > pos) result.append(CodeSpan{pos, end - pos, codeTokenQuote});
     }
-    if (base + part.length() > at) result.append(CodeSpan{at, base + part.length() - at, codeTokenQuote});
 }
 
 QVector<CodeSpan> CodeStyle::markdownSpans(const QString& text, const CodeLanguage* fallback) const
@@ -471,6 +491,18 @@ QVector<CodeSpan> CodeStyle::markdownSpans(const QString& text, const CodeLangua
         for (const QPair<int, int>& c : src.comments) if (c.first <= from && c.second >= to) return true;
         return false;
     };
+    // the lines of the paragraph being read: one text where md4c reads a line feed inside
+    // the inline text of a block, so an element broken by it is found whole
+    QVector<InlinePiece> pieces;
+    auto flush = [&]() {
+        if (!pieces.isEmpty()) addParagraphSpans(result, pieces, src);
+        pieces.clear();
+    };
+    int run = 0;
+    auto joins = [&](int lf) {
+        while (run < src.inlines.size() && src.inlines.at(run).second <= lf) run++;
+        return run < src.inlines.size() && src.inlines.at(run).first < lf;
+    };
     const CodeLanguage* fenceLang = nullptr;
     int bodyStart = -1;
     while (pos <= n) {
@@ -487,6 +519,7 @@ QVector<CodeSpan> CodeStyle::markdownSpans(const QString& text, const CodeLangua
                 bodyStart = -1;
             }
         } else if (f.hasMatch()) {
+            flush();
             inQuote = false;
             fenceMarker = f.captured(1);
             const CodeLanguage* tagged = find(f.captured(2));
@@ -495,17 +528,22 @@ QVector<CodeSpan> CodeStyle::markdownSpans(const QString& text, const CodeLangua
             bodyStart = qMin(eol + 1, n);
         } else if (holds(pos, eol)) {
             // a line of a display formula or of a comment
+            flush();
             addSourceSpans(result, src, pos, eol);
         } else if (remark.match(line).hasMatch()) {
+            flush();
             inQuote = false;
             result.append(CodeSpan{pos, line.length(), codeTokenComment});
         } else if (heading.match(line).hasMatch()) {
+            flush();
             inQuote = false;
             addAround(result, addSourceSpans(result, src, pos, eol), pos, eol, codeTokenHeading);
         } else if (rule.match(line).hasMatch()) {
+            flush();
             inQuote = false;
             result.append(CodeSpan{pos, line.length(), codeTokenMarker});
         } else if (line.trimmed().isEmpty()) {
+            flush();
             inQuote = false;
         } else {
             int start = 0;
@@ -523,16 +561,13 @@ QVector<CodeSpan> CodeStyle::markdownSpans(const QString& text, const CodeLangua
                 result.append(CodeSpan{pos + start + l.capturedStart(1), l.capturedLength(1), codeTokenMarker});
                 start += l.capturedEnd(1);
             }
-            if (inQuote) {
-                addQuoteSpans(result, line.mid(start), pos + start, src);
-            } else {
-                QVector<QPair<int, int>> holes = addSourceSpans(result, src, pos + start, eol);
-                addInlineSpans(result, line.mid(start), pos + start, holes);
-            }
+            if (!joins(pos - 1)) flush();
+            pieces.append(InlinePiece{pos + start, line.mid(start), inQuote});
         }
         if (eol >= n) break;
         pos = eol + 1;
     }
+    flush();
     // an unclosed fence runs to the end
     if (bodyStart >= 0) addFenceBody(result, text, bodyStart, n, fenceLang);
     return result;
@@ -543,6 +578,8 @@ CodeHighlighter::CodeHighlighter(QTextDocument* document, CodeRole role,
     QSyntaxHighlighter(document), role(role), language(language), markup(markup)
 {
     connect(&CodeStyle::instance(), &CodeStyle::styleChanged, this, &CodeHighlighter::restyle);
+    // after the base class has highlighted the edited lines
+    connect(document, &QTextDocument::contentsChange, this, &CodeHighlighter::reformatEarlier);
     // the first pass is otherwise deferred to the event loop and the edits
     // before it are not highlighted: an export right after a load or an undo
     // would draw plain text
@@ -576,14 +613,45 @@ void CodeHighlighter::restyle()
     rehighlight();
 }
 
+// the first position before end coloured otherwise by the two span lists, -1 when none
+static int firstDifference(const QVector<CodeSpan>& a, const QVector<CodeSpan>& b, int end)
+{
+    auto kinds = [end](const QVector<CodeSpan>& spans) {
+        QVector<int> k(end, -1);
+        for (const CodeSpan& s : spans) {
+            for (int i = qMax(0, s.start); i < qMin(end, s.start + s.length); i++) k[i] = s.kind;
+        }
+        return k;
+    };
+    QVector<int> ka = kinds(a), kb = kinds(b);
+    for (int i = 0; i < end; i++) {
+        if (ka.at(i) != kb.at(i)) return i;
+    }
+    return -1;
+}
+
+void CodeHighlighter::reformatEarlier()
+{
+    if (staleFrom < 0) return;
+    int from = staleFrom, end = staleEnd;
+    staleFrom = staleEnd = -1;
+    // as the base class reformats the edited lines, without an edit block of its own
+    QMetaObject::invokeMethod(this, "_q_reformatBlocks", Qt::DirectConnection,
+                              Q_ARG(int, from), Q_ARG(int, 0), Q_ARG(int, end - from));
+}
+
 void CodeHighlighter::highlightBlock(const QString& text)
 {
     // a span may cross the lines (a block comment, a guard, a fence, a formula), so
     // the whole text is scanned, once per change of the text or the settings
     const CodeStyle& style = CodeStyle::instance();
     QString whole = document()->toPlainText();
+    int blockStart = currentBlock().position();
     if (!cacheValid || whole != cachedText) {
-        cachedSpans.clear();
+        // an edit: the text before the edited line keeps its offsets
+        bool edited = cacheValid;
+        QVector<CodeSpan> before;
+        before.swap(cachedSpans);
         if (role == codeRoleMarkup) {
             if (markup == codeMarkupMarkdown && style.isActive()) cachedSpans = style.markdownSpans(whole, language);
         } else if (const CodeLanguage* lang = style.effective(language)) {
@@ -591,13 +659,17 @@ void CodeHighlighter::highlightBlock(const QString& text)
         }
         cachedText = whole;
         cacheValid = true;
+        int changed = edited ? firstDifference(before, cachedSpans, blockStart) : -1;
+        if (changed >= 0) {
+            staleFrom = staleFrom < 0 ? changed : qMin(staleFrom, changed);
+            staleEnd = qMax(staleEnd, blockStart);
+        }
     }
     const QVector<CodeSpan>& all = cachedSpans;
     if (all.isEmpty()) {
         setCurrentBlockState(0);
         return;
     }
-    int blockStart = currentBlock().position();
     int blockEnd = blockStart + text.length();
     uint tail = 0;
     for (const CodeSpan& span : all) {
