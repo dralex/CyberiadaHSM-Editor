@@ -518,6 +518,7 @@ add_l2_text_test(double-click geometry)
 add_l2_text_test(subject-fragment comment-transition)
 add_l2_text_test(comment-selection comment-transition)
 add_l2_text_test(render-markdown markdown-render-comments)
+add_l2_text_test(auto-type comment-transition)
 
 # a setting verb with a wrong argument is a script error (EDIT-TEXT-14)
 add_test(NAME l2-render-markdown-reject
@@ -775,6 +776,7 @@ add_l4_test(modes)
 add_l4_test(markdown)
 add_l4_test(find)
 add_l4_test(keys)
+add_l4_test(autoreplace)
 
 # The plugin layer: the batch plugin stage over the example plugins of
 # plugins/<set>/, which all run one helper with no dependencies (see

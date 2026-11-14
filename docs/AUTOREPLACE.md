@@ -11,18 +11,17 @@ Preferences.
  a typed key
      |
      v
- EditableTextItem::keyPressEvent / inputMethodEvent      canvas texts
- AutoreplaceWatcher (key filter + contentsChange)        CodeEditor, MultilineTextDialog
- AutoreplaceWatcher (key filter + textEdited)            name line edits
-     |  text, cursor, kind
+ EditableTextItem::keyPressEvent / inputMethodEvent      canvas texts, kind by role and markup
+ CodeEditor::keyPressEvent / inputMethodEvent            text tabs, kind by the mode
+     |  before(key): Backspace gives the pattern back
+     |  typed(cursor, kind): after a key that changed the text
      v
- autoreplaceAllowed(kind, text, pos) --- markdownCodeRanges()   markdown_importer.*
-     |  yes
-     v
- autoreplaceMatch(text before the cursor, rules) -> from, to    autoreplace.*
-     |                                  ^
-     v                                  | rules, enabled; autoreplaceChanged
- one edit block: from -> to        SettingsManager  <---  Preferences, Autoreplace page
+ Autoreplacer (one per text)                             autoreplace.*
+     |  autoreplaceMatch(text before the cursor, rules) -> rule
+     |  autoreplaceAllowed(kind, text, from, to) -- markdownProseAt()
+     v                                  ^
+ one edit block: from -> to             | rules, enabled; autoreplaceChanged
+                                   SettingsManager  <---  Preferences, Autoreplace page
 ```
 
 ## The rules
@@ -66,24 +65,26 @@ A trigger is an event name: the model refuses one with a typographic character.
 
 ## Markdown exclusions
 
-`markdownCodeRanges()` reads the source with md4c, as `markdownSourceRanges()` does, and
-gives the ranges where nothing is replaced:
+`markdownProseAt()` reads the source up to the pattern typed, by its lines and characters:
+the text being typed is mostly not closed yet, which a Markdown parser would read as plain
+text. Nothing is replaced in:
 
 | Range | Example |
 |---|---|
 | a code span, an unclosed one to the end of its line | `` `x--` ``, `` `a << `` |
-| a fenced or indented code block, an unclosed fence to the end of the text | ` ``` ` |
-| a formula, an unclosed `$` to the end of its line | `$a <= b$` |
+| a fenced code block, an unclosed fence to the end of the text; a line indented by four spaces after an empty line, not under a list item | ` ``` ` |
+| a formula, an unclosed `$` to the end of its line, `$$` to the end of the text; a `$` before a digit or a space opens none | `$a <= b$` |
 | an HTML tag or comment, an unclosed `<!--` to the end of the text | `<!-- note -->` |
 | the target of a link or an image, a bare URL | `[x](a...b)` |
-| a line of `-`, `|`, `:` and spaces — a rule, a table border | `|---|:--|` |
+| a line of `-`, `=`, `|`, `:` and spaces — a rule, the underline of a heading, a table border | `|---|:--|` |
 | the `>` that open a quote | `>> quoted` |
 
 ## The moment
 
 Only a typed character is replaced: a key press or an input method commit that inserted
-text at the cursor. A paste, a drop, an undo or redo, a plugin result, a loaded or rendered
-text and the batch `set` verbs are never read. The batch `type` verb is typing.
+text at the cursor, the text changed by it. A paste, a drop, an undo or redo, a plugin
+result, a loaded or rendered text are never read. Of the batch verbs `type` is typing;
+`edit-text` sets a text as written (`suspendAutoreplace()`).
 
 The replacement is one edit block of its own:
 
@@ -93,7 +94,9 @@ The replacement is one edit block of its own:
 | Backspace, the cursor not moved since | the same |
 | the next typed character | it is read against the rules again, so `–` and `-` make `—` |
 
-A pattern restored by Undo or Backspace stays as typed.
+A pattern restored by Undo or Backspace stays as typed: the `Autoreplacer` keeps the place
+of its last replacement and replaces nothing over the pattern found there again. The Undo
+of a text tab puts the cursor at the change, after the characters given back.
 
 ## The storage
 
@@ -120,12 +123,12 @@ The rules are written when they differ from the defaults, removed when they equa
 
 | File | Part |
 |---|---|
-| `autoreplace.*` | `AutoreplaceRule`, the default rules, `autoreplaceMatch()`, `autoreplaceAllowed()`, `AutoreplaceWatcher` |
-| `markdown_importer.*` | `markdownCodeRanges()` |
+| `autoreplace.*` | `AutoreplaceRule`, the default rules, `autoreplaceMatch()`, `markdownProseAt()`, `autoreplaceAllowed()`, `Autoreplacer` |
 | `settings_manager.*` | `autoreplace/*`, `autoreplaceChanged` |
-| `editable_text_item.*` | the hook of the canvas texts, the kind by the role and the markup |
-| `text_document.*`, `code_editor.*` | the watcher of a Markdown tab |
-| `dialogs/multilinetextdialog.*` | the watcher of a prose or Markdown text |
-| `cyberiadasm_properties_widget.*`, `cyberiadasm_view.*` | the watcher of the name rows and of the tree rename |
-| `dialogs/preferences_dialog.*` | the Autoreplace page |
-| `tests/l4/l4-autoreplace.cpp`, `tests/scripts/auto-*` | the cases `EDIT-AUTO-1..8` |
+| `editable_text_item.*` | the hook of the canvas texts, `autoreplaceKind()` by the role and the markup |
+| `code_editor.*`, `text_document.*` | the hook of a text tab, its kind by the mode; the cursor of Undo and Redo |
+| `batch_script.cpp` | `edit-text` as written |
+| `dialogs/multilinetextdialog.*` | planned: a prose or Markdown text |
+| `cyberiadasm_properties_widget.*`, `cyberiadasm_view.*` | planned: the name rows and the tree rename |
+| `dialogs/preferences_dialog.*` | planned: the Autoreplace page |
+| `tests/l4/l4-autoreplace.cpp`, `tests/scripts/auto-type.script` | the cases `EDIT-AUTO-1..8` |

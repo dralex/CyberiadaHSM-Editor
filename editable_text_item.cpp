@@ -122,6 +122,7 @@ void EditableTextItem::startEditing() {
     // a rendered Markdown text is edited as its source (EDIT-TEXT-14)
     showSource();
     editOrigin = toPlainText();
+    replacer.forget();
     setTextInteractionFlags(Qt::TextEditorInteraction);
     setFocus();
     setEditing(true);
@@ -138,7 +139,28 @@ void EditableTextItem::keyPressEvent(QKeyEvent *event) {
         return;
     }
     if (isEdit) {
+        if (replacer.before(event, textCursor())) return;
+        int revision = document()->revision();
         QGraphicsTextItem::keyPressEvent(event);
+        // only a key that typed is read against the rules (EDIT-AUTO-5)
+        if (typingKey(event) && document()->revision() != revision) {
+            replacer.typed(textCursor(), autoreplaceKind());
+        }
+    }
+}
+
+void EditableTextItem::inputMethodEvent(QInputMethodEvent* event)
+{
+    QGraphicsTextItem::inputMethodEvent(event);
+    if (isEdit && !event->commitString().isEmpty()) replacer.typed(textCursor(), autoreplaceKind());
+}
+
+AutoreplaceKind EditableTextItem::autoreplaceKind() const
+{
+    switch (getCodeRole()) {
+    case codeRoleNone:      return autoreplaceProse;
+    case codeRoleMarkup:    return getCodeMarkup() == codeMarkupMarkdown ? autoreplaceMarkdown : autoreplaceProse;
+    default:                return autoreplaceNone;
     }
 }
 

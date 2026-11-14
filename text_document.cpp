@@ -42,16 +42,25 @@
 // one edit of the text: the undo stack of the tab drives the text's own history
 class TextEditStep : public QUndoCommand {
 public:
-    TextEditStep(QTextDocument* document, const QString& name):
-        QUndoCommand(name.isEmpty() ? QObject::tr("typing") : name), document(document) {}
-    void undo() override { document->undo(); }
+    TextEditStep(CodeEditor* editor, const QString& name):
+        QUndoCommand(name.isEmpty() ? QObject::tr("typing") : name), editor(editor) {}
+    // the cursor goes to the change, as the Undo of the editor itself puts it
+    void undo() override {
+        QTextCursor cursor = editor->textCursor();
+        editor->document()->undo(&cursor);
+        editor->setTextCursor(cursor);
+    }
     // the push redoes the step the text has just done itself
     void redo() override {
-        if (pushed) document->redo();
+        if (pushed) {
+            QTextCursor cursor = editor->textCursor();
+            editor->document()->redo(&cursor);
+            editor->setTextCursor(cursor);
+        }
         pushed = true;
     }
 private:
-    QTextDocument* document;
+    CodeEditor* editor;
     bool pushed = false;
 };
 
@@ -63,7 +72,7 @@ TextDocument::TextDocument(const QString& mode, QObject* parent):
     m_document = m_editor->document();
     m_document->setUndoRedoEnabled(true);
     connect(m_document, &QTextDocument::undoCommandAdded, this,
-            [this]() { m_undo->push(new TextEditStep(m_document, m_stepName)); });
+            [this]() { m_undo->push(new TextEditStep(m_editor, m_stepName)); });
     m_rendered = new MarkdownView();
     m_page = new QStackedWidget();
     m_page->addWidget(m_editor);
@@ -108,6 +117,8 @@ void TextDocument::applyMode()
 {
     delete m_highlighter;
     m_highlighter = nullptr;
+    // only the text of a Markdown takes the typed replacements (EDIT-AUTO-2/3)
+    m_editor->setAutoreplaceKind(m_mode == MODE_MARKDOWN ? autoreplaceMarkdown : autoreplaceNone);
     // the source of a language as its code, Markdown by its elements (EDIT-TEXT-7/11)
     if (m_mode == MODE_MARKDOWN) {
         m_highlighter = new CodeHighlighter(m_document, codeRoleMarkup, nullptr, codeMarkupMarkdown);

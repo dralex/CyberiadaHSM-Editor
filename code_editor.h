@@ -25,6 +25,7 @@
 #define CYBERIADA_CODE_EDITOR
 
 #include <QPlainTextEdit>
+#include "autoreplace.h"
 
 // The text of a text tab (docs/MODES.md, Text tabs): the line numbers in a margin;
 // Undo and Redo belong to the window, so the undo stack of the tab is the one
@@ -36,10 +37,14 @@ public:
 
     int  lineNumberAreaWidth() const;
     void paintLineNumbers(QPaintEvent* event);
+    // what the text is for the typed replacements (EDIT-AUTO-2/3): none unless set
+    void setAutoreplaceKind(AutoreplaceKind kind) { m_kind = kind; }
+    AutoreplaceKind autoreplaceKind() const { return m_kind; }
 
 protected:
     bool event(QEvent* event) override;
     void keyPressEvent(QKeyEvent* event) override;
+    void inputMethodEvent(QInputMethodEvent* event) override;
     void contextMenuEvent(QContextMenuEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
 
@@ -49,6 +54,8 @@ private slots:
 
 private:
     QWidget* lineNumbers;
+    AutoreplaceKind m_kind = autoreplaceNone;
+    Autoreplacer m_replacer;
 };
 
 #endif

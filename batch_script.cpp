@@ -32,6 +32,7 @@
 #include <QTextCursor>
 
 #include "batch_script.h"
+#include "autoreplace.h"
 #include "batch_plugin.h"
 #include "batch_driver.h"
 #include "plugin_registry.h"
@@ -681,8 +682,11 @@ static bool runTextVerb(CyberiadaSMEditorScene* scene, const QStringList& tokens
 		if (!text) return false;
 		if (cmd == "edit") return true;   // leave the editor open for the keystroke verbs
 		QString value = restOfLine(tokens, from);
+		// the text is set as written, not typed (EDIT-AUTO-5)
+		suspendAutoreplace(true);
 		if (value.isEmpty()) sendKey(scene, Qt::Key_Delete, Qt::NoModifier);
 		else typeText(scene, value);
+		suspendAutoreplace(false);
 		text->clearFocus();
 		return true;
 	}

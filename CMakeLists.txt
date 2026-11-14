@@ -158,6 +158,7 @@ add_library(CyberiadaEditorCore STATIC
   find_query.h find_query.cpp
   find_bar.h find_bar.cpp
   shortcut_map.h shortcut_map.cpp
+  autoreplace.h autoreplace.cpp
   diagram_find.h diagram_find.cpp
   diff_document.h diff_document.cpp
   cyberiadasm_editor_document.cpp

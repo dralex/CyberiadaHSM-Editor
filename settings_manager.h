@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QSettings>
+#include "autoreplace.h"
 #include <QColor>
 #include <QSize>
 #include <QString>
@@ -160,6 +161,13 @@ public:
 
     // the changed keys of an action (EDIT-KEYS-4, docs/SHORTCUTS.md): the keys as
     // text, empty - no key; an action not stored has its default keys
+    // the typed patterns replaced by their characters (EDIT-AUTO-7/8,
+    // docs/AUTOREPLACE.md); the rules are stored when they differ from the default ones
+    bool getAutoreplaceEnabled() const { return autoreplaceEnabled; }
+    void setAutoreplaceEnabled(bool value);
+    const AutoreplaceRules& getAutoreplaceRules() const { return autoreplaceRules; }
+    void setAutoreplaceRules(const AutoreplaceRules& rules);
+
     QString getShortcut(const QString& action, bool* found = nullptr) const;
     void setShortcut(const QString& action, const QString& keys);
     void removeShortcut(const QString& action);
@@ -184,6 +192,7 @@ signals:
     void renderMarkdownCommentsChanged(bool);
 
     void selectionSettingsChanged();
+    void autoreplaceChanged();
 
     // the interpreters changed: the plugins rescan
     void pluginsChanged();
@@ -195,6 +204,9 @@ private:
     SettingsManager();
     SettingsManager(const SettingsManager&) = delete;
     SettingsManager& operator=(const SettingsManager&) = delete;
+
+    bool autoreplaceEnabled = true;
+    AutoreplaceRules autoreplaceRules;
 
     // grid
     bool showGrid;

@@ -123,7 +123,17 @@ void CodeEditor::keyPressEvent(QKeyEvent* event)
         event->ignore();
         return;
     }
+    if (m_replacer.before(event, textCursor())) return;
+    int revision = document()->revision();
     QPlainTextEdit::keyPressEvent(event);
+    // only a key that typed is read against the rules (EDIT-AUTO-5)
+    if (typingKey(event) && document()->revision() != revision) m_replacer.typed(textCursor(), m_kind);
+}
+
+void CodeEditor::inputMethodEvent(QInputMethodEvent* event)
+{
+    QPlainTextEdit::inputMethodEvent(event);
+    if (!isReadOnly() && !event->commitString().isEmpty()) m_replacer.typed(textCursor(), m_kind);
 }
 
 // the standard menu without its own Undo and Redo, which would pass the tab by

@@ -29,6 +29,7 @@
 #include "cyberiada_constants.h"
 #include "code_highlighter.h"
 #include "find_query.h"
+#include "autoreplace.h"
 
 class CyberiadaSMEditorAbstractItem;
 
@@ -82,6 +83,8 @@ public:
     // enter edit mode programmatically (a double click on the owner, say)
     void startEditing();
     bool isEditing() const { return isEdit; }
+    // a name and a text for people take the typed replacements, code none (EDIT-AUTO-2/3)
+    AutoreplaceKind autoreplaceKind() const;
     // leave the edit mode with the text as it was at its start, the document
     // untouched (EDIT-KEYS-11)
     void cancelEditing();
@@ -107,6 +110,7 @@ protected:
     void keyPressEvent(QKeyEvent *event);
     // Esc is the edit's ahead of the action it is a key of
     bool sceneEvent(QEvent* event) override;
+    void inputMethodEvent(QInputMethodEvent* event) override;
     // while editing: Copy and Comment the Selection (EDIT-TOOL-17)
     void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
     void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
@@ -163,6 +167,7 @@ private:
     QString source;
     // the text at the start of the edit, which Esc gives back
     QString editOrigin;
+    Autoreplacer replacer;
     QString markdownBase;
     FindRanges findMarks;
     int findCurrentMark = -1;

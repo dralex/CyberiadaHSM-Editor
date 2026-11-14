@@ -123,6 +123,20 @@ void SettingsManager::load() {
     selectionColor = QColor(s.value("display/selectionColor", QColor(Qt::darkGray).name()).toString());
     selectionBorderWidth = s.value("display/selectionBorderWidth", 2).toInt();
     selectionInvertText = s.value("display/selectionInvertText", false).toBool();
+
+    autoreplaceEnabled = s.value("autoreplace/enabled", true).toBool();
+    autoreplaceRules = defaultAutoreplaceRules();
+    if (s.childGroups().contains("autoreplace") && s.contains("autoreplace/rules/size")) {
+        autoreplaceRules.clear();
+        int n = s.beginReadArray("autoreplace/rules");
+        for (int i = 0; i < n; i++) {
+            s.setArrayIndex(i);
+            AutoreplaceRule rule(s.value("from").toString(), s.value("to").toString(),
+                                 s.value("enabled", true).toBool());
+            if (!rule.from.isEmpty()) autoreplaceRules << rule;
+        }
+        s.endArray();
+    }
 }
 
 void SettingsManager::loadDefaults()
@@ -156,6 +170,9 @@ void SettingsManager::loadDefaults()
     setSelectionColor(QColor(Qt::red));
     setSelectionBorderWidth(2);
     setSelectionInvertText(false);
+
+    setAutoreplaceEnabled(true);
+    setAutoreplaceRules(defaultAutoreplaceRules());
 }
 
 void SettingsManager::setFontFamily(const QString& value)
@@ -535,4 +552,33 @@ void SettingsManager::setShortcut(const QString& action, const QString& keys)
 void SettingsManager::removeShortcut(const QString& action)
 {
     QSettings().remove(shortcutKey(action));
+}
+
+void SettingsManager::setAutoreplaceEnabled(bool value)
+{
+    if (autoreplaceEnabled != value) {
+        autoreplaceEnabled = value;
+        QSettings().setValue("autoreplace/enabled", value);
+        emit autoreplaceChanged();
+    }
+}
+
+void SettingsManager::setAutoreplaceRules(const AutoreplaceRules& rules)
+{
+    if (autoreplaceRules == rules) return;
+    autoreplaceRules = rules;
+    QSettings s;
+    s.remove("autoreplace/rules");
+    // the default rules are not stored: they follow the editor
+    if (rules != defaultAutoreplaceRules()) {
+        s.beginWriteArray("autoreplace/rules", rules.size());
+        for (int i = 0; i < rules.size(); i++) {
+            s.setArrayIndex(i);
+            s.setValue("from", rules[i].from);
+            s.setValue("to", rules[i].to);
+            s.setValue("enabled", rules[i].enabled);
+        }
+        s.endArray();
+    }
+    emit autoreplaceChanged();
 }

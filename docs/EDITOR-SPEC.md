@@ -1264,9 +1264,11 @@ Specified in 0.62.
   of its line or, a fence and a comment, of the text — nor in a line of a rule or a table
   border, nor the `>` opening a quote. *design*
 - `EDIT-AUTO-5` MUST [U]: only typing is replaced: a paste, a drop, an undo or redo, a loaded
-  file, a plugin result and the batch verbs that set a text leave it as it is. *design*
+  file, a plugin result and the batch `edit-text` leave it as it is; the batch `type` is
+  typing. *design*
 - `EDIT-AUTO-6` MUST [I]: Undo right after a replacement, or Backspace with the cursor not
-  moved, gives back the characters typed; they then stay as typed. *design*
+  moved, gives back the characters typed, the cursor after them; they then stay as typed.
+  *design*
 - `EDIT-AUTO-7` MUST [A]: the Autoreplace page of the Preferences has the switch *Replace as
   you type* and the table of the rules: each one switched, changed or removed, new ones added
   in the last row, a pattern never twice; Restore defaults gives the default rules. Ok and

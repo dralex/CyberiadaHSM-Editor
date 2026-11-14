@@ -1,0 +1,15 @@
+# the typed patterns become their characters in a name and a comment body, not in
+# an action; a text set by edit-text stays as written (EDIT-AUTO-2/3/5)
+edit n0 title
+select-all
+type On -- off
+commit
+edit n2 body
+select-all
+type (c) <<note>> a -> b...
+commit
+new-action n1 entry/ x()
+edit n1 action 0
+type y-- >> 1
+commit
+edit-text n1 title set -- as written
