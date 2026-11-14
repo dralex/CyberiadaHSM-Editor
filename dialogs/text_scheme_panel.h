@@ -28,13 +28,16 @@
 #include "text_scheme.h"
 
 class QComboBox;
+class QFontComboBox;
 class QPushButton;
+class QSpinBox;
 class QToolButton;
 class CodeEditor;
 class CodeHighlighter;
 
-// The color schemes of the text editors (EDIT-COLOR-3/4, docs/COLOR-SCHEMES.md): the
-// panel edits a copy, apply() stores it and makes the scheme shown current
+// The font and the color schemes of the text editors (EDIT-MODE-27, EDIT-COLOR-3/4,
+// docs/COLOR-SCHEMES.md): the panel edits a copy, apply() stores it and makes the scheme
+// shown current
 class TextSchemePanel: public QWidget {
 Q_OBJECT
 public:
@@ -57,6 +60,8 @@ public:
     CodeEditor*        preview() const { return m_preview; }
 
 private slots:
+    // the preview in the font chosen
+    void               showFont();
     void               schemeChosen();
     void               swatchClicked();
     void               copyClicked();
@@ -74,6 +79,8 @@ private:
     TextScheme*        shown();
 
     TextSchemes        m_schemes;
+    QFontComboBox*     m_fontFamily;
+    QSpinBox*          m_fontSize;
     QComboBox*         m_list;
     QPushButton*       m_copy;
     QPushButton*       m_rename;

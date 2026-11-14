@@ -89,6 +89,12 @@ public:
     // comment size, so it has no setting of its own
     int getFontSize(FontRole role) const;
     void setFontSize(FontRole role, int value);
+    // the font of the text editors apart from the diagram one (EDIT-MODE-27): an empty
+    // family is the bundled one, the size in points
+    QString getEditorFontFamily() const { return editorFontFamily; }
+    void setEditorFontFamily(const QString& value);
+    int getEditorFontSize() const { return editorFontSize; }
+    void setEditorFontSize(int value);
 
     // the reserved parts of an action are drawn bold: the entry/exit/do keyword
     // prefix, the internal transition event name, and the edge transition event
@@ -200,6 +206,8 @@ signals:
     void snapModeChanged(bool);
 
     void fontSettingsChanged();
+    // the text editor font, the canvas is not laid out again
+    void editorFontChanged();
     void highlightSettingsChanged();
     void renderMarkdownCommentsChanged(bool);
 
@@ -252,6 +260,8 @@ private:
     bool renderMarkdownComments = false;
     QString fontFamily;
     int fontSizes[fontRolesCount];
+    QString editorFontFamily;
+    int editorFontSize = FONT_SIZE;
 
     // files
     QString interfaceLanguage;

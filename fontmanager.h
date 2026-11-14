@@ -52,6 +52,8 @@ public:
     QFont font(FontRole role) const;
     // the family at the default size, for the painter of the exported image
     QFont baseFont() const;
+    // the font of the text editors (EDIT-MODE-27), a screen font in points
+    QFont editorFont() const;
 
 signals:
     void fontsChanged();

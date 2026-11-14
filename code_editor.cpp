@@ -22,7 +22,6 @@
  * ----------------------------------------------------------------------------- */
 
 #include <QContextMenuEvent>
-#include <QFontDatabase>
 #include <QKeyEvent>
 #include <QMenu>
 #include <QMouseEvent>
@@ -31,6 +30,8 @@
 
 #include "code_editor.h"
 #include "cyberiada_constants.h"
+#include "fontmanager.h"
+#include "settings_manager.h"
 #include "text_scheme.h"
 
 // the gap between the numbers and the text, in pixels
@@ -70,12 +71,27 @@ private:
 CodeEditor::CodeEditor(QWidget* parent):
     QPlainTextEdit(parent), lineNumbers(new LineNumberArea(this)), errorBar(new ErrorBar(this))
 {
-    setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
+    // the text editor font, not the diagram one (EDIT-MODE-27)
+    setFont(FontManager::instance().editorFont());
     setLineWrapMode(QPlainTextEdit::NoWrap);
-    setTabStopDistance(fontMetrics().horizontalAdvance(' ') * TAB_SPACES);
     connect(this, &QPlainTextEdit::blockCountChanged, this, &CodeEditor::updateMargin);
     connect(this, &QPlainTextEdit::updateRequest, this, &CodeEditor::updateLineNumbers);
+    connect(&SettingsManager::instance(), &SettingsManager::editorFontChanged, this,
+            [this]() { setFont(FontManager::instance().editorFont()); });
+    applyFontMetrics();
+}
+
+void CodeEditor::applyFontMetrics()
+{
+    setTabStopDistance(fontMetrics().horizontalAdvance(' ') * TAB_SPACES);
     updateMargin();
+    placeLineNumbers();
+}
+
+void CodeEditor::changeEvent(QEvent* event)
+{
+    QPlainTextEdit::changeEvent(event);
+    if (event->type() == QEvent::FontChange) applyFontMetrics();
 }
 
 void CodeEditor::setScheme(const TextScheme& scheme)
@@ -157,9 +173,14 @@ void CodeEditor::updateLineNumbers(const QRect& rect, int dy)
 void CodeEditor::resizeEvent(QResizeEvent* event)
 {
     QPlainTextEdit::resizeEvent(event);
+    placeLineNumbers();
+    placeErrorBar();
+}
+
+void CodeEditor::placeLineNumbers()
+{
     QRect cr = contentsRect();
     lineNumbers->setGeometry(QRect(cr.left(), cr.top(), lineNumberAreaWidth(), cr.height()));
-    placeErrorBar();
 }
 
 void CodeEditor::paintLineNumbers(QPaintEvent* event)

@@ -23,6 +23,7 @@
 
 #include <QColorDialog>
 #include <QComboBox>
+#include <QFontComboBox>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QInputDialog>
@@ -31,6 +32,7 @@
 #include <QPainter>
 #include <QPushButton>
 #include <QSignalBlocker>
+#include <QSpinBox>
 #include <QTextBlock>
 #include <QToolButton>
 #include <QVBoxLayout>
@@ -38,6 +40,7 @@
 #include "code_editor.h"
 #include "code_highlighter.h"
 #include "cyberiada_constants.h"
+#include "fontmanager.h"
 #include "settings_manager.h"
 
 // the editor colors in the first column, the highlighting in the next ones
@@ -49,13 +52,27 @@ TextSchemePanel::TextSchemePanel(QWidget* parent):
 {
     QVBoxLayout* layout = new QVBoxLayout(this);
 
-    QHBoxLayout* top = new QHBoxLayout;
+    // the font apart from the diagram one (EDIT-MODE-27), then the scheme
+    QGridLayout* top = new QGridLayout;
+    QLabel* fontLabel = new QLabel(tr("Font"), this);
+    m_fontFamily = new QFontComboBox(this);
+    m_fontFamily->setObjectName("textEditorFontFamily");
+    m_fontFamily->setFontFilters(QFontComboBox::MonospacedFonts);
+    m_fontSize = new QSpinBox(this);
+    m_fontSize->setObjectName("textEditorFontSize");
+    m_fontSize->setRange(FONT_SIZE_MIN, FONT_SIZE_MAX);
+    m_fontSize->setSuffix(tr(" pt"));
+    fontLabel->setBuddy(m_fontFamily);
+    top->addWidget(fontLabel, 0, 0);
+    top->addWidget(m_fontFamily, 0, 1);
+    top->addWidget(m_fontSize, 0, 2);
     QLabel* label = new QLabel(tr("Scheme"), this);
     m_list = new QComboBox(this);
     m_list->setObjectName("textSchemeList");
     label->setBuddy(m_list);
-    top->addWidget(label);
-    top->addWidget(m_list, 1);
+    top->addWidget(label, 1, 0);
+    top->addWidget(m_list, 1, 1, 1, 2);
+    top->setColumnStretch(1, 1);
     layout->addLayout(top);
 
     QHBoxLayout* buttons = new QHBoxLayout;
@@ -110,6 +127,8 @@ TextSchemePanel::TextSchemePanel(QWidget* parent):
     m_preview->setMinimumHeight(m_preview->fontMetrics().lineSpacing() * (m_preview->blockCount() + 1));
     layout->addWidget(m_preview, 1);
 
+    connect(m_fontFamily, &QFontComboBox::currentFontChanged, this, &TextSchemePanel::showFont);
+    connect(m_fontSize, QOverload<int>::of(&QSpinBox::valueChanged), this, &TextSchemePanel::showFont);
     connect(m_list, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &TextSchemePanel::schemeChosen);
     connect(m_copy, &QPushButton::clicked, this, &TextSchemePanel::copyClicked);
     connect(m_rename, &QPushButton::clicked, this, &TextSchemePanel::renameClicked);
@@ -121,6 +140,11 @@ TextSchemePanel::TextSchemePanel(QWidget* parent):
 void TextSchemePanel::load()
 {
     SettingsManager& sm = SettingsManager::instance();
+    // the empty family is the bundled one, shown by its name
+    QString family = sm.getEditorFontFamily();
+    m_fontFamily->setCurrentFont(QFont(family.isEmpty() ? FontManager::instance().bundledFamily() : family));
+    m_fontSize->setValue(sm.getEditorFontSize());
+    showFont();
     m_schemes = sm.getTextSchemes();
     fill(sm.currentTextScheme().id);
 }
@@ -128,8 +152,20 @@ void TextSchemePanel::load()
 void TextSchemePanel::apply()
 {
     SettingsManager& sm = SettingsManager::instance();
+    // the bundled family is stored empty: the default follows the editor
+    QString family = m_fontFamily->currentFont().family();
+    sm.setEditorFontFamily(family == FontManager::instance().bundledFamily() ? QString() : family);
+    sm.setEditorFontSize(m_fontSize->value());
     sm.setTextSchemes(m_schemes);
     sm.setTextScheme(shownId());
+}
+
+void TextSchemePanel::showFont()
+{
+    QFont font(m_fontFamily->currentFont().family());
+    font.setPointSize(m_fontSize->value());
+    font.setStyleHint(QFont::Monospace);
+    m_preview->setFont(font);
 }
 
 QString TextSchemePanel::shownId() const

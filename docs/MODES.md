@@ -1,7 +1,7 @@
 # The Document Modes — Architecture
 
-**Document version:** 0.12 (2026-11-14) — stages 1 to 9 implemented (see Stages). The
-requirements are `EDIT-MODE-1..26` in `EDITOR-SPEC.md` §4.14, the plugin parts
+**Document version:** 0.13 (2026-11-14) — stages 1 to 9 implemented (see Stages). The
+requirements are `EDIT-MODE-1..27` in `EDITOR-SPEC.md` §4.14, the plugin parts
 `EDIT-PLUG-56..60`.
 
 A tab holds one document in one **mode**: the format edited, the access, and the tools, the
@@ -229,6 +229,9 @@ The git plugin hands the revision of a diagram to a diff tab:
 * The proxy step lets the window's Undo and Redo, bound to the `QUndoGroup`, drive the text's own
   undo, and the stack's clean state gives the `*` of the title.
 * Save writes the text as it is, in UTF-8; Save As proposes the mode's first extension.
+* A `CodeEditor` (a text tab, a side of a text diff tab) draws in the text editor font of the
+  Preferences, `FontManager::editorFont()`, and follows its change (`EDIT-MODE-27`); the
+  diagram font is another one.
 * File > Export of a Markdown tab saves the rendered text as a PDF (`MARKDOWN.md`, PDF); the
   other text tabs have nothing to export.
 

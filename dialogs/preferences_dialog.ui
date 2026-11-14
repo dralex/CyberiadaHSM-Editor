@@ -256,7 +256,7 @@
          <item row="0" column="0">
           <widget class="QLabel" name="fontFamilyLabel">
            <property name="text">
-            <string>Font</string>
+            <string>Diagram font</string>
            </property>
           </widget>
          </item>
@@ -402,7 +402,7 @@
              </font>
             </property>
             <property name="text">
-             <string>Text editor colors</string>
+             <string>Text editors</string>
             </property>
            </widget>
           </item>
