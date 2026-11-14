@@ -46,6 +46,7 @@ private slots:
 	void test_open_text();
 	void test_untitled_gives_way();
 	void test_text_undo_save();
+	void test_json_text();
 	void test_text_modes();
 	void test_markdown_rendered();
 	void test_read_only_button();
@@ -84,12 +85,18 @@ void TestModes::test_extension_modes()
 	QCOMPARE(modeForFile("main.c"), QString("c"));
 	QCOMPARE(modeForFile("App.cs"), QString("csharp"));
 	QCOMPARE(modeForFile("run.py"), QString("python"));
+	QCOMPARE(modeForFile("plugin.json"), QString("json"));
+	QCOMPARE(modeForFile("DARK.JSON"), QString("json"));
 	QCOMPARE(modeForFile("README.md"), QString(MODE_MARKDOWN));
 	QCOMPARE(modeForFile("notes.txt"), QString(MODE_TEXT));
 	QCOMPARE(modeForFile("Main.java"), QString(MODE_TEXT));
 	QCOMPARE(modeExtension("cpp"), QString(".cpp"));
 	QCOMPARE(modeExtension(MODE_MARKDOWN), QString(".md"));
 	QCOMPARE(modeExtension(MODE_TEXT), QString(".txt"));
+	QCOMPARE(modeExtension("json"), QString(".json"));
+	QVERIFY(isDocumentFile("dark.json"));
+	QVERIFY(textFilePatterns().split(' ').contains("*.json"));
+	QCOMPARE(modeMarker("json", true, false), QString(" [JSON, ro]"));
 	QVERIFY(isTextMode("python") && isTextMode(MODE_TEXT) && !isTextMode(MODE_FA));
 	QCOMPARE(modeMarker("cpp", false, false), QString(" [C++]"));
 	QCOMPARE(modeMarker(MODE_MARKDOWN, true, false), QString(" [Markdown, ro]"));
@@ -136,6 +143,26 @@ void TestModes::test_untitled_gives_way()
 	QVERIFY(window.openFile("diagrams/hierarchy.graphml"));
 	QCOMPARE(window.documentCount(), 2);
 	QCOMPARE(window.currentTab()->mode(), QString(MODE_HSM));
+}
+
+// EDIT-MODE-13: a .json file opens as JSON; File > New > Text file > JSON
+void TestModes::test_json_text()
+{
+	CyberiadaSMEditorWindow window;
+	QVERIFY(window.openFile("texts/settings.json"));
+	TextDocument* text = window.currentText();
+	QVERIFY(text && text->mode() == "json");
+	QCOMPARE(window.tabBar()->tabText(0), QString("settings.json [JSON]"));
+	QVERIFY(text->editor()->document()->findChild<QSyntaxHighlighter*>());
+	QAction* json = nullptr;
+	for (QAction* a : window.menuNew->findChild<QMenu*>("menuNewText")->actions()) {
+		if (a->data().toString() == "json") json = a;
+	}
+	QVERIFY(json);
+	QCOMPARE(json->text(), QString("JSON"));
+	json->trigger();
+	QVERIFY(window.currentText() && window.currentText()->mode() == "json");
+	QCOMPARE(window.tabBar()->tabText(1), tr("untitled") + " [JSON]");
 }
 
 // EDIT-MODE-13: the edits go through the window's Undo and Redo; Save As writes UTF-8

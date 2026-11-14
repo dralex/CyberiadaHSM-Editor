@@ -1,6 +1,6 @@
 # The Document Modes — Architecture
 
-**Document version:** 0.11 (2026-11-14) — stages 1 to 6 implemented, 7 to 9 (JSON) planned (see
+**Document version:** 0.11 (2026-11-14) — stages 1 to 7 implemented, 8 and 9 (JSON) planned (see
 Stages). The requirements are `EDIT-MODE-1..20` in `EDITOR-SPEC.md` §4.14, the plugin parts
 `EDIT-PLUG-56..60`.
 
@@ -335,7 +335,7 @@ File                              Document
 6. The git plugin: Compare with a Revision... — done in cybersphere-git-plugin: `hsm-git
    revision` writes the base, `modes` on every git action, its text diff hides
    `regionGeometry` without the geometry as the tab does.
-7. The JSON language file — planned: `syntax/json.json`, `.json` in Open, New and Save As.
+7. The JSON language file — done: `syntax/json.json`, `.json` in Open, New and Save As.
 8. The JSON check — planned: `json_text.*` (lexer, `checkJson`), the underline, the margin, the
    bar, the `error:` dump line (`EDIT-MODE-19`).
 9. The formatted read-only JSON page — planned: `formatJson`, the third page, Find on it, the

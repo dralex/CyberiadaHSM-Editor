@@ -1,0 +1,17 @@
+== tabs
+count: 1
+0 settings.json json active
+== text
+mode: json
+file: settings.json
+modified: no
+rendered: no
+lines: 8
+| {
+|     "name": "traffic light",
+|     "period": 1.5e3,
+|     "states": ["red", "yellow", "green"],
+|     "blink": true,
+|     "note": null
+| }
+| 

@@ -58,6 +58,7 @@
         <file>syntax/c.json</file>
         <file>syntax/cpp.json</file>
         <file>syntax/csharp.json</file>
+        <file>syntax/json.json</file>
         <file>syntax/python.json</file>
     </qresource>
     <qresource prefix="/Schemes">

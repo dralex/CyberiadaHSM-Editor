@@ -1,0 +1,7 @@
+{
+    "name": "traffic light",
+    "period": 1.5e3,
+    "states": ["red", "yellow", "green"],
+    "blink": true,
+    "note": null
+}

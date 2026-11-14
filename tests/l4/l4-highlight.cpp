@@ -37,6 +37,9 @@
 #include "dialogs/stateactiondialog.h"
 #include "dialogs/multilinetextdialog.h"
 
+// the kind of the span covering the position (below), -1 when none
+static int kindAt(const QVector<CodeSpan>& spans, int pos);
+
 // EDIT-TEXT-7, EDIT-TEXT-8, EDIT-TEXT-11
 class TestHighlight: public QObject {
 	Q_OBJECT
@@ -131,8 +134,25 @@ void TestHighlight::test_languages()
 	QVERIFY(style.find("ARDUINO"));
 	QCOMPARE(style.find("ARDUINO")->name, QString("C++"));
 	QCOMPARE(style.find("py3")->name, QString("Python"));
-	// the built-in languages are the four of the project (EDIT-TEXT-7)
-	QCOMPARE(style.languages(), QStringList() << "C" << "C++" << "C#" << "Python");
+	// the built-in languages are the five of the project (EDIT-TEXT-7)
+	QCOMPARE(style.languages(), QStringList() << "C" << "C++" << "C#" << "JSON" << "Python");
+	// JSON: the keys and the strings as strings, the numbers, the literals as keywords
+	const CodeLanguage* json = style.find("json");
+	QVERIFY(json && json->id == "json" && json->extensions == QStringList(".json"));
+	QString text = "{\"a\": [1.5e3, true, null, \"t\\\"x\"]}";
+	QVector<CodeSpan> spans = CodeStyle::spans(text, codeRoleFormalComment, *json);
+	QCOMPARE(kindAt(spans, text.indexOf("\"a\"")), int(codeTokenString));
+	QCOMPARE(kindAt(spans, text.indexOf("1.5e3")), int(codeTokenNumber));
+	QCOMPARE(kindAt(spans, text.indexOf("e3")), int(codeTokenNumber));
+	QCOMPARE(kindAt(spans, text.indexOf("true")), int(codeTokenKeyword));
+	QCOMPARE(kindAt(spans, text.indexOf("null")), int(codeTokenKeyword));
+	QCOMPARE(kindAt(spans, text.indexOf("x\"]")), int(codeTokenString));
+	QCOMPARE(kindAt(spans, text.indexOf("]}")), -1);
+	// a json fence of Markdown
+	text = "```json\n{\"on\": false}\n```";
+	spans = style.markdownSpans(text, nullptr);
+	QCOMPARE(kindAt(spans, text.indexOf("\"on\"")), int(codeTokenString));
+	QCOMPARE(kindAt(spans, text.indexOf("false")), int(codeTokenKeyword));
 	QVERIFY(!style.find("java") && !style.find("javascript") && !style.find("ts"));
 	// unknown or empty: plain
 	QVERIFY(!style.find("Cobol"));
