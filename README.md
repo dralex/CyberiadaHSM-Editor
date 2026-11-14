@@ -13,24 +13,26 @@ The editor is able to create HSM diagrams and edit Cyberiada GraphML files.
 It suports multiple HSM formats and has many drawing tools - HSM diagram
 elements (states, pseudostate, transitions, etc.), view management (zoom,
 pan), copy/paste, undo/redo, etc. Several documents are open at once in tabs,
-with the clipboard shared between them. The code in the actions, guards and formal
+with the clipboard shared between them.
+
+The code in the actions, guards and formal
 comments is highlighted by the `platformLanguage` of the document (C, C++, C#,
 Python; the rules are in `syntax/`), chosen in Document > Language.
 The informal comments in Markdown are highlighted as well (Document > Markup).
-Each tab has a mode (Document > Mode, see `docs/MODES.md`): an HSM diagram, a finite
-automaton (FA) diagram with the automaton tools and the EXT-FA check, the inspection of
-a file exactly as it is stored, or a text - plain, Markdown or a C, C++, C# or Python
+
+Each tab has a mode (Document > Mode): an HSM diagram, a finite
+automaton (FA) diagram, or a text - plain, Markdown or a C, C++, C# or Python
 source, highlighted; any tab can also be made read-only (a read-only Markdown tab shows
-the rendered document with its TeX formulas and SVG images, see `docs/MARKDOWN.md`).
-Document > Compare with... opens a diff tab: two revisions of a
-diagram side by side, the added, removed and changed elements marked and listed, or of a
-text, two columns line by line with the changed characters marked.
-Edit > Find (Ctrl+F) searches the text of a tab or the texts drawn on a diagram canvas,
-the matches marked yellow and the current one orange (see `docs/FIND.md`).
+the rendered document with its TeX formulas and SVG images).
+
+The Find and Text File Compare functions are available as well as other
+useful IDE features.
 
 ![CyberiadaPro. Sample 1](images/gui-sample-1.jpg)
 
 ![CyberiadaPro. Sample 2](images/gui-sample-2.jpg)
+
+![CyberiadaPro. Sample 3](images/gui-sample-3.jpg)
 
 ## Plugins
 
