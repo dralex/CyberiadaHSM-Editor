@@ -2929,7 +2929,7 @@
         <translation>Текст</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+8"/>
         <source>Font</source>
         <translation>Шрифт</translation>
     </message>
@@ -2997,7 +2997,12 @@
         <translation>Показывать комментарии Markdown отформатированными</translation>
     </message>
     <message>
-        <location filename="../dialogs/preferences_dialog.cpp" line="+32"/>
+        <location line="+17"/>
+        <source>Text editor colors</source>
+        <translation>Цвета текстового редактора</translation>
+    </message>
+    <message>
+        <location filename="../dialogs/preferences_dialog.cpp" line="+33"/>
         <source>Plugin interpreters (empty: looked up in PATH)</source>
         <translation>Интерпретаторы плагинов (пусто: поиск в PATH)</translation>
     </message>
@@ -3022,7 +3027,7 @@
         <translation>Автозамена</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+5"/>
         <source>Shortcuts</source>
         <translation>Сочетания клавиш</translation>
     </message>
@@ -3055,7 +3060,7 @@
         <translation>Сбросить положение подписи</translation>
     </message>
     <message>
-        <location filename="../text_document.cpp" line="+46"/>
+        <location filename="../text_document.cpp" line="+47"/>
         <source>typing</source>
         <translation>ввод текста</translation>
     </message>
@@ -3992,7 +3997,7 @@
 <context>
     <name>TextDocument</name>
     <message>
-        <location filename="../text_document.cpp" line="+160"/>
+        <location filename="../text_document.cpp" line="+169"/>
         <source>untitled</source>
         <translation>без имени</translation>
     </message>
@@ -4009,6 +4014,186 @@
 %2</source>
         <translation>Не удаётся записать %1:
 %2</translation>
+    </message>
+</context>
+<context>
+    <name>TextScheme</name>
+    <message>
+        <location filename="../text_scheme.cpp" line="+46"/>
+        <source>Background</source>
+        <translation>Фон</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Text</source>
+        <translation>Текст</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Selection</source>
+        <translation>Выделение</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Selected text</source>
+        <translation>Выделенный текст</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Line numbers background</source>
+        <translation>Фон номеров строк</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Line numbers</source>
+        <translation>Номера строк</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Keyword</source>
+        <translation>Ключевое слово</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Type</source>
+        <translation>Тип</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>String</source>
+        <translation>Строка</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Number</source>
+        <translation>Число</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Comment</source>
+        <translation>Комментарий</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Heading</source>
+        <translation>Заголовок</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Emphasis</source>
+        <translation>Акцент</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Code</source>
+        <translation>Код</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Link</source>
+        <translation>Ссылка</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Marker</source>
+        <translation>Разметка</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Quote</source>
+        <translation>Цитата</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Formula</source>
+        <translation>Формула</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>White</source>
+        <translation>Белая</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Dark</source>
+        <translation>Тёмная</translation>
+    </message>
+</context>
+<context>
+    <name>TextSchemePanel</name>
+    <message>
+        <location filename="../dialogs/text_scheme_panel.cpp" line="+53"/>
+        <source>Scheme</source>
+        <translation>Схема</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Copy...</source>
+        <translation>Копировать...</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Rename...</source>
+        <translation>Переименовать...</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Delete</source>
+        <translation>Удалить</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Restore</source>
+        <translation>Восстановить</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>The colors of the built-in scheme</source>
+        <translation>Цвета встроенной схемы</translation>
+    </message>
+    <message>
+        <location line="+28"/>
+        <source># Heading *emphasis*
+&gt; A quote, a [link](https://example.org), $x^2$
+- `code` &lt;!-- a comment --&gt;
+
+```cpp
+// a comment
+int main() { return printf(&quot;%d&quot;, 42); }
+```</source>
+        <translation># Заголовок *акцент*
+&gt; Цитата, [ссылка](https://example.org), $x^2$
+- `код` &lt;!-- комментарий --&gt;
+
+```cpp
+// комментарий
+int main() { return printf(&quot;%d&quot;, 42); }
+```</translation>
+    </message>
+    <message>
+        <location line="+169"/>
+        <source>Name</source>
+        <translation>Имя</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>A scheme named &quot;%1&quot; exists already.</source>
+        <translation>Схема «%1» уже есть.</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Copy the Scheme</source>
+        <translation>Копирование схемы</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>%1 copy</source>
+        <translation>%1, копия</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Rename the Scheme</source>
+        <translation>Переименование схемы</translation>
     </message>
 </context>
 </TS>

@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QSettings>
 #include "autoreplace.h"
+#include "text_scheme.h"
 #include <QColor>
 #include <QSize>
 #include <QString>
@@ -172,6 +173,17 @@ public:
     void setShortcut(const QString& action, const QString& keys);
     void removeShortcut(const QString& action);
 
+    // the color schemes of the text editors (EDIT-COLOR-6, docs/COLOR-SCHEMES.md): the
+    // built-in ones with their changes, then the user ones; a built-in one is stored by
+    // its changed colors only
+    const TextSchemes& getTextSchemes() const { return textSchemes; }
+    void setTextSchemes(const TextSchemes& schemes);
+    // the id of the current scheme
+    QString getTextScheme() const { return textScheme; }
+    void setTextScheme(const QString& id);
+    // the scheme of the current id, White for an unknown one
+    const TextScheme& currentTextScheme() const;
+
 signals:
     void settingsChanged();
     void recentFilesChanged();
@@ -193,6 +205,8 @@ signals:
 
     void selectionSettingsChanged();
     void autoreplaceChanged();
+    // the current scheme or the colors of a scheme changed
+    void textSchemeChanged();
 
     // the interpreters changed: the plugins rescan
     void pluginsChanged();
@@ -207,6 +221,9 @@ private:
 
     bool autoreplaceEnabled = true;
     AutoreplaceRules autoreplaceRules;
+
+    TextSchemes textSchemes;
+    QString textScheme;
 
     // grid
     bool showGrid;

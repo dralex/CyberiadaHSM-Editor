@@ -60,6 +60,10 @@
         <file>syntax/csharp.json</file>
         <file>syntax/python.json</file>
     </qresource>
+    <qresource prefix="/Schemes">
+        <file>schemes/dark.json</file>
+        <file>schemes/white.json</file>
+    </qresource>
     <qresource prefix="/Fonts">
         <file>fonts/cyberiada-mono.ttf</file>
         <file>fonts/cyberiada-mono-bold.ttf</file>

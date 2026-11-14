@@ -187,6 +187,7 @@ add_library(CyberiadaEditorCore STATIC
   cyberiadasm_editor_comment_item.h cyberiadasm_editor_comment_item.cpp
   fontmanager.h fontmanager.cpp
   code_highlighter.h code_highlighter.cpp
+  text_scheme.h text_scheme.cpp
   meta_choice_menu.h meta_choice_menu.cpp
   dialogs/stateactiondialog.h dialogs/stateactiondialog.cpp
   dialogs/multilinetextdialog.h dialogs/multilinetextdialog.cpp
@@ -199,6 +200,7 @@ add_library(CyberiadaEditorCore STATIC
   dialogs/preferences_dialog.h dialogs/preferences_dialog.cpp dialogs/preferences_dialog.ui
   dialogs/shortcuts_page.h dialogs/shortcuts_page.cpp
   dialogs/autoreplace_page.h dialogs/autoreplace_page.cpp
+  dialogs/text_scheme_panel.h dialogs/text_scheme_panel.cpp
   settings_manager.h settings_manager.cpp
   interface_language.h interface_language.cpp
   gesture_log.h gesture_log.cpp

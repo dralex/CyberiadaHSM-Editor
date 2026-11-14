@@ -27,6 +27,8 @@
 #include <QPlainTextEdit>
 #include "autoreplace.h"
 
+struct TextScheme;
+
 // The text of a text tab (docs/MODES.md, Text tabs): the line numbers in a margin;
 // Undo and Redo belong to the window, so the undo stack of the tab is the one
 // the edits go through (EDIT-MODE-13)
@@ -42,6 +44,8 @@ public:
     // what the text is for the typed replacements (EDIT-AUTO-2/3): none unless set
     void setAutoreplaceKind(AutoreplaceKind kind) { m_kind = kind; }
     AutoreplaceKind autoreplaceKind() const { return m_kind; }
+    // the page, the selection and the margin in the colors of the scheme (EDIT-COLOR-1)
+    void setScheme(const TextScheme& scheme);
 
 protected:
     bool event(QEvent* event) override;

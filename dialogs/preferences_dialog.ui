@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>372</width>
-    <height>200</height>
+    <width>960</width>
+    <height>580</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -250,141 +250,163 @@
       <attribute name="title">
        <string>Text</string>
       </attribute>
-      <layout class="QFormLayout" name="formLayout_4">
-       <item row="0" column="0">
-        <widget class="QLabel" name="fontFamilyLabel">
-         <property name="text">
-          <string>Font</string>
-         </property>
-        </widget>
+      <layout class="QHBoxLayout" name="textTabLayout">
+       <item>
+        <layout class="QFormLayout" name="formLayout_4">
+         <item row="0" column="0">
+          <widget class="QLabel" name="fontFamilyLabel">
+           <property name="text">
+            <string>Font</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QFontComboBox" name="fontFamilyComboBox">
+           <property name="toolTip">
+            <string>The family of the text of every element but the formal comment</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="stateTitleFontSizeLabel">
+           <property name="text">
+            <string>State header</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QSpinBox" name="stateTitleFontSizeSpinBox">
+           <property name="suffix">
+            <string> pt</string>
+           </property>
+           <property name="minimum">
+            <number>6</number>
+           </property>
+           <property name="maximum">
+            <number>72</number>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="stateActionFontSizeLabel">
+           <property name="text">
+            <string>State body</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QSpinBox" name="stateActionFontSizeSpinBox">
+           <property name="suffix">
+            <string> pt</string>
+           </property>
+           <property name="minimum">
+            <number>6</number>
+           </property>
+           <property name="maximum">
+            <number>72</number>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="transitionFontSizeLabel">
+           <property name="text">
+            <string>Transition label</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QSpinBox" name="transitionFontSizeSpinBox">
+           <property name="suffix">
+            <string> pt</string>
+           </property>
+           <property name="minimum">
+            <number>6</number>
+           </property>
+           <property name="maximum">
+            <number>72</number>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="0">
+          <widget class="QLabel" name="commentFontSizeLabel">
+           <property name="text">
+            <string>Comment</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="1">
+          <widget class="QSpinBox" name="commentFontSizeSpinBox">
+           <property name="suffix">
+            <string> pt</string>
+           </property>
+           <property name="minimum">
+            <number>6</number>
+           </property>
+           <property name="maximum">
+            <number>72</number>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="0" colspan="2">
+          <widget class="QCheckBox" name="boldActionPrefixCheckBox">
+           <property name="text">
+            <string>Bold entry/exit/do prefix</string>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="0" colspan="2">
+          <widget class="QCheckBox" name="boldEventNameCheckBox">
+           <property name="text">
+            <string>Bold event names in states</string>
+           </property>
+          </widget>
+         </item>
+         <item row="7" column="0" colspan="2">
+          <widget class="QCheckBox" name="boldTransitionEventNameCheckBox">
+           <property name="text">
+            <string>Bold event names on transitions</string>
+           </property>
+          </widget>
+         </item>
+         <item row="8" column="0" colspan="2">
+          <widget class="QCheckBox" name="highlightCodeCheckBox">
+           <property name="text">
+            <string>Highlight code by the platform language</string>
+           </property>
+          </widget>
+         </item>
+         <item row="9" column="0" colspan="2">
+          <widget class="QCheckBox" name="highlightInExportsCheckBox">
+           <property name="text">
+            <string>Keep the code highlighting in exported images</string>
+           </property>
+          </widget>
+         </item>
+         <item row="10" column="0" colspan="2">
+          <widget class="QCheckBox" name="renderMarkdownCommentsCheckBox">
+           <property name="text">
+            <string>Render Markdown comments</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
-       <item row="0" column="1">
-        <widget class="QFontComboBox" name="fontFamilyComboBox">
-         <property name="toolTip">
-          <string>The family of the text of every element but the formal comment</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="stateTitleFontSizeLabel">
-         <property name="text">
-          <string>State header</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QSpinBox" name="stateTitleFontSizeSpinBox">
-         <property name="suffix">
-          <string> pt</string>
-         </property>
-         <property name="minimum">
-          <number>6</number>
-         </property>
-         <property name="maximum">
-          <number>72</number>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="stateActionFontSizeLabel">
-         <property name="text">
-          <string>State body</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1">
-        <widget class="QSpinBox" name="stateActionFontSizeSpinBox">
-         <property name="suffix">
-          <string> pt</string>
-         </property>
-         <property name="minimum">
-          <number>6</number>
-         </property>
-         <property name="maximum">
-          <number>72</number>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0">
-        <widget class="QLabel" name="transitionFontSizeLabel">
-         <property name="text">
-          <string>Transition label</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="1">
-        <widget class="QSpinBox" name="transitionFontSizeSpinBox">
-         <property name="suffix">
-          <string> pt</string>
-         </property>
-         <property name="minimum">
-          <number>6</number>
-         </property>
-         <property name="maximum">
-          <number>72</number>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="0">
-        <widget class="QLabel" name="commentFontSizeLabel">
-         <property name="text">
-          <string>Comment</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="1">
-        <widget class="QSpinBox" name="commentFontSizeSpinBox">
-         <property name="suffix">
-          <string> pt</string>
-         </property>
-         <property name="minimum">
-          <number>6</number>
-         </property>
-         <property name="maximum">
-          <number>72</number>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="0" colspan="2">
-        <widget class="QCheckBox" name="boldActionPrefixCheckBox">
-         <property name="text">
-          <string>Bold entry/exit/do prefix</string>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="0" colspan="2">
-        <widget class="QCheckBox" name="boldEventNameCheckBox">
-         <property name="text">
-          <string>Bold event names in states</string>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="0" colspan="2">
-        <widget class="QCheckBox" name="boldTransitionEventNameCheckBox">
-         <property name="text">
-          <string>Bold event names on transitions</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="0" colspan="2">
-        <widget class="QCheckBox" name="highlightCodeCheckBox">
-         <property name="text">
-          <string>Highlight code by the platform language</string>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="0" colspan="2">
-        <widget class="QCheckBox" name="highlightInExportsCheckBox">
-         <property name="text">
-          <string>Keep the code highlighting in exported images</string>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="0" colspan="2">
-        <widget class="QCheckBox" name="renderMarkdownCommentsCheckBox">
-         <property name="text">
-          <string>Render Markdown comments</string>
-         </property>
+       <item>
+        <widget class="QGroupBox" name="textSchemeGroup">
+         <layout class="QVBoxLayout" name="textSchemeLayout">
+          <item>
+           <widget class="QLabel" name="textSchemeTitle">
+            <property name="font">
+             <font>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Text editor colors</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </widget>
        </item>
       </layout>

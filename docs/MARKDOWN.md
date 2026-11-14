@@ -1,6 +1,6 @@
 # The Markdown Rendering — Architecture
 
-**Document version:** 0.10 (2026-11-14). The requirements are `EDIT-MODE-14`, `EDIT-MODE-17`,
+**Document version:** 0.11 (2026-11-14). The requirements are `EDIT-MODE-14`, `EDIT-MODE-17`,
 `EDIT-MODE-18` and `EDIT-TEXT-14` in `EDITOR-SPEC.md`.
 
 The editor renders Markdown itself: a read-only Markdown tab (`docs/MODES.md`, Text tabs) and,
@@ -102,7 +102,7 @@ rendered comment body (its colours: the text colour on white, the canvas keeps i
 * A span `$..$` is inline, `$$..$$` is display; a display formula alone in its paragraph
   centres the paragraph.
 * `MathRenderer` parses the TeX with JKQTMathText (XITS fonts, embedded), at the size of the
-  text around it, in its colour (the palette text colour in a tab). `\colon` reads as `:`.
+  text around it, in its colour (black in a tab). `\colon` reads as `:`.
 * A formula is recorded once into a `QPicture` with its width, ascent and descent and replayed
   on every paint, on the screen and in an export alike.
 * The baseline. An `AlignMiddle` object of height `h` gets `(h + x/2) / 2` above the baseline
@@ -148,8 +148,9 @@ rendered comment body (its colours: the text colour on white, the canvas keeps i
 `MarkdownView` is the page of a read-only Markdown tab: a `QTextBrowser` whose document is
 filled by `importMarkdown`. A link to a file or a site opens outside the editor, a `#anchor`
 scrolls to the heading of that GitHub anchor (`headingAnchor`: lower case, the spaces as `-`,
-no punctuation, a repeated one numbered); Ctrl+wheel zooms; a palette change renders the
-text again, the formulas and the quotes in the new colours.
+no punctuation, a repeated one numbered); Ctrl+wheel zooms. The page is black on white as
+the PDF, whatever the colour scheme of the editor and the theme (`EDIT-COLOR-7`); a palette
+change renders the text again for the link colour.
 
 ## PDF
 

@@ -97,6 +97,8 @@ protected:
 
 private:
     void             applyMode();
+    // the source editor in the current color scheme (EDIT-COLOR-1/5)
+    void             applyScheme();
     void             showPage();
     bool             write(const QString& path, QString* error);
     // the editor or the rendered view, the one the stack shows

@@ -34,6 +34,7 @@
 #include "code_highlighter.h"
 #include "markdown_importer.h"
 #include "settings_manager.h"
+#include "text_scheme.h"
 
 static void initSyntaxResource()
 {
@@ -237,22 +238,8 @@ void CodeStyle::overrideExportPlain(bool on)
 QTextCharFormat CodeStyle::format(CodeTokenKind kind) const
 {
     // colour only: a weight or a slant would change the text size and the layout
-    static const QColor colors[codeTokenKindsCount] = {
-        QColor(0x00, 0x33, 0xb3),   // keyword
-        QColor(0x00, 0x7f, 0x7f),   // type
-        QColor(0x06, 0x7d, 0x17),   // string
-        QColor(0x17, 0x50, 0xeb),   // number
-        QColor(0x8c, 0x8c, 0x8c),   // comment
-        QColor(0x87, 0x10, 0x94),   // heading
-        QColor(0x9e, 0x5a, 0x00),   // emphasis
-        QColor(0x06, 0x7d, 0x17),   // code
-        QColor(0x17, 0x50, 0xeb),   // link
-        QColor(0x8c, 0x8c, 0x8c),   // marker
-        QColor(0x5d, 0x6d, 0x7e),   // quote
-        QColor(0xa3, 0x1b, 0x5a)    // math
-    };
     QTextCharFormat fmt;
-    fmt.setForeground(colors[kind]);
+    fmt.setForeground(builtinTextScheme(TEXT_SCHEME_DEFAULT).tokenColor(kind));
     return fmt;
 }
 
@@ -607,6 +594,24 @@ void CodeHighlighter::setMarkup(CodeMarkup newMarkup)
     restyle();
 }
 
+void CodeHighlighter::setScheme(const TextScheme& scheme)
+{
+    QVector<QColor> colors;
+    for (int kind = 0; kind < codeTokenKindsCount; kind++) colors << scheme.tokenColor(CodeTokenKind(kind));
+    if (colors == tokenColors) return;
+    tokenColors = colors;
+    // the spans stay, only their colours change
+    rehighlight();
+}
+
+QTextCharFormat CodeHighlighter::format(CodeTokenKind kind) const
+{
+    if (tokenColors.isEmpty()) return CodeStyle::instance().format(kind);
+    QTextCharFormat fmt;
+    fmt.setForeground(tokenColors.at(kind));
+    return fmt;
+}
+
 void CodeHighlighter::restyle()
 {
     cacheValid = false;
@@ -675,7 +680,7 @@ void CodeHighlighter::highlightBlock(const QString& text)
     for (const CodeSpan& span : all) {
         int from = qMax(span.start, blockStart);
         int to = qMin(span.start + span.length, blockEnd);
-        if (from < to) setFormat(from - blockStart, to - from, style.format(span.kind));
+        if (from < to) setFormat(from - blockStart, to - from, format(span.kind));
         // the spans past this line, relative to its end: the next line is
         // re-highlighted only when they change
         if (span.start + span.length > blockEnd) {

@@ -19,6 +19,7 @@
 #include "shortcut_map.h"
 #include "shortcuts_page.h"
 #include "autoreplace_page.h"
+#include "text_scheme_panel.h"
 
 PreferencesDialog::PreferencesDialog(QWidget *parent, ShortcutMap* keys) :
     QDialog(parent),
@@ -41,6 +42,8 @@ PreferencesDialog::PreferencesDialog(QWidget *parent, ShortcutMap* keys) :
     ui->tabWidget->addTab(pluginsTab, tr("Plugins"));
     autoreplace = new AutoreplacePage(this);
     ui->tabWidget->addTab(autoreplace, tr("Autoreplace"));
+    textSchemes = new TextSchemePanel(ui->textSchemeGroup);
+    ui->textSchemeLayout->addWidget(textSchemes);
     if (shortcutMap) {
         shortcuts = new ShortcutsPage(shortcutMap, this);
         ui->tabWidget->addTab(shortcuts, tr("Shortcuts"));
@@ -171,6 +174,7 @@ void PreferencesDialog::loadFromSettings()
     interpreters->insertRow(interpreters->rowCount());
     if (shortcuts) shortcuts->load();
     autoreplace->load();
+    textSchemes->load();
 }
 
 void PreferencesDialog::saveSettings()
@@ -225,4 +229,5 @@ void PreferencesDialog::saveSettings()
     }
     if (shortcuts) shortcuts->apply();
     autoreplace->apply();
+    textSchemes->apply();
 }

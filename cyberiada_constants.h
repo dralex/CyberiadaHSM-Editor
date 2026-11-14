@@ -123,6 +123,9 @@
 #define FIND_NO_MATCH_COLOR      "#ffcdd2"
 // the matches marked in a tab at most
 #define FIND_MATCH_LIMIT         10000
+// the color schemes of the text editors (EDIT-COLOR-2/6, docs/COLOR-SCHEMES.md)
+#define TEXT_SCHEME_DEFAULT      "white"
+#define TEXT_SCHEME_USER_PREFIX  "user-"
 // the JSON-RPC errors the editor sends
 #define JSONRPC_METHOD_NOT_FOUND (-32601)
 
