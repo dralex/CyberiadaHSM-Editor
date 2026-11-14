@@ -1,10 +1,11 @@
 # The Editor Window — Documents and Tabs
 
-**Document version:** 0.17 (2026-11-14) — the modes, the read-only flag and the plugins in
+**Document version:** 0.18 (2026-11-14) — the modes, the read-only flag and the plugins in
 the modes (`modes`, the text tabs, a plugin run as a diff base, the plugin languages) are
 implemented, the git compare with them (stage 6 of `docs/MODES.md`); a switch keeps the dock
 sizes; a Markdown tab exports its rendered PDF; the find bar (`docs/FIND.md`); the shortcuts
-and the autoreplace (`docs/SHORTCUTS.md`, `docs/AUTOREPLACE.md`).
+and the autoreplace (`docs/SHORTCUTS.md`, `docs/AUTOREPLACE.md`); the color schemes of the
+text editors (`docs/COLOR-SCHEMES.md`).
 
 The window holds several documents at once. The menus, the toolbars, the tab line and the
 docks (the structure tree, the properties, the plugins) are one set; each document brings its
@@ -92,6 +93,7 @@ setCurrentDocument(doc)
 | Go to Line | document | the cursor of the active text tab; disabled elsewhere (`EDIT-KEYS-7`) |
 | Shortcuts | global | one set of keys for the window, changed in the Preferences; the focused text takes its keys first (`EDIT-KEYS-1..12`, `docs/SHORTCUTS.md`) |
 | Autoreplace | global | the switch and the rules are settings; each text follows them by its kind (`EDIT-AUTO-1..8`, `docs/AUTOREPLACE.md`) |
+| Color scheme | global | one current scheme for the source editors of all text tabs, changed in the Preferences (`EDIT-COLOR-1..8`, `docs/COLOR-SCHEMES.md`) |
 | Document > Reconstruct geometry, Update geometry | document | the active diagram; disabled in a tab that is not editable (`EDIT-MODE-4`) |
 | Zoom in/out, Fit, Zoom to SM, zoom combo | document | the active view; disabled in a text tab |
 | Document > Language, code highlighting | document | the checked entry is the active document's `platformLanguage`; each tab is highlighted by its own (`EDIT-TEXT-9`); the list of unknown values met is global |

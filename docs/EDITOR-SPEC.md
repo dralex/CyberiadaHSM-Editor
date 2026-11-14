@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.62 (2026-11-14)
+**Document version:** 0.63 (2026-11-14)
 
 **Related authorities:**
 
@@ -450,7 +450,8 @@ the third is a derived display value the format does not store):
 - `EDIT-TEXT-7` SHOULD [A]: the code parts of a text are highlighted by the language of the
   `platformLanguage` metainformation parameter of its own document, so the tabs are highlighted
   independently; an empty or unknown language leaves the text plain. The highlighting is a display colour only: the text, the saved document and the bold
-  prefix (EDIT-TEXT-2) are not changed. A preference turns it off. *design*
+  prefix (EDIT-TEXT-2) are not changed. A preference turns it off. A text tab draws the colors
+  of its color scheme (`EDIT-COLOR-1`). *design*
 
   ```
   entry/ foo(1);        ─► after the keyword "/"          (entry, exit, do behaviour)
@@ -1115,8 +1116,9 @@ the stages of `docs/MODES.md`.
   extension no mode names, a diagram for `.graphml`, its dialog offering the CyberiadaML
   graphs, the Markdown files, the text files and all files; the text is UTF-8 and Save writes it back as it is, Save As
   proposing the mode's first extension; Undo and Redo step through the text's own edits; the
-  text is highlighted by the language (`EDIT-TEXT-7`) or as Markdown (`EDIT-TEXT-11`), and a
-  switch between the text modes changes only the highlighting and the marker. *design*
+  text is highlighted by the language (`EDIT-TEXT-7`) or as Markdown (`EDIT-TEXT-11`) in the
+  colors of the current scheme (`EDIT-COLOR-1`), and a switch between the text modes changes
+  only the highlighting and the marker. *design*
 - `EDIT-MODE-14` SHOULD [A]: a read-only Markdown tab shows the rendered document instead of the
   source; clearing the flag shows the source again. The rendering (`docs/MARKDOWN.md`) reads
   CommonMark with the GitHub tables, task lists and strikethrough; a TeX formula `$..$` stands
@@ -1128,7 +1130,8 @@ the stages of `docs/MODES.md`.
   heading. A heading has 1.5 text lines of space above it and 0.5
   below, a paragraph 0.75 above and below (the larger of two neighbouring spaces counts), an
   item of a tight list 0.15, the first block none; a quote is indented by a level, drawn with a
-  bar at the left of each level and in a grey between the text and the background. *design*
+  bar at the left of each level and in a grey between the text and the background. The page is
+  black text on white whatever the color scheme and the theme (`EDIT-COLOR-7`). *design*
 - `EDIT-MODE-15` MUST [A]: the parts of the window follow the mode of the active tab
   (`docs/MODES.md`, The modes): a text tab hides the element toolbar and disables the zoom,
   Language, Markup, Properties..., the geometry actions, Export (a Markdown tab exports its
@@ -1275,6 +1278,42 @@ Specified in 0.62.
   Apply act on the open texts at once; Cancel changes nothing. *design*
 - `EDIT-AUTO-8` MUST [A]: the switch and the rules are stored per user (`autoreplace/enabled`,
   `autoreplace/rules`), the rules only when they differ from the default ones. *design*
+
+### 4.18 Color schemes of the text editors — COLOR
+
+The source editor of a text tab draws in the colors of a scheme; the schemes are edited in
+the Preferences. The architecture, the colors and the storage are in `docs/COLOR-SCHEMES.md`.
+Specified in 0.63.
+
+- `EDIT-COLOR-1` MUST [A]: the source editor of a text tab (`EDIT-MODE-13`) draws its
+  background, its text, the selection, the line numbers and the highlighting
+  (`EDIT-TEXT-7/11`) in the colors of the current scheme; the canvas, the text dialogs, the
+  exported images and the rendered Markdown (`EDIT-COLOR-7`) keep the colors of the White
+  scheme as built in, whatever the current one. *design*
+- `EDIT-COLOR-2` MUST [I]: two schemes are built in: *White*, the default — black text on white
+  with the highlighting colors of the canvas — and *Dark* — yellow text (`#ffff00`) on blue
+  (`#000099`); a scheme has all the colors of `docs/COLOR-SCHEMES.md`, The colors. *design*
+- `EDIT-COLOR-3` MUST [A]: Preferences > Text has the group *Text editor colors* beside the
+  font: the list of the schemes, a swatch per color that opens a color dialog, and a preview
+  of a Markdown text with a C++ block in the scheme shown. Ok and Apply make the scheme shown
+  current and store the changes; Cancel changes nothing. *design*
+- `EDIT-COLOR-4` MUST [A]: *Copy...* adds a user scheme with the colors shown, under a name
+  asked that is not empty and is no other scheme's in any case; *Rename...* and *Delete* act on
+  a user scheme only, White taking the place of a deleted one; *Restore* gives a built-in
+  scheme its own colors back and is disabled while it has them. *design*
+- `EDIT-COLOR-5` MUST [A]: a change of the current scheme or of its colors re-colors every open
+  text tab at once; its text, cursor, undo history and find marks stay as they are, the marks
+  in their own colors in every scheme (`EDIT-FIND-4`). *design*
+- `EDIT-COLOR-6` MUST [U]: the current scheme and the schemes are stored per user
+  (`textSchemes/current`, `textSchemes/list`): a built-in scheme by its changed colors only, a
+  user scheme by its name and all its colors, the list removed when nothing differs from the
+  built-ins. An unknown current scheme is White; a missing or malformed stored color is the
+  built-in one's, White's for a user scheme. *design*
+- `EDIT-COLOR-7` MUST [A]: the rendered page of a read-only Markdown tab (`EDIT-MODE-14`) draws
+  black text on white whatever the scheme and the theme, as its PDF does (`EDIT-MODE-18`).
+  *design*
+- `EDIT-COLOR-8` SHOULD [A]: Reset of the Preferences restores the built-in schemes, drops the
+  user ones and makes White current. *design*
 
 ## 5. Coverage
 
