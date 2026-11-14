@@ -38,6 +38,11 @@ MarkdownView::MarkdownView(QWidget* parent): QTextBrowser(parent)
     // the links are opened here: a heading inside, a file or a site outside
     setOpenLinks(false);
     connect(this, &QTextBrowser::anchorClicked, this, &MarkdownView::openLink);
+    // black on white as the PDF, whatever the color scheme and the theme (EDIT-COLOR-7)
+    QPalette p = palette();
+    p.setColor(QPalette::Base, Qt::white);
+    p.setColor(QPalette::Text, Qt::black);
+    setPalette(p);
 }
 
 void MarkdownView::setMarkdownText(const QString& text, const QString& baseDir)

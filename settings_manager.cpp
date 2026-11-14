@@ -137,6 +137,36 @@ void SettingsManager::load() {
         }
         s.endArray();
     }
+
+    textScheme = s.value("textSchemes/current", TEXT_SCHEME_DEFAULT).toString();
+    textSchemes = builtinTextSchemes();
+    int n = s.beginReadArray("textSchemes/list");
+    for (int i = 0; i < n; i++) {
+        s.setArrayIndex(i);
+        QString id = s.value("id").toString();
+        TextScheme* scheme = nullptr;
+        // a built-in one takes its changes, a user one starts from White
+        for (TextScheme& builtin : textSchemes) {
+            if (builtin.isBuiltin() && builtin.id == id) scheme = &builtin;
+        }
+        if (!scheme) {
+            QString name = s.value("name").toString().trimmed();
+            if (!id.startsWith(TEXT_SCHEME_USER_PREFIX) || name.isEmpty() ||
+                findTextScheme(textSchemes, id)) {
+                continue;
+            }
+            TextScheme user = builtinTextScheme(TEXT_SCHEME_DEFAULT);
+            user.id = id;
+            user.name = name;
+            textSchemes << user;
+            scheme = &textSchemes.last();
+        }
+        for (int role = 0; role < textSchemeRolesCount; role++) {
+            QColor c(s.value(textSchemeRoleKey(role)).toString());
+            if (c.isValid()) scheme->colors[role] = c;
+        }
+    }
+    s.endArray();
 }
 
 void SettingsManager::loadDefaults()
@@ -173,6 +203,9 @@ void SettingsManager::loadDefaults()
 
     setAutoreplaceEnabled(true);
     setAutoreplaceRules(defaultAutoreplaceRules());
+
+    setTextSchemes(builtinTextSchemes());
+    setTextScheme(TEXT_SCHEME_DEFAULT);
 }
 
 void SettingsManager::setFontFamily(const QString& value)
@@ -581,4 +614,54 @@ void SettingsManager::setAutoreplaceRules(const AutoreplaceRules& rules)
         s.endArray();
     }
     emit autoreplaceChanged();
+}
+
+void SettingsManager::setTextSchemes(const TextSchemes& schemes)
+{
+    // every built-in one first, then the user ones as given
+    TextSchemes list;
+    for (const TextScheme& builtin : builtinTextSchemes()) {
+        const TextScheme* given = findTextScheme(schemes, builtin.id);
+        TextScheme scheme = given ? *given : builtin;
+        scheme.name = builtin.name;
+        list << scheme;
+    }
+    for (const TextScheme& scheme : schemes) {
+        if (!scheme.isBuiltin() && !findTextScheme(list, scheme.id)) list << scheme;
+    }
+    if (list == textSchemes) return;
+    textSchemes = list;
+    QSettings s;
+    s.remove("textSchemes/list");
+    s.beginWriteArray("textSchemes/list");
+    int index = 0;
+    for (const TextScheme& scheme : list) {
+        const TextScheme& base = builtinTextScheme(scheme.isBuiltin() ? scheme.id : TEXT_SCHEME_DEFAULT);
+        if (scheme.isBuiltin() && scheme.sameColors(base)) continue;
+        s.setArrayIndex(index++);
+        s.setValue("id", scheme.id);
+        if (!scheme.isBuiltin()) s.setValue("name", scheme.name);
+        for (int role = 0; role < textSchemeRolesCount; role++) {
+            if (scheme.isBuiltin() && scheme.colors[role] == base.colors[role]) continue;
+            s.setValue(textSchemeRoleKey(role), scheme.colors[role].name());
+        }
+    }
+    s.endArray();
+    // nothing differs from the built-in ones: nothing stored
+    if (!index) s.remove("textSchemes/list");
+    emit textSchemeChanged();
+}
+
+void SettingsManager::setTextScheme(const QString& id)
+{
+    if (textScheme == id) return;
+    textScheme = id;
+    QSettings().setValue("textSchemes/current", id);
+    emit textSchemeChanged();
+}
+
+const TextScheme& SettingsManager::currentTextScheme() const
+{
+    const TextScheme* scheme = findTextScheme(textSchemes, textScheme);
+    return scheme ? *scheme : textSchemes.first();
 }

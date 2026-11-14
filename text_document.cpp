@@ -38,6 +38,7 @@
 #include "code_highlighter.h"
 #include "markdown_view.h"
 #include "markdown_pdf.h"
+#include "settings_manager.h"
 
 // one edit of the text: the undo stack of the tab drives the text's own history
 class TextEditStep : public QUndoCommand {
@@ -80,6 +81,7 @@ TextDocument::TextDocument(const QString& mode, QObject* parent):
     // the marks follow the text and the rendered page (EDIT-FIND-8)
     connect(m_document, &QTextDocument::contentsChanged, this, &TextDocument::scheduleFind);
     connect(m_rendered->document(), &QTextDocument::contentsChanged, this, &TextDocument::scheduleFind);
+    connect(&SettingsManager::instance(), &SettingsManager::textSchemeChanged, this, &TextDocument::applyScheme);
     applyMode();
 }
 
@@ -125,7 +127,15 @@ void TextDocument::applyMode()
     } else if (const CodeLanguage* lang = CodeStyle::instance().findId(m_mode)) {
         m_highlighter = new CodeHighlighter(m_document, codeRoleFormalComment, lang);
     }
+    applyScheme();
     showPage();
+}
+
+void TextDocument::applyScheme()
+{
+    const TextScheme& scheme = SettingsManager::instance().currentTextScheme();
+    m_editor->setScheme(scheme);
+    if (m_highlighter) m_highlighter->setScheme(scheme);
 }
 
 void TextDocument::showPage()

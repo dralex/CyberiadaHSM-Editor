@@ -1,0 +1,23 @@
+{
+    "name": "White",
+    "colors": {
+        "background": "#ffffff",
+        "text": "#000000",
+        "selection": "#308cc6",
+        "selectionText": "#ffffff",
+        "lineNumbersBackground": "#f0f0f0",
+        "lineNumbers": "#8c8c8c",
+        "keyword": "#0033b3",
+        "type": "#007f7f",
+        "string": "#067d17",
+        "number": "#1750eb",
+        "comment": "#8c8c8c",
+        "heading": "#871094",
+        "emphasis": "#9e5a00",
+        "code": "#067d17",
+        "link": "#1750eb",
+        "marker": "#8c8c8c",
+        "quote": "#5d6d7e",
+        "math": "#a31b5a"
+    }
+}

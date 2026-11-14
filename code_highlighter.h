@@ -65,6 +65,8 @@ enum CodeTokenKind {
     codeTokenKindsCount
 };
 
+struct TextScheme;
+
 struct CodeSpan {
     int start;
     int length;
@@ -139,6 +141,7 @@ public:
     // an export draws plain text unless the preference keeps the colours
     void overrideExportPlain(bool on);
 
+    // the colors of White as built in: the canvas, the dialogs, the exports (EDIT-COLOR-1)
     QTextCharFormat format(CodeTokenKind kind) const;
 
     // the coloured spans of the whole text
@@ -176,6 +179,8 @@ public:
     void setLanguage(const CodeLanguage* newLanguage);
     CodeMarkup getMarkup() const { return markup; }
     void setMarkup(CodeMarkup newMarkup);
+    // the colors of a text editor's scheme instead of CodeStyle's (EDIT-COLOR-1)
+    void setScheme(const TextScheme& scheme);
 
 protected:
     void highlightBlock(const QString& text) override;
@@ -185,11 +190,14 @@ private:
     void restyle();
     // after an edit: the lines before it whose colours it changed
     void reformatEarlier();
+    QTextCharFormat format(CodeTokenKind kind) const;
 
     CodeRole role;
     // the code language; for the markup role, the fallback of a fenced block
     const CodeLanguage* language;
     CodeMarkup markup;
+    // the token colors of the scheme, empty for CodeStyle's
+    QVector<QColor> tokenColors;
     // the spans of the whole text, found once while the text and the settings stay
     QString cachedText;
     QVector<CodeSpan> cachedSpans;

@@ -183,6 +183,7 @@ add_library(CyberiadaEditorCore STATIC
   cyberiadasm_editor_comment_item.h cyberiadasm_editor_comment_item.cpp
   fontmanager.h fontmanager.cpp
   code_highlighter.h code_highlighter.cpp
+  text_scheme.h text_scheme.cpp
   meta_choice_menu.h meta_choice_menu.cpp
   dialogs/stateactiondialog.h dialogs/stateactiondialog.cpp
   dialogs/multilinetextdialog.h dialogs/multilinetextdialog.cpp

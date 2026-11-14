@@ -1,0 +1,23 @@
+{
+    "name": "Dark",
+    "colors": {
+        "background": "#000099",
+        "text": "#ffff00",
+        "selection": "#00aaaa",
+        "selectionText": "#000000",
+        "lineNumbersBackground": "#000066",
+        "lineNumbers": "#8080ff",
+        "keyword": "#ffffff",
+        "type": "#00ffff",
+        "string": "#55ff55",
+        "number": "#ff99ff",
+        "comment": "#b0b0b0",
+        "heading": "#ffffff",
+        "emphasis": "#ffb000",
+        "code": "#55ff55",
+        "link": "#00ffff",
+        "marker": "#b0b0b0",
+        "quote": "#c0c0c0",
+        "math": "#ff99ff"
+    }
+}

@@ -29,6 +29,7 @@
 #include <QTextBlock>
 
 #include "code_editor.h"
+#include "text_scheme.h"
 
 // the gap between the numbers and the text, in pixels
 static const int LINE_NUMBER_PADDING = 6;
@@ -54,6 +55,27 @@ CodeEditor::CodeEditor(QWidget* parent):
     connect(this, &QPlainTextEdit::blockCountChanged, this, &CodeEditor::updateMargin);
     connect(this, &QPlainTextEdit::updateRequest, this, &CodeEditor::updateLineNumbers);
     updateMargin();
+}
+
+void CodeEditor::setScheme(const TextScheme& scheme)
+{
+    // the margin paints with AlternateBase and PlaceholderText
+    static const struct {
+        QPalette::ColorRole palette;
+        TextSchemeRole scheme;
+    } roles[] = {
+        { QPalette::Base,            textSchemeBackground },
+        { QPalette::Text,            textSchemeText },
+        { QPalette::Highlight,       textSchemeSelection },
+        { QPalette::HighlightedText, textSchemeSelectionText },
+        { QPalette::AlternateBase,   textSchemeLineNumbersBackground },
+        { QPalette::PlaceholderText, textSchemeLineNumbers }
+    };
+    QPalette p = palette();
+    for (size_t i = 0; i < sizeof(roles) / sizeof(roles[0]); i++) {
+        p.setColor(roles[i].palette, scheme.color(roles[i].scheme));
+    }
+    setPalette(p);
 }
 
 int CodeEditor::lineNumberAreaWidth() const
