@@ -330,8 +330,9 @@ File                              Document
    plugin result and change list one path), `TextDiffDocument` with its `DiffTextPane`s and
    `OverviewRuler`, Compare with... on a text tab, Next and Previous Change (also in an HSM
    diff tab), Ignore Whitespace, the batch verbs and `== text diff`; a diff tab now reaches no
-   entry of Document > Mode. Next: `EDIT-PLUG-58` in the text modes and the git plugin
-   comparing texts.
+   entry of Document > Mode; `EDIT-PLUG-58` in the text modes: a `diff` action may list any
+   mode but `diff` and `text-diff`, its base read as UTF-8 in a text tab. The git plugin
+   compares texts with it (cybersphere-git-plugin).
 
 ## Decisions of 0.1
 

@@ -1,0 +1,27 @@
+== tabs
+count: 2
+0 notes.md markdown
+1 notes.md ↔ Compare the Text with a Base text-diff active
+== text diff
+base: Compare the Text with a Base
+target: notes.md
+ignore whitespace: no
+hunks: 1, added: 0, removed: 0, changed: 1
+current: 0
+@@ 3 | 3
+1 1 = # The traffic light
+2 2 = 
+3 3 ~ The light has two states: **red**, *yellow* and green. | The light has three states: **red**, *yellow* and green.
+4 4 = 
+5 5 = - the timer switches the states
+6 6 = - the button asks for green
+== plugin
+action: modes:text-base
+result: diff
+state: done
+exit: 0
+tab: 1
+stdout:
+  base
+== diagnostics
+count: 0

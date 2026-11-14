@@ -719,21 +719,23 @@ void PluginRunner::validate()
         }
         QByteArray bytes = f.readAll();
         std::string buffer = bytes.toStdString();
+        // the text of a text tab comes back in UTF-8 (EDIT-PLUG-57)
+        auto utf8 = [this, &bytes]() {
+            QTextCodec::ConverterState state;
+            QTextCodec::codecForName("UTF-8")->toUnicode(bytes.constData(), bytes.size(), &state);
+            if (state.invalidChars == 0) return true;
+            finish(PluginResult::stateFailed, PluginRunner::tr("the output text is not UTF-8"));
+            return false;
+        };
         if (a.result == PluginAction::resultDiff) {
-            // the base of a diff tab: an empty one is an empty document (EDIT-PLUG-58)
-            if (!buffer.empty() && !checkDocument(buffer, false, nullptr)) return;
+            // the base of a diff tab: an empty one is an empty document or text (EDIT-PLUG-58)
+            if (context.text ? !utf8() : !buffer.empty() && !checkDocument(buffer, false, nullptr)) return;
             res.document = buffer;
         } else if (buffer.empty()) {
             finish(PluginResult::stateFailed, PluginRunner::tr("the output document is empty"));
             return;
         } else if (context.text) {
-            // the text of a text tab comes back in UTF-8 (EDIT-PLUG-57)
-            QTextCodec::ConverterState state;
-            QTextCodec::codecForName("UTF-8")->toUnicode(bytes.constData(), bytes.size(), &state);
-            if (state.invalidChars > 0) {
-                finish(PluginResult::stateFailed, PluginRunner::tr("the output text is not UTF-8"));
-                return;
-            }
+            if (!utf8()) return;
             res.document = buffer;
         } else if (!checkDocument(buffer, true, &res.document)) {
             return;

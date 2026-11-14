@@ -1070,6 +1070,7 @@ add_plugin_test(diff-result-label INPUT diagrams/geometry.graphml PLUGIN modes:b
 add_plugin_test(diff-result-empty INPUT diagrams/geometry.graphml PLUGIN modes:empty-base PATHS modes DUMP)
 add_plugin_test(diff-result-missing INPUT diagrams/geometry.graphml PLUGIN modes:no-base PATHS modes
   DUMP_PLUGIN EXPECTED 6)
+add_plugin_test(diff-text-result INPUT texts/notes.md PLUGIN modes:text-base PATHS modes DUMP DUMP_TABS)
 # the languages of the plugins (EDIT-PLUG-60): a Lua source opens in its mode
 add_plugin_test(list-lang LIST PATHS lang)
 add_plugin_test(lang-open INPUT texts/script.lua PATHS lang DUMP DUMP_TABS)
@@ -1098,6 +1099,8 @@ add_plugin_test(script-session-no-end INPUT diagrams/lift.graphml SCRIPT scripts
   PATHS session EXPECTED 4)
 add_plugin_test(script-diff INPUT diagrams/geometry.graphml SCRIPT scripts/plugin-diff.script PATHS modes
   DUMP DUMP_TABS DUMP_ACTIONS)
+add_plugin_test(script-text-diff INPUT texts/notes.md SCRIPT scripts/plugin-text-diff.script PATHS modes
+  DUMP DUMP_TABS)
 add_plugin_test(script-diff-switch INPUT diagrams/geometry.graphml SCRIPT scripts/plugin-diff-switch.script
   PATHS modes DUMP_PLUGIN DUMP_TABS DUMP_ACTIONS)
 add_plugin_test(script-text INPUT texts/notes.md SCRIPT scripts/plugin-text.script PATHS modes DUMP)

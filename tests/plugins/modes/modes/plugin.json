@@ -109,6 +109,15 @@
       "result": "diff",
       "parameters": [],
       "argv": ["${plugin_dir}/../../bin/plugin-helper", "print", "nothing"]
+    },
+    {
+      "id": "text-base",
+      "label": "Compare the Text with a Base",
+      "result": "diff",
+      "modes": ["text", "markdown", "cpp"],
+      "parameters": [],
+      "argv": ["${plugin_dir}/../../bin/plugin-helper", "copy", "${input}", "${output}", "--",
+               "replace", "${output}", "three states", "two states", "--", "print", "base"]
     }
   ]
 }
