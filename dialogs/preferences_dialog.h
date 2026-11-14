@@ -7,6 +7,7 @@ class QTableWidget;
 class ShortcutMap;
 class ShortcutsPage;
 class AutoreplacePage;
+class TextSchemePanel;
 
 namespace Ui {
 class PreferencesDialog;
@@ -40,10 +41,13 @@ private:
     ShortcutMap* shortcutMap = nullptr;
     ShortcutsPage* shortcuts = nullptr;
     AutoreplacePage* autoreplace = nullptr;
+    // the color schemes of the text editors on the Text page, under its title (EDIT-COLOR-3)
+    TextSchemePanel* textSchemes = nullptr;
 public:
     AutoreplacePage* autoreplacePage() const { return autoreplace; }
     QTableWidget* interpreterTable() const { return interpreters; }
     ShortcutsPage* shortcutsPage() const { return shortcuts; }
+    TextSchemePanel* textSchemePanel() const { return textSchemes; }
 };
 
 #endif // PREFERENCES_DIALOG_H

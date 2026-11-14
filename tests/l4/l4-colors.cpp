@@ -22,11 +22,15 @@
  * ----------------------------------------------------------------------------- */
 
 #include <QtTest>
+#include <QComboBox>
+#include <QDialogButtonBox>
+#include <QPushButton>
 #include <QSettings>
 #include <QTemporaryDir>
 #include <QTextBlock>
 #include <QTextEdit>
 #include <QTextLayout>
+#include <QToolButton>
 #include <QUndoStack>
 #include "code_editor.h"
 #include "code_highlighter.h"
@@ -38,6 +42,8 @@
 #include "settings_manager.h"
 #include "text_document.h"
 #include "text_scheme.h"
+#include "dialogs/preferences_dialog.h"
+#include "dialogs/text_scheme_panel.h"
 
 // the EDIT-COLOR laws (docs/COLOR-SCHEMES.md): the built-in schemes, the text editors
 // in the current one, everything else in White, the storage
@@ -54,8 +60,12 @@ private slots:
 	void test_storage();
 	void test_fallbacks();
 	void test_rendered_page();
+	void test_page();
+	void test_page_schemes();
+	void test_reset();
 
 private:
+	static QPushButton* button(QWidget* parent, const char* name) { return parent->findChild<QPushButton*>(name); }
 	// the foreground the highlighting gives the first occurrence of the word
 	static QColor colorAt(QTextDocument* doc, const QString& word);
 	static QColor dark(TextSchemeRole role) { return builtinTextScheme("dark").color(role); }
@@ -314,6 +324,140 @@ void TestColors::test_rendered_page()
 	setMarkdownColors(&page, Qt::black, Qt::white);
 	QCOMPARE(markdownQuoteColor(view->document()), markdownQuoteColor(&page));
 	QCOMPARE(text.editor()->palette().color(QPalette::Base), dark(textSchemeBackground));
+}
+
+// EDIT-COLOR-3: the group beside the font, the swatches, the preview, Apply, Cancel, Ok
+void TestColors::test_page()
+{
+	SettingsManager& sm = SettingsManager::instance();
+	TextDocument text("cpp");
+	text.setText("int main() { return 0; }");
+	{
+		PreferencesDialog dialog;
+		TextSchemePanel* panel = dialog.textSchemePanel();
+		QVERIFY(panel);
+		QWidget* tab = dialog.findChild<QWidget*>("textTab");
+		QVERIFY(tab && tab->isAncestorOf(panel) && tab->isAncestorOf(dialog.findChild<QWidget*>("fontFamilyComboBox")));
+		QComboBox* list = panel->findChild<QComboBox*>("textSchemeList");
+		QCOMPARE(list->count(), 2);
+		QCOMPARE(list->itemText(0), QString("White"));
+		QCOMPARE(list->itemText(1), QString("Dark"));
+		QCOMPARE(panel->shownId(), QString(TEXT_SCHEME_DEFAULT));
+		for (int role = 0; role < textSchemeRolesCount; role++) {
+			QVERIFY(panel->findChild<QToolButton*>("textSchemeSwatch-" + textSchemeRoleKey(role)));
+		}
+
+		// the preview follows the scheme shown and its edits
+		list->setCurrentIndex(1);
+		QCOMPARE(panel->shownId(), QString("dark"));
+		QCOMPARE(panel->preview()->palette().color(QPalette::Base), dark(textSchemeBackground));
+		QCOMPARE(colorAt(panel->preview()->document(), "int"), QColor("#00ffff"));
+		panel->setColor(textSchemeFirstToken + codeTokenKeyword, QColor("#ff0000"));
+		QCOMPARE(colorAt(panel->preview()->document(), "return"), QColor("#ff0000"));
+		QCOMPARE(panel->findChild<QToolButton*>("textSchemeSwatch-keyword")->toolTip(), QString("#ff0000"));
+
+		// Cancel: nothing changes
+		dialog.reject();
+	}
+	QCOMPARE(sm.getTextScheme(), QString(TEXT_SCHEME_DEFAULT));
+	QVERIFY(sm.getTextSchemes() == builtinTextSchemes());
+	QCOMPARE(text.editor()->palette().color(QPalette::Base), QColor(Qt::white));
+	{
+		PreferencesDialog dialog;
+		TextSchemePanel* panel = dialog.textSchemePanel();
+		QVERIFY(panel->showScheme("dark"));
+		panel->setColor(textSchemeFirstToken + codeTokenKeyword, QColor("#ff0000"));
+		dialog.findChild<QDialogButtonBox*>()->button(QDialogButtonBox::Apply)->click();
+		QCOMPARE(sm.getTextScheme(), QString("dark"));
+		QCOMPARE(sm.currentTextScheme().tokenColor(codeTokenKeyword), QColor("#ff0000"));
+		QCOMPARE(QSettings().value("textSchemes/list/1/keyword").toString(), QString("#ff0000"));
+		// the open tab follows at once
+		QCOMPARE(text.editor()->palette().color(QPalette::Base), dark(textSchemeBackground));
+		QCOMPARE(colorAt(text.editor()->document(), "return"), QColor("#ff0000"));
+
+		// Ok makes the scheme shown current
+		QVERIFY(panel->showScheme(TEXT_SCHEME_DEFAULT));
+		dialog.findChild<QDialogButtonBox*>()->button(QDialogButtonBox::Ok)->click();
+		QCOMPARE(sm.getTextScheme(), QString(TEXT_SCHEME_DEFAULT));
+		QCOMPARE(text.editor()->palette().color(QPalette::Base), QColor(Qt::white));
+	}
+	// a new dialog shows the stored schemes
+	PreferencesDialog again;
+	QVERIFY(again.textSchemePanel()->showScheme("dark"));
+	QCOMPARE(findTextScheme(again.textSchemePanel()->schemes(), "dark")->tokenColor(codeTokenKeyword), QColor("#ff0000"));
+}
+
+// EDIT-COLOR-4: Copy, Rename and Delete of a user scheme, Restore of a built-in one
+void TestColors::test_page_schemes()
+{
+	TextSchemePanel panel;
+	QPushButton* rename = button(&panel, "textSchemeRename");
+	QPushButton* remove = button(&panel, "textSchemeDelete");
+	QPushButton* restore = button(&panel, "textSchemeRestore");
+	QComboBox* list = panel.findChild<QComboBox*>("textSchemeList");
+	QVERIFY(rename && remove && restore && list && button(&panel, "textSchemeCopy"));
+	QVERIFY(!rename->isEnabled() && !remove->isEnabled() && !restore->isEnabled());
+
+	// a name not empty and no other scheme's in any case
+	QVERIFY(panel.showScheme("dark"));
+	QVERIFY(!panel.copyScheme("  "));
+	QVERIFY(!panel.copyScheme("white"));
+	QVERIFY(panel.copyScheme(" Mine "));
+	const QString mine = TEXT_SCHEME_USER_PREFIX "1";
+	QCOMPARE(panel.shownId(), mine);
+	QCOMPARE(list->count(), 3);
+	QCOMPARE(list->currentText(), QString("Mine"));
+	const TextScheme* copy = findTextScheme(panel.schemes(), mine);
+	QVERIFY(copy && copy->sameColors(builtinTextScheme("dark")));
+	QVERIFY(rename->isEnabled() && remove->isEnabled() && !restore->isEnabled());
+	QVERIFY(!panel.copyScheme("MINE"));
+
+	QVERIFY(!panel.renameScheme("Dark"));
+	QVERIFY(panel.renameScheme("mine"));
+	QVERIFY(panel.renameScheme("Ours"));
+	QCOMPARE(list->currentText(), QString("Ours"));
+
+	// a built-in one is not renamed; Restore while its colors differ
+	QVERIFY(panel.showScheme("dark"));
+	QVERIFY(!panel.renameScheme("Other"));
+	QVERIFY(!rename->isEnabled() && !remove->isEnabled() && !restore->isEnabled());
+	panel.setColor(textSchemeBackground, QColor("#000000"));
+	QVERIFY(restore->isEnabled());
+	restore->click();
+	QVERIFY(findTextScheme(panel.schemes(), "dark")->sameColors(builtinTextScheme("dark")));
+	QVERIFY(!restore->isEnabled());
+
+	// Delete gives way to White; the id is free again
+	QVERIFY(panel.showScheme(mine));
+	remove->click();
+	QCOMPARE(panel.shownId(), QString(TEXT_SCHEME_DEFAULT));
+	QCOMPARE(list->count(), 2);
+	QVERIFY(!findTextScheme(panel.schemes(), mine));
+	QVERIFY(panel.copyScheme("Again"));
+	QCOMPARE(panel.shownId(), mine);
+	QVERIFY(findTextScheme(panel.schemes(), mine)->sameColors(builtinTextScheme(TEXT_SCHEME_DEFAULT)));
+}
+
+// EDIT-COLOR-8: Reset restores the built-in schemes, drops the user ones, White current
+void TestColors::test_reset()
+{
+	SettingsManager& sm = SettingsManager::instance();
+	TextSchemes schemes = sm.getTextSchemes();
+	schemes[1].colors[textSchemeText] = QColor("#ffffff");
+	TextScheme mine = schemes[1];
+	mine.id = TEXT_SCHEME_USER_PREFIX "1";
+	mine.name = "Mine";
+	schemes << mine;
+	sm.setTextSchemes(schemes);
+	sm.setTextScheme(mine.id);
+	PreferencesDialog dialog;
+	QCOMPARE(dialog.textSchemePanel()->shownId(), mine.id);
+	dialog.findChild<QDialogButtonBox*>()->button(QDialogButtonBox::Reset)->click();
+	QVERIFY(sm.getTextSchemes() == builtinTextSchemes());
+	QCOMPARE(sm.getTextScheme(), QString(TEXT_SCHEME_DEFAULT));
+	QVERIFY(QSettings().allKeys().filter("textSchemes/list").isEmpty());
+	QCOMPARE(dialog.textSchemePanel()->shownId(), QString(TEXT_SCHEME_DEFAULT));
+	QCOMPARE(dialog.textSchemePanel()->findChild<QComboBox*>("textSchemeList")->count(), 2);
 }
 
 QTEST_MAIN(TestColors)
