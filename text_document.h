@@ -71,6 +71,11 @@ public:
     CodeEditor*      editor() const { return m_editor; }
     // the rendered view of a read-only Markdown tab is shown
     bool             showsRendered() const;
+    // the lines of the source from 1 (EDIT-KEYS-7): the cursor to the start of the
+    // line, scrolled into view and focused; false for a line the text has not
+    bool             goToLine(int line);
+    int              lineCount() const;
+    int              currentLine() const;
     // the directory of the file, where the Markdown images are found; empty without a file
     QString          baseDir() const;
     // the rendered Markdown text saved as a PDF (EDIT-MODE-18)

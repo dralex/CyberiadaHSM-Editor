@@ -513,3 +513,26 @@ void SettingsManager::setInterpreterPath(const QString& name, const QString& pat
     else s.setValue(key, path);
     emit pluginsChanged();
 }
+
+static QString shortcutKey(const QString& action)
+{
+    return "shortcuts/" + action;
+}
+
+QString SettingsManager::getShortcut(const QString& action, bool* found) const
+{
+    QSettings s;
+    QString key = shortcutKey(action);
+    if (found) *found = s.contains(key);
+    return s.value(key).toString();
+}
+
+void SettingsManager::setShortcut(const QString& action, const QString& keys)
+{
+    QSettings().setValue(shortcutKey(action), keys);
+}
+
+void SettingsManager::removeShortcut(const QString& action)
+{
+    QSettings().remove(shortcutKey(action));
+}

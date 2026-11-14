@@ -68,23 +68,13 @@
 #include "plugin_session.h"
 #include "plugin_session_view.h"
 #include "find_bar.h"
+#include "shortcut_map.h"
 #include "dialogs/plugin_manager_dialog.h"
 #include "dialogs/plugin_parameter_dialog.h"
 
 
 // the initial width of the tree and the properties docks
 static const int PANE_DOCK_WIDTH = 300;
-
-// the key first, then the platform keys of the standard one without a repeat (EDIT-FIND-3)
-static QList<QKeySequence> findKeys(const QKeySequence& key, QKeySequence::StandardKey standard)
-{
-    QList<QKeySequence> keys;
-    keys << key;
-    for (const QKeySequence& other : QKeySequence::keyBindings(standard)) {
-        if (!keys.contains(other)) keys << other;
-    }
-    return keys;
-}
 
 // a bold dock title; the contents keep the inherited weight (EDIT-UI-6)
 static void setBoldDockTitle(QDockWidget* dock)
@@ -123,8 +113,6 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     connect(documentTabs, &QTabBar::tabCloseRequested, this, &CyberiadaSMEditorWindow::closeTab);
     connect(documentTabs, &QTabBar::tabMoved, this,
             [this](int from, int to) { documents.move(from, to); });
-    actionNextDocument->setShortcut(QKeySequence::NextChild);
-    actionPreviousDocument->setShortcut(QKeySequence::PreviousChild);
     connect(actionClose, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotFileClose);
     connect(actionNextDocument, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotNextDocument);
     connect(actionPreviousDocument, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotPreviousDocument);
@@ -133,9 +121,7 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     m_findBar = new FindBar(centralwidget);
     centralLayout->addWidget(m_findBar);
     m_findBar->hide();
-    actionFind->setShortcuts(QKeySequence::Find);
-    actionFindNext->setShortcuts(findKeys(QKeySequence(Qt::Key_F3), QKeySequence::FindNext));
-    actionFindPrevious->setShortcuts(findKeys(QKeySequence(Qt::SHIFT + Qt::Key_F3), QKeySequence::FindPrevious));
+    connect(actionGoToLine, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotGoToLine);
     connect(actionFind, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotFind);
     connect(actionFindNext, &QAction::triggered, this, [this]() { slotFindStep(1); });
     connect(actionFindPrevious, &QAction::triggered, this, [this]() { slotFindStep(-1); });
@@ -164,7 +150,9 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     }
     QAction* outputPanel = pluginDockWidget->toggleViewAction();
     outputPanel->setText(tr("Output panel"));
+    outputPanel->setObjectName("actionOutputPanel");
     QAction* manager = new QAction(tr("Plugin manager..."), this);
+    manager->setObjectName("actionPluginManager");
     connect(manager, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotPluginManager);
     initSessionMenu();
     pluginMenu->setTailActions(QList<QAction*>() << sessionMenu->menuAction() << outputPanel << manager);
@@ -207,8 +195,54 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     connect(undoGroup, &QUndoGroup::indexChanged, this, &CyberiadaSMEditorWindow::updatePluginActions);
     actionUndo->setEnabled(false);
     actionRedo->setEnabled(false);
+    initShortcuts();
     updateEditActions();
     updateTitle();   // start as a clean "untitled" document
+}
+
+// the titles of the menus over an action, "Edit > Tools"
+static QString menuPath(const QStringList& titles)
+{
+    QStringList path;
+    for (QString title : titles) path << title.remove('&');
+    return path.join(" > ");
+}
+
+void CyberiadaSMEditorWindow::registerMenuKeys(QMenu* menu, const QStringList& titles)
+{
+    QStringList path = titles;
+    path << menu->title();
+    for (QAction* action : menu->actions()) {
+        if (action->isSeparator()) continue;
+        if (action->menu()) registerMenuKeys(action->menu(), path);
+        else registerKeys(action, menuPath(path));
+    }
+}
+
+// an action of the window itself: its key acts while its toolbar or menu is hidden
+// (EDIT-KEYS-6); the unnamed entries come and go and have no keys (EDIT-KEYS-1)
+void CyberiadaSMEditorWindow::registerKeys(QAction* action, const QString& path)
+{
+    if (action->objectName().isEmpty()) return;
+    addAction(action);
+    m_shortcuts->add(action, path);
+}
+
+// the keys of the built-in actions, the default or the stored ones (docs/SHORTCUTS.md)
+void CyberiadaSMEditorWindow::initShortcuts()
+{
+    m_shortcuts = new ShortcutMap(this);
+    for (QAction* top : QMainWindow::menuBar()->actions()) {
+        if (top->menu()) registerMenuKeys(top->menu(), QStringList());
+    }
+    QStringList plugins = QStringList() << pluginMenu->menu()->title();
+    registerMenuKeys(sessionMenu, plugins);
+    // the actions shown on a toolbar only
+    QString tools = menuPath(QStringList() << menuEdit->title() << menuTools->title());
+    registerKeys(actionSelectTool, tools);
+    registerKeys(actionPan, tools);
+    registerKeys(actionZoomTool, tools);
+    registerKeys(actionZoomToSM, menuPath(QStringList() << menuView->title()));
 }
 
 void CyberiadaSMEditorWindow::addTab(EditorDocument* doc)
@@ -869,6 +903,19 @@ void CyberiadaSMEditorWindow::updateFindActions()
     actionFindNext->setEnabled(on);
     actionFindPrevious->setEnabled(on);
     if (m_findBar) m_findBar->setSearchable(on);
+    // the lines of a source shown, not of a rendered page (EDIT-KEYS-7)
+    TextDocument* text = currentText();
+    actionGoToLine->setEnabled(text && !text->showsRendered());
+}
+
+void CyberiadaSMEditorWindow::slotGoToLine()
+{
+    TextDocument* text = currentText();
+    if (!text || text->showsRendered()) return;
+    bool ok = false;
+    int line = QInputDialog::getInt(this, tr("Go to Line"), tr("Line number:"),
+                                    text->currentLine(), 1, text->lineCount(), 1, &ok);
+    if (ok) text->goToLine(line);
 }
 
 void CyberiadaSMEditorWindow::slotFind()
@@ -1324,7 +1371,9 @@ void CyberiadaSMEditorWindow::initPaneDocks()
 {
     SettingsManager& sm = SettingsManager::instance();
     actionStructureTree = treeDock->toggleViewAction();
+    actionStructureTree->setObjectName("actionStructureTree");
     actionProperties = propertiesDock->toggleViewAction();
+    actionProperties->setObjectName("actionPropertiesPane");
     menuView->insertAction(actionTransitionText, actionStructureTree);
     menuView->insertAction(actionTransitionText, actionProperties);
     menuView->insertSeparator(actionTransitionText);
@@ -2371,20 +2420,26 @@ void CyberiadaSMEditorWindow::initSessionMenu()
 {
     sessionMenu = new QMenu(tr("Session"), this);
     sessionMenu->setObjectName("menuPluginSession");
+    // the names are the ids of the keys (docs/SHORTCUTS.md)
     actionSessionStep = sessionMenu->addAction(tr("Step"));
-    actionSessionStep->setShortcut(QKeySequence(Qt::Key_F10));
+    actionSessionStep->setObjectName("actionSessionStep");
     actionSessionRun = sessionMenu->addAction(tr("Run"));
-    actionSessionRun->setShortcut(QKeySequence(Qt::Key_F5));
+    actionSessionRun->setObjectName("actionSessionRun");
     actionSessionPause = sessionMenu->addAction(tr("Pause"));
-    actionSessionPause->setShortcut(QKeySequence(Qt::Key_F6));
+    actionSessionPause->setObjectName("actionSessionPause");
     actionSessionRestart = sessionMenu->addAction(tr("Restart"));
+    actionSessionRestart->setObjectName("actionSessionRestart");
     actionSessionStop = sessionMenu->addAction(tr("Stop"));
-    actionSessionStop->setShortcut(QKeySequence(Qt::SHIFT + Qt::Key_F5));
+    actionSessionStop->setObjectName("actionSessionStop");
     sessionMenu->addSeparator();
     actionSessionPost = sessionMenu->addAction(tr("Post Event"));
+    actionSessionPost->setObjectName("actionSessionPost");
     actionSessionLoad = sessionMenu->addAction(tr("Load Stream..."));
+    actionSessionLoad->setObjectName("actionSessionLoad");
     actionSessionEdit = sessionMenu->addAction(tr("Edit Stream..."));
+    actionSessionEdit->setObjectName("actionSessionEdit");
     actionSessionSave = sessionMenu->addAction(tr("Save Log..."));
+    actionSessionSave->setObjectName("actionSessionSave");
     connect(actionSessionStep, &QAction::triggered, this, [this]() {
         if (PluginSession* s = currentSession()) { if (s->canStep()) s->step(); }
     });
@@ -2625,11 +2680,7 @@ void CyberiadaSMEditorWindow::slotLineActivated(EditorDocument* doc, int line)
     TextDocument* text = qobject_cast<TextDocument*>(doc);
     if (!text || !documents.contains(doc)) return;
     setCurrentDocument(doc);
-    QTextBlock block = text->editor()->document()->findBlockByNumber(line - 1);
-    if (!block.isValid()) return;
-    text->editor()->setTextCursor(QTextCursor(block));
-    text->editor()->centerCursor();
-    text->editor()->setFocus();
+    text->goToLine(line);
 }
 
 void CyberiadaSMEditorWindow::slotFileActivated(const QString& path)

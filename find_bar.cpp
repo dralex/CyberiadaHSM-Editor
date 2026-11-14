@@ -163,6 +163,16 @@ bool FindBar::eventFilter(QObject* watched, QEvent* event)
     return QWidget::eventFilter(watched, event);
 }
 
+bool FindBar::event(QEvent* event)
+{
+    if (event->type() == QEvent::ShortcutOverride &&
+        static_cast<QKeyEvent*>(event)->key() == Qt::Key_Escape) {
+        event->accept();
+        return true;
+    }
+    return QWidget::event(event);
+}
+
 void FindBar::keyPressEvent(QKeyEvent* event)
 {
     if (event->key() == Qt::Key_Escape) {

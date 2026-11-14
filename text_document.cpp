@@ -25,6 +25,7 @@
 #include <QFileInfo>
 #include <QSaveFile>
 #include <QStackedWidget>
+#include <QTextBlock>
 #include <QTextCursor>
 #include <QTextDocument>
 #include <QTextEdit>
@@ -131,6 +132,26 @@ void TextDocument::showPage()
 bool TextDocument::showsRendered() const
 {
     return m_mode == MODE_MARKDOWN && readOnlyFlag();
+}
+
+bool TextDocument::goToLine(int line)
+{
+    QTextBlock block = m_document->findBlockByNumber(line - 1);
+    if (!block.isValid()) return false;
+    m_editor->setTextCursor(QTextCursor(block));
+    m_editor->centerCursor();
+    m_editor->setFocus();
+    return true;
+}
+
+int TextDocument::lineCount() const
+{
+    return m_document->blockCount();
+}
+
+int TextDocument::currentLine() const
+{
+    return m_editor->textCursor().blockNumber() + 1;
 }
 
 QString TextDocument::baseDir() const

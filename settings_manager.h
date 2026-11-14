@@ -158,6 +158,12 @@ public:
     // an empty path removes the entry
     void setInterpreterPath(const QString& name, const QString& path);
 
+    // the changed keys of an action (EDIT-KEYS-4, docs/SHORTCUTS.md): the keys as
+    // text, empty - no key; an action not stored has its default keys
+    QString getShortcut(const QString& action, bool* found = nullptr) const;
+    void setShortcut(const QString& action, const QString& keys);
+    void removeShortcut(const QString& action);
+
 signals:
     void settingsChanged();
     void recentFilesChanged();

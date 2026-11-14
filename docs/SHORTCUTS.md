@@ -39,8 +39,10 @@ Deferred).
 
 ## The default keys
 
-One table in `shortcut_map.cpp`; a name not in it has no key. *new* marks the keys the
-editor did not have before 0.62.
+One table in `shortcut_map.cpp`; a name not in it has no key. A row is its written keys,
+then the platform keys Qt names for it; a platform key some row writes is left to that row
+(`Ctrl+G` is Grid, not the Find Next of a desktop). *new* marks the keys the editor did not
+have before 0.62.
 
 | Menu | Action | Keys | |
 |---|---|---|---|

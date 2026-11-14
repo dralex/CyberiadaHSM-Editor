@@ -182,6 +182,7 @@
     <addaction name="actionFind"/>
     <addaction name="actionFindNext"/>
     <addaction name="actionFindPrevious"/>
+    <addaction name="actionGoToLine"/>
     <addaction name="separator"/>
     <addaction name="menuTools"/>
    </widget>
@@ -332,9 +333,6 @@
    <property name="text">
     <string>Undo</string>
    </property>
-   <property name="shortcut">
-    <string notr="true">Ctrl+Z</string>
-   </property>
   </action>
   <action name="actionRedo">
    <property name="icon">
@@ -343,9 +341,6 @@
    </property>
    <property name="text">
     <string>Redo</string>
-   </property>
-   <property name="shortcut">
-    <string notr="true">Ctrl+Shift+Z</string>
    </property>
   </action>
   <action name="actionFind">
@@ -363,6 +358,11 @@
     <string>Find Previous</string>
    </property>
   </action>
+  <action name="actionGoToLine">
+   <property name="text">
+    <string>Go to Line...</string>
+   </property>
+  </action>
   <action name="actionOpen">
    <property name="icon">
     <iconset resource="smeditor.qrc">
@@ -371,16 +371,10 @@
    <property name="text">
     <string>&amp;Open...</string>
    </property>
-   <property name="shortcut">
-    <string notr="true">Ctrl+O</string>
-   </property>
   </action>
   <action name="actionExit">
    <property name="text">
     <string>E&amp;xit</string>
-   </property>
-   <property name="shortcut">
-    <string notr="true">Ctrl+Q</string>
    </property>
   </action>
   <action name="actionClose">
@@ -389,9 +383,6 @@
    </property>
    <property name="toolTip">
     <string>Close the document</string>
-   </property>
-   <property name="shortcut">
-    <string notr="true">Ctrl+W</string>
    </property>
   </action>
   <action name="actionNextDocument">
@@ -619,9 +610,6 @@
    <property name="text">
     <string>Preferences</string>
    </property>
-   <property name="shortcut">
-    <string notr="true">Ctrl+I</string>
-   </property>
   </action>
   <action name="actionAbout">
    <property name="text">
@@ -635,9 +623,6 @@
    </property>
    <property name="text">
     <string>Delete Element</string>
-   </property>
-   <property name="shortcut">
-    <string notr="true">Del</string>
    </property>
   </action>
   <action name="actionReconstructGeometry">
@@ -696,9 +681,6 @@
    <property name="text">
     <string>Cut</string>
    </property>
-   <property name="shortcut">
-    <string notr="true">Ctrl+X</string>
-   </property>
   </action>
   <action name="actionCopy">
    <property name="icon">
@@ -707,9 +689,6 @@
    </property>
    <property name="text">
     <string>Copy</string>
-   </property>
-   <property name="shortcut">
-    <string notr="true">Ctrl+C</string>
    </property>
   </action>
   <action name="actionPaste">
@@ -720,9 +699,6 @@
    <property name="text">
     <string>Paste</string>
    </property>
-   <property name="shortcut">
-    <string notr="true">Ctrl+V</string>
-   </property>
   </action>
   <action name="actionSave">
    <property name="icon">
@@ -732,16 +708,10 @@
    <property name="text">
     <string>&amp;Save...</string>
    </property>
-   <property name="shortcut">
-    <string notr="true">Ctrl+S</string>
-   </property>
   </action>
   <action name="actionSaveAs">
    <property name="text">
     <string>&amp;Save as...</string>
-   </property>
-   <property name="shortcut">
-    <string notr="true">Ctrl+Shift+S</string>
    </property>
   </action>
   <action name="actionSnapMode">
@@ -899,9 +869,6 @@
    <property name="text">
     <string>Export...</string>
    </property>
-   <property name="shortcut">
-    <string notr="true">Ctrl+E</string>
-   </property>
   </action>
   <action name="actionNew">
    <property name="icon">
@@ -913,9 +880,6 @@
    </property>
    <property name="toolTip">
     <string>New HSM diagram</string>
-   </property>
-   <property name="shortcut">
-    <string notr="true">Ctrl+N</string>
    </property>
   </action>
   <action name="actionNewMarkdown">

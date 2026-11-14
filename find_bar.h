@@ -67,6 +67,8 @@ signals:
 protected:
     // Enter, Shift+Enter and Esc in the field
     bool         eventFilter(QObject* watched, QEvent* event) override;
+    // Esc is the bar's ahead of the action it is a key of (EDIT-KEYS-11)
+    bool         event(QEvent* event) override;
     void         keyPressEvent(QKeyEvent* event) override;
 
 private slots:

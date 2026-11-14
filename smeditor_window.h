@@ -46,6 +46,7 @@ class QTreeWidgetItem;
 class PluginsMenu;
 class PluginDock;
 class FindBar;
+class ShortcutMap;
 class PluginSession;
 class PluginSessionTab;
 
@@ -127,6 +128,8 @@ public:
     QTabBar*                tabBar() const { return documentTabs; }
     // the find bar under the documents (EDIT-FIND-1, docs/FIND.md)
     FindBar*                findBar() const { return m_findBar; }
+    // the keys of the built-in actions (docs/SHORTCUTS.md)
+    ShortcutMap*            shortcuts() const { return m_shortcuts; }
 
     // PLUGINS (docs/PLUGINS.md): start an action on the document, the active one by
     // default; nullptr with the reason when it cannot start; the result is applied
@@ -275,6 +278,7 @@ private slots:
     void                    updateUndoActions();
     // Edit > Find, Find Next, Find Previous and the bar (EDIT-FIND-1..3)
     void                    slotFind();
+    void                    slotGoToLine();
     void                    slotFindStep(int step);
     void                    slotFindQueryChanged(const FindQuery& query);
     void                    slotFindClosed();
@@ -342,6 +346,10 @@ private:
     bool                    elementBarHidden = false;
     QTreeWidget*            m_changeList = nullptr;
     FindBar*                m_findBar = nullptr;
+    ShortcutMap*            m_shortcuts = nullptr;
+    void                    initShortcuts();
+    void                    registerKeys(QAction* action, const QString& path);
+    void                    registerMenuKeys(QMenu* menu, const QStringList& titles);
     // the running plugins and the documents they started from
     QMap<PluginRunner*, QPointer<EditorDocument> > pluginRuns;
     // the diff tabs a run refreshes (EDIT-MODE-12)
