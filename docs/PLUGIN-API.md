@@ -1,6 +1,6 @@
 # The Plugin Interface
 
-**Document version:** 0.12 (2026-11-11), plugin contract `api` 1, session protocol 1. In
+**Document version:** 0.13 (2026-11-14), plugin contract `api` 1, session protocol 1. In
 Russian: `PLUGIN-API-ru.md`.
 
 This is the brief for a plugin author. A plugin gives CyberiadaPro, the Cyberiada HSM editor, a
@@ -263,7 +263,7 @@ metainformation strings except the editor's own view state. Secrets are never in
 | `diagnostics` | `${diagnostics}` | shows the findings |
 | `files` | files into `${outdir}` (the action's `outdir` parameter) | lists the new and changed files in the output tab; a diagram or a text file of a known mode opens in a tab on a click |
 | `log` | stdout, stderr | nothing more |
-| `diff` | the base document to `${output}`; an empty file is an empty document | opens a diff tab: the base is the output, the target the document as `${input}` had it; the tab is labelled by the values of the action's `string` parameters, else by its label; Refresh runs the action again on the same tab, and fails when that tab is closed |
+| `diff` | the base document to `${output}`; an empty file is an empty document; in a text tab the base text in UTF-8 | opens a diff tab — a text diff tab in a text mode: the base is the output, the target the document as `${input}` had it; the tab is labelled by the values of the action's `string` parameters, else by its label; Refresh runs the action again on the same tab, and fails when that tab is closed |
 
 * The output document may be CyberiadaML-GraphML 1.0 or a yEd dialect the library reads;
   the document keeps its own save format.
@@ -278,11 +278,13 @@ metainformation strings except the editor's own view state. Secrets are never in
 * A `replace` action is disabled in a tab that is not editable — read-only, inspection,
   diff — and the document is locked while it runs.
 * A `diff` action supplies the base only: the editor pairs the elements itself, with the
-  revision diff of libcyberiadaml, as in Document > Compare with.... Its `modes` may list
-  only `hsm`, `fa` and `inspection`.
+  revision diff of libcyberiadaml, or the lines of a text with its own line diff, as in
+  Document > Compare with.... Its `modes` may list the diagram modes `hsm`, `fa`,
+  `inspection` and the text modes (0.13).
 * An editor that does not know a `result` greys that action out as needing a newer editor;
   an editor before the diff tabs rejects the whole plugin, so a package with a `diff`
-  action requires an editor with them.
+  action requires an editor with them; one before the text diff tabs rejects the whole
+  plugin when a `diff` action lists a text mode.
 
 ## The diagnostics file
 
@@ -474,6 +476,7 @@ modes an action works in; in a tab of another mode the action is greyed out.
 | `fa` | a finite automaton diagram (`type/ fa`) | `input.graphml` |
 | `inspection` | a diagram inspected, read-only | `input.graphml` |
 | `diff` | two diagrams compared, read-only | - (no action runs there) |
+| `text-diff` | two texts compared, read-only | - (no action runs there) |
 | `text` | a plain text | `input.txt` |
 | `markdown` | a Markdown text | `input.md` |
 | `c`, `cpp`, `csharp`, `python` | a source file of the language | `input.c`, `input.cpp`, `input.cs`, `input.py` |

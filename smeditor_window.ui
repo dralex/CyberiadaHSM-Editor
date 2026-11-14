@@ -198,6 +198,7 @@
      <addaction name="actionModeInspection"/>
      <addaction name="actionModeFA"/>
      <addaction name="actionModeDiff"/>
+     <addaction name="actionModeTextDiff"/>
     </widget>
     <widget class="QMenu" name="menuLanguage">
      <property name="title">
@@ -223,6 +224,9 @@
     <addaction name="actionCompare"/>
     <addaction name="actionGeometry"/>
     <addaction name="actionRefresh"/>
+    <addaction name="actionNextChange"/>
+    <addaction name="actionPreviousChange"/>
+    <addaction name="actionIgnoreWhitespace"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
@@ -530,6 +534,44 @@
    </property>
    <property name="toolTip">
     <string>Two revisions of a diagram side by side: opened by Compare with...</string>
+   </property>
+  </action>
+  <action name="actionModeTextDiff">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Text diff</string>
+   </property>
+   <property name="toolTip">
+    <string>Two texts side by side, line by line: opened by Compare with... on a text tab</string>
+   </property>
+  </action>
+  <action name="actionNextChange">
+   <property name="text">
+    <string>Next Change</string>
+   </property>
+   <property name="toolTip">
+    <string>Show the next change of the comparison</string>
+   </property>
+  </action>
+  <action name="actionPreviousChange">
+   <property name="text">
+    <string>Previous Change</string>
+   </property>
+   <property name="toolTip">
+    <string>Show the previous change of the comparison</string>
+   </property>
+  </action>
+  <action name="actionIgnoreWhitespace">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Ignore Whitespace</string>
+   </property>
+   <property name="toolTip">
+    <string>Compare the lines of the texts without their runs of spaces and tabs</string>
    </property>
   </action>
   <action name="actionCompare">

@@ -37,7 +37,7 @@ class CodeHighlighter;
 
 // A text tab (docs/MODES.md, Text tabs): the text in UTF-8, highlighted by its
 // mode; a read-only Markdown tab shows the rendered document (EDIT-MODE-13/14), a
-// JSON tab marks its first error (EDIT-MODE-19).
+// JSON tab marks its first error (EDIT-MODE-26).
 // The undo stack mirrors the edits of the text, so the window's Undo and Redo
 // and the clean state work as for a diagram
 class TextDocument: public EditorDocument {
@@ -85,12 +85,12 @@ public:
     bool             exportPdf(const QString& path, QString* error) const;
     // an empty unmodified tab a file may take
     bool             isUntitled() const { return !hasFile() && isClean() && text().isEmpty(); }
-    // the built-in JSON language (EDIT-MODE-19)
+    // the built-in JSON language (EDIT-MODE-26)
     bool             isJson() const;
     // the last check of a JSON tab, ok in another mode; the edits of the last
     // JSON_CHECK_DELAY_MS are not checked yet
     const JsonCheck& jsonCheck() const { return m_jsonCheck; }
-    // check the text now (EDIT-MODE-19)
+    // check the text now (EDIT-MODE-26)
     void             checkText();
 
     // the shown page is searched, the editor or the rendered view (EDIT-FIND-5)

@@ -1,0 +1,26 @@
+== tabs
+count: 2
+0 diff-target.py python
+1 diff-target.py ↔ diff-base.py text-diff active
+== text diff
+base: diff-base.py
+target: diff-target.py
+ignore whitespace: no
+hunks: 3, added: 1, removed: 1, changed: 3
+current: 2
+@@ 8 | 8-9
+5 5 =         self.n = 0
+6 6 = 
+7 7 =     def step(self):
+8 8 ~         self.n += 1 |         self.n += 2
+. 9 +         self.log()
+9 10 =         return self.n
+10 11 = 
+11 12 =     def reset(self):
+@@ 12-13 | 13
+12 13 ~         self.n = 0 |         self.n  =  0
+13 . -         print("reset")
+14 14 = 
+15 15 =     def name(self):
+@@ 16 | 16
+16 16 ~         return "light" |         return "lamp"

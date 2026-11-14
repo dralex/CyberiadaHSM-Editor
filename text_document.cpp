@@ -83,7 +83,7 @@ TextDocument::TextDocument(const QString& mode, QObject* parent):
     connect(m_document, &QTextDocument::contentsChanged, this, &TextDocument::scheduleFind);
     connect(m_rendered->document(), &QTextDocument::contentsChanged, this, &TextDocument::scheduleFind);
     connect(&SettingsManager::instance(), &SettingsManager::textSchemeChanged, this, &TextDocument::applyScheme);
-    // a JSON text is checked a while after its last edit (EDIT-MODE-19)
+    // a JSON text is checked a while after its last edit (EDIT-MODE-26)
     m_checkTimer = new QTimer(this);
     m_checkTimer->setSingleShot(true);
     m_checkTimer->setInterval(JSON_CHECK_DELAY_MS);
@@ -392,7 +392,7 @@ void TextDocument::markFind()
 {
     QList<QTextEdit::ExtraSelection> marks;
     QTextDocument* document = shownDocument();
-    // the JSON error under the find marks (EDIT-MODE-19)
+    // the JSON error under the find marks (EDIT-MODE-26)
     if (m_errorPlace && m_errorPlace->document() == document && m_errorPlace->hasSelection()) {
         QTextEdit::ExtraSelection error;
         error.cursor = *m_errorPlace;

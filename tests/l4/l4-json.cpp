@@ -33,7 +33,7 @@
 #include "json_text.h"
 #include "cyberiada_constants.h"
 
-// the JSON texts (docs/MODES.md, JSON): the check (EDIT-MODE-19)
+// the JSON texts (docs/MODES.md, JSON): the check (EDIT-MODE-26)
 class TestJson: public QObject {
 	Q_OBJECT
 
@@ -152,7 +152,7 @@ void TestJson::test_deep()
 	QCOMPARE(check.message, QString("the array is not closed"));
 }
 
-// EDIT-MODE-19: the underline, the margin number and the bar; a valid text has none
+// EDIT-MODE-26: the underline, the margin number and the bar; a valid text has none
 void TestJson::test_tab_marks()
 {
 	CyberiadaSMEditorWindow window;
@@ -183,7 +183,7 @@ void TestJson::test_tab_marks()
 	QVERIFY(text->jsonCheck().ok && editor->errorLine() == 0 && editor->extraSelections().isEmpty());
 }
 
-// EDIT-MODE-19: an edit is checked JSON_CHECK_DELAY_MS later; the underline follows it
+// EDIT-MODE-26: an edit is checked JSON_CHECK_DELAY_MS later; the underline follows it
 void TestJson::test_tab_edit()
 {
 	CyberiadaSMEditorWindow window;
@@ -209,7 +209,7 @@ void TestJson::test_tab_edit()
 	QCOMPARE(editor->errorMessage(), QString("Line 1, column 9: comments are not allowed in JSON"));
 }
 
-// EDIT-MODE-19: the find marks beside the underline; a click on the bar goes to the error
+// EDIT-MODE-26: the find marks beside the underline; a click on the bar goes to the error
 void TestJson::test_tab_find_and_click()
 {
 	CyberiadaSMEditorWindow window;
@@ -243,7 +243,7 @@ void TestJson::test_tab_find_and_click()
 	QCOMPARE(editor->textCursor().blockNumber() + 1, 3);
 }
 
-// EDIT-MODE-19: a read-only tab shows its checked source; another mode drops the marks
+// EDIT-MODE-26: a read-only tab shows its checked source; another mode drops the marks
 // and the bar, JSON brings them back
 void TestJson::test_tab_mode()
 {

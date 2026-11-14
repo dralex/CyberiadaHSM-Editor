@@ -37,6 +37,7 @@
 #include "text_document.h"
 #include "json_text.h"
 #include "diff_document.h"
+#include "text_diff_document.h"
 #include "cyberiadasm_editor_subject_item.h"
 #include "plugin_runner.h"
 #include <algorithm>
@@ -312,7 +313,7 @@ void dumpTextDocument(const TextDocument* doc, std::ostream& os)
 	   << std::endl;
 	os << "modified: " << (doc->isClean() ? "no" : "yes") << std::endl;
 	os << "rendered: " << (doc->showsRendered() ? "yes" : "no") << std::endl;
-	// the check of a JSON tab, of the text as it is now (EDIT-MODE-16/19)
+	// the check of a JSON tab, of the text as it is now (EDIT-MODE-16/26)
 	if (doc->isJson()) {
 		JsonCheck check = checkJson(doc->text());
 		os << "error: " << (check.ok ? QString("none") : QString("%1:%2 %3").arg(check.line)
@@ -322,6 +323,41 @@ void dumpTextDocument(const TextDocument* doc, std::ostream& os)
 	const QStringList lines = doc->text().split('\n');
 	os << "lines: " << lines.size() << std::endl;
 	for (const QString& line : lines) os << "| " << line.toStdString() << std::endl;
+}
+
+// the equal rows printed next to a hunk
+static const int TEXT_DIFF_DUMP_CONTEXT = 3;
+
+void dumpTextDiffDocument(const TextDiffDocument* doc, std::ostream& os)
+{
+	TextDiffDocument* diff = const_cast<TextDiffDocument*>(doc);
+	const TextDiff::Result& result = doc->result();
+	os << "base: " << diff->base().label.toStdString() << std::endl;
+	os << "target: " << diff->target().label.toStdString() << std::endl;
+	os << "ignore whitespace: " << (doc->ignoreWhitespace() ? "yes" : "no") << std::endl;
+	os << "hunks: " << result.hunks.size() << ", added: " << result.added << ", removed: "
+	   << result.removed << ", changed: " << result.changed << std::endl;
+	os << "current: " << doc->currentChange() + 1 << std::endl;
+	auto number = [](int line) { return line < 0 ? std::string(".") : std::to_string(line + 1); };
+	int printed = 0;
+	for (int h = 0; h < result.hunks.size(); h++) {
+		const TextDiff::Hunk& hunk = result.hunks[h];
+		os << "@@ " << TextDiffDocument::lineRange(hunk.baseLine, hunk.baseCount).toStdString() << " | "
+		   << TextDiffDocument::lineRange(hunk.targetLine, hunk.targetCount).toStdString() << std::endl;
+		int end = hunk.lastRow + TEXT_DIFF_DUMP_CONTEXT;
+		if (h + 1 < result.hunks.size()) end = std::min(end, result.hunks[h + 1].firstRow);
+		end = std::min(end, int(result.rows.size()));
+		for (int r = std::max(printed, hunk.firstRow - TEXT_DIFF_DUMP_CONTEXT); r < end; r++) {
+			const TextDiff::Row& row = result.rows[r];
+			static const char marks[] = { '=', '-', '+', '~' };
+			QString text = row.kind == TextDiff::rowAdded ? doc->targetLines()[row.target] :
+				doc->baseLines()[row.base];
+			if (row.kind == TextDiff::rowChanged) text += " | " + doc->targetLines()[row.target];
+			os << number(row.base) << " " << number(row.target) << " " << marks[row.kind] << " "
+			   << text.toStdString() << std::endl;
+		}
+		printed = end;
+	}
 }
 
 void dumpDiffDocument(const DiffDocument* doc, std::ostream& os)

@@ -348,6 +348,10 @@ add_text_test(text-edit-reject texts/blink.cpp 4)
 add_text_test(markdown-ro texts/notes.md 0)
 add_text_test(json-open texts/settings.json 0)
 add_text_test(json-error texts/broken.json 0)
+add_text_test(text-compare texts/diff-target.py 0)
+add_text_test(text-compare-whitespace texts/diff-target.py 0)
+add_text_test(text-compare-tab texts/diff-target.py 0)
+add_text_test(text-compare-reject texts/diff-target.py 4)
 
 # the export of a text tab: a Markdown text to PDF only (EDIT-MODE-16/18)
 function(add_text_export_test name input output expected_code)
@@ -779,6 +783,7 @@ add_l4_test(markdown)
 add_l4_test(find)
 add_l4_test(keys)
 add_l4_test(autoreplace)
+add_l4_test(textdiff)
 add_l4_test(colors)
 add_l4_test(json)
 
@@ -1069,6 +1074,7 @@ add_plugin_test(diff-result-label INPUT diagrams/geometry.graphml PLUGIN modes:b
 add_plugin_test(diff-result-empty INPUT diagrams/geometry.graphml PLUGIN modes:empty-base PATHS modes DUMP)
 add_plugin_test(diff-result-missing INPUT diagrams/geometry.graphml PLUGIN modes:no-base PATHS modes
   DUMP_PLUGIN EXPECTED 6)
+add_plugin_test(diff-text-result INPUT texts/notes.md PLUGIN modes:text-base PATHS modes DUMP DUMP_TABS)
 # the languages of the plugins (EDIT-PLUG-60): a Lua source opens in its mode
 add_plugin_test(list-lang LIST PATHS lang)
 add_plugin_test(lang-open INPUT texts/script.lua PATHS lang DUMP DUMP_TABS)
@@ -1097,6 +1103,8 @@ add_plugin_test(script-session-no-end INPUT diagrams/lift.graphml SCRIPT scripts
   PATHS session EXPECTED 4)
 add_plugin_test(script-diff INPUT diagrams/geometry.graphml SCRIPT scripts/plugin-diff.script PATHS modes
   DUMP DUMP_TABS DUMP_ACTIONS)
+add_plugin_test(script-text-diff INPUT texts/notes.md SCRIPT scripts/plugin-text-diff.script PATHS modes
+  DUMP DUMP_TABS)
 add_plugin_test(script-diff-switch INPUT diagrams/geometry.graphml SCRIPT scripts/plugin-diff-switch.script
   PATHS modes DUMP_PLUGIN DUMP_TABS DUMP_ACTIONS)
 add_plugin_test(script-text INPUT texts/notes.md SCRIPT scripts/plugin-text.script PATHS modes DUMP)

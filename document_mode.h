@@ -33,10 +33,11 @@ extern const char* const MODE_HSM;
 extern const char* const MODE_INSPECTION;
 extern const char* const MODE_FA;
 extern const char* const MODE_DIFF;
+extern const char* const MODE_TEXT_DIFF;
 extern const char* const MODE_TEXT;
 extern const char* const MODE_MARKDOWN;
 // a language of syntax/*.json is a mode too: its id is the file name (EDIT-MODE-1)
-// the built-in JSON language, checked by its tab (EDIT-MODE-19)
+// the built-in JSON language, checked by its tab (EDIT-MODE-26)
 extern const char* const LANGUAGE_JSON;
 
 // what a mode gives its tab (docs/MODES.md, The modes)

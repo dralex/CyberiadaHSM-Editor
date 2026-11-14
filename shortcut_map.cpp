@@ -72,6 +72,8 @@ const DefaultKeys DEFAULT_KEYS[] = {
     { "actionPreferences",      "Ctrl+I",               QKeySequence::UnknownKey },
     { "actionDocumentProperties", "Alt+Return",         QKeySequence::UnknownKey },
     { "actionCheck",            "F7",                   QKeySequence::UnknownKey },
+    { "actionNextChange",       "Alt+Down",             QKeySequence::UnknownKey },
+    { "actionPreviousChange",   "Alt+Up",               QKeySequence::UnknownKey },
     { "actionSessionStep",      "F10",                  QKeySequence::UnknownKey },
     { "actionSessionRun",       "F5",                   QKeySequence::UnknownKey },
     { "actionSessionPause",     "F6",                   QKeySequence::UnknownKey },

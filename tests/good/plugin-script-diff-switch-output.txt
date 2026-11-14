@@ -16,6 +16,7 @@ modes:next disabled: the action needs a newer editor
 modes:base enabled
 modes:empty-base enabled
 modes:no-base enabled
+modes:text-base disabled: the action works in: Plain text, Markdown, C++
 == plugin 1
 action: modes:base
 result: diff

@@ -1,8 +1,8 @@
-# CyberiadaPro — the Cyberiada Hierarchical State Machines Editor
+# CyberiadaPro — the Cyberiada Professional IDE and Hierarchical State Machines Editor
 
 ![The Cyberiada Logo](images/logo.png)
 
-The visual editor program for Cyberiada HSM graphs based on the Qt Framework.
+The IDE and the visual editor program for Cyberiada HSM graphs based on the Qt Framework.
 
 The code is distributed under the GNU Public License (version 3), the documentation -- under
 the GNU Free Documentation License (version 1.3).
@@ -13,31 +13,33 @@ The editor is able to create HSM diagrams and edit Cyberiada GraphML files.
 It suports multiple HSM formats and has many drawing tools - HSM diagram
 elements (states, pseudostate, transitions, etc.), view management (zoom,
 pan), copy/paste, undo/redo, etc. Several documents are open at once in tabs,
-with the clipboard shared between them. The code in the actions, guards and formal
+with the clipboard shared between them.
+
+The code in the actions, guards and formal
 comments is highlighted by the `platformLanguage` of the document (C, C++, C#,
 Python; the rules are in `syntax/`), chosen in Document > Language.
 The informal comments in Markdown are highlighted as well (Document > Markup).
-Each tab has a mode (Document > Mode, see `docs/MODES.md`): an HSM diagram, a finite
-automaton (FA) diagram with the automaton tools and the EXT-FA check, the inspection of
-a file exactly as it is stored, or a text - plain, Markdown, JSON or a C, C++, C# or Python
+
+Each tab has a mode (Document > Mode): an HSM diagram, a finite
+automaton (FA) diagram, or a text - plain, Markdown, JSON or a C, C++, C# or Python
 source, highlighted; any tab can also be made read-only (a read-only Markdown tab shows
-the rendered document with its TeX formulas and SVG images, see `docs/MARKDOWN.md`).
-A JSON tab marks its first syntax error as you type.
-Document > Compare with... opens a diff tab: two revisions of a
-diagram side by side, the added, removed and changed elements marked and listed.
-Edit > Find (Ctrl+F) searches the text of a tab or the texts drawn on a diagram canvas,
-the matches marked yellow and the current one orange (see `docs/FIND.md`).
+the rendered document with its TeX formulas and SVG images).
+
+The Find and Text File Compare functions are available as well as other
+useful IDE features.
 
 ![CyberiadaPro. Sample 1](images/gui-sample-1.jpg)
 
 ![CyberiadaPro. Sample 2](images/gui-sample-2.jpg)
+
+![CyberiadaPro. Sample 3](images/gui-sample-3.jpg)
 
 ## Plugins
 
 The editor supports plugins (see ![The Plugin Interface](docs/PLUGIN-API.md))
 which allow to process HSM diagrams and run controlled by HSM diagrams programs.
 A plugin may also work on the text tabs, bring the programming languages of its tool and
-give a diff tab the base revision of a diagram.
+give a diff tab the base revision of a diagram or a text.
 The most interesting plugins are:
 
 * ![HSM Diagram Maker](https://github.com/dralex/cybersphere-hsm-maker): generating HSM diagrams using LLM;

@@ -39,12 +39,14 @@ public:
 
     int  lineNumberAreaWidth() const;
     void paintLineNumbers(QPaintEvent* event);
+    // the number shown at a block from 0: its own number; a diff side has its lines
+    virtual QString lineLabel(int block) const { return QString::number(block + 1); }
     // what the text is for the typed replacements (EDIT-AUTO-2/3): none unless set
     void setAutoreplaceKind(AutoreplaceKind kind) { m_kind = kind; }
     AutoreplaceKind autoreplaceKind() const { return m_kind; }
     // the page, the selection and the margin in the colors of the scheme (EDIT-COLOR-1)
     void setScheme(const TextScheme& scheme);
-    // an error of the text (EDIT-MODE-19): the number of its line in red, the message in a
+    // an error of the text (EDIT-MODE-26): the number of its line in red, the message in a
     // bar under the text; line 0 and an empty message clear them
     void setError(int line, const QString& message);
     int  errorLine() const { return m_errorLine; }

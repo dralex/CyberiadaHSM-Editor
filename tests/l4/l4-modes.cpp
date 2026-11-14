@@ -23,6 +23,9 @@
 
 #include <QtTest>
 #include <QFileDialog>
+#include <QHeaderView>
+#include <QPainter>
+#include <QStyleOptionGraphicsItem>
 #include <QStackedWidget>
 #include <QSyntaxHighlighter>
 #include <QTabBar>
@@ -33,8 +36,15 @@
 #include "code_highlighter.h"
 #include "text_document.h"
 #include "diff_document.h"
+#include "text_diff_document.h"
+#include "text_diff_view.h"
+#include <QClipboard>
+#include <QTextBlock>
 #include "cyberiadasm_editor_scene.h"
 #include "cyberiadasm_editor_items.h"
+#include "cyberiadasm_editor_sm_item.h"
+#include "editable_text_item.h"
+#include "cyberiada_constants.h"
 
 // the EDIT-MODE laws of the text tabs at the widget level: the modes, the page,
 // the window parts that follow, the undo, the save and the rendered Markdown
@@ -56,8 +66,11 @@ private slots:
 	void test_compare_saved();
 	void test_compare_refresh();
 	void test_compare_tab();
+	void test_compare_fields();
+	void test_text_compare();
 
 private:
+	static QStringList diffTexts(CyberiadaSMEditorScene* scene);
 	static CyberiadaSMEditorAbstractItem::RunMark mark(CyberiadaSMEditorScene* scene, const char* id);
 	static const DiffRow* row(DiffDocument* diff, const QString& first, const QString& second);
 };
@@ -74,6 +87,19 @@ const DiffRow* TestModes::row(DiffDocument* diff, const QString& first, const QS
 		if (r.first == first && r.second == second) return &r;
 	}
 	return nullptr;
+}
+
+// the tinted parts of the drawn texts of a side, sorted
+QStringList TestModes::diffTexts(CyberiadaSMEditorScene* scene)
+{
+	QStringList texts;
+	for (QGraphicsItem* item : scene->items()) {
+		EditableTextItem* text = dynamic_cast<EditableTextItem*>(item);
+		if (!text) continue;
+		for (const FindRange& r : text->getDiffRanges()) texts << text->toPlainText().mid(r.from, r.to - r.from);
+	}
+	texts.sort();
+	return texts;
 }
 
 // EDIT-MODE-13: the extension names the mode, the mode its extension
@@ -435,6 +461,146 @@ void TestModes::test_compare_tab()
 	QCOMPARE(diff->title(), QString::fromUtf8("geometry.graphml ↔ hierarchy.graphml"));
 	QVERIFY(diff->added() > 0 && diff->removed() > 0);
 	QCOMPARE(window.documentCount(), 3);
+}
+
+// EDIT-MODE-11: what differs is shown - the machine's border, the changed fields
+// tinted on both sides, the change column in view
+void TestModes::test_compare_fields()
+{
+	CyberiadaSMEditorWindow window;
+	window.resize(640, 480);
+	window.show();
+	QVERIFY(window.openFile("diagrams/diff-fields-target.graphml"));
+	DiffOrigin base;
+	base.kind = DiffOrigin::originFile;
+	base.path = "diagrams/diff-fields-base.graphml";
+	base.label = "base";
+	QString error;
+	DiffDocument* diff = window.compareDocument(window.currentDocument(), base, &error);
+	QVERIFY2(diff, qPrintable(error));
+	QCOMPARE(row(diff, "G0", "G0")->change, QString("title"));
+	QCOMPARE(row(diff, "n0-n1", "n0-n1")->change, QString("guard"));
+	// the name, the guards, the changed entry and the internal guard; an action
+	// without a pair whole; the unchanged exit and the other transition not
+	QCOMPARE(diffTexts(diff->baseScene()),
+	         QStringList() << "Lamp" << "level() < 10" << "light(1)" << "ready()");
+	QCOMPARE(diffTexts(diff->targetScene()),
+	         QStringList() << "Lamp 2" << "PRESS / beep()" << "led.level() < 10" << "led.on()" << "led.ready()");
+	// the border of the machine is drawn in the changed colour
+	CyberiadaSMEditorSMItem* sm = dynamic_cast<CyberiadaSMEditorSMItem*>(diff->targetScene()->getMap().value("G0"));
+	QVERIFY(sm);
+	QRectF r = sm->boundingRect();
+	QImage image(r.size().toSize(), QImage::Format_ARGB32);
+	image.fill(Qt::white);
+	{
+		QPainter painter(&image);
+		painter.translate(-r.topLeft());
+		QStyleOptionGraphicsItem option;
+		sm->paint(&painter, &option, nullptr);
+	}
+	QCOMPARE(QColor(image.pixel(1, image.height() / 2)), QColor(DIFF_CHANGED_COLOR));
+	// the change column fits the dock
+	QTreeWidget* list = window.findChild<QTreeWidget*>("changeList");
+	QVERIFY(list && list->isVisible());
+	QCoreApplication::processEvents();
+	QHeaderView* header = list->header();
+	QVERIFY(header->sectionViewportPosition(1) + header->sectionSize(1) <= list->viewport()->width());
+}
+
+// EDIT-MODE-19..24: a text compared with a file, two columns, line by line
+void TestModes::test_text_compare()
+{
+	CyberiadaSMEditorWindow window;
+	window.resize(1000, 600);
+	window.show();
+	QVERIFY(window.openFile("texts/diff-target.py"));
+	TextDocument* source = window.currentText();
+	QVERIFY(source && window.actionCompare->isEnabled() && !window.actionNextChange->isEnabled());
+	DiffOrigin base;
+	base.kind = DiffOrigin::originFile;
+	base.path = "texts/diff-base.py";
+	base.label = "diff-base.py";
+	QString error;
+	TextDiffDocument* diff = window.compareText(source, base, &error);
+	QVERIFY2(diff, qPrintable(error));
+	QCOMPARE(window.currentTextDiff(), diff);
+	QCOMPARE(diff->mode(), QString(MODE_TEXT_DIFF));
+	QCOMPARE(diff->language(), QString("python"));
+	QCOMPARE(window.tabBar()->tabText(1), QString::fromUtf8("diff-target.py ↔ diff-base.py [text diff]"));
+	// a row a block on both sides; a filler has no number and no text
+	const TextDiff::Result& r = diff->result();
+	QCOMPARE(r.hunks.size(), 3);
+	QCOMPARE(r.changed, 3);
+	QCOMPARE(r.added, 1);
+	QCOMPARE(r.removed, 1);
+	QCOMPARE(diff->basePane()->document()->blockCount(), r.rows.size());
+	QCOMPARE(diff->targetPane()->document()->blockCount(), r.rows.size());
+	int added = -1;
+	for (int i = 0; i < r.rows.size(); i++) {
+		if (r.rows[i].kind == TextDiff::rowAdded) added = i;
+	}
+	QVERIFY(added > 0);
+	QCOMPARE(diff->basePane()->lineLabel(added), QString());
+	QCOMPARE(diff->targetPane()->lineLabel(added), QString("9"));
+	QCOMPARE(diff->basePane()->lineLabel(added + 1), QString("9"));
+	QCOMPARE(diff->basePane()->document()->findBlockByNumber(added).text(), QString());
+	// a row per hunk in the dock, the structure tree hidden
+	QTreeWidget* list = window.findChild<QTreeWidget*>("changeList");
+	QVERIFY(list && list->isVisible());
+	QCOMPARE(list->topLevelItemCount(), 3);
+	QCOMPARE(list->topLevelItem(0)->text(0), QString::fromUtf8("8 → 8-9"));
+	QCOMPARE(list->topLevelItem(0)->text(1), QString::fromUtf8("changed 1 → 2"));
+	// read-only, no canvas parts; Refresh and the changes
+	QVERIFY(window.actionReadOnly->isChecked() && !window.actionReadOnly->isEnabled());
+	QVERIFY(window.actionModeTextDiff->isChecked() && !window.actionModeTextDiff->isEnabled());
+	QVERIFY(!window.actionSave->isEnabled() && !window.actionCompare->isEnabled());
+	QVERIFY(!window.actionZoomIn->isEnabled() && !window.actionGeometry->isEnabled());
+	QVERIFY(window.actionRefresh->isEnabled() && window.actionNextChange->isEnabled());
+	QVERIFY(window.actionIgnoreWhitespace->isEnabled() && !window.actionIgnoreWhitespace->isChecked());
+	// Next and Previous Change stop at the ends; the row is selected and shown
+	window.actionNextChange->trigger();
+	QCOMPARE(diff->currentChange(), 0);
+	QCOMPARE(list->currentItem(), list->topLevelItem(0));
+	QCOMPARE(diff->targetPane()->textCursor().blockNumber(), r.hunks[0].firstRow);
+	window.actionPreviousChange->trigger();
+	QCOMPARE(diff->currentChange(), 0);
+	for (int i = 0; i < r.hunks.size(); i++) window.actionNextChange->trigger();
+	QCOMPARE(diff->currentChange(), 2);
+	emit list->itemClicked(list->topLevelItem(1), 0);
+	QCOMPARE(diff->currentChange(), 1);
+	// the spaces of the reset line ignored, then compared again
+	window.actionIgnoreWhitespace->trigger();
+	QVERIFY(diff->ignoreWhitespace());
+	QCOMPARE(diff->result().changed, 2);
+	QCOMPARE(diff->currentChange(), -1);
+	window.actionIgnoreWhitespace->trigger();
+	QCOMPARE(diff->result().changed, 3);
+	// Copy and Find act on the side the focus was in last
+	QCOMPARE(diff->focusedPane(), diff->targetPane());
+	emit diff->basePane()->focused();
+	QCOMPARE(diff->focusedPane(), diff->basePane());
+	QTextCursor cursor(diff->basePane()->document()->firstBlock());
+	cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
+	diff->basePane()->setTextCursor(cursor);
+	QVERIFY(window.actionCopy->isEnabled());
+	window.actionCopy->trigger();
+	QCOMPARE(QApplication::clipboard()->text(), QString("import time"));
+	FindQuery query;
+	query.text = "print";
+	diff->setFindQuery(query, true);
+	QCOMPARE(diff->findMatches().size(), 1);
+	emit diff->targetPane()->focused();
+	QCOMPARE(diff->findMatches().size(), 0);
+	diff->clearFind(false);
+	// Refresh takes the text of the source tab with its edits
+	source->editor()->moveCursor(QTextCursor::End);
+	source->editor()->insertPlainText("# end\n");
+	window.actionRefresh->trigger();
+	QCOMPARE(diff->result().added, 2);
+	QVERIFY(window.grab().save(QT_TESTCASE_BUILDDIR "/tests/text-diff.png"));
+	// the text tab again: Compare on, the changes off
+	window.setCurrentDocument(source);
+	QVERIFY(window.actionCompare->isEnabled() && !window.actionNextChange->isEnabled());
 }
 
 QTEST_MAIN(TestModes)

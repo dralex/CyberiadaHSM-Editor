@@ -26,7 +26,7 @@
 
 #include <QString>
 
-// the first error of a JSON text (EDIT-MODE-19, docs/MODES.md, JSON)
+// the first error of a JSON text (EDIT-MODE-26, docs/MODES.md, JSON)
 struct JsonCheck {
     // a valid, an empty or a blank text
     bool    ok = true;

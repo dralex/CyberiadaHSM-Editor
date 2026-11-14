@@ -32,6 +32,7 @@
 #include <cmath>
 
 #include "plugin_descriptor.h"
+#include "document_mode.h"
 
 namespace {
 
@@ -63,8 +64,6 @@ const char* const typeNames[] = {
 };
 const char* const scopeNames[] = { "run", "persistent", "document" };
 const char* const resultNames[] = { "replace", "new-document", "diagnostics", "files", "log", "diff" };
-// the modes a diff action may list: a diagram is the target (EDIT-PLUG-58)
-const QStringList diffModes = { "hsm", "fa", "inspection" };
 
 bool fail(QString* error, const QString& message)
 {
@@ -379,9 +378,10 @@ bool parseAction(const QJsonValue& value, int index, bool session, PluginAction*
     } else {
         a->modes = PluginAction::defaultModes();
     }
+    // a diff opens a comparison of a diagram or a text, never of a comparison (EDIT-PLUG-58)
     if (a->result == PluginAction::resultDiff) {
         for (const QString& m: a->modes) {
-            if (!diffModes.contains(m)) {
+            if (m == MODE_DIFF || m == MODE_TEXT_DIFF) {
                 return fail(error, QString("the diff action '%1' cannot work in the mode '%2'").arg(a->id, m));
             }
         }

@@ -1,0 +1,4 @@
+# Compare with... a file on a text tab: a text diff tab, line by line; Next Change (EDIT-MODE-19..22/25)
+compare texts/diff-base.py
+next-change
+next-change

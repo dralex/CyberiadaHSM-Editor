@@ -23,6 +23,7 @@ modes:next disabled: the action needs a newer editor
 modes:base disabled: the action works in: HSM diagram, FA diagram, HSM inspection
 modes:empty-base disabled: the action works in: HSM diagram, FA diagram
 modes:no-base disabled: the action works in: HSM diagram, FA diagram
+modes:text-base disabled: the action works in: Plain text, Markdown, C++
 == plugin 1
 action: modes:base
 result: diff

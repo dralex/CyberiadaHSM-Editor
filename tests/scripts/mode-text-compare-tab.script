@@ -1,0 +1,5 @@
+# another text tab as the base, Refresh taking both again (EDIT-MODE-12/19/25)
+open texts/diff-base.py
+switch 0
+compare 1
+refresh

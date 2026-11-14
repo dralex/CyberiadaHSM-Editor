@@ -162,6 +162,11 @@ void CyberiadaSMEditorSMItem::paint(QPainter* painter, const QStyleOptionGraphic
     if (!element->has_geometry()) return;
 
     QPen pen = QPen(Qt::black, 2, Qt::SolidLine);
+    // a diff tab marks the border and the title tab (EDIT-MODE-11)
+    if (runMarkColor().isValid()) {
+        pen.setColor(runMarkColor());
+        pen.setWidth(RUN_MARK_WIDTH);
+    }
     if (isSelected() || isHighlighted) {
         SettingsManager& sm = SettingsManager::instance();
         pen.setColor(sm.getSelectionColor());
@@ -190,6 +195,11 @@ void CyberiadaSMEditorSMItem::paint(QPainter* painter, const QStyleOptionGraphic
 }
 
 
+
+EditableTextItem* CyberiadaSMEditorSMItem::titleItem() const
+{
+    return title;
+}
 
 void CyberiadaSMEditorSMItem::updateSizeToFitChildren(CyberiadaSMEditorAbstractItem *child)
 {
