@@ -35,6 +35,7 @@
 #include <QList>
 #include <QGraphicsItem>
 #include <QMultiMap>
+#include <QHash>
 #include <QDebug>
 #include <string>
 
@@ -44,6 +45,7 @@
 #include "cyberiadasm_editor_transition_item.h"
 #include "cyberiada_constants.h"
 #include "code_highlighter.h"
+#include "find_query.h"
 
 class CyberiadaSMEditorSubjectItem;
 class EditableTextItem;
@@ -129,6 +131,8 @@ public:
     void  setRunMarks(const QStringList& active, const QStringList& fired);
     // the marks of a side of a diff tab, by element id (EDIT-MODE-11)
     void  setDiffMarks(const QMap<QString, CyberiadaSMEditorAbstractItem::RunMark>& marks);
+    // the changed fields of the pairs: ranges of the drawn texts, the others cleared
+    void  setDiffTextMarks(const QHash<EditableTextItem*, FindRanges>& marks);
     const QStringList& runActive() const { return runMarkedActive; }
     const QStringList& runFired() const { return runMarkedFired; }
     // a drawn text changed, joined or left the scene: the find searches again (EDIT-FIND-8)

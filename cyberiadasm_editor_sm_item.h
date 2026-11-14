@@ -60,6 +60,9 @@ public:
     qreal minSpanWidth() const override;
     qreal minSpanHeight() const override;
 
+    // the name of the machine as drawn in its title tab, null before it is built
+    EditableTextItem* titleItem() const;
+
 private:
     void setTitlePosition();
     qreal titleTabWidth() const;

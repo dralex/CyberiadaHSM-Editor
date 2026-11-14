@@ -380,13 +380,29 @@ QRectF EditableTextItem::findRangeBounds(int from, int to) const
     return bounds;
 }
 
-// behind the glyphs; a cut text clips the boxes as it clips its lines, a range not
-// wholly shown marks the ellipsis too (EDIT-FIND-7)
+void EditableTextItem::setDiffRanges(const FindRanges& ranges)
+{
+    if (ranges.isEmpty() && diffMarks.isEmpty()) return;
+    diffMarks = ranges;
+    update();
+}
+
+// behind the glyphs, the diff marks under the find ones; a cut text clips the boxes as
+// it clips its lines, a range not wholly shown marks the ellipsis too (EDIT-FIND-7,
+// EDIT-MODE-11); an export shows neither
 void EditableTextItem::paintFindMarks(QPainter* painter) const
 {
-    if (findMarks.isEmpty()) return;
+    if (findMarks.isEmpty() && diffMarks.isEmpty()) return;
     CyberiadaSMEditorScene* sc = dynamic_cast<CyberiadaSMEditorScene*>(scene());
     if (sc && !sc->findMarksShown()) return;
+    paintRanges(painter, diffMarks, QColor(DIFF_FIELD_COLOR), -1, QColor());
+    paintRanges(painter, findMarks, QColor(FIND_MATCH_COLOR), findCurrentMark, QColor(FIND_CURRENT_COLOR));
+}
+
+void EditableTextItem::paintRanges(QPainter* painter, const FindRanges& ranges, const QColor& color,
+                                   int current, const QColor& currentColor) const
+{
+    if (ranges.isEmpty()) return;
     QPainterPath shown;
     QRectF ellipsis;
     bool cut = cutParts(&shown, &ellipsis);
@@ -394,19 +410,19 @@ void EditableTextItem::paintFindMarks(QPainter* painter) const
     painter->setPen(Qt::NoPen);
     if (cut) painter->setClipPath(shown, Qt::IntersectClip);
     int hidden = -1;
-    for (int i = 0; i < findMarks.size(); i++) {
-        bool current = (i == findCurrentMark);
-        painter->setBrush(QColor(current ? FIND_CURRENT_COLOR : FIND_MATCH_COLOR));
-        for (const QRectF& r : EdgeGeometry::textRangeRects(this, findMarks[i].from, findMarks[i].to)) {
+    for (int i = 0; i < ranges.size(); i++) {
+        bool isCurrent = (i == current);
+        painter->setBrush(isCurrent ? currentColor : color);
+        for (const QRectF& r : EdgeGeometry::textRangeRects(this, ranges[i].from, ranges[i].to)) {
             painter->drawRect(r);
         }
-        if (cut && (hidden < 0 || current) && rangeHidden(findMarks[i].from, findMarks[i].to, shown)) {
+        if (cut && (hidden < 0 || isCurrent) && rangeHidden(ranges[i].from, ranges[i].to, shown)) {
             hidden = i;
         }
     }
     painter->setClipping(false);
     if (hidden >= 0) {
-        painter->setBrush(QColor(hidden == findCurrentMark ? FIND_CURRENT_COLOR : FIND_MATCH_COLOR));
+        painter->setBrush(hidden == current ? currentColor : color);
         painter->drawRect(ellipsis);
     }
     painter->restore();

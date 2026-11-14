@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.62 (2026-11-14)
+**Document version:** 0.63 (2026-11-14)
 
 **Related authorities:**
 
@@ -1098,9 +1098,14 @@ the stages of `docs/MODES.md`.
   being an empty document; the tab is titled `<target> ↔ <base>`; the source tabs are
   untouched. *design*
 - `EDIT-MODE-11` MUST [A]: a diff tab shows the base and the target side by side, read-only,
-  their elements marked added (the target only), removed (the base only) and changed; the
-  change list in the structure tree dock lists the pairs by state machine with what differs, a
-  row selecting and centring the element in both views. The pairs and what differs are the
+  their elements marked added (the target only), removed (the base only) and changed, a state
+  machine by its border and title tab; in a changed pair the drawn text of what differs is
+  tinted on both sides — the name, the trigger, guard and behaviour of a transition, the
+  actions of a state that differ from their pairs (paired by type, the others by trigger, one
+  without a pair whole), the body of a comment (0.63). The change list in the structure tree
+  dock lists the pairs by state machine with what differs, that column kept in view (the
+  element elided, whole in its tooltip, 0.63), a row selecting and centring the element in
+  both views. The pairs and what differs are the
   library's revision diff with the geometry option of Document > Geometry (off): without it
   the ids, the geometry and the `cyberiadaEditorView` and `regionGeometry` metainformation
   are not shown; a pair is named as the target names it. *design*

@@ -22,6 +22,7 @@
  * ----------------------------------------------------------------------------- */
 
 #include <QCoreApplication>
+#include <QHash>
 #include <QLabel>
 #include <QSplitter>
 #include <QUndoStack>
@@ -31,6 +32,9 @@
 #include "cyberiadasm_editor_scene.h"
 #include "cyberiadasm_editor_view.h"
 #include "cyberiadasm_editor_items.h"
+#include "cyberiadasm_editor_sm_item.h"
+#include "editable_text_item.h"
+#include "subject_fragment.h"
 
 // the geometry metainformation is shown with the geometry only: the editor's view
 // state, as hsm-git does, and the stored regions mark the editor writes on a save
@@ -234,6 +238,7 @@ void DiffDocument::compare()
             row.first = QString::fromStdString(sm.first);
             row.second = QString::fromStdString(sm.second);
             row.change = sm.first.empty() ? "added" : sm.second.empty() ? "removed" : changeWords(own);
+            row.flags = own;
             count(row.change);
             m_rows.append(row);
         }
@@ -252,6 +257,7 @@ void DiffDocument::compare()
                 row.element = e.removed() ? label(m_baseModel, row.first) : label(m_targetModel, row.second);
             }
             row.change = e.added() ? "added" : e.removed() ? "removed" : changeWords(e.flags);
+            row.flags = e.flags;
             count(row.change);
             m_rows.append(row);
         }
@@ -260,9 +266,106 @@ void DiffDocument::compare()
     emit compared();
 }
 
+static bool isState(const Cyberiada::Element* e)
+{
+    return e->get_type() == Cyberiada::elementSimpleState ||
+        e->get_type() == Cyberiada::elementCompositeState ||
+        e->get_type() == Cyberiada::elementSubmachineState;
+}
+
+// the actions of a state paired by key: entry and exit by their type, the others by
+// their trigger, the n-th of a key with the n-th, so an inserted action shifts none
+static QStringList actionKeys(const std::vector<Cyberiada::Action>& actions)
+{
+    QStringList keys;
+    QHash<QString, int> seen;
+    for (const Cyberiada::Action& a : actions) {
+        QString key = QString::number(a.get_type());
+        if (a.get_type() == Cyberiada::actionTransition) key += ":" + QString::fromStdString(a.get_trigger());
+        keys << key + "#" + QString::number(seen[key]++);
+    }
+    return keys;
+}
+
+static CyberiadaSMEditorAbstractItem* sceneItem(CyberiadaSMEditorScene* scene, const Cyberiada::ID& id)
+{
+    return dynamic_cast<CyberiadaSMEditorAbstractItem*>(scene->getMap().value(id));
+}
+
+// the drawn texts of what differs in a pair, on the side of own (EDIT-MODE-11): the
+// name, the trigger, guard and behaviour of a transition, the actions of a state that
+// differ from their pairs (a whole action without one), the body of a comment
+static void fieldMarks(QHash<EditableTextItem*, FindRanges>& marks, CyberiadaSMEditorScene* scene,
+                       const Cyberiada::Element* own, const Cyberiada::Element* other,
+                       Cyberiada::DiffFlags flags)
+{
+    if (!own || !other) return;
+    CyberiadaSMEditorAbstractItem* item = sceneItem(scene, own->get_id());
+    if (!item) return;
+    auto add = [&marks](EditableTextItem* text, int start, int length) {
+        if (!text || start < 0 || length <= 0) return;
+        FindRange range;
+        range.from = start;
+        range.to = start + length;
+        marks[text].append(range);
+    };
+    auto field = [item, &add](SubjectFragment::FieldKind kind, int action, const std::string& value) {
+        SubjectFragment::Field f;
+        f.kind = kind;
+        f.action = action;
+        int start = -1;
+        EditableTextItem* text = item->fieldText(f, &start);
+        add(text, start, QString::fromStdString(value).length());
+    };
+    if ((flags & Cyberiada::diffTitle) && own->has_name()) {
+        if (own->get_type() == Cyberiada::elementSM) {
+            add(static_cast<CyberiadaSMEditorSMItem*>(item)->titleItem(), 0,
+                QString::fromStdString(own->get_name()).length());
+        } else {
+            field(SubjectFragment::fieldName, -1, own->get_name());
+        }
+    }
+    if (own->get_type() == Cyberiada::elementTransition) {
+        const Cyberiada::Action& a = static_cast<const Cyberiada::Transition*>(own)->get_action();
+        if (flags & Cyberiada::diffTrigger) field(SubjectFragment::fieldTrigger, -1, a.get_trigger());
+        if (flags & Cyberiada::diffGuard) field(SubjectFragment::fieldGuard, -1, a.get_guard());
+        if (flags & Cyberiada::diffBehavior) field(SubjectFragment::fieldBehaviour, -1, a.get_behavior());
+    } else if ((flags & Cyberiada::diffActions) && isState(own) && isState(other)) {
+        const std::vector<Cyberiada::Action>& mine = static_cast<const Cyberiada::State*>(own)->get_actions();
+        const std::vector<Cyberiada::Action>& theirs = static_cast<const Cyberiada::State*>(other)->get_actions();
+        QStringList mineKeys = actionKeys(mine);
+        QStringList theirKeys = actionKeys(theirs);
+        for (int i = 0; i < mineKeys.size(); i++) {
+            const Cyberiada::Action& a = mine[size_t(i)];
+            int j = theirKeys.indexOf(mineKeys[i]);
+            const Cyberiada::Action* b = j >= 0 ? &theirs[size_t(j)] : nullptr;
+            bool guard = b && a.get_guard() != b->get_guard();
+            bool behaviour = b && a.get_behavior() != b->get_behavior();
+            // no pair, a changed propagation, or a field this side lacks: the whole action
+            if (!b || a.get_propagation() != b->get_propagation() ||
+                (guard && a.get_guard().empty()) || (behaviour && a.get_behavior().empty())) {
+                SubjectFragment::Field f;
+                f.kind = a.get_type() == Cyberiada::actionTransition ? SubjectFragment::fieldTrigger
+                                                                     : SubjectFragment::fieldBehaviour;
+                f.action = i;
+                int start = -1;
+                EditableTextItem* text = item->fieldText(f, &start);
+                if (text) add(text, 0, text->toPlainText().length());
+                continue;
+            }
+            if (guard) field(SubjectFragment::fieldGuard, i, a.get_guard());
+            if (behaviour) field(SubjectFragment::fieldBehaviour, i, a.get_behavior());
+        }
+    }
+    if ((flags & Cyberiada::diffComment) && Cyberiada::element_is_comment(own)) {
+        field(SubjectFragment::fieldBody, -1, static_cast<const Cyberiada::Comment*>(own)->get_body());
+    }
+}
+
 void DiffDocument::mark()
 {
     QMap<QString, CyberiadaSMEditorAbstractItem::RunMark> base, target;
+    QHash<EditableTextItem*, FindRanges> baseTexts, targetTexts;
     for (const DiffRow& row : m_rows) {
         if (row.machine.isEmpty()) continue;
         if (row.change == "added") {
@@ -272,10 +375,16 @@ void DiffDocument::mark()
         } else {
             base.insert(row.first, CyberiadaSMEditorAbstractItem::runMarkChanged);
             target.insert(row.second, CyberiadaSMEditorAbstractItem::runMarkChanged);
+            const Cyberiada::Element* first = m_baseModel->idToElement(row.first);
+            const Cyberiada::Element* second = m_targetModel->idToElement(row.second);
+            fieldMarks(baseTexts, m_baseScene, first, second, row.flags);
+            fieldMarks(targetTexts, m_targetScene, second, first, row.flags);
         }
     }
     m_baseScene->setDiffMarks(base);
     m_targetScene->setDiffMarks(target);
+    m_baseScene->setDiffTextMarks(baseTexts);
+    m_targetScene->setDiffTextMarks(targetTexts);
 }
 
 void DiffDocument::showElement(const QString& first, const QString& second)

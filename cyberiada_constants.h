@@ -103,6 +103,8 @@
 #define DIFF_ADDED_COLOR         "#2e7d32"
 #define DIFF_REMOVED_COLOR       "#c62828"
 #define DIFF_CHANGED_COLOR       "#1565c0"
+// the changed text of a changed pair: a box behind the field
+#define DIFF_FIELD_COLOR         "#90caf9"
 #define RUN_MARK_WIDTH           4
 #define RUN_MARK_FILL_ALPHA      40
 // the find bar (EDIT-FIND-2/4, docs/FIND.md): the marks, the field without a match

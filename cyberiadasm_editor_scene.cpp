@@ -751,6 +751,14 @@ void CyberiadaSMEditorScene::setDiffMarks(const QMap<QString, CyberiadaSMEditorA
     }
 }
 
+void CyberiadaSMEditorScene::setDiffTextMarks(const QHash<EditableTextItem*, FindRanges>& marks)
+{
+    for (QGraphicsItem* item : items()) {
+        EditableTextItem* text = dynamic_cast<EditableTextItem*>(item);
+        if (text) text->setDiffRanges(marks.value(text));
+    }
+}
+
 QGraphicsItem* CyberiadaSMEditorScene::addElementItem(Cyberiada::Element* child, QGraphicsItem* new_parent)
 {
     QGraphicsItem* item = NULL;

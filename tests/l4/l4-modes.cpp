@@ -23,6 +23,9 @@
 
 #include <QtTest>
 #include <QFileDialog>
+#include <QHeaderView>
+#include <QPainter>
+#include <QStyleOptionGraphicsItem>
 #include <QStackedWidget>
 #include <QSyntaxHighlighter>
 #include <QTabBar>
@@ -35,6 +38,9 @@
 #include "diff_document.h"
 #include "cyberiadasm_editor_scene.h"
 #include "cyberiadasm_editor_items.h"
+#include "cyberiadasm_editor_sm_item.h"
+#include "editable_text_item.h"
+#include "cyberiada_constants.h"
 
 // the EDIT-MODE laws of the text tabs at the widget level: the modes, the page,
 // the window parts that follow, the undo, the save and the rendered Markdown
@@ -55,8 +61,10 @@ private slots:
 	void test_compare_saved();
 	void test_compare_refresh();
 	void test_compare_tab();
+	void test_compare_fields();
 
 private:
+	static QStringList diffTexts(CyberiadaSMEditorScene* scene);
 	static CyberiadaSMEditorAbstractItem::RunMark mark(CyberiadaSMEditorScene* scene, const char* id);
 	static const DiffRow* row(DiffDocument* diff, const QString& first, const QString& second);
 };
@@ -73,6 +81,19 @@ const DiffRow* TestModes::row(DiffDocument* diff, const QString& first, const QS
 		if (r.first == first && r.second == second) return &r;
 	}
 	return nullptr;
+}
+
+// the tinted parts of the drawn texts of a side, sorted
+QStringList TestModes::diffTexts(CyberiadaSMEditorScene* scene)
+{
+	QStringList texts;
+	for (QGraphicsItem* item : scene->items()) {
+		EditableTextItem* text = dynamic_cast<EditableTextItem*>(item);
+		if (!text) continue;
+		for (const FindRange& r : text->getDiffRanges()) texts << text->toPlainText().mid(r.from, r.to - r.from);
+	}
+	texts.sort();
+	return texts;
 }
 
 // EDIT-MODE-13: the extension names the mode, the mode its extension
@@ -408,6 +429,50 @@ void TestModes::test_compare_tab()
 	QCOMPARE(diff->title(), QString::fromUtf8("geometry.graphml ↔ hierarchy.graphml"));
 	QVERIFY(diff->added() > 0 && diff->removed() > 0);
 	QCOMPARE(window.documentCount(), 3);
+}
+
+// EDIT-MODE-11: what differs is shown - the machine's border, the changed fields
+// tinted on both sides, the change column in view
+void TestModes::test_compare_fields()
+{
+	CyberiadaSMEditorWindow window;
+	window.resize(640, 480);
+	window.show();
+	QVERIFY(window.openFile("diagrams/diff-fields-target.graphml"));
+	DiffOrigin base;
+	base.kind = DiffOrigin::originFile;
+	base.path = "diagrams/diff-fields-base.graphml";
+	base.label = "base";
+	QString error;
+	DiffDocument* diff = window.compareDocument(window.currentDocument(), base, &error);
+	QVERIFY2(diff, qPrintable(error));
+	QCOMPARE(row(diff, "G0", "G0")->change, QString("title"));
+	QCOMPARE(row(diff, "n0-n1", "n0-n1")->change, QString("guard"));
+	// the name, the guards, the changed entry and the internal guard; an action
+	// without a pair whole; the unchanged exit and the other transition not
+	QCOMPARE(diffTexts(diff->baseScene()),
+	         QStringList() << "Lamp" << "level() < 10" << "light(1)" << "ready()");
+	QCOMPARE(diffTexts(diff->targetScene()),
+	         QStringList() << "Lamp 2" << "PRESS / beep()" << "led.level() < 10" << "led.on()" << "led.ready()");
+	// the border of the machine is drawn in the changed colour
+	CyberiadaSMEditorSMItem* sm = dynamic_cast<CyberiadaSMEditorSMItem*>(diff->targetScene()->getMap().value("G0"));
+	QVERIFY(sm);
+	QRectF r = sm->boundingRect();
+	QImage image(r.size().toSize(), QImage::Format_ARGB32);
+	image.fill(Qt::white);
+	{
+		QPainter painter(&image);
+		painter.translate(-r.topLeft());
+		QStyleOptionGraphicsItem option;
+		sm->paint(&painter, &option, nullptr);
+	}
+	QCOMPARE(QColor(image.pixel(1, image.height() / 2)), QColor(DIFF_CHANGED_COLOR));
+	// the change column fits the dock
+	QTreeWidget* list = window.findChild<QTreeWidget*>("changeList");
+	QVERIFY(list && list->isVisible());
+	QCoreApplication::processEvents();
+	QHeaderView* header = list->header();
+	QVERIFY(header->sectionViewportPosition(1) + header->sectionSize(1) <= list->viewport()->width());
 }
 
 QTEST_MAIN(TestModes)

@@ -673,7 +673,10 @@ void CyberiadaSMEditorWindow::initDocumentMenu()
     m_changeList = new QTreeWidget(treeDockContents);
     m_changeList->setObjectName("changeList");
     m_changeList->setHeaderLabels(QStringList() << tr("Element") << tr("Change"));
-    m_changeList->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    // what differs stays in view: the element column takes the rest, elided (EDIT-MODE-11)
+    m_changeList->header()->setStretchLastSection(false);
+    m_changeList->header()->setSectionResizeMode(0, QHeaderView::Stretch);
+    m_changeList->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
     m_changeList->hide();
     treeDockLayout->addWidget(m_changeList);
     connect(m_changeList, &QTreeWidget::itemActivated, this, &CyberiadaSMEditorWindow::slotChangeActivated);
@@ -1015,6 +1018,8 @@ void CyberiadaSMEditorWindow::fillChangeList()
         }
         item->setText(0, row.element);
         item->setText(1, change);
+        item->setToolTip(0, row.element);
+        item->setToolTip(1, change);
         item->setData(0, Qt::UserRole, row.first);
         item->setData(1, Qt::UserRole, row.second);
         QColor color = row.change == "added" ? QColor(DIFF_ADDED_COLOR) :

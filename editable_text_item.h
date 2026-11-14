@@ -100,6 +100,9 @@ public:
     int getFindCurrent() const { return findCurrentMark; }
     // the box of a range, or the ellipsis when the cut hides a part of it
     QRectF findRangeBounds(int from, int to) const;
+    // the changed fields of a diff tab pair (EDIT-MODE-11): boxes behind the find marks
+    void setDiffRanges(const FindRanges& ranges);
+    const FindRanges& getDiffRanges() const { return diffMarks; }
 
 protected:
     // the items are built before they join the scene of their document
@@ -117,7 +120,8 @@ protected:
     void hoverMoveEvent(QGraphicsSceneHoverEvent *event) override;
 
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
-    // the find marks behind the glyphs: a label with its own background paints them over it
+    // the diff and find marks behind the glyphs: a label with its own background paints
+    // them over it
     void paintFindMarks(QPainter* painter) const;
 
     // weight the leading [0, length) characters bold or normal (idempotent)
@@ -171,6 +175,11 @@ private:
     QString markdownBase;
     FindRanges findMarks;
     int findCurrentMark = -1;
+    FindRanges diffMarks;
+
+    // the boxes of the ranges, the current one in its own colour (-1: none)
+    void paintRanges(QPainter* painter, const FindRanges& ranges, const QColor& color,
+                     int current, const QColor& currentColor) const;
 };
 
 

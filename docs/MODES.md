@@ -140,6 +140,11 @@ CyberiadaSMEditorWindow                                                         
   or, for a plugin run, the values of the action's string parameters (`HEAD`), else the action
   label.
 * A closed source tab leaves the target as it was taken; Refresh keeps it then.
+* The marks: the element by its border (a state machine's too); a changed pair also tints
+  the drawn text of what differs, found by `fieldText()` (`SubjectFragment`) and painted
+  behind the glyphs like the find marks (`EditableTextItem::setDiffRanges`). The library
+  flags only that the actions differ, so the editor pairs them itself: entry and exit by
+  type, the others by trigger and order.
 
 The git plugin hands the revision of a diagram to a diff tab:
 

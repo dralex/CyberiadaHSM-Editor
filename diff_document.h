@@ -62,6 +62,7 @@ struct DiffRow {
     QString first;       // the id of the base side, empty when added
     QString second;      // the id of the target side, empty when removed
     QString change;      // "added", "removed", or what differs: "title, actions"
+    Cyberiada::DiffFlags flags = 0;   // what differs, as the library tells it
 };
 
 // A diff tab (docs/MODES.md, The diff tab): the base and the target read as
