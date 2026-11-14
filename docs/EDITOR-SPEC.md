@@ -1045,8 +1045,8 @@ The interface translations and their workflow are in `docs/TRANSLATION.md`.
 ### 4.14 Document modes — MODE
 
 A tab holds its document in a mode — the format, the access, the tools and the plugins — and
-has a read-only flag; the architecture is `docs/MODES.md`. Specified in 0.47, the JSON texts
-(`EDIT-MODE-19/20`) in 0.64, implemented by the stages of `docs/MODES.md`.
+has a read-only flag; the architecture is `docs/MODES.md`. Specified in 0.47, the JSON check
+(`EDIT-MODE-19`) in 0.64, implemented by the stages of `docs/MODES.md`.
 
 - `EDIT-MODE-1` MUST [A]: every tab has one mode — `hsm` (HSM diagram), `inspection` (HSM
   inspection), `fa` (FA diagram), `diff` (HSM diff), `text` (Plain text), `markdown`
@@ -1142,7 +1142,7 @@ has a read-only flag; the architecture is `docs/MODES.md`. Specified in 0.47, th
   opens the inspection tab), `read-only on|off`, `compare <index|title|file>`, `geometry
   on|off` and `refresh` act as the menus do; `--dump-tabs` prints `i <title>[*] <mode>[ ro]
   [active]`; `--dump` of a text tab prints `== text` (the mode and the lines; a JSON tab also
-  `formatted: yes|no` and `error: none|<line>:<column> <message>`), of a diff tab
+  `error: none|<line>:<column> <message>`), of a diff tab
   `== diff` (the base label and the pairs with what differs, by id); `--export <file>.pdf` of a
   Markdown tab writes its rendered PDF (`EDIT-MODE-18`), any other export of a text tab is a
   usage error. *design*
@@ -1163,14 +1163,8 @@ has a read-only flag; the architecture is `docs/MODES.md`. Specified in 0.47, th
   the red number of its line in the margin and a bar under the text, `Line 3, column 7: missing
   comma`, a click on the bar putting the cursor at the error; the find marks (`EDIT-FIND-4`)
   stay. The check never changes the text, the history or the file; another mode drops the
-  marks and the bar. The rules and the messages are in `docs/MODES.md`, JSON. *design*
-- `EDIT-MODE-20` SHOULD [A]: a read-only JSON tab shows its text formatted instead of the source:
-  one member or element per line, 4 spaces per level, `": "` after a key, an empty object or
-  array as `{}` or `[]`, the keys in their order and the strings, the numbers and the literals as
-  written; highlighted and colored as the source (`EDIT-COLOR-1`), with the line numbers. A text
-  with an error is shown as it is, with the bar of `EDIT-MODE-19`. Find searches the formatted
-  page (`EDIT-FIND-5`); the file and the history are not changed; clearing the flag shows the
-  source again. *design*
+  marks and the bar; a read-only JSON tab shows its source, checked, as the other languages do.
+  The rules and the messages are in `docs/MODES.md`, JSON. *design*
 
 ### 4.15 Find — FIND
 
@@ -1199,7 +1193,7 @@ document is never changed. The architecture is `docs/FIND.md`. Specified in 0.60
   export stay as they are. *design*
 - `EDIT-FIND-5` MUST [A]: a text tab searches the page it shows: the source, or the rendered
   document of a read-only Markdown tab (`EDIT-MODE-14`), whose formulas and images are not
-  searched, or the formatted text of a read-only JSON tab (`EDIT-MODE-20`). The current match is scrolled into view; hiding the bar leaves it selected. *design*
+  searched. The current match is scrolled into view; hiding the bar leaves it selected. *design*
 - `EDIT-FIND-6` MUST [A]: a diagram tab (HSM, FA, inspection) searches the texts its canvas
   draws — the names, the actions, the transition labels, the comment titles and bodies, a
   rendered comment by its rendered text — in the order of `--dump-text`: the document tree,

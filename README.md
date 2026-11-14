@@ -22,8 +22,7 @@ automaton (FA) diagram with the automaton tools and the EXT-FA check, the inspec
 a file exactly as it is stored, or a text - plain, Markdown, JSON or a C, C++, C# or Python
 source, highlighted; any tab can also be made read-only (a read-only Markdown tab shows
 the rendered document with its TeX formulas and SVG images, see `docs/MARKDOWN.md`).
-A JSON tab marks its first syntax error as you type and shows the formatted text when
-read-only.
+A JSON tab marks its first syntax error as you type.
 Document > Compare with... opens a diff tab: two revisions of a
 diagram side by side, the added, removed and changed elements marked and listed.
 Edit > Find (Ctrl+F) searches the text of a tab or the texts drawn on a diagram canvas,

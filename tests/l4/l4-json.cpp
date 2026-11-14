@@ -23,6 +23,7 @@
 
 #include <QtTest>
 #include <QLineEdit>
+#include <QStackedWidget>
 #include <QTextBlock>
 #include <QUndoStack>
 #include "smeditor_window.h"
@@ -242,7 +243,8 @@ void TestJson::test_tab_find_and_click()
 	QCOMPARE(editor->textCursor().blockNumber() + 1, 3);
 }
 
-// EDIT-MODE-19: another mode drops the marks and the bar, JSON brings them back
+// EDIT-MODE-19: a read-only tab shows its checked source; another mode drops the marks
+// and the bar, JSON brings them back
 void TestJson::test_tab_mode()
 {
 	CyberiadaSMEditorWindow window;
@@ -250,6 +252,12 @@ void TestJson::test_tab_mode()
 	QVERIFY(text);
 	CodeEditor* editor = text->editor();
 	QCOMPARE(editor->errorLine(), 1);
+	window.setDocumentReadOnly(text, true);
+	QCOMPARE(qobject_cast<QStackedWidget*>(text->page())->currentWidget(), (QWidget*)editor);
+	QVERIFY(editor->isReadOnly() && !text->showsRendered());
+	QCOMPARE(editor->errorMessage(), QString("Line 1, column 3: trailing comma"));
+	QCOMPARE(editor->extraSelections().size(), 1);
+	window.setDocumentReadOnly(text, false);
 	QVERIFY(window.setDocumentMode(text, MODE_TEXT));
 	QVERIFY(!text->isJson() && text->jsonCheck().ok);
 	QVERIFY(editor->errorLine() == 0 && editor->errorMessage().isEmpty());
