@@ -680,17 +680,28 @@ class Difference:
 _NUMBER = re.compile(r"-?\d+\.?\d*(?:[eE][-+]?\d+)?")
 
 
+# the dump prints coordinates to two decimals, so the comparison cannot resolve
+# finer than 0.01: two values straddling a .xx5 rounding cusp print 0.01 apart
+# though their true values are the same (e.g. 64.424996 -> 64.42, 64.425059 ->
+# 64.43). The absolute tolerance therefore absorbs one display step on top of the
+# round-trip relative noise, so a cusp does not read as a difference.
+_DUMP_STEP = 1e-2
+
+def _numbers_close(a, b):
+    return abs(a - b) <= _DUMP_STEP + 1e-4 * max(abs(a), abs(b))
+
+
 def values_equal(a, b):
     """Two dump field values are equal when they match, or differ only in the
-    floating-point noise of a coordinate round-trip: the same non-numeric shape
-    and every number within a small relative tolerance (~5 significant figures)."""
+    floating-point noise of a coordinate round-trip (within one printed step):
+    the same non-numeric shape and every number within the tolerance."""
     if a == b:
         return True
     # a field value may be a number or a nested tuple/list (a structured sub-record),
     # not a string: compare numbers within the same tolerance and recurse into a
     # tuple/list so the round-trip noise is absorbed at the leaves, not byte for byte
     if isinstance(a, (int, float)) and isinstance(b, (int, float)):
-        return abs(a - b) <= 1e-3 + 1e-4 * max(abs(a), abs(b))
+        return _numbers_close(a, b)
     if isinstance(a, (tuple, list)) and isinstance(b, (tuple, list)):
         return len(a) == len(b) and all(values_equal(x, y) for x, y in zip(a, b))
     if not isinstance(a, str) or not isinstance(b, str):
@@ -701,7 +712,7 @@ def values_equal(a, b):
     nb = [float(x) for x in _NUMBER.findall(b)]
     if len(na) != len(nb):
         return False
-    return all(abs(x - y) <= 1e-3 + 1e-4 * max(abs(x), abs(y)) for x, y in zip(na, nb))
+    return all(_numbers_close(x, y) for x, y in zip(na, nb))
 
 
 def compare(a_text, b_text, ignore=()):
