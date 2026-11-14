@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.67 (2026-11-14)
+**Document version:** 0.68 (2026-11-14)
 
 **Related authorities:**
 
@@ -511,7 +511,7 @@ the third is a derived display value the format does not store):
   ---  ***             ─► a rule
   **strong** *em*      ─► emphasis
   `code`               ─► code
-  [text](url) <url>    ─► link
+  [text](url) <url>    ─► link; the target underlined in a text tab (EDIT-MODE-28)
   *over a              ─► one element over the lines of a paragraph; the quote markers
   > line* [a⏎b](url)      and the indents between them keep their colours
   $x^2$  $$ … $$       ─► the dollars as markers, the TeX as a formula, where the reader
@@ -1226,6 +1226,21 @@ has a read-only flag; the architecture is `docs/MODES.md`. Specified in 0.47, th
   dialogs keep their fonts. The font is stored per user (`display/editorFontFamily`, empty for
   the bundled one, `display/editorFontSize`); Reset of the Preferences restores it. Specified in
   0.67. *design*
+- `EDIT-MODE-28` SHOULD [A]: in the source editor of a Markdown tab, highlighted (`EDIT-TEXT-11`),
+  the target of a link, of an image, of an autolink and a bare URL is underlined in the link
+  color; with Ctrl held the pointer over it is a hand, and a tooltip names it. Ctrl+click opens
+  it: a `#anchor` puts the cursor on the line of its heading, a file the editor opens
+  (`EDIT-MODE-13`, `.graphml`) goes to its tab (an open one is activated, a failure is a
+  warning), another file and a site go to the system (an image to its viewer, a page to the
+  browser). A relative path is taken from the directory of the tab's file; in an untitled tab it
+  opens nothing. A plain click edits as before. Specified in 0.68. *design*
+
+  ```
+  Ctrl+click on a target ─► #anchor            ─► the heading's source line
+                           ─► .md .cpp .graphml ─► an editor tab
+                           ─► pic.png doc.pdf   ─► the system's viewer
+                           ─► https:// mailto:  ─► the browser, the mail client
+  ```
 
 ### 4.15 Find — FIND
 

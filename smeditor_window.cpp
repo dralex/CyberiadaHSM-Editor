@@ -312,6 +312,9 @@ TextDocument* CyberiadaSMEditorWindow::newTextDocument(const QString& mode)
     // the selection drives Cut and Copy
     connect(doc->editor(), &QPlainTextEdit::copyAvailable, this,
             [this, doc](bool) { if (doc == active) updateEditActions(); });
+    // a file a link names opens as a recent one does, after the click (EDIT-MODE-28)
+    connect(doc, &TextDocument::openFileRequested, this, &CyberiadaSMEditorWindow::openRecentFile,
+            Qt::QueuedConnection);
     return doc;
 }
 

@@ -1,7 +1,7 @@
 # The Document Modes — Architecture
 
-**Document version:** 0.13 (2026-11-14) — stages 1 to 9 implemented (see Stages). The
-requirements are `EDIT-MODE-1..27` in `EDITOR-SPEC.md` §4.14, the plugin parts
+**Document version:** 0.14 (2026-11-14) — stages 1 to 9 implemented (see Stages). The
+requirements are `EDIT-MODE-1..28` in `EDITOR-SPEC.md` §4.14, the plugin parts
 `EDIT-PLUG-56..60`.
 
 A tab holds one document in one **mode**: the format edited, the access, and the tools, the
@@ -234,6 +234,19 @@ The git plugin hands the revision of a diagram to a diff tab:
   diagram font is another one.
 * File > Export of a Markdown tab saves the rendered text as a PDF (`MARKDOWN.md`, PDF); the
   other text tabs have nothing to export.
+* The link targets of a Markdown tab open by Ctrl+click (`EDIT-MODE-28`). The highlighter
+  underlines them and keeps each in its format (`anchorHref`); the editor knows no Markdown,
+  only the format under the pointer:
+
+```
+ CodeHighlighter (setOpenLinks)   the target: link color + underline + anchorHref
+ CodeEditor                       Ctrl over a target: hand, tooltip; Ctrl+click: linkActivated
+ TextDocument::openLink           #anchor -> the heading's line in the source
+                                  a file (markdownImagePath, the tab's directory):
+                                    isDocumentFile -> openFileRequested -> the window opens it
+                                    else           -> QDesktopServices::openUrl
+                                  a site -> QDesktopServices::openUrl
+```
 
 ## JSON
 

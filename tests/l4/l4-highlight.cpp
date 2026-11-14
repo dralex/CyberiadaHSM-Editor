@@ -59,6 +59,7 @@ private slots:
 	void test_markup_lookup();
 	void test_markdown_spans();
 	void test_markdown_fence_lines();
+	void test_markdown_targets();
 	void test_markdown_canvas();
 	void test_markdown_dialog();
 
@@ -564,6 +565,62 @@ void TestHighlight::test_markdown_fence_lines()
 	// a plain markup draws nothing
 	highlighter.setMarkup(codeMarkupPlain);
 	QVERIFY(!hasFormats(&doc));
+}
+
+// the text of each target span
+static QStringList targetTexts(const QString& text, const QVector<CodeSpan>& targets)
+{
+	QStringList result;
+	for (const CodeSpan& t : targets) result << text.mid(t.start, t.length);
+	return result;
+}
+
+// the format the highlighter gives the character at pos
+static QTextCharFormat formatAt(QTextDocument* doc, int pos)
+{
+	QTextBlock block = doc->findBlock(pos);
+	int rel = pos - block.position();
+	QTextCharFormat result;
+	for (const QTextLayout::FormatRange& r : block.layout()->formats()) {
+		if (rel >= r.start && rel < r.start + r.length) result = r.format;
+	}
+	return result;
+}
+
+void TestHighlight::test_markdown_targets()
+{
+	// the target of a link, an image, a <dest>, an autolink and a bare URL; the title, the
+	// text and code are none (EDIT-MODE-28)
+	const CodeStyle& style = CodeStyle::instance();
+	QString text = "[a](http://x \"t\") ![i](img/p.png) [b](<b.md>) <http://c> see https://d.org/x\n"
+		"`[c](u)` [d]()";
+	QVector<CodeSpan> targets;
+	QVector<CodeSpan> spans = style.markdownSpans(text, nullptr, &targets);
+	QCOMPARE(targetTexts(text, targets),
+	         QStringList({ "http://x", "img/p.png", "b.md", "http://c", "https://d.org/x" }));
+	for (const CodeSpan& t : targets) QCOMPARE(kindAt(spans, t.start), int(codeTokenLink));
+	// the targets are the same without the asking
+	QCOMPARE(style.markdownSpans(text, nullptr).size(), spans.size());
+
+	// underlined, an anchor of its target, only where the host opens them
+	QTextDocument doc;
+	doc.documentLayout();
+	CodeHighlighter highlighter(&doc, codeRoleMarkup, nullptr, codeMarkupMarkdown);
+	doc.setPlainText("see [a\nb](pic.png) end");
+	int target = doc.toPlainText().indexOf("pic");
+	QCOMPARE(colorAt(&doc, target), kindColor(codeTokenLink));
+	QVERIFY(!formatAt(&doc, target).fontUnderline());
+	QVERIFY(!formatAt(&doc, target).isAnchor());
+	highlighter.setOpenLinks(true);
+	QTextCharFormat fmt = formatAt(&doc, target);
+	QVERIFY(fmt.fontUnderline());
+	QVERIFY(fmt.isAnchor());
+	QCOMPARE(fmt.anchorHref(), QString("pic.png"));
+	QCOMPARE(fmt.foreground().color(), kindColor(codeTokenLink));
+	// the link text is no target
+	QVERIFY(!formatAt(&doc, doc.toPlainText().indexOf("b](")).fontUnderline());
+	highlighter.setOpenLinks(false);
+	QVERIFY(!formatAt(&doc, target).isAnchor());
 }
 
 void TestHighlight::test_markdown_canvas()

@@ -92,6 +92,9 @@ public:
     const JsonCheck& jsonCheck() const { return m_jsonCheck; }
     // check the text now (EDIT-MODE-26)
     void             checkText();
+    // a link target of the Markdown source opened (EDIT-MODE-28): a #anchor on its heading's
+    // line, a file the editor opens by openFileRequested, another file or a site by the system
+    void             openLink(const QString& target);
 
     // the shown page is searched, the editor or the rendered view (EDIT-FIND-5)
     bool             canFind() const override { return true; }
@@ -101,6 +104,10 @@ public:
     QString          findSeed() const override;
     const FindRanges& findMatches() const { return m_findMatches; }
     int              findCurrent() const { return m_findCurrent; }
+
+signals:
+    // a file a link names that the editor opens in a tab (EDIT-MODE-28)
+    void             openFileRequested(const QString& path);
 
 protected:
     void             applyReadOnlyFlag(bool on) override;
@@ -128,6 +135,8 @@ private:
     void             scheduleCheck();
     // the bar clicked: the cursor at the error
     void             showError();
+    // the cursor on the source line of the heading an anchor names; false when none
+    bool             goToHeading(const QString& anchor);
 
     QString          m_mode;
     QString          m_path;

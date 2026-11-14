@@ -21,8 +21,11 @@
  *
  * ----------------------------------------------------------------------------- */
 
+#include <QDesktopServices>
 #include <QFile>
 #include <QFileInfo>
+#include <QHash>
+#include <QRegularExpression>
 #include <QSaveFile>
 #include <QStackedWidget>
 #include <QTextBlock>
@@ -31,11 +34,13 @@
 #include <QTextEdit>
 #include <QTimer>
 #include <QUndoStack>
+#include <QUrl>
 
 #include "text_document.h"
 #include "cyberiada_constants.h"
 #include "code_editor.h"
 #include "code_highlighter.h"
+#include "markdown_objects.h"
 #include "markdown_view.h"
 #include "markdown_pdf.h"
 #include "document_mode.h"
@@ -90,6 +95,7 @@ TextDocument::TextDocument(const QString& mode, QObject* parent):
     connect(m_checkTimer, &QTimer::timeout, this, &TextDocument::checkText);
     connect(m_document, &QTextDocument::contentsChanged, this, &TextDocument::scheduleCheck);
     connect(m_editor, &CodeEditor::errorClicked, this, &TextDocument::showError);
+    connect(m_editor, &CodeEditor::linkActivated, this, &TextDocument::openLink);
     applyMode();
 }
 
@@ -133,6 +139,7 @@ void TextDocument::applyMode()
     // the source of a language as its code, Markdown by its elements (EDIT-TEXT-7/11)
     if (m_mode == MODE_MARKDOWN) {
         m_highlighter = new CodeHighlighter(m_document, codeRoleMarkup, nullptr, codeMarkupMarkdown);
+        m_highlighter->setOpenLinks(true);
     } else if (const CodeLanguage* lang = CodeStyle::instance().findId(m_mode)) {
         m_highlighter = new CodeHighlighter(m_document, codeRoleFormalComment, lang);
     }
@@ -211,6 +218,50 @@ bool TextDocument::goToLine(int line)
     m_editor->centerCursor();
     m_editor->setFocus();
     return true;
+}
+
+void TextDocument::openLink(const QString& target)
+{
+    QUrl url(target, QUrl::TolerantMode);
+    if (url.scheme().isEmpty() && url.path().isEmpty() && url.hasFragment()) {
+        goToHeading(url.fragment(QUrl::FullyDecoded));
+        return;
+    }
+    // a file as the rendered page finds an image: from the directory of the tab's file
+    QString path = markdownImagePath(target, baseDir());
+    if (!path.isEmpty()) {
+        if (isDocumentFile(path)) emit openFileRequested(path);
+        else QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+        return;
+    }
+    // a relative path of an untitled tab names nothing
+    if (!url.isRelative()) QDesktopServices::openUrl(url);
+}
+
+bool TextDocument::goToHeading(const QString& anchor)
+{
+    static const QRegularExpression heading(R"(^ {0,3}#{1,6}\s+(.*?)(\s+#+)?\s*$)");
+    static const QRegularExpression fence(R"(^ {0,3}(`{3,}|~{3,}))");
+    // a repeated heading is anchor-1, anchor-2, ... as the rendered view numbers them
+    QHash<QString, int> seen;
+    QString openFence;
+    for (QTextBlock b = m_document->begin(); b.isValid(); b = b.next()) {
+        QRegularExpressionMatch f = fence.match(b.text());
+        if (f.hasMatch()) {
+            if (openFence.isEmpty()) openFence = f.captured(1);
+            else if (f.captured(1).startsWith(openFence)) openFence.clear();
+            continue;
+        }
+        if (!openFence.isEmpty()) continue;
+        QRegularExpressionMatch m = heading.match(b.text());
+        if (!m.hasMatch()) continue;
+        QString name = MarkdownView::headingAnchor(m.captured(1));
+        int n = seen.value(name, 0);
+        seen.insert(name, n + 1);
+        if (n > 0) name += "-" + QString::number(n);
+        if (name == anchor.toLower()) return goToLine(b.blockNumber() + 1);
+    }
+    return false;
 }
 
 int TextDocument::lineCount() const

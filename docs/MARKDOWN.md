@@ -1,6 +1,6 @@
 # The Markdown Rendering — Architecture
 
-**Document version:** 0.11 (2026-11-14). The requirements are `EDIT-MODE-14`, `EDIT-MODE-17`,
+**Document version:** 0.12 (2026-11-14). The requirements are `EDIT-MODE-14`, `EDIT-MODE-17`,
 `EDIT-MODE-18` and `EDIT-TEXT-14` in `EDITOR-SPEC.md`.
 
 The editor renders Markdown itself: a read-only Markdown tab (`docs/MODES.md`, Text tabs) and,
@@ -53,7 +53,10 @@ The source highlighting (`EDIT-TEXT-11`) finds the formulas and the HTML comment
 `markdownSourceRanges`, the same md4c reading, so a formula is coloured exactly where it is
 rendered and a comment where it is hidden. The same reading gives the runs of inline text of
 the paragraphs, headings, list items and table cells: the lines a run crosses are matched as
-one text, so an element broken by a line feed is coloured whole.
+one text, so an element broken by a line feed is coloured whole. The link rule also gives the
+target of a link (`markdownSpans`, `targets`): the destination of `[text](dest)` and
+`![alt](dest)` without its `<>`, the address of `<url>`, a bare URL; a text tab underlines it
+and opens it by Ctrl+click (`EDIT-MODE-28`, `docs/MODES.md`, Text tabs).
 
 ```
  markdownSourceRanges(text): math, comments, inlines (a run of text md4c reads in one block)

@@ -22,11 +22,13 @@
  * ----------------------------------------------------------------------------- */
 
 #include <QContextMenuEvent>
+#include <QHelpEvent>
 #include <QKeyEvent>
 #include <QMenu>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QTextBlock>
+#include <QToolTip>
 
 #include "code_editor.h"
 #include "cyberiada_constants.h"
@@ -74,6 +76,8 @@ CodeEditor::CodeEditor(QWidget* parent):
     // the text editor font, not the diagram one (EDIT-MODE-27)
     setFont(FontManager::instance().editorFont());
     setLineWrapMode(QPlainTextEdit::NoWrap);
+    // the pointer follows the link targets under it (EDIT-MODE-28)
+    viewport()->setMouseTracking(true);
     connect(this, &QPlainTextEdit::blockCountChanged, this, &CodeEditor::updateMargin);
     connect(this, &QPlainTextEdit::updateRequest, this, &CodeEditor::updateLineNumbers);
     connect(&SettingsManager::instance(), &SettingsManager::editorFontChanged, this,
@@ -220,8 +224,92 @@ bool CodeEditor::event(QEvent* event)
     return QPlainTextEdit::event(event);
 }
 
+QString CodeEditor::linkAt(const QPoint& pos) const
+{
+    // the nearest gap to the point: the glyph is on the point's side of it, in its line
+    QTextCursor cursor = cursorForPosition(pos);
+    QRect gap = cursorRect(cursor);
+    if (pos.y() < gap.top() || pos.y() > gap.bottom()) return QString();
+    QTextBlock block = cursor.block();
+    int glyph = cursor.positionInBlock() - (pos.x() < gap.left() ? 1 : 0);
+    if (glyph < 0 || glyph >= block.length() - 1) return QString();
+    for (const QTextLayout::FormatRange& range : block.layout()->formats()) {
+        if (range.format.isAnchor() && glyph >= range.start && glyph < range.start + range.length) {
+            return range.format.anchorHref();
+        }
+    }
+    return QString();
+}
+
+void CodeEditor::updateLinkPointer(const QPoint& pos, bool ctrl)
+{
+    bool hand = ctrl && !linkAt(pos).isEmpty();
+    if (hand == m_linkPointer) return;
+    m_linkPointer = hand;
+    if (hand) {
+        m_textPointer = viewport()->cursor();
+        viewport()->setCursor(Qt::PointingHandCursor);
+    } else {
+        viewport()->setCursor(m_textPointer);
+    }
+}
+
+// a link target names itself in a tooltip (EDIT-MODE-28)
+bool CodeEditor::viewportEvent(QEvent* event)
+{
+    if (event->type() == QEvent::ToolTip) {
+        QHelpEvent* help = static_cast<QHelpEvent*>(event);
+        QString link = linkAt(help->pos());
+        if (!link.isEmpty()) {
+            QToolTip::showText(help->globalPos(), tr("%1\nCtrl+click to open").arg(link), viewport());
+            return true;
+        }
+        QToolTip::hideText();
+    }
+    return QPlainTextEdit::viewportEvent(event);
+}
+
+void CodeEditor::mousePressEvent(QMouseEvent* event)
+{
+    if (event->button() == Qt::LeftButton && (event->modifiers() & Qt::ControlModifier)) {
+        m_pressedLink = linkAt(event->pos());
+        if (!m_pressedLink.isEmpty()) {
+            event->accept();
+            return;
+        }
+    }
+    QPlainTextEdit::mousePressEvent(event);
+}
+
+void CodeEditor::mouseMoveEvent(QMouseEvent* event)
+{
+    updateLinkPointer(event->pos(), event->modifiers() & Qt::ControlModifier);
+    // a press on a target selects nothing
+    if (!m_pressedLink.isEmpty()) return;
+    QPlainTextEdit::mouseMoveEvent(event);
+}
+
+void CodeEditor::mouseReleaseEvent(QMouseEvent* event)
+{
+    if (m_pressedLink.isEmpty()) {
+        QPlainTextEdit::mouseReleaseEvent(event);
+        return;
+    }
+    QString link = m_pressedLink;
+    m_pressedLink.clear();
+    event->accept();
+    if (event->button() == Qt::LeftButton && linkAt(event->pos()) == link) emit linkActivated(link);
+}
+
+void CodeEditor::keyReleaseEvent(QKeyEvent* event)
+{
+    if (event->key() == Qt::Key_Control) updateLinkPointer(viewport()->mapFromGlobal(QCursor::pos()), false);
+    QPlainTextEdit::keyReleaseEvent(event);
+}
+
 void CodeEditor::keyPressEvent(QKeyEvent* event)
 {
+    if (event->key() == Qt::Key_Control) updateLinkPointer(viewport()->mapFromGlobal(QCursor::pos()), true);
     if (undoKey(event)) {
         event->ignore();
         return;
