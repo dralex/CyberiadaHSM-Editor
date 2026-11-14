@@ -34,6 +34,7 @@ const char* const MODE_FA = "fa";
 const char* const MODE_DIFF = "diff";
 const char* const MODE_TEXT = "text";
 const char* const MODE_MARKDOWN = "markdown";
+const char* const LANGUAGE_JSON = "json";
 
 static const ModeTraits modes[] = {
     // id               marker                                     readOnly stored faTools text

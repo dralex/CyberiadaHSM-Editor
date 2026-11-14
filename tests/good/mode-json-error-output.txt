@@ -1,0 +1,16 @@
+== tabs
+count: 1
+0 broken.json json active
+== text
+mode: json
+file: broken.json
+modified: no
+rendered: no
+error: 3:32 missing comma
+lines: 6
+| {
+|     "name": "traffic light",
+|     "states": ["red", "yellow" "green"],
+|     "period": 1.5e3
+| }
+| 

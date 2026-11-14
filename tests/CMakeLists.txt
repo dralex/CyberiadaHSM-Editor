@@ -347,6 +347,7 @@ add_text_test(text-reject texts/blink.cpp 4)
 add_text_test(text-edit-reject texts/blink.cpp 4)
 add_text_test(markdown-ro texts/notes.md 0)
 add_text_test(json-open texts/settings.json 0)
+add_text_test(json-error texts/broken.json 0)
 
 # the export of a text tab: a Markdown text to PDF only (EDIT-MODE-16/18)
 function(add_text_export_test name input output expected_code)
@@ -779,6 +780,7 @@ add_l4_test(find)
 add_l4_test(keys)
 add_l4_test(autoreplace)
 add_l4_test(colors)
+add_l4_test(json)
 
 # The plugin layer: the batch plugin stage over the example plugins of
 # plugins/<set>/, which all run one helper with no dependencies (see

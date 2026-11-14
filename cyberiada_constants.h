@@ -111,6 +111,11 @@
 #define FIND_NO_MATCH_COLOR      "#ffcdd2"
 // the matches marked in a tab at most
 #define FIND_MATCH_LIMIT         10000
+// a JSON tab (EDIT-MODE-19, docs/MODES.md, JSON): the check after an edit, the underline and
+// the margin number of the error, the bar under the text
+#define JSON_CHECK_DELAY_MS      300
+#define TEXT_ERROR_COLOR         "#ff0000"
+#define TEXT_ERROR_BAR_COLOR     "#c62828"
 // the color schemes of the text editors (EDIT-COLOR-2/6, docs/COLOR-SCHEMES.md)
 #define TEXT_SCHEME_DEFAULT      "white"
 #define TEXT_SCHEME_USER_PREFIX  "user-"

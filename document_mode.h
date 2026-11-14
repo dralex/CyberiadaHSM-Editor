@@ -36,6 +36,8 @@ extern const char* const MODE_DIFF;
 extern const char* const MODE_TEXT;
 extern const char* const MODE_MARKDOWN;
 // a language of syntax/*.json is a mode too: its id is the file name (EDIT-MODE-1)
+// the built-in JSON language, checked and formatted by its tab (EDIT-MODE-19/20)
+extern const char* const LANGUAGE_JSON;
 
 // what a mode gives its tab (docs/MODES.md, The modes)
 struct ModeTraits {

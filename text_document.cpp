@@ -38,6 +38,7 @@
 #include "code_highlighter.h"
 #include "markdown_view.h"
 #include "markdown_pdf.h"
+#include "document_mode.h"
 #include "settings_manager.h"
 
 // one edit of the text: the undo stack of the tab drives the text's own history
@@ -82,6 +83,13 @@ TextDocument::TextDocument(const QString& mode, QObject* parent):
     connect(m_document, &QTextDocument::contentsChanged, this, &TextDocument::scheduleFind);
     connect(m_rendered->document(), &QTextDocument::contentsChanged, this, &TextDocument::scheduleFind);
     connect(&SettingsManager::instance(), &SettingsManager::textSchemeChanged, this, &TextDocument::applyScheme);
+    // a JSON text is checked a while after its last edit (EDIT-MODE-19)
+    m_checkTimer = new QTimer(this);
+    m_checkTimer->setSingleShot(true);
+    m_checkTimer->setInterval(JSON_CHECK_DELAY_MS);
+    connect(m_checkTimer, &QTimer::timeout, this, &TextDocument::checkText);
+    connect(m_document, &QTextDocument::contentsChanged, this, &TextDocument::scheduleCheck);
+    connect(m_editor, &CodeEditor::errorClicked, this, &TextDocument::showError);
     applyMode();
 }
 
@@ -89,6 +97,7 @@ TextDocument::TextDocument(const QString& mode, QObject* parent):
 TextDocument::~TextDocument()
 {
     delete m_findPlace;
+    delete m_errorPlace;
     delete m_highlighter;
     delete m_page;
 }
@@ -129,6 +138,45 @@ void TextDocument::applyMode()
     }
     applyScheme();
     showPage();
+    checkText();
+}
+
+bool TextDocument::isJson() const
+{
+    return m_mode == LANGUAGE_JSON;
+}
+
+void TextDocument::scheduleCheck()
+{
+    if (isJson()) m_checkTimer->start();
+}
+
+void TextDocument::checkText()
+{
+    m_checkTimer->stop();
+    m_jsonCheck = isJson() ? checkJson(text()) : JsonCheck();
+    delete m_errorPlace;
+    m_errorPlace = nullptr;
+    QString message;
+    if (!m_jsonCheck.ok) {
+        m_errorPlace = new QTextCursor(m_document);
+        m_errorPlace->setPosition(m_jsonCheck.position);
+        m_errorPlace->setPosition(m_jsonCheck.position + m_jsonCheck.length, QTextCursor::KeepAnchor);
+        message = tr("Line %1, column %2: %3").arg(m_jsonCheck.line).arg(m_jsonCheck.column)
+            .arg(m_jsonCheck.message);
+    }
+    m_editor->setError(m_jsonCheck.ok ? 0 : m_jsonCheck.line, message);
+    markFind();
+}
+
+void TextDocument::showError()
+{
+    if (!m_errorPlace) return;
+    QTextCursor cursor(m_document);
+    cursor.setPosition(m_errorPlace->selectionStart());
+    m_editor->setTextCursor(cursor);
+    m_editor->centerCursor();
+    m_editor->setFocus();
 }
 
 void TextDocument::applyScheme()
@@ -208,6 +256,7 @@ bool TextDocument::replaceText(const QString& text, const QString& label)
     cursor.endEditBlock();
     m_stepName.clear();
     showPage();
+    checkText();
     return true;
 }
 
@@ -232,6 +281,7 @@ void TextDocument::setText(const QString& text)
     m_editor->setPlainText(text);
     m_undo->clear();
     showPage();
+    checkText();
 }
 
 bool TextDocument::load(const QString& path, QString* error)
@@ -342,6 +392,14 @@ void TextDocument::markFind()
 {
     QList<QTextEdit::ExtraSelection> marks;
     QTextDocument* document = shownDocument();
+    // the JSON error under the find marks (EDIT-MODE-19)
+    if (m_errorPlace && m_errorPlace->document() == document && m_errorPlace->hasSelection()) {
+        QTextEdit::ExtraSelection error;
+        error.cursor = *m_errorPlace;
+        error.format.setUnderlineStyle(QTextCharFormat::WaveUnderline);
+        error.format.setUnderlineColor(QColor(TEXT_ERROR_COLOR));
+        marks.append(error);
+    }
     for (int i = 0; i < m_findMatches.size(); i++) {
         QTextEdit::ExtraSelection mark;
         mark.cursor = QTextCursor(document);

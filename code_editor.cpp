@@ -25,16 +25,20 @@
 #include <QFontDatabase>
 #include <QKeyEvent>
 #include <QMenu>
+#include <QMouseEvent>
 #include <QPainter>
 #include <QTextBlock>
 
 #include "code_editor.h"
+#include "cyberiada_constants.h"
 #include "text_scheme.h"
 
 // the gap between the numbers and the text, in pixels
 static const int LINE_NUMBER_PADDING = 6;
 // the tab stop in spaces
 static const int TAB_SPACES = 4;
+// the space above and below the text of the error bar, in pixels
+static const int ERROR_BAR_PADDING = 3;
 
 class LineNumberArea : public QWidget {
 public:
@@ -46,8 +50,25 @@ private:
     CodeEditor* editor;
 };
 
+class ErrorBar : public QWidget {
+public:
+    ErrorBar(CodeEditor* editor): QWidget(editor), editor(editor)
+    {
+        setCursor(Qt::PointingHandCursor);
+        hide();
+    }
+protected:
+    void paintEvent(QPaintEvent* event) override { editor->paintErrorBar(event); }
+    void mousePressEvent(QMouseEvent* event) override
+    {
+        if (event->button() == Qt::LeftButton) emit editor->errorClicked();
+    }
+private:
+    CodeEditor* editor;
+};
+
 CodeEditor::CodeEditor(QWidget* parent):
-    QPlainTextEdit(parent), lineNumbers(new LineNumberArea(this))
+    QPlainTextEdit(parent), lineNumbers(new LineNumberArea(this)), errorBar(new ErrorBar(this))
 {
     setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
     setLineWrapMode(QPlainTextEdit::NoWrap);
@@ -86,7 +107,44 @@ int CodeEditor::lineNumberAreaWidth() const
 
 void CodeEditor::updateMargin()
 {
-    setViewportMargins(lineNumberAreaWidth(), 0, 0, 0);
+    setViewportMargins(lineNumberAreaWidth(), 0, 0, errorBarHeight());
+    placeErrorBar();
+}
+
+void CodeEditor::setError(int line, const QString& message)
+{
+    if (line == m_errorLine && message == m_errorMessage) return;
+    m_errorLine = line;
+    m_errorMessage = message;
+    errorBar->setToolTip(message);
+    errorBar->setVisible(!message.isEmpty());
+    updateMargin();
+    errorBar->update();
+    lineNumbers->update();
+}
+
+int CodeEditor::errorBarHeight() const
+{
+    return m_errorMessage.isEmpty() ? 0 : fontMetrics().height() + 2 * ERROR_BAR_PADDING;
+}
+
+// the bottom margin under the viewport, left of a vertical scroll bar
+void CodeEditor::placeErrorBar()
+{
+    QRect cr = contentsRect();
+    QRect view = viewport()->geometry();
+    errorBar->setGeometry(QRect(cr.left(), view.bottom() + 1, view.right() + 1 - cr.left(), errorBarHeight()));
+    errorBar->raise();
+}
+
+void CodeEditor::paintErrorBar(QPaintEvent* event)
+{
+    QPainter painter(errorBar);
+    painter.fillRect(event->rect(), QColor(TEXT_ERROR_BAR_COLOR));
+    painter.setPen(Qt::white);
+    QRect text = errorBar->rect().adjusted(LINE_NUMBER_PADDING, 0, -LINE_NUMBER_PADDING, 0);
+    painter.drawText(text, Qt::AlignLeft | Qt::AlignVCenter,
+                     fontMetrics().elidedText(m_errorMessage, Qt::ElideRight, text.width()));
 }
 
 void CodeEditor::updateLineNumbers(const QRect& rect, int dy)
@@ -101,19 +159,21 @@ void CodeEditor::resizeEvent(QResizeEvent* event)
     QPlainTextEdit::resizeEvent(event);
     QRect cr = contentsRect();
     lineNumbers->setGeometry(QRect(cr.left(), cr.top(), lineNumberAreaWidth(), cr.height()));
+    placeErrorBar();
 }
 
 void CodeEditor::paintLineNumbers(QPaintEvent* event)
 {
     QPainter painter(lineNumbers);
     painter.fillRect(event->rect(), palette().color(QPalette::AlternateBase));
-    painter.setPen(palette().color(QPalette::PlaceholderText));
     QTextBlock block = firstVisibleBlock();
     int number = block.blockNumber() + 1;
     int top = qRound(blockBoundingGeometry(block).translated(contentOffset()).top());
     int bottom = top + qRound(blockBoundingRect(block).height());
+    QColor numbers = palette().color(QPalette::PlaceholderText);
     while (block.isValid() && top <= event->rect().bottom()) {
         if (block.isVisible() && bottom >= event->rect().top()) {
+            painter.setPen(number == m_errorLine ? QColor(TEXT_ERROR_COLOR) : numbers);
             painter.drawText(0, top, lineNumbers->width() - LINE_NUMBER_PADDING,
                              fontMetrics().height(), Qt::AlignRight, QString::number(number));
         }

@@ -1,6 +1,6 @@
 # The Document Modes — Architecture
 
-**Document version:** 0.11 (2026-11-14) — stages 1 to 7 implemented, 8 and 9 (JSON) planned (see
+**Document version:** 0.11 (2026-11-14) — stages 1 to 8 implemented, 9 (JSON) planned (see
 Stages). The requirements are `EDIT-MODE-1..20` in `EDITOR-SPEC.md` §4.14, the plugin parts
 `EDIT-PLUG-56..60`.
 
@@ -336,8 +336,9 @@ File                              Document
    revision` writes the base, `modes` on every git action, its text diff hides
    `regionGeometry` without the geometry as the tab does.
 7. The JSON language file — done: `syntax/json.json`, `.json` in Open, New and Save As.
-8. The JSON check — planned: `json_text.*` (lexer, `checkJson`), the underline, the margin, the
-   bar, the `error:` dump line (`EDIT-MODE-19`).
+8. The JSON check — done: `json_text.*` (lexer, `checkJson`), the underline among the find
+   marks, the margin number and the bar of `CodeEditor` (a bottom viewport margin), the
+   `error:` dump line (`EDIT-MODE-19`).
 9. The formatted read-only JSON page — planned: `formatJson`, the third page, Find on it, the
    `formatted:` dump line (`EDIT-MODE-20`).
 

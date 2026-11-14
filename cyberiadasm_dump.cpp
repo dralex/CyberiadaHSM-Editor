@@ -35,6 +35,7 @@
 
 #include "cyberiadasm_dump.h"
 #include "text_document.h"
+#include "json_text.h"
 #include "diff_document.h"
 #include "cyberiadasm_editor_subject_item.h"
 #include "plugin_runner.h"
@@ -311,6 +312,12 @@ void dumpTextDocument(const TextDocument* doc, std::ostream& os)
 	   << std::endl;
 	os << "modified: " << (doc->isClean() ? "no" : "yes") << std::endl;
 	os << "rendered: " << (doc->showsRendered() ? "yes" : "no") << std::endl;
+	// the check of a JSON tab, of the text as it is now (EDIT-MODE-16/19)
+	if (doc->isJson()) {
+		JsonCheck check = checkJson(doc->text());
+		os << "error: " << (check.ok ? QString("none") : QString("%1:%2 %3").arg(check.line)
+		                    .arg(check.column).arg(check.message)).toStdString() << std::endl;
+	}
 	// the lines as they are, each after a bar so an empty one shows
 	const QStringList lines = doc->text().split('\n');
 	os << "lines: " << lines.size() << std::endl;

@@ -1,0 +1,5 @@
+{
+    "name": "traffic light",
+    "states": ["red", "yellow" "green"],
+    "period": 1.5e3
+}

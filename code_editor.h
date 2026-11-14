@@ -29,9 +29,9 @@
 
 struct TextScheme;
 
-// The text of a text tab (docs/MODES.md, Text tabs): the line numbers in a margin;
-// Undo and Redo belong to the window, so the undo stack of the tab is the one
-// the edits go through (EDIT-MODE-13)
+// The text of a text tab (docs/MODES.md, Text tabs): the line numbers in a margin, an
+// error bar under the text; Undo and Redo belong to the window, so the undo stack of the
+// tab is the one the edits go through (EDIT-MODE-13)
 class CodeEditor : public QPlainTextEdit {
     Q_OBJECT
 public:
@@ -44,6 +44,18 @@ public:
     AutoreplaceKind autoreplaceKind() const { return m_kind; }
     // the page, the selection and the margin in the colors of the scheme (EDIT-COLOR-1)
     void setScheme(const TextScheme& scheme);
+    // an error of the text (EDIT-MODE-19): the number of its line in red, the message in a
+    // bar under the text; line 0 and an empty message clear them
+    void setError(int line, const QString& message);
+    int  errorLine() const { return m_errorLine; }
+    QString errorMessage() const { return m_errorMessage; }
+    // the bar, 0 high without a message
+    int  errorBarHeight() const;
+    void paintErrorBar(QPaintEvent* event);
+
+signals:
+    // the bar is clicked
+    void errorClicked();
 
 protected:
     bool event(QEvent* event) override;
@@ -54,10 +66,14 @@ protected:
 
 private slots:
     void updateMargin();
+    void placeErrorBar();
     void updateLineNumbers(const QRect& rect, int dy);
 
 private:
     QWidget* lineNumbers;
+    QWidget* errorBar;
+    int m_errorLine = 0;
+    QString m_errorMessage;
     AutoreplaceKind m_kind = autoreplaceNone;
     Autoreplacer m_replacer;
 };

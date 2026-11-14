@@ -6,6 +6,7 @@ mode: json
 file: settings.json
 modified: no
 rendered: no
+error: none
 lines: 8
 | {
 |     "name": "traffic light",

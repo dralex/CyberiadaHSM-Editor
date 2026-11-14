@@ -25,16 +25,19 @@
 #define CYBERIADA_TEXT_DOCUMENT
 
 #include "editor_document.h"
+#include "json_text.h"
 
 class QStackedWidget;
 class QTextCursor;
 class QTextDocument;
+class QTimer;
 class CodeEditor;
 class MarkdownView;
 class CodeHighlighter;
 
 // A text tab (docs/MODES.md, Text tabs): the text in UTF-8, highlighted by its
-// mode; a read-only Markdown tab shows the rendered document (EDIT-MODE-13/14).
+// mode; a read-only Markdown tab shows the rendered document (EDIT-MODE-13/14), a
+// JSON tab marks its first error (EDIT-MODE-19).
 // The undo stack mirrors the edits of the text, so the window's Undo and Redo
 // and the clean state work as for a diagram
 class TextDocument: public EditorDocument {
@@ -82,6 +85,13 @@ public:
     bool             exportPdf(const QString& path, QString* error) const;
     // an empty unmodified tab a file may take
     bool             isUntitled() const { return !hasFile() && isClean() && text().isEmpty(); }
+    // the built-in JSON language (EDIT-MODE-19)
+    bool             isJson() const;
+    // the last check of a JSON tab, ok in another mode; the edits of the last
+    // JSON_CHECK_DELAY_MS are not checked yet
+    const JsonCheck& jsonCheck() const { return m_jsonCheck; }
+    // check the text now (EDIT-MODE-19)
+    void             checkText();
 
     // the shown page is searched, the editor or the rendered view (EDIT-FIND-5)
     bool             canFind() const override { return true; }
@@ -114,6 +124,10 @@ private:
     void             scheduleFind();
     void             markFind();
     void             showFindMatch();
+    // a JSON text edited: checked after JSON_CHECK_DELAY_MS
+    void             scheduleCheck();
+    // the bar clicked: the cursor at the error
+    void             showError();
 
     QString          m_mode;
     QString          m_path;
@@ -132,6 +146,10 @@ private:
     bool             m_findMore = false;
     bool             m_findPending = false;
     QTextCursor*     m_findPlace = nullptr;
+    QTimer*          m_checkTimer;
+    JsonCheck        m_jsonCheck;
+    // the underlined token as the edits move it, null without an error
+    QTextCursor*     m_errorPlace = nullptr;
 };
 
 #endif

@@ -1500,7 +1500,7 @@
 <context>
     <name>DocumentMode</name>
     <message>
-        <location filename="../document_mode.cpp" line="+41"/>
+        <location filename="../document_mode.cpp" line="+42"/>
         <source>inspection</source>
         <translation>инспекция</translation>
     </message>
@@ -1751,6 +1751,98 @@
         <location line="+3"/>
         <source>Underlined in: %1.</source>
         <translation>Подчёркнуто в: %1.</translation>
+    </message>
+</context>
+<context>
+    <name>JsonText</name>
+    <message>
+        <location filename="../json_text.cpp" line="+184"/>
+        <source>invalid escape sequence</source>
+        <translation>недопустимая escape-последовательность</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>control character in a string</source>
+        <translation>управляющий символ в строке</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>unterminated string</source>
+        <translation>незакрытая строка</translation>
+    </message>
+    <message>
+        <location line="+64"/>
+        <source>invalid number</source>
+        <translation>недопустимое число</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>&apos;%1&apos; is not a JSON value</source>
+        <translation>«%1» не является значением JSON</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>a string must be in double quotes</source>
+        <translation>строка должна быть в двойных кавычках</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>missing value</source>
+        <translation>нет значения</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <location line="+68"/>
+        <location line="+28"/>
+        <source>unexpected &apos;%1&apos;</source>
+        <translation>неожиданный символ «%1»</translation>
+    </message>
+    <message>
+        <location line="-77"/>
+        <source>the object is not closed</source>
+        <translation>объект не закрыт</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>the array is not closed</source>
+        <translation>массив не закрыт</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>comments are not allowed in JSON</source>
+        <translation>комментарии в JSON не допускаются</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <location line="+17"/>
+        <source>trailing comma</source>
+        <translation>лишняя запятая в конце</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>a key must be a string in double quotes</source>
+        <translation>ключ должен быть строкой в двойных кавычках</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <location line="+22"/>
+        <source>expected &apos;%1&apos;</source>
+        <translation>ожидается «%1»</translation>
+    </message>
+    <message>
+        <location line="-12"/>
+        <source>missing colon</source>
+        <translation>нет двоеточия</translation>
+    </message>
+    <message>
+        <location line="+18"/>
+        <source>missing comma</source>
+        <translation>нет запятой</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>extra text after the value</source>
+        <translation>лишний текст после значения</translation>
     </message>
 </context>
 <context>
@@ -3037,7 +3129,7 @@
         <translation>Сбросить положение подписи</translation>
     </message>
     <message>
-        <location filename="../text_document.cpp" line="+47"/>
+        <location filename="../text_document.cpp" line="+48"/>
         <source>typing</source>
         <translation>ввод текста</translation>
     </message>
@@ -3906,12 +3998,17 @@
 <context>
     <name>TextDocument</name>
     <message>
-        <location filename="../text_document.cpp" line="+169"/>
+        <location filename="../text_document.cpp" line="+117"/>
+        <source>Line %1, column %2: %3</source>
+        <translation>Строка %1, столбец %2: %3</translation>
+    </message>
+    <message>
+        <location line="+100"/>
         <source>untitled</source>
         <translation>без имени</translation>
     </message>
     <message>
-        <location line="+25"/>
+        <location line="+26"/>
         <source>Cannot read %1:
 %2</source>
         <translation>Не удаётся прочитать %1:
