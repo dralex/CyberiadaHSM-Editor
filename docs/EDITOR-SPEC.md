@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.61 (2026-11-14)
+**Document version:** 0.62 (2026-11-14)
 
 **Related authorities:**
 
@@ -1197,6 +1197,81 @@ document is never changed. The architecture is `docs/FIND.md`. Specified in 0.60
 - `EDIT-FIND-9` MUST [A]: the bar and its query are global (`docs/WINDOW.md`): a tab switch drops
   the marks of the tab left and searches the new one. In a diff tab Find, Find Next and Find
   Previous are disabled and the bar is greyed. *design*
+
+### 4.16 Keyboard shortcuts — KEYS
+
+Every built-in action has default keys the user may change; a text being edited takes its
+keys first. The architecture and the default keys are in `docs/SHORTCUTS.md`. Specified in 0.62.
+
+- `EDIT-KEYS-1` MUST [A]: every built-in action of the menus and the toolbars — the session
+  entries and the dock toggles too — has the default keys of `docs/SHORTCUTS.md` or none; the
+  menu shows the first key of an action and all its keys act. The entries that come and go
+  (the plugin actions, Open Recent, the text modes, Language and Markup) have no keys. *design*
+- `EDIT-KEYS-2` MUST [A]: the Shortcuts page of the Preferences lists the actions by their
+  menus with their keys, the changed ones in bold; a filter narrows the list by action, menu
+  or key. A key typed into the key field replaces the keys of the chosen action (Assign) or
+  joins them (Add); Clear leaves it without a key; Reset gives it its default keys, Reset all
+  every action. Ok and Apply put the keys to work at once; Cancel changes nothing. *design*
+- `EDIT-KEYS-3` MUST [A]: no two actions hold one key: the page names the action that holds
+  the key typed and, on a confirmation, takes it from that action. *design*
+- `EDIT-KEYS-4` MUST [A]: only the changes are stored, per user (`shortcuts/<action>`): an
+  action never changed follows the default keys of the editor it runs in; an action left
+  without a key stays so. Reset of the Preferences drops the changes. *design*
+- `EDIT-KEYS-5` MUST [A]: a key the focused text takes does not reach its action: while a text
+  is edited on the canvas, in a text tab or in a field, the typing and editing keys — a tool
+  letter, Del, the clipboard keys of a field — go to the text. *design*
+- `EDIT-KEYS-6` MUST [A]: the key of an action shown only on a toolbar (Select, Pan, Zoom, Zoom
+  to SM) acts while its toolbar is hidden; a disabled action ignores its key. *design*
+- `EDIT-KEYS-7` MUST [A]: Edit > Go to Line (Alt+G) asks a line number of the text tab, the
+  current one offered, and puts the cursor at the start of that line, scrolled into view. It
+  is disabled in a diagram, a diff and a rendered Markdown tab. *design*
+- `EDIT-KEYS-8` SHOULD [A]: the default keys follow the platform where Qt names them (Find,
+  Find Next, the next document) and keep `Ctrl+Y` beside `Ctrl+Shift+Z` for Redo. *design*
+- `EDIT-KEYS-9` MUST [A]: Del on the focused point of a transition removes the point
+  (`EDIT-EDGE-9`), not the transition selected with it. *design*
+- `EDIT-KEYS-10` MUST [A]: an action that reads or replaces the document — New, Open, Save,
+  Save as, Export, Close, Exit, a tab switch, a mode change, Check, Compare, the geometry
+  entries, a plugin run, a session start — first ends the edit of a canvas text as a click
+  outside does, so the text typed is in the document it works on. *design*
+- `EDIT-KEYS-11` MUST [I]: Esc in a canvas text being edited abandons the edit: the text is as
+  it was before, the document and its undo history unchanged. Esc there, and in the find bar
+  (`EDIT-FIND-1`), does not reach the action it is a key of. *design*
+- `EDIT-KEYS-12` MUST [A]: in a text tab the keys of Undo and Redo, whichever they are, drive
+  the Undo and Redo of the window (`EDIT-HIST-1/2`), `Ctrl+Y` among them. *design*
+
+### 4.17 Autoreplace — AUTO
+
+A typed pattern becomes its typographic character in a text for people, never in code. The
+architecture, the default rules and the Markdown exclusions are in `docs/AUTOREPLACE.md`.
+Specified in 0.62.
+
+- `EDIT-AUTO-1` MUST [A]: when the characters typed complete the pattern of an enabled rule,
+  they are replaced by its text at once (`--` by `–`, `<<` by `«`, `(c)` by `©`); of several
+  patterns ending at the cursor the longest wins; a pattern is compared as written. *design*
+- `EDIT-AUTO-2` MUST [A]: the rules replace only in the names (a state, a state machine, a
+  pseudostate, a comment, a document), the bodies of the informal comments, the description
+  of the metainformation and the Markdown texts (a comment body in Markdown, a Markdown tab)
+  — on the canvas, in a text tab, in the properties panel, the text dialog and the structure
+  tree. *design*
+- `EDIT-AUTO-3` MUST [U]: nothing is replaced in code and values: the actions, the transition
+  labels, the triggers, the guards, the behaviours, the formal and component comments not in
+  Markdown, the ids and the other metainformation, the tabs of a language and of Plain text,
+  the find field, the fragment of a comment link, the plugin parameters and session lines.
+  *design*
+- `EDIT-AUTO-4` MUST [A]: in a Markdown text nothing is replaced inside a code span or block, a
+  formula, an HTML tag or comment, a link target or URL — an unclosed one counting to the end
+  of its line or, a fence and a comment, of the text — nor in a line of a rule or a table
+  border, nor the `>` opening a quote. *design*
+- `EDIT-AUTO-5` MUST [U]: only typing is replaced: a paste, a drop, an undo or redo, a loaded
+  file, a plugin result and the batch verbs that set a text leave it as it is. *design*
+- `EDIT-AUTO-6` MUST [I]: Undo right after a replacement, or Backspace with the cursor not
+  moved, gives back the characters typed; they then stay as typed. *design*
+- `EDIT-AUTO-7` MUST [A]: the Autoreplace page of the Preferences has the switch *Replace as
+  you type* and the table of the rules: each one switched, changed or removed, new ones added
+  in the last row, a pattern never twice; Restore defaults gives the default rules. Ok and
+  Apply act on the open texts at once; Cancel changes nothing. *design*
+- `EDIT-AUTO-8` MUST [A]: the switch and the rules are stored per user (`autoreplace/enabled`,
+  `autoreplace/rules`), the rules only when they differ from the default ones. *design*
 
 ## 5. Coverage
 
