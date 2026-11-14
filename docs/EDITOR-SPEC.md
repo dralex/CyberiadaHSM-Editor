@@ -1197,12 +1197,14 @@ the stages of `docs/MODES.md`.
   over the diff marks (`EDIT-FIND-5`). *design*
 - `EDIT-MODE-25` MUST [A]: the batch verbs `compare <index|title|file>` on a text tab,
   `next-change`, `previous-change` and `ignore-whitespace on|off` act as the menus do;
-  `--dump-tabs` prints the tab as `text-diff ro`; `--dump` of a text diff tab prints `== text
-  diff`: `base <label>`, `target <label>`, `changes <n>: +<added> -<removed> ~<changed>`
-  (lines), `current <n>` (0 without a current hunk), then each hunk as `@@ <base lines> |
-  <target lines>` and its rows `<base number> <target number> <mark> <text>` — the marks `=`
-  equal, `-` removed, `+` added, `~` a pair as `<base text> | <target text>`, `.` the number
-  of a filler side; the equal rows are printed only the 3 next to a hunk. *design*
+  `--dump-tabs` prints the tab's mode as `text-diff`; `--dump` of a text diff tab prints `==
+  text diff`: `base: <label>`, `target: <label>`, `ignore whitespace: yes|no`, `hunks: <n>,
+  added: <n>, removed: <n>, changed: <n>` (the lines without a pair and the pairs), `current:
+  <n>` (from 1, 0 without a current hunk), then each hunk as `@@ <base lines> | <target
+  lines>` (`13`, `13-15`, `.` for none) and its rows `<base number> <target number> <mark>
+  <text>` — the marks `=` equal, `-` removed, `+` added, `~` a pair as `<base text> | <target
+  text>`, `.` the number of a filler side; of the equal rows only the 3 next to a hunk.
+  *design*
 
 ### 4.15 Find — FIND
 

@@ -32,6 +32,7 @@
 #include "cyberiadasm_editor_document.h"
 #include "text_document.h"
 #include "diff_document.h"
+#include "text_diff_document.h"
 #include "plugin_runner.h"
 #include "meta_choice_menu.h"
 
@@ -91,7 +92,7 @@ public:
                                             QString* error = nullptr);
     // Document > Refresh: both sides again from their origins (EDIT-MODE-12)
     // a plugin base runs its action again: wait for the run, or leave it running
-    bool                    refreshDiff(DiffDocument* diff, QString* error = nullptr, bool wait = false);
+    bool                    refreshDiff(ComparisonDocument* diff, QString* error = nullptr, bool wait = false);
     // the change list of a diff tab, in the structure tree dock (EDIT-MODE-11)
     QTreeWidget*            changeList() const { return m_changeList; }
     // a new untitled diagram in a new tab
@@ -110,6 +111,12 @@ public:
     CyberiadaSMEditorDocument* currentDocument() const { return current; }
     TextDocument*           currentText() const { return qobject_cast<TextDocument*>(active); }
     DiffDocument*           currentDiff() const { return qobject_cast<DiffDocument*>(active); }
+    // a diff or a text diff tab
+    ComparisonDocument*     currentComparison() const { return qobject_cast<ComparisonDocument*>(active); }
+    TextDiffDocument*       currentTextDiff() const { return qobject_cast<TextDiffDocument*>(active); }
+    // Document > Compare with... of a text tab: a new text diff tab (EDIT-MODE-19)
+    TextDiffDocument*       compareText(TextDocument* source, const DiffOrigin& base,
+                                        QString* error = nullptr);
     CyberiadaSMModel*       getModel() { return model(); }
     CyberiadaSMEditorScene* getScene() { return scene(); }
     int                     documentCount() const { return documents.size(); }
@@ -137,11 +144,11 @@ public:
     // diff tab given (EDIT-PLUG-58)
     PluginRunner*           runPlugin(const QString& pluginId, const QString& actionId,
                                       const PluginValues& values, QString* error = nullptr,
-                                      EditorDocument* doc = nullptr, DiffDocument* refresh = nullptr);
+                                      EditorDocument* doc = nullptr, ComparisonDocument* refresh = nullptr);
     // the batch and test form: run, wait in a local event loop, return the result
     PluginResult            runPluginAndWait(const QString& pluginId, const QString& actionId,
                                              const PluginValues& values,
-                                             EditorDocument* doc = nullptr, DiffDocument* refresh = nullptr);
+                                             EditorDocument* doc = nullptr, ComparisonDocument* refresh = nullptr);
     // why the action cannot run on the document now; empty when it can
     QString                 pluginDisabledReason(const PluginEntry& plugin, const PluginAction& action,
                                                  EditorDocument* doc) const;
@@ -203,6 +210,10 @@ private:
     void                    exportMarkdown(TextDocument* text);
     // the rows of the active diff tab
     void                    fillChangeList();
+    // the row of the current change selected in the list (EDIT-MODE-22)
+    void                    selectChange(int index);
+    // a new comparison tab activated, its list bound to it
+    void                    openComparison(ComparisonDocument* diff);
     // a side of a diff tab as a buffer; a closed source tab keeps the last one
     bool                    originBuffer(const DiffOrigin& origin, const std::string& last,
                                          std::string* buffer, QString* error) const;
@@ -254,6 +265,7 @@ private slots:
     // Document > Compare with...: the base chosen among the tabs, a file, the saved file
     void                    slotCompare();
     void                    slotChangeActivated(QTreeWidgetItem* item);
+    void                    slotCompareText(TextDocument* text);
     // Document > Check: the EXT-FA findings of an FA tab in Diagnostics (EDIT-MODE-9)
     void                    slotCheck();
     void                    slotServiceObjectsChanged(bool on);
@@ -354,7 +366,7 @@ private:
     // the running plugins and the documents they started from
     QMap<PluginRunner*, QPointer<EditorDocument> > pluginRuns;
     // the diff tabs a run refreshes (EDIT-MODE-12)
-    QMap<PluginRunner*, QPointer<DiffDocument> > diffRefreshes;
+    QMap<PluginRunner*, QPointer<ComparisonDocument> > diffRefreshes;
     QUndoGroup*             undoGroup = nullptr;
     // the tab line over the central area, shown from the second document on
     QTabBar*                documentTabs = nullptr;

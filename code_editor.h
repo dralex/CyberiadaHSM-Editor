@@ -37,6 +37,8 @@ public:
 
     int  lineNumberAreaWidth() const;
     void paintLineNumbers(QPaintEvent* event);
+    // the number shown at a block from 0: its own number; a diff side has its lines
+    virtual QString lineLabel(int block) const { return QString::number(block + 1); }
     // what the text is for the typed replacements (EDIT-AUTO-2/3): none unless set
     void setAutoreplaceKind(AutoreplaceKind kind) { m_kind = kind; }
     AutoreplaceKind autoreplaceKind() const { return m_kind; }

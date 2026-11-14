@@ -32,6 +32,7 @@ const char* const MODE_HSM = "hsm";
 const char* const MODE_INSPECTION = "inspection";
 const char* const MODE_FA = "fa";
 const char* const MODE_DIFF = "diff";
+const char* const MODE_TEXT_DIFF = "text-diff";
 const char* const MODE_TEXT = "text";
 const char* const MODE_MARKDOWN = "markdown";
 
@@ -41,6 +42,7 @@ static const ModeTraits modes[] = {
     { MODE_INSPECTION, QT_TRANSLATE_NOOP("DocumentMode", "inspection"), true, true, false, false },
     { MODE_FA,         QT_TRANSLATE_NOOP("DocumentMode", "FA"),     false, false, true, false },
     { MODE_DIFF,       QT_TRANSLATE_NOOP("DocumentMode", "diff"),   true, true, false, false },
+    { MODE_TEXT_DIFF,  QT_TRANSLATE_NOOP("DocumentMode", "text diff"), true, false, false, false },
     { MODE_TEXT,       QT_TRANSLATE_NOOP("DocumentMode", "text"),   false, false, false, true },
     { MODE_MARKDOWN,   "Markdown",                                   false, false, false, true },
 };
@@ -80,6 +82,7 @@ QString modeName(const QString& id)
     if (id == MODE_INSPECTION) return QCoreApplication::translate("DocumentMode", "HSM inspection");
     if (id == MODE_FA) return QCoreApplication::translate("DocumentMode", "FA diagram");
     if (id == MODE_DIFF) return QCoreApplication::translate("DocumentMode", "HSM diff");
+    if (id == MODE_TEXT_DIFF) return QCoreApplication::translate("DocumentMode", "Text diff");
     if (id == MODE_TEXT) return QCoreApplication::translate("DocumentMode", "Plain text");
     if (id == MODE_MARKDOWN) return QStringLiteral("Markdown");
     const CodeLanguage* lang = CodeStyle::instance().findId(id);

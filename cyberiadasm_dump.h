@@ -62,6 +62,11 @@ class DiffDocument;
 // by state machine, each with its change and the ids of its sides (EDIT-MODE-16)
 void dumpDiffDocument(const DiffDocument* doc, std::ostream& os);
 
+class TextDiffDocument;
+// the active text diff tab: its sides, the whitespace option, the counts, the current
+// hunk and the hunks with their rows and the equal rows next to them (EDIT-MODE-25)
+void dumpTextDiffDocument(const TextDiffDocument* doc, std::ostream& os);
+
 // the plugins found, one line per plugin folder: the id, the version, the state,
 // the origin and the reason, then the warnings (EDIT-PLUG-28)
 void dumpPlugins(const QList<PluginEntry>& entries, std::ostream& os);

@@ -878,14 +878,15 @@ static bool isDocumentVerb(const QString& cmd)
 {
 	return cmd == "open" || cmd == "new-document" || cmd == "switch" || cmd == "close" ||
 		cmd == "mode" || cmd == "read-only" || cmd == "compare" || cmd == "geometry" ||
-		cmd == "refresh" || cmd == "save";
+		cmd == "refresh" || cmd == "save" || cmd == "next-change" || cmd == "previous-change" ||
+		cmd == "ignore-whitespace";
 }
 
 // save [<file>]: Save, or Save As the file with the defaults of its dialog (EDIT-DOC-11)
 static bool saveDocument(CyberiadaSMEditorWindow* win, const QStringList& tokens, QString* error)
 {
 	EditorDocument* doc = win->currentTab();
-	if (win->currentDiff()) {
+	if (win->currentComparison()) {
 		*error = "a diff tab cannot be saved";
 		return false;
 	}
@@ -1022,8 +1023,34 @@ static bool runDocumentVerb(CyberiadaSMEditorWindow* win, const QStringList& tok
 		return true;
 	}
 	if (cmd == "compare") {
-		// compare <index|title|file|saved>: a diff tab of the active diagram (EDIT-MODE-16)
+		// compare <index|title|file|saved>: a diff tab of the active diagram (EDIT-MODE-16),
+		// a text diff tab of the active text (EDIT-MODE-25)
 		if (tokens.size() < 2) { *error = "compare needs a tab, a file or saved"; return false; }
+		if (TextDocument* text = win->currentText()) {
+			QString what = tokens.mid(1).join(' ');
+			DiffOrigin base;
+			if (what == "saved") {
+				if (!text->hasFile()) { *error = "the document has no saved file"; return false; }
+				base.kind = DiffOrigin::originSaved;
+				base.tab = text;
+				base.path = text->filePath();
+				base.label = "saved";
+			} else if (EditorDocument* tab = documentByToken(win, what)) {
+				TextDocument* other = qobject_cast<TextDocument*>(tab);
+				if (!other) { *error = "the tab " + what + " holds no text"; return false; }
+				base.kind = DiffOrigin::originTab;
+				base.tab = other;
+				base.label = other->title();
+			} else if (QFileInfo(what).isFile()) {
+				base.kind = DiffOrigin::originFile;
+				base.path = what;
+				base.label = QFileInfo(what).fileName();
+			} else {
+				*error = "no tab or file " + what;
+				return false;
+			}
+			return win->compareText(text, base, error) != nullptr;
+		}
 		CyberiadaSMEditorDocument* source = win->currentDocument();
 		if (!source) { *error = "the active tab holds no diagram"; return false; }
 		QString what = tokens.mid(1).join(' ');
@@ -1050,13 +1077,33 @@ static bool runDocumentVerb(CyberiadaSMEditorWindow* win, const QStringList& tok
 		}
 		return win->compareDocument(source, base, error) != nullptr;
 	}
-	if (cmd == "geometry" || cmd == "refresh") {
+	if (cmd == "next-change" || cmd == "previous-change") {
+		// the ends stop, as the menu does (EDIT-MODE-22)
+		ComparisonDocument* diff = win->currentComparison();
+		if (!diff) { *error = cmd + " needs an active diff tab"; return false; }
+		if (tokens.size() != 1) { *error = cmd + " takes no argument"; return false; }
+		diff->moveChange(cmd == "next-change" ? 1 : -1);
+		return true;
+	}
+	if (cmd == "ignore-whitespace") {
+		TextDiffDocument* diff = win->currentTextDiff();
+		if (!diff) { *error = "ignore-whitespace needs an active text diff tab"; return false; }
+		if (tokens.size() != 2 || (tokens[1] != "on" && tokens[1] != "off")) {
+			*error = "ignore-whitespace requires on or off";
+			return false;
+		}
+		diff->setIgnoreWhitespace(tokens[1] == "on");
+		return true;
+	}
+	if (cmd == "refresh") {
+		ComparisonDocument* diff = win->currentComparison();
+		if (!diff) { *error = "refresh needs an active diff tab"; return false; }
+		if (tokens.size() != 1) { *error = "refresh takes no argument"; return false; }
+		return win->refreshDiff(diff, error, true);
+	}
+	if (cmd == "geometry") {
 		DiffDocument* diff = win->currentDiff();
 		if (!diff) { *error = cmd + " needs an active diff tab"; return false; }
-		if (cmd == "refresh") {
-			if (tokens.size() != 1) { *error = "refresh takes no argument"; return false; }
-			return win->refreshDiff(diff, error, true);
-		}
 		if (tokens.size() != 2 || (tokens[1] != "on" && tokens[1] != "off")) {
 			*error = "geometry requires on or off";
 			return false;

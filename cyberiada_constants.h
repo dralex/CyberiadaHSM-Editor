@@ -105,6 +105,16 @@
 #define DIFF_CHANGED_COLOR       "#1565c0"
 // the changed text of a changed pair: a box behind the field
 #define DIFF_FIELD_COLOR         "#90caf9"
+// the rows of a text diff tab (EDIT-MODE-21): a removed, an added and a changed line,
+// the changed characters of a pair, a filler row, the ruler marks
+#define TEXT_DIFF_REMOVED_COLOR  "#ffebee"
+#define TEXT_DIFF_ADDED_COLOR    "#e8f5e9"
+#define TEXT_DIFF_CHANGED_COLOR  "#e3f2fd"
+#define TEXT_DIFF_SPAN_COLOR     "#90caf9"
+#define TEXT_DIFF_FILLER_COLOR   "#bdbdbd"
+#define TEXT_DIFF_RULER_WIDTH    12
+// the rows above a change shown when it is made current
+#define TEXT_DIFF_CONTEXT_ROWS   3
 #define RUN_MARK_WIDTH           4
 #define RUN_MARK_FILL_ALPHA      40
 // the find bar (EDIT-FIND-2/4, docs/FIND.md): the marks, the field without a match

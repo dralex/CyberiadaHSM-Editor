@@ -325,11 +325,13 @@ File                              Document
 6. The git plugin: Compare with a Revision... — done in cybersphere-git-plugin: `hsm-git
    revision` writes the base, `modes` on every git action, its text diff hides
    `regionGeometry` without the geometry as the tab does.
-7. The text diff tab — specified (0.11, `EDIT-MODE-19..25`, `EDIT-PLUG-58` in the text modes):
-   `text_diff` and its tests, `ComparisonDocument` taken out of `DiffDocument`,
-   `TextDiffDocument` with its panes and ruler, Compare with... on a text tab, Next and
-   Previous Change, Ignore Whitespace, the batch verbs and `== text diff`; then the git plugin
-   compares texts.
+7. The text diff tab — done in the editor (0.11, `EDIT-MODE-19..25`): `text_diff` and its
+   tests, `ComparisonDocument` taken out of `DiffDocument` (the window's Compare, Refresh,
+   plugin result and change list one path), `TextDiffDocument` with its `DiffTextPane`s and
+   `OverviewRuler`, Compare with... on a text tab, Next and Previous Change (also in an HSM
+   diff tab), Ignore Whitespace, the batch verbs and `== text diff`; a diff tab now reaches no
+   entry of Document > Mode. Next: `EDIT-PLUG-58` in the text modes and the git plugin
+   comparing texts.
 
 ## Decisions of 0.1
 

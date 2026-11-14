@@ -157,12 +157,18 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const BatchOptions& options)
 		dumpDiagnostics(stage.result, std::cout);
 	};
 
-	// a diff tab dumps its comparison and has nothing to draw or save (EDIT-MODE-16)
-	if (DiffDocument* diff = win.currentDiff()) {
+	// a diff tab dumps its comparison and has nothing to draw or save (EDIT-MODE-16/25)
+	if (ComparisonDocument* comparison = win.currentComparison()) {
 		if (options.dump) {
-			std::cout << "== diff" << std::endl;
-			dumpDiffDocument(diff, std::cout);
+			if (DiffDocument* diff = win.currentDiff()) {
+				std::cout << "== diff" << std::endl;
+				dumpDiffDocument(diff, std::cout);
+			} else {
+				std::cout << "== text diff" << std::endl;
+				dumpTextDiffDocument(win.currentTextDiff(), std::cout);
+			}
 		}
+		Q_UNUSED(comparison);
 		dumpPluginSections();
 		if (!options.exportImage.isEmpty() || options.dumpAudit || options.dumpTextMetrics ||
 			options.dumpUndoStack || !options.save.isEmpty()) {

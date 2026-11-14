@@ -87,13 +87,13 @@ void CodeEditor::paintLineNumbers(QPaintEvent* event)
     painter.fillRect(event->rect(), palette().color(QPalette::AlternateBase));
     painter.setPen(palette().color(QPalette::PlaceholderText));
     QTextBlock block = firstVisibleBlock();
-    int number = block.blockNumber() + 1;
+    int number = block.blockNumber();
     int top = qRound(blockBoundingGeometry(block).translated(contentOffset()).top());
     int bottom = top + qRound(blockBoundingRect(block).height());
     while (block.isValid() && top <= event->rect().bottom()) {
         if (block.isVisible() && bottom >= event->rect().top()) {
             painter.drawText(0, top, lineNumbers->width() - LINE_NUMBER_PADDING,
-                             fontMetrics().height(), Qt::AlignRight, QString::number(number));
+                             fontMetrics().height(), Qt::AlignRight, lineLabel(number));
         }
         block = block.next();
         top = bottom;

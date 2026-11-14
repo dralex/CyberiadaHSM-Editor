@@ -55,9 +55,8 @@ static QWidget* sidePane(QLabel* label, CyberiadaSMGraphicsView* view)
 }
 
 DiffDocument::DiffDocument(QObject* parent):
-    EditorDocument(parent)
+    ComparisonDocument(parent)
 {
-    m_undo = new QUndoStack(this);
     // both sides are read as stored and never edited (EDIT-MODE-10)
     m_baseModel = new CyberiadaSMModel(this);
     m_targetModel = new CyberiadaSMModel(this);
@@ -89,28 +88,42 @@ QWidget* DiffDocument::page() const
     return m_page;
 }
 
-QString DiffDocument::title() const
+void DiffDocument::loadSides()
 {
-    return m_target.label + QString::fromUtf8(" ↔ ") + m_base.label;
-}
-
-void DiffDocument::setSides(const std::string& base, const std::string& target)
-{
-    m_baseBuffer = base;
-    m_targetBuffer = target;
     // the reset reloads each scene from its document as it is stored
-    m_baseModel->restoreSnapshot(base);
-    m_targetModel->restoreSnapshot(target);
+    m_baseModel->restoreSnapshot(m_baseBuffer);
+    m_targetModel->restoreSnapshot(m_targetBuffer);
     m_baseLabel->setText(tr("Base: %1").arg(m_base.label));
     m_targetLabel->setText(tr("Target: %1").arg(m_target.label));
     compare();
-    emit titleChanged();
+}
+
+QList<ChangeEntry> DiffDocument::changes() const
+{
+    QList<ChangeEntry> list;
+    for (const DiffRow& row : m_rows) {
+        ChangeEntry entry;
+        entry.group = row.machine;
+        entry.element = row.element;
+        entry.change = row.change;
+        entry.kind = row.change == "added" ? ChangeEntry::changeAdded :
+                     row.change == "removed" ? ChangeEntry::changeRemoved : ChangeEntry::changeChanged;
+        list << entry;
+    }
+    return list;
+}
+
+void DiffDocument::showChange(int index)
+{
+    const DiffRow& row = m_rows.at(index);
+    showElement(row.first, row.second);
 }
 
 void DiffDocument::setGeometry(bool on)
 {
     if (m_geometry == on) return;
     m_geometry = on;
+    m_current = -1;
     compare();
 }
 

@@ -1,0 +1,4 @@
+# Ignore Whitespace: the reset line equal; Previous Change from no row takes the last (EDIT-MODE-22/23/25)
+compare texts/diff-base.py
+ignore-whitespace on
+previous-change

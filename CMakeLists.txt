@@ -160,8 +160,11 @@ add_library(CyberiadaEditorCore STATIC
   shortcut_map.h shortcut_map.cpp
   autoreplace.h autoreplace.cpp
   diagram_find.h diagram_find.cpp
+  comparison_document.h comparison_document.cpp
   diff_document.h diff_document.cpp
   text_diff.h text_diff.cpp
+  text_diff_view.h text_diff_view.cpp
+  text_diff_document.h text_diff_document.cpp
   cyberiadasm_editor_document.cpp
   cyberiadasm_properties_widget.cpp
   cyberiadasm_editor_view.cpp
