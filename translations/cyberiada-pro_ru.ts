@@ -2951,7 +2951,7 @@
         <translation>Показывать комментарии Markdown отформатированными</translation>
     </message>
     <message>
-        <location filename="../dialogs/preferences_dialog.cpp" line="+28"/>
+        <location filename="../dialogs/preferences_dialog.cpp" line="+31"/>
         <source>Plugin interpreters (empty: looked up in PATH)</source>
         <translation>Интерпретаторы плагинов (пусто: поиск в PATH)</translation>
     </message>
@@ -2971,7 +2971,12 @@
         <translation>Плагины</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+3"/>
+        <source>Shortcuts</source>
+        <translation>Сочетания клавиш</translation>
+    </message>
+    <message>
+        <location line="+5"/>
         <source>System default (%1)</source>
         <translation>Как в системе (%1)</translation>
     </message>
@@ -3749,6 +3754,64 @@
         <location line="+3"/>
         <source>Skip empty behaviour</source>
         <translation>Пропускать пустое поведение</translation>
+    </message>
+</context>
+<context>
+    <name>ShortcutsPage</name>
+    <message>
+        <location filename="../dialogs/shortcuts_page.cpp" line="+50"/>
+        <source>Filter</source>
+        <translation>Фильтр</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Action</source>
+        <translation>Действие</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Keys</source>
+        <translation>Клавиши</translation>
+    </message>
+    <message>
+        <location line="+28"/>
+        <source>Assign</source>
+        <translation>Назначить</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Add</source>
+        <translation>Добавить</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Clear</source>
+        <translation>Очистить</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Reset</source>
+        <translation>Сбросить</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Reset all</source>
+        <translation>Сбросить все</translation>
+    </message>
+    <message>
+        <location line="+114"/>
+        <source>%1 is the key of &quot;%2&quot;.</source>
+        <translation>%1 — сочетание действия «%2».</translation>
+    </message>
+    <message>
+        <location line="+18"/>
+        <source>%1 is the key of &quot;%2&quot;. Give it to &quot;%3&quot;?</source>
+        <translation>%1 — сочетание действия «%2». Передать его действию «%3»?</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Shortcuts</source>
+        <translation>Сочетания клавиш</translation>
     </message>
 </context>
 <context>

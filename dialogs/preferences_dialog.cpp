@@ -16,10 +16,13 @@
 #include "settings_manager.h"
 #include "fontmanager.h"
 #include "interface_language.h"
+#include "shortcut_map.h"
+#include "shortcuts_page.h"
 
-PreferencesDialog::PreferencesDialog(QWidget *parent) :
+PreferencesDialog::PreferencesDialog(QWidget *parent, ShortcutMap* keys) :
     QDialog(parent),
-    ui(new Ui::PreferencesDialog)
+    ui(new Ui::PreferencesDialog),
+    shortcutMap(keys)
 {
     ui->setupUi(this);
     // the plugin interpreters: a name of plugin.json, the program it stands for
@@ -35,6 +38,10 @@ PreferencesDialog::PreferencesDialog(QWidget *parent) :
     interpreters->verticalHeader()->hide();
     pluginsLayout->addWidget(interpreters);
     ui->tabWidget->addTab(pluginsTab, tr("Plugins"));
+    if (shortcutMap) {
+        shortcuts = new ShortcutsPage(shortcutMap, this);
+        ui->tabWidget->addTab(shortcuts, tr("Shortcuts"));
+    }
 
     // the interface languages by their own names; the empty code is the system one
     QString system = resolveUiLanguage(QString(), QLocale::system().uiLanguages());
@@ -104,6 +111,8 @@ void PreferencesDialog::slotApplySettings()
 void PreferencesDialog::slotResetSettings()
 {
     SettingsManager::instance().loadDefaults();
+    // the changed keys are dropped too (EDIT-KEYS-4)
+    if (shortcutMap) shortcutMap->resetAll();
     loadFromSettings();
 }
 
@@ -157,6 +166,7 @@ void PreferencesDialog::loadFromSettings()
         interpreters->setItem(row, 1, new QTableWidgetItem(i.value()));
     }
     interpreters->insertRow(interpreters->rowCount());
+    if (shortcuts) shortcuts->load();
 }
 
 void PreferencesDialog::saveSettings()
@@ -209,4 +219,5 @@ void PreferencesDialog::saveSettings()
     for (QMap<QString, QString>::const_iterator i = old.begin(); i != old.end(); i++) {
         if (!kept.contains(i.key())) sm.setInterpreterPath(i.key(), QString());
     }
+    if (shortcuts) shortcuts->apply();
 }

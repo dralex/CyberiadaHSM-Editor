@@ -192,6 +192,7 @@ add_library(CyberiadaEditorCore STATIC
   dialogs/open_file_dialog.h dialogs/open_file_dialog.cpp dialogs/open_file_dialog.ui
   dialogs/save_file_dialog.h dialogs/save_file_dialog.cpp dialogs/save_file_dialog.ui
   dialogs/preferences_dialog.h dialogs/preferences_dialog.cpp dialogs/preferences_dialog.ui
+  dialogs/shortcuts_page.h dialogs/shortcuts_page.cpp
   settings_manager.h settings_manager.cpp
   interface_language.h interface_language.cpp
   gesture_log.h gesture_log.cpp

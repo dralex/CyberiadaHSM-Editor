@@ -136,7 +136,8 @@ start, so that they see the text typed (`EDIT-KEYS-10`).
 | `shortcut_map.*` | `ShortcutMap`, the default table, the key list as text, the conflicts |
 | `settings_manager.*` | `shortcuts/<id>`: read, write, remove, the group reset |
 | `smeditor_window.*` | `initShortcuts()`, the action names, Go to Line, `commitPendingEdit()`, Del on a point |
-| `dialogs/preferences_dialog.*` | the Shortcuts page |
+| `dialogs/shortcuts_page.*` | `ShortcutsPage`: the tree, the key field, the copy of the keys |
+| `dialogs/preferences_dialog.*` | the page as a tab, its load, apply and reset |
 | `code_editor.*` | the window keys left to the window |
 | `editable_text_item.*`, `cyberiadasm_editor_state_item.cpp` | `commitEditing()`, `cancelEditing()`, `Esc` |
 | `cyberiadasm_editor_scene.*` | `commitTextEdit()` |

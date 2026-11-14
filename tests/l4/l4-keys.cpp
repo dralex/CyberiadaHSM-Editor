@@ -22,7 +22,13 @@
  * ----------------------------------------------------------------------------- */
 
 #include <QtTest>
+#include <QDialogButtonBox>
 #include <QInputDialog>
+#include <QKeySequenceEdit>
+#include <QLabel>
+#include <QMessageBox>
+#include <QPushButton>
+#include <QTreeWidget>
 #include <QLineEdit>
 #include <QSettings>
 #include <QTemporaryDir>
@@ -33,6 +39,8 @@
 #include "text_document.h"
 #include "find_bar.h"
 #include "shortcut_map.h"
+#include "dialogs/preferences_dialog.h"
+#include "dialogs/shortcuts_page.h"
 #include "cyberiadasm_editor_view.h"
 #include "settings_manager.h"
 
@@ -50,10 +58,18 @@ private slots:
 	void test_text_takes_keys();
 	void test_find_bar_esc();
 	void test_go_to_line();
+	void test_page();
+	void test_page_conflict();
+	void test_page_reset();
 
 private:
 	static QKeySequence key(const char* text) { return QKeySequence(QString(text)); }
 	static void activate(CyberiadaSMEditorWindow& window);
+	static QList<QKeySequence> one(const char* text) { return QList<QKeySequence>() << key(text); }
+	// the question of the page answered when it comes
+	static void answer(QMessageBox::StandardButton button);
+	static void type(QDialog& dialog, const char* text);
+	static void click(QDialog& dialog, const char* button);
 	QTemporaryDir settings;
 };
 
@@ -277,6 +293,173 @@ void TestKeys::test_go_to_line()
 	window.currentText()->setReadOnlyFlag(true);
 	QVERIFY(window.currentText()->showsRendered());
 	QVERIFY(!window.actionGoToLine->isEnabled());
+}
+
+void TestKeys::answer(QMessageBox::StandardButton button)
+{
+	QTimer::singleShot(50, [button]() {
+		QMessageBox* box = qobject_cast<QMessageBox*>(QApplication::activeModalWidget());
+		if (box) box->button(button)->click();
+	});
+}
+
+void TestKeys::type(QDialog& dialog, const char* text)
+{
+	dialog.findChild<QKeySequenceEdit*>("shortcutKeyEdit")->setKeySequence(key(text));
+}
+
+void TestKeys::click(QDialog& dialog, const char* button)
+{
+	QPushButton* b = dialog.findChild<QPushButton*>(button);
+	QVERIFY2(b && b->isEnabled(), button);
+	b->click();
+}
+
+// EDIT-KEYS-2: the rows by the menus, the filter, Assign, Add and Clear on a copy,
+// Apply and Cancel
+void TestKeys::test_page()
+{
+	CyberiadaSMEditorWindow window;
+	ShortcutMap* map = window.shortcuts();
+	// no page without the keys of a window
+	QVERIFY(!PreferencesDialog().shortcutsPage());
+	{
+		PreferencesDialog dialog(&window, map);
+		ShortcutsPage* page = dialog.shortcutsPage();
+		QVERIFY(page);
+		QTreeWidget* tree = dialog.findChild<QTreeWidget*>("shortcutTree");
+		QVERIFY(tree);
+		int rows = 0;
+		QStringList groups;
+		for (int g = 0; g < tree->topLevelItemCount(); g++) {
+			groups << tree->topLevelItem(g)->text(0);
+			rows += tree->topLevelItem(g)->childCount();
+		}
+		QCOMPARE(rows, map->ids().size());
+		QVERIFY(groups.contains("File"));
+		QVERIFY(groups.contains("Edit > Tools"));
+		QVERIFY(groups.contains("Plugins > Session"));
+		QVERIFY(page->select("actionSave"));
+		QTreeWidgetItem* save = tree->currentItem();
+		QCOMPARE(save->text(0), QString("Save..."));
+		QCOMPARE(save->text(1), key("Ctrl+S").toString(QKeySequence::NativeText));
+		QVERIFY(!save->font(1).bold());
+		QVERIFY(!page->select("actionNoSuch"));
+
+		// the filter by the action, the menu and the key
+		QLineEdit* filter = dialog.findChild<QLineEdit*>("shortcutFilter");
+		filter->setText("zoom");
+		QVERIFY(save->isHidden());
+		QVERIFY(save->parent()->isHidden());
+		page->select("actionZoomIn");
+		QVERIFY(!tree->currentItem()->isHidden());
+		filter->setText("session");
+		page->select("actionSessionRestart");
+		QVERIFY(!tree->currentItem()->isHidden());
+		filter->setText("ctrl+s");
+		QVERIFY(!save->isHidden());
+		filter->clear();
+		QVERIFY(!save->parent()->isHidden());
+
+		// the keys of the copy change, the window keeps its own until Apply
+		QVERIFY(page->select("actionAbout"));
+		QTreeWidgetItem* about = tree->currentItem();
+		QVERIFY(!dialog.findChild<QPushButton*>("shortcutClear")->isEnabled());
+		QVERIFY(!dialog.findChild<QPushButton*>("shortcutReset")->isEnabled());
+		type(dialog, "F1");
+		click(dialog, "shortcutAssign");
+		type(dialog, "Shift+F1");
+		click(dialog, "shortcutAdd");
+		QCOMPARE(page->keys("actionAbout"), QList<QKeySequence>() << key("F1") << key("Shift+F1"));
+		QVERIFY(about->font(1).bold());
+		QVERIFY(about->text(1).contains("; "));
+		type(dialog, "F2");
+		click(dialog, "shortcutAssign");
+		QCOMPARE(page->keys("actionAbout"), one("F2"));
+		QVERIFY(window.actionAbout->shortcuts().isEmpty());
+		dialog.findChild<QDialogButtonBox*>()->button(QDialogButtonBox::Apply)->click();
+		QCOMPARE(window.actionAbout->shortcuts(), one("F2"));
+		QCOMPARE(QSettings().value("shortcuts/actionAbout").toString(), QString("F2"));
+
+		click(dialog, "shortcutClear");
+		QVERIFY(page->keys("actionAbout").isEmpty());
+		QVERIFY(!about->font(1).bold());
+		// Cancel: the cleared key stays in the window
+	}
+	QCOMPARE(window.actionAbout->shortcuts(), one("F2"));
+	{
+		PreferencesDialog dialog(&window, map);
+		QCOMPARE(dialog.shortcutsPage()->keys("actionAbout"), one("F2"));
+		dialog.shortcutsPage()->select("actionAbout");
+		click(dialog, "shortcutReset");
+		dialog.findChild<QDialogButtonBox*>()->button(QDialogButtonBox::Ok)->click();
+	}
+	QVERIFY(window.actionAbout->shortcuts().isEmpty());
+	QVERIFY(QSettings().allKeys().filter("shortcuts/").isEmpty());
+}
+
+// EDIT-KEYS-3: the holder of a key is named and gives it on a confirmation
+void TestKeys::test_page_conflict()
+{
+	CyberiadaSMEditorWindow window;
+	ShortcutMap* map = window.shortcuts();
+	PreferencesDialog dialog(&window, map);
+	ShortcutsPage* page = dialog.shortcutsPage();
+	QLabel* holder = dialog.findChild<QLabel*>("shortcutHolder");
+	page->select("actionAbout");
+	type(dialog, "F2");
+	QVERIFY(holder->text().isEmpty());
+	type(dialog, "Ctrl+S");
+	QVERIFY(holder->text().contains("File > Save..."));
+
+	answer(QMessageBox::No);
+	click(dialog, "shortcutAssign");
+	QVERIFY(page->keys("actionAbout").isEmpty());
+	QCOMPARE(page->keys("actionSave"), one("Ctrl+S"));
+
+	answer(QMessageBox::Yes);
+	click(dialog, "shortcutAssign");
+	QCOMPARE(page->keys("actionAbout"), one("Ctrl+S"));
+	QVERIFY(page->keys("actionSave").isEmpty());
+	QVERIFY(holder->text().isEmpty());
+
+	// one of two keys taken, the other stays
+	type(dialog, "Ctrl+Y");
+	answer(QMessageBox::Yes);
+	click(dialog, "shortcutAdd");
+	QCOMPARE(page->keys("actionAbout"), QList<QKeySequence>() << key("Ctrl+S") << key("Ctrl+Y"));
+	QCOMPARE(page->keys("actionRedo"), one("Ctrl+Shift+Z"));
+
+	dialog.findChild<QDialogButtonBox*>()->button(QDialogButtonBox::Apply)->click();
+	QVERIFY(window.actionSave->shortcuts().isEmpty());
+	QCOMPARE(window.actionAbout->shortcuts().size(), 2);
+	for (const QString& id : map->ids()) {
+		for (const QKeySequence& k : map->keys(id)) QVERIFY(map->holder(k, id).isEmpty());
+	}
+
+	// the reset of a row takes its default key back
+	page->select("actionSave");
+	click(dialog, "shortcutReset");
+	QCOMPARE(page->keys("actionSave"), one("Ctrl+S"));
+	QCOMPARE(page->keys("actionAbout"), one("Ctrl+Y"));
+	click(dialog, "shortcutResetAll");
+	QVERIFY(page->keys("actionAbout").isEmpty());
+	QCOMPARE(page->keys("actionRedo").size(), 2);
+	dialog.findChild<QDialogButtonBox*>()->button(QDialogButtonBox::Apply)->click();
+	QVERIFY(QSettings().allKeys().filter("shortcuts/").isEmpty());
+}
+
+// EDIT-KEYS-4: Reset of the Preferences drops the changed keys
+void TestKeys::test_page_reset()
+{
+	CyberiadaSMEditorWindow window;
+	window.shortcuts()->setKeys("actionAbout", one("F1"));
+	PreferencesDialog dialog(&window, window.shortcuts());
+	QCOMPARE(dialog.shortcutsPage()->keys("actionAbout"), one("F1"));
+	dialog.findChild<QDialogButtonBox*>()->button(QDialogButtonBox::Reset)->click();
+	QVERIFY(dialog.shortcutsPage()->keys("actionAbout").isEmpty());
+	QVERIFY(window.actionAbout->shortcuts().isEmpty());
+	QVERIFY(QSettings().allKeys().filter("shortcuts/").isEmpty());
 }
 
 QTEST_MAIN(TestKeys)

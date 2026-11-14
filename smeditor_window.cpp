@@ -1781,7 +1781,7 @@ void CyberiadaSMEditorWindow::slotZoomComboActivated() {
 
 void CyberiadaSMEditorWindow::slotPreferences()
 {
-    PreferencesDialog dlg(this);
+    PreferencesDialog dlg(this, m_shortcuts);
     dlg.exec();
 }
 

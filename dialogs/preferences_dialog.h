@@ -4,6 +4,8 @@
 #include <QDialog>
 
 class QTableWidget;
+class ShortcutMap;
+class ShortcutsPage;
 
 namespace Ui {
 class PreferencesDialog;
@@ -14,7 +16,8 @@ class PreferencesDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit PreferencesDialog(QWidget *parent = nullptr);
+    // with the keys of a window the dialog has its Shortcuts page (EDIT-KEYS-2)
+    explicit PreferencesDialog(QWidget *parent = nullptr, ShortcutMap* keys = nullptr);
     ~PreferencesDialog();
 
 private slots:
@@ -33,8 +36,11 @@ private:
     QColor selectionColor;
     // the plugin interpreters by logical name (EDIT-PLUG-31)
     QTableWidget* interpreters = nullptr;
+    ShortcutMap* shortcutMap = nullptr;
+    ShortcutsPage* shortcuts = nullptr;
 public:
     QTableWidget* interpreterTable() const { return interpreters; }
+    ShortcutsPage* shortcutsPage() const { return shortcuts; }
 };
 
 #endif // PREFERENCES_DIALOG_H
