@@ -777,6 +777,7 @@ add_l4_test(markdown)
 add_l4_test(find)
 add_l4_test(keys)
 add_l4_test(autoreplace)
+add_l4_test(textdiff)
 
 # The plugin layer: the batch plugin stage over the example plugins of
 # plugins/<set>/, which all run one helper with no dependencies (see

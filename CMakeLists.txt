@@ -161,6 +161,7 @@ add_library(CyberiadaEditorCore STATIC
   autoreplace.h autoreplace.cpp
   diagram_find.h diagram_find.cpp
   diff_document.h diff_document.cpp
+  text_diff.h text_diff.cpp
   cyberiadasm_editor_document.cpp
   cyberiadasm_properties_widget.cpp
   cyberiadasm_editor_view.cpp
