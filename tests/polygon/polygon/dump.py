@@ -543,7 +543,7 @@ def parse_text(text):
 
 # the header keys of the document text-tab form of the == text section
 # (EDIT-MODE-13..16): the active text document, not the per-element glyphs
-TEXT_TAB_KEYS = ("mode", "file", "modified", "rendered", "lines")
+TEXT_TAB_KEYS = ("mode", "file", "modified", "rendered", "error", "lines")
 
 
 @dataclass
@@ -553,6 +553,7 @@ class TextTab:
     modified: bool
     rendered: bool         # a Markdown tab shown read-only rendered
     content: str           # the tab body, the leading "| " stripped, newlines kept
+    error: str = ""        # a parse diagnostic of the text (e.g. json), '' or 'none' if clean
 
     def lines(self):
         return self.content.split("\n") if self.content else []
@@ -597,7 +598,7 @@ def parse_text_tab(text):
     return TextTab(mode=header.get("mode", ""), file=header.get("file", ""),
                    modified=header.get("modified") == "yes",
                    rendered=header.get("rendered") == "yes",
-                   content="\n".join(body))
+                   content="\n".join(body), error=header.get("error", ""))
 
 
 def parse_stack(text):
