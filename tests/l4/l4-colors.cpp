@@ -24,8 +24,12 @@
 #include <QtTest>
 #include <QComboBox>
 #include <QDialogButtonBox>
+#include <QFontComboBox>
+#include <QFontDatabase>
+#include <QLabel>
 #include <QPushButton>
 #include <QSettings>
+#include <QSpinBox>
 #include <QTemporaryDir>
 #include <QTextBlock>
 #include <QTextEdit>
@@ -37,6 +41,7 @@
 #include "cyberiada_constants.h"
 #include "document_mode.h"
 #include "find_query.h"
+#include "fontmanager.h"
 #include "markdown_objects.h"
 #include "markdown_view.h"
 #include "settings_manager.h"
@@ -63,6 +68,8 @@ private slots:
 	void test_page();
 	void test_page_schemes();
 	void test_reset();
+	void test_editor_font();
+	void test_page_font();
 
 private:
 	static QPushButton* button(QWidget* parent, const char* name) { return parent->findChild<QPushButton*>(name); }
@@ -77,11 +84,15 @@ void TestColors::initTestCase()
 	// the stored schemes must not reach the profile the other cases share
 	QVERIFY(settings.isValid());
 	QSettings::setPath(QSettings::defaultFormat(), QSettings::UserScope, settings.path());
+	FontManager::instance().loadBundledFont();
 }
 
 void TestColors::init()
 {
-	QSettings().remove("textSchemes");
+	QSettings s;
+	s.remove("textSchemes");
+	s.remove("display/editorFontFamily");
+	s.remove("display/editorFontSize");
 	SettingsManager::instance().load();
 }
 
@@ -458,6 +469,108 @@ void TestColors::test_reset()
 	QVERIFY(QSettings().allKeys().filter("textSchemes/list").isEmpty());
 	QCOMPARE(dialog.textSchemePanel()->shownId(), QString(TEXT_SCHEME_DEFAULT));
 	QCOMPARE(dialog.textSchemePanel()->findChild<QComboBox*>("textSchemeList")->count(), 2);
+}
+
+// EDIT-MODE-27: the editors in their own font, bundled 12 pt by default, apart from the diagram font
+void TestColors::test_editor_font()
+{
+	SettingsManager& sm = SettingsManager::instance();
+	FontManager& fm = FontManager::instance();
+	QCOMPARE(sm.getEditorFontFamily(), QString());
+	QCOMPARE(sm.getEditorFontSize(), FONT_SIZE);
+	QCOMPARE(fm.editorFont().family(), fm.bundledFamily());
+	QCOMPARE(fm.editorFont().pointSize(), FONT_SIZE);
+	TextDocument text("cpp");
+	text.setText("\tint x;");
+	CodeEditor* editor = text.editor();
+	QCOMPARE(editor->font().family(), fm.bundledFamily());
+	QCOMPARE(editor->font().pointSize(), FONT_SIZE);
+
+	// a change re-fonts the open tab, its tab stop in the new metrics; the diagram font stays
+	const QFont diagram = fm.font(fontRoleStateAction);
+	QSignalSpy diagramSpy(&fm, &FontManager::fontsChanged);
+	QSignalSpy spy(&sm, &SettingsManager::editorFontChanged);
+	const int size = FONT_SIZE * 2;
+	sm.setEditorFontSize(size);
+	QCOMPARE(spy.count(), 1);
+	QCOMPARE(diagramSpy.count(), 0);
+	QCOMPARE(editor->font().pointSize(), size);
+	QCOMPARE(editor->tabStopDistance(), qreal(editor->fontMetrics().horizontalAdvance(' ') * 4));
+	QCOMPARE(fm.font(fontRoleStateAction), diagram);
+	sm.setEditorFontSize(FONT_SIZE_MAX + 1);
+	QCOMPARE(sm.getEditorFontSize(), size);
+
+	// another monospaced family, when the system has one
+	QString other;
+	QFontDatabase fonts;
+	for (const QString& family : fonts.families()) {
+		if (family != fm.bundledFamily() && fonts.isFixedPitch(family)) {
+			other = family;
+			break;
+		}
+	}
+	if (!other.isEmpty()) {
+		sm.setEditorFontFamily(other);
+		QCOMPARE(editor->font().family(), other);
+	}
+
+	// a new editor takes it, as a side of a text diff tab does
+	CodeEditor fresh;
+	QCOMPARE(fresh.font(), editor->font());
+	// the rendered page keeps its own font
+	MarkdownView page;
+	QVERIFY(page.font() != editor->font());
+
+	QSettings s;
+	QCOMPARE(s.value("display/editorFontSize").toInt(), size);
+	QCOMPARE(s.value("display/editorFontFamily").toString(), other);
+	sm.load();
+	QCOMPARE(sm.getEditorFontSize(), size);
+	QCOMPARE(sm.getEditorFontFamily(), other);
+}
+
+// EDIT-MODE-27, EDIT-COLOR-3: the font row of Text editors, its preview, Apply, Cancel, Reset
+void TestColors::test_page_font()
+{
+	SettingsManager& sm = SettingsManager::instance();
+	FontManager& fm = FontManager::instance();
+	TextDocument text("cpp");
+	{
+		PreferencesDialog dialog;
+		QCOMPARE(dialog.findChild<QLabel*>("fontFamilyLabel")->text(), QString("Diagram font"));
+		QCOMPARE(dialog.findChild<QLabel*>("textSchemeTitle")->text(), QString("Text editors"));
+		TextSchemePanel* panel = dialog.textSchemePanel();
+		QFontComboBox* family = panel->findChild<QFontComboBox*>("textEditorFontFamily");
+		QSpinBox* size = panel->findChild<QSpinBox*>("textEditorFontSize");
+		QVERIFY(family && size);
+		QCOMPARE(family->currentFont().family(), fm.bundledFamily());
+		QCOMPARE(size->value(), FONT_SIZE);
+		QCOMPARE(panel->preview()->font().pointSize(), FONT_SIZE);
+
+		// the preview follows, the open tab not before Apply
+		size->setValue(FONT_SIZE + 4);
+		QCOMPARE(panel->preview()->font().pointSize(), FONT_SIZE + 4);
+		QCOMPARE(text.editor()->font().pointSize(), FONT_SIZE);
+		dialog.findChild<QDialogButtonBox*>()->button(QDialogButtonBox::Apply)->click();
+		QCOMPARE(sm.getEditorFontSize(), FONT_SIZE + 4);
+		QCOMPARE(text.editor()->font().pointSize(), FONT_SIZE + 4);
+		// the bundled family is stored empty
+		QCOMPARE(sm.getEditorFontFamily(), QString());
+
+		// Cancel changes nothing
+		size->setValue(FONT_SIZE_MAX);
+		dialog.reject();
+	}
+	QCOMPARE(sm.getEditorFontSize(), FONT_SIZE + 4);
+	QCOMPARE(text.editor()->font().pointSize(), FONT_SIZE + 4);
+
+	// Reset of the Preferences: the bundled font at 12 pt
+	PreferencesDialog dialog;
+	dialog.findChild<QDialogButtonBox*>()->button(QDialogButtonBox::Reset)->click();
+	QCOMPARE(sm.getEditorFontSize(), FONT_SIZE);
+	QCOMPARE(sm.getEditorFontFamily(), QString());
+	QCOMPARE(text.editor()->font().pointSize(), FONT_SIZE);
+	QCOMPARE(dialog.textSchemePanel()->findChild<QSpinBox*>("textEditorFontSize")->value(), FONT_SIZE);
 }
 
 QTEST_MAIN(TestColors)

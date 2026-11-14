@@ -41,7 +41,7 @@ private:
     ShortcutMap* shortcutMap = nullptr;
     ShortcutsPage* shortcuts = nullptr;
     AutoreplacePage* autoreplace = nullptr;
-    // the color schemes of the text editors on the Text page, under its title (EDIT-COLOR-3)
+    // the font and the color schemes of the text editors on the Text page (EDIT-MODE-27, EDIT-COLOR-3)
     TextSchemePanel* textSchemes = nullptr;
 public:
     AutoreplacePage* autoreplacePage() const { return autoreplace; }

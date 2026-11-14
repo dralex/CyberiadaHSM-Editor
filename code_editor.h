@@ -65,6 +65,7 @@ protected:
     void inputMethodEvent(QInputMethodEvent* event) override;
     void contextMenuEvent(QContextMenuEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
+    void changeEvent(QEvent* event) override;
 
 private slots:
     void updateMargin();
@@ -72,6 +73,10 @@ private slots:
     void updateLineNumbers(const QRect& rect, int dy);
 
 private:
+    // the tab stop and the margins, measured in the font
+    void applyFontMetrics();
+    void placeLineNumbers();
+
     QWidget* lineNumbers;
     QWidget* errorBar;
     int m_errorLine = 0;

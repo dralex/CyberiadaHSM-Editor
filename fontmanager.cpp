@@ -79,6 +79,16 @@ QFont FontManager::font(FontRole role) const
     return result;
 }
 
+QFont FontManager::editorFont() const
+{
+    const SettingsManager& settings = SettingsManager::instance();
+    QString family = settings.getEditorFontFamily();
+    QFont result(family.isEmpty() ? bundled : family);
+    result.setPointSize(settings.getEditorFontSize());
+    result.setStyleHint(QFont::Monospace);
+    return result;
+}
+
 QFont FontManager::baseFont() const
 {
     QString family = SettingsManager::instance().getFontFamily();

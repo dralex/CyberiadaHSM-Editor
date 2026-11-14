@@ -1513,7 +1513,7 @@
 <context>
     <name>DocumentMode</name>
     <message>
-        <location filename="../document_mode.cpp" line="+42"/>
+        <location filename="../document_mode.cpp" line="+43"/>
         <source>inspection</source>
         <translation>инспекция</translation>
     </message>
@@ -2560,12 +2560,12 @@
         <translation>выходной документ не удается прочитать</translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="+18"/>
         <source>the output document is empty</source>
         <translation>выходной документ пуст</translation>
     </message>
     <message>
-        <location line="-42"/>
+        <location line="-50"/>
         <source>the output document has no state machine</source>
         <translation>в выходном документе нет машины состояний</translation>
     </message>
@@ -2585,12 +2585,12 @@
         <translation>выходной документ не является допустимым документом CyberiadaML</translation>
     </message>
     <message>
-        <location line="+37"/>
+        <location line="+30"/>
         <source>the output text is not UTF-8</source>
         <translation>выходной текст не в кодировке UTF-8</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+26"/>
         <source>the diagnostics file cannot be read</source>
         <translation>файл замечаний не удается прочитать</translation>
     </message>
@@ -3022,11 +3022,20 @@
     </message>
     <message>
         <location line="+8"/>
-        <source>Font</source>
-        <translation>Шрифт</translation>
+        <source>Diagram font</source>
+        <translation>Шрифт диаграмм</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+146"/>
+        <source>Text editors</source>
+        <translation>Текстовые редакторы</translation>
+    </message>
+    <message>
+        <source>Font</source>
+        <translation type="vanished">Шрифт</translation>
+    </message>
+    <message>
+        <location line="-139"/>
         <source>The family of the text of every element but the formal comment</source>
         <translation>Гарнитура текста всех элементов, кроме формального комментария</translation>
     </message>
@@ -3089,9 +3098,8 @@
         <translation>Показывать комментарии Markdown отформатированными</translation>
     </message>
     <message>
-        <location line="+17"/>
         <source>Text editor colors</source>
-        <translation>Цвета текстового редактора</translation>
+        <translation type="vanished">Цвета текстового редактора</translation>
     </message>
     <message>
         <location filename="../dialogs/preferences_dialog.cpp" line="+33"/>
@@ -4219,12 +4227,22 @@
 <context>
     <name>TextSchemePanel</name>
     <message>
-        <location filename="../dialogs/text_scheme_panel.cpp" line="+53"/>
+        <location filename="../dialogs/text_scheme_panel.cpp" line="+57"/>
+        <source>Font</source>
+        <translation>Шрифт</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source> pt</source>
+        <translation> пт</translation>
+    </message>
+    <message>
+        <location line="+5"/>
         <source>Scheme</source>
         <translation>Схема</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+10"/>
         <source>Copy...</source>
         <translation>Копировать...</translation>
     </message>
@@ -4268,7 +4286,7 @@ int main() { return printf(&quot;%d&quot;, 42); }
 ```</translation>
     </message>
     <message>
-        <location line="+169"/>
+        <location line="+188"/>
         <source>Name</source>
         <translation>Имя</translation>
     </message>

@@ -105,6 +105,8 @@ void SettingsManager::load() {
     for (int role = 0; role < fontRolesCount; role++) {
         fontSizes[role] = s.value(fontSizeKey(FontRole(role)), FONT_SIZE).toInt();
     }
+    editorFontFamily = s.value("display/editorFontFamily", QString()).toString();
+    editorFontSize = s.value("display/editorFontSize", FONT_SIZE).toInt();
     boldActionPrefix = s.value("display/boldActionPrefix", true).toBool();
     boldEventName = s.value("display/boldEventName", true).toBool();
     boldTransitionEventName = s.value("display/boldTransitionEventName", true).toBool();
@@ -190,6 +192,8 @@ void SettingsManager::loadDefaults()
     for (int role = 0; role < fontRolesCount; role++) {
         setFontSize(FontRole(role), FONT_SIZE);
     }
+    setEditorFontFamily(QString());
+    setEditorFontSize(FONT_SIZE);
     setBoldActionPrefix(true);
     setBoldEventName(true);
     setBoldTransitionEventName(true);
@@ -220,6 +224,25 @@ void SettingsManager::setFontFamily(const QString& value)
 int SettingsManager::getFontSize(FontRole role) const
 {
     return fontSizes[storedFontRole(role)];
+}
+
+void SettingsManager::setEditorFontFamily(const QString& value)
+{
+    if (editorFontFamily != value) {
+        editorFontFamily = value;
+        QSettings().setValue("display/editorFontFamily", value);
+        emit editorFontChanged();
+    }
+}
+
+void SettingsManager::setEditorFontSize(int value)
+{
+    if (value < FONT_SIZE_MIN || value > FONT_SIZE_MAX) return;
+    if (editorFontSize != value) {
+        editorFontSize = value;
+        QSettings().setValue("display/editorFontSize", value);
+        emit editorFontChanged();
+    }
 }
 
 void SettingsManager::setFontSize(FontRole role, int value)
