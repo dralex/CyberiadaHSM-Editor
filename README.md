@@ -23,7 +23,8 @@ a file exactly as it is stored, or a text - plain, Markdown or a C, C++, C# or P
 source, highlighted; any tab can also be made read-only (a read-only Markdown tab shows
 the rendered document with its TeX formulas and SVG images, see `docs/MARKDOWN.md`).
 Document > Compare with... opens a diff tab: two revisions of a
-diagram side by side, the added, removed and changed elements marked and listed.
+diagram side by side, the added, removed and changed elements marked and listed, or of a
+text, two columns line by line with the changed characters marked.
 Edit > Find (Ctrl+F) searches the text of a tab or the texts drawn on a diagram canvas,
 the matches marked yellow and the current one orange (see `docs/FIND.md`).
 
@@ -36,7 +37,7 @@ the matches marked yellow and the current one orange (see `docs/FIND.md`).
 The editor supports plugins (see ![The Plugin Interface](docs/PLUGIN-API.md))
 which allow to process HSM diagrams and run controlled by HSM diagrams programs.
 A plugin may also work on the text tabs, bring the programming languages of its tool and
-give a diff tab the base revision of a diagram.
+give a diff tab the base revision of a diagram or a text.
 The most interesting plugins are:
 
 * ![HSM Diagram Maker](https://github.com/dralex/cybersphere-hsm-maker): generating HSM diagrams using LLM;
