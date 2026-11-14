@@ -23,6 +23,7 @@
 
 #include <QDir>
 #include <QFileInfo>
+#include <QRegularExpression>
 #include <QStandardPaths>
 #include <QVersionNumber>
 
@@ -240,10 +241,12 @@ bool PluginConditions::parsePluginReference(const QString& text, QString* id, QS
     QString name = (at < 0 ? text : text.left(at)).trimmed();
     QString least = at < 0 ? QString() : text.mid(at + versionAtLeast.size()).trimmed();
     if (!PluginDescriptor::validId(name)) return false;
-    if (at >= 0) {
-        int suffix = 0;
-        QVersionNumber number = QVersionNumber::fromString(least, &suffix);
-        if (number.isNull() || suffix != least.size()) return false;
+    // the text is matched, not the suffix index: Qt 5.12 declares fromString pure, so
+    // an optimised build never reads the index it writes
+    static const QRegularExpression versionPattern("^[0-9]+(\\.[0-9]+)*$");
+    if (at >= 0 && (!versionPattern.match(least).hasMatch() ||
+                    QVersionNumber::fromString(least).isNull())) {
+        return false;
     }
     if (id) *id = name;
     if (version) *version = least;
