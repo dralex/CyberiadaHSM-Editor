@@ -1,7 +1,8 @@
 # The Document Modes — Architecture
 
-**Document version:** 0.10 (2026-11-13) — stages 1 to 6 implemented (see Stages). The requirements are
-`EDIT-MODE-1..17` in `EDITOR-SPEC.md` §4.14, the plugin parts `EDIT-PLUG-56..60`.
+**Document version:** 0.11 (2026-11-14) — stages 1 to 6 implemented, 7 to 9 (JSON) planned (see
+Stages). The requirements are `EDIT-MODE-1..20` in `EDITOR-SPEC.md` §4.14, the plugin parts
+`EDIT-PLUG-56..60`.
 
 A tab holds one document in one **mode**: the format edited, the access, and the tools, the
 docks and the plugins that come with them — as an image mode of GIMP (Image > Mode). The mode
@@ -11,7 +12,7 @@ with a text editor as the page of its tab.
 
 ```
 CyberiadaSMEditorWindow                                                          GLOBAL
- | File > New > HSM diagram | FA diagram | Text file > Plain text, Markdown, C, ... Python
+ | File > New > HSM diagram | FA diagram | Text file > Plain text, Markdown, C, ... JSON, Python
  | Document menu ------------------------------------------- acts on the active tab
  | ModeTraits[mode]: the tools, the docks, the actions, the plugin id   (document_mode.h)
  | documents : QList<EditorDocument*>          documentStack page i = documents[i]->page()
@@ -28,7 +29,8 @@ CyberiadaSMEditorWindow                                                         
  +-- DiffDocument                        diff              ro always
  |     base, target: CyberiadaSMModel read as inspected; Document::diff
  +-- TextDocument                        text | markdown | <language>    rw (default) | ro
-       QTextDocument; page: CodeEditor, a rendered view for a read-only Markdown
+       QTextDocument; page: CodeEditor, a rendered view for a read-only Markdown,
+       a formatted view for a read-only JSON
 ```
 
 ## The modes
@@ -41,7 +43,7 @@ CyberiadaSMEditorWindow                                                         
 | HSM diff | `diff` | two canvases | Select, Pan, Zoom | the change list | `[diff]` |
 | Plain text | `text` | CodeEditor | the toolbar hidden | empty | `[text]` |
 | Markdown | `markdown` | CodeEditor; rendered when read-only | the toolbar hidden | empty | `[Markdown]` |
-| a language | `c`, `cpp`, `csharp`, `python`, a plugin's (`lua`) | CodeEditor | the toolbar hidden | empty | `[C++]` ... |
+| a language | `c`, `cpp`, `csharp`, `json`, `python`, a plugin's (`lua`) | CodeEditor; formatted when read-only for `json` | the toolbar hidden | empty | `[C++]` ... |
 
 * A language mode is a language file: a built-in one of `syntax/`, or one a plugin brings in
   its `languages` (`EDIT-PLUG-60`, `PLUGINS.md` Discovery) — a new language needs no rebuild.
@@ -60,7 +62,7 @@ CyberiadaSMEditorWindow                                                         
  |  HSM  |--------------->|  FA  |----------------->| HSM inspection |   | text | | markdown |
  |       |<---------------|      |<-----------------| read from the  |   +------+ +----------+
  +-------+  drop type/ fa +------+  HSM / FA:       | file without   |   | c cpp csharp      |
-     |                       |      in place        | the recovery   |   | python            |
+     |                       |      in place        | the recovery   |   | json python       |
      |   Compare with...     |                      +----------------+   +-------------------+
      +-----------------------+--------------------->| HSM diff       |    any <-> any: the
      |   Plugins > ... (result: diff)               | base vs target |    highlighting only
@@ -161,13 +163,14 @@ The git plugin hands the revision of a diagram to a diff tab:
  | TextDocument: QTextDocument (UTF-8), mode, file path                     |
  |  QTextDocument::undoCommandAdded -> a proxy step on its QUndoStack       |
  +--------------------------------------------------------------------------+
-            | rw                                     | read-only Markdown
-            v                                        v
- +----------------------------------+     +-------------------------------+
- | CodeEditor: QPlainTextEdit, the  |     | MarkdownView: the rendered    |
- | line numbers, CodeHighlighter by |     | document, the formulas and    |
- | the language or the Markdown     |     | the SVG images (MARKDOWN.md)  |
- +----------------------------------+     +-------------------------------+
+            | rw                                     | read-only Markdown        | read-only JSON
+            v                                        v                           v
+ +----------------------------------+     +-------------------------------+  +----------------+
+ | CodeEditor: QPlainTextEdit, the  |     | MarkdownView: the rendered    |  | CodeEditor,    |
+ | line numbers, CodeHighlighter by |     | document, the formulas and    |  | read-only: the |
+ | the language or the Markdown     |     | the SVG images (MARKDOWN.md)  |  | formatted text |
+ +----------------------------------+     +-------------------------------+  +----------------+
+   a JSON tab: the error bar under the page (JSON, below)
 ```
 
 * The proxy step lets the window's Undo and Redo, bound to the `QUndoGroup`, drive the text's own
@@ -175,6 +178,67 @@ The git plugin hands the revision of a diagram to a diff tab:
 * Save writes the text as it is, in UTF-8; Save As proposes the mode's first extension.
 * File > Export of a Markdown tab saves the rendered text as a PDF (`MARKDOWN.md`, PDF); the
   other text tabs have nothing to export.
+
+## JSON
+
+JSON is the built-in language file `syntax/json.json` (`EDIT-MODE-13`): Open, File > New > Text
+file > JSON, Save As `.json`, the highlighting (the keys and the strings share the string color),
+the ```` ```json ```` fences of Markdown, `input.json` of a plugin. The tab adds the check and the
+formatted read-only page by the language id `json` (`EDIT-MODE-19/20`):
+
+```
+ TextDocument, mode json
+   m_document --contentsChange--> timer, 300 ms --> checkJson(text) --> JsonCheck {ok, position,
+        |                                                               length, line, column,
+        |                                                               message}
+        |          +-------------------------------+---------------------------+
+        |          v                               v                           v
+        |   CodeEditor: a red wavy          CodeEditor margin: the      the bar under the page:
+        |   underline, one more extra       line number in red          "Line 3, column 7: missing
+        |   selection beside the find                                   comma"; a click puts the
+        |   marks                                                       cursor at the error
+        | read-only flag
+        v
+   formatJson(text) --> the formatted page (a read-only CodeEditor, the JSON highlighter, the
+                        scheme); a text with an error is shown as it is
+
+ json_text.h/.cpp
+   JsonLexer   the tokens with their places: { } [ ] : , string number literal, or an error
+   checkJson   the grammar over the tokens with a stack of the open brackets (no recursion)
+   formatJson  the tokens of a valid text re-indented, each copied as written
+```
+
+The check and the formatter are the editor's own: `QJsonObject` sorts the keys and keeps the
+numbers as `double` (`1.0` becomes `1`, `12345678901234567890` loses digits), and Qt's parser
+takes `"\q"`, calls a missing comma "unterminated object", refuses a lone `42` in Qt 5 and gives
+the place in UTF-8 bytes.
+
+The first error stops the check; the line and the column count the characters from 1:
+
+| Text | Message | Underlined |
+|---|---|---|
+| `{"a": 1 "b": 2}` | missing comma | the token after the value |
+| `[1, 2,]`, `{"a": 1,}` | trailing comma | the comma |
+| `{"a" 1}` | missing colon | the token after the key |
+| `{"a": }`, `[1,,2]` | missing value | the token where a value is due |
+| `{a: 1}`, `{'a': 1}` | a key must be a string in double quotes | the key |
+| `['a']` | a string must be in double quotes | the quote |
+| `"abc` up to the line end | unterminated string | the string to its line end |
+| `"\q"`, `"\u12"` | invalid escape sequence | the escape |
+| a tab or another control character in a string | control character in a string | the character |
+| `01`, `1.`, `.5`, `+1`, `-`, `1e` | invalid number | the number |
+| `tru`, `True`, `NaN` | 'tru' is not a JSON value | the word |
+| `[1}` | expected ']' | the bracket |
+| `[1:2]` | unexpected ':' | the character |
+| `// x`, `/* x */` | comments are not allowed in JSON | the `//` or `/*` |
+| `{"a": 1` up to the end | the object is not closed | its `{` |
+| `[1, 2` up to the end | the array is not closed | its `[` |
+| `{} {}`, `1, 2` | extra text after the value | the token after the value |
+
+An empty or blank text and a byte order mark at the start are no error. The formatted page puts
+one member or element per line, 4 spaces per level, `": "` after a key and `{}`, `[]` for an empty
+object or array; the whitespace between the tokens is dropped, the tokens are copied as written.
+It is built again when shown and on every change of the text while shown.
 
 ## The menus
 
@@ -186,8 +250,8 @@ File                              Document
   Open...            Plain text                     ( ) HSM diff
   ...                Markdown                       ---------------
                      C, C++,                        ( ) Plain text
-                     C#, Python                     ( ) Markdown
-                                                    Code > ( ) C ( ) C++ ( ) C# ( ) Python
+                     C#, JSON,                      ( ) Markdown
+                     Python                         Code > ( ) C ( ) C++ ( ) C# ( ) JSON ( ) Python
                                      [ ] Read-only
                                      Language >  Markup >
                                      Properties...
@@ -227,7 +291,7 @@ File                              Document
 | `geometry on\|off`, `refresh` | Document > Geometry, Refresh of the active diff tab |
 | `--inspect` | the command-line files open in inspection tabs |
 | `--dump-tabs` | `i <title>[*] <mode>[ ro] [active]` |
-| `--dump` | a text tab: `== text`; a diff tab: `== diff` (the pairs and their flags) |
+| `--dump` | a text tab: `== text`, a JSON one with `formatted:` and `error:`; a diff tab: `== diff` (the pairs and their flags) |
 | `--export <file>.pdf` | a Markdown tab: the rendered PDF; another export of a text tab is a usage error |
 
 ## Code layout
@@ -239,6 +303,7 @@ File                              Document
 | `cyberiadasm_editor_document.*` | the diagram tab, now an `EditorDocument` |
 | `diff_document.h/.cpp` | `DiffDocument`, the base origins, the change list model |
 | `text_document.h/.cpp`, `code_editor.h/.cpp` | `TextDocument`, `CodeEditor` |
+| `json_text.h/.cpp`, `syntax/json.json` | the JSON lexer, check and formatter; the language |
 | `smeditor_window.*`, `smeditor_window.ui` | the Document menu, File > New, the traits applied |
 
 ## Stages
@@ -270,6 +335,11 @@ File                              Document
 6. The git plugin: Compare with a Revision... — done in cybersphere-git-plugin: `hsm-git
    revision` writes the base, `modes` on every git action, its text diff hides
    `regionGeometry` without the geometry as the tab does.
+7. The JSON language file — planned: `syntax/json.json`, `.json` in Open, New and Save As.
+8. The JSON check — planned: `json_text.*` (lexer, `checkJson`), the underline, the margin, the
+   bar, the `error:` dump line (`EDIT-MODE-19`).
+9. The formatted read-only JSON page — planned: `formatJson`, the third page, Find on it, the
+   `formatted:` dump line (`EDIT-MODE-20`).
 
 ## Decisions of 0.1
 
@@ -285,3 +355,10 @@ File                              Document
 
 * A new language comes with a plugin (`languages`), not with a rebuild; the built-in ones stay
   compiled in and are never replaced.
+
+## Decisions of 0.11
+
+* JSON is a language file, not a mode of its own: no new token or scheme color, the keys colored
+  as strings; the check and the formatted page hang on the built-in id `json`.
+* Strict JSON only (RFC 8259); the check and the formatter are the editor's own, not Qt's.
+* The read-only page is the formatted text, not a tree.

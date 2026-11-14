@@ -1,6 +1,6 @@
 # Find — Architecture
 
-**Document version:** 0.1 (2026-11-13). The requirements are `EDIT-FIND-1..9` in
+**Document version:** 0.2 (2026-11-14). The requirements are `EDIT-FIND-1..9` in
 `EDITOR-SPEC.md` §4.15.
 
 One find bar under the document area searches the text the active tab shows: the source or
@@ -23,7 +23,7 @@ or its exports.
        v                                         v
  TextDocument                            CyberiadaSMEditorDocument --- DiagramFind
    the shown page:                         walk model->rootDocument()   diagram_find.*
-   CodeEditor | MarkdownView               textItemsOf(scene item)     (the --dump-text order)
+   CodeEditor | MarkdownView | JSON page   textItemsOf(scene item)     (the --dump-text order)
        | findRanges(toPlainText)                  | findRanges(text->toPlainText())
        v                                         v
    setExtraSelections                     EditableTextItem::setFindRanges(ranges, current)
@@ -72,13 +72,14 @@ text.
 
 ## Text tabs
 
-`TextDocument` searches the widget its stack shows (`showsRendered()`): the `CodeEditor`
-(`QPlainTextEdit`) or the `MarkdownView` (`QTextBrowser`); the hidden one has its marks
+`TextDocument` searches the widget its stack shows: the `CodeEditor` (`QPlainTextEdit`), the
+`MarkdownView` (`QTextBrowser`) of a read-only Markdown tab or the formatted page of a read-only
+JSON tab (a read-only `CodeEditor`, `MODES.md`, JSON); the hidden ones have their marks
 cleared. Both documents' `contentsChanged` and `showPage()` search again, so an edit, an undo,
 a plugin result, a mode switch and the read-only flag keep the marks right.
 
 The marks are `QTextEdit::ExtraSelection`s, the background yellow or orange and the foreground
-black. While the bar is open the cursor goes to the match without a selection: a selection is
+black; the wavy underline of a JSON error is one more in the same list. While the bar is open the cursor goes to the match without a selection: a selection is
 drawn over the extra selections in the palette colour, so the orange would not show.
 `clearFind(true)`, the bar closed, selects the current match.
 

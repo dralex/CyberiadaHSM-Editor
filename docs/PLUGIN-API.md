@@ -536,7 +536,7 @@ their own mode. No rebuild of the editor is needed.
 
 * The id of the language is the file name without `.json` (`lua`): the mode id that
   `modes` names.
-* The built-in languages (C, C++, C#, Python) come first, then the plugins in the order of
+* The built-in languages (C, C++, C#, JSON, Python) come first, then the plugins in the order of
   the search path. A language whose id, name or alias another one already has is skipped
   with a warning in the plugin manager and `--list-plugins`.
 * A language counts while its plugin is enabled in the plugin manager, even when the
