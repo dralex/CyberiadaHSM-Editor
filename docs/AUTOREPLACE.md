@@ -13,6 +13,7 @@ Preferences.
      v
  EditableTextItem::keyPressEvent / inputMethodEvent      canvas texts, kind by role and markup
  CodeEditor::keyPressEvent / inputMethodEvent            text tabs, kind by the mode
+ AutoreplaceFilter (key filter + textChanged/textEdited) the text dialog, the name lines
      |  before(key): Backspace gives the pattern back
      |  typed(cursor, kind): after a key that changed the text
      v
@@ -94,6 +95,11 @@ The replacement is one edit block of its own:
 | Backspace, the cursor not moved since | the same |
 | the next typed character | it is read against the rules again, so `–` and `-` make `—` |
 
+An editor that is no class of the editor's own is watched by an `AutoreplaceFilter`: a typing
+key arms it, the change of the text that follows is read. A name row of the properties
+panel commits every key, so the pattern typed and its replacement are two steps of the
+document, and Undo gives the pattern back.
+
 A pattern restored by Undo or Backspace stays as typed: the `Autoreplacer` keeps the place
 of its last replacement and replaces nothing over the pattern found there again. The Undo
 of a text tab puts the cursor at the change, after the characters given back.
@@ -124,13 +130,14 @@ The rules are written when they differ from the defaults, removed when they equa
 
 | File | Part |
 |---|---|
-| `autoreplace.*` | `AutoreplaceRule`, the default rules, `autoreplaceMatch()`, `markdownProseAt()`, `autoreplaceAllowed()`, `Autoreplacer` |
+| `autoreplace.*` | `AutoreplaceRule`, the default rules, `autoreplaceMatch()`, `markdownProseAt()`, `autoreplaceAllowed()`, `Autoreplacer` over a text cursor or a line edit, `AutoreplaceFilter` |
 | `settings_manager.*` | `autoreplace/*`, `autoreplaceChanged` |
 | `editable_text_item.*` | the hook of the canvas texts, `autoreplaceKind()` by the role and the markup |
 | `code_editor.*`, `text_document.*` | the hook of a text tab, its kind by the mode; the cursor of Undo and Redo |
 | `batch_script.cpp` | `edit-text` as written |
-| `dialogs/multilinetextdialog.*` | planned: a prose or Markdown text |
-| `cyberiadasm_properties_widget.*`, `cyberiadasm_view.*` | planned: the name rows and the tree rename |
+| `dialogs/multilinetextdialog.*` | the filter of a description and of an informal body, the kind given by the caller |
+| `cyberiadasm_properties_widget.*` | `NameLineEditFactory`: the filter of the name rows; the kind of the text dialog |
+| `cyberiadasm_view.*` | `NameDelegate`: the filter of the tree rename |
 | `dialogs/autoreplace_page.*` | `AutoreplacePage`: the switch, the table, the copy of the rules |
 | `dialogs/preferences_dialog.*` | the page as a tab, its load and apply |
 | `tests/l4/l4-autoreplace.cpp`, `tests/scripts/auto-type.script` | the cases `EDIT-AUTO-1..8` |

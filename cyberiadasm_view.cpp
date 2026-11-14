@@ -27,12 +27,32 @@
 #include <QTreeView>
 
 #include "cyberiadasm_model.h"
+#include <QLineEdit>
+#include <QStyledItemDelegate>
 #include "cyberiadasm_view.h"
+#include "autoreplace.h"
 #include "myassert.h"
+
+namespace {
+
+// the line of a rename takes the typed replacements: it edits a name (EDIT-AUTO-2)
+class NameDelegate: public QStyledItemDelegate {
+public:
+	explicit NameDelegate(QObject* parent): QStyledItemDelegate(parent) {}
+	QWidget* createEditor(QWidget* parent, const QStyleOptionViewItem& option,
+	                      const QModelIndex& index) const override {
+		QWidget* editor = QStyledItemDelegate::createEditor(parent, option, index);
+		if (QLineEdit* line = qobject_cast<QLineEdit*>(editor)) new AutoreplaceFilter(line, autoreplaceProse);
+		return editor;
+	}
+};
+
+} // namespace
 
 CyberiadaSMView::CyberiadaSMView(QWidget* parent):
 	QTreeView(parent)
 {
+	setItemDelegate(new NameDelegate(this));
 	setDragEnabled(true);
 	setAcceptDrops(true);
 	setDropIndicatorShown(true);

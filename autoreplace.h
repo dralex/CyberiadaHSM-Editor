@@ -25,10 +25,13 @@
 #define CYBERIADA_AUTOREPLACE
 
 #include <QList>
+#include <QObject>
 #include <QString>
 #include <QTextCursor>
 
 class QKeyEvent;
+class QLineEdit;
+class QPlainTextEdit;
 
 // a pattern and the text it becomes when typed (EDIT-AUTO-1, docs/AUTOREPLACE.md)
 struct AutoreplaceRule {
@@ -61,15 +64,29 @@ int  autoreplaceMatch(const QString& before, const AutoreplaceRules& rules);
 bool markdownProseAt(const QString& text, int from, int to);
 bool autoreplaceAllowed(AutoreplaceKind kind, const QString& text, int from, int to);
 
+// the text typed into: of a text document by its cursor, or of a line edit
+class AutoreplaceTarget {
+public:
+    virtual ~AutoreplaceTarget() {}
+    virtual int     position() const = 0;
+    virtual bool    hasSelection() const = 0;
+    virtual QString mid(int from, int length) const = 0;
+    virtual QString all() const = 0;
+    // [from, to) replaced as one edit, the cursor after it
+    virtual void    replace(int from, int to, const QString& with) = 0;
+};
+
 // The typing of one text watched for the patterns (EDIT-AUTO-1/5/6): the owner calls
 // it around the key it handles, with the rules of the settings
 class Autoreplacer {
 public:
     // before the key: Backspace right after a replacement gives the typed characters
     // back; true when the key is done
+    bool before(QKeyEvent* event, AutoreplaceTarget& text);
     bool before(QKeyEvent* event, QTextCursor cursor);
     // after a key that typed a character before the cursor: a completed pattern is
     // replaced as one edit block; true when it was
+    bool typed(AutoreplaceTarget& text, AutoreplaceKind kind);
     bool typed(QTextCursor cursor, AutoreplaceKind kind);
     // another text is edited
     void forget() { m_position = m_start = -1; }
@@ -82,6 +99,27 @@ private:
     int     m_start = -1;
     QString m_from;
     QString m_to;
+};
+
+// The watch of an editor that is not a class of the editor's own (EDIT-AUTO-2): a line
+// edit of a name or the text of a dialog; it lives with its editor
+class AutoreplaceFilter: public QObject {
+public:
+    AutoreplaceFilter(QLineEdit* editor, AutoreplaceKind kind);
+    AutoreplaceFilter(QPlainTextEdit* editor, AutoreplaceKind kind);
+
+protected:
+    bool eventFilter(QObject* watched, QEvent* event) override;
+
+private:
+    void changed();
+
+    QLineEdit*      m_line = nullptr;
+    QPlainTextEdit* m_text = nullptr;
+    AutoreplaceKind m_kind;
+    Autoreplacer    m_replacer;
+    // a key typed, its change of the text not yet seen
+    bool            m_armed = false;
 };
 
 // the key types a character

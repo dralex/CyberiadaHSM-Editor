@@ -22,6 +22,8 @@
  * ----------------------------------------------------------------------------- */
 
 #include <QKeyEvent>
+#include <QLineEdit>
+#include <QPlainTextEdit>
 #include <QTextDocument>
 #include "autoreplace.h"
 #include "settings_manager.h"
@@ -241,47 +243,141 @@ bool typingKey(const QKeyEvent* event)
     return !text.isEmpty() && text[0].isPrint();
 }
 
+namespace {
+
+class CursorTarget: public AutoreplaceTarget {
+public:
+    explicit CursorTarget(const QTextCursor& cursor): m_cursor(cursor) {}
+    int     position() const override { return m_cursor.position(); }
+    bool    hasSelection() const override { return m_cursor.hasSelection(); }
+    QString mid(int from, int length) const override {
+        QTextCursor c = m_cursor;
+        c.setPosition(from);
+        c.setPosition(from + length, QTextCursor::KeepAnchor);
+        return c.selectedText();
+    }
+    QString all() const override { return m_cursor.document()->toPlainText(); }
+    void    replace(int from, int to, const QString& with) override {
+        m_cursor.beginEditBlock();
+        m_cursor.setPosition(from);
+        m_cursor.setPosition(to, QTextCursor::KeepAnchor);
+        m_cursor.insertText(with);
+        m_cursor.endEditBlock();
+    }
+private:
+    QTextCursor m_cursor;
+};
+
+class LineTarget: public AutoreplaceTarget {
+public:
+    explicit LineTarget(QLineEdit* line): m_line(line) {}
+    int     position() const override { return m_line->cursorPosition(); }
+    bool    hasSelection() const override { return m_line->hasSelectedText(); }
+    QString mid(int from, int length) const override { return m_line->text().mid(from, length); }
+    QString all() const override { return m_line->text(); }
+    // an edit of the user: the line says textEdited, which commits a property row
+    void    replace(int from, int to, const QString& with) override {
+        m_line->setSelection(from, to - from);
+        m_line->insert(with);
+    }
+private:
+    QLineEdit* m_line;
+};
+
+} // namespace
+
 bool Autoreplacer::before(QKeyEvent* event, QTextCursor cursor)
 {
-    int place = m_position;
-    m_position = -1;
-    if (place < 0 || event->key() != Qt::Key_Backspace || event->modifiers() != Qt::NoModifier ||
-        cursor.hasSelection() || cursor.position() != place) return false;
-    cursor.setPosition(place - m_to.length(), QTextCursor::KeepAnchor);
-    if (cursor.selectedText() != m_to) return false;
-    cursor.insertText(m_from);
-    return true;
+    CursorTarget text(cursor);
+    return before(event, text);
 }
 
 bool Autoreplacer::typed(QTextCursor cursor, AutoreplaceKind kind)
 {
+    CursorTarget text(cursor);
+    return typed(text, kind);
+}
+
+bool Autoreplacer::before(QKeyEvent* event, AutoreplaceTarget& text)
+{
+    int place = m_position;
+    m_position = -1;
+    if (place < 0 || event->key() != Qt::Key_Backspace || event->modifiers() != Qt::NoModifier ||
+        text.hasSelection() || text.position() != place) return false;
+    int from = place - m_to.length();
+    if (text.mid(from, m_to.length()) != m_to) return false;
+    text.replace(from, place, m_from);
+    return true;
+}
+
+bool Autoreplacer::typed(AutoreplaceTarget& text, AutoreplaceKind kind)
+{
     SettingsManager& sm = SettingsManager::instance();
-    if (suspended || kind == autoreplaceNone || !sm.getAutoreplaceEnabled() || cursor.hasSelection()) return false;
+    if (suspended || kind == autoreplaceNone || !sm.getAutoreplaceEnabled() || text.hasSelection()) return false;
     const AutoreplaceRules& rules = sm.getAutoreplaceRules();
-    int to = cursor.position();
-    QTextCursor look = cursor;
-    look.setPosition(qMax(0, to - longestPattern(rules)), QTextCursor::KeepAnchor);
-    int found = autoreplaceMatch(look.selectedText(), rules);
+    int to = text.position();
+    int look = qMax(0, to - longestPattern(rules));
+    int found = autoreplaceMatch(text.mid(look, to - look), rules);
     if (found < 0) return false;
     const AutoreplaceRule& rule = rules[found];
     int from = to - rule.from.length();
     // a pattern given back is not replaced again (EDIT-AUTO-6)
-    if (m_start >= 0 && from < m_start + m_from.length() && to > m_start) {
-        QTextCursor kept = cursor;
-        kept.setPosition(m_start);
-        kept.setPosition(m_start + m_from.length(), QTextCursor::KeepAnchor);
-        if (kept.selectedText() == m_from) return false;
-    }
+    if (m_start >= 0 && from < m_start + m_from.length() && to > m_start &&
+        text.mid(m_start, m_from.length()) == m_from) return false;
     // the whole text is read only for a pattern typed
-    if (kind == autoreplaceMarkdown &&
-        !autoreplaceAllowed(kind, cursor.document()->toPlainText(), from, to)) return false;
-    cursor.beginEditBlock();
-    cursor.setPosition(from, QTextCursor::KeepAnchor);
-    cursor.insertText(rule.to);
-    cursor.endEditBlock();
-    m_position = cursor.position();
+    if (kind == autoreplaceMarkdown && !autoreplaceAllowed(kind, text.all(), from, to)) return false;
+    text.replace(from, to, rule.to);
+    m_position = text.position();
     m_start = from;
     m_from = rule.from;
     m_to = rule.to;
     return true;
+}
+
+AutoreplaceFilter::AutoreplaceFilter(QLineEdit* editor, AutoreplaceKind kind):
+    QObject(editor), m_line(editor), m_kind(kind)
+{
+    editor->installEventFilter(this);
+    connect(editor, &QLineEdit::textEdited, this, [this]() { changed(); });
+}
+
+AutoreplaceFilter::AutoreplaceFilter(QPlainTextEdit* editor, AutoreplaceKind kind):
+    QObject(editor), m_text(editor), m_kind(kind)
+{
+    editor->installEventFilter(this);
+    connect(editor, &QPlainTextEdit::textChanged, this, [this]() { changed(); });
+}
+
+// the key is the editor's; what it typed is read when the text has changed
+bool AutoreplaceFilter::eventFilter(QObject* watched, QEvent* event)
+{
+    if (event->type() == QEvent::KeyPress) {
+        QKeyEvent* key = static_cast<QKeyEvent*>(event);
+        bool done;
+        if (m_line) {
+            LineTarget text(m_line);
+            done = m_replacer.before(key, text);
+        } else {
+            done = m_replacer.before(key, m_text->textCursor());
+        }
+        if (done) return true;
+        m_armed = typingKey(key);
+    } else if (event->type() == QEvent::InputMethod) {
+        m_armed = !static_cast<QInputMethodEvent*>(event)->commitString().isEmpty();
+    } else if (event->type() == QEvent::KeyRelease) {
+        m_armed = false;
+    }
+    return QObject::eventFilter(watched, event);
+}
+
+void AutoreplaceFilter::changed()
+{
+    if (!m_armed) return;
+    m_armed = false;
+    if (m_line) {
+        LineTarget text(m_line);
+        m_replacer.typed(text, m_kind);
+    } else {
+        m_replacer.typed(m_text->textCursor(), m_kind);
+    }
 }

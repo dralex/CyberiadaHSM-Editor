@@ -27,18 +27,21 @@
 #include <QDialog>
 
 #include "code_highlighter.h"
+#include "autoreplace.h"
 
 class QPlainTextEdit;
 
 // a plain multiline editor for a behaviour or a comment body (EDIT-TEXT-10);
-// the text is highlighted as the role asks, by the document language
+// the text is highlighted as the role asks, by the document language; a text for
+// people takes the typed replacements (EDIT-AUTO-2)
 class MultilineTextDialog : public QDialog {
     Q_OBJECT
 
 public:
     MultilineTextDialog(const QString& title, const QString& label, const QString& text,
                         CodeRole role = codeRoleNone, const CodeLanguage* language = nullptr,
-                        QWidget* parent = nullptr, CodeMarkup markup = codeMarkupPlain);
+                        QWidget* parent = nullptr, CodeMarkup markup = codeMarkupPlain,
+                        AutoreplaceKind kind = autoreplaceNone);
 
     QString text() const;
 

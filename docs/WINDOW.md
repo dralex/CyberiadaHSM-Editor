@@ -4,7 +4,7 @@
 the modes (`modes`, the text tabs, a plugin run as a diff base, the plugin languages) are
 implemented, the git compare with them (stage 6 of `docs/MODES.md`); a switch keeps the dock
 sizes; a Markdown tab exports its rendered PDF; the find bar (`docs/FIND.md`); the shortcuts
-and the autoreplace are specified (`docs/SHORTCUTS.md`, `docs/AUTOREPLACE.md`).
+and the autoreplace (`docs/SHORTCUTS.md`, `docs/AUTOREPLACE.md`).
 
 The window holds several documents at once. The menus, the toolbars, the tab line and the
 docks (the structure tree, the properties, the plugins) are one set; each document brings its

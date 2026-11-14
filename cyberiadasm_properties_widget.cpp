@@ -92,7 +92,7 @@ CyberiadaSMPropertiesWidget::CyberiadaSMPropertiesWidget(QWidget *parent):
 
 	stringManager = new QtStringPropertyManager(this);
     connect(stringManager, SIGNAL(propertyChanged(QtProperty*)), this, SLOT(slotPropertyChanged(QtProperty*)));
-    lineEditFactory = new QtLineEditFactory(this);
+    lineEditFactory = new NameLineEditFactory(this, this);
     setFactoryForManager(stringManager, lineEditFactory);
 
 	multilineStringManager = new QtStringPropertyManager(this);
@@ -446,6 +446,8 @@ void CyberiadaSMPropertiesWidget::editMultilineProperty(QtProperty* property)
     CodeRole role = codeRoleFormalComment;
     const CodeLanguage* language = NULL;
     CodeMarkup markup = codeMarkupPlain;
+    // the description and an informal body are for people (EDIT-AUTO-2)
+    AutoreplaceKind kind = autoreplaceNone;
     QString label;
     if (model && model->rootDocument()) {
         language = CodeStyle::instance().find(QString::fromStdString(
@@ -457,6 +459,7 @@ void CyberiadaSMPropertiesWidget::editMultilineProperty(QtProperty* property)
     }
     if (metaStringKeys.contains(property)) {
         role = codeRoleNone;
+        kind = autoreplaceProse;
         label = property->propertyName();
     } else {
         const CyberiadaProperty& cp = findProperty(property);
@@ -475,9 +478,11 @@ void CyberiadaSMPropertiesWidget::editMultilineProperty(QtProperty* property)
                 markup = CodeStyle::commentMarkup(QString::fromStdString(comment->get_markup()), document);
             }
         }
+        if (role == codeRoleMarkup) kind = markup == codeMarkupMarkdown ? autoreplaceMarkdown : autoreplaceProse;
     }
     MultilineTextDialog dialog(tr("Edit text"), label,
-                               multilineStringManager->value(property), role, language, this, markup);
+                               multilineStringManager->value(property), role, language, this, markup,
+                               kind);
     if (dialog.exec() == QDialog::Accepted) {
         multilineStringManager->setValue(property, dialog.text());
     }
@@ -532,6 +537,21 @@ MultilineEditButton::MultilineEditButton(CyberiadaSMPropertiesWidget* owner,
     connect(manager, &QtStringPropertyManager::valueChanged, this,
             [this](QtProperty* p, const QString&) { if (p == this->property) refresh(); });
     refresh();
+}
+
+// the line of a name takes the typed replacements, the other lines are values (EDIT-AUTO-2/3)
+QWidget* NameLineEditFactory::createEditor(QtStringPropertyManager* manager, QtProperty* property,
+                                           QWidget* parent)
+{
+    QWidget* editor = QtLineEditFactory::createEditor(manager, property, parent);
+    QLineEdit* line = qobject_cast<QLineEdit*>(editor);
+    if (line && owner->isNameProperty(property)) new AutoreplaceFilter(line, autoreplaceProse);
+    return editor;
+}
+
+bool CyberiadaSMPropertiesWidget::isNameProperty(QtProperty* property)
+{
+    return property && !metaStringKeys.contains(property) && findProperty(property).name == propName;
 }
 
 void MultilineEditButton::refresh()

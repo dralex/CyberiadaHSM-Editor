@@ -33,7 +33,7 @@
 MultilineTextDialog::MultilineTextDialog(const QString& title, const QString& label,
                                          const QString& text, CodeRole role,
                                          const CodeLanguage* language, QWidget* parent,
-                                         CodeMarkup markup):
+                                         CodeMarkup markup, AutoreplaceKind kind):
     QDialog(parent)
 {
     setWindowTitle(title);
@@ -48,6 +48,7 @@ MultilineTextDialog::MultilineTextDialog(const QString& title, const QString& la
         new CodeHighlighter(edit->document(), role, language, markup);
     }
     edit->setPlainText(text);
+    if (kind != autoreplaceNone) new AutoreplaceFilter(edit, kind);
     QTextCursor cursor = edit->textCursor();
     cursor.movePosition(QTextCursor::End);
     edit->setTextCursor(cursor);

@@ -208,6 +208,10 @@ private:
 	CyberiadaProperty&          findPropertyStruct(CyberiadaPropertyName prop);
 	CyberiadaProperty&          findPropertyStruct(const QString& propName, const QString& alt_name = "");
     CyberiadaProperty&          findProperty(const QtProperty*);
+public:
+    // the row is the name of an element or of the document
+    bool                        isNameProperty(QtProperty* property);
+private:
     QtProperty*                 findQtProperty(QtProperty* root, const QString& prop_name, int index = 0);
     // the rows the subjects of a comment take: a change of it rebuilds the view
     static QString              subjectsShape(const Cyberiada::Comment* comment);
@@ -222,6 +226,18 @@ private:
 
 // the editor of a multiline string row: a one-line preview and a button that
 // opens the multiline dialog through the owning widget (EDIT-TEXT-10)
+// the line edits of the string rows, a name watched for the typed replacements
+class NameLineEditFactory: public QtLineEditFactory {
+	Q_OBJECT
+public:
+	NameLineEditFactory(CyberiadaSMPropertiesWidget* owner, QObject* parent = NULL):
+	    QtLineEditFactory(parent), owner(owner) {}
+protected:
+	QWidget* createEditor(QtStringPropertyManager* manager, QtProperty* property, QWidget* parent) override;
+private:
+	CyberiadaSMPropertiesWidget* owner;
+};
+
 class MultilineEditButton: public QWidget {
 public:
 	MultilineEditButton(CyberiadaSMPropertiesWidget* owner, QtStringPropertyManager* manager,

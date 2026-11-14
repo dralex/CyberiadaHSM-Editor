@@ -24,6 +24,8 @@
 #include <QtTest>
 #include <QCheckBox>
 #include <QDialogButtonBox>
+#include <QLineEdit>
+#include <QPlainTextEdit>
 #include <QPushButton>
 #include <QSettings>
 #include <QTableWidget>
@@ -43,6 +45,9 @@
 #include "settings_manager.h"
 #include "dialogs/preferences_dialog.h"
 #include "dialogs/autoreplace_page.h"
+#include "dialogs/multilinetextdialog.h"
+#include "cyberiadasm_properties_widget.h"
+#include "cyberiadasm_view.h"
 
 // the EDIT-AUTO laws (docs/AUTOREPLACE.md): the rules, the texts they act in, the
 // Markdown exclusions, the typing only, the characters given back
@@ -61,6 +66,10 @@ private slots:
 	void test_other_tabs();
 	void test_settings();
 	void test_page();
+	void test_line_filter();
+	void test_text_dialog();
+	void test_properties_name();
+	void test_tree_rename();
 
 private:
 	static QString u(const char* text) { return QString::fromUtf8(text); }
@@ -69,6 +78,9 @@ private:
 	template <class Text> static Text* edit(CyberiadaSMEditorWindow& window, bool (*wanted)(Text*) = nullptr);
 	static bool informalBody(EditableTextItem* text) { return text->getCodeRole() == codeRoleMarkup; }
 	static CodeEditor* textTab(CyberiadaSMEditorWindow& window, const QString& mode);
+	// the string row of the name and a row of another label, of the element shown
+	static void rows(QtProperty* parent, const QList<QtProperty*>& list, const QString& name,
+	                 QtProperty** found, QtProperty** other);
 	QTemporaryDir settings;
 };
 
@@ -458,6 +470,139 @@ void TestAutoreplace::test_page()
 		QVERIFY(dialog.autoreplacePage()->isEnabledChecked());
 	}
 	QVERIFY(sm.getAutoreplaceEnabled());
+}
+
+// EDIT-AUTO-1/5/6: a line edit watched: only the typing, the pattern given back
+void TestAutoreplace::test_line_filter()
+{
+	SettingsManager::instance().loadDefaults();
+	QLineEdit line;
+	new AutoreplaceFilter(&line, autoreplaceProse);
+	QSignalSpy edited(&line, &QLineEdit::textEdited);
+	QTest::keyClicks(&line, "a -- b");
+	QCOMPARE(line.text(), u("a \u2013 b"));
+	// the replacement is an edit of the user too
+	QCOMPARE(edited.count(), 7);
+	QCOMPARE(edited.last().first().toString(), u("a \u2013 b"));
+	QTest::keyClicks(&line, "(c)");
+	QCOMPARE(line.text(), u("a \u2013 b\u00a9"));
+	QTest::keyClick(&line, Qt::Key_Backspace);
+	QCOMPARE(line.text(), u("a \u2013 b(c)"));
+	QCOMPARE(line.cursorPosition(), line.text().length());
+	QTest::keyClicks(&line, " ");
+	QCOMPARE(line.text(), u("a \u2013 b(c) "));
+	// in the middle of the text
+	line.setCursorPosition(1);
+	QTest::keyClicks(&line, "->");
+	QCOMPARE(line.text(), u("a\u2192 \u2013 b(c) "));
+	QCOMPARE(line.cursorPosition(), 2);
+	// a text set or pasted is not typed
+	line.setText("x--");
+	QCOMPARE(line.text(), QString("x--"));
+	line.insert("--");
+	QCOMPARE(line.text(), QString("x----"));
+
+	QLineEdit value;
+	new AutoreplaceFilter(&value, autoreplaceNone);
+	QTest::keyClicks(&value, "id--1 (c)");
+	QCOMPARE(value.text(), QString("id--1 (c)"));
+}
+
+// EDIT-AUTO-2/3: the text dialog of a description and a body, not of code
+void TestAutoreplace::test_text_dialog()
+{
+	{
+		MultilineTextDialog dialog("t", "l", "The lift", codeRoleNone, nullptr, nullptr,
+		                           codeMarkupPlain, autoreplaceProse);
+		QPlainTextEdit* edit = dialog.findChild<QPlainTextEdit*>();
+		QVERIFY(edit);
+		QTest::keyClicks(edit, " -- up <<and>> down...");
+		QCOMPARE(dialog.text(), u("The lift \u2013 up \u00aband\u00bb down\u2026"));
+		QTest::keyClick(edit, Qt::Key_Backspace);
+		QCOMPARE(dialog.text(), u("The lift \u2013 up \u00aband\u00bb down..."));
+		edit->insertPlainText(" (c)");
+		QVERIFY(dialog.text().endsWith(" (c)"));
+	}
+	{
+		MultilineTextDialog dialog("t", "l", QString(), codeRoleMarkup, nullptr, nullptr,
+		                           codeMarkupMarkdown, autoreplaceMarkdown);
+		QPlainTextEdit* edit = dialog.findChild<QPlainTextEdit*>();
+		QTest::keyClicks(edit, "a -- `b--` c->d");
+		QCOMPARE(dialog.text(), u("a \u2013 `b--` c\u2192d"));
+	}
+	{
+		// a behaviour, a formal body, the stream of a session
+		MultilineTextDialog dialog("t", "l", QString(), codeRoleBehaviour);
+		QPlainTextEdit* edit = dialog.findChild<QPlainTextEdit*>();
+		QTest::keyClicks(edit, "i--; a << 2; p->q");
+		QCOMPARE(dialog.text(), QString("i--; a << 2; p->q"));
+	}
+}
+
+void TestAutoreplace::rows(QtProperty* parent, const QList<QtProperty*>& list, const QString& name,
+                           QtProperty** found, QtProperty** other)
+{
+	Q_UNUSED(parent);
+	for (QtProperty* p : list) {
+		QtStringPropertyManager* m = dynamic_cast<QtStringPropertyManager*>(p->propertyManager());
+		if (m && p->propertyName() == "Name" && m->value(p) == name) *found = p;
+		else if (m && p->propertyName() == "ID") *other = p;
+		rows(p, p->subProperties(), name, found, other);
+	}
+}
+
+// EDIT-AUTO-2/3: the name row of the properties panel, not the id row
+void TestAutoreplace::test_properties_name()
+{
+	SettingsManager::instance().loadDefaults();
+	SettingsManager::instance().setShowProperties(true);
+	CyberiadaSMEditorWindow window;
+	QVERIFY(window.openFile("diagrams/comment-transition.graphml"));
+	activate(window);
+	CyberiadaSMModel* model = window.getModel();
+	const Cyberiada::Element* element = model->idToElement("n0");
+	const QString name = QString::fromStdString(element->get_name());
+	window.SMView->select(model->elementToIndex(element));
+	CyberiadaSMPropertiesWidget* panel = window.propertiesWidget;
+	QtProperty* row = nullptr;
+	QtProperty* id = nullptr;
+	rows(nullptr, panel->properties(), name, &row, &id);
+	QVERIFY(row && id);
+	QVERIFY(panel->isNameProperty(row));
+	QVERIFY(!panel->isNameProperty(id));
+
+	panel->editItem(panel->items(row).first());
+	QLineEdit* line = qobject_cast<QLineEdit*>(QApplication::focusWidget());
+	QVERIFY(line);
+	QCOMPARE(line->text(), name);
+	line->end(false);
+	QTest::keyClicks(line, " -- on");
+	QCOMPARE(line->text(), name + u(" \u2013 on"));
+	// the row commits every key: the model has the name typed
+	QCOMPARE(QString::fromStdString(model->idToElement("n0")->get_name()), name + u(" \u2013 on"));
+}
+
+// EDIT-AUTO-2: the rename of the structure tree
+void TestAutoreplace::test_tree_rename()
+{
+	SettingsManager::instance().setShowStructureTree(true);
+	CyberiadaSMEditorWindow window;
+	QVERIFY(window.openFile("diagrams/comment-transition.graphml"));
+	activate(window);
+	CyberiadaSMModel* model = window.getModel();
+	const QString name = QString::fromStdString(model->idToElement("n1")->get_name());
+	QModelIndex index = model->elementToIndex(model->idToElement("n1"));
+	window.SMView->setCurrentIndex(index);
+	window.SMView->edit(index);
+	QLineEdit* line = window.SMView->findChild<QLineEdit*>();
+	QVERIFY(line);
+	QCOMPARE(line->text(), name);
+	line->end(false);
+	QTest::keyClicks(line, " (tm)");
+	QCOMPARE(line->text(), name + u(" \u2122"));
+	// the delegate commits the line from the event loop
+	QTest::keyClick(line, Qt::Key_Return);
+	QTRY_COMPARE(QString::fromStdString(model->idToElement("n1")->get_name()), name + u(" \u2122"));
 }
 
 QTEST_MAIN(TestAutoreplace)
