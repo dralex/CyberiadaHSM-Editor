@@ -2,7 +2,7 @@
 ; CyberiadaPro, the Cyberiada State Machine Editor
 ;
 ; The Windows installer: the editor, Python 3 when no suitable one is found, the
-; python plugins (hsm-to-python, hsm-maker) and a check that the editor runs them.
+; python plugins (hsm-to-python, hsm-maker, git) and a check that the editor runs them.
 ; The plugins run on the pure-Python cyberiadaml-py everywhere: Windows 10 and newer
 ; with Python 3.10-3.14 and the current pydantic, Windows 7 SP1, 8, 8.1 with Python 3.8
 ; and a pydantic whose core loads there (the LEGACY_* defines). Everything is in the
@@ -47,13 +47,13 @@ RequestExecutionLevel admin
 !define PLUGINS_DIR "share\cyberiada-pro\plugins"
 !define PROGID "CyberiadaPro.graphml"
 ; what pip installs (the dispatcher, cyberiadaml-py and pydantic come with them)
-!define PIP_PACKAGES "hsm-to-python cybersphere-hsm-maker"
+!define PIP_PACKAGES "hsm-to-python cybersphere-hsm-maker cybersphere-git-plugin"
 ; on Windows 7-8.1 cyberiadaml-py by name: the plugins leave it out of their
 ; dependencies on a Windows Python below 3.10 (pip would fetch a pydantic-core that
 ; needs Windows 10), the bundled pydantic of Python 3.8 loads there
-!define LEGACY_PIP_PACKAGES "hsm-to-python cybersphere-hsm-maker cyberiadaml-py"
+!define LEGACY_PIP_PACKAGES "hsm-to-python cybersphere-hsm-maker cybersphere-git-plugin cyberiadaml-py"
 ; what the uninstaller removes (pydantic may serve other programs: it stays)
-!define OUR_PACKAGES "hsm-to-python cybersphere-hsm-maker hsm-dispatcher-py cyberiadaml-py"
+!define OUR_PACKAGES "hsm-to-python cybersphere-hsm-maker cybersphere-git-plugin hsm-dispatcher-py cyberiadaml-py"
 
 Name "CyberiadaPro ${VERSION}"
 OutFile "${OUTFILE}"
@@ -126,8 +126,8 @@ LangString SecEditorDesc ${LANG_ENGLISH} "The state machine editor."
 LangString SecEditorDesc ${LANG_RUSSIAN} "Редактор машин состояний."
 LangString SecToolsName ${LANG_ENGLISH} "Python plugins"
 LangString SecToolsName ${LANG_RUSSIAN} "Модули на Python"
-LangString SecToolsDesc ${LANG_ENGLISH} "hsm-to-python (the Python program of a diagram) and hsm-maker (diagrams drawn from a description); installs Python $WantVersion when no Python $WantRange (64-bit) is found."
-LangString SecToolsDesc ${LANG_RUSSIAN} "hsm-to-python (программа на Python по диаграмме) и hsm-maker (диаграммы по описанию); устанавливает Python $WantVersion, если не найден Python $WantRange (64-бит)."
+LangString SecToolsDesc ${LANG_ENGLISH} "hsm-to-python (the Python program of a diagram), hsm-maker (diagrams drawn from a description) and git (stage, commit and compare a diagram with its revisions; needs Git for Windows); installs Python $WantVersion when no Python $WantRange (64-bit) is found."
+LangString SecToolsDesc ${LANG_RUSSIAN} "hsm-to-python (программа на Python по диаграмме), hsm-maker (диаграммы по описанию) и git (индекс, коммиты и сравнение диаграммы с её ревизиями; нужен Git для Windows); устанавливает Python $WantVersion, если не найден Python $WantRange (64-бит)."
 LangString SecAssocName ${LANG_ENGLISH} "Open .graphml files with CyberiadaPro"
 LangString SecAssocName ${LANG_RUSSIAN} "Открывать файлы .graphml в CyberiadaPro"
 LangString SecAssocDesc ${LANG_ENGLISH} "Makes CyberiadaPro the program of the .graphml files."
@@ -268,6 +268,12 @@ Section "$(SecToolsName)" SecTools
   ${EndIf}
   StrCpy $1 "hsm-maker"
   nsExec::ExecToLog '"$PythonExe" -m hsm_maker --install-editor-plugin "$INSTDIR\${PLUGINS_DIR}"'
+  Pop $0
+  ${If} $0 != 0
+    StrCpy $Problems "$Problems$(PinFailed)$\r$\n"
+  ${EndIf}
+  StrCpy $1 "git"
+  nsExec::ExecToLog '"$PythonExe" -m hsm_git --install-editor-plugin "$INSTDIR\${PLUGINS_DIR}"'
   Pop $0
   ${If} $0 != 0
     StrCpy $Problems "$Problems$(PinFailed)$\r$\n"

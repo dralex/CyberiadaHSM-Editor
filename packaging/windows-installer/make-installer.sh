@@ -28,10 +28,12 @@ HERE="$SRC/CyberiadaHSM-Editor/packaging/windows-installer"
 # the CPythons of the pinned pydantic-core wheels of Windows 10+ (Windows 7-8.1 take
 # 3.8); keep in sync with CheckPython and FindPython of cyberiada-pro.nsi
 PYTHONS="3.10 3.11 3.12 3.13 3.14"
-# the python packages of the Windows release (not cybersphere-agents)
-REPOS="cyberiadaml-py hsm-dispatcher-py hsm-to-python cybersphere-hsm-maker"
+# the python packages of the Windows release (not cybersphere-agents, nor
+# lapki-compiler-plugin: its Lapki writer is the binding's)
+REPOS="cyberiadaml-py hsm-dispatcher-py hsm-to-python cybersphere-hsm-maker
+       cybersphere-git-plugin"
 # the editor plugins the installer pins (keep in sync with cyberiada-pro.nsi)
-PLUGINS="hsm-to-python hsm-maker"
+PLUGINS="hsm-to-python hsm-maker git"
 
 say() { printf '\n\033[1;34m== %s\033[0m\n' "$*"; }
 die() { printf '\033[1;31merror: %s\033[0m\n' "$*" >&2; exit 1; }
