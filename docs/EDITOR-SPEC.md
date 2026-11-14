@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.66 (2026-11-14)
+**Document version:** 0.67 (2026-11-14)
 
 **Related authorities:**
 
@@ -1218,6 +1218,14 @@ has a read-only flag; the architecture is `docs/MODES.md`. Specified in 0.47, th
   stay. The check never changes the text, the history or the file; another mode drops the
   marks and the bar; a read-only JSON tab shows its source, checked, as the other languages do.
   The rules and the messages are in `docs/MODES.md`, JSON. Specified in 0.66. *design*
+- `EDIT-MODE-27` MUST [A]: the source editor of a text tab, the sides of a text diff tab and the
+  preview of the color schemes draw in the text editor font, apart from the diagram font: its
+  family and size are set on Preferences > Text, *Text editors* (the monospaced families
+  offered), the bundled Cyberiada Mono 12 pt by default. A change applies to the open tabs at
+  once, the tab stop being 4 spaces of it; the rendered Markdown page, its PDF and the text
+  dialogs keep their fonts. The font is stored per user (`display/editorFontFamily`, empty for
+  the bundled one, `display/editorFontSize`); Reset of the Preferences restores it. Specified in
+  0.67. *design*
 
 ### 4.15 Find — FIND
 
@@ -1357,10 +1365,11 @@ Specified in 0.63.
 - `EDIT-COLOR-2` MUST [I]: two schemes are built in: *White*, the default — black text on white
   with the highlighting colors of the canvas — and *Dark* — yellow text (`#ffff00`) on blue
   (`#000099`); a scheme has all the colors of `docs/COLOR-SCHEMES.md`, The colors. *design*
-- `EDIT-COLOR-3` MUST [A]: Preferences > Text has the group *Text editor colors* beside the
-  font: the list of the schemes, a swatch per color that opens a color dialog, and a preview
-  of a Markdown text with a C++ block in the scheme shown. Ok and Apply make the scheme shown
-  current and store the changes; Cancel changes nothing. *design*
+- `EDIT-COLOR-3` MUST [A]: Preferences > Text has the group *Text editors* beside the diagram
+  font: the editor font (`EDIT-MODE-27`), the list of the schemes, a swatch per color that opens
+  a color dialog, and a preview of a Markdown text with a C++ block in the font and the scheme
+  shown. Ok and Apply make the scheme shown current and store the changes; Cancel changes
+  nothing. *design*
 - `EDIT-COLOR-4` MUST [A]: *Copy...* adds a user scheme with the colors shown, under a name
   asked that is not empty and is no other scheme's in any case; *Rename...* and *Delete* act on
   a user scheme only, White taking the place of a deleted one; *Restore* gives a built-in

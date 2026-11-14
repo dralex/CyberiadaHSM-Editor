@@ -1,7 +1,7 @@
 # Color Schemes — Architecture
 
-**Document version:** 0.1 (2026-11-14). The requirements are `EDIT-COLOR-1..8` in
-`EDITOR-SPEC.md` §4.18.
+**Document version:** 0.2 (2026-11-14). The requirements are `EDIT-COLOR-1..8` in
+`EDITOR-SPEC.md` §4.18; the editor font beside them is `EDIT-MODE-27`.
 
 The source editor of a text tab draws in the colors of a scheme: its background, text,
 selection, line numbers and the highlighting. White and Dark are built in; the user edits
@@ -85,20 +85,21 @@ the built-in one's, White's for a user scheme.
 
 ## The page
 
-The group *Text editor colors* on the Text page of the Preferences, beside the font of the
+The group *Text editors* on the Text page of the Preferences, beside the font of the
 diagrams; the dialog is wide enough for both.
 
 | Event | Effect |
 |---|---|
+| the font, its size | the text editor font (`EDIT-MODE-27`), the preview in it |
 | a scheme chosen | its swatches and the preview |
 | a swatch | a color dialog; the color changed in the copy, the preview follows |
 | Copy... | a name asked; a user scheme with the colors shown, chosen |
 | Rename... | a new name for a user scheme |
 | Delete | the user scheme dropped, White chosen |
 | Restore | the built-in colors of a built-in scheme |
-| Ok, Apply | the schemes stored, the scheme shown current; the open text tabs follow at once |
+| Ok, Apply | the font and the schemes stored, the scheme shown current; the open text tabs follow at once |
 | Cancel | nothing changes |
-| Reset of the dialog | the built-in schemes, no user ones, White current |
+| Reset of the dialog | the bundled font at 12 pt, the built-in schemes, no user ones, White current |
 
 ## Code layout
 
@@ -111,6 +112,7 @@ diagrams; the dialog is wide enough for both.
 | `code_editor.*` | `CodeEditor::setScheme()`: the palette and the margin |
 | `text_document.*` | `applyScheme()` on a mode and on a change |
 | `markdown_view.*` | the rendered page black on white |
-| `dialogs/text_scheme_panel.*` | `TextSchemePanel`: the list, the buttons, the swatches, the preview |
+| `fontmanager.*` | `FontManager::editorFont()`: the stored family or the bundled one, the point size |
+| `dialogs/text_scheme_panel.*` | `TextSchemePanel`: the font, the list, the buttons, the swatches, the preview |
 | `dialogs/preferences_dialog.*` | the panel on the Text page, its load, apply and reset |
 | `tests/l4/l4-colors.cpp` | the cases `EDIT-COLOR-1..8` |
