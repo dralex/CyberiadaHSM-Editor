@@ -134,7 +134,8 @@ void TestKeys::test_defaults()
 	QCOMPARE(map->label("actionOpen"), QString("Open..."));
 	// registered without a key
 	const char* keyless[] = { "actionAbout", "actionNewTerminate", "actionModeFA", "actionReadOnly",
-	                          "actionStructureTree", "actionPropertiesPane", "actionOutputPanel",
+	                          "actionStructureTree", "actionPropertiesPane", "actionChangesPane",
+	                          "actionOutputPanel",
 	                          "actionPluginManager", "actionSessionRestart", "actionZoomToSM" };
 	for (size_t i = 0; i < sizeof(keyless) / sizeof(keyless[0]); i++) {
 		QVERIFY2(map->contains(keyless[i]), keyless[i]);

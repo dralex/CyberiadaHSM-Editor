@@ -41,6 +41,13 @@ extern const char* const MODE_MARKDOWN;
 extern const char* const LANGUAGE_JSON;
 
 // what a mode gives its tab (docs/MODES.md, The modes)
+// the side docks a mode has (EDIT-UI-6)
+enum ModeDock {
+    modeDockTree       = 1,
+    modeDockProperties = 2,
+    modeDockChanges    = 4
+};
+
 struct ModeTraits {
     const char* id;
     // the tab marker after the title (EDIT-MODE-2); empty for HSM
@@ -53,6 +60,8 @@ struct ModeTraits {
     bool        faTools;
     // a text page instead of the canvas (EDIT-MODE-13)
     bool        text;
+    // the ModeDock flags of the docks shown in its tabs
+    int         docks;
 };
 
 // the traits of a mode id: a language takes the text ones; HSM for an unknown id

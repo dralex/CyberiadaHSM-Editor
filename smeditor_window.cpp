@@ -357,6 +357,7 @@ void CyberiadaSMEditorWindow::documentStateChanged(EditorDocument* doc)
     if (doc != active) return;
     updateTitle();
     updateEditActions();
+    applyDocks();
 }
 
 CyberiadaSMEditorDocument* CyberiadaSMEditorWindow::findDocument(const QString& fileName,
@@ -494,11 +495,10 @@ void CyberiadaSMEditorWindow::setCurrentDocument(EditorDocument* tab)
         documentTabs->setCurrentIndex(documents.indexOf(tab));
     }
     undoGroup->setActiveStack(tab->undoStack());
-    // a text tab has no canvas, no structure and no element tools (EDIT-MODE-15)
+    // a text tab has no canvas, no structure and no element tools (EDIT-MODE-15); the docks
+    // are the tab type's (EDIT-UI-6)
     showDiagramParts(current != nullptr);
-
-    SMView->setVisible(!currentComparison());
-    m_changeList->setVisible(currentComparison() != nullptr);
+    applyDocks();
     if (CyberiadaSMEditorDocument* doc = current) {
         sceneView = doc->view();
         CyberiadaSMModel* m = doc->model();
@@ -686,18 +686,6 @@ void CyberiadaSMEditorWindow::initDocumentMenu()
     connect(actionIgnoreWhitespace, &QAction::triggered, this, [this](bool on) {
         if (TextDiffDocument* diff = currentTextDiff()) diff->setIgnoreWhitespace(on);
     });
-    // the change list shares the structure tree dock, shown for a diff tab
-    m_changeList = new QTreeWidget(treeDockContents);
-    m_changeList->setObjectName("changeList");
-    m_changeList->setHeaderLabels(QStringList() << tr("Element") << tr("Change"));
-    // what differs stays in view: the element column takes the rest, elided (EDIT-MODE-11)
-    m_changeList->header()->setStretchLastSection(false);
-    m_changeList->header()->setSectionResizeMode(0, QHeaderView::Stretch);
-    m_changeList->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
-    m_changeList->hide();
-    treeDockLayout->addWidget(m_changeList);
-    connect(m_changeList, &QTreeWidget::itemActivated, this, &CyberiadaSMEditorWindow::slotChangeActivated);
-    connect(m_changeList, &QTreeWidget::itemClicked, this, &CyberiadaSMEditorWindow::slotChangeActivated);
     connect(actionNewFA, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotFileNewFA);
     // the toolbar button of a new Markdown text, also its entry in File > New > Text file
     actionNewMarkdown->setData(QString(MODE_MARKDOWN));
@@ -1545,21 +1533,66 @@ void CyberiadaSMEditorWindow::expandAndWidenTree()
 void CyberiadaSMEditorWindow::initPaneDocks()
 {
     SettingsManager& sm = SettingsManager::instance();
+    // the change list of a diff tab, a dock of its own under the other two
+    m_changeList = new QTreeWidget();
+    m_changeList->setObjectName("changeList");
+    m_changeList->setHeaderLabels(QStringList() << tr("Element") << tr("Change"));
+    // what differs stays in view: the element column takes the rest, elided (EDIT-MODE-11)
+    m_changeList->header()->setStretchLastSection(false);
+    m_changeList->header()->setSectionResizeMode(0, QHeaderView::Stretch);
+    m_changeList->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+    connect(m_changeList, &QTreeWidget::itemActivated, this, &CyberiadaSMEditorWindow::slotChangeActivated);
+    connect(m_changeList, &QTreeWidget::itemClicked, this, &CyberiadaSMEditorWindow::slotChangeActivated);
+    changesDock = new QDockWidget(tr("Changes"), this);
+    changesDock->setObjectName("changesDock");
+    changesDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    changesDock->setWidget(m_changeList);
+    addDockWidget(Qt::RightDockWidgetArea, changesDock);
+    resizeDocks(QList<QDockWidget*>() << changesDock, QList<int>() << PANE_DOCK_WIDTH, Qt::Horizontal);
+
     actionStructureTree = treeDock->toggleViewAction();
     actionStructureTree->setObjectName("actionStructureTree");
     actionProperties = propertiesDock->toggleViewAction();
     actionProperties->setObjectName("actionPropertiesPane");
+    actionChanges = changesDock->toggleViewAction();
+    actionChanges->setObjectName("actionChangesPane");
     menuView->insertAction(actionTransitionText, actionStructureTree);
     menuView->insertAction(actionTransitionText, actionProperties);
+    menuView->insertAction(actionTransitionText, actionChanges);
     menuView->insertSeparator(actionTransitionText);
-    treeDock->setVisible(sm.getShowStructureTree());
-    propertiesDock->setVisible(sm.getShowProperties());
     treeDock->installEventFilter(this);
     propertiesDock->installEventFilter(this);
+    changesDock->installEventFilter(this);
+    // the choice changes by a View entry or a close button only, never by a tab switch
     connect(actionStructureTree, &QAction::triggered, &sm, &SettingsManager::setShowStructureTree);
     connect(actionProperties, &QAction::triggered, &sm, &SettingsManager::setShowProperties);
-    connect(&sm, &SettingsManager::structureTreeChanged, treeDock, &QDockWidget::setVisible);
-    connect(&sm, &SettingsManager::propertiesChanged, propertiesDock, &QDockWidget::setVisible);
+    connect(actionChanges, &QAction::triggered, &sm, &SettingsManager::setShowChanges);
+    connect(&sm, &SettingsManager::structureTreeChanged, this, &CyberiadaSMEditorWindow::applyDocks);
+    connect(&sm, &SettingsManager::propertiesChanged, this, &CyberiadaSMEditorWindow::applyDocks);
+    connect(&sm, &SettingsManager::changesChanged, this, &CyberiadaSMEditorWindow::applyDocks);
+    applyDocks();
+}
+
+void CyberiadaSMEditorWindow::applyDocks()
+{
+    const SettingsManager& sm = SettingsManager::instance();
+    // before the first tab: the docks of a diagram
+    int docks = active ? modeTraits(active->mode()).docks : modeDockTree | modeDockProperties;
+    const struct {
+        QDockWidget* dock;
+        QAction* entry;
+        int flag;
+        bool chosen;
+    } rows[] = {
+        { treeDock,       actionStructureTree, modeDockTree,       sm.getShowStructureTree() },
+        { propertiesDock, actionProperties,    modeDockProperties, sm.getShowProperties() },
+        { changesDock,    actionChanges,       modeDockChanges,    sm.getShowChanges() }
+    };
+    for (size_t i = 0; i < sizeof(rows) / sizeof(rows[0]); i++) {
+        bool has = (docks & rows[i].flag) != 0;
+        rows[i].entry->setEnabled(has);
+        rows[i].dock->setVisible(has && rows[i].chosen);
+    }
 }
 
 bool CyberiadaSMEditorWindow::eventFilter(QObject* watched, QEvent* event)
@@ -1567,6 +1600,7 @@ bool CyberiadaSMEditorWindow::eventFilter(QObject* watched, QEvent* event)
     if (event->type() == QEvent::Close) {
         if (watched == treeDock) SettingsManager::instance().setShowStructureTree(false);
         if (watched == propertiesDock) SettingsManager::instance().setShowProperties(false);
+        if (watched == changesDock) SettingsManager::instance().setShowChanges(false);
     }
     return QMainWindow::eventFilter(watched, event);
 }

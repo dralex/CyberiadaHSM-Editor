@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.68 (2026-11-14)
+**Document version:** 0.69 (2026-11-15)
 
 **Related authorities:**
 
@@ -1024,14 +1024,24 @@ The interface translations and their workflow are in `docs/TRANSLATION.md`.
 - `EDIT-UI-5` MUST [A]: the preferences are stored per user under the name `CyberiadaPro`; the
   first start without them adopts once every preference stored under the pre-release name
   *Cyberiada State Machine Editor* and leaves that store unchanged. *design*
-- `EDIT-UI-6` MUST [A]: the structure tree and the properties panel are docks at the right of
-  the canvas (as the plugin dock: a title bar with the float and close buttons, movable; every
-  dock title is bold, the dock contents keep the regular weight), each
-  with a checkable View entry — *Structure tree*, *Properties* — both shown by default; closing a
-  dock unchecks its entry and the entry shows it again; the choice is kept per user between
-  sessions; a hidden tree or panel keeps following the active document and the canvas
-  selection, so showing it again needs no refresh; a tab switch keeps the sizes of the docks,
-  the tree only grows once to fit a wider structure. *design*
+- `EDIT-UI-6` MUST [A]: the structure tree, the properties panel and the change list are docks at
+  the right of the canvas (as the plugin dock: a title bar with the float and close buttons,
+  movable; every dock title is bold, the dock contents keep the regular weight), each with a
+  checkable View entry — *Structure tree*, *Properties*, *Changes* — all shown by default;
+  closing a dock unchecks its entry and the entry shows it again; the choice is kept per user
+  between sessions. A dock is shown only in the tabs that have it, as the user chose: a
+  diagram tab (HSM, inspection, FA) the tree and the properties, a diff and a text diff tab
+  the changes, a text tab none; in the other tabs it is hidden and its View entry greyed, the
+  choice unchanged (0.69). A hidden tree or panel keeps following the active document and the
+  canvas selection, so showing it again needs no refresh; a tab switch keeps the sizes of the
+  docks, the tree only grows once to fit a wider structure. *design*
+
+  ```
+  tab                         Structure tree   Properties   Changes
+  HSM, inspection, FA               x              x
+  diff, text diff                                               x
+  text, Markdown, a language
+  ```
 - `EDIT-UI-7` MUST [A]: `CYBERIADA_PRO_CONFIG_HOME` keeps the preferences in the ini file
   `<folder>/Cyberiada/CyberiadaPro.ini` and `CYBERIADA_PRO_DATA_HOME` the user data, the user
   plugin folder `<folder>/Cyberiada/CyberiadaPro/plugins`, instead of the places of the system
@@ -1105,8 +1115,8 @@ has a read-only flag; the architecture is `docs/MODES.md`. Specified in 0.47, th
   machine by its border and title tab; in a changed pair the drawn text of what differs is
   tinted on both sides — the name, the trigger, guard and behaviour of a transition, the
   actions of a state that differ from their pairs (paired by type, the others by trigger, one
-  without a pair whole), the body of a comment (0.64). The change list in the structure tree
-  dock lists the pairs by state machine with what differs, that column kept in view (the
+  without a pair whole), the body of a comment (0.64). The change list in the Changes dock
+  (`EDIT-UI-6`) lists the pairs by state machine with what differs, that column kept in view (the
   element elided, whole in its tooltip, 0.64), a row selecting and centring the element in
   both views. The pairs and what differs are the
   library's revision diff with the geometry option of Document > Geometry (off): without it
@@ -1144,9 +1154,9 @@ has a read-only flag; the architecture is `docs/MODES.md`. Specified in 0.47, th
   Language, Markup, Properties..., the geometry actions, Export (a Markdown tab exports its
   rendered PDF, `EDIT-MODE-18`) and the switches of the canvas
   view (the grid, the snap, the service objects, the transition text, the FA symbols, the
-  component comments), and the tree and properties docks are empty; Geometry and Refresh act on a diff tab, Check on an FA tab only. A text diff
+  component comments), and the tree and properties docks are hidden (`EDIT-UI-6`, 0.69); Geometry and Refresh act on a diff tab, Check on an FA tab only. A text diff
   tab hides the element toolbar, disables the zoom and Geometry, shows its change list in the
-  tree dock and enables Refresh, Next Change, Previous Change and Ignore Whitespace (0.65).
+  Changes dock and enables Refresh, Next Change, Previous Change and Ignore Whitespace (0.65).
   *design*
 - `EDIT-MODE-16` MUST [A]: the batch verbs `new-document [<mode>]`, `mode <id>` (`inspection`
   opens the inspection tab), `read-only on|off`, `compare <index|title|file>`, `geometry
@@ -1187,7 +1197,7 @@ has a read-only flag; the architecture is `docs/MODES.md`. Specified in 0.47, th
   scroll together, vertically and horizontally; an overview ruler at the right of the target
   shows where the changes lie in the whole text, a click scrolling both sides there.
   *design*
-- `EDIT-MODE-22` MUST [A]: the change list in the tree dock lists the hunks of a text diff tab —
+- `EDIT-MODE-22` MUST [A]: the change list in the Changes dock lists the hunks of a text diff tab —
   a run of rows that are not equal — as `<base lines> → <target lines>` with what they are:
   `changed <n> → <m>`, `removed <n>`, `added <m>`; a row scrolls both sides to its hunk and
   makes it current. Document > Next Change (`Alt+Down`) and Previous Change (`Alt+Up`) make

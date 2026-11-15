@@ -93,7 +93,7 @@ public:
     // Document > Refresh: both sides again from their origins (EDIT-MODE-12)
     // a plugin base runs its action again: wait for the run, or leave it running
     bool                    refreshDiff(ComparisonDocument* diff, QString* error = nullptr, bool wait = false);
-    // the change list of a diff tab, in the structure tree dock (EDIT-MODE-11)
+    // the change list of a diff tab, in the Changes dock (EDIT-MODE-11, EDIT-UI-6)
     QTreeWidget*            changeList() const { return m_changeList; }
     // a new untitled diagram in a new tab
     CyberiadaSMEditorDocument* newDocument();
@@ -165,9 +165,12 @@ public:
     // Plugins > Session: the session of the active document (EDIT-PLUG-46)
     QMenu*                  pluginSessionMenu() const { return sessionMenu; }
     PluginSession*          currentSession() const;
-    // View > Structure tree / Properties: the toggle actions of the docks (EDIT-UI-6)
+    // View > Structure tree / Properties / Changes: the toggle actions of the docks (EDIT-UI-6)
     QAction*                actionStructureTree = nullptr;
     QAction*                actionProperties = nullptr;
+    QAction*                actionChanges = nullptr;
+    // the change list of a diff tab (EDIT-MODE-11/22)
+    QDockWidget*            changesDock = nullptr;
 
 signals:
     void                    pluginRunStarted(PluginRunner* run, EditorDocument* doc);
@@ -186,6 +189,8 @@ private:
     void                    initializeTools();
     void                    updateTitle();
     void                    initPaneDocks();
+    // the docks the active tab has, as View chose; the others hidden, their entries greyed
+    void                    applyDocks();
     // on load: expand the tree fully and widen the right panel to fit its content
     void                    expandAndWidenTree();
     // the File > Open Recent submenu, rebuilt from the stored recent-files list

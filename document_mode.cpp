@@ -37,18 +37,20 @@ const char* const MODE_TEXT = "text";
 const char* const MODE_MARKDOWN = "markdown";
 const char* const LANGUAGE_JSON = "json";
 
+static const int DIAGRAM_DOCKS = modeDockTree | modeDockProperties;
+
 static const ModeTraits modes[] = {
-    // id               marker                                     readOnly stored faTools text
-    { MODE_HSM,        "",                                           false, false, false, false },
-    { MODE_INSPECTION, QT_TRANSLATE_NOOP("DocumentMode", "inspection"), true, true, false, false },
-    { MODE_FA,         QT_TRANSLATE_NOOP("DocumentMode", "FA"),     false, false, true, false },
-    { MODE_DIFF,       QT_TRANSLATE_NOOP("DocumentMode", "diff"),   true, true, false, false },
-    { MODE_TEXT_DIFF,  QT_TRANSLATE_NOOP("DocumentMode", "text diff"), true, false, false, false },
-    { MODE_TEXT,       QT_TRANSLATE_NOOP("DocumentMode", "text"),   false, false, false, true },
-    { MODE_MARKDOWN,   "Markdown",                                   false, false, false, true },
+    // id               marker                                     readOnly stored faTools text docks
+    { MODE_HSM,        "",                                           false, false, false, false, DIAGRAM_DOCKS },
+    { MODE_INSPECTION, QT_TRANSLATE_NOOP("DocumentMode", "inspection"), true, true, false, false, DIAGRAM_DOCKS },
+    { MODE_FA,         QT_TRANSLATE_NOOP("DocumentMode", "FA"),     false, false, true, false, DIAGRAM_DOCKS },
+    { MODE_DIFF,       QT_TRANSLATE_NOOP("DocumentMode", "diff"),   true, true, false, false, modeDockChanges },
+    { MODE_TEXT_DIFF,  QT_TRANSLATE_NOOP("DocumentMode", "text diff"), true, false, false, false, modeDockChanges },
+    { MODE_TEXT,       QT_TRANSLATE_NOOP("DocumentMode", "text"),   false, false, false, true, 0 },
+    { MODE_MARKDOWN,   "Markdown",                                   false, false, false, true, 0 },
 };
 // a language: the marker is its name
-static const ModeTraits languageTraits = { "", "", false, false, false, true };
+static const ModeTraits languageTraits = { "", "", false, false, false, true, 0 };
 
 const ModeTraits& modeTraits(const QString& id)
 {

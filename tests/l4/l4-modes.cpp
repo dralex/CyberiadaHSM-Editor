@@ -47,6 +47,7 @@
 #include "cyberiadasm_editor_sm_item.h"
 #include "editable_text_item.h"
 #include "cyberiada_constants.h"
+#include "settings_manager.h"
 
 // the EDIT-MODE laws of the text tabs at the widget level: the modes, the page,
 // the window parts that follow, the undo, the save and the rendered Markdown
@@ -484,9 +485,9 @@ void TestModes::test_compare_saved()
 			window.actionRefresh->isEnabled());
 	QVERIFY(window.actionModeDiff->isChecked() && !window.actionModeHSM->isEnabled());
 	QVERIFY(!window.setDocumentMode(diff, MODE_HSM));
-	// the change list stands in the structure tree dock
-	QVERIFY(window.changeList()->isVisibleTo(&window) || !window.changeList()->isHidden());
-	QVERIFY(window.SMView->isHidden());
+	// the change list in its dock, the tree and the properties hidden (EDIT-UI-6)
+	QVERIFY(!window.changesDock->isHidden() && window.changesDock->widget() == window.changeList());
+	QVERIFY(window.treeDock->isHidden() && window.propertiesDock->isHidden());
 	QVERIFY(window.changeList()->topLevelItemCount() > 0);
 	diff->showElement("node-0-0-1", "node-0-0-1");
 	QVERIFY(diff->baseScene()->getMap().value("node-0-0-1")->isSelected());
@@ -497,9 +498,10 @@ void TestModes::test_compare_saved()
 	QVERIFY(diff->geometry());
 	QVERIFY(diff->rows().size() >= rows);
 	QVERIFY(row(diff, "node-0-0-1", "node-0-0-1")->element.contains("(node-0-0-1)"));
-	// a diagram tab gets its tree back
+	// a diagram tab gets its tree and properties back, the changes go
 	window.setCurrentDocument(source);
-	QVERIFY(!window.SMView->isHidden() && window.changeList()->isHidden());
+	QVERIFY(!window.treeDock->isHidden() && !window.propertiesDock->isHidden());
+	QVERIFY(window.changesDock->isHidden() && !window.actionChanges->isEnabled());
 }
 
 // EDIT-MODE-12: Refresh takes both sides again; a closed source keeps the target
@@ -626,9 +628,21 @@ void TestModes::test_text_compare()
 	QCOMPARE(diff->targetPane()->lineLabel(added), QString("9"));
 	QCOMPARE(diff->basePane()->lineLabel(added + 1), QString("9"));
 	QCOMPARE(diff->basePane()->document()->findBlockByNumber(added).text(), QString());
-	// a row per hunk in the dock, the structure tree hidden
+	// a row per hunk in the Changes dock, the tree and the properties hidden (EDIT-UI-6)
 	QTreeWidget* list = window.findChild<QTreeWidget*>("changeList");
 	QVERIFY(list && list->isVisible());
+	QVERIFY(window.changesDock->isVisible() && window.actionChanges->isEnabled());
+	QVERIFY(window.treeDock->isHidden() && window.propertiesDock->isHidden());
+	// closed in a diff tab, the changes stay closed in the next one until View shows them
+	SettingsManager& sm = SettingsManager::instance();
+	window.changesDock->close();
+	QVERIFY(window.changesDock->isHidden() && !sm.getShowChanges());
+	window.setCurrentDocument(source);
+	QVERIFY(window.changesDock->isHidden() && !window.actionChanges->isEnabled());
+	window.setCurrentDocument(diff);
+	QVERIFY(window.changesDock->isHidden() && window.actionChanges->isEnabled());
+	window.actionChanges->trigger();
+	QVERIFY(window.changesDock->isVisible() && sm.getShowChanges());
 	QCOMPARE(list->topLevelItemCount(), 3);
 	QCOMPARE(list->topLevelItem(0)->text(0), QString::fromUtf8("8 → 8-9"));
 	QCOMPARE(list->topLevelItem(0)->text(1), QString::fromUtf8("changed 1 → 2"));

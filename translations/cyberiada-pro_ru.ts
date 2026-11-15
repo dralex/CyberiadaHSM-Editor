@@ -212,7 +212,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Менеджер плагинов...</translation>
     </message>
     <message>
-        <location line="+253"/>
+        <location line="+254"/>
         <source>Close</source>
         <translation>Закрыть</translation>
     </message>
@@ -231,7 +231,7 @@ Ctrl+щелчок — открыть</translation>
 </translation>
     </message>
     <message>
-        <location line="+102"/>
+        <location line="+101"/>
         <source>Undefined</source>
         <translation>Не задан</translation>
     </message>
@@ -246,7 +246,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Markdown</translation>
     </message>
     <message>
-        <location line="+849"/>
+        <location line="+837"/>
         <source>Undo</source>
         <translation>Отменить</translation>
     </message>
@@ -292,7 +292,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Выполняются плагины. Остановить их и выйти?</translation>
     </message>
     <message>
-        <location line="+115"/>
+        <location line="+161"/>
         <source>Load State Machine</source>
         <translation>Загрузка машины состояний</translation>
     </message>
@@ -369,8 +369,8 @@ Ctrl+щелчок — открыть</translation>
         <translation>нет документа</translation>
     </message>
     <message>
-        <location line="-1428"/>
-        <location line="+1438"/>
+        <location line="-1474"/>
+        <location line="+1484"/>
         <source>a plugin is running on the document</source>
         <translation>для документа выполняется плагин</translation>
     </message>
@@ -379,8 +379,8 @@ Ctrl+щелчок — открыть</translation>
         <translation type="vanished">в режиме инспектора документ доступен только для чтения</translation>
     </message>
     <message>
-        <location line="-1404"/>
-        <location line="+1441"/>
+        <location line="-1450"/>
+        <location line="+1487"/>
         <source>the document cannot be encoded</source>
         <translation>не удалось сериализовать документ</translation>
     </message>
@@ -412,33 +412,33 @@ Ctrl+щелчок — открыть</translation>
         <translation>Плагин: %1</translation>
     </message>
     <message>
-        <location line="-1870"/>
+        <location line="-1904"/>
         <source>Mode</source>
         <translation>Режим</translation>
     </message>
     <message>
-        <location line="+140"/>
+        <location line="+128"/>
         <source>the mode %1 is not available</source>
         <translation>режим %1 недоступен</translation>
     </message>
     <message>
-        <location line="+1454"/>
+        <location line="+1500"/>
         <source>the inspection tab is read-only</source>
         <translation>вкладка инспекции доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1433"/>
-        <location line="+1434"/>
+        <location line="-1479"/>
+        <location line="+1480"/>
         <source>the tab is read-only</source>
         <translation>вкладка доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1613"/>
+        <location line="-1647"/>
         <source>Text file</source>
         <translation>Текстовый файл</translation>
     </message>
     <message>
-        <location line="+92"/>
+        <location line="+80"/>
         <source>Code</source>
         <translation>Код</translation>
     </message>
@@ -481,7 +481,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>%1: не элемент конечного автомата</translation>
     </message>
     <message>
-        <location line="+314"/>
+        <location line="+360"/>
         <location line="+26"/>
         <location line="+7"/>
         <source>Save Text</source>
@@ -498,19 +498,19 @@ Ctrl+щелчок — открыть</translation>
         <translation>%1 (*%2)</translation>
     </message>
     <message>
-        <location line="-475"/>
+        <location line="-521"/>
         <location line="+55"/>
-        <location line="+420"/>
+        <location line="+466"/>
         <source>All files (*)</source>
         <translation>Все файлы (*)</translation>
     </message>
     <message>
-        <location line="-1045"/>
+        <location line="-1079"/>
         <source>Refresh</source>
         <translation>Обновить</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+864"/>
         <source>Element</source>
         <translation>Элемент</translation>
     </message>
@@ -520,7 +520,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Изменение</translation>
     </message>
     <message>
-        <location line="+89"/>
+        <location line="-770"/>
         <source>a diff tab is opened by Document &gt; Compare with...</source>
         <translation>вкладку сравнения открывает «Документ &gt; Сравнить с...»</translation>
     </message>
@@ -611,7 +611,12 @@ Ctrl+щелчок — открыть</translation>
         <translation>Граф CyberiadaML (*.graphml)</translation>
     </message>
     <message>
-        <location line="+487"/>
+        <location line="+258"/>
+        <source>Changes</source>
+        <translation>Изменения</translation>
+    </message>
+    <message>
+        <location line="+275"/>
         <source>Export the rendered text as PDF</source>
         <translation>Экспорт отображённого текста в PDF</translation>
     </message>
@@ -1523,7 +1528,7 @@ Ctrl+щелчок — открыть</translation>
 <context>
     <name>DocumentMode</name>
     <message>
-        <location filename="../document_mode.cpp" line="+43"/>
+        <location filename="../document_mode.cpp" line="+45"/>
         <source>inspection</source>
         <translation>инспекция</translation>
     </message>
@@ -2000,7 +2005,7 @@ Ctrl+щелчок — открыть</translation>
 <context>
     <name>PluginConditions</name>
     <message>
-        <location filename="../plugin_conditions.cpp" line="+70"/>
+        <location filename="../plugin_conditions.cpp" line="+71"/>
         <location line="+30"/>
         <source>the document has no file</source>
         <translation>у документа нет файла</translation>

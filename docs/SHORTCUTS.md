@@ -26,7 +26,7 @@ An action is registered under its `objectName`; the page shows it under its menu
 (`Edit > Tools > New State`), the toolbar-only ones under `Tools` and `View`. The actions
 made in code get names: `actionSessionStep`, `...Run`, `...Pause`, `...Restart`, `...Stop`,
 `...Post`, `...Load`, `...Edit`, `...Save`, `actionOutputPanel`, `actionPluginManager`,
-`actionStructureTree`, `actionPropertiesPane`. The toolbar-only actions are added to the
+`actionStructureTree`, `actionPropertiesPane`, `actionChangesPane`. The toolbar-only actions are added to the
 window itself, so their keys act while the toolbar is hidden.
 
 Not registered: the plugin actions and their toolbars' toggles, Open Recent, the text modes,

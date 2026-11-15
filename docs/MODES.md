@@ -1,6 +1,6 @@
 # The Document Modes — Architecture
 
-**Document version:** 0.14 (2026-11-14) — stages 1 to 9 implemented (see Stages). The
+**Document version:** 0.15 (2026-11-15) — stages 1 to 9 implemented (see Stages). The
 requirements are `EDIT-MODE-1..28` in `EDITOR-SPEC.md` §4.14, the plugin parts
 `EDIT-PLUG-56..60`.
 
@@ -37,15 +37,15 @@ CyberiadaSMEditorWindow                                                         
 
 ## The modes
 
-| Mode | Id | Page | Element tools | Tree, properties | Marker |
+| Mode | Id | Page | Element tools | Side docks (`EDIT-UI-6`) | Marker |
 |---|---|---|---|---|---|
-| HSM diagram | `hsm` | canvas | all | yes | — |
-| HSM inspection | `inspection` | canvas, the stored geometry | Select, Pan, Zoom | yes, read-only | `[inspection]` |
-| FA diagram | `fa` | canvas | Select, Pan, Zoom, State, Initial, Final, Transition, Comment, Formal comment | yes | `[FA]` |
-| HSM diff | `diff` | two canvases | Select, Pan, Zoom | the change list | `[diff]` |
-| Plain text | `text` | CodeEditor | the toolbar hidden | empty | `[text]` |
-| Markdown | `markdown` | CodeEditor; rendered when read-only | the toolbar hidden | empty | `[Markdown]` |
-| a language | `c`, `cpp`, `csharp`, `json`, `python`, a plugin's (`lua`) | CodeEditor | the toolbar hidden | empty | `[C++]` ... |
+| HSM diagram | `hsm` | canvas | all | tree, properties | — |
+| HSM inspection | `inspection` | canvas, the stored geometry | Select, Pan, Zoom | tree, properties (read-only) | `[inspection]` |
+| FA diagram | `fa` | canvas | Select, Pan, Zoom, State, Initial, Final, Transition, Comment, Formal comment | tree, properties | `[FA]` |
+| HSM diff | `diff` | two canvases | Select, Pan, Zoom | changes | `[diff]` |
+| Plain text | `text` | CodeEditor | the toolbar hidden | none | `[text]` |
+| Markdown | `markdown` | CodeEditor; rendered when read-only | the toolbar hidden | none | `[Markdown]` |
+| a language | `c`, `cpp`, `csharp`, `json`, `python`, a plugin's (`lua`) | CodeEditor | the toolbar hidden | none | `[C++]` ... |
 
 * A language mode is a language file: a built-in one of `syntax/`, or one a plugin brings in
   its `languages` (`EDIT-PLUG-60`, `PLUGINS.md` Discovery) — a new language needs no rebuild.
@@ -53,8 +53,9 @@ CyberiadaSMEditorWindow                                                         
   recognises (`cpp`: `.cpp .cxx .cc .h .hpp .hh .ino`).
 * The read-only flag adds `ro` to the marker: the tab `a.graphml [FA, ro]*`, the window
   `a.graphml [FA, read-only][*]`; an HSM tab `a.graphml [ro]`.
-* The traits decide which actions and docks a tab gets; the read-only flag, a plugin lock and
-  the inspection then disable the editing ones as today.
+* The traits decide which actions and docks a tab gets (`ModeTraits::docks`; a text diff tab
+  has the changes); a dock the tab has not is hidden with its View entry greyed. The read-only
+  flag, a plugin lock and the inspection then disable the editing ones as today.
 
 ## Mode transitions
 
@@ -126,8 +127,8 @@ CyberiadaSMEditorWindow                                                         
       | pairs + flags                       | marks                     ^ Refresh:
       v                                     v                           | both sides
  +------------------------+    +------------------------------------+   | again from
- | the change list (tree  |    |  base view       |   target view   |   | their origins;
- | dock): machine >       |--->|  removed,        |   added,        |   | a plugin base
+ | the change list        |    |  base view       |   target view   |   | their origins;
+ | (Changes): machine >   |--->|  removed,        |   added,        |   | a plugin base
  | element: what differs  |    |  changed         |   changed       |   | re-runs it
  +------------------------+    +------------------------------------+---+
    a row selects and centres the element in both views; the marks reuse RunMark
@@ -176,8 +177,8 @@ The git plugin hands the revision of a diagram to a diff tab:
         | rows, hunks                                   | rows
         v                                               v
  +--------------------------+    +-------------------------------------------+---+
- | the change list (tree    |    | base pane          | target pane          | r |
- | dock): 13-13 -> 13-14    |--->| DiffTextPane       | DiffTextPane         | u |
+ | the change list          |    | base pane          | target pane          | r |
+ | (Changes) 13-13 -> 13-14 |--->| DiffTextPane       | DiffTextPane         | u |
  |   changed 1 -> 2         |    | (CodeEditor, ro,   | fillers have no      | l |
  | Next/Previous Change     |    |  lineLabel)        | number               | e |
  +--------------------------+    +-------------------------------------------+---+
@@ -202,7 +203,7 @@ The git plugin hands the revision of a diagram to a diff tab:
   the change list, the current row — so the window's Compare, Refresh, plugin result and
   change list code is one path; Geometry stays on `DiffDocument`, Ignore Whitespace goes on
   `TextDiffDocument`.
-* No tabs inside a tab: one comparison is one tab, the tree dock is its navigator. A
+* No tabs inside a tab: one comparison is one tab, the Changes dock is its navigator. A
   repository change set (all the staged files) would list files and their hunks in the same
   dock over one page.
 

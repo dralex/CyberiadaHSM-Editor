@@ -1,14 +1,15 @@
 # The Editor Window — Documents and Tabs
 
-**Document version:** 0.20 (2026-11-14) — the modes, the read-only flag and the plugins in
+**Document version:** 0.21 (2026-11-15) — the modes, the read-only flag and the plugins in
 the modes (`modes`, the text tabs, a plugin run as a diff base, the plugin languages) are
 implemented, the git compare with them (stage 6 of `docs/MODES.md`); a switch keeps the dock
 sizes; a Markdown tab exports its rendered PDF; the find bar (`docs/FIND.md`); the shortcuts
 and the autoreplace (`docs/SHORTCUTS.md`, `docs/AUTOREPLACE.md`); the color schemes of the
-text editors (`docs/COLOR-SCHEMES.md`) and their font; the text diff tab (stage 7 of `docs/MODES.md`).
+text editors (`docs/COLOR-SCHEMES.md`) and their font; the text diff tab (stage 7 of `docs/MODES.md`);
+0.21: the side docks follow the tab type, the change list a dock of its own.
 
 The window holds several documents at once. The menus, the toolbars, the tab line and the
-docks (the structure tree, the properties, the plugins) are one set; each document brings its
+docks (the structure tree, the properties, the changes, the plugins) are one set; each document brings its
 own page — a diagram its model, scene and canvas view — and its mode (`docs/MODES.md`). The
 requirements are `EDIT-DOC-1..10` in `EDITOR-SPEC.md` §4.11, `EDIT-MODE-1..17` §4.14 and
 `EDIT-UI-6` for the docks, `EDIT-FIND-1..9` §4.15 for the find bar; the plugin parts follow `docs/PLUGINS.md` (`EDIT-PLUG-n`, §4.12), the
@@ -27,16 +28,17 @@ CyberiadaSMEditorWindow (QMainWindow)                                   GLOBAL
  | central widget (QVBoxLayout)              | right dock area (EDIT-UI-6)
  |  +--------------------------------------+ | +---------------------------------+
  |  | documentTabs : QTabBar  hidden < 2   | | | treeDock "Structure tree" [_][x]|
- |  | [ a.graphml ][ a.graphml [FA]* ]     | | |   SMView (structure tree);      |
- |  +--------------------------------------+ | |   a (text) diff tab: the changes|
- |  | documentStack : QStackedWidget       | | +---------------------------------+
- |  |   page i = documents[i]->page()      | | | propertiesDock "Properties"[_][x]|
- |  |   a canvas, two canvases (diff), a   | | |   propertiesWidget              |
- |  |   CodeEditor (text), two (text diff) | | |   (re-targeted on switch)       |
+ |  | [ a.graphml ][ a.graphml [FA]* ]     | | |   SMView (structure tree)       |
  |  +--------------------------------------+ | +---------------------------------+
- |  | findBar : FindBar  hidden until Find | |
- |  +--------------------------------------+ |
- |  View > Structure tree / Properties: the docks' toggle actions, kept in the settings
+ |  | documentStack : QStackedWidget       | | | propertiesDock "Properties"[_][x]|
+ |  |   page i = documents[i]->page()      | | |   propertiesWidget              |
+ |  |   a canvas, two canvases (diff), a   | | |   (re-targeted on switch)       |
+ |  |   CodeEditor (text), two (text diff) | | +---------------------------------+
+ |  +--------------------------------------+ | | changesDock "Changes"      [_][x]|
+ |  | findBar : FindBar  hidden until Find | | |   changeList (a (text) diff tab)|
+ |  +--------------------------------------+ | +---------------------------------+
+ |  View > Structure tree / Properties / Changes: the docks' toggle actions, kept in the
+ |  settings; applyDocks shows the docks of ModeTraits::docks as chosen, greys the others
  +-------------------------------------------+-------------------------------------
  | pluginDock (QDockWidget, bottom, full width, hidden until the first run)   pluginRuns
  |
@@ -62,6 +64,8 @@ setCurrentDocument(doc)
   unbind the old document        SMView <-> scene selection links
   documentStack.setCurrentWidget(doc.page)
   apply ModeTraits(doc.mode) and the read-only flag: tools, docks, Document menu, actions
+  applyDocks: the docks of ModeTraits::docks shown as View chose, the others hidden and
+                                 their View entries greyed; the settings stay
   SMView.setModel(doc.model) + setRootIndex   propertiesWidget.setModel/setScene(doc)
                                  (a diagram; a text tab empties them, a diff tab lists changes)
   expand the tree; widen its dock to the contents (grow-only, the docks keep their sizes)
@@ -100,7 +104,7 @@ setCurrentDocument(doc)
 | Zoom in/out, Fit, Zoom to SM, zoom combo | document | the active view; disabled in a text tab |
 | Document > Language, code highlighting | document | the checked entry is the active document's `platformLanguage`; each tab is highlighted by its own (`EDIT-TEXT-9`); the list of unknown values met is global |
 | Document > Markup, comment markup | document | the checked entry is the active document's `markupLanguage` (`EDIT-TEXT-12`); the list of unknown values met is global |
-| Structure tree, properties panel | shared docks | content re-targeted on a switch; shown or hidden by View, the choice kept (`EDIT-UI-6`) |
+| Structure tree, properties panel, changes | shared docks | content re-targeted on a switch; shown in the tabs that have them as View chose, the choice kept (`EDIT-UI-6`): a diagram the tree and the properties, a (text) diff the changes, a text tab none |
 | Window title and `[*]` | document | the active one with its mode marker (`EDIT-MODE-2`); the tab text carries the marker and `*` when modified; an unsaved document is `[document name]` or `untitled` (`EDIT-DOC-10`) |
 | Saved viewport (zoom/pan in the document) | document | restored on the tab's first activation |
 | Gesture-log session | bound to one document | a switch ends it and starts a new one (`EDIT-DOC-8`) |

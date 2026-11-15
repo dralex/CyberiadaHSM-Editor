@@ -92,6 +92,7 @@ void SettingsManager::load() {
     showFASymbols = s.value("display/showFASymbols", false).toBool();
     showStructureTree = s.value("display/showStructureTree", true).toBool();
     showProperties = s.value("display/showProperties", true).toBool();
+    showChanges = s.value("display/showChanges", true).toBool();
     showServiceObjects = s.value("display/showServiceObjects", false).toBool();
     showComponentComments = s.value("display/showComponentComments", false).toBool();
     loggingEnabled = s.value("logging/enabled", false).toBool();
@@ -180,6 +181,7 @@ void SettingsManager::loadDefaults()
     setShowFASymbols(false);
     setShowStructureTree(true);
     setShowProperties(true);
+    setShowChanges(true);
     setShowServiceObjects(false);
     setShowComponentComments(false);
     setLoggingEnabled(false);
@@ -364,6 +366,14 @@ void SettingsManager::setShowProperties(bool value) {
         showProperties = value;
         QSettings().setValue("display/showProperties", value);
         emit propertiesChanged(value);
+    }
+}
+
+void SettingsManager::setShowChanges(bool value) {
+    if (showChanges != value) {
+        showChanges = value;
+        QSettings().setValue("display/showChanges", value);
+        emit changesChanged(value);
     }
 }
 

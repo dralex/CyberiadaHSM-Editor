@@ -38,6 +38,8 @@ public:
     void setShowStructureTree(bool value);
     bool getShowProperties() const { return showProperties; }
     void setShowProperties(bool value);
+    bool getShowChanges() const { return showChanges; }
+    void setShowChanges(bool value);
 
     bool getShowTransitionText() const { return showTransitionText; }
     void setShowTransitionText(bool value);
@@ -199,6 +201,7 @@ signals:
     void faSymbolsChanged(bool);
     void structureTreeChanged(bool);
     void propertiesChanged(bool);
+    void changesChanged(bool);
     void serviceObjectsChanged(bool);
     void componentCommentsChanged(bool);
     void loggingChanged(bool);
@@ -242,6 +245,7 @@ private:
     bool showFASymbols = false;
     bool showStructureTree;
     bool showProperties;
+    bool showChanges;
     bool showServiceObjects;
     bool showComponentComments;
     bool loggingEnabled;

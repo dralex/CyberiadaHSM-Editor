@@ -53,6 +53,7 @@ private slots:
 	void test_delete_component_formal_from_tree();
 	void test_pane_toggles();
 	void test_pane_persist();
+	void test_docks_follow_tab();
 	void test_dock_titles_bold();
 	void test_dock_sizes_on_switch();
 
@@ -467,6 +468,7 @@ void TestWindow::test_pane_toggles()
 	QList<QAction*> view = window->menuView->actions();
 	QVERIFY(view.indexOf(window->actionStructureTree) < view.indexOf(window->actionTransitionText));
 	QVERIFY(view.indexOf(window->actionProperties) < view.indexOf(window->actionTransitionText));
+	QVERIFY(view.indexOf(window->actionChanges) < view.indexOf(window->actionTransitionText));
 	SettingsManager& sm = SettingsManager::instance();
 
 	window->actionStructureTree->trigger();
@@ -516,11 +518,48 @@ void TestWindow::test_pane_persist()
 	QVERIFY(window->treeDock->isVisible());
 }
 
+// EDIT-UI-6: a dock is shown in the tabs that have it, as View chose; elsewhere it is hidden
+// with its entry greyed and the choice kept
+void TestWindow::test_docks_follow_tab()
+{
+	window->show();
+	QVERIFY(QTest::qWaitForWindowExposed(window));
+	SettingsManager& sm = SettingsManager::instance();
+	QVERIFY(window->getModel());
+	EditorDocument* diagram = window->currentTab();
+	// a diagram: the tree and the properties, the changes greyed
+	QVERIFY(window->treeDock->isVisible() && window->propertiesDock->isVisible());
+	QVERIFY(window->changesDock->isHidden() && !window->actionChanges->isEnabled());
+	QVERIFY(window->actionStructureTree->isEnabled() && window->actionProperties->isEnabled());
+
+	// a text tab: none, the entries greyed, the choices untouched
+	QVERIFY(window->openFile("texts/notes.md"));
+	EditorDocument* text = window->currentTab();
+	QVERIFY(window->treeDock->isHidden() && window->propertiesDock->isHidden() &&
+	        window->changesDock->isHidden());
+	QVERIFY(!window->actionStructureTree->isEnabled() && !window->actionProperties->isEnabled() &&
+	        !window->actionChanges->isEnabled());
+	QVERIFY(sm.getShowStructureTree() && sm.getShowProperties() && sm.getShowChanges());
+
+	// the tree hidden by View in a diagram stays hidden after the text tab and back
+	window->setCurrentDocument(diagram);
+	QVERIFY(window->treeDock->isVisible() && window->propertiesDock->isVisible());
+	window->actionStructureTree->trigger();
+	QVERIFY(window->treeDock->isHidden() && !sm.getShowStructureTree());
+	window->setCurrentDocument(text);
+	window->setCurrentDocument(diagram);
+	QVERIFY(window->treeDock->isHidden() && window->propertiesDock->isVisible());
+	QVERIFY(window->actionStructureTree->isEnabled() && !window->actionStructureTree->isChecked());
+	window->actionStructureTree->trigger();
+	QVERIFY(window->treeDock->isVisible() && sm.getShowStructureTree());
+	QVERIFY(window->closeDocument(text, true));
+}
+
 // EDIT-UI-6: every dock title is bold, its contents are not
 void TestWindow::test_dock_titles_bold()
 {
 	QList<QDockWidget*> docks = QList<QDockWidget*>() << window->treeDock << window->propertiesDock
-	                                                  << window->pluginDock();
+	                                                  << window->changesDock << window->pluginDock();
 	for (QDockWidget* dock : docks) {
 		QVERIFY2(dock->font().bold(), qPrintable(dock->objectName()));
 		QVERIFY2(!dock->widget()->font().bold(), qPrintable(dock->objectName()));
@@ -544,6 +583,9 @@ void TestWindow::test_dock_sizes_on_switch()
 	QVERIFY(window->openFile("texts/notes.md"));
 	EditorDocument* text = window->currentTab();
 	QVERIFY(first != second && second != text && !window->getModel());
+	// a text tab has no side docks (EDIT-UI-6)
+	QVERIFY(window->treeDock->isHidden() && window->propertiesDock->isHidden());
+	QVERIFY(!window->actionStructureTree->isEnabled() && !window->actionProperties->isEnabled());
 	// a narrow tree: the next diagram activation widens it
 	window->resizeDocks(QList<QDockWidget*>() << window->treeDock, QList<int>() << 120, Qt::Horizontal);
 	QTest::qWait(50);
