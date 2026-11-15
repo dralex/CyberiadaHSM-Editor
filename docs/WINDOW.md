@@ -1,17 +1,18 @@
 # The Editor Window — Documents and Tabs
 
-**Document version:** 0.21 (2026-11-15) — the modes, the read-only flag and the plugins in
+**Document version:** 0.22 (2026-11-15) — the modes, the read-only flag and the plugins in
 the modes (`modes`, the text tabs, a plugin run as a diff base, the plugin languages) are
 implemented, the git compare with them (stage 6 of `docs/MODES.md`); a switch keeps the dock
 sizes; a Markdown tab exports its rendered PDF; the find bar (`docs/FIND.md`); the shortcuts
 and the autoreplace (`docs/SHORTCUTS.md`, `docs/AUTOREPLACE.md`); the color schemes of the
 text editors (`docs/COLOR-SCHEMES.md`) and their font; the text diff tab (stage 7 of `docs/MODES.md`);
 0.21: the side docks follow the tab type, the change list a dock of its own.
+0.22: Open Terminal.
 
 The window holds several documents at once. The menus, the toolbars, the tab line and the
 docks (the structure tree, the properties, the changes, the plugins) are one set; each document brings its
 own page — a diagram its model, scene and canvas view — and its mode (`docs/MODES.md`). The
-requirements are `EDIT-DOC-1..10` in `EDITOR-SPEC.md` §4.11, `EDIT-MODE-1..17` §4.14 and
+requirements are `EDIT-DOC-1..12` in `EDITOR-SPEC.md` §4.11, `EDIT-MODE-1..17` §4.14 and
 `EDIT-UI-6` for the docks, `EDIT-FIND-1..9` §4.15 for the find bar; the plugin parts follow `docs/PLUGINS.md` (`EDIT-PLUG-n`, §4.12), the
 plugin sessions its chapter Level 2 (`EDIT-PLUG-36..49`).
 
@@ -92,6 +93,7 @@ setCurrentDocument(doc)
 | Armed tool | global | pushed to the active scene on a switch; a scene's own tool change is honoured only from the active scene |
 | Clipboard | global | paste into the active document (`EDIT-DOC-5`) |
 | Close (Ctrl+W), Save, Save As, Export | document | the active one; Save, Save As and Export enabling as `EDIT-IO-7`; Export of a Markdown tab saves its rendered PDF (`EDIT-MODE-18`) |
+| Open Terminal | document | the system terminal in the folder of the active tab's file (`system_terminal.cpp`); disabled for a tab without a file (`EDIT-DOC-12`) |
 | Undo, Redo | document | the active stack of the `QUndoGroup`; a text tab's stack proxies its `QTextDocument` |
 | Cut, Copy, Delete | document | the active scene's selection, or the active text editor's |
 | Find bar, Find, Find Next, Find Previous | global | one bar and query; the marks are the active tab's, dropped on a switch and searched again in the new tab; disabled in a diff tab, one side of a text diff tab (`EDIT-FIND-9`, `EDIT-MODE-24`, `docs/FIND.md`) |

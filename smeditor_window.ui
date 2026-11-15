@@ -141,6 +141,7 @@
     <addaction name="actionSave"/>
     <addaction name="actionSaveAs"/>
     <addaction name="actionExport"/>
+    <addaction name="actionOpenTerminal"/>
     <addaction name="separator"/>
     <addaction name="actionClose"/>
     <addaction name="separator"/>
@@ -277,6 +278,7 @@
    <addaction name="actionOpen"/>
    <addaction name="actionSave"/>
    <addaction name="actionExport"/>
+   <addaction name="actionOpenTerminal"/>
    <addaction name="separator"/>
    <addaction name="actionUndo"/>
    <addaction name="actionRedo"/>
@@ -910,6 +912,18 @@
    </property>
    <property name="text">
     <string>Export...</string>
+   </property>
+  </action>
+  <action name="actionOpenTerminal">
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/terminal.png</normaloff>:/Icons/images/terminal.png</iconset>
+   </property>
+   <property name="text">
+    <string>Open Terminal</string>
+   </property>
+   <property name="toolTip">
+    <string>Open a terminal in the folder of the file</string>
    </property>
   </action>
   <action name="actionNew">

@@ -71,6 +71,7 @@
 #include "plugin_session_view.h"
 #include "find_bar.h"
 #include "shortcut_map.h"
+#include "system_terminal.h"
 #include "dialogs/plugin_manager_dialog.h"
 #include "dialogs/plugin_parameter_dialog.h"
 
@@ -116,6 +117,7 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     connect(documentTabs, &QTabBar::tabMoved, this,
             [this](int from, int to) { documents.move(from, to); });
     connect(actionClose, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotFileClose);
+    connect(actionOpenTerminal, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotOpenTerminal);
     connect(actionNextDocument, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotNextDocument);
     connect(actionPreviousDocument, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotPreviousDocument);
 
@@ -275,7 +277,7 @@ void CyberiadaSMEditorWindow::addTab(EditorDocument* doc)
             [this, doc]() {
                 updateTabTitle(doc);
                 // a Save As of an unmodified document changes the file, not the clean state
-                if (doc == active) { updateTitle(); updatePluginActions(); }
+                if (doc == active) { updateTitle(); updatePluginActions(); updateTerminalAction(); }
             });
     connect(doc, &EditorDocument::modeChanged, this, [this, doc]() { documentStateChanged(doc); });
     connect(doc, &EditorDocument::readOnlyChanged, this, [this, doc]() { documentStateChanged(doc); });
@@ -939,6 +941,21 @@ void CyberiadaSMEditorWindow::updateFindActions()
     actionGoToLine->setEnabled(text && !text->showsRendered());
 }
 
+void CyberiadaSMEditorWindow::updateTerminalAction()
+{
+    actionOpenTerminal->setEnabled(active && active->hasFile());
+}
+
+void CyberiadaSMEditorWindow::slotOpenTerminal()
+{
+    if (!active || !active->hasFile()) return;
+    QString error;
+    if (!openSystemTerminal(QFileInfo(active->filePath()).absolutePath(), &error) &&
+        !qApp->property("batchMode").toBool()) {
+        QMessageBox::warning(this, tr("Open Terminal"), error);
+    }
+}
+
 void CyberiadaSMEditorWindow::slotGoToLine()
 {
     TextDocument* text = currentText();
@@ -1302,6 +1319,7 @@ void CyberiadaSMEditorWindow::updateEditActions()
 {
     if (!active) return;   // the documents are gone (destructor)
     updateFindActions();
+    updateTerminalAction();
     if (!current) {
         if (currentText()) updateTextActions();
         else updateDiffActions();

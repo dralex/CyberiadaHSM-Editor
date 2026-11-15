@@ -211,6 +211,8 @@ private:
     void                    enableCanvasSwitches(bool on);
     // Find, Find Next and Find Previous and the bar follow the active tab (EDIT-FIND-9)
     void                    updateFindActions();
+    // Open Terminal needs a tab with a file (EDIT-DOC-12)
+    void                    updateTerminalAction();
     // the rendered text of a Markdown tab saved as a PDF (EDIT-MODE-18)
     void                    exportMarkdown(TextDocument* text);
     // the rows of the active diff tab
@@ -279,6 +281,8 @@ private slots:
     void                    activateDocument(int index);
     void                    closeTab(int index);
     void                    slotFileClose();
+    // the system terminal in the folder of the active tab's file (EDIT-DOC-12)
+    void                    slotOpenTerminal();
     void                    slotNextDocument();
     void                    slotPreviousDocument();
     // enable cut/copy/paste/delete only for a fitting selection (and an editable tab)

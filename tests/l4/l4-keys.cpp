@@ -134,6 +134,7 @@ void TestKeys::test_defaults()
 	QCOMPARE(map->label("actionOpen"), QString("Open..."));
 	// registered without a key
 	const char* keyless[] = { "actionAbout", "actionNewTerminate", "actionModeFA", "actionReadOnly",
+	                          "actionOpenTerminal",
 	                          "actionStructureTree", "actionPropertiesPane", "actionChangesPane",
 	                          "actionOutputPanel",
 	                          "actionPluginManager", "actionSessionRestart", "actionZoomToSM" };

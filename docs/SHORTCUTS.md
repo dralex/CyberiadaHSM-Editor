@@ -69,10 +69,10 @@ have before 0.62.
 | | Next Change, Previous Change | `Alt+Down`, `Alt+Up` | *new* (0.2) |
 | Plugins > Session | Step, Run, Pause, Stop | `F10`, `F5`, `F6`, `Shift+F5` | |
 
-Without a default key: the other element tools (terminate, the histories, the submachine
-state, the entry and exit points, the state machine), Center Horizontally / Vertically, the
-modes, Read-only, the geometry entries, Compare, Refresh, the other View toggles and docks,
-Zoom to SM, the other session entries, Plugin manager, About.
+Without a default key: Open Terminal, the other element tools (terminate, the histories, the
+submachine state, the entry and exit points, the state machine), Center Horizontally /
+Vertically, the modes, Read-only, the geometry entries, Compare, Refresh, the other View
+toggles and docks, Zoom to SM, the other session entries, Plugin manager, About.
 
 ## The keys of a text
 

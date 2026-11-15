@@ -156,6 +156,7 @@ add_library(CyberiadaEditorCore STATIC
   svg_markers.h svg_markers.cpp
   code_editor.h code_editor.cpp
   json_text.h json_text.cpp
+  system_terminal.h system_terminal.cpp
   find_query.h find_query.cpp
   find_bar.h find_bar.cpp
   shortcut_map.h shortcut_map.cpp

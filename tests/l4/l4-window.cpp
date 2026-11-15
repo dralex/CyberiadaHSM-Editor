@@ -27,6 +27,9 @@
 #include <cmath>
 #include "smeditor_window.h"
 #include "code_highlighter.h"
+#include "diff_document.h"
+#include "system_terminal.h"
+#include "text_document.h"
 #include "plugin_dock.h"
 #include "settings_manager.h"
 #include "cyberiadasm_model.h"
@@ -46,6 +49,7 @@ private slots:
 	void test_pan_tool();
 	void test_tool_cursors();
 	void test_save_enablement();
+	void test_open_terminal();
 	void test_recent_files();
 	void test_menu_refactor();
 	void test_edit_action_gating();
@@ -235,6 +239,68 @@ void TestWindow::test_save_enablement()
 	QVERIFY(dir.isValid());
 	model->saveAsDocument(dir.filePath("save.graphml"), Cyberiada::formatCyberiada10);
 	QVERIFY(!window->actionSave->isEnabled());
+}
+
+// EDIT-DOC-12: Open Terminal after Export, enabled for a tab with a file, started in its folder
+void TestWindow::test_open_terminal()
+{
+	CyberiadaSMEditorWindow w;
+	QList<QAction*> tools = w.mainToolBar->actions();
+	int at = tools.indexOf(w.actionOpenTerminal);
+	QCOMPARE(at, tools.indexOf(w.actionExport) + 1);
+	QVERIFY(tools.at(at + 1)->isSeparator());
+	QCOMPARE(tools.at(at + 2), w.actionUndo);
+	QList<QAction*> file = w.menuFile->actions();
+	QCOMPARE(file.indexOf(w.actionOpenTerminal), file.indexOf(w.actionExport) + 1);
+	QVERIFY(!w.actionOpenTerminal->icon().isNull());
+	// the untitled diagram of a new window has no folder
+	QVERIFY(!w.actionOpenTerminal->isEnabled());
+	QVERIFY(w.openFile("diagrams/geometry.graphml"));
+	QVERIFY(w.actionOpenTerminal->isEnabled());
+	CyberiadaSMEditorDocument* source = w.currentDocument();
+	DiffOrigin saved;
+	saved.kind = DiffOrigin::originSaved;
+	saved.tab = source;
+	saved.path = source->filePath();
+	saved.label = "saved";
+	QString error;
+	QVERIFY2(w.compareDocument(source, saved, &error), qPrintable(error));
+	QVERIFY(!w.actionOpenTerminal->isEnabled());
+	// an untitled text gets its folder by Save As, its clean state unchanged
+	w.actionNewMarkdown->trigger();
+	TextDocument* text = w.currentText();
+	QVERIFY(text && text->isUntitled() && !w.actionOpenTerminal->isEnabled());
+	QTemporaryDir dir;
+	QVERIFY(dir.isValid());
+	QVERIFY2(text->saveAs(dir.filePath("notes.md"), &error), qPrintable(error));
+	QVERIFY(w.actionOpenTerminal->isEnabled());
+	QVERIFY(!openSystemTerminal(dir.filePath("gone"), &error));
+	QVERIFY(!error.isEmpty());
+#if defined(Q_OS_UNIX) && !defined(Q_OS_MACOS)
+	// a stub terminal writes the folder it starts in
+	QString out = dir.filePath("terminal.out");
+	QFile stub(dir.filePath("terminal.sh"));
+	QVERIFY(stub.open(QIODevice::WriteOnly));
+	stub.write("#!/bin/sh\npwd -P > \"$TERMINAL_OUT\"\n");
+	stub.close();
+	QVERIFY(stub.setPermissions(stub.permissions() | QFileDevice::ExeOwner));
+	qputenv("TERMINAL", stub.fileName().toLocal8Bit());
+	qputenv("TERMINAL_OUT", out.toLocal8Bit());
+	w.actionOpenTerminal->trigger();
+	QTRY_VERIFY(QFileInfo(out).size() > 0);
+	QFile written(out);
+	QVERIFY(written.open(QIODevice::ReadOnly));
+	QCOMPARE(QString::fromLocal8Bit(written.readAll()).trimmed(), QFileInfo(dir.path()).canonicalFilePath());
+	// no terminal at all
+	QByteArray path = qgetenv("PATH");
+	qunsetenv("TERMINAL");
+	qputenv("PATH", dir.filePath("none").toLocal8Bit());
+	error.clear();
+	QVERIFY(!openSystemTerminal(dir.path(), &error));
+	qputenv("PATH", path);
+	qunsetenv("TERMINAL_OUT");
+	QVERIFY(error.contains("TERMINAL"));
+#endif
 }
 
 void TestWindow::test_recent_files()

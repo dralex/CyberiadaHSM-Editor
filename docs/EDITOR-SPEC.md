@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.69 (2026-11-15)
+**Document version:** 0.70 (2026-11-15)
 
 **Related authorities:**
 
@@ -734,6 +734,13 @@ The window holds several documents; the structure is drawn in `docs/WINDOW.md`.
   modified, so the `saved` token holds (`EDIT-PLUG-52`). It follows the enabling of Save and
   Save As (`EDIT-IO-7`), except that `save` of an unmodified tab with a file writes nothing;
   a refused `save` and a failed write are script errors. *design*
+- `EDIT-DOC-12` MUST [A]: File > Open Terminal, also the main toolbar button after Export,
+  opens the system terminal in the folder of the active tab's file: `cmd` on Windows, Terminal
+  on macOS, elsewhere the program of `TERMINAL` or the first found of `x-terminal-emulator`,
+  `gnome-terminal`, `konsole`, `xfce4-terminal`, `mate-terminal`, `lxterminal`, `xterm`. It is
+  enabled only for a tab with a file — an untitled tab, a plugin's `new-document` result
+  before its save and a diff tab have none; a folder gone or a terminal that cannot start is
+  reported. It has no default key (0.70). *design*
 
 ### 4.12 Plugins — PLUG
 

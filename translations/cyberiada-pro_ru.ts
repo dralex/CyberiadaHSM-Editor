@@ -202,7 +202,7 @@ Ctrl+щелчок — открыть</translation>
 <context>
     <name>CyberiadaSMEditorWindow</name>
     <message>
-        <location filename="../smeditor_window.cpp" line="+154"/>
+        <location filename="../smeditor_window.cpp" line="+156"/>
         <source>Output panel</source>
         <translation>Панель вывода</translation>
     </message>
@@ -246,7 +246,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Markdown</translation>
     </message>
     <message>
-        <location line="+837"/>
+        <location line="+853"/>
         <source>Undo</source>
         <translation>Отменить</translation>
     </message>
@@ -369,8 +369,8 @@ Ctrl+щелчок — открыть</translation>
         <translation>нет документа</translation>
     </message>
     <message>
-        <location line="-1474"/>
-        <location line="+1484"/>
+        <location line="-1490"/>
+        <location line="+1500"/>
         <source>a plugin is running on the document</source>
         <translation>для документа выполняется плагин</translation>
     </message>
@@ -379,8 +379,8 @@ Ctrl+щелчок — открыть</translation>
         <translation type="vanished">в режиме инспектора документ доступен только для чтения</translation>
     </message>
     <message>
-        <location line="-1450"/>
-        <location line="+1487"/>
+        <location line="-1466"/>
+        <location line="+1503"/>
         <source>the document cannot be encoded</source>
         <translation>не удалось сериализовать документ</translation>
     </message>
@@ -412,7 +412,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Плагин: %1</translation>
     </message>
     <message>
-        <location line="-1904"/>
+        <location line="-1920"/>
         <source>Mode</source>
         <translation>Режим</translation>
     </message>
@@ -422,18 +422,18 @@ Ctrl+щелчок — открыть</translation>
         <translation>режим %1 недоступен</translation>
     </message>
     <message>
-        <location line="+1500"/>
+        <location line="+1516"/>
         <source>the inspection tab is read-only</source>
         <translation>вкладка инспекции доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1479"/>
-        <location line="+1480"/>
+        <location line="-1495"/>
+        <location line="+1496"/>
         <source>the tab is read-only</source>
         <translation>вкладка доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1647"/>
+        <location line="-1663"/>
         <source>Text file</source>
         <translation>Текстовый файл</translation>
     </message>
@@ -476,7 +476,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Автомат не нарушает ни одного правила EXT-FA.</translation>
     </message>
     <message>
-        <location line="+486"/>
+        <location line="+502"/>
         <source>%1: not an element of a finite automaton</source>
         <translation>%1: не элемент конечного автомата</translation>
     </message>
@@ -498,19 +498,19 @@ Ctrl+щелчок — открыть</translation>
         <translation>%1 (*%2)</translation>
     </message>
     <message>
-        <location line="-521"/>
+        <location line="-522"/>
         <location line="+55"/>
-        <location line="+466"/>
+        <location line="+467"/>
         <source>All files (*)</source>
         <translation>Все файлы (*)</translation>
     </message>
     <message>
-        <location line="-1079"/>
+        <location line="-1095"/>
         <source>Refresh</source>
         <translation>Обновить</translation>
     </message>
     <message>
-        <location line="+864"/>
+        <location line="+880"/>
         <source>Element</source>
         <translation>Элемент</translation>
     </message>
@@ -520,12 +520,17 @@ Ctrl+щелчок — открыть</translation>
         <translation>Изменение</translation>
     </message>
     <message>
-        <location line="-770"/>
+        <location line="-786"/>
         <source>a diff tab is opened by Document &gt; Compare with...</source>
         <translation>вкладку сравнения открывает «Документ &gt; Сравнить с...»</translation>
     </message>
     <message>
-        <location line="+178"/>
+        <location line="+184"/>
+        <source>Open Terminal</source>
+        <translation>Открыть терминал</translation>
+    </message>
+    <message>
+        <location line="+9"/>
         <source>Go to Line</source>
         <translation>Перейти к строке</translation>
     </message>
@@ -611,7 +616,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Граф CyberiadaML (*.graphml)</translation>
     </message>
     <message>
-        <location line="+258"/>
+        <location line="+259"/>
         <source>Changes</source>
         <translation>Изменения</translation>
     </message>
@@ -3291,7 +3296,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>&amp;Файл</translation>
     </message>
     <message>
-        <location line="+22"/>
+        <location line="+23"/>
         <source>&amp;Edit</source>
         <translation>&amp;Правка</translation>
     </message>
@@ -3337,7 +3342,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Основная панель</translation>
     </message>
     <message>
-        <location line="+35"/>
+        <location line="+36"/>
         <source>Elements</source>
         <translation>Элементы</translation>
     </message>
@@ -3459,12 +3464,12 @@ Ctrl+щелчок — открыть</translation>
     </message>
     <message>
         <location line="+8"/>
-        <location line="+422"/>
+        <location line="+434"/>
         <source>HSM diagram</source>
         <translation>Диаграмма ПРИМС</translation>
     </message>
     <message>
-        <location line="-410"/>
+        <location line="-422"/>
         <source>HSM inspection</source>
         <translation>Инспекция ПРИМС</translation>
     </message>
@@ -3771,6 +3776,16 @@ Ctrl+щелчок — открыть</translation>
         <translation>Экспорт...</translation>
     </message>
     <message>
+        <location line="+9"/>
+        <source>Open Terminal</source>
+        <translation>Открыть терминал</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Open a terminal in the folder of the file</source>
+        <translation>Открыть терминал в папке файла</translation>
+    </message>
+    <message>
         <location line="+12"/>
         <source>New HSM diagram</source>
         <translation>Новая диаграмма ПРИМС</translation>
@@ -3786,7 +3801,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Новый текст Markdown</translation>
     </message>
     <message>
-        <location line="-803"/>
+        <location line="-817"/>
         <source>New</source>
         <translation>Создать</translation>
     </message>
@@ -3795,7 +3810,7 @@ Ctrl+щелчок — открыть</translation>
         <translation type="vanished">Новый файл</translation>
     </message>
     <message>
-        <location line="+815"/>
+        <location line="+829"/>
         <source>Service objects</source>
         <translation>Служебные объекты</translation>
     </message>
@@ -4079,6 +4094,24 @@ Ctrl+щелчок — открыть</translation>
         <location filename="../cyberiadasm_editor_state_item.cpp" line="-321"/>
         <source>The name &quot;%1&quot; already exists at this hierarchy level.</source>
         <translation>Имя «%1» уже есть на этом уровне иерархии.</translation>
+    </message>
+</context>
+<context>
+    <name>SystemTerminal</name>
+    <message>
+        <location filename="../system_terminal.cpp" line="+35"/>
+        <source>The folder %1 does not exist.</source>
+        <translation>Папка %1 не существует.</translation>
+    </message>
+    <message>
+        <location line="+24"/>
+        <source>No terminal found: set TERMINAL to the terminal program.</source>
+        <translation>Терминал не найден: укажите программу терминала в переменной TERMINAL.</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Cannot start the terminal %1.</source>
+        <translation>Не удаётся запустить терминал %1.</translation>
     </message>
 </context>
 <context>
