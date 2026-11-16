@@ -22,7 +22,9 @@ set(CYBERIADA_GIT_REVISION "unknown")
 if(Git_FOUND)
   # a build container may run as another user than the checkout's owner (the
   # Windows cross-build runs as root): git refuses such a tree unless told it is
-  # safe, and the status must not rewrite its index
+  # safe - a newer git from the command line, an older one (Ubuntu 22.04's) only
+  # from the global config, which windows-docker/cross-build.sh sets - and the
+  # status must not rewrite its index
   set(_git ${GIT_EXECUTABLE} -c safe.directory=${CMAKE_CURRENT_SOURCE_DIR}
       --no-optional-locks -C ${CMAKE_CURRENT_SOURCE_DIR})
   execute_process(COMMAND ${_git} rev-parse --short HEAD

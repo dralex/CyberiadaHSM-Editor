@@ -61,6 +61,14 @@ WINE="$(command -v wine64 || command -v wine || true)"
 
 mkdir -p "$OUT"
 
+# the container runs as root on the user's checkouts: git (the revision in the editor's
+# About) refuses a tree owned by another user unless the global config lists it as safe;
+# the git of the image (22.04) takes no safe.directory from the command line
+for d in "$SRC"/*/; do
+    git config --global --add safe.directory "${d%/}" \
+        || say "note: $d not marked safe for git, the editor revision may read unknown"
+done
+
 # run cross-built test exes under Wine. Registering the binfmt makes a bare .exe
 # run under Wine transparently (covers test harnesses that spawn the exe), and
 # CMAKE_CROSSCOMPILING_EMULATOR covers plain add_test targets. binfmt needs a
