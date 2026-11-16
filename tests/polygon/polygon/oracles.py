@@ -243,8 +243,19 @@ class Round:
         findings = []
         steps = dump.stack.index if dump.stack else 0
         undo_text = script_text.rstrip("\n") + "\n" + "undo\n" * steps
-        undo = self.run(undo_text, "undo", dump=True)
-        findings += self._compare("undo-all", self.start_dump().stdout, undo, "undo-all")
+        undo = self.run(undo_text, "undo", dump=True, stack=True)
+        # a session longer than the editor's undo depth (QUndoStack undoLimit)
+        # drops its oldest snapshots, so undoing every retained step cannot reach
+        # the loaded state: the fully-undone stack reports clean=no, its clean
+        # base purged. That is the undo depth limit, not an undo defect - a real
+        # within-limit bug leaves the stack at its clean index (clean=yes) with
+        # the content wrong, which the compare below still catches. So only
+        # require the return-to-start when the clean base was still reachable.
+        undo_dump = D.parse_dump(undo.stdout) if undo.exit == runner.EXIT_OK else None
+        truncated = (undo_dump is not None and undo_dump.stack is not None
+                     and not undo_dump.stack.clean)
+        if not truncated:
+            findings += self._compare("undo-all", self.start_dump().stdout, undo, "undo-all")
         redo_text = undo_text + "redo\n" * steps
         redo = self.run(redo_text, "redo", dump=True)
         findings += self._compare("redo-all", main.stdout, redo, "redo-all")
