@@ -193,7 +193,11 @@ The installer:
 Its pictures, `windows-installer/welcome.bmp` (the Welcome and Finish pages, 164x314) and
 `windows-installer/header.bmp` (the header of the other pages, 150x57), are drawn from the
 editor logo by `windows-installer/make-images.py` (Pillow, run by hand when the logo
-changes); a 24-bit BMP of the same size replaces either.
+changes); a 24-bit BMP of the same size replaces either. The icon of the installer, the
+shortcuts and the `.graphml` files is `images/cyberiada.ico`, the one of the editor
+executable: every size from 16 to 256 px, rendered from `images/cyberiada.svg` with the
+thin lines widened by `images/make-icons.py` (librsvg and cairo, run by hand), which also
+writes the `cyberiada-<n>.png` sizes of the window icon.
 
 The build takes the editor zip made before (`--editor-zip` picks another one); no
 Windows machine takes part. It runs in the Linux builder image of the newest release

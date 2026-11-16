@@ -23,6 +23,7 @@
 
 #include <clocale>
 #include <QCommandLineParser>
+#include <QIcon>
 #include "main.h"
 #include "cyberiada_constants.h"
 #include "settings_manager.h"
@@ -40,6 +41,14 @@ int main(int argc, char *argv[])
 	QCoreApplication::setOrganizationName(CYBERIADA_VENDOR);
 	QCoreApplication::setApplicationName(CYBERIADA_APP_NAME);
 	QCoreApplication::setApplicationVersion(CYBERIADA_VERSION);
+	// the icon in every size a system asks for (images/make-icons.py): the 256 px
+	// picture shrunk by the system loses the thin lines of the logo
+	static const int iconSizes[] = { 16, 20, 24, 32, 40, 48, 64, 96, 128 };
+	QIcon appIcon(":/Icons/images/cyberiada.png");
+	for (int size : iconSizes) {
+		appIcon.addFile(QString(":/Icons/images/cyberiada-%1.png").arg(size), QSize(size, size));
+	}
+	QApplication::setWindowIcon(appIcon);
 	// the preferences of the pre-release name move over once (EDIT-UI-5)
 	SettingsManager::adoptLegacySettings(CYBERIADA_LEGACY_APP_NAME);
 	// QApplication adopts the user's locale; keep the printf-family numeric

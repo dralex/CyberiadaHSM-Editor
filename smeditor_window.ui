@@ -13,10 +13,6 @@
   <property name="windowTitle">
    <string notr="true">CyberiadaPro</string>
   </property>
-  <property name="windowIcon">
-   <iconset resource="smeditor.qrc">
-    <normaloff>:/Icons/images/cyberiada.png</normaloff>:/Icons/images/cyberiada.png</iconset>
-  </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="centralLayout">
     <property name="leftMargin">

@@ -271,6 +271,11 @@ if(WIN32)
   if(TARGET Qt5::WinMain)
     target_link_libraries(CyberiadaPro Qt5::WinMain)
   endif()
+  # the icon of the executable in every size (Explorer, the taskbar, the shortcuts)
+  enable_language(RC)
+  file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/cyberiada-pro.rc
+       "IDI_ICON1 ICON \"${CMAKE_CURRENT_SOURCE_DIR}/images/cyberiada.ico\"\n")
+  target_sources(CyberiadaPro PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/cyberiada-pro.rc)
 endif()
 
 if(APPLE)

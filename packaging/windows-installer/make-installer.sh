@@ -199,16 +199,9 @@ cp "$SRC/hsm-to-python/test/graphs/code_layout.graphml" \
    "$SRC/cybersphere-hsm-maker/tests/good/lift.graphml" "$WORK/tools/samples/"
 
 say "the icon"
-# an ICO holding the 256x256 PNG of the editor as it is (Windows Vista and newer)
-python3 - "$SRC/CyberiadaHSM-Editor/images/cyberiada.png" "$WORK/cyberiada-pro.ico" <<'EOF'
-import struct, sys
-png = open(sys.argv[1], 'rb').read()
-width, height = struct.unpack('>II', png[16:24])
-if png[:8] != b'\x89PNG\r\n\x1a\n' or width > 256 or height > 256:
-    sys.exit('error: {} is not a PNG of at most 256x256'.format(sys.argv[1]))
-entry = struct.pack('<BBBBHHII', width % 256, height % 256, 0, 0, 1, 32, len(png), 6 + 16)
-open(sys.argv[2], 'wb').write(struct.pack('<HHH', 0, 1, 1) + entry + png)
-EOF
+# every size of the editor icon in one ICO (images/make-icons.py): the installer, the
+# shortcuts and the .graphml files; Windows shrinking a single 256x256 PNG blurs the logo
+cp "$SRC/CyberiadaHSM-Editor/images/cyberiada.ico" "$WORK/cyberiada-pro.ico"
 
 say "makensis"
 setup="$OUT/CyberiadaPro-$VERSION-win64-setup.exe"
