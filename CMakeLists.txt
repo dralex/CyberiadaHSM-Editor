@@ -20,11 +20,16 @@ endif()
 find_package(Git QUIET)
 set(CYBERIADA_GIT_REVISION "unknown")
 if(Git_FOUND)
-  execute_process(COMMAND ${GIT_EXECUTABLE} -C ${CMAKE_CURRENT_SOURCE_DIR} rev-parse --short HEAD
+  # a build container may run as another user than the checkout's owner (the
+  # Windows cross-build runs as root): git refuses such a tree unless told it is
+  # safe, and the status must not rewrite its index
+  set(_git ${GIT_EXECUTABLE} -c safe.directory=${CMAKE_CURRENT_SOURCE_DIR}
+      --no-optional-locks -C ${CMAKE_CURRENT_SOURCE_DIR})
+  execute_process(COMMAND ${_git} rev-parse --short HEAD
     OUTPUT_VARIABLE _rev OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET RESULT_VARIABLE _rc)
   if(_rc EQUAL 0)
     set(CYBERIADA_GIT_REVISION "${_rev}")
-    execute_process(COMMAND ${GIT_EXECUTABLE} -C ${CMAKE_CURRENT_SOURCE_DIR} status --porcelain -uno
+    execute_process(COMMAND ${_git} status --porcelain -uno
       OUTPUT_VARIABLE _dirty OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
     if(_dirty)
       set(CYBERIADA_GIT_REVISION "${_rev}-dirty")
