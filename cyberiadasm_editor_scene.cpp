@@ -407,10 +407,14 @@ void CyberiadaSMEditorScene::slotRowsInserted(const QModelIndex& parent, int fir
         update();
         return;
     }
+    QList<CyberiadaSMEditorCommentItem*> newComments;
     for (int row = first; row <= last; row++) {
         Cyberiada::Element* element = model->indexToElement(model->index(row, 0, parent));
         if (element) {
-            addElementItem(element, parent_item);
+            if (CyberiadaSMEditorCommentItem* ci =
+                    dynamic_cast<CyberiadaSMEditorCommentItem*>(addElementItem(element, parent_item))) {
+                newComments.append(ci);
+            }
         }
     }
     // a state that just gained its first child became composite: re-lay-out its
@@ -420,6 +424,11 @@ void CyberiadaSMEditorScene::slotRowsInserted(const QModelIndex& parent, int fir
                 dynamic_cast<CyberiadaSMEditorStateItem*>(elementIdToItemMap.value(parentEl->get_id()))) {
             st->syncFromModel();
         }
+    }
+    // a new shown comment sizes itself to its text and grows its state to contain
+    // it (EDIT-NODE-2); addElementItem does not sync the new item, so drive it here
+    for (CyberiadaSMEditorCommentItem* ci : newComments) {
+        ci->syncFromModel();
     }
     noteModified(parent);
     rebuildSubjectLinks();

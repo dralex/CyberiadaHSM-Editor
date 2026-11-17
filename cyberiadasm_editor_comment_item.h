@@ -66,6 +66,9 @@ private slots:
 
 private:
     void applyBodyRole();
+    // give a shown, geometry-less comment in a state a text-sized rect so the
+    // state grows to contain it (EDIT-NODE-2, polygon P-4)
+    void fitToText();
 
     EditableTextItem* title;   // the comment name, bold, at the top (when set)
     EditableTextItem* body;

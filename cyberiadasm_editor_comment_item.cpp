@@ -242,6 +242,20 @@ void CyberiadaSMEditorCommentItem::syncFromModel()
     applyBodyRole();
     body->setVisible(SettingsManager::instance().getShowText());
     setTextPosition();
+    fitToText();
     CyberiadaSMEditorAbstractItem::syncFromModel();
+}
+
+void CyberiadaSMEditorCommentItem::fitToText()
+{
+    // a shown comment inside a state is sized to its text and makes the state
+    // grow to contain it (EDIT-NODE-2); a hidden comment, or one not in a state,
+    // stays geometry-less and is laid out by the scene (EDIT-NODE-5)
+    if (comment->has_geometry()) return;
+    if (!SettingsManager::instance().getShowText()) return;
+    QRectF b = boundingRect();
+    if (b.width() <= 0.0 || b.height() <= 0.0) return;
+    model->growToFitComment(model->elementToIndex(element),
+                            Cyberiada::Rect(pos().x(), pos().y(), b.width(), b.height()));
 }
 

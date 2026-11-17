@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.70 (2026-11-15)
+**Document version:** 0.71 (2026-11-17)
 
 **Related authorities:**
 
@@ -212,7 +212,9 @@ the third is a derived display value the format does not store):
 - `EDIT-NODE-2` MUST [U]: when an operation would leave a child outside its parent, the
   editor grows the parent to fit; a parent never shrinks below its content — a resize through
   the model (the `move` verb) re-contains the children just as the interactive border drag does.
-  Adding new content (by `move` or `new-state`) grow the parent (see also `EDIT-NODE-5`). A drag that
+  Adding new content (by `move`, `new-state` or `new-comment`) grows the parent (see also
+  `EDIT-NODE-5`, `EDIT-NODE-11`): a comment shown inside a state is given its text-sized geometry so
+  the state grows to contain it. A drag that
   moves a child within its own parent grows the parent to keep it inside the same way
   (snap-to-grid included); a dragged element is never relocated away from where it is
   dropped. *design*

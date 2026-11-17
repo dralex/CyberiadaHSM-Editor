@@ -548,6 +548,25 @@ bool CyberiadaSMModel::growToFitText(const QModelIndex& index, const Cyberiada::
 	return true;
 }
 
+// a shown comment inside a state is given a text-sized geometry by its item
+// (EDIT-NODE-11) so the state grows to contain it (EDIT-NODE-2, polygon P-4);
+// a comment with no state container (an SM-direct one) keeps no stored rect and
+// floats on the frame (EDIT-NODE-13), so it is left geometry-less
+bool CyberiadaSMModel::growToFitComment(const QModelIndex& index, const Cyberiada::Rect& rect)
+{
+	if (readOnly()) return false;
+	Cyberiada::Element* element = indexToElement(index);
+	if (!element || !Cyberiada::element_is_comment(element)) return false;
+	Cyberiada::State* parent = dynamic_cast<Cyberiada::State*>(element->get_parent());
+	if (!parent || !parent->has_geometry()) return false;
+	UndoScope scope(this, tr("comment geometry"));
+	if (!updateGeometry(index, rect, false, false)) return false;
+	// the comment now counts in the content: grow the state about its centre to
+	// contain it, keeping the siblings in place
+	growToFitChildren(element, false);
+	return true;
+}
+
 // the written document declares its geometry (7.1): the editor writes the
 // exact sizes or none at all; the yEd formats carry no metainformation
 void CyberiadaSMModel::declareGeometry(Cyberiada::DocumentFormat f, bool skip_geometry)
