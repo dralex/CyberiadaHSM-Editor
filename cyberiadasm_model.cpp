@@ -1548,8 +1548,12 @@ bool CyberiadaSMModel::growToFitChildren(Cyberiada::Element* moved, bool directi
 		Cyberiada::Rect region;
 		if (regionRect(pc, region)) {
 			QMarginsF m = regionMargins(pr, region);
-			cl += region.x - m.left();  cr += region.x + m.right();
-			ct += region.y - m.top();   cb += region.y + m.bottom();
+			// a band only pushes the border outward; a border shrunk smaller than
+			// its own region (a mid-shrink degenerate state) makes a margin negative,
+			// which would pull the content envelope in and undergrow the parent,
+			// leaving an off-centre child outside it (polygon P-5/P-6, EDIT-NODE-2)
+			cl += region.x - std::max(0.0, m.left());  cr += region.x + std::max(0.0, m.right());
+			ct += region.y - std::max(0.0, m.top());   cb += region.y + std::max(0.0, m.bottom());
 		}
 		if (directional) {
 			// extend each edge outward to include the content, keeping the edges
