@@ -56,7 +56,7 @@
 <context>
     <name>CodeEditor</name>
     <message>
-        <location filename="../code_editor.cpp" line="+264"/>
+        <location filename="../code_editor.cpp" line="+267"/>
         <source>%1
 Ctrl+click to open</source>
         <translation>%1
@@ -202,7 +202,7 @@ Ctrl+щелчок — открыть</translation>
 <context>
     <name>CyberiadaSMEditorWindow</name>
     <message>
-        <location filename="../smeditor_window.cpp" line="+156"/>
+        <location filename="../smeditor_window.cpp" line="+164"/>
         <source>Output panel</source>
         <translation>Панель вывода</translation>
     </message>
@@ -212,7 +212,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Менеджер плагинов...</translation>
     </message>
     <message>
-        <location line="+254"/>
+        <location line="+256"/>
         <source>Close</source>
         <translation>Закрыть</translation>
     </message>
@@ -246,7 +246,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Markdown</translation>
     </message>
     <message>
-        <location line="+854"/>
+        <location line="+939"/>
         <source>Undo</source>
         <translation>Отменить</translation>
     </message>
@@ -369,8 +369,8 @@ Ctrl+щелчок — открыть</translation>
         <translation>нет документа</translation>
     </message>
     <message>
-        <location line="-1491"/>
-        <location line="+1501"/>
+        <location line="-1576"/>
+        <location line="+1586"/>
         <source>a plugin is running on the document</source>
         <translation>для документа выполняется плагин</translation>
     </message>
@@ -379,8 +379,8 @@ Ctrl+щелчок — открыть</translation>
         <translation type="vanished">в режиме инспектора документ доступен только для чтения</translation>
     </message>
     <message>
-        <location line="-1467"/>
-        <location line="+1504"/>
+        <location line="-1552"/>
+        <location line="+1589"/>
         <source>the document cannot be encoded</source>
         <translation>не удалось сериализовать документ</translation>
     </message>
@@ -412,7 +412,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Плагин: %1</translation>
     </message>
     <message>
-        <location line="-1921"/>
+        <location line="-2006"/>
         <source>Mode</source>
         <translation>Режим</translation>
     </message>
@@ -422,18 +422,18 @@ Ctrl+щелчок — открыть</translation>
         <translation>режим %1 недоступен</translation>
     </message>
     <message>
-        <location line="+1517"/>
+        <location line="+1602"/>
         <source>the inspection tab is read-only</source>
         <translation>вкладка инспекции доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1496"/>
-        <location line="+1497"/>
+        <location line="-1581"/>
+        <location line="+1582"/>
         <source>the tab is read-only</source>
         <translation>вкладка доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1664"/>
+        <location line="-1749"/>
         <source>Text file</source>
         <translation>Текстовый файл</translation>
     </message>
@@ -476,7 +476,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Автомат не нарушает ни одного правила EXT-FA.</translation>
     </message>
     <message>
-        <location line="+503"/>
+        <location line="+588"/>
         <source>%1: not an element of a finite automaton</source>
         <translation>%1: не элемент конечного автомата</translation>
     </message>
@@ -498,19 +498,19 @@ Ctrl+щелчок — открыть</translation>
         <translation>%1 (*%2)</translation>
     </message>
     <message>
-        <location line="-522"/>
+        <location line="-523"/>
         <location line="+55"/>
-        <location line="+467"/>
+        <location line="+468"/>
         <source>All files (*)</source>
         <translation>Все файлы (*)</translation>
     </message>
     <message>
-        <location line="-1096"/>
+        <location line="-1181"/>
         <source>Refresh</source>
         <translation>Обновить</translation>
     </message>
     <message>
-        <location line="+881"/>
+        <location line="+966"/>
         <source>Element</source>
         <translation>Элемент</translation>
     </message>
@@ -520,7 +520,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Изменение</translation>
     </message>
     <message>
-        <location line="-787"/>
+        <location line="-872"/>
         <source>a diff tab is opened by Document &gt; Compare with...</source>
         <translation>вкладку сравнения открывает «Документ &gt; Сравнить с...»</translation>
     </message>
@@ -538,6 +538,46 @@ Ctrl+щелчок — открыть</translation>
         <location line="+0"/>
         <source>Line number:</source>
         <translation>Номер строки:</translation>
+    </message>
+    <message>
+        <location line="+26"/>
+        <source>The text has no file yet. The inserted files are saved in its folder, so the text is saved first.</source>
+        <translation type="unfinished">У текста ещё нет файла. Вставляемые файлы сохраняются в его папке, поэтому сначала текст будет сохранён.</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Save and Insert</source>
+        <translation type="unfinished">Сохранить и вставить</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <location line="+1"/>
+        <location line="+9"/>
+        <location line="+9"/>
+        <location line="+4"/>
+        <location line="+15"/>
+        <source>Insert Image</source>
+        <translation type="unfinished">Вставка изображения</translation>
+    </message>
+    <message>
+        <location line="-14"/>
+        <source>%1 exists with another content.</source>
+        <translation type="unfinished">%1 уже существует с другим содержимым.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Replace</source>
+        <translation type="unfinished">Заменять</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Keep Both</source>
+        <translation type="unfinished">Сохранить оба</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>insert image</source>
+        <translation type="unfinished">вставка изображения</translation>
     </message>
     <message>
         <location line="+80"/>
@@ -616,7 +656,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Граф CyberiadaML (*.graphml)</translation>
     </message>
     <message>
-        <location line="+259"/>
+        <location line="+260"/>
         <source>Changes</source>
         <translation>Изменения</translation>
     </message>
@@ -1802,6 +1842,125 @@ Ctrl+щелчок — открыть</translation>
     </message>
 </context>
 <context>
+    <name>InsertImageDialog</name>
+    <message>
+        <location filename="../dialogs/insert_image_dialog.cpp" line="+225"/>
+        <location line="+273"/>
+        <source>Insert Image</source>
+        <translation type="unfinished">Вставка изображения</translation>
+    </message>
+    <message>
+        <location line="-269"/>
+        <source>Source:</source>
+        <translation type="unfinished">Источник:</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Browse...</source>
+        <translation type="unfinished">Обзор...</translation>
+    </message>
+    <message>
+        <location line="+18"/>
+        <source>Crop</source>
+        <translation type="unfinished">Обрезка</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>x</source>
+        <translation type="unfinished">x</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>y</source>
+        <translation type="unfinished">y</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>w</source>
+        <translation type="unfinished">ш</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>h</source>
+        <translation type="unfinished">в</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Rotate Left</source>
+        <translation type="unfinished">Повернуть влево</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Rotate Right</source>
+        <translation type="unfinished">Повернуть вправо</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Width at most</source>
+        <translation type="unfinished">Ширина не более</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source> px</source>
+        <translation type="unfinished"> пикс.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Reset</source>
+        <translation type="unfinished">Сбросить</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Alt text:</source>
+        <translation type="unfinished">Альтернативный текст:</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Save as:</source>
+        <translation type="unfinished">Сохранить как:</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Inserts:</source>
+        <translation type="unfinished">Вставляет:</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Insert</source>
+        <translation type="unfinished">Вставить</translation>
+    </message>
+    <message>
+        <location line="+24"/>
+        <source>the clipboard</source>
+        <translation type="unfinished">буфер обмена</translation>
+    </message>
+    <message>
+        <location line="+111"/>
+        <source>The image cannot be read</source>
+        <translation type="unfinished">Изображение не читается</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Result: %1 × %2 px</source>
+        <translation type="unfinished">Результат: %1 × %2 пикс.</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>An SVG image is copied as it is, without the edits.</source>
+        <translation type="unfinished">Изображение SVG копируется как есть, без правок.</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>The image lies in the folder of the text: it is linked where it is.</source>
+        <translation type="unfinished">Изображение лежит в папке текста: ссылка указывает на него на месте.</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>The pasted image is saved as a new file.</source>
+        <translation type="unfinished">Вставленное изображение сохраняется в новый файл.</translation>
+    </message>
+</context>
+<context>
     <name>JsonText</name>
     <message>
         <location filename="../json_text.cpp" line="+184"/>
@@ -1900,6 +2059,44 @@ Ctrl+щелчок — открыть</translation>
         <location line="+36"/>
         <source>cannot write the PDF %1</source>
         <translation>не удается записать PDF %1</translation>
+    </message>
+</context>
+<context>
+    <name>MarkdownTools</name>
+    <message>
+        <location filename="../markdown_tools.cpp" line="+124"/>
+        <source>Images (%1)</source>
+        <translation type="unfinished">Изображения (%1)</translation>
+    </message>
+    <message>
+        <location line="+51"/>
+        <source>Cannot read %1</source>
+        <translation type="unfinished">Не удаётся прочитать %1</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>An SVG image is copied as it is, without the edits</source>
+        <translation type="unfinished">Изображение SVG копируется как есть, без правок</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Cannot read the image %1: %2</source>
+        <translation type="unfinished">Не удаётся прочитать изображение %1: %2</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Cannot encode the image: %1</source>
+        <translation type="unfinished">Не удаётся закодировать изображение: %1</translation>
+    </message>
+    <message>
+        <location line="+25"/>
+        <source>Cannot make the folder %1</source>
+        <translation type="unfinished">Не удаётся создать папку %1</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Cannot write %1: %2</source>
+        <translation type="unfinished">Не удаётся записать %1: %2</translation>
     </message>
 </context>
 <context>
@@ -3311,7 +3508,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Инструменты</translation>
     </message>
     <message>
-        <location line="+36"/>
+        <location line="+38"/>
         <source>&amp;Document</source>
         <translation>&amp;Документ</translation>
     </message>
@@ -3385,6 +3582,16 @@ Ctrl+щелчок — открыть</translation>
         <location line="+5"/>
         <source>Find Previous</source>
         <translation>Найти предыдущее</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Insert Image...</source>
+        <translation type="unfinished">Вставить изображение...</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Insert an image into the Markdown text</source>
+        <translation type="unfinished">Вставить изображение в текст Markdown</translation>
     </message>
     <message>
         <location line="+9"/>
@@ -3816,7 +4023,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Новый текст Markdown</translation>
     </message>
     <message>
-        <location line="-845"/>
+        <location line="-859"/>
         <source>New</source>
         <translation>Создать</translation>
     </message>
@@ -3825,7 +4032,7 @@ Ctrl+щелчок — открыть</translation>
         <translation type="vanished">Новый файл</translation>
     </message>
     <message>
-        <location line="+857"/>
+        <location line="+871"/>
         <source>Service objects</source>
         <translation>Служебные объекты</translation>
     </message>
@@ -4160,12 +4367,12 @@ Ctrl+щелчок — открыть</translation>
 <context>
     <name>TextDocument</name>
     <message>
-        <location filename="../text_document.cpp" line="+119"/>
+        <location filename="../text_document.cpp" line="+122"/>
         <source>Line %1, column %2: %3</source>
         <translation>Строка %1, столбец %2: %3</translation>
     </message>
     <message>
-        <location line="+144"/>
+        <location line="+190"/>
         <source>untitled</source>
         <translation>без имени</translation>
     </message>
