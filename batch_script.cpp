@@ -21,6 +21,9 @@
  *
  * ----------------------------------------------------------------------------- */
 
+#include <iostream>
+
+#include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QTextStream>
@@ -1136,7 +1139,15 @@ static bool runDocumentVerb(CyberiadaSMEditorWindow* win, const QStringList& tok
 // the Markdown verbs (EDIT-MD-12): the tools of the active Markdown tab
 static bool isMarkdownVerb(const QString& cmd)
 {
-	return cmd == "insert-image";
+	return cmd == "insert-image" || cmd == "insert-diagram" || cmd == "update-diagram-images";
+}
+
+// the batch draws in the --font family, never in a font of the GUI settings
+static QString batchDiagramFont;
+
+void setBatchDiagramFont(const QString& family)
+{
+	batchDiagramFont = family;
 }
 
 // the active Markdown tab with a file: the inserted files go into its folder (EDIT-MD-4)
@@ -1219,8 +1230,70 @@ static bool insertImageVerb(CyberiadaSMEditorWindow* win, const QStringList& tok
 							 "insert image");
 }
 
+// insert-diagram <graphml> [to <dir>] [line <n>] [<alt>]: Insert Diagram, a clash keeping
+// both (EDIT-MD-5)
+static bool insertDiagramVerb(CyberiadaSMEditorWindow* win, const QStringList& tokens, QString* error)
+{
+	TextDocument* text = markdownTab(win, tokens.first(), error);
+	if (!text) return false;
+	if (tokens.size() < 2) { *error = "insert-diagram needs a diagram file"; return false; }
+	QString source = QDir::cleanPath(QFileInfo(tokens[1]).absoluteFilePath());
+	if (!QFileInfo(source).isFile()) { *error = "no diagram file " + tokens[1]; return false; }
+	QString folder = MARKDOWN_DIAGRAM_FOLDER;
+	int before = text->lineCount() + 1;
+	int i = 2;
+	for (; i + 1 < tokens.size(); i += 2) {
+		bool ok = true;
+		if (tokens[i] == "to") folder = tokens[i + 1];
+		else if (tokens[i] == "line") ok = (before = tokens[i + 1].toInt(&ok)) > 0 && ok;
+		else break;
+		if (!ok) { *error = "bad line value " + tokens[i + 1]; return false; }
+	}
+	QString alt = i < tokens.size() ? restOfLine(tokens, i) : diagramFileTitle(source);
+	QString baseDir = text->baseDir();
+	QString target = source;
+	if (!isInsideDirectory(source, baseDir)) {
+		target = QDir::cleanPath(QDir(QDir(baseDir).filePath(folder)).filePath(QFileInfo(source).fileName()));
+		if (QFileInfo::exists(target) && !sameFileContent(source, target)) {
+			QFileInfo info(target);
+			target = numberedFileName(info.absolutePath(), info.completeBaseName(), info.suffix());
+		}
+		if (!copyFileOver(source, target, error)) return false;
+	}
+	QFileInfo info(target);
+	QString svg = QDir(info.absolutePath()).filePath(info.completeBaseName() + ".svg");
+	if (!renderDiagramFile(target, svg, batchDiagramFont, error)) return false;
+	return text->insertBlock(markdownDiagramLine(alt, svg, target, baseDir), before, "insert diagram");
+}
+
+// update-diagram-images [all]: Update Diagram Images, the results as == update (EDIT-MD-7)
+static bool updateDiagramImagesVerb(CyberiadaSMEditorWindow* win, const QStringList& tokens, QString* error)
+{
+	TextDocument* text = win->currentText();
+	if (!text || text->mode() != MODE_MARKDOWN) {
+		*error = tokens.first() + " needs an active Markdown tab";
+		return false;
+	}
+	if (tokens.size() > 2 || (tokens.size() == 2 && tokens[1] != "all")) {
+		*error = "update-diagram-images takes all at most";
+		return false;
+	}
+	QList<DiagramImage> images = markdownDiagramImages(text->text(), text->baseDir());
+	QList<DiagramUpdate> updates = updateDiagramImages(images, tokens.size() == 2, batchDiagramFont);
+	std::cout << "== update" << std::endl;
+	if (updates.isEmpty()) std::cout << "none" << std::endl;
+	for (const DiagramUpdate& u : updates) {
+		QString svg = markdownPath(u.image.svg, text->baseDir());
+		std::cout << u.image.image.line << " " << qPrintable(u.updated ? "updated " + svg : "failed " + svg + ": " + u.error)
+				  << std::endl;
+	}
+	return true;
+}
+
 static bool runMarkdownVerb(CyberiadaSMEditorWindow* win, const QStringList& tokens, QString* error)
 {
+	if (tokens.first() == "insert-diagram") return insertDiagramVerb(win, tokens, error);
+	if (tokens.first() == "update-diagram-images") return updateDiagramImagesVerb(win, tokens, error);
 	return insertImageVerb(win, tokens, error);
 }
 

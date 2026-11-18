@@ -1,0 +1,8 @@
+# Insert Diagram in batch mode (EDIT-MD-5/7/12): a diagram outside copied into diagrams/ with
+# its image, the same diagram again reused under its own name, another before line 1 into a
+# folder; the update finds none out of date, all exports both again
+insert-diagram diagrams/geometry.graphml Geometry
+insert-diagram diagrams/geometry.graphml
+insert-diagram diagrams/cyb-geometry.graphml to figures line 1 The [other] one
+update-diagram-images
+update-diagram-images all

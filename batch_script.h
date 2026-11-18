@@ -35,5 +35,7 @@ struct BatchPluginRuns;
 // to plugins (EDIT-PLUG-61)
 bool runEditScript(CyberiadaSMEditorWindow* win, const QString& path, QString* error,
 				   BatchPluginRuns* plugins = nullptr);
+// the font the Markdown verbs draw a diagram in (--font); the bundled one when empty
+void setBatchDiagramFont(const QString& family);
 
 #endif

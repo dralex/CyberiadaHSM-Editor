@@ -7,7 +7,8 @@
 # LIST_PLUGINS, DUMP_PLUGIN, DUMP_SESSION and SESSION_SCRIPT (a plugin session),
 # NO_DUMP (stdout without --dump), CLEAN_DIR (a fresh
 # work dir), SEED (src>dst copies before the run), MARKERS (directories made before
-# the run, '|'-separated), FORBID (absent from the output)
+# the run, '|'-separated), FORBID (absent from the output), SVG_METADATA (--svg-metadata),
+# IMAGE_CONTAINS (the '|'-separated texts the exported image holds)
 
 # what differs between a good file and the output: diff -u where there is one, else
 # the first lines that differ (Windows has no diff)
@@ -155,6 +156,9 @@ endif()
 if(DEFINED IMAGE_OUT)
   list(APPEND _args --export ${IMAGE_OUT})
 endif()
+if(DEFINED SVG_METADATA)
+  list(APPEND _args --svg-metadata)
+endif()
 set(_workdir)
 if(DEFINED WORKDIR)
   set(_workdir WORKING_DIRECTORY ${WORKDIR})
@@ -203,6 +207,16 @@ if(DEFINED IMAGE_GOOD)
   if(NOT imgdiff EQUAL 0)
     message(FATAL_ERROR "image ${IMAGE_OUT} differs from the good file ${IMAGE_GOOD}")
   endif()
+endif()
+if(DEFINED IMAGE_CONTAINS)
+  file(READ ${IMAGE_OUT} _image_text)
+  string(REPLACE "|" ";" _needles "${IMAGE_CONTAINS}")
+  foreach(_needle ${_needles})
+    string(FIND "${_image_text}" "${_needle}" _at)
+    if(_at EQUAL -1)
+      message(FATAL_ERROR "image ${IMAGE_OUT} holds no ${_needle}")
+    endif()
+  endforeach()
 endif()
 if(DEFINED SVG_GOOD)
   execute_process(COMMAND ${CMAKE_COMMAND} -E compare_files ${_eol} ${IMAGE_OUT} ${SVG_GOOD}

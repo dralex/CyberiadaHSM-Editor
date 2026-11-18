@@ -22,7 +22,9 @@
  * ----------------------------------------------------------------------------- */
 
 #include <QCoreApplication>
+#include <QBuffer>
 #include <QFileInfo>
+#include <QSaveFile>
 #include <QImage>
 #include <QMargins>
 #include <QPageSize>
@@ -35,6 +37,7 @@
 #include "cyberiadasm_editor_scene.h"
 #include "fontmanager.h"
 #include "code_highlighter.h"
+#include "svg_source.h"
 
 // the final state and the transition label fill from the painter background,
 // so it is set explicitly instead of relying on the paint device default;
@@ -111,7 +114,7 @@ struct FindMarksGuard {
 };
 
 bool renderScene(CyberiadaSMEditorScene* scene, const QString& path, QString* error, int dpi,
-				 const QString& fontFamily)
+				 const QString& fontFamily, const QString& sourceFile, const QString& title)
 {
 	if (scene->items().isEmpty()) {
 		if (error) *error = QCoreApplication::translate("Render", "the scene is empty, nothing to export");
@@ -136,8 +139,11 @@ bool renderScene(CyberiadaSMEditorScene* scene, const QString& path, QString* er
 	QString suffix = QFileInfo(path).suffix().toLower();
 
 	if (suffix == "svg") {
+		// a recorded source is added to the generated text before it is written (EDIT-IO-8)
+		QBuffer buffer;
 		QSvgGenerator generator;
-		generator.setFileName(path);
+		if (sourceFile.isEmpty()) generator.setFileName(path);
+		else generator.setOutputDevice(&buffer);
 		generator.setSize(target.size());
 		generator.setViewBox(target);
 		{
@@ -148,6 +154,15 @@ bool renderScene(CyberiadaSMEditorScene* scene, const QString& path, QString* er
 			}
 			preparePainter(painter, target);
 			scene->render(&painter, target, scene_rect);
+		}
+		if (!sourceFile.isEmpty()) {
+			QByteArray svg = recordSvgSource(buffer.data(), path, sourceFile, title,
+											 FontManager::instance().baseFont().family());
+			QSaveFile file(path);
+			if (!file.open(QIODevice::WriteOnly) || file.write(svg) != svg.size() || !file.commit()) {
+				if (error) *error = QCoreApplication::translate("Render", "cannot write the image %1").arg(path);
+				return false;
+			}
 		}
 		if (!fileWritten(path)) {
 			if (error) *error = "cannot save the image " + path;

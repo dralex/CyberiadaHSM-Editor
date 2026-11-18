@@ -182,6 +182,7 @@
     <addaction name="actionGoToLine"/>
     <addaction name="separator"/>
     <addaction name="actionInsertImage"/>
+    <addaction name="actionInsertDiagram"/>
     <addaction name="separator"/>
     <addaction name="menuTools"/>
    </widget>
@@ -217,6 +218,7 @@
     <addaction name="actionDocumentProperties"/>
     <addaction name="separator"/>
     <addaction name="actionCheck"/>
+    <addaction name="actionUpdateDiagramImages"/>
     <addaction name="actionReconstructGeometry"/>
     <addaction name="actionUpdateGeometry"/>
     <addaction name="separator"/>
@@ -384,6 +386,30 @@
   <action name="actionFindPrevious">
    <property name="text">
     <string>Find Previous</string>
+   </property>
+  </action>
+  <action name="actionInsertDiagram">
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/insert-diagram.png</normaloff>:/Icons/images/insert-diagram.png</iconset>
+   </property>
+   <property name="text">
+    <string>Insert Diagram...</string>
+   </property>
+   <property name="toolTip">
+    <string>Insert a diagram image linked to its diagram into the Markdown text</string>
+   </property>
+  </action>
+  <action name="actionUpdateDiagramImages">
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/update-diagrams.png</normaloff>:/Icons/images/update-diagrams.png</iconset>
+   </property>
+   <property name="text">
+    <string>Update Diagram Images</string>
+   </property>
+   <property name="toolTip">
+    <string>Export again the diagram images of the text whose diagrams changed</string>
    </property>
   </action>
   <action name="actionInsertImage">

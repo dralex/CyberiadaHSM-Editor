@@ -52,6 +52,7 @@ private slots:
 	void test_save_refused_format();
 	void test_export_image();
 	void test_export_default_name();
+	void test_export_svg_source();
 	void test_action_dialog();
 	void test_transition_dialog();
 	void test_about_dialog();
@@ -245,6 +246,30 @@ void TestDialog::test_export_default_name()
 	QCOMPARE(base, QString("geometry"));
 	dlg.selectFile(base);
 	QCOMPARE(QFileInfo(dlg.selectedFile()).completeBaseName(), QString("geometry"));
+}
+
+// EDIT-IO-8: the source checkbox is an SVG option of a saved diagram, off by default
+void TestDialog::test_export_svg_source()
+{
+	ExportImageDialog dlg;
+	QVERIFY(dlg.sourceBox());
+	QVERIFY(!dlg.sourceBox()->isChecked());
+	dlg.selectNameFilter("SVG (*.svg)");
+	dlg.updateSuffix();
+	QVERIFY(dlg.sourceBox()->isEnabled());
+	QVERIFY(!dlg.recordSource());
+	dlg.sourceBox()->setChecked(true);
+	QVERIFY(dlg.recordSource());
+	dlg.selectNameFilter("PNG (*.png)");
+	dlg.updateSuffix();
+	QVERIFY(!dlg.sourceBox()->isEnabled() && !dlg.recordSource());
+	QCOMPARE(dlg.sourceBox()->toolTip(), QString("SVG only"));
+	// a modified or untitled diagram has no saved file to record
+	ExportImageDialog unsaved(nullptr, "Save the diagram first");
+	unsaved.selectNameFilter("SVG (*.svg)");
+	unsaved.updateSuffix();
+	QVERIFY(!unsaved.sourceBox()->isEnabled() && !unsaved.recordSource());
+	QCOMPARE(unsaved.sourceBox()->toolTip(), QString("Save the diagram first"));
 }
 
 QTEST_MAIN(TestDialog)

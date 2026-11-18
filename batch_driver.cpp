@@ -116,6 +116,7 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const BatchOptions& options)
 	scriptRuns.dumping = options.dump || options.dumpPlugin;
 	if (!options.script.isEmpty()) {
 		// the scene follows the model through its signals
+		setBatchDiagramFont(options.exportFont);
 		if (!runEditScript(&win, options.script, &error, &scriptRuns)) {
 			fprintf(stderr, "script %s failed\n%s\n", qPrintable(options.script), qPrintable(error));
 			return batchScriptError;
@@ -250,8 +251,20 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const BatchOptions& options)
 
 	if (!options.exportImage.isEmpty()) {
 		QString render_error;
+		// the SVG records the saved file it is drawn from (EDIT-IO-8)
+		QString source, title;
+		if (options.svgMetadata) {
+			CyberiadaSMEditorDocument* doc = win.currentDocument();
+			if (QFileInfo(options.exportImage).suffix().toLower() != "svg" || !doc || !doc->hasFile() ||
+				!doc->isClean()) {
+				fprintf(stderr, "--svg-metadata needs an SVG export of a saved, unmodified diagram\n");
+				return batchUsageError;
+			}
+			source = doc->filePath();
+			title = doc->documentName().isEmpty() ? QFileInfo(source).completeBaseName() : doc->documentName();
+		}
 		if (!renderScene(win.getScene(), options.exportImage, &render_error, options.exportDpi,
-						 options.exportFont)) {
+						 options.exportFont, source, title)) {
 			fprintf(stderr, "cannot export %s\n%s\n", qPrintable(options.exportImage),
 					qPrintable(render_error));
 			return batchInternalError;

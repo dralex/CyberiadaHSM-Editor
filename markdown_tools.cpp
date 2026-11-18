@@ -23,6 +23,17 @@
 
 #include "markdown_tools.h"
 
+#include <QRegularExpression>
+#include <QTextStream>
+
+#include "cyberiadasm_editor_document.h"
+#include "cyberiadasm_model.h"
+#include "cyberiadasm_render.h"
+#include "fontmanager.h"
+#include "markdown_objects.h"
+
+#include <algorithm>
+
 #include <QBuffer>
 #include <QCoreApplication>
 #include <QDir>
@@ -35,6 +46,7 @@
 
 const char* const MARKDOWN_IMAGE_FOLDER = "images";
 const char* const MARKDOWN_PASTED_IMAGE = "image";
+const char* const MARKDOWN_DIAGRAM_FOLDER = "diagrams";
 
 static QString absoluteClean(const QString& path)
 {
@@ -237,4 +249,185 @@ bool writeImageInsert(const ImageInsert& insert, const QByteArray& data, QString
         return false;
     }
     return true;
+}
+
+// ---------------------------------------------------------------------------- diagram images
+
+bool sameFileContent(const QString& a, const QString& b)
+{
+    QFile fa(a), fb(b);
+    if (!fa.open(QIODevice::ReadOnly) || !fb.open(QIODevice::ReadOnly)) return false;
+    return fa.size() == fb.size() && fa.readAll() == fb.readAll();
+}
+
+bool copyFileOver(const QString& source, const QString& target, QString* error)
+{
+    if (samePath(source, target) || sameFileContent(source, target)) return true;
+    QFile in(source);
+    if (!in.open(QIODevice::ReadOnly)) {
+        *error = QCoreApplication::translate("MarkdownTools", "Cannot read %1").arg(source);
+        return false;
+    }
+    ImageInsert copy;
+    copy.source = source;
+    copy.target = target;
+    return writeImageInsert(copy, in.readAll(), error);
+}
+
+// a destination of an image or a link: <path> or a path without spaces, then a title
+static const char* const DESTINATION = R"(\(\s*(<[^>\n]*>|[^\s)]+)(?:\s+(?:"[^"]*"|'[^']*'))?\s*\))";
+static const char* const IMAGE = R"(!\[((?:\\.|[^\\\]])*)\])";
+
+static QString destination(const QString& written)
+{
+    if (written.startsWith('<') && written.endsWith('>')) return written.mid(1, written.size() - 2);
+    return written;
+}
+
+// the code spans of a line as spaces, so no image is found in them and the columns stay
+static QString withoutCodeSpans(const QString& line)
+{
+    static const QRegularExpression code("(`+)(.*?)\\1");
+    QString masked = line;
+    QRegularExpressionMatchIterator it = code.globalMatch(line);
+    while (it.hasNext()) {
+        QRegularExpressionMatch m = it.next();
+        masked.replace(m.capturedStart(), m.capturedLength(), QString(m.capturedLength(), ' '));
+    }
+    return masked;
+}
+
+QList<MarkdownImage> markdownImages(const QString& text)
+{
+    static const QRegularExpression fence(R"(^ {0,3}(`{3,}|~{3,}))");
+    static const QRegularExpression linked(QString(R"(\[\s*)") + IMAGE + DESTINATION + R"(\s*\])" + DESTINATION);
+    static const QRegularExpression image(QString(IMAGE) + DESTINATION);
+    QList<MarkdownImage> images;
+    QStringList lines = text.split('\n');
+    QString openFence;
+    for (int n = 0; n < lines.size(); n++) {
+        const QString& line = lines.at(n);
+        QRegularExpressionMatch f = fence.match(line);
+        if (f.hasMatch()) {
+            if (openFence.isEmpty()) openFence = f.captured(1);
+            else if (f.captured(1).startsWith(openFence.at(0)) && f.captured(1).size() >= openFence.size()) openFence.clear();
+            continue;
+        }
+        if (!openFence.isEmpty()) continue;
+        QString masked = withoutCodeSpans(line);
+        QList<QPair<int, int>> taken;
+        QRegularExpressionMatchIterator it = linked.globalMatch(masked);
+        while (it.hasNext()) {
+            QRegularExpressionMatch m = it.next();
+            MarkdownImage i;
+            i.line = n + 1;
+            i.column = m.capturedStart() + 1;
+            i.alt = m.captured(1);
+            i.target = destination(m.captured(2));
+            i.link = destination(m.captured(3));
+            images << i;
+            taken << qMakePair(m.capturedStart(), m.capturedEnd());
+        }
+        it = image.globalMatch(masked);
+        while (it.hasNext()) {
+            QRegularExpressionMatch m = it.next();
+            bool inside = false;
+            for (const QPair<int, int>& t : taken) inside = inside || (m.capturedStart() >= t.first && m.capturedEnd() <= t.second);
+            if (inside) continue;
+            MarkdownImage i;
+            i.line = n + 1;
+            i.column = m.capturedStart() + 1;
+            i.alt = m.captured(1);
+            i.target = destination(m.captured(2));
+            images << i;
+        }
+    }
+    std::sort(images.begin(), images.end(), [](const MarkdownImage& a, const MarkdownImage& b) {
+        return a.line < b.line || (a.line == b.line && a.column < b.column);
+    });
+    return images;
+}
+
+static bool hasSuffix(const QString& path, const char* suffix)
+{
+    return QFileInfo(path).suffix().compare(QLatin1String(suffix), Qt::CaseInsensitive) == 0;
+}
+
+QList<DiagramImage> markdownDiagramImages(const QString& text, const QString& baseDir)
+{
+    QList<DiagramImage> diagrams;
+    for (const MarkdownImage& image : markdownImages(text)) {
+        QString svg = markdownImagePath(image.target, baseDir);
+        if (svg.isEmpty() || !isSvgFile(svg)) continue;
+        DiagramImage d;
+        d.image = image;
+        d.svg = svg;
+        d.recorded = readSvgSource(svg);
+        QString linked = image.link.isEmpty() ? QString() : markdownImagePath(image.link, baseDir);
+        QFileInfo info(svg);
+        QString sibling = info.absoluteDir().absoluteFilePath(info.completeBaseName() + ".graphml");
+        if (!linked.isEmpty() && hasSuffix(linked, "graphml")) d.graphml = linked;
+        else if (!d.recorded.graphml.isEmpty()) d.graphml = d.recorded.graphml;
+        else if (QFileInfo::exists(sibling)) d.graphml = QDir::cleanPath(sibling);
+        else continue;
+        d.upToDate = !d.recorded.digest.isEmpty() && d.recorded.digest == fileDigest(d.graphml);
+        diagrams << d;
+    }
+    return diagrams;
+}
+
+QString markdownDiagramLine(const QString& alt, const QString& svg, const QString& graphml,
+                            const QString& baseDir)
+{
+    return "[" + markdownImageLine(alt, svg, baseDir) + "](" + markdownPath(graphml, baseDir) + ")";
+}
+
+QString diagramFileTitle(const QString& graphml)
+{
+    CyberiadaSMEditorDocument doc;
+    QString error;
+    if (doc.load(graphml, &error)) {
+        if (!doc.documentName().isEmpty()) return doc.documentName();
+        const Cyberiada::LocalDocument* root = doc.model()->rootDocument();
+        if (root) {
+            Cyberiada::ConstStateMachineList machines = root->get_state_machines();
+            if (!machines.empty() && !machines.front()->get_name().empty()) {
+                return QString::fromStdString(machines.front()->get_name());
+            }
+        }
+    }
+    return QFileInfo(graphml).completeBaseName();
+}
+
+bool renderDiagramFile(const QString& graphml, const QString& svg, const QString& font, QString* error)
+{
+    CyberiadaSMEditorDocument doc;
+    if (!doc.load(graphml, error)) return false;
+    if (!QDir().mkpath(QFileInfo(svg).absolutePath())) {
+        *error = QCoreApplication::translate("MarkdownTools", "Cannot make the folder %1").arg(QFileInfo(svg).absolutePath());
+        return false;
+    }
+    QString title = doc.documentName().isEmpty() ? QFileInfo(graphml).completeBaseName() : doc.documentName();
+    QString family = font.isEmpty() ? FontManager::instance().bundledFamily() : font;
+    return renderScene(doc.scene(), svg, error, RENDER_DEFAULT_DPI, family, QDir::cleanPath(QFileInfo(graphml).absoluteFilePath()), title);
+}
+
+QList<DiagramUpdate> updateDiagramImages(const QList<DiagramImage>& images, bool all, const QString& font)
+{
+    QList<DiagramUpdate> updates;
+    QStringList done;
+    for (const DiagramImage& image : images) {
+        if ((!all && image.upToDate) || done.contains(image.svg)) continue;
+        done << image.svg;
+        DiagramUpdate update;
+        update.image = image;
+        if (!QFileInfo(image.graphml).isFile()) {
+            update.error = QCoreApplication::translate("MarkdownTools", "No diagram file %1").arg(image.graphml);
+        } else {
+            QString family = image.recorded.font.isEmpty() ? font : image.recorded.font;
+            update.updated = renderDiagramFile(image.graphml, image.svg, family, &update.error);
+        }
+        updates << update;
+    }
+    return updates;
 }

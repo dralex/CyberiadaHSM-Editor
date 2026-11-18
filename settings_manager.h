@@ -141,6 +141,12 @@ public:
     // the last font family chosen in the image export dialog (empty = bundled)
     QString getExportFontFamily() const { return exportFontFamily; }
     void setExportFontFamily(const QString& value);
+    // an SVG export records its source diagram in its metadata (EDIT-IO-8)
+    bool getExportSvgMetadata() const { return exportSvgMetadata; }
+    void setExportSvgMetadata(bool value);
+    // the folder a diagram is copied into, relative to the Markdown text (EDIT-MD-5)
+    QString getMarkdownDiagramFolder() const { return markdownDiagramFolder; }
+    void setMarkdownDiagramFolder(const QString& value);
     // the folder an image is copied into, relative to the Markdown text (EDIT-MD-2)
     QString getMarkdownImageFolder() const { return markdownImageFolder; }
     void setMarkdownImageFolder(const QString& value);
@@ -279,6 +285,8 @@ private:
     int exportDpi;
     QString exportFontFamily;
     QString markdownImageFolder;
+    QString markdownDiagramFolder;
+    bool exportSvgMetadata;
 
     // selection
     QColor selectionColor;

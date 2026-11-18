@@ -96,6 +96,7 @@ TextDocument::TextDocument(const QString& mode, QObject* parent):
     connect(m_document, &QTextDocument::contentsChanged, this, &TextDocument::scheduleCheck);
     connect(m_editor, &CodeEditor::errorClicked, this, &TextDocument::showError);
     connect(m_editor, &CodeEditor::linkActivated, this, &TextDocument::openLink);
+    connect(m_rendered, &MarkdownView::linkActivated, this, &TextDocument::openLink);
     connect(m_editor, &CodeEditor::imageOffered, this, &TextDocument::imageOffered);
     applyMode();
 }

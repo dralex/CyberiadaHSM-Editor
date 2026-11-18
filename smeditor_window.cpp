@@ -61,6 +61,7 @@
 #include "dialogs/save_file_dialog.h"
 #include "dialogs/export_image_dialog.h"
 #include "dialogs/insert_image_dialog.h"
+#include "dialogs/insert_diagram_dialog.h"
 #include "markdown_tools.h"
 #include "settings_manager.h"
 #include "cyberiadasm_render.h"
@@ -130,10 +131,13 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     m_findBar->hide();
     connect(actionGoToLine, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotGoToLine);
     connect(actionInsertImage, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotInsertImage);
+    connect(actionInsertDiagram, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotInsertDiagram);
+    connect(actionUpdateDiagramImages, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotUpdateDiagramImages);
     // the Markdown group of the text toolbar, shown in a Markdown tab (EDIT-MD-1)
     QAction* markdownSeparator = new QAction(this);
     markdownSeparator->setSeparator(true);
-    markdownToolActions << markdownSeparator << actionInsertImage;
+    markdownToolActions << markdownSeparator << actionInsertImage << actionInsertDiagram
+                        << actionUpdateDiagramImages;
     connect(actionFind, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotFind);
     connect(actionFindNext, &QAction::triggered, this, [this]() { slotFindStep(1); });
     connect(actionFindPrevious, &QAction::triggered, this, [this]() { slotFindStep(-1); });
@@ -993,7 +997,11 @@ void CyberiadaSMEditorWindow::updateMarkdownActions()
     TextDocument* text = currentText();
     bool markdown = text && text->mode() == MODE_MARKDOWN;
     // the source of a writable Markdown text takes the inserts (EDIT-MD-1)
-    actionInsertImage->setEnabled(markdown && text->isEditable() && !text->showsRendered());
+    bool inserts = markdown && text->isEditable() && !text->showsRendered();
+    actionInsertImage->setEnabled(inserts);
+    actionInsertDiagram->setEnabled(inserts);
+    // the images are other files: a read-only text updates them too
+    actionUpdateDiagramImages->setEnabled(markdown && text->hasFile());
     showMarkdownTools(markdown);
 }
 
@@ -1070,6 +1078,107 @@ void CyberiadaSMEditorWindow::insertImage(TextDocument* text, const QString& sou
         text->insertBlock(markdownImageLine(insert.alt, insert.target, insert.baseDir), 0, tr("insert image"));
         return;
     }
+}
+
+void CyberiadaSMEditorWindow::slotInsertDiagram()
+{
+    TextDocument* text = currentText();
+    if (!text || text->mode() != MODE_MARKDOWN || !text->isEditable()) return;
+    if (!ensureTextFile(text, tr("Insert Diagram"))) return;
+    // the diagram tabs with a file, their saved files drawn
+    QList<DiagramTab> tabs;
+    for (EditorDocument* doc : documents) {
+        CyberiadaSMEditorDocument* diagram = qobject_cast<CyberiadaSMEditorDocument*>(doc);
+        if (!diagram || !diagram->hasFile()) continue;
+        DiagramTab tab;
+        tab.title = diagram->title();
+        tab.path = diagram->filePath();
+        tab.modified = !diagram->isClean();
+        tabs << tab;
+    }
+    SettingsManager& sm = SettingsManager::instance();
+    QString font = sm.getExportFontFamily().isEmpty() ? FontManager::instance().bundledFamily()
+                                                      : sm.getExportFontFamily();
+    InsertDiagramDialog dlg(tabs, text->baseDir(), sm.getMarkdownDiagramFolder(), font, this);
+    // a refused name or a failed write goes back to the dialog as it was
+    while (dlg.exec() == QDialog::Accepted) {
+        QString target = dlg.target();
+        QString svg = dlg.svg();
+        QString error;
+        if (dlg.copies() && QFileInfo::exists(target) && !sameFileContent(dlg.source(), target)) {
+            QMessageBox box(QMessageBox::Question, tr("Insert Diagram"),
+                            tr("%1 exists with another content.").arg(markdownPath(target, text->baseDir())),
+                            QMessageBox::Cancel, this);
+            QPushButton* replace = box.addButton(tr("Replace"), QMessageBox::DestructiveRole);
+            QPushButton* both = box.addButton(tr("Keep Both"), QMessageBox::AcceptRole);
+            box.setDefaultButton(both);
+            box.exec();
+            if (box.clickedButton() == both) {
+                QFileInfo info(target);
+                target = numberedFileName(info.absolutePath(), info.completeBaseName(), info.suffix());
+                svg = QDir(info.absolutePath()).filePath(QFileInfo(target).completeBaseName() + ".svg");
+            } else if (box.clickedButton() != replace) {
+                continue;
+            }
+        }
+        if ((dlg.copies() && !copyFileOver(dlg.source(), target, &error)) ||
+            !renderDiagramFile(target, svg, dlg.font(), &error)) {
+            QMessageBox::warning(this, tr("Insert Diagram"), error);
+            continue;
+        }
+        if (!dlg.folder().isEmpty()) sm.setMarkdownDiagramFolder(dlg.folder());
+        text->insertBlock(markdownDiagramLine(dlg.alt(), svg, target, text->baseDir()), 0, tr("insert diagram"));
+        return;
+    }
+}
+
+QList<PluginDiagnostic> CyberiadaSMEditorWindow::updateDiagramImages(TextDocument* text, bool all)
+{
+    QList<PluginDiagnostic> results;
+    if (!text || text->mode() != MODE_MARKDOWN) return results;
+    SettingsManager& sm = SettingsManager::instance();
+    QString font = sm.getExportFontFamily().isEmpty() ? FontManager::instance().bundledFamily()
+                                                      : sm.getExportFontFamily();
+    QList<DiagramImage> images = markdownDiagramImages(text->text(), text->baseDir());
+    for (const DiagramUpdate& u : ::updateDiagramImages(images, all, font)) {
+        PluginDiagnostic d;
+        d.severity = u.updated ? "info" : "error";
+        d.line = u.image.image.line;
+        QString svg = markdownPath(u.image.svg, text->baseDir());
+        d.message = u.updated ? tr("%1 exported again from %2").arg(svg, markdownPath(u.image.graphml, text->baseDir()))
+                              : tr("%1 is not exported: %2").arg(svg, u.error);
+        results << d;
+    }
+    // the findings link to the lines of the text (EDIT-PLUG-57)
+    pluginDockWidget->showDiagnostics(results, text);
+    if (!results.isEmpty()) {
+        pluginDockWidget->show();
+        pluginDockWidget->raise();
+    }
+    return results;
+}
+
+void CyberiadaSMEditorWindow::slotUpdateDiagramImages()
+{
+    TextDocument* text = currentText();
+    if (!text || text->mode() != MODE_MARKDOWN) return;
+    QList<DiagramImage> images = markdownDiagramImages(text->text(), text->baseDir());
+    if (images.isEmpty()) {
+        QMessageBox::information(this, tr("Update Diagram Images"), tr("The text has no diagram images."));
+        return;
+    }
+    bool stale = false;
+    for (const DiagramImage& image : images) stale = stale || !image.upToDate;
+    bool all = false;
+    if (!stale) {
+        QMessageBox box(QMessageBox::Information, tr("Update Diagram Images"),
+                        tr("The diagram images of the text are up to date."), QMessageBox::Close, this);
+        QPushButton* again = box.addButton(tr("Re-export All"), QMessageBox::AcceptRole);
+        box.exec();
+        if (box.clickedButton() != again) return;
+        all = true;
+    }
+    updateDiagramImages(text, all);
 }
 
 void CyberiadaSMEditorWindow::slotFind()
@@ -1923,7 +2032,9 @@ void CyberiadaSMEditorWindow::slotFileExport()
         return;
     }
     if (!current) return;
-    ExportImageDialog dlg(this);
+    // the SVG records the saved file it is drawn from (EDIT-IO-8)
+    bool saved = current->hasFile() && current->isClean();
+    ExportImageDialog dlg(this, saved ? QString() : tr("Save the diagram first: the metadata records its saved file"));
     // propose the diagram's base name; the dialog's default suffix / filter adds
     // the image extension (mirrors slotFileSaveAs)
     if (current && current->hasFile()) {
@@ -1934,7 +2045,10 @@ void CyberiadaSMEditorWindow::slotFileExport()
     QString fileName = dlg.selectedFile();
     if (!fileName.isEmpty()) {
         QString error;
-        if (!renderScene(scene(), fileName, &error, dlg.dpi(), dlg.fontFamily())) {
+        QString source = dlg.recordSource() ? current->filePath() : QString();
+        QString title = current->documentName().isEmpty() ? QFileInfo(current->filePath()).completeBaseName()
+                                                          : current->documentName();
+        if (!renderScene(scene(), fileName, &error, dlg.dpi(), dlg.fontFamily(), source, title)) {
             QMessageBox::critical(this, tr("Error"), error);
         }
     }

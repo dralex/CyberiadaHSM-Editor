@@ -22,7 +22,9 @@
  * ----------------------------------------------------------------------------- */
 
 #include <QWidget>
+#include <QCheckBox>
 #include <QHBoxLayout>
+#include <QVBoxLayout>
 #include <QLabel>
 #include <QSpinBox>
 #include <QFontComboBox>
@@ -31,12 +33,12 @@
 #include "fontmanager.h"
 
 
-ExportImageDialog::ExportImageDialog(QWidget* parent)
+ExportImageDialog::ExportImageDialog(QWidget* parent, const QString& sourceUnavailable)
     : CyberiadaFileDialog(parent, tr("Export the scene as an image"),
                           // format names only, never translated: the suffix follows the prefix
                           QString("PNG (*.png);;JPEG (*.jpg *.jpeg);;BMP (*.bmp);;TIFF (*.tiff);;"
                                   "SVG (*.svg);;PDF (*.pdf)")),
-      dpiSpin(nullptr), fontCombo(nullptr)
+      dpiSpin(nullptr), fontCombo(nullptr), sourceCheck(nullptr), sourceReason(sourceUnavailable)
 {
     setFileMode(QFileDialog::AnyFile);
     setAcceptMode(QFileDialog::AcceptSave);
@@ -46,8 +48,10 @@ ExportImageDialog::ExportImageDialog(QWidget* parent)
     // the raster resolution control (96 = one scene unit per pixel); the vector
     // formats are resolution-independent, so it is disabled for them
     QWidget* options = new QWidget(this);
-    QHBoxLayout* row = new QHBoxLayout(options);
-    row->setContentsMargins(0, 0, 0, 0);
+    QVBoxLayout* rows = new QVBoxLayout(options);
+    rows->setContentsMargins(0, 0, 0, 0);
+    QHBoxLayout* row = new QHBoxLayout();
+    rows->addLayout(row);
     row->addWidget(new QLabel(tr("Resolution (DPI):"), options));
     dpiSpin = new QSpinBox(options);
     dpiSpin->setRange(48, 1200);
@@ -66,6 +70,10 @@ ExportImageDialog::ExportImageDialog(QWidget* parent)
     if (family.isEmpty()) family = FontManager::instance().bundledFamily();
     fontCombo->setCurrentFont(QFont(family));
     row->addWidget(fontCombo);
+    // an SVG of a saved diagram records it, off unless chosen before
+    sourceCheck = new QCheckBox(tr("Record the source diagram in the SVG metadata"), options);
+    sourceCheck->setChecked(SettingsManager::instance().getExportSvgMetadata());
+    rows->addWidget(sourceCheck);
     setOptionsWidget(options);
 
     connect(this, &QFileDialog::filterSelected, this, &ExportImageDialog::slotFilterSelected);
@@ -74,6 +82,11 @@ ExportImageDialog::ExportImageDialog(QWidget* parent)
 int ExportImageDialog::dpi() const
 {
     return dpiSpin ? dpiSpin->value() : 96;
+}
+
+bool ExportImageDialog::recordSource() const
+{
+    return sourceCheck && sourceCheck->isEnabled() && sourceCheck->isChecked();
 }
 
 QString ExportImageDialog::fontFamily() const
@@ -87,6 +100,7 @@ void ExportImageDialog::accept()
     updateSuffix();
     if (dpiSpin) SettingsManager::instance().setExportDpi(dpiSpin->value());
     if (fontCombo) SettingsManager::instance().setExportFontFamily(fontFamily());
+    if (sourceCheck && sourceCheck->isEnabled()) SettingsManager::instance().setExportSvgMetadata(sourceCheck->isChecked());
     CyberiadaFileDialog::accept();
 }
 
@@ -115,4 +129,9 @@ void ExportImageDialog::slotFilterSelected(const QString& filter)
     }
     // the DPI only affects the raster formats
     if (dpiSpin) dpiSpin->setEnabled(!vector);
+    if (sourceCheck) {
+        bool svg = filter.startsWith("SVG");
+        sourceCheck->setEnabled(svg && sourceReason.isEmpty());
+        sourceCheck->setToolTip(!svg ? tr("SVG only") : sourceReason);
+    }
 }

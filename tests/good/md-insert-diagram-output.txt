@@ -1,0 +1,26 @@
+== update
+none
+== update
+1 updated figures/cyb-geometry.svg
+10 updated diagrams/geometry.svg
+== tabs
+count: 1
+0 notes.md* markdown active
+== text
+mode: markdown
+file: notes.md
+modified: yes
+rendered: no
+lines: 12
+| [![The \[other\] one](figures/cyb-geometry.svg)](figures/cyb-geometry.graphml)
+| 
+| # The traffic light
+| 
+| The light has three states: **red**, *yellow* and green.
+| 
+| - the timer switches the states
+| - the button asks for green
+| 
+| [![Geometry](diagrams/geometry.svg)](diagrams/geometry.graphml)
+| 
+| [![test-geometry-1](diagrams/geometry.svg)](diagrams/geometry.graphml)

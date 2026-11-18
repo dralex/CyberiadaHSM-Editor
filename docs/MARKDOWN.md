@@ -1,7 +1,7 @@
 # The Markdown Rendering — Architecture
 
 **Document version:** 0.13 (2026-11-18) — the authoring tools specified (Tools), stages 1
-and 2 implemented.
+to 3 implemented.
 The requirements are `EDIT-MODE-14`, `EDIT-MODE-17`, `EDIT-MODE-18`, `EDIT-TEXT-14`,
 `EDIT-MD-1..12` and `EDIT-IO-8` in `EDITOR-SPEC.md`.
 
@@ -220,9 +220,10 @@ its links point to its headings and to the other texts (`EDIT-MD-1..12`).
  InsertImageDialog  InsertDiagramDialog  InsertLinkDialog               |     dialogs/
         \                  |                  /                         |
          +-----> markdown_tools.*: the paths and the copies, the written line,
-                 diagramSource, markdownHeadings, markdownCheck, renderDiagramFile
+                 markdownImages, markdownDiagramImages, updateDiagramImages,
+                 renderDiagramFile, markdownHeadings, markdownCheck
                        |                                  |
-       TextDocument::insertBlock: one undo step    renderScene(..., metadata)
+       TextDocument::insertBlock: one undo step    renderScene(..., source) + svg_source.*
        (the cursor, or line n in batch mode)       an off-tab model and scene, as a diff
                                                    side has (cyberiadasm_render.*)
 ```
@@ -297,8 +298,10 @@ The text links the image to its diagram; the SVG records where it was drawn from
    x.svg  <metadata>  ── dc:source, cyb:sourceDigest ──>  x.graphml
 ```
 
-* `diagramSource(text, image)` — the diagram of an image (`EDIT-MD-6`), in this order: the
-  `.graphml` the image is linked to; the `dc:source` of the SVG's metadata; the `.graphml`
+* `markdownImages(text)` finds the images line by line, the code fences and the code spans
+  skipped, an image that is the whole text of a link with that link's target;
+  `markdownDiagramImages(text, baseDir)` — the diagram of an image (`EDIT-MD-6`), in this order:
+  the `.graphml` the image is linked to; the `dc:source` of the SVG's metadata; the `.graphml`
   beside the SVG with its base name (every diagram image of the course texts today).
 * The provenance belongs to the image, not to the texts using it, so it is stored where
   SVG 1.1 §21 puts metadata: an RDF description with Dublin Core `dc:source` ("a related
@@ -397,9 +400,13 @@ The text links the image to its diagram; the SVG records where it was drawn from
    `dialogs/insert_image_dialog.*` (`ImageCropView`), `CodeEditor::insertFromMimeData` offering
    a dropped or pasted image (queued, after the event), Edit > Insert Image (`Ctrl+Shift+I`, the
    text toolbar), `markdown/imageFolder`, `insert-image`.
-3. Insert Diagram, Update Diagram Images and the SVG metadata: `renderScene(..., metadata)`,
-   the Export checkbox, `--svg-metadata`, `dialogs/insert_diagram_dialog.*`, the rendered page
-   opening the editor's files in a tab, `insert-diagram`, `update-diagram-images`.
+3. Insert Diagram, Update Diagram Images and the SVG metadata — done: `svg_source.*`
+   (`recordSvgSource`, `readSvgSource`, `fileDigest`), `renderScene(..., sourceFile, title)`, the
+   Export checkbox (`export/svgMetadata`), `--svg-metadata`, `markdownImages`,
+   `markdownDiagramImages`, `renderDiagramFile` (an off-tab `CyberiadaSMEditorDocument`),
+   `updateDiagramImages`, `dialogs/insert_diagram_dialog.*` (`markdown/diagramFolder`),
+   `MarkdownView::linkActivated` through `TextDocument::openLink`, `insert-diagram`,
+   `update-diagram-images` (`== update`).
 4. Check: `markdownCheck`, Check routed by the mode, `check`.
 5. Insert Link: `markdownHeadings`, `dialogs/insert_link_dialog.*`, `file.md#anchor`,
    `insert-link`.
@@ -443,10 +450,11 @@ The text links the image to its diagram; the SVG records where it was drawn from
 (a PNG of a Markdown text) and `mode-text-export-reject` (a PDF of a C++ text) are usage errors.
 
 The tools: `l4-markdown-tools` — the paths and the copies, a name clash, the crop, rotation and
-scale sizes, the inserted line and its single undo step, the dialog, the crop drag, the pasted
-images; `md-insert-image` and its rejects; planned with their stages: `diagramSource` (the linked image, the metadata, the sibling, a mismatch), the digest, the font
-kept by an update, the headings and anchors of another text (repeats, Cyrillic, an open tab's
-unsaved heading), the preview re-render and scroll; `md-*` batch cases for every verb of
-`EDIT-MD-12` against good files, the untitled refusal (exit 4); `export-svg-metadata` — the
-checkbox off gives today's SVG byte for byte, on the metadata, the same drawing (an image
-compare), the refusal for a modified diagram.
+scale sizes, the inserted line and its single undo step, the Insert Image dialog, the crop drag,
+the pasted images; the image scan, the diagram of an image (the link, the metadata, the
+sibling), the digest, the update and the font it keeps, the Insert Diagram dialog, a rendered
+link opening its tab; `md-insert-image`, `md-insert-diagram` and their rejects;
+`export-svg-metadata` — the parts of the recorded source, the refusals of a modified diagram
+and of a PNG, the plain `l3-svg-*` goods unchanged; `l4-dialog test_export_svg_source` — the
+checkbox. Planned with their stages: the headings and anchors of another text (repeats,
+Cyrillic, an open tab's unsaved heading), the check, the preview re-render and scroll.

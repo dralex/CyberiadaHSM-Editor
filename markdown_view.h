@@ -41,6 +41,10 @@ public:
     // scroll to the heading of the anchor; false when there is none
     bool scrollToHeading(const QString& anchor);
 
+signals:
+    // a link that is no #anchor: the tab opens it (EDIT-MODE-14)
+    void linkActivated(const QString& target);
+
 protected:
     // a palette of another theme renders the text again: the quote grey is mixed from it
     void changeEvent(QEvent* event) override;

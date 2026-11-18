@@ -25,7 +25,9 @@ automaton (FA) diagram, or a text - plain, Markdown, JSON or a C, C++, C# or Pyt
 source, highlighted; any tab can also be made read-only (a read-only Markdown tab shows
 the rendered document with its TeX formulas and SVG images). A Markdown text takes images
 by Edit > Insert Image, a drop or a paste: copied next to the text, cropped, turned or
-scaled down on the way.
+scaled down on the way. Edit > Insert Diagram adds a diagram as its SVG image linked to the
+.graphml file, and Document > Update Diagram Images exports again the images whose diagrams
+changed: each SVG records its source diagram in its metadata.
 
 The Find and Text File Compare functions are available as well as other
 useful IDE features.

@@ -22,7 +22,6 @@
  * ----------------------------------------------------------------------------- */
 
 #include <QAbstractTextDocumentLayout>
-#include <QDesktopServices>
 #include <QEvent>
 #include <QHash>
 #include <QPainter>
@@ -103,8 +102,6 @@ void MarkdownView::openLink(const QUrl& url)
         scrollToHeading(url.fragment(QUrl::FullyDecoded));
         return;
     }
-    QUrl target = url;
-    if (url.isRelative() && !m_baseDir.isEmpty())
-        target = QUrl::fromLocalFile(m_baseDir + "/").resolved(url);
-    QDesktopServices::openUrl(target);
+    // the tab opens it as the source does: the editor's files in a tab (EDIT-MODE-14)
+    emit linkActivated(url.toString());
 }

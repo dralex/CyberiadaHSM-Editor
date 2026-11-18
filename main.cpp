@@ -76,6 +76,8 @@ int main(int argc, char *argv[])
 	parser.addOption(dpiOption);
 	QCommandLineOption fontOption("font", "Font family the exported image text is drawn with.", "family");
 	parser.addOption(fontOption);
+	QCommandLineOption svgMetadataOption("svg-metadata", "The exported SVG records its source diagram (a saved, unmodified one).");
+	parser.addOption(svgMetadataOption);
 	QCommandLineOption noTextOption("no-text", "Hide the text elements in batch mode (font-independent output).");
 	parser.addOption(noTextOption);
 	QCommandLineOption textOption("text", "Show the text elements in batch mode, overriding --no-text.");
@@ -231,6 +233,7 @@ int main(int argc, char *argv[])
 			options.dumpAudit = parser.isSet(dumpAuditOption);
 			options.exportDpi = parser.value(dpiOption).toInt();
 			options.exportFont = parser.value(fontOption);
+			options.svgMetadata = parser.isSet(svgMetadataOption);
 			options.dumpTabsLine = parser.isSet(dumpTabsOption);
 			options.plugin = parser.value(pluginOption);
 			options.pluginParams = parser.values(pluginParamOption);

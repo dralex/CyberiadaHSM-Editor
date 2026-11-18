@@ -124,6 +124,8 @@ void SettingsManager::load() {
     exportDpi = s.value("export/dpi", 96).toInt();
     exportFontFamily = s.value("export/fontFamily", QString()).toString();
     markdownImageFolder = s.value("markdown/imageFolder", MARKDOWN_IMAGE_FOLDER).toString();
+    markdownDiagramFolder = s.value("markdown/diagramFolder", MARKDOWN_DIAGRAM_FOLDER).toString();
+    exportSvgMetadata = s.value("export/svgMetadata", false).toBool();
 
     selectionColor = QColor(s.value("display/selectionColor", QColor(Qt::darkGray).name()).toString());
     selectionBorderWidth = s.value("display/selectionBorderWidth", 2).toInt();
@@ -484,6 +486,22 @@ void SettingsManager::setExportFontFamily(const QString& value)
     if (exportFontFamily != value) {
         exportFontFamily = value;
         QSettings().setValue("export/fontFamily", value);
+    }
+}
+
+void SettingsManager::setExportSvgMetadata(bool value)
+{
+    if (exportSvgMetadata != value) {
+        exportSvgMetadata = value;
+        QSettings().setValue("export/svgMetadata", value);
+    }
+}
+
+void SettingsManager::setMarkdownDiagramFolder(const QString& value)
+{
+    if (markdownDiagramFolder != value) {
+        markdownDiagramFolder = value;
+        QSettings().setValue("markdown/diagramFolder", value);
     }
 }
 

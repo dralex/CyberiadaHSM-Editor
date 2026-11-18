@@ -26,6 +26,7 @@
 
 #include "file_dialog.h"
 
+class QCheckBox;
 class QSpinBox;
 class QFontComboBox;
 
@@ -35,7 +36,8 @@ class ExportImageDialog : public CyberiadaFileDialog
     Q_OBJECT
 
 public:
-    explicit ExportImageDialog(QWidget* parent = nullptr);
+    // sourceUnavailable: why the SVG cannot record its source diagram, empty when it can
+    explicit ExportImageDialog(QWidget* parent = nullptr, const QString& sourceUnavailable = QString());
 
     // the suffix of the selected image format
     void updateSuffix();
@@ -43,6 +45,9 @@ public:
     int dpi() const;
     // the chosen monospace font family the image text is drawn with
     QString fontFamily() const;
+    // an SVG records its source diagram in its metadata (EDIT-IO-8)
+    bool recordSource() const;
+    QCheckBox* sourceBox() const { return sourceCheck; }
 
     void accept() override;
 
@@ -52,6 +57,8 @@ private slots:
 private:
     QSpinBox* dpiSpin;
     QFontComboBox* fontCombo;
+    QCheckBox* sourceCheck;
+    QString sourceReason;
 };
 
 #endif // EXPORT_IMAGE_DIALOG_H

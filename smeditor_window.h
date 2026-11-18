@@ -115,6 +115,9 @@ public:
     // Insert Image of a Markdown tab on a file, or on a pasted image when source is empty:
     // the dialog, the copy and the line (EDIT-MD-2/3)
     void                    insertImage(TextDocument* text, const QString& source, const QImage& pasted);
+    // Update Diagram Images of a Markdown tab: the out-of-date ones, every one with all; the
+    // results in Diagnostics, returned for the tests (EDIT-MD-7)
+    QList<PluginDiagnostic> updateDiagramImages(TextDocument* text, bool all);
     DiffDocument*           currentDiff() const { return qobject_cast<DiffDocument*>(active); }
     // a diff or a text diff tab
     ComparisonDocument*     currentComparison() const { return qobject_cast<ComparisonDocument*>(active); }
@@ -314,6 +317,10 @@ private slots:
     void                    slotGoToLine();
     // Edit > Insert Image... (EDIT-MD-2)
     void                    slotInsertImage();
+    // Edit > Insert Diagram... (EDIT-MD-5)
+    void                    slotInsertDiagram();
+    // Document > Update Diagram Images (EDIT-MD-7)
+    void                    slotUpdateDiagramImages();
     void                    slotFindStep(int step);
     void                    slotFindQueryChanged(const FindQuery& query);
     void                    slotFindClosed();

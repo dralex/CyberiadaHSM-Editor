@@ -66,6 +66,8 @@ struct BatchOptions {
 	bool dumpAudit = false;
 	int exportDpi = 96;
 	QString exportFont;
+	// the SVG export records its source diagram (EDIT-IO-8)
+	bool svgMetadata = false;
 	bool dumpTabsLine = false;
 	// the plugin stage (docs/TESTING.md, Plugins): id[:action] and name=value items
 	QString plugin;

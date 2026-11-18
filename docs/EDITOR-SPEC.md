@@ -1541,13 +1541,13 @@ architecture is `docs/MARKDOWN.md`, Tools. Specified in 0.72.
   Line and the inserts act on the source. *design*
 - `EDIT-MD-12` MUST [A]: the batch verbs act on the active Markdown tab as the dialogs do,
   inserting before line `n` of `line <n>`, else at the end; the trailing text is the alt or the
-  link text; the diagram is drawn in the `--font` family:
+  link text; the diagram is drawn in the `--font` family, the bundled one without it:
 
   | Verb | Acts as |
   |---|---|
   | `insert-image <file> [crop <x>,<y>,<w>,<h>] [rotate 90\|180\|270] [width <px>] [to <dir>] [line <n>] [<alt>]` | Insert Image |
   | `insert-diagram <graphml> [to <dir>] [line <n>] [<alt>]` | Insert Diagram |
-  | `update-diagram-images [all]` | Update Diagram Images; `all` = Re-export All |
+  | `update-diagram-images [all]` | Update Diagram Images; `all` = Re-export All; `== update` and a `<line> updated <svg>` or `<line> failed <svg>: <reason>` per image, or `none`, on stdout |
   | `insert-link <target> [line <n>] [<text>]` | Insert Link; an anchor no heading has is refused (exit 4) |
   | `check` | Check: `== check` and a `<line>:<column> <message>` per finding, or `none`, on stdout |
   | `preview on\|off` | View > Preview |
