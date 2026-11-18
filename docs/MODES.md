@@ -1,7 +1,8 @@
 # The Document Modes — Architecture
 
-**Document version:** 0.15 (2026-11-15) — stages 1 to 9 implemented (see Stages). The
-requirements are `EDIT-MODE-1..28` in `EDITOR-SPEC.md` §4.14, the plugin parts
+**Document version:** 0.16 (2026-11-18) — stages 1 to 9 implemented (see Stages); 0.16: the
+text toolbar and the Markdown tools of a text tab (`EDIT-MD-1..12`, `docs/MARKDOWN.md`, Tools).
+The requirements are `EDIT-MODE-1..28` in `EDITOR-SPEC.md` §4.14, the plugin parts
 `EDIT-PLUG-56..60`.
 
 A tab holds one document in one **mode**: the format edited, the access, and the tools, the
@@ -230,6 +231,10 @@ The git plugin hands the revision of a diagram to a diff tab:
 * The proxy step lets the window's Undo and Redo, bound to the `QUndoGroup`, drive the text's own
   undo, and the stack's clean state gives the `*` of the title.
 * Save writes the text as it is, in UTF-8; Save As proposes the mode's first extension.
+* A text tab shows the Text toolbar in the place of the element tools and hides the Diagram
+  toolbar (`EDIT-MD-1`): Go to Line; in a Markdown tab Insert Image, Insert Diagram, Insert
+  Link and Update Diagram Images. View > Preview puts the rendered page beside the source of a
+  writable Markdown tab (`EDIT-MD-11`). The tools are `docs/MARKDOWN.md`, Tools.
 * A `CodeEditor` (a text tab, a side of a text diff tab) draws in the text editor font of the
   Preferences, `FontManager::editorFont()`, and follows its change (`EDIT-MODE-27`); the
   diagram font is another one.
@@ -319,13 +324,16 @@ File                              Document
                                      Check
                                      Reconstruct geometry   Update geometry
                                      Compare with...   [ ] Geometry   Refresh
+                                     Update Diagram Images            (a Markdown tab)
+Edit > Insert Image..., Insert Diagram..., Insert Link...   View > [ ] Preview   (a Markdown tab)
 ```
 
 * Document stands between Edit and View. Edit keeps Cut, Copy, Paste, Delete, the centring,
   Undo, Redo and Tools; Language, Markup and the two geometry actions move to Document; Edit >
   Inspector mode is gone.
 * A Mode entry the tab cannot reach is disabled; Read-only is checked and disabled in an
-  inspection or a diff tab; Geometry and Refresh act on a diff tab only; Check on an FA tab only.
+  inspection or a diff tab; Geometry and Refresh act on a diff tab only; Check on an FA and a
+  Markdown tab only; the inserts and Update Diagram Images on a Markdown tab only.
 * Properties... selects the Document element in the structure tree and the properties.
 
 ## Plugins
@@ -354,6 +362,7 @@ File                              Document
 | `--dump-tabs` | `i <title>[*] <mode>[ ro] [active]` |
 | `--dump` | a text tab: `== text`, a JSON one with `error:`; a diff tab: `== diff` (the pairs and their flags) |
 | `--export <file>.pdf` | a Markdown tab: the rendered PDF; another export of a text tab is a usage error |
+| `insert-image`, `insert-diagram`, `insert-link`, `update-diagram-images`, `check`, `preview` | the Markdown tools (`EDIT-MD-12`) |
 
 ## Code layout
 

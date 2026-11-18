@@ -1,7 +1,7 @@
 # Keyboard Shortcuts — Architecture
 
-**Document version:** 0.2 (2026-11-14). The requirements are `EDIT-KEYS-1..12` in
-`EDITOR-SPEC.md` §4.16.
+**Document version:** 0.3 (2026-11-18), the keys of the Markdown tools. The requirements are
+`EDIT-KEYS-1..12` in `EDITOR-SPEC.md` §4.16.
 
 Every built-in action of the window has a name, a list of default keys and, perhaps, the
 keys the user gave it. The Preferences edit them; only the changes are stored. A text being
@@ -54,6 +54,7 @@ have before 0.62.
 | | Find | the platform Find keys (`Ctrl+F`) | |
 | | Find Next, Find Previous | `F3`, `Shift+F3` and the platform keys | |
 | | Go to Line | `Alt+G` | *new* |
+| | Insert Image, Insert Link | `Ctrl+Shift+I`, `Ctrl+K` | *new* (0.3, `EDIT-MD-2/9`) |
 | Tools | Select | `Esc` | *new* |
 | | Pan, Zoom | `H`, `Z` | *new* |
 | | New State, Transition Tool | `S`, `T` | *new* |
@@ -71,8 +72,9 @@ have before 0.62.
 
 Without a default key: Open Terminal, the other element tools (terminate, the histories, the
 submachine state, the entry and exit points, the state machine), Center Horizontally /
-Vertically, the modes, Read-only, the geometry entries, Compare, Refresh, the other View
-toggles and docks, Zoom to SM, the other session entries, Plugin manager, About.
+Vertically, Insert Diagram, Update Diagram Images, Preview, the modes, Read-only, the geometry
+entries, Compare, Refresh, the other View toggles and docks, Zoom to SM, the other session
+entries, Plugin manager, About.
 
 ## The keys of a text
 

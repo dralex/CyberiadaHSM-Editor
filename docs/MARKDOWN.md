@@ -1,7 +1,8 @@
 # The Markdown Rendering — Architecture
 
-**Document version:** 0.12 (2026-11-14). The requirements are `EDIT-MODE-14`, `EDIT-MODE-17`,
-`EDIT-MODE-18` and `EDIT-TEXT-14` in `EDITOR-SPEC.md`.
+**Document version:** 0.13 (2026-11-18) — the authoring tools specified (Tools, stage 0).
+The requirements are `EDIT-MODE-14`, `EDIT-MODE-17`, `EDIT-MODE-18`, `EDIT-TEXT-14`,
+`EDIT-MD-1..12` and `EDIT-IO-8` in `EDITOR-SPEC.md`.
 
 The editor renders Markdown itself: a read-only Markdown tab (`docs/MODES.md`, Text tabs) and,
 when the preference is on, a Markdown comment body on the canvas. md4c reads the text, a TeX
@@ -206,6 +207,197 @@ document of its `EditableTextItem`:
   the border of the comment, as while the body is edited (`EDIT-EDGE-21`).
 * The setting off draws the canvas exactly as before; the good files of the render tests stay.
 
+## Tools
+
+A Markdown tab writes a course text: its images and diagrams live in the folders next to it,
+its links point to its headings and to the other texts (`EDIT-MD-1..12`).
+
+```
+ Text toolbar, Edit > Insert ..., a drop, a paste       Document > Update Diagram Images, Check
+        |                  |                  |                         |
+        v                  v                  v                         |
+ InsertImageDialog  InsertDiagramDialog  InsertLinkDialog               |     dialogs/
+        \                  |                  /                         |
+         +-----> markdown_tools.*: the paths and the copies, the written line,
+                 diagramSource, markdownHeadings, markdownCheck, renderDiagramFile
+                       |                                  |
+       TextDocument::insertBlock: one undo step    renderScene(..., metadata)
+       (the cursor, or line n in batch mode)       an off-tab model and scene, as a diff
+                                                   side has (cyberiadasm_render.*)
+```
+
+A course text and its files:
+
+```
+ 02-traffic-light-sm.md
+   ![Wiring](images/semaphore-arduino.png)                         Insert Image
+   [![Traffic light](diagrams/2/semaphore.svg)](diagrams/2/semaphore.graphml)   Insert Diagram
+   see [the HSM language](04-hsm-language.md#42-composite-states)  Insert Link
+ images/semaphore-arduino.png            copied, perhaps cropped
+ diagrams/2/semaphore.graphml            copied when it lay outside
+ diagrams/2/semaphore.svg                <metadata>: dc:source semaphore.graphml, the digest
+```
+
+### Paths and copies
+
+| Source | Written |
+|---|---|
+| a file inside the text's directory, not edited | linked where it is |
+| a file outside, or an edited image | saved into the folder: `images/`, `diagrams/` by default, the last one remembered |
+| a pasted image | `image-<n>.png`, the first free n |
+| a target with the same content | reused, nothing asked |
+| a target with another content | Replace, Keep both (`<name>-<n>.<ext>`), Cancel; batch keeps both |
+
+* A path is relative to the directory of the text, with `/`; `<path>` when it has a space or a
+  parenthesis; `\[`, `\]` in an alt or link text. The inserted line is a paragraph of its own.
+* An untitled text has no directory: Save and Insert first; the source image is never written.
+
+### Insert Image
+
+```
+ Insert Image ─────────────────────────────────────────────────────────
+ Source: /home/u/Pictures/scr-2026.png                        [Browse]
+ ┌──────────────────────────────────────────────┐  Crop  x 12  y 40
+ │   ┌────────────────────────┐                 │        w 800 h 450
+ │   │  crop frame, 8 handles │                 │  [Rotate ⟲] [Rotate ⟳]
+ │   └────────────────────────┘                 │  Width ≤ [ 800 ] px
+ └──────────────────────────────────────────────┘  [Reset]
+ Alt text: [Traffic light wiring                          ]
+ Save as:  [images/] [scr-2026.png        ]   (relative to the text)
+ Inserts:  ![Traffic light wiring](images/scr-2026.png)
+                                                    [Insert] [Cancel]
+```
+
+* The edits are for a raster image (`QImageReader`): crop, rotate (`QTransform`), scale down
+  (`Qt::SmoothTransformation`); written by `QImageWriter` in the source format, a JPEG at
+  quality 90. An SVG is copied as it is.
+
+### Insert Diagram and the diagram images
+
+```
+ Insert Diagram ───────────────────────────────────────────────────────
+ Diagram:  ( ) open tab [ semaphore.graphml        v]   (tabs with a file)
+           (•) file     [~/work/semaphore.graphml ] [Browse]
+ Copy to:  [diagrams/2/]                     (when it lies outside the text's directory)
+ Font:     [Cyberiada Mono  v]                (the export font)
+ Alt text: [Traffic light state machine                   ]
+ Writes:   diagrams/2/semaphore.graphml, diagrams/2/semaphore.svg
+ Inserts:  [![Traffic light state machine](diagrams/2/semaphore.svg)](diagrams/2/semaphore.graphml)
+                                                    [Insert] [Cancel]
+```
+
+The text links the image to its diagram; the SVG records where it was drawn from:
+
+```
+ [![alt](diagrams/2/x.svg)](diagrams/2/x.graphml)        the text
+        |                          |
+        | the image                | Ctrl+click (source), a click (rendered page): its tab
+        v                          v
+   x.svg  <metadata>  ── dc:source, cyb:sourceDigest ──>  x.graphml
+```
+
+* `diagramSource(text, image)` — the diagram of an image (`EDIT-MD-6`), in this order: the
+  `.graphml` the image is linked to; the `dc:source` of the SVG's metadata; the `.graphml`
+  beside the SVG with its base name (every diagram image of the course texts today).
+* The provenance belongs to the image, not to the texts using it, so it is stored where
+  SVG 1.1 §21 puts metadata: an RDF description with Dublin Core `dc:source` ("a related
+  resource from which the described resource is derived") and two terms of the editor's own
+  namespace `https://cyberiada.dev/ns/svg#` (`EDIT-IO-8`):
+
+```xml
+<svg ... xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:dc="http://purl.org/dc/elements/1.1/"
+         xmlns:cyb="https://cyberiada.dev/ns/svg#">
+<title>Traffic light</title>
+<desc>Generated by CyberiadaPro from semaphore.graphml</desc>
+<metadata><rdf:RDF><rdf:Description rdf:about="">
+  <dc:source>semaphore.graphml</dc:source>              relative to the SVG
+  <dc:format>image/svg+xml</dc:format>
+  <cyb:sourceDigest>sha256:9f2c…</cyb:sourceDigest>      the diagram file drawn
+  <cyb:font>Courier New</cyb:font>                       the family the text is drawn in
+</rdf:Description></rdf:RDF></metadata>
+```
+
+* Out of date = the digest is not the SHA-256 of the diagram file, or there is none: a git
+  checkout gives every file the time of the checkout, so the times tell nothing.
+* `QSvgGenerator` writes its own `<title>`, `<desc>` and no `<metadata>`: with the metadata on,
+  `renderScene` generates into a `QBuffer`, sets the title and the description, inserts the
+  namespaces into `<svg>` and the block after `<desc>`, then writes the file. QtSvg,
+  `expandSvgMarkers` and the browsers draw it as before. Off, the bytes are today's.
+* Update Diagram Images keeps the look of the SVG it replaces: the `cyb:font`, else the first
+  `font-family` of the old SVG (the course SVGs are Courier New), else the export font. The
+  diagram is read from its saved file into an off-tab model and scene, drawn, and dropped.
+
+### Check
+
+```
+ Diagnostics ─ 02-traffic-light-sm.md ─────────────────────────────────
+ ▲ 92:1   image not found: images/lego-cooker.png
+ ▲ 141:1  diagram image out of date: diagrams/2/microwave.graphml
+ ▲ 210:15 no heading for #states-and-events
+ ▲ 233:4  no heading for 04-hsm-language.md#composite
+ ▲ 240:1  linked to diagrams/2/day.graphml, its SVG names diagrams/2/night.graphml
+```
+
+* `markdownCheck(text, baseDir)` walks the link and image targets of `markdownSpans` and the
+  headings of `markdownHeadings`; a finding goes to Diagnostics as an editor finding
+  (`PluginDock::showEditorFindings`) with its line, a click putting the cursor there.
+* A site (`https:`, `mailto:`) is never fetched: the check needs no network.
+
+### Insert Link
+
+```
+ Insert Link ──────────────────────────────────────────────────────────
+ Text:   [the HSM language             ]   (the selection, if any)
+ Target: (•) heading  Text:    [04-hsm-language.md            v] [Browse]
+                               this text | the .md files of the directory
+                      Heading: [  4.2 Composite states         v]  (indented by level)
+         ( ) file     [programs/semaphore/semaphore.ino      ] [Browse]
+         ( ) address  [https://                              ]
+ Inserts: [the HSM language](04-hsm-language.md#42-composite-states)
+                                                    [Insert] [Cancel]
+```
+
+* `markdownHeadings(text)` → {level, title, anchor, line}: one reading of the headings (not
+  in a code fence) for the dialog, the check, `TextDocument::goToHeading` and
+  `MarkdownView::scrollToHeading`, which number a repeated anchor alike (`-1`, `-2`); a
+  Cyrillic heading keeps its letters, as GitHub does: `## 4.2 Составные состояния` is
+  `#42-составные-состояния`.
+* The headings of another text come from its tab when it is open (the unsaved ones too).
+* Opening `file.md#anchor`: `openFileRequested(path, fragment)`; the window opens or activates
+  the tab, then goes to the heading in the source or scrolls the rendered page to it.
+
+### The preview
+
+```
+ ┌ 02-traffic-light-sm.md [Markdown] ───────────────────────────────────┐
+ │ CodeEditor (source)              ┃ MarkdownView (rendered)          │
+ │ ## 3.2 States and events         ┃  3.2 States and events            │
+ │ ![Traffic](diagrams/2/s.svg)     ┃  [diagram]                        │
+ └──────────────────────────────────┸───────────────────────────────────┘
+   contentsChange ─ 300 ms single-shot timer ─> importMarkdown(text, baseDir), the scroll kept
+   cursor to another block ─> the rendered block of that source line scrolled into view
+```
+
+* View > Preview splits each writable Markdown tab (`display/markdownPreview`); the read-only
+  flag still shows the rendered page alone.
+* The reader keeps the source offset of each block it inserts, so a source line finds its
+  rendered block; the image and formula caches keep a re-render cheap.
+
+### Stages
+
+1. The toolbars: `mainToolBar` split into Main and Diagram (`smeditor_window.ui`), the Text
+   toolbar, `showDiagramParts` hiding Diagram and Elements.
+2. Insert Image: `markdown_tools.*`, `dialogs/insert_image_dialog.*`, the drop and the paste of
+   `CodeEditor`, `insert-image`.
+3. Insert Diagram, Update Diagram Images and the SVG metadata: `renderScene(..., metadata)`,
+   the Export checkbox, `--svg-metadata`, `dialogs/insert_diagram_dialog.*`, the rendered page
+   opening the editor's files in a tab, `insert-diagram`, `update-diagram-images`.
+4. Check: `markdownCheck`, Check routed by the mode, `check`.
+5. Insert Link: `markdownHeadings`, `dialogs/insert_link_dialog.*`, `file.md#anchor`,
+   `insert-link`.
+6. The preview: the splitter page of `TextDocument`, the block offsets, `preview`.
+
 ## Build
 
 | Part | Where | Licence |
@@ -242,3 +434,12 @@ document of its `EditableTextItem`:
 `l2-render-markdown` runs the batch verb: the dump and the saved document stay as they are.
 `mode-markdown-pdf` exports `texts/markdown.md` to PDF in batch mode; `mode-markdown-export-reject`
 (a PNG of a Markdown text) and `mode-text-export-reject` (a PDF of a C++ text) are usage errors.
+
+The tools (planned with their stages): `l4-markdown-tools` — the paths and the copies, a name
+clash, the crop, rotation and scale sizes, the inserted line and its single undo step,
+`diagramSource` (the linked image, the metadata, the sibling, a mismatch), the digest, the font
+kept by an update, the headings and anchors of another text (repeats, Cyrillic, an open tab's
+unsaved heading), the preview re-render and scroll; `md-*` batch cases for every verb of
+`EDIT-MD-12` against good files, the untitled refusal (exit 4); `export-svg-metadata` — the
+checkbox off gives today's SVG byte for byte, on the metadata, the same drawing (an image
+compare), the refusal for a modified diagram.
