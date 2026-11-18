@@ -181,6 +181,8 @@
     <addaction name="actionFindPrevious"/>
     <addaction name="actionGoToLine"/>
     <addaction name="separator"/>
+    <addaction name="actionInsertImage"/>
+    <addaction name="separator"/>
     <addaction name="menuTools"/>
    </widget>
    <widget class="QMenu" name="menuDocument">
@@ -382,6 +384,18 @@
   <action name="actionFindPrevious">
    <property name="text">
     <string>Find Previous</string>
+   </property>
+  </action>
+  <action name="actionInsertImage">
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/insert-image.png</normaloff>:/Icons/images/insert-image.png</iconset>
+   </property>
+   <property name="text">
+    <string>Insert Image...</string>
+   </property>
+   <property name="toolTip">
+    <string>Insert an image into the Markdown text</string>
    </property>
   </action>
   <action name="actionGoToLine">

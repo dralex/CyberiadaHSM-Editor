@@ -1,0 +1,25 @@
+== tabs
+count: 1
+0 notes.md* markdown active
+== text
+mode: markdown
+file: notes.md
+modified: yes
+rendered: no
+lines: 16
+| ![An arrow](images/arrow.svg)
+| 
+| # The traffic light
+| 
+| The light has three states: **red**, *yellow* and green.
+| 
+| - the timer switches the states
+| - the button asks for green
+| 
+| ![Red](images/quadrants.png)
+| 
+| ![quadrants](images/quadrants-1.png)
+| 
+| ![Red again](images/quadrants.png)
+| 
+| ![Turned \[q\]](figures/quadrants.png)

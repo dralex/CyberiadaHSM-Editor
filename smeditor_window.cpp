@@ -43,6 +43,7 @@
 #include <QEventLoop>
 #include <QHeaderView>
 #include <QInputDialog>
+#include <QPushButton>
 #include <QTreeWidget>
 #include <QTreeWidgetItemIterator>
 
@@ -59,6 +60,8 @@
 #include "dialogs/open_file_dialog.h"
 #include "dialogs/save_file_dialog.h"
 #include "dialogs/export_image_dialog.h"
+#include "dialogs/insert_image_dialog.h"
+#include "markdown_tools.h"
 #include "settings_manager.h"
 #include "cyberiadasm_render.h"
 #include "gesture_log.h"
@@ -126,6 +129,11 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     centralLayout->addWidget(m_findBar);
     m_findBar->hide();
     connect(actionGoToLine, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotGoToLine);
+    connect(actionInsertImage, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotInsertImage);
+    // the Markdown group of the text toolbar, shown in a Markdown tab (EDIT-MD-1)
+    QAction* markdownSeparator = new QAction(this);
+    markdownSeparator->setSeparator(true);
+    markdownToolActions << markdownSeparator << actionInsertImage;
     connect(actionFind, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotFind);
     connect(actionFindNext, &QAction::triggered, this, [this]() { slotFindStep(1); });
     connect(actionFindPrevious, &QAction::triggered, this, [this]() { slotFindStep(-1); });
@@ -317,6 +325,8 @@ TextDocument* CyberiadaSMEditorWindow::newTextDocument(const QString& mode)
     // a file a link names opens as a recent one does, after the click (EDIT-MODE-28)
     connect(doc, &TextDocument::openFileRequested, this, &CyberiadaSMEditorWindow::openRecentFile,
             Qt::QueuedConnection);
+    connect(doc, &TextDocument::imageOffered, this,
+            [this, doc](const QString& path, const QImage& image) { insertImage(doc, path, image); });
     return doc;
 }
 
@@ -978,6 +988,90 @@ void CyberiadaSMEditorWindow::slotGoToLine()
     if (ok) text->goToLine(line);
 }
 
+void CyberiadaSMEditorWindow::updateMarkdownActions()
+{
+    TextDocument* text = currentText();
+    bool markdown = text && text->mode() == MODE_MARKDOWN;
+    // the source of a writable Markdown text takes the inserts (EDIT-MD-1)
+    actionInsertImage->setEnabled(markdown && text->isEditable() && !text->showsRendered());
+    showMarkdownTools(markdown);
+}
+
+void CyberiadaSMEditorWindow::showMarkdownTools(bool on)
+{
+    if (textToolBar->actions().contains(markdownToolActions.first()) == on) return;
+    if (on) textToolBar->addActions(markdownToolActions);
+    else for (QAction* action : markdownToolActions) textToolBar->removeAction(action);
+}
+
+bool CyberiadaSMEditorWindow::ensureTextFile(TextDocument* text, const QString& title)
+{
+    if (text->hasFile()) return true;
+    if (qApp->property("batchMode").toBool()) return false;
+    QMessageBox box(QMessageBox::Question, title,
+                    tr("The text has no file yet. The inserted files are saved in its folder, "
+                       "so the text is saved first."),
+                    QMessageBox::Cancel, this);
+    QPushButton* save = box.addButton(tr("Save and Insert"), QMessageBox::AcceptRole);
+    box.setDefaultButton(save);
+    box.exec();
+    if (box.clickedButton() != save) return false;
+    setCurrentDocument(text);
+    slotFileSaveAs();
+    return text->hasFile();
+}
+
+void CyberiadaSMEditorWindow::slotInsertImage()
+{
+    TextDocument* text = currentText();
+    if (!text || text->mode() != MODE_MARKDOWN || !text->isEditable()) return;
+    if (!ensureTextFile(text, tr("Insert Image"))) return;
+    CyberiadaFileDialog dlg(this, tr("Insert Image"), imageFileFilter());
+    dlg.setFileMode(QFileDialog::ExistingFile);
+    if (dlg.exec() != QDialog::Accepted || dlg.selectedFile().isEmpty()) return;
+    insertImage(text, dlg.selectedFile(), QImage());
+}
+
+void CyberiadaSMEditorWindow::insertImage(TextDocument* text, const QString& source, const QImage& pasted)
+{
+    if (!text || text->mode() != MODE_MARKDOWN || !text->isEditable()) return;
+    if (!ensureTextFile(text, tr("Insert Image"))) return;
+    SettingsManager& sm = SettingsManager::instance();
+    InsertImageDialog dlg(source, pasted, text->baseDir(), sm.getMarkdownImageFolder(), this);
+    // a refused name or a failed write goes back to the dialog as it was
+    while (dlg.exec() == QDialog::Accepted) {
+        ImageInsert insert = dlg.insert();
+        QByteArray data;
+        QString format, error;
+        if (!imageInsertData(insert, &data, &format, &error)) {
+            QMessageBox::warning(this, tr("Insert Image"), error);
+            continue;
+        }
+        if (imageTargetClashes(insert, data)) {
+            QMessageBox box(QMessageBox::Question, tr("Insert Image"),
+                            tr("%1 exists with another content.").arg(markdownPath(insert.target, insert.baseDir)),
+                            QMessageBox::Cancel, this);
+            QPushButton* replace = box.addButton(tr("Replace"), QMessageBox::DestructiveRole);
+            QPushButton* both = box.addButton(tr("Keep Both"), QMessageBox::AcceptRole);
+            box.setDefaultButton(both);
+            box.exec();
+            if (box.clickedButton() == both) {
+                QFileInfo target(insert.target);
+                insert.target = numberedFileName(target.absolutePath(), target.completeBaseName(), target.suffix());
+            } else if (box.clickedButton() != replace) {
+                continue;
+            }
+        }
+        if (!writeImageInsert(insert, data, &error)) {
+            QMessageBox::warning(this, tr("Insert Image"), error);
+            continue;
+        }
+        if (!dlg.folder().isEmpty()) sm.setMarkdownImageFolder(dlg.folder());
+        text->insertBlock(markdownImageLine(insert.alt, insert.target, insert.baseDir), 0, tr("insert image"));
+        return;
+    }
+}
+
 void CyberiadaSMEditorWindow::slotFind()
 {
     if (!active || !active->canFind()) return;
@@ -1332,6 +1426,7 @@ void CyberiadaSMEditorWindow::updateEditActions()
     if (!active) return;   // the documents are gone (destructor)
     updateFindActions();
     updateTerminalAction();
+    updateMarkdownActions();
     if (!current) {
         if (currentText()) updateTextActions();
         else updateDiffActions();

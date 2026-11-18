@@ -96,6 +96,7 @@ TextDocument::TextDocument(const QString& mode, QObject* parent):
     connect(m_document, &QTextDocument::contentsChanged, this, &TextDocument::scheduleCheck);
     connect(m_editor, &CodeEditor::errorClicked, this, &TextDocument::showError);
     connect(m_editor, &CodeEditor::linkActivated, this, &TextDocument::openLink);
+    connect(m_editor, &CodeEditor::imageOffered, this, &TextDocument::imageOffered);
     applyMode();
 }
 
@@ -136,6 +137,8 @@ void TextDocument::applyMode()
     m_highlighter = nullptr;
     // only the text of a Markdown takes the typed replacements (EDIT-AUTO-2/3)
     m_editor->setAutoreplaceKind(m_mode == MODE_MARKDOWN ? autoreplaceMarkdown : autoreplaceNone);
+    // a dropped or pasted image goes to Insert Image (EDIT-MD-2)
+    m_editor->setImageDrops(m_mode == MODE_MARKDOWN);
     // the source of a language as its code, Markdown by its elements (EDIT-TEXT-7/11)
     if (m_mode == MODE_MARKDOWN) {
         m_highlighter = new CodeHighlighter(m_document, codeRoleMarkup, nullptr, codeMarkupMarkdown);
@@ -306,6 +309,52 @@ bool TextDocument::replaceText(const QString& text, const QString& label)
     cursor.insertText(text);
     cursor.endEditBlock();
     m_stepName.clear();
+    showPage();
+    checkText();
+    return true;
+}
+
+static bool isBlankBlock(const QTextBlock& block)
+{
+    return block.text().trimmed().isEmpty();
+}
+
+bool TextDocument::insertBlock(const QString& line, int before, const QString& label)
+{
+    if (!isEditable()) return false;
+    int count = m_document->blockCount();
+    // the paragraph goes before the block `at`; count is after the last one
+    int at = 0;
+    if (before > 0) {
+        at = qMin(before - 1, count);
+    } else {
+        QTextBlock block = m_editor->textCursor().block();
+        if (isBlankBlock(block)) {
+            at = block.blockNumber();
+        } else {
+            while (block.next().isValid() && !isBlankBlock(block.next())) block = block.next();
+            at = block.blockNumber() + 1;
+        }
+    }
+    bool blankBefore = at == 0 || isBlankBlock(m_document->findBlockByNumber(at - 1));
+    bool blankAfter = at == count || isBlankBlock(m_document->findBlockByNumber(at));
+    QString text = (blankBefore ? QString() : QString("\n")) + line + (blankAfter ? QString() : QString("\n"));
+    m_stepName = label;
+    QTextCursor cursor(m_document);
+    cursor.beginEditBlock();
+    if (at < count) {
+        cursor.setPosition(m_document->findBlockByNumber(at).position());
+        cursor.insertText(text + "\n");
+    } else {
+        cursor.movePosition(QTextCursor::End);
+        cursor.insertText("\n" + text);
+    }
+    cursor.endEditBlock();
+    m_stepName.clear();
+    QTextCursor end(m_document->findBlockByNumber(at + (blankBefore ? 0 : 1)));
+    end.movePosition(QTextCursor::EndOfBlock);
+    m_editor->setTextCursor(end);
+    m_editor->ensureCursorVisible();
     showPage();
     checkText();
     return true;

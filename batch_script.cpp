@@ -43,6 +43,8 @@
 #include "cyberiadasm_dump.h"
 #include "editable_text_item.h"
 #include "settings_manager.h"
+#include "markdown_tools.h"
+#include "text_document.h"
 
 static bool toNumbers(const QStringList& tokens, int from, int count, double* values)
 {
@@ -1131,6 +1133,97 @@ static bool runDocumentVerb(CyberiadaSMEditorWindow* win, const QStringList& tok
 	return win->closeDocument(doc, true);
 }
 
+// the Markdown verbs (EDIT-MD-12): the tools of the active Markdown tab
+static bool isMarkdownVerb(const QString& cmd)
+{
+	return cmd == "insert-image";
+}
+
+// the active Markdown tab with a file: the inserted files go into its folder (EDIT-MD-4)
+static TextDocument* markdownTab(CyberiadaSMEditorWindow* win, const QString& cmd, QString* error)
+{
+	TextDocument* text = win->currentText();
+	if (!text || text->mode() != MODE_MARKDOWN) {
+		*error = cmd + " needs an active Markdown tab";
+		return nullptr;
+	}
+	if (!text->isEditable()) {
+		*error = "the tab is read-only";
+		return nullptr;
+	}
+	if (!text->hasFile()) {
+		*error = "the text has no file: save <file> names one";
+		return nullptr;
+	}
+	return text;
+}
+
+// insert-image <file> [crop <x>,<y>,<w>,<h>] [rotate 90|180|270] [width <px>] [to <dir>]
+// [line <n>] [<alt>]: Insert Image, a clash keeping both (EDIT-MD-2/3)
+static bool insertImageVerb(CyberiadaSMEditorWindow* win, const QStringList& tokens, QString* error)
+{
+	TextDocument* text = markdownTab(win, tokens.first(), error);
+	if (!text) return false;
+	if (tokens.size() < 2) { *error = "insert-image needs an image file"; return false; }
+	ImageInsert insert;
+	insert.source = QFileInfo(tokens[1]).absoluteFilePath();
+	insert.baseDir = text->baseDir();
+	if (!isInsertableImage(insert.source)) { *error = "not an image: " + tokens[1]; return false; }
+	QString folder = MARKDOWN_IMAGE_FOLDER;
+	int before = text->lineCount() + 1;
+	int i = 2;
+	for (; i + 1 < tokens.size(); i += 2) {
+		const QString& key = tokens[i];
+		const QString& value = tokens[i + 1];
+		bool ok = true;
+		if (key == "crop") {
+			QStringList n = value.split(',');
+			int v[] = {0, 0, 0, 0};
+			const int parts = sizeof(v) / sizeof(v[0]);
+			ok = n.size() == parts;
+			for (int k = 0; ok && k < parts; k++) v[k] = n[k].toInt(&ok);
+			ok = ok && v[2] > 0 && v[3] > 0;
+			if (ok) insert.edits.crop = QRect(v[0], v[1], v[2], v[3]);
+		} else if (key == "rotate") {
+			insert.edits.rotation = value.toInt(&ok);
+			ok = ok && insert.edits.rotation > 0 && insert.edits.rotation < IMAGE_FULL_TURN &&
+				insert.edits.rotation % IMAGE_QUARTER_TURN == 0;
+		} else if (key == "width") {
+			insert.edits.maxWidth = value.toInt(&ok);
+			ok = ok && insert.edits.maxWidth > 0;
+		} else if (key == "to") {
+			folder = value;
+		} else if (key == "line") {
+			before = value.toInt(&ok);
+			ok = ok && before > 0;
+		} else {
+			break;
+		}
+		if (!ok) { *error = QString("bad %1 value %2").arg(key, value); return false; }
+	}
+	insert.alt = i < tokens.size() ? restOfLine(tokens, i) : QFileInfo(insert.source).completeBaseName();
+	if (isSvgFile(insert.source) && !insert.edits.isEmpty()) {
+		*error = "an SVG image is copied as it is, without the edits";
+		return false;
+	}
+	insert.target = proposeImageTarget(insert, folder);
+	QByteArray data;
+	QString format;
+	if (!imageInsertData(insert, &data, &format, error)) return false;
+	if (imageTargetClashes(insert, data)) {
+		QFileInfo target(insert.target);
+		insert.target = numberedFileName(target.absolutePath(), target.completeBaseName(), target.suffix());
+	}
+	if (!writeImageInsert(insert, data, error)) return false;
+	return text->insertBlock(markdownImageLine(insert.alt, insert.target, insert.baseDir), before,
+							 "insert image");
+}
+
+static bool runMarkdownVerb(CyberiadaSMEditorWindow* win, const QStringList& tokens, QString* error)
+{
+	return insertImageVerb(win, tokens, error);
+}
+
 bool runEditScript(CyberiadaSMEditorWindow* win, const QString& path, QString* error,
 				   BatchPluginRuns* plugins)
 {
@@ -1161,12 +1254,14 @@ bool runEditScript(CyberiadaSMEditorWindow* win, const QString& path, QString* e
 		// run, not on a document
 		const QString& cmd = tokens.first();
 		bool docVerb = isDocumentVerb(cmd);
+		bool markdownVerb = isMarkdownVerb(cmd);
 		// a plugin run pushes its own step, a replace result (EDIT-PLUG-12)
 		bool pluginVerb = cmd == "plugin";
-		bool step = !docVerb && !pluginVerb && !isSettingVerb(cmd) && cmd != "undo" && cmd != "redo" &&
+		bool step = !docVerb && !markdownVerb && !pluginVerb && !isSettingVerb(cmd) && cmd != "undo" && cmd != "redo" &&
 			!isGesture(cmd);
-		// a text tab takes the document, the plugin and the setting verbs only (EDIT-MODE-16)
-		if (!model && !docVerb && !pluginVerb && !isSettingVerb(cmd)) {
+		// a text tab takes the document, the Markdown, the plugin and the setting verbs only
+		// (EDIT-MODE-16, EDIT-MD-12)
+		if (!model && !docVerb && !markdownVerb && !pluginVerb && !isSettingVerb(cmd)) {
 			*error = QString("line %1: the active tab holds no diagram").arg(lineno);
 			return false;
 		}
@@ -1179,6 +1274,8 @@ bool runEditScript(CyberiadaSMEditorWindow* win, const QString& path, QString* e
 				// the verbs change the active document
 				model = win->getModel();
 				scene = win->getScene();
+			} else if (markdownVerb) {
+				ok = runMarkdownVerb(win, tokens, &message);
 			} else if (isSettingVerb(cmd)) {
 				ok = runSettingVerb(tokens, &message);
 			} else if (isGesture(cmd)) {

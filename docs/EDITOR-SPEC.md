@@ -1482,7 +1482,8 @@ architecture is `docs/MARKDOWN.md`, Tools. Specified in 0.72.
   tab's file (a subfolder too) and not edited is linked where it is; another one is saved into
   the folder (`images/` by default, the last one used remembered, `markdown/imageFolder`); a
   pasted one as `image-<n>.png`, the first free n. A target that exists with another content
-  asks Replace, Keep both (`<name>-<n>.<ext>`) or Cancel. *design*
+  asks Replace, Keep both (`<name>-<n>.<ext>`) or Cancel, which goes back to the dialog.
+  *design*
 - `EDIT-MD-3` MUST [A]: a raster image (a format Qt reads) is edited in the dialog: a crop frame
   with eight handles and its numbers, a rotation by 90° either way, a width limit scaling it
   down in its proportions, Reset. The edited image is saved as a new file in the format of its
@@ -1490,8 +1491,8 @@ architecture is `docs/MARKDOWN.md`, Tools. Specified in 0.72.
   edited, is proposed as `<name>-<n>.<ext>`. An SVG is copied as it is, without the edits.
   *design*
 - `EDIT-MD-4` MUST [A]: the paths are relative to the directory of the tab's file, with `/`; a
-  path with a space or a parenthesis is written as `<path>`, a `[` or `]` of an alt or link text
-  as `\[`, `\]`. An untitled tab has no directory: Insert Image, Insert Diagram and Insert Link
+  path with a space or a parenthesis is written as `<path>`, a `\`, `[` or `]` of an alt or link
+  text with a `\` before it. An untitled tab has no directory: Insert Image, Insert Diagram and Insert Link
   first ask Save and Insert or Cancel; the batch verbs refuse it (exit 4). *design*
 - `EDIT-MD-5` MUST [A]: Edit > Insert Diagram... opens the Insert Diagram dialog: the diagram —
   an open diagram tab with a file (its saved file is drawn, a modified tab is told so) or a

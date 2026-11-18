@@ -24,6 +24,8 @@
 #ifndef CYBERIADA_TEXT_DOCUMENT
 #define CYBERIADA_TEXT_DOCUMENT
 
+#include <QImage>
+
 #include "editor_document.h"
 #include "json_text.h"
 
@@ -67,6 +69,11 @@ public:
     // the whole text replaced as one undo step of the label; false when it is the
     // same text (EDIT-PLUG-12/57)
     bool             replaceText(const QString& text, const QString& label);
+    // a line as a paragraph of its own, blank lines around it, one undo step of the label
+    // (EDIT-MD-2/12): before the line `before` from 1 (past the end after the last one), at 0
+    // after the paragraph of the cursor or on its blank line; the cursor at its end; false
+    // when the text is not editable
+    bool             insertBlock(const QString& line, int before, const QString& label);
     // write the text to the file, which becomes the document's
     bool             saveAs(const QString& path, QString* error);
     QString          text() const;
@@ -108,6 +115,8 @@ public:
 signals:
     // a file a link names that the editor opens in a tab (EDIT-MODE-28)
     void             openFileRequested(const QString& path);
+    // an image dropped on or pasted into a Markdown source (EDIT-MD-2)
+    void             imageOffered(const QString& path, const QImage& image);
 
 protected:
     void             applyReadOnlyFlag(bool on) override;

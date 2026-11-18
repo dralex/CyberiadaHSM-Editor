@@ -38,6 +38,7 @@
 #include "meta_choice_menu.h"
 
 class QToolBar;
+class QImage;
 class QComboBox;
 class QMenu;
 class QUndoGroup;
@@ -111,6 +112,9 @@ public:
     EditorDocument*         currentTab() const { return active; }
     CyberiadaSMEditorDocument* currentDocument() const { return current; }
     TextDocument*           currentText() const { return qobject_cast<TextDocument*>(active); }
+    // Insert Image of a Markdown tab on a file, or on a pasted image when source is empty:
+    // the dialog, the copy and the line (EDIT-MD-2/3)
+    void                    insertImage(TextDocument* text, const QString& source, const QImage& pasted);
     DiffDocument*           currentDiff() const { return qobject_cast<DiffDocument*>(active); }
     // a diff or a text diff tab
     ComparisonDocument*     currentComparison() const { return qobject_cast<ComparisonDocument*>(active); }
@@ -210,6 +214,11 @@ private:
     void                    updateDiffActions();
     // the switches of the canvas view: off in a text tab (EDIT-MODE-15)
     void                    enableCanvasSwitches(bool on);
+    // the inserts of a Markdown tab and their group on the text toolbar (EDIT-MD-1)
+    void                    updateMarkdownActions();
+    void                    showMarkdownTools(bool on);
+    // a text without a file is saved first, its folder holding the inserted files (EDIT-MD-4)
+    bool                    ensureTextFile(TextDocument* text, const QString& title);
     // Find, Find Next and Find Previous and the bar follow the active tab (EDIT-FIND-9)
     void                    updateFindActions();
     // Open Terminal needs a tab with a file (EDIT-DOC-12)
@@ -303,6 +312,8 @@ private slots:
     // Edit > Find, Find Next, Find Previous and the bar (EDIT-FIND-1..3)
     void                    slotFind();
     void                    slotGoToLine();
+    // Edit > Insert Image... (EDIT-MD-2)
+    void                    slotInsertImage();
     void                    slotFindStep(int step);
     void                    slotFindQueryChanged(const FindQuery& query);
     void                    slotFindClosed();
@@ -368,6 +379,8 @@ private:
     CyberiadaSMEditorDocument* current = nullptr;
     // the toolbars hidden for the tab's kind, not by the user: shown again with their kind
     QSet<QToolBar*>         modeHiddenBars;
+    // the Markdown group of the text toolbar, after a separator
+    QList<QAction*>         markdownToolActions;
     QTreeWidget*            m_changeList = nullptr;
     FindBar*                m_findBar = nullptr;
     ShortcutMap*            m_shortcuts = nullptr;

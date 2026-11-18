@@ -353,6 +353,39 @@ add_text_test(text-compare-whitespace texts/diff-target.py 0)
 add_text_test(text-compare-tab texts/diff-target.py 0)
 add_text_test(text-compare-reject texts/diff-target.py 4)
 
+# the Markdown tools (EDIT-MD-12): a text of texts/ copied into a fresh work dir, so the
+# files it inserts are written next to the copy
+function(add_markdown_test name input expected_code)
+  set(_work ${CMAKE_CURRENT_BINARY_DIR}/md-${name})
+  get_filename_component(_file ${input} NAME)
+  set(_good)
+  if(expected_code EQUAL 0)
+    set(_good -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/md-${name}.out
+              -DDUMP_GOOD=${CMAKE_CURRENT_SOURCE_DIR}/good/md-${name}-output.txt)
+  endif()
+  add_test(NAME md-${name}
+    COMMAND ${CMAKE_COMMAND}
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaPro>
+      -DCLEAN_DIR=${_work}
+      "-DSEED=${CMAKE_CURRENT_SOURCE_DIR}/${input}>${_work}/${_file}"
+      -DINPUT=${_work}/${_file}
+      -DSCRIPT=scripts/md-${name}.script
+      -DDUMP_TABS=1
+      -DEXPECTED=${expected_code}
+      -DWORKDIR=${CMAKE_CURRENT_SOURCE_DIR}
+      ${_good}
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunBatchTest.cmake)
+  set_tests_properties(md-${name} PROPERTIES
+    TIMEOUT 60
+    ENVIRONMENT "${L0_ENVIRONMENT}")
+endfunction()
+
+add_markdown_test(insert-image texts/notes.md 0)
+add_markdown_test(insert-image-svg-edit-reject texts/notes.md 4)
+add_markdown_test(insert-image-untitled-reject texts/notes.md 4)
+add_markdown_test(insert-image-option-reject texts/notes.md 4)
+add_text_test(markdown-image-diagram-reject diagrams/hierarchy.graphml 4)
+
 # the export of a text tab: a Markdown text to PDF only (EDIT-MODE-16/18)
 function(add_text_export_test name input output expected_code)
   set(_magic)
@@ -786,6 +819,7 @@ add_l4_test(autoreplace)
 add_l4_test(textdiff)
 add_l4_test(colors)
 add_l4_test(json)
+add_l4_test(markdown-tools)
 
 # The plugin layer: the batch plugin stage over the example plugins of
 # plugins/<set>/, which all run one helper with no dependencies (see

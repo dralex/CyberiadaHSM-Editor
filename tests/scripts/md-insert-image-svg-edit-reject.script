@@ -1,0 +1,2 @@
+# an SVG is copied as it is, without the edits (EDIT-MD-3)
+insert-image texts/images/arrow.svg crop 0,0,1,1

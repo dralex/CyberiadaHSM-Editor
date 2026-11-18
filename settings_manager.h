@@ -141,6 +141,9 @@ public:
     // the last font family chosen in the image export dialog (empty = bundled)
     QString getExportFontFamily() const { return exportFontFamily; }
     void setExportFontFamily(const QString& value);
+    // the folder an image is copied into, relative to the Markdown text (EDIT-MD-2)
+    QString getMarkdownImageFolder() const { return markdownImageFolder; }
+    void setMarkdownImageFolder(const QString& value);
 
     QColor getSelectionColor() const { return selectionColor; }
     void setSelectionColor(QColor value);
@@ -275,6 +278,7 @@ private:
     bool optionsExpanded;
     int exportDpi;
     QString exportFontFamily;
+    QString markdownImageFolder;
 
     // selection
     QColor selectionColor;

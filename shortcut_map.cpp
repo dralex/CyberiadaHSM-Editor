@@ -52,6 +52,7 @@ const DefaultKeys DEFAULT_KEYS[] = {
     { "actionFindNext",         "F3",                   QKeySequence::FindNext },
     { "actionFindPrevious",     "Shift+F3",             QKeySequence::FindPrevious },
     { "actionGoToLine",         "Alt+G",                QKeySequence::UnknownKey },
+    { "actionInsertImage",      "Ctrl+Shift+I",         QKeySequence::UnknownKey },
     { "actionSelectTool",       "Esc",                  QKeySequence::UnknownKey },
     { "actionPan",              "H",                    QKeySequence::UnknownKey },
     { "actionZoomTool",         "Z",                    QKeySequence::UnknownKey },

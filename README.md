@@ -23,7 +23,9 @@ The informal comments in Markdown are highlighted as well (Document > Markup).
 Each tab has a mode (Document > Mode): an HSM diagram, a finite
 automaton (FA) diagram, or a text - plain, Markdown, JSON or a C, C++, C# or Python
 source, highlighted; any tab can also be made read-only (a read-only Markdown tab shows
-the rendered document with its TeX formulas and SVG images).
+the rendered document with its TeX formulas and SVG images). A Markdown text takes images
+by Edit > Insert Image, a drop or a paste: copied next to the text, cropped, turned or
+scaled down on the way.
 
 The Find and Text File Compare functions are available as well as other
 useful IDE features.

@@ -25,6 +25,8 @@
 #include <QHelpEvent>
 #include <QKeyEvent>
 #include <QMenu>
+#include <QMimeData>
+#include <QUrl>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QTextBlock>
@@ -33,6 +35,7 @@
 #include "code_editor.h"
 #include "cyberiada_constants.h"
 #include "fontmanager.h"
+#include "markdown_tools.h"
 #include "settings_manager.h"
 #include "text_scheme.h"
 
@@ -338,4 +341,35 @@ void CodeEditor::contextMenuEvent(QContextMenuEvent* event)
     }
     menu->exec(event->globalPos());
     delete menu;
+}
+
+// the first local image file of a drop or a paste, empty when none
+static QString offeredImageFile(const QMimeData* source)
+{
+    for (const QUrl& url : source->urls()) {
+        if (url.isLocalFile() && isInsertableImage(url.toLocalFile())) return url.toLocalFile();
+    }
+    return QString();
+}
+
+bool CodeEditor::canInsertFromMimeData(const QMimeData* source) const
+{
+    if (m_imageDrops && (source->hasImage() || !offeredImageFile(source).isEmpty())) return true;
+    return QPlainTextEdit::canInsertFromMimeData(source);
+}
+
+void CodeEditor::insertFromMimeData(const QMimeData* source)
+{
+    if (m_imageDrops && !isReadOnly()) {
+        QString path = offeredImageFile(source);
+        QImage image;
+        if (path.isEmpty() && source->hasImage()) image = qvariant_cast<QImage>(source->imageData());
+        if (!path.isEmpty() || !image.isNull()) {
+            // the dialog opens after the drop or the paste is over, the cursor at its place
+            QMetaObject::invokeMethod(this, [this, path, image]() { emit imageOffered(path, image); },
+                                      Qt::QueuedConnection);
+            return;
+        }
+    }
+    QPlainTextEdit::insertFromMimeData(source);
 }

@@ -1,0 +1,8 @@
+# Insert Image in batch mode (EDIT-MD-2/3/12): a cropped copy into images/, the plain image
+# clashing with it kept both, the same crop again reused, an SVG before line 1, a turned
+# and scaled copy into another folder with an escaped alt text
+insert-image texts/images/quadrants.png crop 0,0,20,15 Red
+insert-image texts/images/quadrants.png
+insert-image texts/images/quadrants.png crop 0,0,20,15 Red again
+insert-image texts/images/arrow.svg line 1 An arrow
+insert-image texts/images/quadrants.png rotate 90 width 10 to figures Turned [q]

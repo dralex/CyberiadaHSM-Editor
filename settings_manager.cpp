@@ -2,6 +2,7 @@
 #include <QDir>
 
 #include "settings_manager.h"
+#include "markdown_tools.h"
 
 
 // the formal comment is drawn in the comment size, so it stores nothing
@@ -122,6 +123,7 @@ void SettingsManager::load() {
     optionsExpanded = s.value("files/optionsExpanded", true).toBool();
     exportDpi = s.value("export/dpi", 96).toInt();
     exportFontFamily = s.value("export/fontFamily", QString()).toString();
+    markdownImageFolder = s.value("markdown/imageFolder", MARKDOWN_IMAGE_FOLDER).toString();
 
     selectionColor = QColor(s.value("display/selectionColor", QColor(Qt::darkGray).name()).toString());
     selectionBorderWidth = s.value("display/selectionBorderWidth", 2).toInt();
@@ -482,6 +484,14 @@ void SettingsManager::setExportFontFamily(const QString& value)
     if (exportFontFamily != value) {
         exportFontFamily = value;
         QSettings().setValue("export/fontFamily", value);
+    }
+}
+
+void SettingsManager::setMarkdownImageFolder(const QString& value)
+{
+    if (markdownImageFolder != value) {
+        markdownImageFolder = value;
+        QSettings().setValue("markdown/imageFolder", value);
     }
 }
 

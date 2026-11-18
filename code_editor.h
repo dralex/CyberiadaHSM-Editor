@@ -25,6 +25,7 @@
 #define CYBERIADA_CODE_EDITOR
 
 #include <QCursor>
+#include <QImage>
 #include <QPlainTextEdit>
 #include "autoreplace.h"
 
@@ -58,16 +59,23 @@ public:
     // the link target under a point of the viewport: the anchor of the highlighter's format
     // under the glyph there, empty when none (EDIT-MODE-28)
     QString linkAt(const QPoint& pos) const;
+    // a dropped or pasted image is offered instead of its text (EDIT-MD-2): a Markdown text
+    void setImageDrops(bool on) { m_imageDrops = on; }
+    bool imageDrops() const { return m_imageDrops; }
 
 signals:
     // the bar is clicked
     void errorClicked();
     // a link target is Ctrl+clicked
     void linkActivated(const QString& target);
+    // an image file or a clipboard image dropped or pasted at the cursor, after the event
+    void imageOffered(const QString& path, const QImage& image);
 
 protected:
     bool event(QEvent* event) override;
     bool viewportEvent(QEvent* event) override;
+    bool canInsertFromMimeData(const QMimeData* source) const override;
+    void insertFromMimeData(const QMimeData* source) override;
     void keyPressEvent(QKeyEvent* event) override;
     void keyReleaseEvent(QKeyEvent* event) override;
     void mousePressEvent(QMouseEvent* event) override;
@@ -100,6 +108,7 @@ private:
     QString m_pressedLink;
     bool m_linkPointer = false;
     QCursor m_textPointer;
+    bool m_imageDrops = false;
 };
 
 #endif

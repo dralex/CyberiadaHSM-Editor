@@ -1,7 +1,7 @@
 # The Markdown Rendering — Architecture
 
-**Document version:** 0.13 (2026-11-18) — the authoring tools specified (Tools), stage 1
-implemented.
+**Document version:** 0.13 (2026-11-18) — the authoring tools specified (Tools), stages 1
+and 2 implemented.
 The requirements are `EDIT-MODE-14`, `EDIT-MODE-17`, `EDIT-MODE-18`, `EDIT-TEXT-14`,
 `EDIT-MD-1..12` and `EDIT-IO-8` in `EDITOR-SPEC.md`.
 
@@ -250,7 +250,7 @@ A course text and its files:
 | a target with another content | Replace, Keep both (`<name>-<n>.<ext>`), Cancel; batch keeps both |
 
 * A path is relative to the directory of the text, with `/`; `<path>` when it has a space or a
-  parenthesis; `\[`, `\]` in an alt or link text. The inserted line is a paragraph of its own.
+  parenthesis; `\\`, `\[`, `\]` in an alt or link text. The inserted line is a paragraph of its own.
 * An untitled text has no directory: Save and Insert first; the source image is never written.
 
 ### Insert Image
@@ -392,8 +392,11 @@ The text links the image to its diagram; the SVG records where it was drawn from
    element tools stand, `showModeBar` hiding a bar for the tab's kind and showing it back unless
    the user closed it (`modeHiddenBars`); Log session greyed in a text tab with the other
    canvas switches. Each later stage adds its action to the Text toolbar.
-2. Insert Image: `markdown_tools.*`, `dialogs/insert_image_dialog.*`, the drop and the paste of
-   `CodeEditor`, `insert-image`.
+2. Insert Image — done: `markdown_tools.*` (the paths, `proposeImageTarget`, `imageInsertData`,
+   `imageTargetClashes`, `writeImageInsert`), `TextDocument::insertBlock`,
+   `dialogs/insert_image_dialog.*` (`ImageCropView`), `CodeEditor::insertFromMimeData` offering
+   a dropped or pasted image (queued, after the event), Edit > Insert Image (`Ctrl+Shift+I`, the
+   text toolbar), `markdown/imageFolder`, `insert-image`.
 3. Insert Diagram, Update Diagram Images and the SVG metadata: `renderScene(..., metadata)`,
    the Export checkbox, `--svg-metadata`, `dialogs/insert_diagram_dialog.*`, the rendered page
    opening the editor's files in a tab, `insert-diagram`, `update-diagram-images`.
@@ -439,9 +442,9 @@ The text links the image to its diagram; the SVG records where it was drawn from
 `mode-markdown-pdf` exports `texts/markdown.md` to PDF in batch mode; `mode-markdown-export-reject`
 (a PNG of a Markdown text) and `mode-text-export-reject` (a PDF of a C++ text) are usage errors.
 
-The tools (planned with their stages): `l4-markdown-tools` — the paths and the copies, a name
-clash, the crop, rotation and scale sizes, the inserted line and its single undo step,
-`diagramSource` (the linked image, the metadata, the sibling, a mismatch), the digest, the font
+The tools: `l4-markdown-tools` — the paths and the copies, a name clash, the crop, rotation and
+scale sizes, the inserted line and its single undo step, the dialog, the crop drag, the pasted
+images; `md-insert-image` and its rejects; planned with their stages: `diagramSource` (the linked image, the metadata, the sibling, a mismatch), the digest, the font
 kept by an update, the headings and anchors of another text (repeats, Cyrillic, an open tab's
 unsaved heading), the preview re-render and scroll; `md-*` batch cases for every verb of
 `EDIT-MD-12` against good files, the untitled refusal (exit 4); `export-svg-metadata` — the
