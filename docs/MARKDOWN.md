@@ -1,6 +1,7 @@
 # The Markdown Rendering — Architecture
 
-**Document version:** 0.13 (2026-11-18) — the authoring tools specified (Tools, stage 0).
+**Document version:** 0.13 (2026-11-18) — the authoring tools specified (Tools), stage 1
+implemented.
 The requirements are `EDIT-MODE-14`, `EDIT-MODE-17`, `EDIT-MODE-18`, `EDIT-TEXT-14`,
 `EDIT-MD-1..12` and `EDIT-IO-8` in `EDITOR-SPEC.md`.
 
@@ -386,8 +387,11 @@ The text links the image to its diagram; the SVG records where it was drawn from
 
 ### Stages
 
-1. The toolbars: `mainToolBar` split into Main and Diagram (`smeditor_window.ui`), the Text
-   toolbar, `showDiagramParts` hiding Diagram and Elements.
+1. The toolbars — done: `mainToolBar` split into Main and `diagramToolBar`
+   (`smeditor_window.ui`), `textToolBar` with Go to Line (`images/go-to-line.svg`) where the
+   element tools stand, `showModeBar` hiding a bar for the tab's kind and showing it back unless
+   the user closed it (`modeHiddenBars`); Log session greyed in a text tab with the other
+   canvas switches. Each later stage adds its action to the Text toolbar.
 2. Insert Image: `markdown_tools.*`, `dialogs/insert_image_dialog.*`, the drop and the paste of
    `CodeEditor`, `insert-image`.
 3. Insert Diagram, Update Diagram Images and the SVG metadata: `renderScene(..., metadata)`,

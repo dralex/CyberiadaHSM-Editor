@@ -536,15 +536,13 @@ void CyberiadaSMEditorWindow::setCurrentDocument(EditorDocument* tab)
 
 void CyberiadaSMEditorWindow::showDiagramParts(bool on)
 {
+    // Elements for a diagram, Diagram also for a diff, Text for a text (EDIT-MD-1)
+    showModeBar(elementToolBar, on);
+    showModeBar(diagramToolBar, on || currentDiff());
+    showModeBar(textToolBar, currentText() != nullptr);
     if (!on) {
-        if (elementToolBar->isVisible()) {
-            elementToolBar->hide();
-            elementBarHidden = true;
-        }
         for (QToolBar* bar : toolOptionBars) bar->hide();
     } else {
-        if (elementBarHidden) elementToolBar->show();
-        elementBarHidden = false;
         for (auto i = toolOptionBars.constBegin(); i != toolOptionBars.constEnd(); i++) {
             i.value()->setVisible(i.key() == currentTool);
         }
@@ -552,6 +550,19 @@ void CyberiadaSMEditorWindow::showDiagramParts(bool on)
     const QList<QAction*> zooms = QList<QAction*>() << actionZoomIn << actionZoomOut
                                                     << actionFitContent << actionZoomToSM;
     for (QAction* zoom : zooms) zoom->setEnabled(on);
+}
+
+void CyberiadaSMEditorWindow::showModeBar(QToolBar* bar, bool on)
+{
+    // isHidden, not isVisible: the window may not be shown yet; a bar the user closed stays closed
+    if (!on) {
+        if (!bar->isHidden()) {
+            bar->hide();
+            modeHiddenBars.insert(bar);
+        }
+    } else if (modeHiddenBars.remove(bar)) {
+        bar->show();
+    }
 }
 
 void CyberiadaSMEditorWindow::bindDocument(CyberiadaSMEditorDocument* doc)
@@ -925,7 +936,8 @@ void CyberiadaSMEditorWindow::enableCanvasSwitches(bool on)
 {
     const QList<QAction*> switches = QList<QAction*>()
         << actionGridVisibility << actionSnapMode << actionServiceObjects
-        << actionTransitionText << actionFASymbols << actionComponentComments;
+        << actionTransitionText << actionFASymbols << actionComponentComments
+        << actionLogSession;
     for (QAction* action : switches) action->setEnabled(on);
 }
 

@@ -282,6 +282,19 @@
    <addaction name="actionCut"/>
    <addaction name="actionCopy"/>
    <addaction name="actionPaste"/>
+   <addaction name="separator"/>
+   <addaction name="actionReadOnly"/>
+  </widget>
+  <widget class="QToolBar" name="diagramToolBar">
+   <property name="windowTitle">
+    <string>Diagram</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
    <addaction name="actionDeleteElement"/>
    <addaction name="actionReconstructGeometry"/>
    <addaction name="actionUpdateGeometry"/>
@@ -292,7 +305,6 @@
    <addaction name="actionGridVisibility"/>
    <addaction name="actionSnapMode"/>
    <addaction name="actionServiceObjects"/>
-   <addaction name="actionReadOnly"/>
    <addaction name="actionLogSession"/>
   </widget>
   <widget class="QToolBar" name="elementToolBar">
@@ -326,6 +338,18 @@
    <addaction name="actionNewComment"/>
    <addaction name="actionNewFormalComment"/>
    <addaction name="actionNewTransition"/>
+  </widget>
+  <widget class="QToolBar" name="textToolBar">
+   <property name="windowTitle">
+    <string>Text</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>LeftToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionGoToLine"/>
   </widget>
   <action name="actionUndo">
    <property name="icon">
@@ -361,6 +385,10 @@
    </property>
   </action>
   <action name="actionGoToLine">
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/go-to-line.png</normaloff>:/Icons/images/go-to-line.png</iconset>
+   </property>
    <property name="text">
     <string>Go to Line...</string>
    </property>

@@ -1460,9 +1460,10 @@ architecture is `docs/MARKDOWN.md`, Tools. Specified in 0.72.
 
 - `EDIT-MD-1` MUST [A]: the toolbars follow the active tab: *Main* (the file, history and
   clipboard actions, Read-only) always; *Diagram* (Delete, the geometry, the centring, Grid,
-  Snap, Service objects, Log session) and *Elements* in a diagram or a diff tab; *Text* in a
-  text tab, in the place of Elements: Go to Line in every text tab, Insert Image, Insert
-  Diagram, Insert Link and Update Diagram Images in a Markdown one. The entries of a hidden
+  Snap, Service objects, Log session) in a diagram or a diff tab; *Elements* in a diagram tab;
+  *Text* in a text tab, in the place of Elements: Go to Line in every text tab, Insert Image,
+  Insert Diagram, Insert Link and Update Diagram Images in a Markdown one; a text diff tab has
+  none of the three. The entries of a hidden
   toolbar stay in the menus, greyed; a toolbar the user closed stays closed. In a rendered
   (read-only) Markdown tab Go to Line and the inserts are greyed, Update Diagram Images is not.
   *design*

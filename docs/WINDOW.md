@@ -110,7 +110,7 @@ setCurrentDocument(doc)
 | Text editor font | global | one font for the source editors and the text diff sides, apart from the diagram font, changed in the Preferences (`EDIT-MODE-27`) |
 | Document > Reconstruct geometry, Update geometry | document | the active diagram; disabled in a tab that is not editable (`EDIT-MODE-4`) |
 | Zoom in/out, Fit, Zoom to SM, zoom combo | document | the active view; disabled in a text tab |
-| Toolbars | global | Main always; Diagram and Elements in a diagram or a diff tab, Text in a text tab; the entries of a hidden one greyed in the menus; one the user closed stays closed (`EDIT-MD-1`) |
+| Toolbars | global | Main always; Diagram in a diagram or a diff tab, Elements in a diagram tab, Text in a text tab, none of the three in a text diff tab; the entries of a hidden one greyed in the menus; one the user closed stays closed (`EDIT-MD-1`) |
 | Document > Language, code highlighting | document | the checked entry is the active document's `platformLanguage`; each tab is highlighted by its own (`EDIT-TEXT-9`); the list of unknown values met is global |
 | Document > Markup, comment markup | document | the checked entry is the active document's `markupLanguage` (`EDIT-TEXT-12`); the list of unknown values met is global |
 | Structure tree, properties panel, changes | shared docks | content re-targeted on a switch; shown in the tabs that have them as View chose, the choice kept (`EDIT-UI-6`): a diagram the tree and the properties, a (text) diff the changes, a text tab none |

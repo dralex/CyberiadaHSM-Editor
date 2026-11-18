@@ -337,12 +337,14 @@ void TestWindow::test_menu_refactor()
 	QVERIFY(mt.contains(window->actionOpen) && mt.contains(window->actionSave) &&
 			mt.contains(window->actionExport));
 
-	// #4/#7/#9: cut/copy/paste/delete sit on the main toolbar right after undo/redo
+	// #4/#7/#9: cut/copy/paste sit on the main toolbar right after undo/redo; delete leads
+	// the diagram toolbar (EDIT-MD-1)
 	int iRedo = mt.indexOf(window->actionRedo);
 	int iCut = mt.indexOf(window->actionCut);
 	QVERIFY(iRedo >= 0 && iCut > iRedo);
-	QVERIFY(mt.contains(window->actionCopy) && mt.contains(window->actionPaste) &&
-			mt.contains(window->actionDeleteElement));
+	QVERIFY(mt.contains(window->actionCopy) && mt.contains(window->actionPaste));
+	QVERIFY(!mt.contains(window->actionDeleteElement));
+	QCOMPARE(window->diagramToolBar->actions().value(0), window->actionDeleteElement);
 
 	// #7: delete has left the tool palette
 	QVERIFY(!window->elementToolBar->actions().contains(window->actionDeleteElement));
@@ -431,8 +433,9 @@ void TestWindow::test_edit_action_gating()
 
 void TestWindow::test_center_actions()
 {
-	// EDIT-TOOL-18: the centring pair sits before the grid toggle and in Edit
-	QList<QAction*> mt = window->mainToolBar->actions();
+	// EDIT-TOOL-18: the centring pair sits before the grid toggle (the diagram toolbar,
+	// EDIT-MD-1) and in Edit
+	QList<QAction*> mt = window->diagramToolBar->actions();
 	int iH = mt.indexOf(window->actionCenterHorizontally);
 	int iV = mt.indexOf(window->actionCenterVertically);
 	QVERIFY(iH >= 0 && iV == iH + 1 && iV < mt.indexOf(window->actionGridVisibility));

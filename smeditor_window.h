@@ -26,6 +26,7 @@
 
 #include <QMainWindow>
 #include <QList>
+#include <QSet>
 #include "ui_smeditor_window.h"
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_editor_scene.h"
@@ -224,8 +225,10 @@ private:
     // a side of a diff tab as a buffer; a closed source tab keeps the last one
     bool                    originBuffer(const DiffOrigin& origin, const std::string& last,
                                          std::string* buffer, QString* error) const;
-    // the canvas tools and docks go with a text tab and come back with a diagram
+    // the canvas tools and docks go with a text tab and come back with a diagram; the
+    // toolbars follow the tab's kind (EDIT-MD-1)
     void                    showDiagramParts(bool on);
+    void                    showModeBar(QToolBar* bar, bool on);
     // the Document menu: the modes, the flag (EDIT-MODE-3/4)
     void                    initDocumentMenu();
     void                    updateModeActions();
@@ -363,8 +366,8 @@ private:
     // the active tab, and its diagram (null for a text tab)
     EditorDocument*         active = nullptr;
     CyberiadaSMEditorDocument* current = nullptr;
-    // the element toolbar was hidden for a text tab, not by the user
-    bool                    elementBarHidden = false;
+    // the toolbars hidden for the tab's kind, not by the user: shown again with their kind
+    QSet<QToolBar*>         modeHiddenBars;
     QTreeWidget*            m_changeList = nullptr;
     FindBar*                m_findBar = nullptr;
     ShortcutMap*            m_shortcuts = nullptr;

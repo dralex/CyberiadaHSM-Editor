@@ -76,6 +76,7 @@ private slots:
 	void test_markdown_export();
 	void test_markdown_links();
 	void test_back_to_diagram();
+	void test_mode_toolbars();
 	void test_compare_saved();
 	void test_compare_refresh();
 	void test_compare_tab();
@@ -445,6 +446,74 @@ void TestModes::test_back_to_diagram()
 	// closing the text tab leaves the diagram as it was
 	QVERIFY(window.closeDocument(window.tabAt(1)));
 	QCOMPARE(window.documentCount(), 1);
+}
+
+// EDIT-MD-1: the toolbars follow the tab - Elements for a diagram, Diagram also for a diff,
+// Text for a text, none of them for a text diff; a toolbar the user closed stays closed
+void TestModes::test_mode_toolbars()
+{
+	CyberiadaSMEditorWindow window;
+	window.show();
+	QVERIFY(QTest::qWaitForWindowExposed(&window));
+	const QList<QAction*> diagramActions = QList<QAction*>()
+		<< window.actionDeleteElement << window.actionReconstructGeometry
+		<< window.actionUpdateGeometry << window.actionCenterHorizontally
+		<< window.actionCenterVertically << window.actionGridVisibility << window.actionSnapMode
+		<< window.actionServiceObjects << window.actionLogSession;
+	for (QAction* a : diagramActions) {
+		QVERIFY2(window.diagramToolBar->actions().contains(a), qPrintable(a->text()));
+		QVERIFY2(!window.mainToolBar->actions().contains(a), qPrintable(a->text()));
+	}
+	QVERIFY(window.textToolBar->actions().contains(window.actionGoToLine));
+	QVERIFY(!window.actionGoToLine->icon().isNull());
+	QCOMPARE(window.toolBarArea(window.textToolBar), Qt::LeftToolBarArea);
+	auto shown = [&window](bool elements, bool diagram, bool text) {
+		return window.elementToolBar->isHidden() == !elements &&
+			window.diagramToolBar->isHidden() == !diagram &&
+			window.textToolBar->isHidden() == !text && !window.mainToolBar->isHidden();
+	};
+	QVERIFY(window.openFile("diagrams/geometry.graphml"));
+	QVERIFY(shown(true, true, false));
+	QVERIFY(window.actionLogSession->isEnabled());
+	QVERIFY(window.openFile("texts/notes.md"));
+	QVERIFY(shown(false, false, true));
+	QVERIFY(window.actionGoToLine->isEnabled());
+	// the entries of the hidden toolbars stay in the menus, greyed
+	QVERIFY(!window.actionLogSession->isEnabled() && !window.actionGridVisibility->isEnabled());
+	window.actionReadOnly->trigger();
+	QVERIFY(!window.actionGoToLine->isEnabled());
+	window.actionReadOnly->trigger();
+	// a diff tab draws diagrams but creates nothing
+	window.setCurrentDocument(window.tabAt(0));
+	DiffOrigin base;
+	base.kind = DiffOrigin::originFile;
+	base.path = "diagrams/hierarchy.graphml";
+	base.label = "base";
+	QString error;
+	QVERIFY2(window.compareDocument(window.currentDocument(), base, &error), qPrintable(error));
+	QVERIFY(shown(false, true, false));
+	// a text diff has nothing to draw and no line to go to
+	window.setCurrentDocument(window.tabAt(1));
+	DiffOrigin textBase;
+	textBase.kind = DiffOrigin::originFile;
+	textBase.path = "texts/markdown.md";
+	textBase.label = "markdown.md";
+	QVERIFY2(window.compareText(window.currentText(), textBase, &error), qPrintable(error));
+	QVERIFY(shown(false, false, false));
+	// the text toolbar closed by the user stays closed over a switch
+	window.setCurrentDocument(window.tabAt(1));
+	QVERIFY(shown(false, false, true));
+	window.textToolBar->hide();
+	window.setCurrentDocument(window.tabAt(0));
+	QVERIFY(shown(true, true, false));
+	window.setCurrentDocument(window.tabAt(1));
+	QVERIFY(shown(false, false, false));
+	// and the diagram one too
+	window.setCurrentDocument(window.tabAt(0));
+	window.diagramToolBar->hide();
+	window.setCurrentDocument(window.tabAt(1));
+	window.setCurrentDocument(window.tabAt(0));
+	QVERIFY(shown(true, false, false));
 }
 
 // EDIT-MODE-10/11: a diff tab of an edited diagram against its saved file
