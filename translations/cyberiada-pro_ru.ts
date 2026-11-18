@@ -82,7 +82,7 @@ Ctrl+щелчок — открыть</translation>
 <context>
     <name>CyberiadaSMEditorScene</name>
     <message>
-        <location filename="../cyberiadasm_editor_scene.cpp" line="+1240"/>
+        <location filename="../cyberiadasm_editor_scene.cpp" line="+1249"/>
         <location line="+35"/>
         <location line="+152"/>
         <location line="+35"/>
@@ -231,7 +231,7 @@ Ctrl+щелчок — открыть</translation>
 </translation>
     </message>
     <message>
-        <location line="+101"/>
+        <location line="+112"/>
         <source>Undefined</source>
         <translation>Не задан</translation>
     </message>
@@ -246,7 +246,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Markdown</translation>
     </message>
     <message>
-        <location line="+853"/>
+        <location line="+854"/>
         <source>Undo</source>
         <translation>Отменить</translation>
     </message>
@@ -369,8 +369,8 @@ Ctrl+щелчок — открыть</translation>
         <translation>нет документа</translation>
     </message>
     <message>
-        <location line="-1490"/>
-        <location line="+1500"/>
+        <location line="-1491"/>
+        <location line="+1501"/>
         <source>a plugin is running on the document</source>
         <translation>для документа выполняется плагин</translation>
     </message>
@@ -379,8 +379,8 @@ Ctrl+щелчок — открыть</translation>
         <translation type="vanished">в режиме инспектора документ доступен только для чтения</translation>
     </message>
     <message>
-        <location line="-1466"/>
-        <location line="+1503"/>
+        <location line="-1467"/>
+        <location line="+1504"/>
         <source>the document cannot be encoded</source>
         <translation>не удалось сериализовать документ</translation>
     </message>
@@ -412,7 +412,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Плагин: %1</translation>
     </message>
     <message>
-        <location line="-1920"/>
+        <location line="-1921"/>
         <source>Mode</source>
         <translation>Режим</translation>
     </message>
@@ -422,18 +422,18 @@ Ctrl+щелчок — открыть</translation>
         <translation>режим %1 недоступен</translation>
     </message>
     <message>
-        <location line="+1516"/>
+        <location line="+1517"/>
         <source>the inspection tab is read-only</source>
         <translation>вкладка инспекции доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1495"/>
-        <location line="+1496"/>
+        <location line="-1496"/>
+        <location line="+1497"/>
         <source>the tab is read-only</source>
         <translation>вкладка доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1663"/>
+        <location line="-1664"/>
         <source>Text file</source>
         <translation>Текстовый файл</translation>
     </message>
@@ -476,7 +476,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Автомат не нарушает ни одного правила EXT-FA.</translation>
     </message>
     <message>
-        <location line="+502"/>
+        <location line="+503"/>
         <source>%1: not an element of a finite automaton</source>
         <translation>%1: не элемент конечного автомата</translation>
     </message>
@@ -505,12 +505,12 @@ Ctrl+щелчок — открыть</translation>
         <translation>Все файлы (*)</translation>
     </message>
     <message>
-        <location line="-1095"/>
+        <location line="-1096"/>
         <source>Refresh</source>
         <translation>Обновить</translation>
     </message>
     <message>
-        <location line="+880"/>
+        <location line="+881"/>
         <source>Element</source>
         <translation>Элемент</translation>
     </message>
@@ -520,12 +520,12 @@ Ctrl+щелчок — открыть</translation>
         <translation>Изменение</translation>
     </message>
     <message>
-        <location line="-786"/>
+        <location line="-787"/>
         <source>a diff tab is opened by Document &gt; Compare with...</source>
         <translation>вкладку сравнения открывает «Документ &gt; Сравнить с...»</translation>
     </message>
     <message>
-        <location line="+184"/>
+        <location line="+185"/>
         <source>Open Terminal</source>
         <translation>Открыть терминал</translation>
     </message>
@@ -753,7 +753,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>обновление геометрии</translation>
     </message>
     <message>
-        <location line="+241"/>
+        <location line="+260"/>
         <source>id</source>
         <translation>идентификатор</translation>
     </message>
@@ -780,9 +780,9 @@ Ctrl+щелчок — открыть</translation>
         <translation>действие</translation>
     </message>
     <message>
-        <location line="-482"/>
+        <location line="-501"/>
         <location line="+22"/>
-        <location line="+491"/>
+        <location line="+510"/>
         <location line="+19"/>
         <location line="+114"/>
         <location line="+14"/>
@@ -791,12 +791,17 @@ Ctrl+щелчок — открыть</translation>
         <translation>геометрия</translation>
     </message>
     <message>
-        <location line="-895"/>
+        <location line="-914"/>
         <source>document type</source>
         <translation>тип документа</translation>
     </message>
     <message>
-        <location line="+824"/>
+        <location line="+256"/>
+        <source>comment geometry</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+587"/>
         <location line="+18"/>
         <source>label</source>
         <translation>подпись</translation>
@@ -807,7 +812,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>удаление границы</translation>
     </message>
     <message>
-        <location line="+284"/>
+        <location line="+288"/>
         <source>center</source>
         <translation>центрирование</translation>
     </message>
@@ -3281,7 +3286,7 @@ Ctrl+щелчок — открыть</translation>
         <translation type="obsolete">Редактор машин состояний Cyberiada</translation>
     </message>
     <message>
-        <location filename="../smeditor_window.ui" line="+47"/>
+        <location filename="../smeditor_window.ui" line="+43"/>
         <source>Structure tree</source>
         <translation>Дерево элементов</translation>
     </message>
@@ -3342,12 +3347,22 @@ Ctrl+щелчок — открыть</translation>
         <translation>Основная панель</translation>
     </message>
     <message>
-        <location line="+36"/>
+        <location line="+26"/>
+        <source>Diagram</source>
+        <translation type="unfinished">Диаграмма</translation>
+    </message>
+    <message>
+        <location line="+22"/>
         <source>Elements</source>
         <translation>Элементы</translation>
     </message>
     <message>
-        <location line="+36"/>
+        <location line="+32"/>
+        <source>Text</source>
+        <translation type="unfinished">Текст</translation>
+    </message>
+    <message>
+        <location line="+16"/>
         <source>Undo</source>
         <translation>Отменить</translation>
     </message>
@@ -3372,7 +3387,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Найти предыдущее</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+9"/>
         <source>Go to Line...</source>
         <translation>Перейти к строке...</translation>
     </message>
@@ -3801,7 +3816,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Новый текст Markdown</translation>
     </message>
     <message>
-        <location line="-817"/>
+        <location line="-845"/>
         <source>New</source>
         <translation>Создать</translation>
     </message>
@@ -3810,7 +3825,7 @@ Ctrl+щелчок — открыть</translation>
         <translation type="vanished">Новый файл</translation>
     </message>
     <message>
-        <location line="+829"/>
+        <location line="+857"/>
         <source>Service objects</source>
         <translation>Служебные объекты</translation>
     </message>
