@@ -212,7 +212,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Менеджер плагинов...</translation>
     </message>
     <message>
-        <location line="+256"/>
+        <location line="+264"/>
         <source>Close</source>
         <translation>Закрыть</translation>
     </message>
@@ -246,7 +246,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Markdown</translation>
     </message>
     <message>
-        <location line="+1044"/>
+        <location line="+1078"/>
         <source>Undo</source>
         <translation>Отменить</translation>
     </message>
@@ -369,8 +369,8 @@ Ctrl+щелчок — открыть</translation>
         <translation>нет документа</translation>
     </message>
     <message>
-        <location line="-1686"/>
-        <location line="+1696"/>
+        <location line="-1720"/>
+        <location line="+1730"/>
         <source>a plugin is running on the document</source>
         <translation>для документа выполняется плагин</translation>
     </message>
@@ -379,8 +379,8 @@ Ctrl+щелчок — открыть</translation>
         <translation type="vanished">в режиме инспектора документ доступен только для чтения</translation>
     </message>
     <message>
-        <location line="-1662"/>
-        <location line="+1699"/>
+        <location line="-1696"/>
+        <location line="+1733"/>
         <source>the document cannot be encoded</source>
         <translation>не удалось сериализовать документ</translation>
     </message>
@@ -412,7 +412,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Плагин: %1</translation>
     </message>
     <message>
-        <location line="-2116"/>
+        <location line="-2150"/>
         <source>Mode</source>
         <translation>Режим</translation>
     </message>
@@ -422,18 +422,18 @@ Ctrl+щелчок — открыть</translation>
         <translation>режим %1 недоступен</translation>
     </message>
     <message>
-        <location line="+1712"/>
+        <location line="+1746"/>
         <source>the inspection tab is read-only</source>
         <translation>вкладка инспекции доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1691"/>
-        <location line="+1692"/>
+        <location line="-1725"/>
+        <location line="+1726"/>
         <source>the tab is read-only</source>
         <translation>вкладка доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1859"/>
+        <location line="-1893"/>
         <source>Text file</source>
         <translation>Текстовый файл</translation>
     </message>
@@ -458,7 +458,8 @@ Ctrl+щелчок — открыть</translation>
         <translation>тип документа не изменён</translation>
     </message>
     <message>
-        <location line="+59"/>
+        <location line="+82"/>
+        <location line="+9"/>
         <location line="+18"/>
         <source>Check</source>
         <translation>Проверка</translation>
@@ -476,7 +477,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Автомат не нарушает ни одного правила EXT-FA.</translation>
     </message>
     <message>
-        <location line="+693"/>
+        <location line="+695"/>
         <source>%1: not an element of a finite automaton</source>
         <translation>%1: не элемент конечного автомата</translation>
     </message>
@@ -505,12 +506,12 @@ Ctrl+щелчок — открыть</translation>
         <translation>Все файлы (*)</translation>
     </message>
     <message>
-        <location line="-1286"/>
+        <location line="-1320"/>
         <source>Refresh</source>
         <translation>Обновить</translation>
     </message>
     <message>
-        <location line="+1071"/>
+        <location line="+1105"/>
         <source>Element</source>
         <translation>Элемент</translation>
     </message>
@@ -520,12 +521,17 @@ Ctrl+щелчок — открыть</translation>
         <translation>Изменение</translation>
     </message>
     <message>
-        <location line="-977"/>
+        <location line="-1011"/>
         <source>a diff tab is opened by Document &gt; Compare with...</source>
         <translation>вкладку сравнения открывает «Документ &gt; Сравнить с...»</translation>
     </message>
     <message>
-        <location line="+185"/>
+        <location line="+117"/>
+        <source>The text has no broken link.</source>
+        <translation type="unfinished">В тексте нет битых ссылок.</translation>
+    </message>
+    <message>
+        <location line="+102"/>
         <source>Open Terminal</source>
         <translation>Открыть терминал</translation>
     </message>
@@ -2204,7 +2210,7 @@ Ctrl+щелчок — открыть</translation>
 <context>
     <name>MarkdownTools</name>
     <message>
-        <location filename="../markdown_tools.cpp" line="+136"/>
+        <location filename="../markdown_tools.cpp" line="+139"/>
         <source>Images (%1)</source>
         <translation type="unfinished">Изображения (%1)</translation>
     </message>
@@ -2244,6 +2250,46 @@ Ctrl+щелчок — открыть</translation>
         <location line="+178"/>
         <source>No diagram file %1</source>
         <translation type="unfinished">Нет файла диаграммы %1</translation>
+    </message>
+    <message>
+        <location line="+146"/>
+        <source>no heading for #%1</source>
+        <translation type="unfinished">нет заголовка для #%1</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>image not found: %1</source>
+        <translation type="unfinished">изображение не найдено: %1</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>file not found: %1</source>
+        <translation type="unfinished">файл не найден: %1</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>no heading for %1#%2</source>
+        <translation type="unfinished">нет заголовка для %1#%2</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>no diagram file %1</source>
+        <translation type="unfinished">нет файла диаграммы %1</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>diagram image without a recorded source: Update Diagram Images records %1</source>
+        <translation type="unfinished">изображение диаграммы без записанного источника: «Обновить изображения диаграмм» запишет %1</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>diagram image out of date: %1 changed</source>
+        <translation type="unfinished">изображение диаграммы устарело: %1 изменён</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>linked to %1, its SVG names %2</source>
+        <translation type="unfinished">ссылка ведёт на %1, а SVG указывает на %2</translation>
     </message>
 </context>
 <context>
@@ -2659,7 +2705,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>%1 (отсутствует)</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+11"/>
         <source>Diagnostics %1</source>
         <translation>Замечания (%1)</translation>
     </message>
@@ -3529,7 +3575,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Сбросить положение подписи</translation>
     </message>
     <message>
-        <location filename="../text_document.cpp" line="+53"/>
+        <location filename="../text_document.cpp" line="+54"/>
         <source>typing</source>
         <translation>ввод текста</translation>
     </message>
@@ -3849,11 +3895,16 @@ Ctrl+щелчок — открыть</translation>
         <translation>Текст переходов</translation>
     </message>
     <message>
+        <location line="+126"/>
+        <source>Check the finite automaton against the EXT-FA rules, or the links of a Markdown text</source>
+        <translation type="unfinished">Проверить конечный автомат по правилам EXT-FA или ссылки текста Markdown</translation>
+    </message>
+    <message>
         <source>Inspector mode</source>
         <translation type="vanished">Режим инспектора</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="-118"/>
         <location line="+434"/>
         <source>HSM diagram</source>
         <translation>Диаграмма ПРИМС</translation>
@@ -3970,12 +4021,11 @@ Ctrl+щелчок — открыть</translation>
         <translation>Проверить</translation>
     </message>
     <message>
-        <location line="+3"/>
         <source>Check the finite automaton against the EXT-FA rules</source>
-        <translation>Проверить конечный автомат по правилам EXT-FA</translation>
+        <translation type="vanished">Проверить конечный автомат по правилам EXT-FA</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+11"/>
         <source>FA symbols</source>
         <translation>Символы КА</translation>
     </message>
@@ -4540,7 +4590,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Строка %1, столбец %2: %3</translation>
     </message>
     <message>
-        <location line="+190"/>
+        <location line="+176"/>
         <source>untitled</source>
         <translation>без имени</translation>
     </message>
