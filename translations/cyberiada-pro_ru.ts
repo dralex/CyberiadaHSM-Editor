@@ -202,7 +202,7 @@ Ctrl+щелчок — открыть</translation>
 <context>
     <name>CyberiadaSMEditorWindow</name>
     <message>
-        <location filename="../smeditor_window.cpp" line="+164"/>
+        <location filename="../smeditor_window.cpp" line="+168"/>
         <source>Output panel</source>
         <translation>Панель вывода</translation>
     </message>
@@ -246,7 +246,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Markdown</translation>
     </message>
     <message>
-        <location line="+939"/>
+        <location line="+1044"/>
         <source>Undo</source>
         <translation>Отменить</translation>
     </message>
@@ -328,7 +328,7 @@ Ctrl+щелчок — открыть</translation>
 </translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+32"/>
         <location line="+19"/>
         <source>Error</source>
         <translation>Ошибка</translation>
@@ -369,8 +369,8 @@ Ctrl+щелчок — открыть</translation>
         <translation>нет документа</translation>
     </message>
     <message>
-        <location line="-1576"/>
-        <location line="+1586"/>
+        <location line="-1686"/>
+        <location line="+1696"/>
         <source>a plugin is running on the document</source>
         <translation>для документа выполняется плагин</translation>
     </message>
@@ -379,8 +379,8 @@ Ctrl+щелчок — открыть</translation>
         <translation type="vanished">в режиме инспектора документ доступен только для чтения</translation>
     </message>
     <message>
-        <location line="-1552"/>
-        <location line="+1589"/>
+        <location line="-1662"/>
+        <location line="+1699"/>
         <source>the document cannot be encoded</source>
         <translation>не удалось сериализовать документ</translation>
     </message>
@@ -412,7 +412,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Плагин: %1</translation>
     </message>
     <message>
-        <location line="-2006"/>
+        <location line="-2116"/>
         <source>Mode</source>
         <translation>Режим</translation>
     </message>
@@ -422,18 +422,18 @@ Ctrl+щелчок — открыть</translation>
         <translation>режим %1 недоступен</translation>
     </message>
     <message>
-        <location line="+1602"/>
+        <location line="+1712"/>
         <source>the inspection tab is read-only</source>
         <translation>вкладка инспекции доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1581"/>
-        <location line="+1582"/>
+        <location line="-1691"/>
+        <location line="+1692"/>
         <source>the tab is read-only</source>
         <translation>вкладка доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1749"/>
+        <location line="-1859"/>
         <source>Text file</source>
         <translation>Текстовый файл</translation>
     </message>
@@ -476,7 +476,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Автомат не нарушает ни одного правила EXT-FA.</translation>
     </message>
     <message>
-        <location line="+588"/>
+        <location line="+693"/>
         <source>%1: not an element of a finite automaton</source>
         <translation>%1: не элемент конечного автомата</translation>
     </message>
@@ -505,12 +505,12 @@ Ctrl+щелчок — открыть</translation>
         <translation>Все файлы (*)</translation>
     </message>
     <message>
-        <location line="-1181"/>
+        <location line="-1286"/>
         <source>Refresh</source>
         <translation>Обновить</translation>
     </message>
     <message>
-        <location line="+966"/>
+        <location line="+1071"/>
         <source>Element</source>
         <translation>Элемент</translation>
     </message>
@@ -520,7 +520,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Изменение</translation>
     </message>
     <message>
-        <location line="-872"/>
+        <location line="-977"/>
         <source>a diff tab is opened by Document &gt; Compare with...</source>
         <translation>вкладку сравнения открывает «Документ &gt; Сравнить с...»</translation>
     </message>
@@ -540,7 +540,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Номер строки:</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+30"/>
         <source>The text has no file yet. The inserted files are saved in its folder, so the text is saved first.</source>
         <translation type="unfinished">У текста ещё нет файла. Вставляемые файлы сохраняются в его папке, поэтому сначала текст будет сохранён.</translation>
     </message>
@@ -561,26 +561,72 @@ Ctrl+щелчок — открыть</translation>
     </message>
     <message>
         <location line="-14"/>
+        <location line="+50"/>
         <source>%1 exists with another content.</source>
         <translation type="unfinished">%1 уже существует с другим содержимым.</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="-48"/>
+        <location line="+50"/>
         <source>Replace</source>
         <translation type="unfinished">Заменять</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="-49"/>
+        <location line="+50"/>
         <source>Keep Both</source>
         <translation type="unfinished">Сохранить оба</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="-35"/>
         <source>insert image</source>
         <translation type="unfinished">вставка изображения</translation>
     </message>
     <message>
-        <location line="+80"/>
+        <location line="+9"/>
+        <location line="+22"/>
+        <location line="+17"/>
+        <source>Insert Diagram</source>
+        <translation type="unfinished">Вставка диаграммы</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>insert diagram</source>
+        <translation type="unfinished">вставка диаграммы</translation>
+    </message>
+    <message>
+        <location line="+18"/>
+        <source>%1 exported again from %2</source>
+        <translation type="unfinished">%1 экспортировано заново из %2</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>%1 is not exported: %2</source>
+        <translation type="unfinished">%1 не экспортировано: %2</translation>
+    </message>
+    <message>
+        <location line="+18"/>
+        <location line="+7"/>
+        <source>Update Diagram Images</source>
+        <translation type="unfinished">Обновить изображения диаграмм</translation>
+    </message>
+    <message>
+        <location line="-7"/>
+        <source>The text has no diagram images.</source>
+        <translation type="unfinished">В тексте нет изображений диаграмм.</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>The diagram images of the text are up to date.</source>
+        <translation type="unfinished">Изображения диаграмм текста актуальны.</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Re-export All</source>
+        <translation type="unfinished">Экспортировать все заново</translation>
+    </message>
+    <message>
+        <location line="+83"/>
         <source>added</source>
         <translation>добавлено</translation>
     </message>
@@ -661,7 +707,12 @@ Ctrl+щелчок — открыть</translation>
         <translation>Изменения</translation>
     </message>
     <message>
-        <location line="+275"/>
+        <location line="+257"/>
+        <source>Save the diagram first: the metadata records its saved file</source>
+        <translation type="unfinished">Сначала сохраните диаграмму: метаданные указывают на её сохранённый файл</translation>
+    </message>
+    <message>
+        <location line="+23"/>
         <source>Export the rendered text as PDF</source>
         <translation>Экспорт отображённого текста в PDF</translation>
     </message>
@@ -1664,7 +1715,7 @@ Ctrl+щелчок — открыть</translation>
 <context>
     <name>ExportImageDialog</name>
     <message>
-        <location filename="../dialogs/export_image_dialog.cpp" line="+35"/>
+        <location filename="../dialogs/export_image_dialog.cpp" line="+37"/>
         <source>Export the scene as an image</source>
         <translation>Экспорт диаграммы в изображение</translation>
     </message>
@@ -1674,7 +1725,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Экспортировать</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+10"/>
         <source>Resolution (DPI):</source>
         <translation>Разрешение (DPI):</translation>
     </message>
@@ -1682,6 +1733,16 @@ Ctrl+щелчок — открыть</translation>
         <location line="+10"/>
         <source>Font:</source>
         <translation>Шрифт:</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Record the source diagram in the SVG metadata</source>
+        <translation type="unfinished">Записать исходную диаграмму в метаданные SVG</translation>
+    </message>
+    <message>
+        <location line="+61"/>
+        <source>SVG only</source>
+        <translation type="unfinished">Только для SVG</translation>
     </message>
 </context>
 <context>
@@ -1839,6 +1900,85 @@ Ctrl+щелчок — открыть</translation>
         <location line="+3"/>
         <source>Underlined in: %1.</source>
         <translation>Подчёркнуто в: %1.</translation>
+    </message>
+</context>
+<context>
+    <name>InsertDiagramDialog</name>
+    <message>
+        <location filename="../dialogs/insert_diagram_dialog.cpp" line="+46"/>
+        <location line="+112"/>
+        <source>Insert Diagram</source>
+        <translation type="unfinished">Вставка диаграммы</translation>
+    </message>
+    <message>
+        <location line="-107"/>
+        <source>open tab</source>
+        <translation type="unfinished">открытая вкладка</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>file</source>
+        <translation type="unfinished">файл</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Browse...</source>
+        <translation type="unfinished">Обзор...</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Diagram:</source>
+        <translation type="unfinished">Диаграмма:</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Copy to:</source>
+        <translation type="unfinished">Копировать в:</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Font:</source>
+        <translation type="unfinished">Шрифт:</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Alt text:</source>
+        <translation type="unfinished">Альтернативный текст:</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Writes:</source>
+        <translation type="unfinished">Записывает:</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Inserts:</source>
+        <translation type="unfinished">Вставляет:</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Insert</source>
+        <translation type="unfinished">Вставить</translation>
+    </message>
+    <message>
+        <location line="+72"/>
+        <source>CyberiadaML diagrams (*.graphml)</source>
+        <translation type="unfinished">Диаграммы CyberiadaML (*.graphml)</translation>
+    </message>
+    <message>
+        <location line="+36"/>
+        <source>No such diagram file.</source>
+        <translation type="unfinished">Нет такого файла диаграммы.</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>The tab has unsaved changes: its saved file is drawn.</source>
+        <translation type="unfinished">Во вкладке есть несохранённые изменения: рисуется её сохранённый файл.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>The diagram lies in the folder of the text: the image is written beside it.</source>
+        <translation type="unfinished">Диаграмма лежит в папке текста: изображение записывается рядом с ней.</translation>
     </message>
 </context>
 <context>
@@ -2064,17 +2204,18 @@ Ctrl+щелчок — открыть</translation>
 <context>
     <name>MarkdownTools</name>
     <message>
-        <location filename="../markdown_tools.cpp" line="+124"/>
+        <location filename="../markdown_tools.cpp" line="+136"/>
         <source>Images (%1)</source>
         <translation type="unfinished">Изображения (%1)</translation>
     </message>
     <message>
         <location line="+51"/>
+        <location line="+81"/>
         <source>Cannot read %1</source>
         <translation type="unfinished">Не удаётся прочитать %1</translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="-71"/>
         <source>An SVG image is copied as it is, without the edits</source>
         <translation type="unfinished">Изображение SVG копируется как есть, без правок</translation>
     </message>
@@ -2090,13 +2231,19 @@ Ctrl+щелчок — открыть</translation>
     </message>
     <message>
         <location line="+25"/>
+        <location line="+165"/>
         <source>Cannot make the folder %1</source>
         <translation type="unfinished">Не удаётся создать папку %1</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="-160"/>
         <source>Cannot write %1: %2</source>
         <translation type="unfinished">Не удаётся записать %1: %2</translation>
+    </message>
+    <message>
+        <location line="+178"/>
+        <source>No diagram file %1</source>
+        <translation type="unfinished">Нет файла диаграммы %1</translation>
     </message>
 </context>
 <context>
@@ -3465,13 +3612,14 @@ Ctrl+щелчок — открыть</translation>
 <context>
     <name>Render</name>
     <message>
-        <location filename="../cyberiadasm_render.cpp" line="+117"/>
+        <location filename="../cyberiadasm_render.cpp" line="+120"/>
         <source>the scene is empty, nothing to export</source>
         <translation>сцена пуста, экспортировать нечего</translation>
     </message>
     <message>
-        <location line="+29"/>
-        <location line="+22"/>
+        <location line="+32"/>
+        <location line="+11"/>
+        <location line="+20"/>
         <source>cannot write the image %1</source>
         <translation>не удается записать изображение %1</translation>
     </message>
@@ -3508,7 +3656,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Инструменты</translation>
     </message>
     <message>
-        <location line="+38"/>
+        <location line="+39"/>
         <source>&amp;Document</source>
         <translation>&amp;Документ</translation>
     </message>
@@ -3529,7 +3677,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Разметка</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+24"/>
         <source>View</source>
         <translation>Вид</translation>
     </message>
@@ -3582,6 +3730,26 @@ Ctrl+щелчок — открыть</translation>
         <location line="+5"/>
         <source>Find Previous</source>
         <translation>Найти предыдущее</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Insert Diagram...</source>
+        <translation type="unfinished">Вставить диаграмму...</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Insert a diagram image linked to its diagram into the Markdown text</source>
+        <translation type="unfinished">Вставить в текст Markdown изображение диаграммы со ссылкой на неё</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Update Diagram Images</source>
+        <translation type="unfinished">Обновить изображения диаграмм</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Export again the diagram images of the text whose diagrams changed</source>
+        <translation type="unfinished">Заново экспортировать изображения диаграмм текста, чьи диаграммы изменились</translation>
     </message>
     <message>
         <location line="+9"/>
@@ -4023,7 +4191,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Новый текст Markdown</translation>
     </message>
     <message>
-        <location line="-859"/>
+        <location line="-885"/>
         <source>New</source>
         <translation>Создать</translation>
     </message>
@@ -4032,7 +4200,7 @@ Ctrl+щелчок — открыть</translation>
         <translation type="vanished">Новый файл</translation>
     </message>
     <message>
-        <location line="+871"/>
+        <location line="+897"/>
         <source>Service objects</source>
         <translation>Служебные объекты</translation>
     </message>
@@ -4367,7 +4535,7 @@ Ctrl+щелчок — открыть</translation>
 <context>
     <name>TextDocument</name>
     <message>
-        <location filename="../text_document.cpp" line="+122"/>
+        <location filename="../text_document.cpp" line="+123"/>
         <source>Line %1, column %2: %3</source>
         <translation>Строка %1, столбец %2: %3</translation>
     </message>
