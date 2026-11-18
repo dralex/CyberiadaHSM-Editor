@@ -334,15 +334,23 @@ TextDocument* CyberiadaSMEditorWindow::newTextDocument(const QString& mode)
     return doc;
 }
 
+TextDocument* CyberiadaSMEditorWindow::findTextTab(const QString& path) const
+{
+    QString absolute = QDir::cleanPath(QFileInfo(path).absoluteFilePath());
+    for (EditorDocument* doc : documents) {
+        TextDocument* text = qobject_cast<TextDocument*>(doc);
+        if (text && text->hasFile() && QDir::cleanPath(text->filePath()) == absolute) return text;
+    }
+    return nullptr;
+}
+
 bool CyberiadaSMEditorWindow::openTextFile(const QString& fileName, QString* error)
 {
     QString absolute = QFileInfo(fileName).absoluteFilePath();
     // an open file is activated, not loaded twice (EDIT-DOC-2)
-    for (EditorDocument* doc : documents) {
-        if (qobject_cast<TextDocument*>(doc) && doc->filePath() == absolute) {
-            setCurrentDocument(doc);
-            return true;
-        }
+    if (TextDocument* open = findTextTab(absolute)) {
+        setCurrentDocument(open);
+        return true;
     }
     // a clean untitled tab gives way to the file, as Open does
     EditorDocument* untitled = nullptr;
@@ -879,9 +887,41 @@ void CyberiadaSMEditorWindow::slotFileNewFA()
     setCurrentDocument(doc);
 }
 
+QList<PluginDiagnostic> CyberiadaSMEditorWindow::checkMarkdown(TextDocument* text)
+{
+    QList<PluginDiagnostic> diagnostics;
+    if (!text || text->mode() != MODE_MARKDOWN) return diagnostics;
+    // a Markdown file open in a tab is checked by its text there, unsaved headings too
+    auto openText = [this](const QString& path) {
+        TextDocument* tab = findTextTab(path);
+        return tab ? tab->text() : QString();
+    };
+    for (const MarkdownFinding& f : markdownCheck(text->text(), text->baseDir(), openText)) {
+        PluginDiagnostic d;
+        d.severity = "warning";
+        d.line = f.line;
+        d.column = f.column;
+        d.message = f.message;
+        diagnostics << d;
+    }
+    // the findings link to the lines of the source (EDIT-PLUG-57)
+    pluginDockWidget->showDiagnostics(diagnostics, text);
+    pluginDockWidget->show();
+    pluginDockWidget->raise();
+    return diagnostics;
+}
+
 void CyberiadaSMEditorWindow::slotCheck()
 {
     commitPendingEdit();
+    // a Markdown text: its broken links (EDIT-MD-8)
+    if (TextDocument* text = currentText()) {
+        if (checkMarkdown(text).isEmpty() && text->mode() == MODE_MARKDOWN &&
+            !qApp->property("batchMode").toBool()) {
+            QMessageBox::information(this, tr("Check"), tr("The text has no broken link."));
+        }
+        return;
+    }
     if (!current || current->mode() != MODE_FA || !model()->rootDocument()) return;
     Cyberiada::FAFindingList findings;
     try {
@@ -933,6 +973,8 @@ void CyberiadaSMEditorWindow::updateTextActions()
         << actionNextChange << actionPreviousChange << actionIgnoreWhitespace;
     for (QAction* off : diagramOnly) off->setEnabled(false);
     actionIgnoreWhitespace->setChecked(false);
+    // a Markdown text checks its links, read-only too (EDIT-MD-8)
+    actionCheck->setEnabled(text->mode() == MODE_MARKDOWN);
     // a text compares with a text (EDIT-MODE-19)
     actionCompare->setEnabled(true);
     // a Markdown text exports its rendered pages (EDIT-MODE-18)
@@ -3137,12 +3179,12 @@ void CyberiadaSMEditorWindow::slotDiagnosticActivated(EditorDocument* doc,
     if (item && sceneView) sceneView->centerOn(item);
 }
 
-void CyberiadaSMEditorWindow::slotLineActivated(EditorDocument* doc, int line)
+void CyberiadaSMEditorWindow::slotLineActivated(EditorDocument* doc, int line, int column)
 {
     TextDocument* text = qobject_cast<TextDocument*>(doc);
     if (!text || !documents.contains(doc)) return;
     setCurrentDocument(doc);
-    text->goToLine(line);
+    text->goToLine(line, column);
 }
 
 void CyberiadaSMEditorWindow::slotFileActivated(const QString& path)

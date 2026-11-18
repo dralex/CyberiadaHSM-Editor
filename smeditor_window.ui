@@ -680,7 +680,7 @@
     <string>Check</string>
    </property>
    <property name="toolTip">
-    <string>Check the finite automaton against the EXT-FA rules</string>
+    <string>Check the finite automaton against the EXT-FA rules, or the links of a Markdown text</string>
    </property>
   </action>
   <action name="actionFASymbols">

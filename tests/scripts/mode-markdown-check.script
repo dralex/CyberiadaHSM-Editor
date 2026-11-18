@@ -1,0 +1,4 @@
+# Check of a Markdown text (EDIT-MD-8): a bad anchor, a missing image, a heading another text
+# has not, a missing file and a missing definition target; the good anchors, the site, the
+# code, the comment and the setext heading pass
+check

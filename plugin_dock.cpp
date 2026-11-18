@@ -414,8 +414,10 @@ void PluginDock::showDiagnostics(const QList<PluginDiagnostic>& diagnostics, Edi
         item->setText(columnElement, d.element.isEmpty() ? QString() :
                       (d.linked ? d.element : tr("%1 (absent)").arg(d.element)));
         if (d.line > 0) {
-            item->setText(columnLine, QString::number(d.line));
+            item->setText(columnLine, d.column > 0 ? QString("%1:%2").arg(d.line).arg(d.column)
+                                                   : QString::number(d.line));
             item->setData(columnLine, Qt::UserRole, d.line);
+            item->setData(columnLine, Qt::UserRole + 1, d.column);
         }
         item->setText(columnMessage, d.message);
         if (d.linked) item->setData(columnElement, Qt::UserRole, d.element);
@@ -456,5 +458,6 @@ void PluginDock::slotItemActivated(QTreeWidgetItem* item, int)
     }
     // a line of a diagram is one of its file, not of the canvas
     int line = item->data(columnLine, Qt::UserRole).toInt();
-    if (line > 0 && diagnosticsDocument->traits().text) emit lineActivated(diagnosticsDocument.data(), line);
+    int column = item->data(columnLine, Qt::UserRole + 1).toInt();
+    if (line > 0 && diagnosticsDocument->traits().text) emit lineActivated(diagnosticsDocument.data(), line, column);
 }

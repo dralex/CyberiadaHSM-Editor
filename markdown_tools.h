@@ -24,6 +24,8 @@
 #ifndef CYBERIADA_MARKDOWN_TOOLS
 #define CYBERIADA_MARKDOWN_TOOLS
 
+#include <functional>
+
 #include <QByteArray>
 #include <QImage>
 #include <QList>
@@ -156,5 +158,40 @@ struct DiagramUpdate {
 // the out-of-date images, every one with all, exported again once per SVG, each in the font it
 // records, else in the font given
 QList<DiagramUpdate> updateDiagramImages(const QList<DiagramImage>& images, bool all, const QString& font);
+
+// a target of a Markdown text: [text](target), ![alt](target) or [label]: target
+struct MarkdownLink {
+    // of the '[' or the '!', from 1
+    int     line = 0;
+    int     column = 0;
+    // as written, without <>
+    QString target;
+    bool    image = false;
+};
+// the links, the images and the link definitions; the code fences and the code spans skipped
+QList<MarkdownLink> markdownLinks(const QString& text);
+
+// a heading of a Markdown text, its anchor numbered as the rendered view numbers it
+struct MarkdownHeading {
+    int     level = 0;
+    QString title;
+    QString anchor;
+    // from 1
+    int     line = 0;
+};
+// the ATX and the setext headings outside the code fences
+QList<MarkdownHeading> markdownHeadings(const QString& text);
+
+// a broken link of a Markdown text (EDIT-MD-8)
+struct MarkdownFinding {
+    int     line = 0;
+    int     column = 0;
+    QString message;
+};
+// the missing files and images, the anchors no heading has, the out-of-date diagram images and
+// the ones linked to another diagram than they record; openText gives the text of a file's
+// open tab, a null string without one; a site is never fetched
+QList<MarkdownFinding> markdownCheck(const QString& text, const QString& baseDir,
+                                     const std::function<QString(const QString&)>& openText);
 
 #endif

@@ -24,13 +24,16 @@
 #include "markdown_tools.h"
 
 #include <QRegularExpression>
+#include <QSet>
 #include <QTextStream>
+#include <QUrl>
 
 #include "cyberiadasm_editor_document.h"
 #include "cyberiadasm_model.h"
 #include "cyberiadasm_render.h"
 #include "fontmanager.h"
 #include "markdown_objects.h"
+#include "markdown_view.h"
 
 #include <algorithm>
 
@@ -430,4 +433,187 @@ QList<DiagramUpdate> updateDiagramImages(const QList<DiagramImage>& images, bool
         updates << update;
     }
     return updates;
+}
+
+// ---------------------------------------------------------------------------- links and headings
+
+static const char* const FENCE = R"(^ {0,3}(`{3,}|~{3,}))";
+
+// the lines outside the code fences, by their numbers from 0; the code spans as spaces when
+// masked, so no link is found in them
+static QList<QPair<int, QString>> proseLines(const QString& text, bool masked)
+{
+    static const QRegularExpression fence(FENCE);
+    QList<QPair<int, QString>> lines;
+    QStringList all = text.split('\n');
+    QString openFence;
+    for (int n = 0; n < all.size(); n++) {
+        QRegularExpressionMatch f = fence.match(all.at(n));
+        if (f.hasMatch()) {
+            if (openFence.isEmpty()) openFence = f.captured(1);
+            else if (f.captured(1).startsWith(openFence.at(0)) && f.captured(1).size() >= openFence.size()) openFence.clear();
+            continue;
+        }
+        if (openFence.isEmpty()) lines << qMakePair(n, masked ? withoutCodeSpans(all.at(n)) : all.at(n));
+    }
+    return lines;
+}
+
+QList<MarkdownLink> markdownLinks(const QString& text)
+{
+    static const QRegularExpression image(QString(IMAGE) + DESTINATION);
+    // a link text may hold one level of brackets: an image
+    static const QRegularExpression link(QString(R"((?<!!)\[(?:\\.|[^\\\[\]]|\[(?:\\.|[^\\\[\]])*\])*\])") + DESTINATION);
+    static const QRegularExpression definition(R"(^ {0,3}\[((?:\\.|[^\\\]])+)\]:\s*(<[^>\n]*>|\S+))");
+    QList<MarkdownLink> links;
+    for (const QPair<int, QString>& line : proseLines(text, true)) {
+        auto add = [&](const QRegularExpressionMatch& m, int group, bool isImage) {
+            MarkdownLink l;
+            l.line = line.first + 1;
+            l.column = m.capturedStart() + 1;
+            l.target = destination(m.captured(group));
+            l.image = isImage;
+            links << l;
+        };
+        QRegularExpressionMatchIterator it = image.globalMatch(line.second);
+        while (it.hasNext()) add(it.next(), 2, true);
+        it = link.globalMatch(line.second);
+        while (it.hasNext()) add(it.next(), 1, false);
+        QRegularExpressionMatch d = definition.match(line.second);
+        if (d.hasMatch()) add(d, 2, false);
+    }
+    std::sort(links.begin(), links.end(), [](const MarkdownLink& a, const MarkdownLink& b) {
+        return a.line < b.line || (a.line == b.line && a.column < b.column);
+    });
+    return links;
+}
+
+// the text a heading shows: a link or an image by its text
+static QString plainHeading(const QString& title)
+{
+    static const QRegularExpression link(R"(!?\[((?:\\.|[^\\\]])*)\]\([^)]*\))");
+    QString plain = title;
+    plain.replace(link, "\\1");
+    return plain;
+}
+
+QList<MarkdownHeading> markdownHeadings(const QString& text)
+{
+    static const QRegularExpression atx(R"(^ {0,3}(#{1,6})\s+(.*?)(\s+#+)?\s*$)");
+    static const QRegularExpression setext(R"(^ {0,3}(=+|-+)\s*$)");
+    static const QRegularExpression block(R"(^( {4}|\s*([-*+>]|\d+[.)])\s|\s*\|))");
+    QList<MarkdownHeading> headings;
+    QHash<QString, int> seen;
+    QList<QPair<int, QString>> lines = proseLines(text, false);
+    for (int i = 0; i < lines.size(); i++) {
+        const QString& line = lines.at(i).second;
+        MarkdownHeading h;
+        QRegularExpressionMatch m = atx.match(line);
+        if (m.hasMatch()) {
+            h.level = m.captured(1).size();
+            h.title = m.captured(2);
+        } else if (i + 1 < lines.size() && lines.at(i + 1).first == lines.at(i).first + 1 &&
+                   !line.trimmed().isEmpty() && !block.match(line).hasMatch() &&
+                   setext.match(lines.at(i + 1).second).hasMatch() &&
+                   (i == 0 || lines.at(i - 1).first != lines.at(i).first - 1 ||
+                    lines.at(i - 1).second.trimmed().isEmpty() || atx.match(lines.at(i - 1).second).hasMatch())) {
+            // a one-line paragraph underlined; an ATX heading before it ends no paragraph
+            h.level = lines.at(i + 1).second.trimmed().startsWith('=') ? 1 : 2;
+            h.title = line.trimmed();
+        } else {
+            continue;
+        }
+        h.line = lines.at(i).first + 1;
+        QString name = MarkdownView::headingAnchor(plainHeading(h.title));
+        int n = seen.value(name, 0);
+        seen.insert(name, n + 1);
+        h.anchor = n > 0 ? name + "-" + QString::number(n) : name;
+        headings << h;
+    }
+    return headings;
+}
+
+static bool isMarkdownFile(const QString& path)
+{
+    return hasSuffix(path, "md") || hasSuffix(path, "markdown");
+}
+
+static QString readText(const QString& path)
+{
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly)) return QString();
+    return QString::fromUtf8(file.readAll());
+}
+
+QList<MarkdownFinding> markdownCheck(const QString& text, const QString& baseDir,
+                                     const std::function<QString(const QString&)>& openText)
+{
+    QList<MarkdownFinding> findings;
+    auto add = [&findings](int line, int column, const QString& message) {
+        MarkdownFinding f;
+        f.line = line;
+        f.column = column;
+        f.message = message;
+        findings << f;
+    };
+    auto anchorsOf = [](const QString& markdown) {
+        QSet<QString> anchors;
+        for (const MarkdownHeading& h : markdownHeadings(markdown)) anchors << h.anchor;
+        return anchors;
+    };
+    QSet<QString> own = anchorsOf(text);
+    QHash<QString, QSet<QString>> others;
+    for (const MarkdownLink& link : markdownLinks(text)) {
+        QUrl url(link.target, QUrl::TolerantMode);
+        // a site is never fetched; a one-letter scheme is a Windows drive
+        if (url.scheme().size() > 1) continue;
+        QString fragment = url.hasFragment() ? url.fragment(QUrl::FullyDecoded) : QString();
+        if (url.path().isEmpty()) {
+            // a bare # is the Markdown comment
+            if (!fragment.isEmpty() && !own.contains(fragment.toLower())) {
+                add(link.line, link.column, QCoreApplication::translate("MarkdownTools", "no heading for #%1").arg(fragment));
+            }
+            continue;
+        }
+        // a relative path of an untitled text names nothing
+        QString file = markdownImagePath(link.target, baseDir);
+        if (file.isEmpty()) continue;
+        QString shown = url.path(QUrl::FullyDecoded);
+        if (!QFileInfo::exists(file)) {
+            add(link.line, link.column, link.image ? QCoreApplication::translate("MarkdownTools", "image not found: %1").arg(shown)
+                                                   : QCoreApplication::translate("MarkdownTools", "file not found: %1").arg(shown));
+            continue;
+        }
+        if (fragment.isEmpty() || !isMarkdownFile(file)) continue;
+        if (!others.contains(file)) {
+            QString open = openText ? openText(file) : QString();
+            others.insert(file, anchorsOf(open.isNull() ? readText(file) : open));
+        }
+        if (!others.value(file).contains(fragment.toLower())) {
+            add(link.line, link.column, QCoreApplication::translate("MarkdownTools", "no heading for %1#%2").arg(shown, fragment));
+        }
+    }
+    for (const DiagramImage& d : markdownDiagramImages(text, baseDir)) {
+        QString graphml = markdownPath(d.graphml, baseDir);
+        bool linked = !d.image.link.isEmpty();
+        if (!QFileInfo(d.graphml).isFile()) {
+            // a missing link target is told above
+            if (!linked) add(d.image.line, d.image.column, QCoreApplication::translate("MarkdownTools", "no diagram file %1").arg(graphml));
+            continue;
+        }
+        if (d.recorded.digest.isEmpty()) {
+            add(d.image.line, d.image.column,
+                QCoreApplication::translate("MarkdownTools", "diagram image without a recorded source: Update Diagram Images records %1").arg(graphml));
+        } else if (!d.upToDate) {
+            add(d.image.line, d.image.column, QCoreApplication::translate("MarkdownTools", "diagram image out of date: %1 changed").arg(graphml));
+        }
+        if (linked && !d.recorded.graphml.isEmpty() && d.recorded.graphml != d.graphml) {
+            add(d.image.line, d.image.column, QCoreApplication::translate("MarkdownTools", "linked to %1, its SVG names %2")
+                .arg(graphml, markdownPath(d.recorded.graphml, baseDir)));
+        }
+    }
+    std::sort(findings.begin(), findings.end(), [](const MarkdownFinding& a, const MarkdownFinding& b) {
+        return a.line < b.line || (a.line == b.line && a.column < b.column);
+    });
+    return findings;
 }

@@ -76,7 +76,7 @@ public:
 signals:
     void          diagnosticActivated(EditorDocument* doc, const QString& elementId);
     // a finding of a text tab by its line (EDIT-PLUG-57)
-    void          lineActivated(EditorDocument* doc, int line);
+    void          lineActivated(EditorDocument* doc, int line, int column);
     // a file a files result lists, by its absolute path
     void          fileActivated(const QString& path);
 

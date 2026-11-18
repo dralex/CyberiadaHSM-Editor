@@ -37,6 +37,7 @@
 #include <QUrl>
 
 #include "text_document.h"
+#include "markdown_tools.h"
 #include "cyberiada_constants.h"
 #include "code_editor.h"
 #include "code_highlighter.h"
@@ -214,11 +215,14 @@ bool TextDocument::showsRendered() const
     return m_mode == MODE_MARKDOWN && readOnlyFlag();
 }
 
-bool TextDocument::goToLine(int line)
+bool TextDocument::goToLine(int line, int column)
 {
     QTextBlock block = m_document->findBlockByNumber(line - 1);
     if (!block.isValid()) return false;
-    m_editor->setTextCursor(QTextCursor(block));
+    QTextCursor cursor(block);
+    // a column past the end of the line stops at its end
+    cursor.setPosition(block.position() + qBound(0, column - 1, block.length() - 1));
+    m_editor->setTextCursor(cursor);
     m_editor->centerCursor();
     m_editor->setFocus();
     return true;
@@ -244,26 +248,9 @@ void TextDocument::openLink(const QString& target)
 
 bool TextDocument::goToHeading(const QString& anchor)
 {
-    static const QRegularExpression heading(R"(^ {0,3}#{1,6}\s+(.*?)(\s+#+)?\s*$)");
-    static const QRegularExpression fence(R"(^ {0,3}(`{3,}|~{3,}))");
-    // a repeated heading is anchor-1, anchor-2, ... as the rendered view numbers them
-    QHash<QString, int> seen;
-    QString openFence;
-    for (QTextBlock b = m_document->begin(); b.isValid(); b = b.next()) {
-        QRegularExpressionMatch f = fence.match(b.text());
-        if (f.hasMatch()) {
-            if (openFence.isEmpty()) openFence = f.captured(1);
-            else if (f.captured(1).startsWith(openFence)) openFence.clear();
-            continue;
-        }
-        if (!openFence.isEmpty()) continue;
-        QRegularExpressionMatch m = heading.match(b.text());
-        if (!m.hasMatch()) continue;
-        QString name = MarkdownView::headingAnchor(m.captured(1));
-        int n = seen.value(name, 0);
-        seen.insert(name, n + 1);
-        if (n > 0) name += "-" + QString::number(n);
-        if (name == anchor.toLower()) return goToLine(b.blockNumber() + 1);
+    // the anchors as the rendered view and the link check number them (EDIT-MD-8)
+    for (const MarkdownHeading& heading : markdownHeadings(text())) {
+        if (heading.anchor == anchor.toLower()) return goToLine(heading.line);
     }
     return false;
 }

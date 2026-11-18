@@ -27,7 +27,9 @@ the rendered document with its TeX formulas and SVG images). A Markdown text tak
 by Edit > Insert Image, a drop or a paste: copied next to the text, cropped, turned or
 scaled down on the way. Edit > Insert Diagram adds a diagram as its SVG image linked to the
 .graphml file, and Document > Update Diagram Images exports again the images whose diagrams
-changed: each SVG records its source diagram in its metadata.
+changed: each SVG records its source diagram in its metadata. Document > Check (F7) lists the
+broken links of a Markdown text: missing files and images, anchors no heading has, diagram
+images out of date.
 
 The Find and Text File Compare functions are available as well as other
 useful IDE features.

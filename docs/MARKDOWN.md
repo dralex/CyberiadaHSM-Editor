@@ -1,7 +1,7 @@
 # The Markdown Rendering — Architecture
 
 **Document version:** 0.13 (2026-11-18) — the authoring tools specified (Tools), stages 1
-to 3 implemented.
+to 4 implemented.
 The requirements are `EDIT-MODE-14`, `EDIT-MODE-17`, `EDIT-MODE-18`, `EDIT-TEXT-14`,
 `EDIT-MD-1..12` and `EDIT-IO-8` in `EDITOR-SPEC.md`.
 
@@ -337,16 +337,32 @@ The text links the image to its diagram; the SVG records where it was drawn from
 ```
  Diagnostics ─ 02-traffic-light-sm.md ─────────────────────────────────
  ▲ 92:1   image not found: images/lego-cooker.png
- ▲ 141:1  diagram image out of date: diagrams/2/microwave.graphml
+ ▲ 141:1  diagram image out of date: diagrams/2/microwave.graphml changed
+ ▲ 208:1  diagram image without a recorded source: Update Diagram Images records
+          diagrams/2/semaphore-hierarchy.graphml
  ▲ 210:15 no heading for #states-and-events
  ▲ 233:4  no heading for 04-hsm-language.md#composite
  ▲ 240:1  linked to diagrams/2/day.graphml, its SVG names diagrams/2/night.graphml
 ```
 
-* `markdownCheck(text, baseDir)` walks the link and image targets of `markdownSpans` and the
-  headings of `markdownHeadings`; a finding goes to Diagnostics as an editor finding
-  (`PluginDock::showEditorFindings`) with its line, a click putting the cursor there.
-* A site (`https:`, `mailto:`) is never fetched: the check needs no network.
+```
+ markdownLinks(text)      [t](target)  ![a](target)  [label]: target   (code skipped)
+ markdownHeadings(text)   # ATX and setext, anchors -1, -2 as the rendered view
+        \                     /
+         markdownCheck(text, baseDir, openText) ── markdownDiagramImages
+                 |                                 (no source, out of date, mismatch)
+                 v
+ window checkMarkdown: PluginDiagnostic warning, line + column ──> Diagnostics
+                                         a click: goToLine(line, column) in the source
+```
+
+* A target with a scheme (`https:`, `mailto:`) is never fetched: the check needs no network;
+  a bare `#` is the Markdown comment. An untitled text checks its `#anchor`s only.
+* `file.md#anchor` takes the headings of the file's open tab, its unsaved ones too, else of
+  the file. `TextDocument::goToHeading` reads the same `markdownHeadings`, so Ctrl+click and
+  the check agree on every anchor.
+* An image without a recorded digest (every course SVG before its first Update) is told apart
+  from one whose diagram changed.
 
 ### Insert Link
 
@@ -407,7 +423,9 @@ The text links the image to its diagram; the SVG records where it was drawn from
    `updateDiagramImages`, `dialogs/insert_diagram_dialog.*` (`markdown/diagramFolder`),
    `MarkdownView::linkActivated` through `TextDocument::openLink`, `insert-diagram`,
    `update-diagram-images` (`== update`).
-4. Check: `markdownCheck`, Check routed by the mode, `check`.
+4. Check — done: `markdownLinks`, `markdownHeadings` (also `TextDocument::goToHeading`),
+   `markdownCheck`, the window's `checkMarkdown` (F7 routed by the tab), the column of a
+   `PluginDiagnostic` (`line:column`, a click goes there), `findTextTab`, `check` (`== check`).
 5. Insert Link: `markdownHeadings`, `dialogs/insert_link_dialog.*`, `file.md#anchor`,
    `insert-link`.
 6. The preview: the splitter page of `TextDocument`, the block offsets, `preview`.
@@ -456,5 +474,7 @@ sibling), the digest, the update and the font it keeps, the Insert Diagram dialo
 link opening its tab; `md-insert-image`, `md-insert-diagram` and their rejects;
 `export-svg-metadata` — the parts of the recorded source, the refusals of a modified diagram
 and of a PNG, the plain `l3-svg-*` goods unchanged; `l4-dialog test_export_svg_source` — the
-checkbox. Planned with their stages: the headings and anchors of another text (repeats,
-Cyrillic, an open tab's unsaved heading), the check, the preview re-render and scroll.
+checkbox; the link scan, the headings (ATX, setext, repeats, Cyrillic, a link in a heading),
+the check with an open tab's unsaved heading, the diagram findings, F7 to the cursor;
+`mode-markdown-check` (`texts/markdown-broken.md`) and its reject. Planned with their stages:
+Insert Link, the preview re-render and scroll.

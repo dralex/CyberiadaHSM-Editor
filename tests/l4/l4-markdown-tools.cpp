@@ -31,6 +31,8 @@
 #include <QSpinBox>
 #include <QTemporaryDir>
 #include <QToolBar>
+#include <QTreeWidget>
+#include "plugin_dock.h"
 #include <QUndoStack>
 #include <QComboBox>
 #include <QLabel>
@@ -106,6 +108,11 @@ private slots:
 	void test_insert_diagram_dialog();
 	void test_window_diagram_actions();
 	void test_rendered_link_opens_tab();
+	void test_markdown_links();
+	void test_markdown_headings();
+	void test_markdown_check();
+	void test_check_diagram_images();
+	void test_window_check();
 };
 
 // EDIT-MD-4: the paths relative to the text, <path> with a space or a parenthesis, the
@@ -747,6 +754,171 @@ void TestMarkdownTools::test_rendered_link_opens_tab()
 	QVERIFY(view);
 	emit view->anchorClicked(QUrl("d.graphml"));
 	QTRY_VERIFY(window.currentDocument() && window.currentDocument()->filePath().endsWith("d.graphml"));
+}
+
+static QStringList linkTexts(const QString& text)
+{
+	QStringList out;
+	for (const MarkdownLink& l : markdownLinks(text)) {
+		out << QString("%1:%2 %3%4").arg(l.line).arg(l.column).arg(l.image ? "!" : "").arg(l.target);
+	}
+	return out;
+}
+
+// EDIT-MD-8: the links, the images inside them too, the definitions; none in code
+void TestMarkdownTools::test_markdown_links()
+{
+	QString text =
+		"See [a](x.md) and [![i](d/x.svg)](d/x.graphml), <https://site.org>.\n"
+		"`[code](no.md)` [b](<my file.md> \"t\")\n"
+		"```\n[fenced](no.md)\n```\n"
+		"[ref]: defs/r.md \"title\"\n"
+		"[c][ref] is a reference, not a target\n";
+	QCOMPARE(linkTexts(text), QStringList()
+	         << "1:5 x.md" << "1:19 d/x.graphml" << "1:20 !d/x.svg" << "2:17 my file.md" << "6:1 defs/r.md");
+}
+
+static QStringList headingTexts(const QString& text)
+{
+	QStringList out;
+	for (const MarkdownHeading& h : markdownHeadings(text)) {
+		out << QString("%1 %2 %3").arg(h.line).arg(h.level).arg(h.anchor);
+	}
+	return out;
+}
+
+// EDIT-MD-8/9: the ATX and the setext headings, their anchors as GitHub numbers them
+void TestMarkdownTools::test_markdown_headings()
+{
+	QString text = QString::fromUtf8(
+		"# Title #\n"
+		"Intro\n\n"
+		"## 4.2 Составные состояния\n"
+		"## A [link](x.md) and `code`\n"
+		"## Title\n"
+		"Setext one\n===\n\n"
+		"Setext two\n---\n\n"
+		"- item\n---\n\n"
+		"| a | b |\n|---|---|\n\n"
+		"```\n# not a heading\n```\n"
+		"# Title\n");
+	QCOMPARE(headingTexts(text), QStringList()
+	         << "1 1 title"
+	         << QString::fromUtf8("4 2 42-составные-состояния")
+	         << "5 2 a-link-and-code"
+	         << "6 2 title-1"
+	         << "7 1 setext-one"
+	         << "10 2 setext-two"
+	         << "22 1 title-2");
+	// Ctrl+click and the check read the same anchors
+	TextDocument doc(MODE_MARKDOWN);
+	doc.setText(text);
+	doc.openLink("#title-2");
+	QCOMPARE(doc.currentLine(), 22);
+	doc.openLink("#setext-two");
+	QCOMPARE(doc.currentLine(), 10);
+}
+
+// EDIT-MD-8: missing files and images, anchors of this and of another text, an open tab's
+// unsaved heading; the sites, the comments and the code are passed over
+void TestMarkdownTools::test_markdown_check()
+{
+	QTemporaryDir dir;
+	QString base = dir.path();
+	QVERIFY(copyInto(QUADRANTS, base + "/images/q.png"));
+	QFile other(base + "/other.md");
+	QVERIFY(other.open(QIODevice::WriteOnly));
+	other.write("# Other\n\n## Saved heading\n");
+	other.close();
+	QString text =
+		"# Main\n\n"
+		"[ok](#main) [bad](#gone) ![ok](images/q.png) ![bad](images/none.png)\n"
+		"[ok](other.md#saved-heading) [bad](other.md#unsaved-heading) [gone](none.md)\n"
+		"[site](https://example.org/none) [mail](mailto:a@b.c) [//]: # (comment)\n"
+		"`[code](none.md)`\n";
+	auto none = [](const QString&) { return QString(); };
+	QList<MarkdownFinding> findings = markdownCheck(text, base, none);
+	QStringList messages;
+	for (const MarkdownFinding& f : findings) messages << QString("%1:%2 %3").arg(f.line).arg(f.column).arg(f.message);
+	QCOMPARE(messages, QStringList()
+	         << "3:13 no heading for #gone"
+	         << "3:46 image not found: images/none.png"
+	         << "4:30 no heading for other.md#unsaved-heading"
+	         << "4:62 file not found: none.md");
+	// the open tab's text counts, its unsaved heading too
+	auto open = [&base](const QString& path) {
+		return path == base + "/other.md" ? QString("# Other\n\n## Unsaved heading\n") : QString();
+	};
+	findings = markdownCheck(text, base, open);
+	QCOMPARE(findings.size(), 4);
+	QCOMPARE(findings[2].message, QString("no heading for other.md#saved-heading"));
+	// an untitled text checks its anchors only
+	findings = markdownCheck(text, QString(), none);
+	QCOMPARE(findings.size(), 1);
+	QCOMPARE(findings[0].message, QString("no heading for #gone"));
+}
+
+// EDIT-MD-6/8: a diagram image without a recorded source, out of date, linked to another
+// diagram than it records, and one whose recorded diagram is gone
+void TestMarkdownTools::test_check_diagram_images()
+{
+	QTemporaryDir dir;
+	QString base = dir.path();
+	QString error;
+	QVERIFY(copyInto(DIAGRAM, base + "/d/a.graphml"));
+	QVERIFY(copyInto(ARROW, base + "/d/a.svg"));
+	QVERIFY(copyInto(DIAGRAM, base + "/d/b.graphml"));
+	QVERIFY(renderDiagramFile(base + "/d/b.graphml", base + "/d/b.svg", QString(), &error));
+	QVERIFY(copyInto(DIAGRAM, base + "/d/c.graphml"));
+	QVERIFY(renderDiagramFile(base + "/d/c.graphml", base + "/d/c.svg", QString(), &error));
+	QVERIFY(copyInto(DIAGRAM, base + "/d/e.graphml"));
+	QVERIFY(renderDiagramFile(base + "/d/e.graphml", base + "/img/e.svg", QString(), &error));
+	QFile::remove(base + "/d/e.graphml");
+	QFile c(base + "/d/c.graphml");
+	QVERIFY(c.open(QIODevice::Append));
+	c.write("\n");
+	c.close();
+	QString text = "![a](d/a.svg)\n\n[![b](d/b.svg)](d/a.graphml)\n\n![c](d/c.svg)\n\n![e](img/e.svg)\n\n![b](d/b.svg)\n";
+	QStringList messages;
+	for (const MarkdownFinding& f : markdownCheck(text, base, nullptr)) messages << QString("%1 %2").arg(f.line).arg(f.message);
+	QCOMPARE(messages, QStringList()
+	         << "1 diagram image without a recorded source: Update Diagram Images records d/a.graphml"
+	         << "3 linked to d/a.graphml, its SVG names d/b.graphml"
+	         << "5 diagram image out of date: d/c.graphml changed"
+	         << "7 no diagram file d/e.graphml");
+}
+
+// EDIT-MD-8: F7 on a Markdown tab, read-only too; the findings in Diagnostics by line:column,
+// a click putting the cursor there
+void TestMarkdownTools::test_window_check()
+{
+	QTemporaryDir dir;
+	QFile md(dir.path() + "/text.md");
+	QVERIFY(md.open(QIODevice::WriteOnly));
+	md.write("# Text\n\nSee [nothing](#nowhere) here.\n");
+	md.close();
+	CyberiadaSMEditorWindow window;
+	QVERIFY(!window.actionCheck->isEnabled());
+	QVERIFY(window.openFile(dir.path() + "/text.md"));
+	TextDocument* text = window.currentText();
+	QVERIFY(window.actionCheck->isEnabled());
+	QVERIFY(window.actionCheck->shortcuts().contains(QKeySequence("F7")));
+	window.actionReadOnly->trigger();
+	QVERIFY(window.actionCheck->isEnabled());
+	window.actionReadOnly->trigger();
+	QList<PluginDiagnostic> findings = window.checkMarkdown(text);
+	QCOMPARE(findings.size(), 1);
+	QCOMPARE(findings[0].severity, QString("warning"));
+	QTreeWidget* list = window.pluginDock()->diagnostics();
+	QCOMPARE(list->topLevelItemCount(), 1);
+	QTreeWidgetItem* item = list->topLevelItem(0);
+	QVERIFY(item->text(1).contains("3:5") || item->text(2).contains("3:5") || item->text(3).contains("3:5"));
+	emit list->itemActivated(item, 0);
+	QCOMPARE(text->currentLine(), 3);
+	QCOMPARE(text->editor()->textCursor().positionInBlock(), 4);
+	// a plain text has nothing to check
+	QVERIFY(window.openFile("texts/blink.cpp"));
+	QVERIFY(!window.actionCheck->isEnabled());
 }
 
 QTEST_MAIN(TestMarkdownTools)

@@ -1,0 +1,36 @@
+== check
+3:35 no heading for #nowhere
+3:59 image not found: images/none.png
+4:72 no heading for notes.md#red
+5:3 file not found: programs/none.ino
+20:1 file not found: none/reference.md
+== tabs
+count: 1
+0 markdown-broken.md markdown active
+== text
+mode: markdown
+file: markdown-broken.md
+modified: no
+rendered: no
+lines: 21
+| # Broken links
+| 
+| A [good anchor](#broken-links), a [bad one](#nowhere) and ![a missing image](images/none.png).
+| The [notes](notes.md), [their heading](notes.md#the-traffic-light) and [no such one](notes.md#red).
+| A [missing file](programs/none.ino), a [site](https://example.org/x) and ![the arrow](images/arrow.svg).
+| 
+| `[in code](none.md)` is code.
+| 
+| ```
+| [in a fence](none.md)
+| ```
+| 
+| [//]: # (a Markdown comment)
+| 
+| Setext heading
+| --------------
+| 
+| Back to [it](#setext-heading) and to [a reference][ref].
+| 
+| [ref]: none/reference.md
+| 

@@ -64,6 +64,8 @@ struct PluginDiagnostic {
     QString rule;
     QString element;
     int line = 0;
+    // from 1 in the line; 0 without one (EDIT-MD-8)
+    int column = 0;
     // false when the document has no such element (set by the window)
     bool linked = true;
 };

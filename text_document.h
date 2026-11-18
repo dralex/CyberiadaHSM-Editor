@@ -83,7 +83,7 @@ public:
     bool             showsRendered() const;
     // the lines of the source from 1 (EDIT-KEYS-7): the cursor to the start of the
     // line, scrolled into view and focused; false for a line the text has not
-    bool             goToLine(int line);
+    bool             goToLine(int line, int column = 1);
     int              lineCount() const;
     int              currentLine() const;
     // the directory of the file, where the Markdown images are found; empty without a file

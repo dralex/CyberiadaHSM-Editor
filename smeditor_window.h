@@ -118,6 +118,10 @@ public:
     // Update Diagram Images of a Markdown tab: the out-of-date ones, every one with all; the
     // results in Diagnostics, returned for the tests (EDIT-MD-7)
     QList<PluginDiagnostic> updateDiagramImages(TextDocument* text, bool all);
+    // Check of a Markdown tab: the broken links in Diagnostics, returned for the tests (EDIT-MD-8)
+    QList<PluginDiagnostic> checkMarkdown(TextDocument* text);
+    // the text tab of a file, null when it is not open
+    TextDocument*           findTextTab(const QString& path) const;
     DiffDocument*           currentDiff() const { return qobject_cast<DiffDocument*>(active); }
     // a diff or a text diff tab
     ComparisonDocument*     currentComparison() const { return qobject_cast<ComparisonDocument*>(active); }
@@ -332,7 +336,7 @@ public slots:
     void                    slotPluginManager();
     // a finding was clicked: select and centre its element (EDIT-PLUG-15)
     void                    slotDiagnosticActivated(EditorDocument* doc, const QString& elementId);
-    void                    slotLineActivated(EditorDocument* doc, int line);
+    void                    slotLineActivated(EditorDocument* doc, int line, int column);
     // a file of a files result: opened in a tab
     void                    slotFileActivated(const QString& path);
 

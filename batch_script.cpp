@@ -1139,7 +1139,7 @@ static bool runDocumentVerb(CyberiadaSMEditorWindow* win, const QStringList& tok
 // the Markdown verbs (EDIT-MD-12): the tools of the active Markdown tab
 static bool isMarkdownVerb(const QString& cmd)
 {
-	return cmd == "insert-image" || cmd == "insert-diagram" || cmd == "update-diagram-images";
+	return cmd == "insert-image" || cmd == "insert-diagram" || cmd == "update-diagram-images" || cmd == "check";
 }
 
 // the batch draws in the --font family, never in a font of the GUI settings
@@ -1290,8 +1290,27 @@ static bool updateDiagramImagesVerb(CyberiadaSMEditorWindow* win, const QStringL
 	return true;
 }
 
+// check: the broken links of the active Markdown tab as == check (EDIT-MD-8)
+static bool checkVerb(CyberiadaSMEditorWindow* win, const QStringList& tokens, QString* error)
+{
+	TextDocument* text = win->currentText();
+	if (!text || text->mode() != MODE_MARKDOWN) {
+		*error = "check needs an active Markdown tab";
+		return false;
+	}
+	if (tokens.size() != 1) { *error = "check takes no argument"; return false; }
+	QList<PluginDiagnostic> findings = win->checkMarkdown(text);
+	std::cout << "== check" << std::endl;
+	if (findings.isEmpty()) std::cout << "none" << std::endl;
+	for (const PluginDiagnostic& f : findings) {
+		std::cout << f.line << ":" << f.column << " " << qPrintable(f.message) << std::endl;
+	}
+	return true;
+}
+
 static bool runMarkdownVerb(CyberiadaSMEditorWindow* win, const QStringList& tokens, QString* error)
 {
+	if (tokens.first() == "check") return checkVerb(win, tokens, error);
 	if (tokens.first() == "insert-diagram") return insertDiagramVerb(win, tokens, error);
 	if (tokens.first() == "update-diagram-images") return updateDiagramImagesVerb(win, tokens, error);
 	return insertImageVerb(win, tokens, error);
