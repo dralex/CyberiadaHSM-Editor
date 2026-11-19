@@ -26,6 +26,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QUrl>
 #include <QTextStream>
 #include <QRegularExpression>
 #include <QApplication>
@@ -47,6 +48,7 @@
 #include "editable_text_item.h"
 #include "settings_manager.h"
 #include "markdown_tools.h"
+#include "markdown_objects.h"
 #include "text_document.h"
 
 static bool toNumbers(const QStringList& tokens, int from, int count, double* values)
@@ -1139,7 +1141,8 @@ static bool runDocumentVerb(CyberiadaSMEditorWindow* win, const QStringList& tok
 // the Markdown verbs (EDIT-MD-12): the tools of the active Markdown tab
 static bool isMarkdownVerb(const QString& cmd)
 {
-	return cmd == "insert-image" || cmd == "insert-diagram" || cmd == "update-diagram-images" || cmd == "check";
+	return cmd == "insert-image" || cmd == "insert-diagram" || cmd == "insert-link" ||
+		cmd == "update-diagram-images" || cmd == "check";
 }
 
 // the batch draws in the --font family, never in a font of the GUI settings
@@ -1308,8 +1311,60 @@ static bool checkVerb(CyberiadaSMEditorWindow* win, const QStringList& tokens, Q
 	return true;
 }
 
+// insert-link <target> [line <n>] [<text>]: Insert Link as a paragraph of its own; the target
+// is written as given, relative to the text; a missing file or an anchor no heading has is
+// refused (EDIT-MD-9/12)
+static bool insertLinkVerb(CyberiadaSMEditorWindow* win, const QStringList& tokens, QString* error)
+{
+	TextDocument* text = markdownTab(win, tokens.first(), error);
+	if (!text) return false;
+	if (tokens.size() < 2) { *error = "insert-link needs a target"; return false; }
+	QString target = tokens[1];
+	int before = text->lineCount() + 1;
+	int i = 2;
+	if (i + 1 < tokens.size() && tokens[i] == "line") {
+		bool ok = false;
+		before = tokens[i + 1].toInt(&ok);
+		if (!ok || before <= 0) { *error = "bad line value " + tokens[i + 1]; return false; }
+		i += 2;
+	}
+	QString label = target;
+	QUrl url(target, QUrl::TolerantMode);
+	// an address is not checked; a one-letter scheme is a Windows drive
+	if (url.scheme().size() <= 1) {
+		QString fragment = url.hasFragment() ? url.fragment(QUrl::FullyDecoded) : QString();
+		if (url.path().isEmpty() && fragment.isEmpty()) { *error = "insert-link needs a target"; return false; }
+		QString markdown = text->text();
+		if (!url.path().isEmpty()) {
+			QString file = markdownImagePath(target, text->baseDir());
+			if (file.isEmpty() || !QFileInfo::exists(file)) { *error = "no such file " + url.path(); return false; }
+			label = QFileInfo(file).fileName();
+			if (!fragment.isEmpty()) {
+				TextDocument* open = win->findTextTab(file);
+				QFile other(file);
+				markdown = open ? open->text()
+								: (other.open(QIODevice::ReadOnly) ? QString::fromUtf8(other.readAll()) : QString());
+			}
+		}
+		if (!fragment.isEmpty()) {
+			bool found = false;
+			for (const MarkdownHeading& h : markdownHeadings(markdown)) {
+				if (h.anchor == fragment.toLower()) {
+					found = true;
+					label = h.title;
+					break;
+				}
+			}
+			if (!found) { *error = "no heading for " + target; return false; }
+		}
+	}
+	if (i < tokens.size()) label = restOfLine(tokens, i);
+	return text->insertBlock(markdownLinkLine(label, target), before, "insert link");
+}
+
 static bool runMarkdownVerb(CyberiadaSMEditorWindow* win, const QStringList& tokens, QString* error)
 {
+	if (tokens.first() == "insert-link") return insertLinkVerb(win, tokens, error);
 	if (tokens.first() == "check") return checkVerb(win, tokens, error);
 	if (tokens.first() == "insert-diagram") return insertDiagramVerb(win, tokens, error);
 	if (tokens.first() == "update-diagram-images") return updateDiagramImagesVerb(win, tokens, error);

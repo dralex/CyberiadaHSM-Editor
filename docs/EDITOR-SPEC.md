@@ -1532,7 +1532,7 @@ architecture is `docs/MARKDOWN.md`, Tools. Specified in 0.72.
 - `EDIT-MD-10` MUST [A]: a link `file.md#anchor` opens the file's tab (an open one is
   activated) at the line of the heading in the source or scrolled to it on a rendered page —
   by Ctrl+click in the source (`EDIT-MODE-28`) and by a click on a rendered page
-  (`EDIT-MODE-14`); an anchor no heading has leaves the tab at its top. *design*
+  (`EDIT-MODE-14`); an anchor no heading has only opens the tab. *design*
 - `EDIT-MD-11` SHOULD [A]: View > Preview, off by default and remembered
   (`display/markdownPreview`), shows each writable Markdown tab as its source and its rendered
   page side by side in a splitter; the page is rendered again 300 ms after the last edit with

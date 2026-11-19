@@ -207,6 +207,7 @@ add_library(CyberiadaEditorCore STATIC
   dialogs/export_image_dialog.h dialogs/export_image_dialog.cpp
   dialogs/insert_image_dialog.h dialogs/insert_image_dialog.cpp
   dialogs/insert_diagram_dialog.h dialogs/insert_diagram_dialog.cpp
+  dialogs/insert_link_dialog.h dialogs/insert_link_dialog.cpp
   dialogs/file_dialog.h dialogs/file_dialog.cpp
   dialogs/open_file_dialog.h dialogs/open_file_dialog.cpp dialogs/open_file_dialog.ui
   dialogs/save_file_dialog.h dialogs/save_file_dialog.cpp dialogs/save_file_dialog.ui

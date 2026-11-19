@@ -238,12 +238,31 @@ void TextDocument::openLink(const QString& target)
     // a file as the rendered page finds an image: from the directory of the tab's file
     QString path = markdownImagePath(target, baseDir());
     if (!path.isEmpty()) {
-        if (isDocumentFile(path)) emit openFileRequested(path);
+        if (isDocumentFile(path)) emit openFileRequested(path, url.hasFragment() ? url.fragment(QUrl::FullyDecoded) : QString());
         else QDesktopServices::openUrl(QUrl::fromLocalFile(path));
         return;
     }
     // a relative path of an untitled tab names nothing
     if (!url.isRelative()) QDesktopServices::openUrl(url);
+}
+
+bool TextDocument::insertInline(const QString& text, const QString& label)
+{
+    if (!isEditable()) return false;
+    QTextCursor cursor = m_editor->textCursor();
+    m_stepName = label;
+    cursor.beginEditBlock();
+    cursor.insertText(text);
+    cursor.endEditBlock();
+    m_stepName.clear();
+    m_editor->setTextCursor(cursor);
+    m_editor->ensureCursorVisible();
+    return true;
+}
+
+bool TextDocument::showHeading(const QString& anchor)
+{
+    return showsRendered() ? m_rendered->scrollToHeading(anchor) : goToHeading(anchor);
 }
 
 bool TextDocument::goToHeading(const QString& anchor)

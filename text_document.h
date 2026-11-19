@@ -74,6 +74,12 @@ public:
     // after the paragraph of the cursor or on its blank line; the cursor at its end; false
     // when the text is not editable
     bool             insertBlock(const QString& line, int before, const QString& label);
+    // the text at the cursor, the selection replaced, one undo step of the label (EDIT-MD-9);
+    // false when the text is not editable
+    bool             insertInline(const QString& text, const QString& label);
+    // the heading of the anchor shown: its source line, or scrolled to on a rendered page;
+    // false when no heading has it (EDIT-MD-10)
+    bool             showHeading(const QString& anchor);
     // write the text to the file, which becomes the document's
     bool             saveAs(const QString& path, QString* error);
     QString          text() const;
@@ -100,7 +106,8 @@ public:
     // check the text now (EDIT-MODE-26)
     void             checkText();
     // a link target of the Markdown source opened (EDIT-MODE-28): a #anchor on its heading's
-    // line, a file the editor opens by openFileRequested, another file or a site by the system
+    // line, a file the editor opens by openFileRequested with its #fragment (EDIT-MD-10), another
+    // file or a site by the system
     void             openLink(const QString& target);
 
     // the shown page is searched, the editor or the rendered view (EDIT-FIND-5)
@@ -114,7 +121,7 @@ public:
 
 signals:
     // a file a link names that the editor opens in a tab (EDIT-MODE-28)
-    void             openFileRequested(const QString& path);
+    void             openFileRequested(const QString& path, const QString& fragment);
     // an image dropped on or pasted into a Markdown source (EDIT-MD-2)
     void             imageOffered(const QString& path, const QImage& image);
 

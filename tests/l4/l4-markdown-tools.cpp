@@ -24,6 +24,7 @@
  * ----------------------------------------------------------------------------- */
 
 #include <QtTest>
+#include <QTextBlock>
 #include <QClipboard>
 #include <QLineEdit>
 #include <QMimeData>
@@ -45,6 +46,7 @@
 #include "markdown_view.h"
 #include "fontmanager.h"
 #include "dialogs/insert_diagram_dialog.h"
+#include "dialogs/insert_link_dialog.h"
 #include "dialogs/insert_image_dialog.h"
 #include "code_editor.h"
 #include "text_document.h"
@@ -113,6 +115,12 @@ private slots:
 	void test_markdown_check();
 	void test_check_diagram_images();
 	void test_window_check();
+	void test_link_helpers();
+	void test_insert_inline();
+	void test_insert_link_dialog();
+	void test_insert_link_dialog_outside();
+	void test_open_linked_heading();
+	void test_window_link_action();
 };
 
 // EDIT-MD-4: the paths relative to the text, <path> with a space or a parenthesis, the
@@ -919,6 +927,183 @@ void TestMarkdownTools::test_window_check()
 	// a plain text has nothing to check
 	QVERIFY(window.openFile("texts/blink.cpp"));
 	QVERIFY(!window.actionCheck->isEnabled());
+}
+
+static void writeFile(const QString& path, const QByteArray& content)
+{
+	QDir().mkpath(QFileInfo(path).absolutePath());
+	QFile file(path);
+	QVERIFY(file.open(QIODevice::WriteOnly));
+	file.write(content);
+}
+
+// EDIT-MD-9: the Markdown files below a folder, hidden ones left out; the link line
+void TestMarkdownTools::test_link_helpers()
+{
+	QTemporaryDir dir;
+	writeFile(dir.path() + "/a.md", "# A\n");
+	writeFile(dir.path() + "/sub/b.markdown", "# B\n");
+	writeFile(dir.path() + "/.hidden/c.md", "# C\n");
+	writeFile(dir.path() + "/notes.txt", "text\n");
+	QCOMPARE(markdownFilesUnder(dir.path()), QStringList() << "a.md" << "sub/b.markdown");
+	QVERIFY(markdownFilesUnder(QString()).isEmpty());
+	QCOMPARE(markdownLinkLine("A [x]", "b.md#a"), QString("[A \\[x\\]](b.md#a)"));
+	QCOMPARE(markdownLinkLine("A", "my file.md#a"), QString("[A](<my file.md#a>)"));
+}
+
+// EDIT-MD-9: the link replaces the selection, one undo step
+void TestMarkdownTools::test_insert_inline()
+{
+	TextDocument doc(MODE_MARKDOWN);
+	doc.setText("see here now");
+	QTextCursor cursor(doc.editor()->document());
+	cursor.setPosition(4);
+	cursor.setPosition(8, QTextCursor::KeepAnchor);
+	doc.editor()->setTextCursor(cursor);
+	int steps = doc.undoStack()->count();
+	QVERIFY(doc.insertInline("[here](#x)", "insert link"));
+	QCOMPARE(doc.text(), QString("see [here](#x) now"));
+	QCOMPARE(doc.editor()->textCursor().position(), 14);
+	QCOMPARE(doc.undoStack()->count(), steps + 1);
+	QCOMPARE(doc.undoStack()->undoText(), QString("insert link"));
+	doc.undoStack()->undo();
+	QCOMPARE(doc.text(), QString("see here now"));
+	doc.setReadOnlyFlag(true);
+	QVERIFY(!doc.insertInline("x", "insert link"));
+}
+
+// EDIT-MD-9: this text and the texts below it, their headings by level with GitHub's anchors,
+// an open tab's unsaved heading, a file, an address, the proposed and the selected text
+void TestMarkdownTools::test_insert_link_dialog()
+{
+	QTemporaryDir dir;
+	QString base = dir.path();
+	writeFile(base + "/text.md", "# Own\n\n## Part\n");
+	writeFile(base + "/other/b.md", "# B title\n\n## B part\n\n## B part\n");
+	writeFile(base + "/c.md", "plain\n");
+	writeFile(base + "/.x/d.md", "# D\n");
+	auto none = [](const QString&) { return QString(); };
+	InsertLinkDialog dlg(base + "/text.md", "# Own\n\n## Part\n", QString(), none);
+	QStringList texts;
+	for (int i = 0; i < dlg.textBox()->count(); i++) texts << dlg.textBox()->itemText(i);
+	QCOMPARE(texts, QStringList() << "this text" << "c.md" << "other/b.md");
+	QVERIFY(dlg.headingChoice()->isChecked());
+	QCOMPARE(dlg.headingBox()->count(), 2);
+	QCOMPARE(dlg.headingBox()->itemText(1), QString("    Part"));
+	QCOMPARE(dlg.target(), QString("#own"));
+	QCOMPARE(dlg.text(), QString("Own"));
+	QCOMPARE(dlg.insertedLine(), QString("[Own](#own)"));
+	QVERIFY(dlg.insertButton()->isEnabled());
+	dlg.headingBox()->setCurrentIndex(1);
+	QCOMPARE(dlg.insertedLine(), QString("[Part](#part)"));
+	// another text: its repeated heading numbered
+	dlg.textBox()->setCurrentIndex(2);
+	QCOMPARE(dlg.headingBox()->count(), 3);
+	dlg.headingBox()->setCurrentIndex(2);
+	QCOMPARE(dlg.target(), QString("other/b.md#b-part-1"));
+	QCOMPARE(dlg.text(), QString("B part"));
+	// a text without headings
+	dlg.textBox()->setCurrentIndex(1);
+	QVERIFY(!dlg.noteLabel()->text().isEmpty() && !dlg.insertButton()->isEnabled());
+	// a file, written relative to the text; a missing one refused
+	dlg.chooseFile(base + "/other/b.md");
+	QCOMPARE(dlg.fileEdit()->text(), QString("other/b.md"));
+	QCOMPARE(dlg.insertedLine(), QString("[b.md](other/b.md)"));
+	dlg.fileEdit()->setText("none.txt");
+	QVERIFY(!dlg.insertButton()->isEnabled());
+	// an address
+	dlg.addressChoice()->setChecked(true);
+	dlg.addressEdit()->setText("https://example.org");
+	QCOMPARE(dlg.insertedLine(), QString("[https://example.org](https://example.org)"));
+	// a typed text stays
+	dlg.textEdit()->setText("site");
+	emit dlg.textEdit()->textEdited("site");
+	dlg.addressEdit()->setText("https://example.org/a");
+	QCOMPARE(dlg.insertedLine(), QString("[site](https://example.org/a)"));
+	// a keystroke keeps its character: the proposal never overwrites a typed text
+	InsertLinkDialog typed(base + "/text.md", "# Own\n", QString(), none);
+	typed.textEdit()->setFocus();
+	typed.textEdit()->end(false);
+	QTest::keyClicks(typed.textEdit(), "!");
+	QCOMPARE(typed.text(), QString("Own!"));
+	QCOMPARE(typed.insertedLine(), QString("[Own!](#own)"));
+
+	// the open tab's text: its unsaved heading
+	auto open = [&base](const QString& path) {
+		return path == base + "/other/b.md" ? QString("# Unsaved\n") : QString();
+	};
+	InsertLinkDialog unsaved(base + "/text.md", "# Own\n", "the selection", open);
+	unsaved.textBox()->setCurrentIndex(2);
+	QCOMPARE(unsaved.headingBox()->count(), 1);
+	QCOMPARE(unsaved.target(), QString("other/b.md#unsaved"));
+	QCOMPARE(unsaved.text(), QString("the selection"));
+}
+
+// EDIT-MD-9: a text of a subfolder links up; a text outside its folder is added by Browse
+void TestMarkdownTools::test_insert_link_dialog_outside()
+{
+	QTemporaryDir dir;
+	QString base = dir.path();
+	writeFile(base + "/sub/t.md", "# T\n");
+	writeFile(base + "/c.md", QString::fromUtf8("# 4.2 Составные\n").toUtf8());
+	InsertLinkDialog dlg(base + "/sub/t.md", "# T\n", QString(), nullptr);
+	QCOMPARE(dlg.textBox()->count(), 1);
+	dlg.chooseText(base + "/c.md");
+	QCOMPARE(dlg.textBox()->count(), 2);
+	QCOMPARE(dlg.target(), QString::fromUtf8("../c.md#42-составные"));
+	// the text itself is this text
+	dlg.chooseText(base + "/sub/t.md");
+	QCOMPARE(dlg.textBox()->currentIndex(), 0);
+	QCOMPARE(dlg.target(), QString("#t"));
+}
+
+// EDIT-MD-10: a link to another text's heading opens its tab on the heading's line, scrolls a
+// rendered page to it; an anchor no heading has only opens the tab
+void TestMarkdownTools::test_open_linked_heading()
+{
+	QTemporaryDir dir;
+	writeFile(dir.path() + "/a.md", "[go](b.md#second)\n");
+	writeFile(dir.path() + "/b.md", "# First\n\ntext\n\n## Second\n\nmore\n");
+	CyberiadaSMEditorWindow window;
+	QVERIFY(window.openFile(dir.path() + "/a.md"));
+	TextDocument* a = window.currentText();
+	a->openLink("b.md#second");
+	QTRY_VERIFY(window.currentText() && window.currentText() != a);
+	TextDocument* b = window.currentText();
+	QVERIFY(b->filePath().endsWith("b.md"));
+	QCOMPARE(b->currentLine(), 5);
+	// the rendered page of the open tab scrolls to it
+	b->goToLine(1);
+	window.actionReadOnly->trigger();
+	QVERIFY(b->showsRendered());
+	window.setCurrentDocument(a);
+	a->openLink("b.md#second");
+	QTRY_COMPARE(window.currentText(), b);
+	MarkdownView* view = b->page()->findChild<MarkdownView*>();
+	QTRY_COMPARE(view->textCursor().block().text(), QString("Second"));
+	// an unknown anchor: the tab only
+	window.setCurrentDocument(a);
+	a->openLink("b.md#nowhere");
+	QTRY_COMPARE(window.currentText(), b);
+	QVERIFY(b->showHeading("first"));
+	QVERIFY(!b->showHeading("nowhere"));
+}
+
+// EDIT-MD-1/9: Insert Link in Edit, on the text toolbar, Ctrl+K, a writable Markdown tab
+void TestMarkdownTools::test_window_link_action()
+{
+	CyberiadaSMEditorWindow window;
+	QVERIFY(window.openFile("texts/notes.md"));
+	QVERIFY(window.actionInsertLink->isEnabled());
+	QVERIFY(window.textToolBar->actions().contains(window.actionInsertLink));
+	QVERIFY(window.menuEdit->actions().contains(window.actionInsertLink));
+	QVERIFY(window.actionInsertLink->shortcuts().contains(QKeySequence("Ctrl+K")));
+	QVERIFY(!window.actionInsertLink->icon().isNull());
+	window.actionReadOnly->trigger();
+	QVERIFY(!window.actionInsertLink->isEnabled());
+	window.actionReadOnly->trigger();
+	QVERIFY(window.openFile("diagrams/hierarchy.graphml"));
+	QVERIFY(!window.actionInsertLink->isEnabled());
 }
 
 QTEST_MAIN(TestMarkdownTools)

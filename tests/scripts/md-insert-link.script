@@ -1,0 +1,6 @@
+# Insert Link in batch mode (EDIT-MD-9/12): an anchor of this text before line 1 named by its
+# heading, the anchor in a file with an escaped text, a file by its name, an address
+insert-link #the-traffic-light line 1
+insert-link notes.md#the-traffic-light Back to [the] top
+insert-link notes.md
+insert-link https://example.org/hsm The course site

@@ -208,6 +208,8 @@ private:
     // the File > Open Recent submenu, rebuilt from the stored recent-files list
     void                    rebuildRecentMenu();
     void                    openRecentFile(const QString& path);
+    // a file a link of a text names, at the heading of its #fragment (EDIT-MD-10)
+    void                    openLinkedFile(const QString& path, const QString& fragment);
 
     // the tab text: the title with the mode and the modified markers, the path as
     // the tooltip
@@ -323,6 +325,8 @@ private slots:
     void                    slotInsertImage();
     // Edit > Insert Diagram... (EDIT-MD-5)
     void                    slotInsertDiagram();
+    // Edit > Insert Link... (EDIT-MD-9)
+    void                    slotInsertLink();
     // Document > Update Diagram Images (EDIT-MD-7)
     void                    slotUpdateDiagramImages();
     void                    slotFindStep(int step);

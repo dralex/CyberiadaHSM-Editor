@@ -183,6 +183,7 @@
     <addaction name="separator"/>
     <addaction name="actionInsertImage"/>
     <addaction name="actionInsertDiagram"/>
+    <addaction name="actionInsertLink"/>
     <addaction name="separator"/>
     <addaction name="menuTools"/>
    </widget>
@@ -410,6 +411,18 @@
    </property>
    <property name="toolTip">
     <string>Export again the diagram images of the text whose diagrams changed</string>
+   </property>
+  </action>
+  <action name="actionInsertLink">
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/insert-link.png</normaloff>:/Icons/images/insert-link.png</iconset>
+   </property>
+   <property name="text">
+    <string>Insert Link...</string>
+   </property>
+   <property name="toolTip">
+    <string>Insert a link to a heading, a file or an address into the Markdown text</string>
    </property>
   </action>
   <action name="actionInsertImage">

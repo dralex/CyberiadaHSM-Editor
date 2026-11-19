@@ -617,3 +617,32 @@ QList<MarkdownFinding> markdownCheck(const QString& text, const QString& baseDir
     });
     return findings;
 }
+
+// ---------------------------------------------------------------------------- links
+
+static void collectMarkdownFiles(const QDir& base, const QDir& dir, QStringList* files)
+{
+    // no QDir::Hidden: the hidden files and folders (.git) are left out
+    for (const QFileInfo& info : dir.entryInfoList(QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name)) {
+        if (info.isDir()) {
+            if (!info.isSymLink()) collectMarkdownFiles(base, QDir(info.absoluteFilePath()), files);
+        } else if (isMarkdownFile(info.fileName())) {
+            *files << base.relativeFilePath(info.absoluteFilePath());
+        }
+    }
+}
+
+QStringList markdownFilesUnder(const QString& dir)
+{
+    QStringList files;
+    if (dir.isEmpty()) return files;
+    collectMarkdownFiles(QDir(dir), QDir(dir), &files);
+    files.sort();
+    return files;
+}
+
+QString markdownLinkLine(const QString& text, const QString& target)
+{
+    bool wrap = target.contains(' ') || target.contains('(') || target.contains(')');
+    return "[" + markdownLabel(text) + "](" + (wrap ? "<" + target + ">" : target) + ")";
+}

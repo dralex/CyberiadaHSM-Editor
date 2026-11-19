@@ -1,7 +1,7 @@
 # The Markdown Rendering — Architecture
 
-**Document version:** 0.13 (2026-11-18) — the authoring tools specified (Tools), stages 1
-to 4 implemented.
+**Document version:** 0.13 (2026-11-19) — the authoring tools specified (Tools), stages 1
+to 5 implemented.
 The requirements are `EDIT-MODE-14`, `EDIT-MODE-17`, `EDIT-MODE-18`, `EDIT-TEXT-14`,
 `EDIT-MD-1..12` and `EDIT-IO-8` in `EDITOR-SPEC.md`.
 
@@ -378,14 +378,29 @@ The text links the image to its diagram; the SVG records where it was drawn from
                                                     [Insert] [Cancel]
 ```
 
+```
+ InsertLinkDialog(textPath, its text, the selection, openText)
+   Text combo: this text + markdownFilesUnder(dir), Browse adds one outside (../x.md)
+   Heading combo: markdownHeadings of the chosen text (its open tab's text, else the file)
+   file: relative to the text, a missing one refused;  address: as typed
+        | markdownLinkLine(text, target)
+        v
+ TextDocument::insertInline: the selection replaced, one undo step
+```
+
 * `markdownHeadings(text)` → {level, title, anchor, line}: one reading of the headings (not
-  in a code fence) for the dialog, the check, `TextDocument::goToHeading` and
-  `MarkdownView::scrollToHeading`, which number a repeated anchor alike (`-1`, `-2`); a
-  Cyrillic heading keeps its letters, as GitHub does: `## 4.2 Составные состояния` is
-  `#42-составные-состояния`.
-* The headings of another text come from its tab when it is open (the unsaved ones too).
-* Opening `file.md#anchor`: `openFileRequested(path, fragment)`; the window opens or activates
-  the tab, then goes to the heading in the source or scrolls the rendered page to it.
+  in a code fence) for the dialog, the check and `TextDocument::goToHeading`, numbering a
+  repeated anchor as `MarkdownView::scrollToHeading` does (`-1`, `-2`); a Cyrillic heading
+  keeps its letters, as GitHub does: `## 4.2 Составные состояния` is `#42-составные-состояния`.
+* The link text is the selection, else the heading title, the file name or the address, until
+  it is typed; a keystroke is never overwritten by a proposal (`textChanged` comes before
+  `textEdited`).
+* Opening `file.md#anchor`: `openFileRequested(path, fragment)` (Ctrl+click in the source, a
+  click on a rendered page); `openLinkedFile` opens or activates the tab, then its
+  `showHeading`: the heading's line in the source, or the rendered page scrolled to it; an
+  anchor no heading has only opens the tab.
+* Batch `insert-link <target> [line <n>] [<text>]`: a paragraph of its own; the target written
+  as given, relative to the text; a missing file or an unknown anchor refused.
 
 ### The preview
 
@@ -426,8 +441,9 @@ The text links the image to its diagram; the SVG records where it was drawn from
 4. Check — done: `markdownLinks`, `markdownHeadings` (also `TextDocument::goToHeading`),
    `markdownCheck`, the window's `checkMarkdown` (F7 routed by the tab), the column of a
    `PluginDiagnostic` (`line:column`, a click goes there), `findTextTab`, `check` (`== check`).
-5. Insert Link: `markdownHeadings`, `dialogs/insert_link_dialog.*`, `file.md#anchor`,
-   `insert-link`.
+5. Insert Link — done: `markdownFilesUnder`, `markdownLinkLine`, `dialogs/insert_link_dialog.*`,
+   `TextDocument::insertInline` and `showHeading`, `openFileRequested(path, fragment)` and the
+   window's `openLinkedFile`, Edit > Insert Link (`Ctrl+K`, the text toolbar), `insert-link`.
 6. The preview: the splitter page of `TextDocument`, the block offsets, `preview`.
 
 ## Build
@@ -476,5 +492,8 @@ link opening its tab; `md-insert-image`, `md-insert-diagram` and their rejects;
 and of a PNG, the plain `l3-svg-*` goods unchanged; `l4-dialog test_export_svg_source` — the
 checkbox; the link scan, the headings (ATX, setext, repeats, Cyrillic, a link in a heading),
 the check with an open tab's unsaved heading, the diagram findings, F7 to the cursor;
-`mode-markdown-check` (`texts/markdown-broken.md`) and its reject. Planned with their stages:
-Insert Link, the preview re-render and scroll.
+`mode-markdown-check` (`texts/markdown-broken.md`) and its reject; the link helpers, the
+inline insert, the Insert Link dialog (the texts below the folder, the headings of another
+text and of an open tab, a text outside, a keystroke kept), `file.md#anchor` opening at the
+heading in the source and on a rendered page; `md-insert-link` and its reject. Planned with
+their stage: the preview re-render and scroll.

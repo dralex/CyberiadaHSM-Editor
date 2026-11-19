@@ -62,6 +62,7 @@
 #include "dialogs/export_image_dialog.h"
 #include "dialogs/insert_image_dialog.h"
 #include "dialogs/insert_diagram_dialog.h"
+#include "dialogs/insert_link_dialog.h"
 #include "markdown_tools.h"
 #include "settings_manager.h"
 #include "cyberiadasm_render.h"
@@ -132,12 +133,13 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     connect(actionGoToLine, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotGoToLine);
     connect(actionInsertImage, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotInsertImage);
     connect(actionInsertDiagram, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotInsertDiagram);
+    connect(actionInsertLink, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotInsertLink);
     connect(actionUpdateDiagramImages, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotUpdateDiagramImages);
     // the Markdown group of the text toolbar, shown in a Markdown tab (EDIT-MD-1)
     QAction* markdownSeparator = new QAction(this);
     markdownSeparator->setSeparator(true);
     markdownToolActions << markdownSeparator << actionInsertImage << actionInsertDiagram
-                        << actionUpdateDiagramImages;
+                        << actionInsertLink << actionUpdateDiagramImages;
     connect(actionFind, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotFind);
     connect(actionFindNext, &QAction::triggered, this, [this]() { slotFindStep(1); });
     connect(actionFindPrevious, &QAction::triggered, this, [this]() { slotFindStep(-1); });
@@ -327,7 +329,7 @@ TextDocument* CyberiadaSMEditorWindow::newTextDocument(const QString& mode)
     connect(doc->editor(), &QPlainTextEdit::copyAvailable, this,
             [this, doc](bool) { if (doc == active) updateEditActions(); });
     // a file a link names opens as a recent one does, after the click (EDIT-MODE-28)
-    connect(doc, &TextDocument::openFileRequested, this, &CyberiadaSMEditorWindow::openRecentFile,
+    connect(doc, &TextDocument::openFileRequested, this, &CyberiadaSMEditorWindow::openLinkedFile,
             Qt::QueuedConnection);
     connect(doc, &TextDocument::imageOffered, this,
             [this, doc](const QString& path, const QImage& image) { insertImage(doc, path, image); });
@@ -1042,6 +1044,7 @@ void CyberiadaSMEditorWindow::updateMarkdownActions()
     bool inserts = markdown && text->isEditable() && !text->showsRendered();
     actionInsertImage->setEnabled(inserts);
     actionInsertDiagram->setEnabled(inserts);
+    actionInsertLink->setEnabled(inserts);
     // the images are other files: a read-only text updates them too
     actionUpdateDiagramImages->setEnabled(markdown && text->hasFile());
     showMarkdownTools(markdown);
@@ -1171,6 +1174,24 @@ void CyberiadaSMEditorWindow::slotInsertDiagram()
         if (!dlg.folder().isEmpty()) sm.setMarkdownDiagramFolder(dlg.folder());
         text->insertBlock(markdownDiagramLine(dlg.alt(), svg, target, text->baseDir()), 0, tr("insert diagram"));
         return;
+    }
+}
+
+void CyberiadaSMEditorWindow::slotInsertLink()
+{
+    TextDocument* text = currentText();
+    if (!text || text->mode() != MODE_MARKDOWN || !text->isEditable()) return;
+    if (!ensureTextFile(text, tr("Insert Link"))) return;
+    // the selection is the link text, on one line
+    QString selection = text->editor()->textCursor().selectedText();
+    selection.replace(QChar::ParagraphSeparator, ' ');
+    auto openText = [this](const QString& path) {
+        TextDocument* tab = findTextTab(path);
+        return tab ? tab->text() : QString();
+    };
+    InsertLinkDialog dlg(text->filePath(), text->text(), selection, openText, this);
+    if (dlg.exec() == QDialog::Accepted && !dlg.insertedLine().isEmpty()) {
+        text->insertInline(dlg.insertedLine(), tr("insert link"));
     }
 }
 
@@ -1980,6 +2001,14 @@ void CyberiadaSMEditorWindow::rebuildRecentMenu()
         connect(recentMenu->addAction(tr("Clear list")), &QAction::triggered,
                 this, []() { SettingsManager::instance().clearRecentFiles(); });
     }
+}
+
+void CyberiadaSMEditorWindow::openLinkedFile(const QString& path, const QString& fragment)
+{
+    openRecentFile(path);
+    // an anchor no heading has only opens the tab
+    TextDocument* text = findTextTab(path);
+    if (!fragment.isEmpty() && text && text == currentText()) text->showHeading(fragment);
 }
 
 void CyberiadaSMEditorWindow::openRecentFile(const QString& path)

@@ -194,4 +194,10 @@ struct MarkdownFinding {
 QList<MarkdownFinding> markdownCheck(const QString& text, const QString& baseDir,
                                      const std::function<QString(const QString&)>& openText);
 
+// the Markdown files below the directory, relative to it with '/', sorted; the hidden folders
+// and the links to folders skipped (EDIT-MD-9)
+QStringList markdownFilesUnder(const QString& dir);
+// [text](target), the target written as <target> with a space or a parenthesis (EDIT-MD-9)
+QString markdownLinkLine(const QString& text, const QString& target);
+
 #endif

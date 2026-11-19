@@ -390,6 +390,8 @@ add_text_test(markdown-check-reject diagrams/hierarchy.graphml 4)
 add_markdown_test(insert-diagram texts/notes.md 0)
 add_markdown_test(insert-diagram-reject texts/notes.md 4)
 add_markdown_test(update-diagram-images-reject texts/notes.md 4)
+add_markdown_test(insert-link texts/notes.md 0)
+add_markdown_test(insert-link-reject texts/notes.md 4)
 
 # the export of a text tab: a Markdown text to PDF only (EDIT-MODE-16/18)
 function(add_text_export_test name input output expected_code)
