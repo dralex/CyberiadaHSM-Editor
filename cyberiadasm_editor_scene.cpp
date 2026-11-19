@@ -511,6 +511,17 @@ void CyberiadaSMEditorScene::slotModelDataChanged(const QModelIndex &topLeft, co
             }
         }
     }
+    if (current_item == nullptr
+            && element->get_type() == Cyberiada::elementFormalComment
+            && element->has_geometry()
+            && (!CyberiadaSMModel::isComponentComment(element)
+                || SettingsManager::instance().getShowComponentComments())) {
+        // a formal comment created geometry-less (addElementItem skips it, EDIT-META-6)
+        // becomes drawable when an edit gives it geometry: create its item now so it is
+        // visible in-session, not only after a reload (polygon P-7/P-8)
+        current_item = dynamic_cast<CyberiadaSMEditorAbstractItem*>(
+            addElementItem(element, graphicsParentFor(element->get_parent())));
+    }
     if (current_item != nullptr) {
         current_item->syncFromModel();
         // the item's area may have changed (resize, grow, reparent): re-apply its

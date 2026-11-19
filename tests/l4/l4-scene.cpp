@@ -77,6 +77,7 @@ private slots:
 	void test_new_transition();
 	void test_new_comment();
 	void test_comment_outside_border();
+	void test_formal_comment_gains_item();
 	void test_new_choice();
 	void test_reparent();
 	void test_delete();
@@ -4682,6 +4683,26 @@ void TestScene::test_font_change_moves_nothing()
 		StateAction* action = dynamic_cast<StateAction*>(child);
 		if (action) QVERIFY(!action->isCut() && action->toolTip().isEmpty());
 	}
+}
+
+void TestScene::test_formal_comment_gains_item()
+{
+	// a formal comment created geometry-less has no scene item (EDIT-META-6 keeps
+	// CGML_META and components off the scene); when an edit gives it geometry it must
+	// gain its item in-session, not only after a reload (polygon P-7/P-8)
+	QVERIFY(model->loadDocument("diagrams/geometry.graphml"));
+	scene->loadScene();
+	Cyberiada::ElementCollection* parent = static_cast<Cyberiada::ElementCollection*>(
+		model->idToElement("node-0-0"));
+	QVERIFY(parent);
+	Cyberiada::Comment* fc = model->newFormalComment(parent, "a formal note");
+	QVERIFY(fc);
+	Cyberiada::ID id = fc->get_id();
+	QVERIFY(!fc->has_geometry());                   // created geometry-less
+	QVERIFY(!scene->getMap().contains(id));         // so it is not drawn yet
+	QVERIFY(model->updateGeometry(model->elementToIndex(fc), Cyberiada::Rect(0, 0, 100, 40)));
+	QVERIFY(fc->has_geometry());
+	QVERIFY(scene->getMap().contains(id));          // the edit created its item in-session
 }
 
 #include "l4-scene.moc"
