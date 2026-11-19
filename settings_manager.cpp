@@ -115,6 +115,7 @@ void SettingsManager::load() {
     highlightCode = s.value("display/highlightCode", true).toBool();
     highlightInExports = s.value("export/highlightCode", false).toBool();
     renderMarkdownComments = s.value("display/renderMarkdownComments", false).toBool();
+    markdownPreview = s.value("display/markdownPreview", false).toBool();
 
     lastDirectory = s.value("files/lastDirectory", QDir::currentPath()).toString();
     recentFiles = s.value("files/recentFiles").toStringList();
@@ -206,6 +207,7 @@ void SettingsManager::loadDefaults()
     setHighlightCode(true);
     setHighlightInExports(false);
     setRenderMarkdownComments(false);
+    setMarkdownPreview(false);
 
     setSelectionColor(QColor(Qt::red));
     setSelectionBorderWidth(2);
@@ -312,6 +314,22 @@ void SettingsManager::setRenderMarkdownComments(bool value)
     if (renderMarkdownComments != value) {
         QSettings().setValue("display/renderMarkdownComments", value);
         overrideRenderMarkdownComments(value);
+    }
+}
+
+void SettingsManager::setMarkdownPreview(bool value)
+{
+    if (markdownPreview != value) {
+        QSettings().setValue("display/markdownPreview", value);
+        overrideMarkdownPreview(value);
+    }
+}
+
+void SettingsManager::overrideMarkdownPreview(bool value)
+{
+    if (markdownPreview != value) {
+        markdownPreview = value;
+        emit markdownPreviewChanged(value);
     }
 }
 

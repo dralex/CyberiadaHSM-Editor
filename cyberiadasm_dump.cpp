@@ -313,6 +313,8 @@ void dumpTextDocument(const TextDocument* doc, std::ostream& os)
 	   << std::endl;
 	os << "modified: " << (doc->isClean() ? "no" : "yes") << std::endl;
 	os << "rendered: " << (doc->showsRendered() ? "yes" : "no") << std::endl;
+	// only while shown, so the other dumps stay as they were (EDIT-MD-11)
+	if (doc->showsPreview()) os << "preview: yes" << std::endl;
 	// the check of a JSON tab, of the text as it is now (EDIT-MODE-16/26)
 	if (doc->isJson()) {
 		JsonCheck check = checkJson(doc->text());

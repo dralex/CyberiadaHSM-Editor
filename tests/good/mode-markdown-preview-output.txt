@@ -1,0 +1,17 @@
+== tabs
+count: 1
+0 notes.md markdown active
+== text
+mode: markdown
+file: notes.md
+modified: no
+rendered: no
+preview: yes
+lines: 7
+| # The traffic light
+| 
+| The light has three states: **red**, *yellow* and green.
+| 
+| - the timer switches the states
+| - the button asks for green
+| 

@@ -29,6 +29,7 @@
 #include "editor_document.h"
 #include "json_text.h"
 
+class QSplitter;
 class QStackedWidget;
 class QTextCursor;
 class QTextDocument;
@@ -87,6 +88,11 @@ public:
     CodeEditor*      editor() const { return m_editor; }
     // the rendered view of a read-only Markdown tab is shown
     bool             showsRendered() const;
+    // the source and its rendered page side by side: a writable Markdown tab with View >
+    // Preview (EDIT-MD-11)
+    bool             showsPreview() const;
+    // the preview page, null until it is first shown
+    MarkdownView*    preview() const { return m_preview; }
     // the lines of the source from 1 (EDIT-KEYS-7): the cursor to the start of the
     // line, scrolled into view and focused; false for a line the text has not
     bool             goToLine(int line, int column = 1);
@@ -133,6 +139,9 @@ private:
     // the source editor in the current color scheme (EDIT-COLOR-1/5)
     void             applyScheme();
     void             showPage();
+    // the preview rendered again, its scroll kept; it follows the block of the cursor
+    void             renderPreview();
+    void             followCursor();
     bool             write(const QString& path, QString* error);
     // the editor or the rendered view, the one the stack shows
     QTextDocument*   shownDocument() const;
@@ -172,6 +181,12 @@ private:
     bool             m_findPending = false;
     QTextCursor*     m_findPlace = nullptr;
     QTimer*          m_checkTimer;
+    // the editor stands in the splitter beside the preview while it is shown, else in the stack
+    QSplitter*       m_previewPage = nullptr;
+    MarkdownView*    m_preview = nullptr;
+    QTimer*          m_previewTimer;
+    // the source block the preview last followed
+    int              m_previewBlock = -1;
     JsonCheck        m_jsonCheck;
     // the underlined token as the edits move it, null without an error
     QTextCursor*     m_errorPlace = nullptr;

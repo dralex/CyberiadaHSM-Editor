@@ -21,6 +21,8 @@
  *
  * ----------------------------------------------------------------------------- */
 
+#include <algorithm>
+
 #include <QFontDatabase>
 #include <QFontMetricsF>
 #include <QGuiApplication>
@@ -81,8 +83,17 @@ public:
         doc->clear();
         cursor = QTextCursor(doc);
         QByteArray bytes = text.toUtf8();
+        // the texts md4c gives point into the bytes: their offsets give the source lines
+        source = bytes.constData();
+        sourceSize = bytes.size();
+        lineStarts.clear();
+        lineStarts << 0;
+        for (int i = 0; i < bytes.size(); i++) {
+            if (bytes.at(i) == '\n') lineStarts << i + 1;
+        }
         MD_PARSER parser = {0, MD_FLAGS, enterBlock, leaveBlock, enterSpan, leaveSpan, onText, nullptr, nullptr};
         md_parse(bytes.constData(), MD_SIZE(bytes.size()), &parser, this);
+        source = nullptr;
     }
 
 private:
@@ -95,11 +106,34 @@ private:
     static int leaveSpan(MD_SPANTYPE type, void* detail, void* self)
     { return static_cast<Md4cReader*>(self)->onLeaveSpan(type, detail); }
     static int onText(MD_TEXTTYPE type, const MD_CHAR* text, MD_SIZE size, void* self)
-    { return static_cast<Md4cReader*>(self)->onText(type, QString::fromUtf8(text, int(size))); }
+    {
+        Md4cReader* reader = static_cast<Md4cReader*>(self);
+        int result = reader->onText(type, QString::fromUtf8(text, int(size)));
+        reader->markSourceLine(text);
+        return result;
+    }
+
+    // the block of the first text read gets its source line (EDIT-MD-11); a block not inserted
+    // yet gets it when it is
+    void markSourceLine(const MD_CHAR* text)
+    {
+        if (!source || text < source || text >= source + sourceSize) return;
+        int offset = int(text - source);
+        int line = int(std::upper_bound(lineStarts.begin(), lineStarts.end(), offset) - lineStarts.begin());
+        if (needsInsertBlock) {
+            if (!pendingSourceLine) pendingSourceLine = line;
+            return;
+        }
+        if (cursor.block().blockFormat().hasProperty(MarkdownSourceLine)) return;
+        QTextBlockFormat format;
+        format.setProperty(MarkdownSourceLine, line);
+        cursor.mergeBlockFormat(format);
+    }
 
     int onEnterBlock(MD_BLOCKTYPE type, void* detail)
     {
         blockType = type;
+        pendingSourceLine = 0;
         switch (type) {
         case MD_BLOCK_P:
             needsInsertBlock = true;
@@ -452,6 +486,8 @@ private:
         if (!lists.isEmpty() && !needsInsertList && listItem) {
             QTextList* list = lists.top();
             if (list && list->count() > 0) bf = list->item(list->count() - 1).blockFormat();
+            // the item's own source line, not the one of the item before
+            bf.clearProperty(MarkdownSourceLine);
         }
         if (blockQuoteDepth > 0) {
             // the level draws its bars and greys its text (drawMarkdownQuotes)
@@ -494,6 +530,12 @@ private:
         }
         needsInsertList = false;
         needsInsertBlock = false;
+        if (pendingSourceLine) {
+            QTextBlockFormat format;
+            format.setProperty(MarkdownSourceLine, pendingSourceLine);
+            cursor.mergeBlockFormat(format);
+            pendingSourceLine = 0;
+        }
     }
 
     QTextDocument*          doc;
@@ -532,6 +574,11 @@ private:
     int                     htmlDepth = 0;
     bool                    htmlComment = false;
     QString                 htmlBuffer;
+    // the bytes md4c reads, the offsets their lines start at, a line waiting for its block
+    const MD_CHAR*          source = nullptr;
+    int                     sourceSize = 0;
+    QVector<int>            lineStarts;
+    int                     pendingSourceLine = 0;
 };
 
 } // namespace

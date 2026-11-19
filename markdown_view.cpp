@@ -50,6 +50,8 @@ void MarkdownView::setMarkdownText(const QString& text, const QString& baseDir)
     m_baseDir = baseDir;
     setMarkdownColors(document(), palette().color(QPalette::Text), palette().color(QPalette::Base));
     importMarkdown(document(), text, baseDir);
+    // the import inserts at the view's cursor and pushes it to the end: the page starts at the top
+    setTextCursor(QTextCursor(document()));
 }
 
 QString MarkdownView::headingAnchor(const QString& heading)
@@ -80,6 +82,28 @@ bool MarkdownView::scrollToHeading(const QString& anchor)
         }
     }
     return false;
+}
+
+bool MarkdownView::scrollToSourceLine(int line)
+{
+    QTextBlock target;
+    int targetLine = 0;
+    for (QTextBlock b = document()->begin(); b.isValid(); b = b.next()) {
+        int l = b.blockFormat().intProperty(MarkdownSourceLine);
+        if (l > 0 && l <= line && l > targetLine) {
+            target = b;
+            targetLine = l;
+        }
+    }
+    if (!target.isValid()) return false;
+    QRectF rect = document()->documentLayout()->blockBoundingRect(target);
+    int top = verticalScrollBar()->value();
+    int height = viewport()->height();
+    // a block in view stays where it is; another one comes a line below the top
+    if (rect.top() < top || rect.bottom() > top + height) {
+        verticalScrollBar()->setValue(int(rect.top() - fontMetrics().height()));
+    }
+    return true;
 }
 
 void MarkdownView::changeEvent(QEvent* event)

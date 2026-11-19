@@ -246,6 +246,7 @@
     <addaction name="actionGridVisibility"/>
     <addaction name="actionServiceObjects"/>
     <addaction name="actionComponentComments"/>
+    <addaction name="actionPreview"/>
     <addaction name="actionSnapMode"/>
     <addaction name="actionLogSession"/>
     <addaction name="separator"/>
@@ -411,6 +412,17 @@
    </property>
    <property name="toolTip">
     <string>Export again the diagram images of the text whose diagrams changed</string>
+   </property>
+  </action>
+  <action name="actionPreview">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Preview</string>
+   </property>
+   <property name="toolTip">
+    <string>Show the rendered page of a Markdown text beside its source</string>
    </property>
   </action>
   <action name="actionInsertLink">

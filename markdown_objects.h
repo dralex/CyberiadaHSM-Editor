@@ -47,7 +47,9 @@ enum MarkdownObjectProperty {
     MarkdownImageSource,
     MarkdownImageAlt,
     // the nesting level of a quote, a property of its blocks
-    MarkdownQuoteLevel
+    MarkdownQuoteLevel,
+    // the source line from 1 a rendered block begins at (EDIT-MD-11)
+    MarkdownSourceLine
 };
 
 // a formula or an image in the format of the text around it

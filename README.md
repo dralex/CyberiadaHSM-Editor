@@ -30,7 +30,8 @@ scaled down on the way. Edit > Insert Diagram adds a diagram as its SVG image li
 changed: each SVG records its source diagram in its metadata. Document > Check (F7) lists the
 broken links of a Markdown text: missing files and images, anchors no heading has, diagram
 images out of date. Edit > Insert Link (Ctrl+K) links a heading of this or another text, a
-file or an address; a click on `file.md#anchor` opens the text at that heading.
+file or an address; a click on `file.md#anchor` opens the text at that heading. View > Preview
+shows the rendered page beside the source while you write, following the cursor.
 
 The Find and Text File Compare functions are available as well as other
 useful IDE features.

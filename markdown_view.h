@@ -40,6 +40,9 @@ public:
     static QString headingAnchor(const QString& heading);
     // scroll to the heading of the anchor; false when there is none
     bool scrollToHeading(const QString& anchor);
+    // the block of a source line from 1 brought into view, the last block beginning at or
+    // before it; false without one (EDIT-MD-11)
+    bool scrollToSourceLine(int line);
 
 signals:
     // a link that is no #anchor: the tab opens it (EDIT-MODE-14)

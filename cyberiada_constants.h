@@ -126,6 +126,8 @@
 // a JSON tab (EDIT-MODE-26, docs/MODES.md, JSON): the check after an edit, the underline and
 // the margin number of the error, the bar under the text
 #define JSON_CHECK_DELAY_MS      300
+// the preview of a Markdown text is rendered again a while after its last edit (EDIT-MD-11)
+#define MARKDOWN_PREVIEW_DELAY_MS 300
 #define TEXT_ERROR_COLOR         "#ff0000"
 #define TEXT_ERROR_BAR_COLOR     "#c62828"
 // the color schemes of the text editors (EDIT-COLOR-2/6, docs/COLOR-SCHEMES.md)

@@ -134,6 +134,10 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     connect(actionInsertImage, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotInsertImage);
     connect(actionInsertDiagram, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotInsertDiagram);
     connect(actionInsertLink, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotInsertLink);
+    // View > Preview: a setting of every Markdown tab (EDIT-MD-11)
+    actionPreview->setChecked(SettingsManager::instance().getMarkdownPreview());
+    connect(actionPreview, &QAction::triggered, &SettingsManager::instance(), &SettingsManager::setMarkdownPreview);
+    connect(&SettingsManager::instance(), &SettingsManager::markdownPreviewChanged, actionPreview, &QAction::setChecked);
     connect(actionUpdateDiagramImages, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotUpdateDiagramImages);
     // the Markdown group of the text toolbar, shown in a Markdown tab (EDIT-MD-1)
     QAction* markdownSeparator = new QAction(this);
@@ -1047,6 +1051,7 @@ void CyberiadaSMEditorWindow::updateMarkdownActions()
     actionInsertLink->setEnabled(inserts);
     // the images are other files: a read-only text updates them too
     actionUpdateDiagramImages->setEnabled(markdown && text->hasFile());
+    actionPreview->setEnabled(markdown);
     showMarkdownTools(markdown);
 }
 

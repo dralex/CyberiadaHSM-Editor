@@ -118,6 +118,10 @@ public:
     bool getRenderMarkdownComments() const { return renderMarkdownComments; }
     void setRenderMarkdownComments(bool value);
     void overrideRenderMarkdownComments(bool value);
+    // a writable Markdown tab shows its rendered page beside the source (EDIT-MD-11)
+    bool getMarkdownPreview() const { return markdownPreview; }
+    void setMarkdownPreview(bool value);
+    void overrideMarkdownPreview(bool value);
 
     // the interface language code (EDIT-UI-1): empty = the system one; read at
     // the start only, so a change applies at the next start
@@ -222,6 +226,7 @@ signals:
     void editorFontChanged();
     void highlightSettingsChanged();
     void renderMarkdownCommentsChanged(bool);
+    void markdownPreviewChanged(bool);
 
     void selectionSettingsChanged();
     void autoreplaceChanged();
@@ -271,6 +276,7 @@ private:
     bool highlightCode = true;
     bool highlightInExports = false;
     bool renderMarkdownComments = false;
+    bool markdownPreview = false;
     QString fontFamily;
     int fontSizes[fontRolesCount];
     QString editorFontFamily;

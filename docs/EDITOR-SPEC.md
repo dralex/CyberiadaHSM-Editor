@@ -1538,7 +1538,7 @@ architecture is `docs/MARKDOWN.md`, Tools. Specified in 0.72.
   page side by side in a splitter; the page is rendered again 300 ms after the last edit with
   its scroll kept, and scrolled to the block of the cursor's line when the cursor goes to
   another block. A read-only tab shows the rendered page alone (`EDIT-MODE-14`); Find, Go to
-  Line and the inserts act on the source. *design*
+  Line and the inserts act on the source; `--dump` of such a tab adds `preview: yes`. *design*
 - `EDIT-MD-12` MUST [A]: the batch verbs act on the active Markdown tab as the dialogs do,
   inserting before line `n` of `line <n>`, else at the end; the trailing text is the alt or the
   link text; the diagram is drawn in the `--font` family, the bundled one without it:

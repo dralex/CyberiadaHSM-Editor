@@ -24,6 +24,7 @@
  * ----------------------------------------------------------------------------- */
 
 #include <QtTest>
+#include <QMap>
 #include <QTextBlock>
 #include <QClipboard>
 #include <QLineEdit>
@@ -47,6 +48,12 @@
 #include "fontmanager.h"
 #include "dialogs/insert_diagram_dialog.h"
 #include "dialogs/insert_link_dialog.h"
+#include "markdown_importer.h"
+#include "markdown_objects.h"
+#include "settings_manager.h"
+#include <QScrollBar>
+#include <QSplitter>
+#include <QStackedWidget>
 #include "dialogs/insert_image_dialog.h"
 #include "code_editor.h"
 #include "text_document.h"
@@ -90,6 +97,7 @@ class TestMarkdownTools: public QObject {
 	Q_OBJECT
 
 private slots:
+	void cleanup();
 	void test_paths();
 	void test_image_edits();
 	void test_propose_target();
@@ -121,6 +129,11 @@ private slots:
 	void test_insert_link_dialog_outside();
 	void test_open_linked_heading();
 	void test_window_link_action();
+	void test_source_lines();
+	void test_scroll_to_source_line();
+	void test_preview_page();
+	void test_preview_follows_cursor();
+	void test_preview_action();
 };
 
 // EDIT-MD-4: the paths relative to the text, <path> with a space or a parenthesis, the
@@ -1104,6 +1117,154 @@ void TestMarkdownTools::test_window_link_action()
 	window.actionReadOnly->trigger();
 	QVERIFY(window.openFile("diagrams/hierarchy.graphml"));
 	QVERIFY(!window.actionInsertLink->isEnabled());
+}
+
+// the setting is stored: it must not reach the other tests
+void TestMarkdownTools::cleanup()
+{
+	SettingsManager::instance().setMarkdownPreview(false);
+}
+
+// EDIT-MD-11: every rendered block knows the source line it begins at, an image alone in its
+// paragraph, a list item, a code line and a table cell too
+void TestMarkdownTools::test_source_lines()
+{
+	QString text =
+		"# Title\n"                       // 1
+		"\n"
+		"A paragraph\nover two lines.\n"  // 3-4
+		"\n"
+		"![pic](none.png)\n"             // 6
+		"\n"
+		"- one\n"                         // 8
+		"- two\n"                         // 9
+		"\n"
+		"```\ncode line\n```\n"          // 11-13
+		"\n"
+		"| a | b |\n|---|---|\n| c | d |\n";  // 15-17
+	QTextDocument doc;
+	importMarkdown(&doc, text, QString());
+	QMap<QString, int> lines;
+	for (QTextBlock b = doc.begin(); b.isValid(); b = b.next()) {
+		QString key = b.text().trimmed();
+		if (key.isEmpty() || key == QString(QChar::ObjectReplacementCharacter)) key = "[object]";
+		if (!lines.contains(key)) lines.insert(key, b.blockFormat().intProperty(MarkdownSourceLine));
+	}
+	QCOMPARE(lines.value("Title"), 1);
+	QCOMPARE(lines.value("A paragraph over two lines."), 3);
+	QCOMPARE(lines.value("[object]"), 6);
+	QCOMPARE(lines.value("one"), 8);
+	QCOMPARE(lines.value("two"), 9);
+	QCOMPARE(lines.value("code line"), 12);
+	QCOMPARE(lines.value("c"), 17);
+}
+
+// EDIT-MD-11: the block of a far line comes into view, one in view stays
+void TestMarkdownTools::test_scroll_to_source_line()
+{
+	QString text;
+	for (int i = 1; i <= 60; i++) text += QString("Paragraph %1.\n\n").arg(i);
+	MarkdownView view;
+	view.resize(400, 200);
+	view.show();
+	QVERIFY(QTest::qWaitForWindowExposed(&view));
+	view.setMarkdownText(text, QString());
+	QCOMPARE(view.verticalScrollBar()->value(), 0);
+	QVERIFY(view.scrollToSourceLine(1));
+	QCOMPARE(view.verticalScrollBar()->value(), 0);
+	// paragraph 50 is on line 99
+	QVERIFY(view.scrollToSourceLine(99));
+	int far = view.verticalScrollBar()->value();
+	QVERIFY(far > 0);
+	QTextCursor at = view.cursorForPosition(QPoint(10, view.viewport()->height() / 2));
+	QVERIFY2(at.block().text().startsWith("Paragraph 5"), qPrintable(at.block().text()));
+	// a line of the same block, already in view: no move
+	QVERIFY(view.scrollToSourceLine(100));
+	QCOMPARE(view.verticalScrollBar()->value(), far);
+	QVERIFY(!view.scrollToSourceLine(0));
+}
+
+// EDIT-MD-11: a writable Markdown tab shows its source and its page side by side, the page
+// rendered again after the edits; read-only shows the page alone; off puts the editor back
+void TestMarkdownTools::test_preview_page()
+{
+	TextDocument doc(MODE_MARKDOWN);
+	doc.setText("# First\n");
+	QStackedWidget* page = qobject_cast<QStackedWidget*>(doc.page());
+	QCOMPARE(page->currentWidget(), (QWidget*)doc.editor());
+	QVERIFY(!doc.showsPreview() && !doc.preview());
+	SettingsManager::instance().overrideMarkdownPreview(true);
+	QVERIFY(doc.showsPreview());
+	QSplitter* split = qobject_cast<QSplitter*>(page->currentWidget());
+	QVERIFY(split);
+	QCOMPARE(split->widget(0), (QWidget*)doc.editor());
+	QCOMPARE(split->widget(1), (QWidget*)doc.preview());
+	QVERIFY(!doc.editor()->isHidden());
+	QVERIFY(doc.preview()->toPlainText().contains("First"));
+	// an edit renders the page again a while after
+	doc.editor()->appendPlainText("\nSecond");
+	QVERIFY(!doc.preview()->toPlainText().contains("Second"));
+	QTRY_VERIFY(doc.preview()->toPlainText().contains("Second"));
+	// the source stays the edited, found and inserted text
+	QVERIFY(doc.insertBlock("Third", 99, "insert"));
+	QVERIFY(doc.text().endsWith("Third"));
+	// read-only: the rendered page alone
+	doc.setReadOnlyFlag(true);
+	QVERIFY(doc.showsRendered() && !doc.showsPreview());
+	QVERIFY(page->currentWidget() != split);
+	doc.setReadOnlyFlag(false);
+	QCOMPARE(page->currentWidget(), (QWidget*)split);
+	// another mode has no preview
+	QVERIFY(doc.setMode(MODE_TEXT));
+	QCOMPARE(page->currentWidget(), (QWidget*)doc.editor());
+	QVERIFY(doc.setMode(MODE_MARKDOWN));
+	QCOMPARE(page->currentWidget(), (QWidget*)split);
+	SettingsManager::instance().overrideMarkdownPreview(false);
+	QCOMPARE(page->currentWidget(), (QWidget*)doc.editor());
+	QVERIFY(!doc.editor()->isHidden());
+}
+
+// EDIT-MD-11: the page scrolls to the block of the cursor's line
+void TestMarkdownTools::test_preview_follows_cursor()
+{
+	QString text;
+	for (int i = 1; i <= 60; i++) text += QString("Paragraph %1.\n\n").arg(i);
+	SettingsManager::instance().overrideMarkdownPreview(true);
+	TextDocument doc(MODE_MARKDOWN);
+	doc.setText(text);
+	doc.page()->resize(800, 240);
+	doc.page()->show();
+	QVERIFY(QTest::qWaitForWindowExposed(doc.page()));
+	QScrollBar* bar = doc.preview()->verticalScrollBar();
+	QTRY_VERIFY(doc.preview()->toPlainText().contains("Paragraph 60"));
+	QCOMPARE(bar->value(), 0);
+	doc.goToLine(99);
+	QVERIFY(bar->value() > 0);
+	QTextCursor at = doc.preview()->cursorForPosition(QPoint(10, doc.preview()->viewport()->height() / 2));
+	QVERIFY2(at.block().text().startsWith("Paragraph 5"), qPrintable(at.block().text()));
+	// an edit keeps the scroll of the re-rendered page
+	int kept = bar->value();
+	doc.editor()->insertPlainText("x");
+	QTest::qWait(MARKDOWN_PREVIEW_DELAY_MS * 2);
+	QCOMPARE(bar->value(), kept);
+	doc.page()->hide();
+}
+
+// EDIT-MD-11: View > Preview, checkable, enabled in a Markdown tab, the setting both ways
+void TestMarkdownTools::test_preview_action()
+{
+	CyberiadaSMEditorWindow window;
+	QVERIFY(window.menuView->actions().contains(window.actionPreview));
+	QVERIFY(window.actionPreview->isCheckable() && !window.actionPreview->isChecked());
+	QVERIFY(window.openFile("texts/notes.md"));
+	QVERIFY(window.actionPreview->isEnabled());
+	window.actionPreview->trigger();
+	QVERIFY(SettingsManager::instance().getMarkdownPreview());
+	QVERIFY(window.currentText()->showsPreview());
+	SettingsManager::instance().setMarkdownPreview(false);
+	QVERIFY(!window.actionPreview->isChecked());
+	QVERIFY(window.openFile("texts/blink.cpp"));
+	QVERIFY(!window.actionPreview->isEnabled());
 }
 
 QTEST_MAIN(TestMarkdownTools)

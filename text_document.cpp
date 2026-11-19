@@ -28,6 +28,8 @@
 #include <QRegularExpression>
 #include <QSaveFile>
 #include <QStackedWidget>
+#include <QScrollBar>
+#include <QSplitter>
 #include <QTextBlock>
 #include <QTextCursor>
 #include <QTextDocument>
@@ -99,6 +101,16 @@ TextDocument::TextDocument(const QString& mode, QObject* parent):
     connect(m_editor, &CodeEditor::linkActivated, this, &TextDocument::openLink);
     connect(m_rendered, &MarkdownView::linkActivated, this, &TextDocument::openLink);
     connect(m_editor, &CodeEditor::imageOffered, this, &TextDocument::imageOffered);
+    // the preview follows the edits a while after the last one, and the cursor (EDIT-MD-11)
+    m_previewTimer = new QTimer(this);
+    m_previewTimer->setSingleShot(true);
+    m_previewTimer->setInterval(MARKDOWN_PREVIEW_DELAY_MS);
+    connect(m_previewTimer, &QTimer::timeout, this, &TextDocument::renderPreview);
+    connect(m_document, &QTextDocument::contentsChanged, this, [this]() {
+        if (showsPreview()) m_previewTimer->start();
+    });
+    connect(m_editor, &QPlainTextEdit::cursorPositionChanged, this, &TextDocument::followCursor);
+    connect(&SettingsManager::instance(), &SettingsManager::markdownPreviewChanged, this, &TextDocument::showPage);
     applyMode();
 }
 
@@ -200,14 +212,59 @@ void TextDocument::applyScheme()
 
 void TextDocument::showPage()
 {
+    bool preview = showsPreview();
+    if (preview && !m_previewPage) {
+        m_previewPage = new QSplitter(Qt::Horizontal);
+        m_preview = new MarkdownView();
+        m_previewPage->addWidget(m_preview);
+        m_page->addWidget(m_previewPage);
+        connect(m_preview, &MarkdownView::linkActivated, this, &TextDocument::openLink);
+    }
+    // the editor moves beside the preview and back, so the stack holds it alone otherwise
+    if (preview && m_editor->parentWidget() != m_previewPage) {
+        bool focused = m_editor->hasFocus();
+        m_previewPage->insertWidget(0, m_editor);
+        m_previewPage->setSizes(QList<int>() << 1 << 1);
+        // the stack hid it as a page it did not show
+        m_editor->show();
+        if (focused) m_editor->setFocus();
+    } else if (!preview && m_previewPage && m_editor->parentWidget() == m_previewPage) {
+        m_page->insertWidget(0, m_editor);
+    }
     if (showsRendered()) {
         // the images are found next to the file (EDIT-MODE-14)
         m_rendered->setMarkdownText(text(), baseDir());
         m_page->setCurrentWidget(m_rendered);
+    } else if (preview) {
+        m_previewTimer->stop();
+        renderPreview();
+        m_page->setCurrentWidget(m_previewPage);
     } else {
         m_page->setCurrentWidget(m_editor);
     }
     scheduleFind();
+}
+
+bool TextDocument::showsPreview() const
+{
+    return m_mode == MODE_MARKDOWN && !readOnlyFlag() && SettingsManager::instance().getMarkdownPreview();
+}
+
+void TextDocument::renderPreview()
+{
+    if (!m_preview || !showsPreview()) return;
+    int scroll = m_preview->verticalScrollBar()->value();
+    m_preview->setMarkdownText(text(), baseDir());
+    m_preview->verticalScrollBar()->setValue(scroll);
+}
+
+void TextDocument::followCursor()
+{
+    if (!m_preview || !showsPreview()) return;
+    int block = m_editor->textCursor().blockNumber();
+    if (block == m_previewBlock) return;
+    m_previewBlock = block;
+    m_preview->scrollToSourceLine(block + 1);
 }
 
 bool TextDocument::showsRendered() const
@@ -562,7 +619,7 @@ void TextDocument::clearFind(bool keep)
     setFindCurrent(-1);
     m_findMore = false;
     markFind();
-    if (keep) m_page->currentWidget()->setFocus();
+    if (keep) (showsRendered() ? static_cast<QWidget*>(m_rendered) : m_editor)->setFocus();
 }
 
 void TextDocument::setFindCurrent(int index)

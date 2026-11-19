@@ -1,7 +1,7 @@
 # The Markdown Rendering — Architecture
 
-**Document version:** 0.13 (2026-11-19) — the authoring tools specified (Tools), stages 1
-to 5 implemented.
+**Document version:** 0.13 (2026-11-19) — the authoring tools specified and implemented
+(Tools, stages 1 to 6).
 The requirements are `EDIT-MODE-14`, `EDIT-MODE-17`, `EDIT-MODE-18`, `EDIT-TEXT-14`,
 `EDIT-MD-1..12` and `EDIT-IO-8` in `EDITOR-SPEC.md`.
 
@@ -412,12 +412,25 @@ The text links the image to its diagram; the SVG records where it was drawn from
  └──────────────────────────────────┸───────────────────────────────────┘
    contentsChange ─ 300 ms single-shot timer ─> importMarkdown(text, baseDir), the scroll kept
    cursor to another block ─> the rendered block of that source line scrolled into view
+
+ TextDocument page (QStackedWidget)
+   preview off:  [CodeEditor] [MarkdownView: read-only page]
+   preview on:   [QSplitter: CodeEditor | MarkdownView preview] [read-only page]
+                  the editor moves into the splitter and back (showPage)
 ```
 
-* View > Preview splits each writable Markdown tab (`display/markdownPreview`); the read-only
-  flag still shows the rendered page alone.
-* The reader keeps the source offset of each block it inserts, so a source line finds its
-  rendered block; the image and formula caches keep a re-render cheap.
+* View > Preview splits each writable Markdown tab (`display/markdownPreview`, enabled in a
+  Markdown tab); the read-only flag still shows the rendered page alone. With the preview off
+  the page holds the editor as before, so nothing else sees a change.
+* The reader gives every block it inserts the source line of its first text
+  (`MarkdownSourceLine`): md4c hands the texts as pointers into the bytes it reads, their offsets
+  give the lines; a block not inserted yet (an image alone in its paragraph) takes the line
+  when it is; a list item drops the line of the item whose format it copies.
+  `MarkdownView::scrollToSourceLine` takes the last block beginning at or before a line and
+  brings it a line below the top when it is out of view; one in view stays.
+* `setMarkdownText` puts the view's cursor back at the start: the import inserts at the cursor
+  and would push it, and the scroll with it, to the end of the page.
+* The image and formula caches keep a re-render cheap.
 
 ### Stages
 
@@ -444,7 +457,10 @@ The text links the image to its diagram; the SVG records where it was drawn from
 5. Insert Link — done: `markdownFilesUnder`, `markdownLinkLine`, `dialogs/insert_link_dialog.*`,
    `TextDocument::insertInline` and `showHeading`, `openFileRequested(path, fragment)` and the
    window's `openLinkedFile`, Edit > Insert Link (`Ctrl+K`, the text toolbar), `insert-link`.
-6. The preview: the splitter page of `TextDocument`, the block offsets, `preview`.
+6. The preview — done: `MarkdownSourceLine` from the md4c reader,
+   `MarkdownView::scrollToSourceLine`, the splitter page of `TextDocument` (`showsPreview`,
+   `renderPreview`, `followCursor`), `display/markdownPreview`, View > Preview, `preview`, the
+   `preview: yes` dump line.
 
 ## Build
 
@@ -495,5 +511,7 @@ the check with an open tab's unsaved heading, the diagram findings, F7 to the cu
 `mode-markdown-check` (`texts/markdown-broken.md`) and its reject; the link helpers, the
 inline insert, the Insert Link dialog (the texts below the folder, the headings of another
 text and of an open tab, a text outside, a keystroke kept), `file.md#anchor` opening at the
-heading in the source and on a rendered page; `md-insert-link` and its reject. Planned with
-their stage: the preview re-render and scroll.
+heading in the source and on a rendered page; `md-insert-link` and its reject; the source
+lines of the rendered blocks, the scroll to a source line, the preview page (the splitter, the
+re-render after the edits, read-only and other modes, off), the page following the cursor
+with its scroll kept, View > Preview; `mode-markdown-preview` and its reject.
