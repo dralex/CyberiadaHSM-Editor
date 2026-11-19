@@ -202,7 +202,7 @@ Ctrl+щелчок — открыть</translation>
 <context>
     <name>CyberiadaSMEditorWindow</name>
     <message>
-        <location filename="../smeditor_window.cpp" line="+168"/>
+        <location filename="../smeditor_window.cpp" line="+170"/>
         <source>Output panel</source>
         <translation>Панель вывода</translation>
     </message>
@@ -246,7 +246,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Markdown</translation>
     </message>
     <message>
-        <location line="+1078"/>
+        <location line="+1097"/>
         <source>Undo</source>
         <translation>Отменить</translation>
     </message>
@@ -302,7 +302,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Очистить список</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+17"/>
         <source>Open State Machine</source>
         <translation>Открытие машины состояний</translation>
     </message>
@@ -369,8 +369,8 @@ Ctrl+щелчок — открыть</translation>
         <translation>нет документа</translation>
     </message>
     <message>
-        <location line="-1720"/>
-        <location line="+1730"/>
+        <location line="-1747"/>
+        <location line="+1757"/>
         <source>a plugin is running on the document</source>
         <translation>для документа выполняется плагин</translation>
     </message>
@@ -379,8 +379,8 @@ Ctrl+щелчок — открыть</translation>
         <translation type="vanished">в режиме инспектора документ доступен только для чтения</translation>
     </message>
     <message>
-        <location line="-1696"/>
-        <location line="+1733"/>
+        <location line="-1723"/>
+        <location line="+1760"/>
         <source>the document cannot be encoded</source>
         <translation>не удалось сериализовать документ</translation>
     </message>
@@ -412,7 +412,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Плагин: %1</translation>
     </message>
     <message>
-        <location line="-2150"/>
+        <location line="-2177"/>
         <source>Mode</source>
         <translation>Режим</translation>
     </message>
@@ -422,18 +422,18 @@ Ctrl+щелчок — открыть</translation>
         <translation>режим %1 недоступен</translation>
     </message>
     <message>
-        <location line="+1746"/>
+        <location line="+1773"/>
         <source>the inspection tab is read-only</source>
         <translation>вкладка инспекции доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1725"/>
-        <location line="+1726"/>
+        <location line="-1752"/>
+        <location line="+1753"/>
         <source>the tab is read-only</source>
         <translation>вкладка доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1893"/>
+        <location line="-1920"/>
         <source>Text file</source>
         <translation>Текстовый файл</translation>
     </message>
@@ -477,12 +477,12 @@ Ctrl+щелчок — открыть</translation>
         <translation>Автомат не нарушает ни одного правила EXT-FA.</translation>
     </message>
     <message>
-        <location line="+695"/>
+        <location line="+714"/>
         <source>%1: not an element of a finite automaton</source>
         <translation>%1: не элемент конечного автомата</translation>
     </message>
     <message>
-        <location line="+360"/>
+        <location line="+368"/>
         <location line="+26"/>
         <location line="+7"/>
         <source>Save Text</source>
@@ -499,19 +499,19 @@ Ctrl+щелчок — открыть</translation>
         <translation>%1 (*%2)</translation>
     </message>
     <message>
-        <location line="-523"/>
+        <location line="-531"/>
         <location line="+55"/>
-        <location line="+468"/>
+        <location line="+476"/>
         <source>All files (*)</source>
         <translation>Все файлы (*)</translation>
     </message>
     <message>
-        <location line="-1320"/>
+        <location line="-1347"/>
         <source>Refresh</source>
         <translation>Обновить</translation>
     </message>
     <message>
-        <location line="+1105"/>
+        <location line="+1124"/>
         <source>Element</source>
         <translation>Элемент</translation>
     </message>
@@ -521,7 +521,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Изменение</translation>
     </message>
     <message>
-        <location line="-1011"/>
+        <location line="-1030"/>
         <source>a diff tab is opened by Document &gt; Compare with...</source>
         <translation>вкладку сравнения открывает «Документ &gt; Сравнить с...»</translation>
     </message>
@@ -546,7 +546,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Номер строки:</translation>
     </message>
     <message>
-        <location line="+30"/>
+        <location line="+31"/>
         <source>The text has no file yet. The inserted files are saved in its folder, so the text is saved first.</source>
         <translation type="unfinished">У текста ещё нет файла. Вставляемые файлы сохраняются в его папке, поэтому сначала текст будет сохранён.</translation>
     </message>
@@ -601,7 +601,17 @@ Ctrl+щелчок — открыть</translation>
         <translation type="unfinished">вставка диаграммы</translation>
     </message>
     <message>
-        <location line="+18"/>
+        <location line="+9"/>
+        <source>Insert Link</source>
+        <translation type="unfinished">Вставка ссылки</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>insert link</source>
+        <translation type="unfinished">вставка ссылки</translation>
+    </message>
+    <message>
+        <location line="+17"/>
         <source>%1 exported again from %2</source>
         <translation type="unfinished">%1 экспортировано заново из %2</translation>
     </message>
@@ -713,7 +723,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Изменения</translation>
     </message>
     <message>
-        <location line="+257"/>
+        <location line="+265"/>
         <source>Save the diagram first: the metadata records its saved file</source>
         <translation type="unfinished">Сначала сохраните диаграмму: метаданные указывают на её сохранённый файл</translation>
     </message>
@@ -2104,6 +2114,88 @@ Ctrl+щелчок — открыть</translation>
         <location line="+1"/>
         <source>The pasted image is saved as a new file.</source>
         <translation type="unfinished">Вставленное изображение сохраняется в новый файл.</translation>
+    </message>
+</context>
+<context>
+    <name>InsertLinkDialog</name>
+    <message>
+        <location filename="../dialogs/insert_link_dialog.cpp" line="+53"/>
+        <location line="+124"/>
+        <location line="+7"/>
+        <source>Insert Link</source>
+        <translation type="unfinished">Вставка ссылки</translation>
+    </message>
+    <message>
+        <location line="-127"/>
+        <location line="+19"/>
+        <source>Text:</source>
+        <translation type="unfinished">Текст:</translation>
+    </message>
+    <message>
+        <location line="-16"/>
+        <source>heading</source>
+        <translation type="unfinished">заголовок</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>this text</source>
+        <translation type="unfinished">этот текст</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <location line="+4"/>
+        <source>Browse...</source>
+        <translation type="unfinished">Обзор...</translation>
+    </message>
+    <message>
+        <location line="-2"/>
+        <source>file</source>
+        <translation type="unfinished">файл</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>address</source>
+        <translation type="unfinished">адрес</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Heading:</source>
+        <translation type="unfinished">Заголовок:</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Target:</source>
+        <translation type="unfinished">Цель:</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Inserts:</source>
+        <translation type="unfinished">Вставляет:</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Insert</source>
+        <translation type="unfinished">Вставить</translation>
+    </message>
+    <message>
+        <location line="+79"/>
+        <source>Markdown texts (%1)</source>
+        <translation type="unfinished">Тексты Markdown (%1)</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>All files (*)</source>
+        <translation type="unfinished">Все файлы (*)</translation>
+    </message>
+    <message>
+        <location line="+47"/>
+        <source>The text has no headings.</source>
+        <translation type="unfinished">В тексте нет заголовков.</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>No such file.</source>
+        <translation type="unfinished">Нет такого файла.</translation>
     </message>
 </context>
 <context>
@@ -3702,7 +3794,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Инструменты</translation>
     </message>
     <message>
-        <location line="+39"/>
+        <location line="+40"/>
         <source>&amp;Document</source>
         <translation>&amp;Документ</translation>
     </message>
@@ -3796,6 +3888,16 @@ Ctrl+щелчок — открыть</translation>
         <location line="+3"/>
         <source>Export again the diagram images of the text whose diagrams changed</source>
         <translation type="unfinished">Заново экспортировать изображения диаграмм текста, чьи диаграммы изменились</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Insert Link...</source>
+        <translation type="unfinished">Вставить ссылку...</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Insert a link to a heading, a file or an address into the Markdown text</source>
+        <translation type="unfinished">Вставить в текст Markdown ссылку на заголовок, файл или адрес</translation>
     </message>
     <message>
         <location line="+9"/>
@@ -4241,7 +4343,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Новый текст Markdown</translation>
     </message>
     <message>
-        <location line="-885"/>
+        <location line="-898"/>
         <source>New</source>
         <translation>Создать</translation>
     </message>
@@ -4250,7 +4352,7 @@ Ctrl+щелчок — открыть</translation>
         <translation type="vanished">Новый файл</translation>
     </message>
     <message>
-        <location line="+897"/>
+        <location line="+910"/>
         <source>Service objects</source>
         <translation>Служебные объекты</translation>
     </message>
@@ -4590,7 +4692,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Строка %1, столбец %2: %3</translation>
     </message>
     <message>
-        <location line="+176"/>
+        <location line="+195"/>
         <source>untitled</source>
         <translation>без имени</translation>
     </message>
