@@ -56,7 +56,7 @@
 <context>
     <name>CodeEditor</name>
     <message>
-        <location filename="../code_editor.cpp" line="+267"/>
+        <location filename="../code_editor.cpp" line="+284"/>
         <source>%1
 Ctrl+click to open</source>
         <translation>%1
@@ -82,7 +82,7 @@ Ctrl+щелчок — открыть</translation>
 <context>
     <name>CyberiadaSMEditorScene</name>
     <message>
-        <location filename="../cyberiadasm_editor_scene.cpp" line="+1249"/>
+        <location filename="../cyberiadasm_editor_scene.cpp" line="+1260"/>
         <location line="+35"/>
         <location line="+152"/>
         <location line="+35"/>
@@ -4837,7 +4837,22 @@ Ctrl+щелчок — открыть</translation>
         <translation> пт</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+6"/>
+        <source>Cursor</source>
+        <translation type="unfinished">Курсор</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Line</source>
+        <translation type="unfinished">Линия</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Block</source>
+        <translation type="unfinished">Блок</translation>
+    </message>
+    <message>
+        <location line="+4"/>
         <source>Scheme</source>
         <translation>Схема</translation>
     </message>
@@ -4867,7 +4882,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Цвета встроенной схемы</translation>
     </message>
     <message>
-        <location line="+28"/>
+        <location line="+30"/>
         <source># Heading *emphasis*
 &gt; A quote, a [link](https://example.org), $x^2$
 - `code` &lt;!-- a comment --&gt;
@@ -4886,7 +4901,7 @@ int main() { return printf(&quot;%d&quot;, 42); }
 ```</translation>
     </message>
     <message>
-        <location line="+188"/>
+        <location line="+193"/>
         <source>Name</source>
         <translation>Имя</translation>
     </message>
