@@ -212,7 +212,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Менеджер плагинов...</translation>
     </message>
     <message>
-        <location line="+264"/>
+        <location line="+271"/>
         <source>Close</source>
         <translation>Закрыть</translation>
     </message>
@@ -292,7 +292,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Выполняются плагины. Остановить их и выйти?</translation>
     </message>
     <message>
-        <location line="+161"/>
+        <location line="+163"/>
         <source>Load State Machine</source>
         <translation>Загрузка машины состояний</translation>
     </message>
@@ -369,8 +369,8 @@ Ctrl+щелчок — открыть</translation>
         <translation>нет документа</translation>
     </message>
     <message>
-        <location line="-1748"/>
-        <location line="+1758"/>
+        <location line="-1750"/>
+        <location line="+1760"/>
         <source>a plugin is running on the document</source>
         <translation>для документа выполняется плагин</translation>
     </message>
@@ -379,8 +379,8 @@ Ctrl+щелчок — открыть</translation>
         <translation type="vanished">в режиме инспектора документ доступен только для чтения</translation>
     </message>
     <message>
-        <location line="-1724"/>
-        <location line="+1761"/>
+        <location line="-1726"/>
+        <location line="+1763"/>
         <source>the document cannot be encoded</source>
         <translation>не удалось сериализовать документ</translation>
     </message>
@@ -412,7 +412,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Плагин: %1</translation>
     </message>
     <message>
-        <location line="-2178"/>
+        <location line="-2180"/>
         <source>Mode</source>
         <translation>Режим</translation>
     </message>
@@ -422,18 +422,18 @@ Ctrl+щелчок — открыть</translation>
         <translation>режим %1 недоступен</translation>
     </message>
     <message>
-        <location line="+1774"/>
+        <location line="+1776"/>
         <source>the inspection tab is read-only</source>
         <translation>вкладка инспекции доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1753"/>
-        <location line="+1754"/>
+        <location line="-1755"/>
+        <location line="+1756"/>
         <source>the tab is read-only</source>
         <translation>вкладка доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1921"/>
+        <location line="-1923"/>
         <source>Text file</source>
         <translation>Текстовый файл</translation>
     </message>
@@ -482,7 +482,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>%1: не элемент конечного автомата</translation>
     </message>
     <message>
-        <location line="+368"/>
+        <location line="+370"/>
         <location line="+26"/>
         <location line="+7"/>
         <source>Save Text</source>
@@ -499,14 +499,14 @@ Ctrl+щелчок — открыть</translation>
         <translation>%1 (*%2)</translation>
     </message>
     <message>
-        <location line="-531"/>
+        <location line="-533"/>
         <location line="+55"/>
-        <location line="+476"/>
+        <location line="+478"/>
         <source>All files (*)</source>
         <translation>Все файлы (*)</translation>
     </message>
     <message>
-        <location line="-1348"/>
+        <location line="-1350"/>
         <source>Refresh</source>
         <translation>Обновить</translation>
     </message>
@@ -723,7 +723,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Изменения</translation>
     </message>
     <message>
-        <location line="+265"/>
+        <location line="+267"/>
         <source>Save the diagram first: the metadata records its saved file</source>
         <translation type="unfinished">Сначала сохраните диаграмму: метаданные указывают на её сохранённый файл</translation>
     </message>
@@ -2412,32 +2412,37 @@ Ctrl+щелчок — открыть</translation>
         <translation type="vanished">Открытие файла диаграммы</translation>
     </message>
     <message>
-        <location filename="../dialogs/open_file_dialog.cpp" line="+32"/>
+        <location filename="../dialogs/open_file_dialog.cpp" line="+85"/>
         <source>Open a file</source>
         <translation>Открытие файла</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="-50"/>
         <source>CyberiadaML graph (*.graphml)</source>
         <translation>Диаграмма CyberiadaML (*.graphml)</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+5"/>
         <source>Markdown files (%1)</source>
         <translation>Файлы Markdown (%1)</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+5"/>
         <source>Text files (%1)</source>
         <translation>Текстовые файлы (%1)</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+10"/>
+        <source>%1 files (%2)</source>
+        <translation type="unfinished">Файлы %1 (%2)</translation>
+    </message>
+    <message>
+        <location line="+13"/>
         <source>All files (*)</source>
         <translation>Все файлы (*)</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+23"/>
         <source>Open</source>
         <translation>Открыть</translation>
     </message>
