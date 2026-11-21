@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.75 (2026-11-21)
+**Document version:** 0.76 (2026-11-21)
 
 **Related authorities:**
 
@@ -1055,23 +1055,27 @@ The interface translations and their workflow are in `docs/TRANSLATION.md`.
 - `EDIT-UI-5` MUST [A]: the preferences are stored per user under the name `CyberiadaPro`; the
   first start without them adopts once every preference stored under the pre-release name
   *Cyberiada State Machine Editor* and leaves that store unchanged. *design*
-- `EDIT-UI-6` MUST [A]: the structure tree, the properties panel and the change list are docks at
+- `EDIT-UI-6` MUST [A]: the structure tree, the properties panel, the change list and the
+  outline are docks at
   the right of the canvas (as the plugin dock: a title bar with the float and close buttons,
   movable; every dock title is bold, the dock contents keep the regular weight), each with a
-  checkable View entry — *Structure tree*, *Properties*, *Changes* — all shown by default;
+  checkable View entry — *Structure tree*, *Properties*, *Changes*, *Outline* — all shown by
+  default;
   closing a dock unchecks its entry and the entry shows it again; the choice is kept per user
   between sessions. A dock is shown only in the tabs that have it, as the user chose: a
   diagram tab (HSM, inspection, FA) the tree and the properties, a diff and a text diff tab
-  the changes, a text tab none; in the other tabs it is hidden and its View entry greyed, the
-  choice unchanged (0.69). A hidden tree or panel keeps following the active document and the
-  canvas selection, so showing it again needs no refresh; a tab switch keeps the sizes of the
-  docks, the tree only grows once to fit a wider structure. *design*
+  the changes, a Markdown tab the outline (`EDIT-MD-13`, 0.76), another text tab none; in the
+  other tabs it is hidden and its View entry greyed, the choice unchanged (0.69). A hidden
+  tree or panel keeps following the active document and the canvas selection, so showing it
+  again needs no refresh; a tab switch keeps the sizes of the docks, the tree only grows once
+  to fit a wider structure. *design*
 
   ```
-  tab                         Structure tree   Properties   Changes
+  tab                         Structure tree   Properties   Changes   Outline
   HSM, inspection, FA               x              x
   diff, text diff                                               x
-  text, Markdown, a language
+  Markdown                                                                x
+  text, a language
   ```
 - `EDIT-UI-7` MUST [A]: `CYBERIADA_PRO_CONFIG_HOME` keeps the preferences in the ini file
   `<folder>/Cyberiada/CyberiadaPro.ini` and `CYBERIADA_PRO_DATA_HOME` the user data, the user
@@ -1476,8 +1480,9 @@ Specified in 0.63.
 ### 4.19 Markdown tools — MD
 
 The authoring tools of a Markdown tab: the text toolbar, the image and the diagram inserts,
-the diagram images kept up to date, the link check, the link insert and the live preview. The
-architecture is `docs/MARKDOWN.md`, Tools. Specified in 0.72.
+the diagram images kept up to date, the link check, the link insert, the live preview and the
+outline. The architecture is `docs/MARKDOWN.md`, Tools and Outline. Specified in 0.72, the
+outline (`EDIT-MD-13..17`) in 0.76.
 
 - `EDIT-MD-1` MUST [A]: the toolbars follow the active tab: *Main* (the file, history and
   clipboard actions, Read-only) always; *Diagram* (Delete, the geometry, the centring, Grid,
@@ -1575,6 +1580,77 @@ architecture is `docs/MARKDOWN.md`, Tools. Specified in 0.72.
 
   A name clash keeps both (`<name>-<n>.<ext>`); a verb on another tab is refused (exit 4).
   *design*
+- `EDIT-MD-13` SHOULD [A]: the Outline dock of a Markdown tab, read-only too (`EDIT-UI-6`, View >
+  Outline, `display/showOutline`), shows the headings of the text as a tree and its images as
+  leaves. The top row is the document (the file name, `untitled` without a file); a heading is
+  a child of the nearest earlier heading of a lower level, a skipped level allowed; an image is
+  a leaf of the heading whose section holds its line, in the order of the lines and the
+  columns, an image before the first heading a leaf of the document row. A leaf shows the alt
+  text, else the file name; a diagram image (`EDIT-MD-6`) has the diagram icon and, out of
+  date, a warning mark; a tooltip gives the line, the anchor or the paths and the diagram
+  state. The headings and the anchors are the ones of Check and Insert Link (`EDIT-MD-8/9`),
+  so a reference image `![a][ref]`, an HTML `<img>` and a heading in a quote or a list are not
+  in the tree. The text is the source of the tree: the tree is read-only (no rename, no drag,
+  no edit) and nothing in it changes the text. *design*
+
+  ```
+  Outline                                                [_][x]
+  ▾ 02-traffic-light-sm.md
+    ▾ 2. Машины состояний для управления светофором на Arduino
+      ▾ Теоретическая часть
+        ▾ 2.3. Машины состояний
+          ▾ Что такое машины состояний?
+              ◇ Машина состояний для микроволновки  ⚠
+      ▸ Практическая часть
+  ```
+- `EDIT-MD-14` SHOULD [A]: the outline is read from the text at most once a second: the first
+  change after a reading starts a one-second wait that the next changes do not restart, so a
+  text typed without a pause updates the tree every second. A hidden dock and a tab in the
+  background read nothing; their outline is only marked out of date, and is read at once when
+  the dock is shown or the tab is activated. A reading keeps a row whose heading or image is
+  the same or similar (half of its characters) under the same parent, so its expanded state and
+  the selection stay; a row whose heading changed its level or was retyped beyond that is
+  replaced. *design*
+- `EDIT-MD-15` SHOULD [A]: the tree and the text follow each other. A row made current (a click,
+  the arrow keys) puts the cursor of the source at the heading's line or the image's
+  `line:column`, scrolled into view, the focus kept in the tree; Enter does the same and
+  focuses the source; on a rendered page the heading or the block of the line is scrolled to
+  (`EDIT-MD-10`). A double click on a diagram leaf opens its diagram in a tab, as a click on
+  the link does (`EDIT-MODE-28`); the row's context menu has Go to, Open Diagram, Open Image (the
+  system viewer), Expand All and Collapse All. A cursor moved in the source makes the row of
+  its section or image current, scrolled into view in the tree, the focus kept; an outline out
+  of date does not follow the cursor until it is read. *design*
+- `EDIT-MD-16` MUST [A]: a row made current while the outline is out of date reads the text
+  first and goes to what the row named, not to the row now under the pointer: to the same
+  heading or image when the reading kept it (`EDIT-MD-14`); else to the only heading of the
+  same title, or the only image of the same file, that the reading added (a level changed, a
+  section moved); else nowhere — the cursor stays, a tooltip at the tree says *The heading
+  "<title>" is no longer in the text* (an image: *The image "<file>" is no longer in the text*)
+  and the row at the cursor becomes current. A heading of that title that the text had before
+  the reading is never chosen. *design*
+
+  | In the text since the last reading | Row after the reading | The row made current |
+  |---|---|---|
+  | lines added or removed elsewhere | kept | goes to its new line |
+  | the heading retitled | kept (similar) | goes to the renamed heading |
+  | the heading removed | removed | nowhere, the tooltip |
+  | the heading retyped beyond similar | replaced | nowhere, the tooltip |
+  | the level changed, the section moved | replaced | goes to the added heading |
+- `EDIT-MD-17` MUST [A]: `--dump-outline` reads the outline of the active tab after the script and
+  writes a `== outline` section: the document row, then a line per row indented by two spaces a
+  level — `h<level> <line> "<title>" #<anchor>`, `image <line>:<column> "<alt>" <target>`,
+  `diagram <line>:<column> "<alt>" <svg> <graphml> up-to-date|out-of-date` — or `(none)` when
+  the active tab is no Markdown one. *design*
+
+  ```
+  == outline
+  document 02-traffic-light-sm.md
+    h1 5 "2. Машины состояний для управления светофором на Arduino" #2-машины-состояний-для-управления-светофором-на-arduino
+      h2 12 "Теоретическая часть" #теоретическая-часть
+        h3 126 "2.3. Машины состояний" #23-машины-состояний
+          h4 128 "Что такое машины состояний?" #что-такое-машины-состояний
+            diagram 141:1 "Машина состояний для микроволновки" diagrams/2/microwave.svg diagrams/2/microwave.graphml out-of-date
+  ```
 
 ## 5. Coverage
 

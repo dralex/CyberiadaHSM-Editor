@@ -1,7 +1,8 @@
 # The Document Modes — Architecture
 
-**Document version:** 0.16 (2026-11-18) — stages 1 to 9 implemented (see Stages); 0.16: the
-text toolbar and the Markdown tools of a text tab (`EDIT-MD-1..12`, `docs/MARKDOWN.md`, Tools).
+**Document version:** 0.17 (2026-11-21) — stages 1 to 9 implemented (see Stages); 0.16: the
+text toolbar and the Markdown tools of a text tab (`EDIT-MD-1..12`, `docs/MARKDOWN.md`, Tools);
+0.17: the outline dock of a Markdown tab (`EDIT-MD-13..17`).
 The requirements are `EDIT-MODE-1..28` in `EDITOR-SPEC.md` §4.14, the plugin parts
 `EDIT-PLUG-56..60`.
 
@@ -45,7 +46,7 @@ CyberiadaSMEditorWindow                                                         
 | FA diagram | `fa` | canvas | Select, Pan, Zoom, State, Initial, Final, Transition, Comment, Formal comment | tree, properties | `[FA]` |
 | HSM diff | `diff` | two canvases | Select, Pan, Zoom | changes | `[diff]` |
 | Plain text | `text` | CodeEditor | the toolbar hidden | none | `[text]` |
-| Markdown | `markdown` | CodeEditor; rendered when read-only | the toolbar hidden | none | `[Markdown]` |
+| Markdown | `markdown` | CodeEditor; rendered when read-only | the toolbar hidden | outline | `[Markdown]` |
 | a language | `c`, `cpp`, `csharp`, `json`, `python`, a plugin's (`lua`) | CodeEditor | the toolbar hidden | none | `[C++]` ... |
 
 * A language mode is a language file: a built-in one of `syntax/`, or one a plugin brings in
@@ -55,8 +56,9 @@ CyberiadaSMEditorWindow                                                         
 * The read-only flag adds `ro` to the marker: the tab `a.graphml [FA, ro]*`, the window
   `a.graphml [FA, read-only][*]`; an HSM tab `a.graphml [ro]`.
 * The traits decide which actions and docks a tab gets (`ModeTraits::docks`; a text diff tab
-  has the changes); a dock the tab has not is hidden with its View entry greyed. The read-only
-  flag, a plugin lock and the inspection then disable the editing ones as today.
+  has the changes, a Markdown tab the outline); a dock the tab has not is hidden with its View
+  entry greyed. The read-only flag, a plugin lock and the inspection then disable the editing
+  ones as today.
 
 ## Mode transitions
 

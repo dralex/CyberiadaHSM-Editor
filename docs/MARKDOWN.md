@@ -1,9 +1,9 @@
 # The Markdown Rendering — Architecture
 
-**Document version:** 0.13 (2026-11-19) — the authoring tools specified and implemented
-(Tools, stages 1 to 6).
+**Document version:** 0.14 (2026-11-21) — the authoring tools specified and implemented
+(Tools, stages 1 to 6); 0.14: the outline specified (Outline).
 The requirements are `EDIT-MODE-14`, `EDIT-MODE-17`, `EDIT-MODE-18`, `EDIT-TEXT-14`,
-`EDIT-MD-1..12` and `EDIT-IO-8` in `EDITOR-SPEC.md`.
+`EDIT-MD-1..17` and `EDIT-IO-8` in `EDITOR-SPEC.md`.
 
 The editor renders Markdown itself: a read-only Markdown tab (`docs/MODES.md`, Text tabs) and,
 when the preference is on, a Markdown comment body on the canvas. md4c reads the text, a TeX
@@ -462,6 +462,102 @@ The text links the image to its diagram; the SVG records where it was drawn from
    `renderPreview`, `followCursor`), `display/markdownPreview`, View > Preview, `preview`, the
    `preview: yes` dump line.
 
+## Outline
+
+The Outline dock shows the headings of a Markdown tab as a tree and its images as leaves
+(`EDIT-MD-13..17`). The text is the source: the model is read from it, the tree only navigates,
+nothing goes back.
+
+```
+              data: one way only
+ text ──(read ≤ 1/s, only while the Outline is shown)──▶ model ──Qt signals──▶ tree
+   ▲                                                                           │
+   └──────────── navigation only: goToLine / showHeading ◀─────────────────────┘
+```
+
+|                   | Structure tree (a diagram)        | Outline (a Markdown text)                     |
+|-------------------|-----------------------------------|-----------------------------------------------|
+| data              | the element tree in the model     | the text; the model derives its nodes         |
+| node identity     | `Element*`                        | `OutlineNode*`, matched across the readings   |
+| a change          | the model's mutators              | a reading of the text                         |
+| undo and redo     | a snapshot, the model reset       | a text change, the next reading               |
+| editing in a tree | rename, drag, delete              | none: `flags()` enabled and selectable only   |
+
+### The parts
+
+```
+ TextDocument (Markdown mode)                         CyberiadaSMEditorWindow
+   QTextDocument ─contentsChanged─▶ dirty              outlineDock "Outline" [_][x]
+        │                             │ shown + active   MarkdownOutlineView : QTreeView
+        │                     1 s single-shot timer      (setModel on a tab switch,
+        │                     (not restarted)             nullptr for another tab)
+        ▼                             ▼                         ▲   │ current row, Enter,
+   text() ──▶ markdownOutline(text, baseDir) ──▶ MarkdownOutlineModel  │ double click
+              markdown_outline.*                  refresh: reconcile ───┘   ▼
+              markdownHeadings, markdownImages,   indexAtLine, entry   goToLine / showHeading
+              markdownDiagramImages (cached)      markdown_outline_model.*  openFileRequested
+   CodeEditor ─cursorPositionChanged─▶ (not dirty) indexAtLine ─▶ the view's current row
+```
+
+* `markdown_outline.*`: `OutlineEntry` (heading, image or diagram; the level, title, anchor,
+  line, column, target, link, diagram state) and `markdownOutline`, pure functions over the
+  scanners of Check, so the anchors are the ones of Ctrl+click, Check and Insert Link.
+* `markdown_outline_model.*`: `MarkdownOutlineModel : QAbstractItemModel`, read-only, the
+  `internalPointer` an `OutlineNode*`; the diagram state is cached by the path, the time and the
+  size of the files, so a reading hashes a diagram again only when it changed.
+* `markdown_outline_view.*`: `MarkdownOutlineView : QTreeView`, no drag, no edit triggers; not
+  `CyberiadaSMView`, which casts its model to `CyberiadaSMModel` to drag.
+* `TextDocument` owns the model in the Markdown mode, the dirty flag, the timer and
+  `setOutlineShown`; the window binds the view as it binds the structure tree and the changes.
+
+### The reading
+
+A reading builds the new nodes and reconciles them with the old ones parent by parent: the
+child lists are compared by `TextDiff::diffLines` (`text_diff.*`) on the keys
+`h<level> <title>` and `img <target>`.
+
+```
+old: [h1 Intro] [img board] [h2 Blink]
+new: [h1 Introduction] [img board] [h2 Blink] [h2 Fade]
+      changed → kept    equal → kept  equal      inserted
+```
+
+| Row of the comparison | The node |
+|---|---|
+| equal | kept; `dataChanged` when its line moved |
+| changed pair (similarity ≥ 0.5) | kept, its data replaced; `dataChanged` |
+| removed | `beginRemoveRows`, the rows of a parent from the last |
+| added | `beginInsertRows`, in the order of the text |
+
+The kept nodes are compared again below; a heading that changed its level moves to another
+parent: removed and added, only its subtree loses the expanded state. The model is reset on a
+load and on a mode switch only.
+
+### A row on an out-of-date outline
+
+```
+click / arrow / Enter on the row "2.3" (removed from the text 0.4 s ago)
+ 1. the view keeps a QPersistentModelIndex of the row, its kind and its title (or its file)
+ 2. queued after the event: model->refresh(text)
+      "2.3" not matched → its rows removed → the persistent index invalid
+ 3. valid          → the node's current line
+    else the only node of that kind and title the reading added → it (a level, a move)
+    else           → nowhere; QToolTip at the tree: The heading "2.3. …" is no longer in the
+                     text; the row at the cursor current
+```
+
+The window has no status bar: the message is a tooltip at the tree, as the source shows the
+link targets (`CodeEditor`).
+
+### Stages
+
+1. The navigator: `markdown_outline.*`, the model with the reading, the dirty flag and the
+   timer, the view, `outlineDock` with View > Outline (`display/showOutline`,
+   `modeDockOutline`), the tree and the source following each other, the row on an out-of-date
+   outline, `--dump-outline`.
+2. *(optional)* On a rendered page the current row follows the scroll: the `MarkdownSourceLine`
+   of the top block.
+
 ## Build
 
 | Part | Where | Licence |
@@ -515,3 +611,12 @@ heading in the source and on a rendered page; `md-insert-link` and its reject; t
 lines of the rendered blocks, the scroll to a source line, the preview page (the splitter, the
 re-render after the edits, read-only and other modes, off), the page following the cursor
 with its scroll kept, View > Preview; `mode-markdown-preview` and its reject.
+
+The outline: `l4-markdown-outline` — `markdownOutline` on `texts/*.md` (the levels, a skipped
+level, setext, the fences, images on one line, the diagram leaves); the model under
+`QAbstractItemModelTester` through the typed edits, undo and redo, a heading retyped, a level
+changed and a mode switch; the expanded rows and the selection kept by a reading; nothing read
+while the dock is hidden or the tab is in the background; the tree and the source following
+each other; every row of the out-of-date table of `EDIT-MD-16`, a removed heading with an
+older namesake too; `md-outline` (`--dump-outline` of the texts) and `md-outline-none` (another
+tab).

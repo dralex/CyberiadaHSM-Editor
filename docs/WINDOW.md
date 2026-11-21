@@ -1,6 +1,6 @@
 # The Editor Window — Documents and Tabs
 
-**Document version:** 0.23 (2026-11-18) — the modes, the read-only flag and the plugins in
+**Document version:** 0.24 (2026-11-21) — the modes, the read-only flag and the plugins in
 the modes (`modes`, the text tabs, a plugin run as a diff base, the plugin languages) are
 implemented, the git compare with them (stage 6 of `docs/MODES.md`); a switch keeps the dock
 sizes; a Markdown tab exports its rendered PDF; the find bar (`docs/FIND.md`); the shortcuts
@@ -10,9 +10,10 @@ text editors (`docs/COLOR-SCHEMES.md`) and their font; the text diff tab (stage 
 0.22: Open Terminal.
 0.23: the toolbars follow the tab — Main, Diagram, Elements, Text (`EDIT-MD-1`); the Markdown
 tools (`docs/MARKDOWN.md`, Tools).
+0.24: the Outline dock of a Markdown tab (`EDIT-MD-13..17`, `docs/MARKDOWN.md`, Outline).
 
 The window holds several documents at once. The menus, the toolbars, the tab line and the
-docks (the structure tree, the properties, the changes, the plugins) are one set; each document brings its
+docks (the structure tree, the properties, the changes, the outline, the plugins) are one set; each document brings its
 own page — a diagram its model, scene and canvas view — and its mode (`docs/MODES.md`). The
 requirements are `EDIT-DOC-1..12` in `EDITOR-SPEC.md` §4.11, `EDIT-MODE-1..17` §4.14 and
 `EDIT-UI-6` for the docks, `EDIT-FIND-1..9` §4.15 for the find bar; the plugin parts follow `docs/PLUGINS.md` (`EDIT-PLUG-n`, §4.12), the
@@ -41,7 +42,10 @@ CyberiadaSMEditorWindow (QMainWindow)                                   GLOBAL
  |  +--------------------------------------+ | | changesDock "Changes"      [_][x]|
  |  | findBar : FindBar  hidden until Find | | |   changeList (a (text) diff tab)|
  |  +--------------------------------------+ | +---------------------------------+
- |  View > Structure tree / Properties / Changes: the docks' toggle actions, kept in the
+ |                                           | | outlineDock "Outline"      [_][x]|
+ |                                           | |   outlineView (a Markdown tab)  |
+ |                                           | +---------------------------------+
+ |  View > Structure tree / Properties / Changes / Outline: the docks' toggle actions, kept in the
  |  settings; applyDocks shows the docks of ModeTraits::docks as chosen, greys the others
  +-------------------------------------------+-------------------------------------
  | pluginDock (QDockWidget, bottom, full width, hidden until the first run)   pluginRuns
@@ -72,6 +76,8 @@ setCurrentDocument(doc)
                                  their View entries greyed; the settings stay
   SMView.setModel(doc.model) + setRootIndex   propertiesWidget.setModel/setScene(doc)
                                  (a diagram; a text tab empties them, a diff tab lists changes)
+  outlineView.setModel(text.outline())  a Markdown tab, read first when out of date; nullptr
+                                 for another tab; setOutlineShown on the old and the new tab
   expand the tree; widen its dock to the contents (grow-only, the docks keep their sizes)
   undoGroup.setActiveStack(doc.model.undoStack())   -> undo/redo actions and texts
   bind the new document          scene.elementSelected -> SMView.select
@@ -114,7 +120,8 @@ setCurrentDocument(doc)
 | Toolbars | global | Main always; Diagram in a diagram or a diff tab, Elements in a diagram tab, Text in a text tab, none of the three in a text diff tab; the entries of a hidden one greyed in the menus; one the user closed stays closed (`EDIT-MD-1`) |
 | Document > Language, code highlighting | document | the checked entry is the active document's `platformLanguage`; each tab is highlighted by its own (`EDIT-TEXT-9`); the list of unknown values met is global |
 | Document > Markup, comment markup | document | the checked entry is the active document's `markupLanguage` (`EDIT-TEXT-12`); the list of unknown values met is global |
-| Structure tree, properties panel, changes | shared docks | content re-targeted on a switch; shown in the tabs that have them as View chose, the choice kept (`EDIT-UI-6`): a diagram the tree and the properties, a (text) diff the changes, a text tab none |
+| Structure tree, properties panel, changes, outline | shared docks | content re-targeted on a switch; shown in the tabs that have them as View chose, the choice kept (`EDIT-UI-6`): a diagram the tree and the properties, a (text) diff the changes, a Markdown tab the outline, another text tab none |
+| Outline model | document | owned by a Markdown tab, read from its text at most once a second while the dock shows it, out of date otherwise (`EDIT-MD-14`) |
 | Window title and `[*]` | document | the active one with its mode marker (`EDIT-MODE-2`); the tab text carries the marker and `*` when modified; an unsaved document is `[document name]` or `untitled` (`EDIT-DOC-10`) |
 | Saved viewport (zoom/pan in the document) | document | restored on the tab's first activation |
 | Gesture-log session | bound to one document | a switch ends it and starts a new one (`EDIT-DOC-8`) |
