@@ -189,6 +189,14 @@ pack_editor() {
     done
     # user-facing docs alongside the editor (the editor has no ChangeLog yet)
     cp "$SRC/CyberiadaHSM-Editor/README.md" "$SRC/CyberiadaHSM-Editor/LICENSE" "$stage/" 2>/dev/null || true
+    # the copyright of the bundled parts (the deb's copyright file) and the licences of
+    # the vendored libraries and fonts, which travel with their binary copies
+    ed="$SRC/CyberiadaHSM-Editor"
+    cp "$ed/debian-copyright" "$stage/COPYRIGHT"
+    mkdir -p "$stage/licenses/md4c" "$stage/licenses/jkqtmathtext" "$stage/licenses/xits"
+    cp "$ed/3rdparty/md4c/LICENSE.md" "$stage/licenses/md4c/"
+    cp "$ed/3rdparty/jkqtmathtext/LICENSE" "$stage/licenses/jkqtmathtext/"
+    cp "$ed/3rdparty/jkqtmathtext/jkqtmathtext/resources/xits/OFL.txt" "$stage/licenses/xits/"
 
     # bundle the python tool plugins so the editor lists them under its system
     # plugin folder (next to the exe); running them needs a Python 3.10+ with the
