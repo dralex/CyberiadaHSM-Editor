@@ -2,10 +2,10 @@
 # -----------------------------------------------------------------------------
 # Build the single CyberiadaPro Windows installer (NSIS) from the editor zip built
 # before by build-windows-docker.sh. The installer installs the editor, Python 3
-# when no suitable one is found, the python plugins (hsm-to-python, hsm-maker, git) and
-# checks that the editor runs them; nothing is downloaded at install time. The
-# plugins run on the pure-Python cyberiadaml-py: on Windows 10 and newer with Python
-# 3.10-3.14, on Windows 7 SP1-8.1 with Python 3.8 and a pydantic whose core loads
+# when no suitable one is found, the python plugins (hsm-to-python, hsm-maker, git,
+# fa-dispatcher) and checks that the editor runs them; nothing is downloaded at install
+# time. The plugins run on the pure-Python cyberiadaml-py: on Windows 10 and newer with
+# Python 3.10-3.14, on Windows 7 SP1-8.1 with Python 3.8 and a pydantic whose core loads
 # there. No Windows machine takes part.
 #
 # It pulls the release branch of the python repos on the HOST, then runs
@@ -96,6 +96,7 @@ pull_repo hsm-dispatcher-py
 pull_repo hsm-to-python
 pull_repo cybersphere-hsm-maker
 pull_repo cybersphere-git-plugin
+pull_repo fa-dispatcher-py
 
 # apt (as root) adds makensis and poetry-core when the image predates them; the
 # build then runs as the invoking user (setpriv), so the output stays user-owned.

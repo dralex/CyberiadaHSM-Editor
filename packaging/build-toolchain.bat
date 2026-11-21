@@ -226,6 +226,7 @@ if "%PYTHON%"=="1" (
   call :build_pydeb cybersphere-hsm-maker %BRANCH% || exit /b 1
   call :build_pydeb hsm-to-python         %BRANCH% || exit /b 1
   call :build_pydeb cybersphere-git-plugin %BRANCH% || exit /b 1
+  call :build_pydeb fa-dispatcher-py      %BRANCH% || exit /b 1
 )
 if "%EDITOR%"=="0" goto editor_done
 call :build_repo QtPropertyBrowser master   nozip || exit /b 1
@@ -426,11 +427,11 @@ exit /b 0
 rem ---------------------------------------------------------------------------
 rem :build_pydeb  name  branch
 rem a distribution-independent python package (cyberiadaml-py, hsm-dispatcher,
-rem hsm-to-python, cybersphere-hsm-maker, cybersphere-git-plugin): LANGUAGES NONE,
-rem nothing to compile. Produces a .zip (its files, incl. the editor plugin under
-rem share/cyberiada-pro/plugins/<id>) and a pip wheel (console-script .exe shims +
-rem the plugin data-files). The wheel of cyberiadaml-py needs Python 3.8.1+, and pip
-rem fetches its build backend (poetry-core). Tests run on the Linux tier (they need
+rem hsm-to-python, cybersphere-hsm-maker, cybersphere-git-plugin, fa-dispatcher-py):
+rem LANGUAGES NONE, nothing to compile. Produces a .zip (its files, incl. the editor
+rem plugin under share/cyberiada-pro/plugins/<id>) and a pip wheel (console-script .exe
+rem shims + the plugin data-files). The wheel of cyberiadaml-py needs Python 3.8.1+, and
+rem pip fetches its build backend (poetry-core). Tests run on the Linux tier (they need
 rem the binding + pytest); here we only produce the Windows artifacts.
 rem ---------------------------------------------------------------------------
 :build_pydeb

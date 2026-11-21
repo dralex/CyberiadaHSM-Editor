@@ -31,9 +31,9 @@ PYTHONS="3.10 3.11 3.12 3.13 3.14"
 # the python packages of the Windows release (not cybersphere-agents, nor
 # lapki-compiler-plugin: its Lapki writer is the binding's)
 REPOS="cyberiadaml-py hsm-dispatcher-py hsm-to-python cybersphere-hsm-maker
-       cybersphere-git-plugin"
+       cybersphere-git-plugin fa-dispatcher-py"
 # the editor plugins the installer pins (keep in sync with cyberiada-pro.nsi)
-PLUGINS="hsm-to-python hsm-maker git"
+PLUGINS="hsm-to-python hsm-maker git fa-dispatcher"
 
 say() { printf '\n\033[1;34m== %s\033[0m\n' "$*"; }
 die() { printf '\033[1;31merror: %s\033[0m\n' "$*" >&2; exit 1; }
@@ -196,7 +196,9 @@ fetch_python "legacy."
 say "the plugin check and its samples"
 cp "$HERE/check-plugins.py" "$WORK/tools/"
 cp "$SRC/hsm-to-python/test/graphs/code_layout.graphml" \
-   "$SRC/cybersphere-hsm-maker/tests/good/lift.graphml" "$WORK/tools/samples/"
+   "$SRC/cybersphere-hsm-maker/tests/good/lift.graphml" \
+   "$SRC/fa-dispatcher-py/examples/morse-decoder.graphml" \
+   "$SRC/fa-dispatcher-py/examples/morse-decoder.tests" "$WORK/tools/samples/"
 
 say "the icon"
 # every size of the editor icon in one ICO (images/make-icons.py): the installer, the

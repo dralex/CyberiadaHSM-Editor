@@ -115,8 +115,9 @@ the pure-Python `cyberiadaml-py`. A binding for another Python, without the edit
 ### The python tools on Windows
 
 The python packages of the Windows release (`hsm-dispatcher-py`, `hsm-to-python`,
-`cybersphere-hsm-maker`, `cybersphere-git-plugin`; `cybersphere-agents` and
-`lapki-compiler-plugin`, whose Lapki writer is the binding's, are not in it) read the diagrams with
+`cybersphere-hsm-maker`, `cybersphere-git-plugin`, `fa-dispatcher-py`;
+`cybersphere-agents` and `lapki-compiler-plugin`, whose Lapki writer is the binding's, are
+not in it) read the diagrams with
 `cyberiadaml-py`, the pure-Python
 CyberiadaML interface, when the binding is not installed, so on Windows they need no
 binary module of ours and no Python of a particular version, only Python 3.8.1+. On
@@ -126,10 +127,11 @@ below). Their wheels are built by this script or, the same files, on
 Linux in `dist/pyapps/`; pip takes `cyberiadaml-py` and the dispatcher from that
 folder and `pydantic` from PyPI:
 
-    py -3 -m pip install --find-links dist\pyapps hsm-to-python cybersphere-hsm-maker cybersphere-git-plugin
+    py -3 -m pip install --find-links dist\pyapps hsm-to-python cybersphere-hsm-maker cybersphere-git-plugin fa-dispatcher-py
     hsm-run --install-editor-plugin
     hsm-maker --install-editor-plugin
     hsm-git --install-editor-plugin
+    fa-run --install-editor-plugin
 
 The plugins then appear in CyberiadaPro (either Windows build). The binding `.zip` is
 optional: it is faster and reads the legacy yEd diagrams too, for the Python it was
@@ -177,8 +179,8 @@ The installer:
    built before; the build checks its import table. Python 3.8 is the last one for
    Windows 7. The Pythons are found in the PEP 514 registry; the bundled ones are the
    python.org installers of `windows-installer/python.txt`, installed for all users;
-3. installs the python plugins hsm-to-python, hsm-maker and git (not cybersphere-agents,
-   nor lapki-compiler)
+3. installs the python plugins hsm-to-python, hsm-maker, git and fa-dispatcher (not
+   cybersphere-agents, nor lapki-compiler)
    into that Python from the bundled wheels, offline: the plugin packages, the
    pure-Python `cyberiadaml-py` and the pinned pydantic wheels of that Windows. Then
    it binds the plugins of the editor folder to that Python for every user

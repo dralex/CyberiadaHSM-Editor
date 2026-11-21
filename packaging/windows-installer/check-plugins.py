@@ -44,10 +44,11 @@ import subprocess
 import sys
 import tempfile
 
-PLUGINS = ('hsm-to-python', 'hsm-maker', 'git')
-MODULES = ('cyberiadaml_py.cml', 'pydantic', 'hsmd', 'gencode', 'hsm_maker', 'hsm_git')
+PLUGINS = ('hsm-to-python', 'hsm-maker', 'git', 'fa-dispatcher')
+MODULES = ('cyberiadaml_py.cml', 'pydantic', 'hsmd', 'gencode', 'hsm_maker', 'hsm_git', 'fad')
 DISTRIBUTIONS = ('cyberiadaml-py', 'pydantic', 'pydantic-core', 'hsm-dispatcher-py',
-                 'hsm-to-python', 'cybersphere-hsm-maker', 'cybersphere-git-plugin')
+                 'hsm-to-python', 'cybersphere-hsm-maker', 'cybersphere-git-plugin',
+                 'fa-dispatcher-py')
 # the plugins the editor enables only with a program on PATH (their 'requires')
 PROGRAMS = {'git': 'git'}
 TIMEOUT = 120
@@ -263,12 +264,18 @@ def pinned_python(editor, plugin):
     return sys.executable
 
 
-def check_run(check, editor, env, document, action, marks, work):
-    """One plugin action on a copy of a sample diagram."""
+def check_run(check, editor, env, document, action, marks, work, params=()):
+    """One plugin action on a copy of a sample diagram; params name the files of
+    the samples folder beside it: (parameter, file name)."""
     plugin = action.partition(':')[0]
     copy = os.path.join(work, os.path.basename(document))
     shutil.copyfile(document, copy)
-    code, output = run([editor, '--batch', copy, '--run-plugin', action, '--dump-plugin'], env)
+    command = [editor, '--batch', copy, '--run-plugin', action, '--dump-plugin']
+    for name, file in params:
+        path = os.path.join(work, file)
+        shutil.copyfile(os.path.join(os.path.dirname(document), file), path)
+        command += ['--plugin-param', '{}={}'.format(name, path)]
+    code, output = run(command, env)
     ok = code == 0 and all(mark in output for mark in marks)
     detail = 'exit {}'.format(code) if code is not None else output
     errors = [line.strip() for line in output.splitlines() if line.startswith('error:')]
@@ -318,6 +325,10 @@ def main(argv=None):
                 check_run(check, args.editor, env,
                           os.path.join(args.samples, 'lift.graphml'),
                           'hsm-maker:notation', ('state: done', 'machine Lift'), work)
+                check_run(check, args.editor, env,
+                          os.path.join(args.samples, 'morse-decoder.graphml'),
+                          'fa-dispatcher:test', ('state: done', '8 passed'), work,
+                          (('tests', 'morse-decoder.tests'),))
                 if 'git' in enabled:
                     check_git(check, args.editor, env,
                               os.path.join(args.samples, 'code_layout.graphml'), work)
