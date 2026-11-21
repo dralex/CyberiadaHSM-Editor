@@ -340,6 +340,13 @@ TextDocument* CyberiadaSMEditorWindow::newTextDocument(const QString& mode)
     return doc;
 }
 
+QString CyberiadaSMEditorWindow::openFileMode() const
+{
+    if (!active) return MODE_HSM;
+    if (TextDiffDocument* diff = currentTextDiff()) return diff->language().isEmpty() ? QString(MODE_TEXT) : diff->language();
+    return active->mode();
+}
+
 TextDocument* CyberiadaSMEditorWindow::findTextTab(const QString& path) const
 {
     QString absolute = QDir::cleanPath(QFileInfo(path).absoluteFilePath());
@@ -1933,7 +1940,9 @@ void CyberiadaSMEditorWindow::slotFileNew()
 void CyberiadaSMEditorWindow::slotFileOpen()
 {
     commitPendingEdit();
-    OpenFileDialog dlg(this);
+    // the type and the folder of the active tab first (EDIT-MODE-13)
+    QString folder = active && active->hasFile() ? QFileInfo(active->filePath()).absolutePath() : QString();
+    OpenFileDialog dlg(this, openFileMode(), folder);
     if (dlg.exec() != QDialog::Accepted) { return; }
 
     QString fileName = dlg.selectedFile();

@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.73 (2026-11-21)
+**Document version:** 0.74 (2026-11-21)
 
 **Related authorities:**
 
@@ -1163,7 +1163,10 @@ has a read-only flag; the architecture is `docs/MODES.md`. Specified in 0.47, th
   diagram; Open reads a file into a text tab in the mode its extension names
   (the `extensions` of the languages, `.json` for JSON, `.md` and `.markdown`, `.txt`), Plain text for an
   extension no mode names, a diagram for `.graphml`, its dialog offering the CyberiadaML
-  graphs, the Markdown files, the text files and all files; the text is UTF-8 and Save writes it back as it is, Save As
+  graphs, the Markdown files, the text files, the files of each language and all files - the
+  type of the active tab chosen first (a diagram or a diff the graphs, a Markdown or a plain text
+  tab its own, a language tab its files, a text diff tab its language) and the folder of the
+  active tab's file, when it has one, opened first (0.74); the text is UTF-8 and Save writes it back as it is, Save As
   proposing the mode's first extension; Undo and Redo step through the text's own edits; the
   text is highlighted by the language (`EDIT-TEXT-7`) or as Markdown (`EDIT-TEXT-11`) in the
   colors of the current scheme (`EDIT-COLOR-1`), and a switch between the text modes changes

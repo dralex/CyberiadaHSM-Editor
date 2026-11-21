@@ -122,6 +122,9 @@ public:
     QList<PluginDiagnostic> checkMarkdown(TextDocument* text);
     // the text tab of a file, null when it is not open
     TextDocument*           findTextTab(const QString& path) const;
+    // the mode whose files File > Open shows first: the active tab's, a text diff's language
+    // (EDIT-MODE-13)
+    QString                 openFileMode() const;
     DiffDocument*           currentDiff() const { return qobject_cast<DiffDocument*>(active); }
     // a diff or a text diff tab
     ComparisonDocument*     currentComparison() const { return qobject_cast<ComparisonDocument*>(active); }

@@ -36,13 +36,21 @@ class OpenFileDialog : public CyberiadaFileDialog
     Q_OBJECT
 
 public:
-    explicit OpenFileDialog(QWidget *parent = nullptr);
+    // the filter of the mode chosen, the browser in the folder when one is given (EDIT-MODE-13)
+    explicit OpenFileDialog(QWidget *parent = nullptr, const QString& mode = QString(),
+                            const QString& folder = QString());
     ~OpenFileDialog();
 
     bool inspectorModeEnabled() const;
     bool reconstructionEnabled() const;
     bool reconstructionSMEnabled() const;
     bool strictModeEnabled() const;
+
+    // the graphs, the Markdown files, the text files, the files of each language, all files
+    static QStringList filters();
+    // the filter a tab of the mode opens: a Markdown or a text tab its own, a language its
+    // files, a diagram or anything else the graphs
+    static QString filterFor(const QString& mode);
 
 private slots:
     void slotInspectorToggled(bool on);

@@ -228,6 +228,10 @@ The git plugin hands the revision of a diagram to a diff tab:
    a JSON tab: the error bar under the editor (JSON, below)
 ```
 
+* File > Open shows first the files of the active tab's mode - the graphs for a diagram or a
+  diff, Markdown, the plain texts, a language's files (one filter per language), a text
+  diff's language - in the folder of the active tab's file (`EDIT-MODE-13`,
+  `OpenFileDialog::filterFor`, `CyberiadaSMEditorWindow::openFileMode`).
 * The proxy step lets the window's Undo and Redo, bound to the `QUndoGroup`, drive the text's own
   undo, and the stack's clean state gives the `*` of the title.
 * Save writes the text as it is, in UTF-8; Save As proposes the mode's first extension.

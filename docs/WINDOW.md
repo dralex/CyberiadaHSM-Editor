@@ -88,7 +88,7 @@ setCurrentDocument(doc)
 | Part / action | Scope | Rule |
 |---|---|---|
 | Menus, toolbars, tab line | global | one set; the actions target the active document |
-| New, Open, Open Recent, Exit, Preferences, About | global | New > HSM diagram, FA diagram, Text file = a new tab in that mode; Open = replace a clean untitled tab, else a new tab, the mode by the file (`EDIT-MODE-5/13`), the inspection box an inspection tab; an open path activates its tab; the interface language of the Preferences applies at the next start (`EDIT-UI-1`) |
+| New, Open, Open Recent, Exit, Preferences, About | global | New > HSM diagram, FA diagram, Text file = a new tab in that mode; Open = replace a clean untitled tab, else a new tab, the mode by the file (`EDIT-MODE-5/13`), its dialog on the file type and in the folder of the active tab, the inspection box an inspection tab; an open path activates its tab; the interface language of the Preferences applies at the next start (`EDIT-UI-1`) |
 | Grid, Snap, Service objects, Transition text, FA symbols, Log session | global | settings; every scene listens to `SettingsManager` |
 | Document > Mode, Read-only | document | the mode and the flag of the active tab (`EDIT-DOC-6`, `EDIT-MODE-1..7`); HSM inspection and Compare with... open tabs of their own |
 | Document > Check, Geometry, Refresh | document | Check on an FA and a Markdown tab (`EDIT-MD-8`), Geometry and Refresh on a diff tab (`EDIT-MODE-9..12`), Refresh on a text diff tab |

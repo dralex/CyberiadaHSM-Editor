@@ -22,6 +22,8 @@
  * ----------------------------------------------------------------------------- */
 
 #include <QtTest>
+#include <QTemporaryDir>
+#include "document_mode.h"
 #include <QCheckBox>
 #include <QComboBox>
 #include <QFontComboBox>
@@ -53,6 +55,7 @@ private slots:
 	void test_export_image();
 	void test_export_default_name();
 	void test_export_svg_source();
+	void test_open_follows_tab();
 	void test_action_dialog();
 	void test_transition_dialog();
 	void test_about_dialog();
@@ -78,11 +81,13 @@ void TestDialog::test_open_filters()
 {
 	OpenFileDialog dlg;
 	QStringList filters = dlg.nameFilters();
-	QCOMPARE(filters.size(), 4);
+	// the graphs, the Markdown files, the texts, a filter per language, all files (EDIT-MODE-13)
+	QCOMPARE(filters, OpenFileDialog::filters());
+	QVERIFY(filters.size() > 4);
 	QVERIFY(filters.at(0).contains("*.graphml"));
 	QVERIFY(filters.at(1).contains("*.md *.markdown"));
 	QVERIFY(filters.at(2).contains("*.txt") && filters.at(2).contains("*.markdown"));
-	QVERIFY(filters.at(3).contains("(*)"));
+	QVERIFY(filters.last().contains("(*)"));
 	QCOMPARE(dlg.selectedNameFilter(), filters.at(0));
 }
 
@@ -270,6 +275,39 @@ void TestDialog::test_export_svg_source()
 	unsaved.updateSuffix();
 	QVERIFY(!unsaved.sourceBox()->isEnabled() && !unsaved.recordSource());
 	QCOMPARE(unsaved.sourceBox()->toolTip(), QString("Save the diagram first"));
+}
+
+// EDIT-MODE-13: the graphs, the Markdown files, the texts, each language and all files; the
+// type of the active tab's mode chosen first, the browser in the folder given
+void TestDialog::test_open_follows_tab()
+{
+	QStringList filters = OpenFileDialog::filters();
+	QVERIFY(filters.first().startsWith("CyberiadaML graph"));
+	QVERIFY(filters.at(1).startsWith("Markdown files"));
+	QVERIFY(filters.at(2).startsWith("Text files"));
+	QVERIFY(filters.last().startsWith("All files"));
+	QString cpp, python;
+	for (const QString& f : filters) {
+		if (f.startsWith("C++ files (")) cpp = f;
+		if (f.startsWith("Python files (")) python = f;
+	}
+	QVERIFY(cpp.contains("*.cpp") && python.contains("*.py"));
+	for (const char* mode : {MODE_HSM, MODE_FA, MODE_INSPECTION, MODE_DIFF, "unknown"}) {
+		QCOMPARE(OpenFileDialog::filterFor(mode), filters.first());
+	}
+	QCOMPARE(OpenFileDialog::filterFor(MODE_MARKDOWN), filters.at(1));
+	QCOMPARE(OpenFileDialog::filterFor(MODE_TEXT), filters.at(2));
+	QCOMPARE(OpenFileDialog::filterFor("cpp"), cpp);
+	QCOMPARE(OpenFileDialog::filterFor("python"), python);
+
+	QTemporaryDir dir;
+	OpenFileDialog markdown(nullptr, MODE_MARKDOWN, dir.path());
+	QCOMPARE(markdown.selectedNameFilter(), filters.at(1));
+	QCOMPARE(QFileInfo(markdown.directory().absolutePath()).canonicalFilePath(), QFileInfo(dir.path()).canonicalFilePath());
+	OpenFileDialog code(nullptr, "cpp");
+	QCOMPARE(code.selectedNameFilter(), cpp);
+	OpenFileDialog diagram(nullptr, MODE_HSM);
+	QCOMPARE(diagram.selectedNameFilter(), filters.first());
 }
 
 QTEST_MAIN(TestDialog)

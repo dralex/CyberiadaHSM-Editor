@@ -77,6 +77,7 @@ private slots:
 	void test_markdown_links();
 	void test_back_to_diagram();
 	void test_mode_toolbars();
+	void test_open_file_mode();
 	void test_compare_saved();
 	void test_compare_refresh();
 	void test_compare_tab();
@@ -446,6 +447,27 @@ void TestModes::test_back_to_diagram()
 	// closing the text tab leaves the diagram as it was
 	QVERIFY(window.closeDocument(window.tabAt(1)));
 	QCOMPARE(window.documentCount(), 1);
+}
+
+// EDIT-MODE-13: File > Open shows first the files of the active tab's mode, a text diff's language
+void TestModes::test_open_file_mode()
+{
+	CyberiadaSMEditorWindow window;
+	QCOMPARE(window.openFileMode(), QString(MODE_HSM));
+	QVERIFY(window.openFile("diagrams/geometry.graphml"));
+	QCOMPARE(window.openFileMode(), QString(MODE_HSM));
+	QVERIFY(window.openFile("texts/notes.md"));
+	QCOMPARE(window.openFileMode(), QString(MODE_MARKDOWN));
+	QVERIFY(window.openFile("texts/blink.cpp"));
+	QCOMPARE(window.openFileMode(), QString("cpp"));
+	QVERIFY(window.openFile("texts/diff-target.py"));
+	DiffOrigin base;
+	base.kind = DiffOrigin::originFile;
+	base.path = "texts/diff-base.py";
+	base.label = "diff-base.py";
+	QString error;
+	QVERIFY2(window.compareText(window.currentText(), base, &error), qPrintable(error));
+	QCOMPARE(window.openFileMode(), QString("python"));
 }
 
 // EDIT-MD-1: the toolbars follow the tab - Elements for a diagram, Diagram also for a diff,

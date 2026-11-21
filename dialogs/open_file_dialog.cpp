@@ -22,19 +22,67 @@
  * ----------------------------------------------------------------------------- */
 
 #include <QCheckBox>
+#include <QCoreApplication>
 
 #include "open_file_dialog.h"
 #include "ui_open_file_dialog.h"
 #include "document_mode.h"
+#include "code_highlighter.h"
 
 
-OpenFileDialog::OpenFileDialog(QWidget *parent)
-    : CyberiadaFileDialog(parent, tr("Open a file"),
-                          // a text file opens in a text tab of its mode (EDIT-MODE-13)
-                          tr("CyberiadaML graph (*.graphml)") + ";;" +
-                          tr("Markdown files (%1)").arg(markdownFilePatterns()) + ";;" +
-                          tr("Text files (%1)").arg(textFilePatterns()) + ";;" +
-                          tr("All files (*)"))
+static QString graphFilter()
+{
+    return QCoreApplication::translate("OpenFileDialog", "CyberiadaML graph (*.graphml)");
+}
+
+static QString markdownFilter()
+{
+    return QCoreApplication::translate("OpenFileDialog", "Markdown files (%1)").arg(markdownFilePatterns());
+}
+
+static QString textFilter()
+{
+    return QCoreApplication::translate("OpenFileDialog", "Text files (%1)").arg(textFilePatterns());
+}
+
+// the files of a language, as Open names its mode by the extensions (EDIT-MODE-13)
+static QString languageFilter(const QString& id)
+{
+    const CodeLanguage* language = CodeStyle::instance().findId(id);
+    if (!language || language->extensions.isEmpty()) return QString();
+    QStringList patterns;
+    for (const QString& extension : language->extensions) patterns << "*" + extension;
+    return QCoreApplication::translate("OpenFileDialog", "%1 files (%2)").arg(modeName(id), patterns.join(' '));
+}
+
+QStringList OpenFileDialog::filters()
+{
+    QStringList list;
+    list << graphFilter()
+         << markdownFilter()
+         << textFilter();
+    for (const QString& id : textModes()) {
+        QString filter = languageFilter(id);
+        if (!filter.isEmpty()) list << filter;
+    }
+    list << QCoreApplication::translate("OpenFileDialog", "All files (*)");
+    return list;
+}
+
+QString OpenFileDialog::filterFor(const QString& mode)
+{
+    if (mode == MODE_MARKDOWN) return markdownFilter();
+    if (mode == MODE_TEXT) return textFilter();
+    if (isTextMode(mode)) {
+        QString filter = languageFilter(mode);
+        return filter.isEmpty() ? textFilter() : filter;
+    }
+    return graphFilter();
+}
+
+OpenFileDialog::OpenFileDialog(QWidget *parent, const QString& mode, const QString& folder)
+    // a text file opens in a text tab of its mode (EDIT-MODE-13)
+    : CyberiadaFileDialog(parent, tr("Open a file"), filters().join(";;"))
     , ui(new Ui::OpenFileOptions)
     , options(new QWidget(this))
 {
@@ -51,6 +99,9 @@ OpenFileDialog::OpenFileDialog(QWidget *parent)
     slotReconstructToggled(false);
 
     connect(ui->inspectorCheckBox, &QCheckBox::toggled, this, &OpenFileDialog::slotInspectorToggled);
+    // the type and the folder of the active tab first
+    selectNameFilter(filterFor(mode));
+    if (!folder.isEmpty()) setDirectory(folder);
     connect(ui->reconstructCheckBox, &QCheckBox::toggled, this, &OpenFileDialog::slotReconstructToggled);
 }
 
