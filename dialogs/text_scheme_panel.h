@@ -60,6 +60,8 @@ public:
     CodeEditor*        preview() const { return m_preview; }
     // Line or Block (EDIT-MODE-29)
     QComboBox*         cursorBox() const { return m_cursor; }
+    // Scroll or Wrap (EDIT-MODE-30)
+    QComboBox*         wrapBox() const { return m_wrap; }
 
 private slots:
     // the preview in the font chosen
@@ -84,6 +86,7 @@ private:
     QFontComboBox*     m_fontFamily;
     QSpinBox*          m_fontSize;
     QComboBox*         m_cursor;
+    QComboBox*         m_wrap;
     QComboBox*         m_list;
     QPushButton*       m_copy;
     QPushButton*       m_rename;

@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.74 (2026-11-21)
+**Document version:** 0.75 (2026-11-21)
 
 **Related authorities:**
 
@@ -1300,6 +1300,16 @@ has a read-only flag; the architecture is `docs/MODES.md`. Specified in 0.47, th
   once and a font change keeps the block one character wide; the choice is stored per user
   (`display/editorCursor`: `line` or `block`), and Reset of the Preferences restores the line.
   The line edits, the find bar and the canvas keep their cursors. Specified in 0.73. *design*
+- `EDIT-MODE-30` SHOULD [A]: the long lines of a source editor scroll sideways, by default, or
+  are wrapped at its width: a row breaks at any character, a line keeps one number at its first
+  row, and a narrow right fringe shows a hook arrow, in the color of the line numbers, at the
+  end of each row the line continues from (as the continuation lines of Emacs). It is chosen on
+  Preferences > Text, *Text editors*, `Long lines: Scroll | Wrap`, the preview showing it before
+  Apply, and by View > Wrap Long Lines, checkable, enabled in a text tab; a change applies to
+  the open editors at once; stored per user (`display/editorWrap`: `scroll` or `wrap`), Reset
+  of the Preferences restores scroll. The sides of a text diff tab always scroll: their rows
+  align. Lines stay lines for Go to Line, Find, the errors and the links. Specified in 0.75.
+  *design*
 
 ### 4.15 Find — FIND
 

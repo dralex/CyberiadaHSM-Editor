@@ -242,7 +242,9 @@ The git plugin hands the revision of a diagram to a diff tab:
 * A `CodeEditor` (a text tab, a side of a text diff tab) draws in the text editor font of the
   Preferences, `FontManager::editorFont()`, and follows its change (`EDIT-MODE-27`); the
   diagram font is another one. Its cursor is a line or a block over the character, as the
-  Preferences choose (`EDIT-MODE-29`).
+  Preferences choose (`EDIT-MODE-29`); its long lines scroll or wrap at the width with a sign at
+  the end of each continued row (`EDIT-MODE-30`, View > Wrap Long Lines), a text diff side
+  always scrolling.
 * File > Export of a Markdown tab saves the rendered text as a PDF (`MARKDOWN.md`, PDF); the
   other text tabs have nothing to export.
 * The link targets of a Markdown tab open by Ctrl+click (`EDIT-MODE-28`). The highlighter

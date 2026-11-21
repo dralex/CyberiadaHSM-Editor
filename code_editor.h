@@ -27,6 +27,8 @@
 #include <QCursor>
 #include <QImage>
 #include <QPlainTextEdit>
+#include <QRectF>
+#include <QVector>
 #include "autoreplace.h"
 
 struct TextScheme;
@@ -66,6 +68,17 @@ public:
     // a dropped or pasted image is offered instead of its text (EDIT-MD-2): a Markdown text
     void setImageDrops(bool on) { m_imageDrops = on; }
     bool imageDrops() const { return m_imageDrops; }
+    // the long lines wrapped at the width, at any character, a sign in a right fringe at the end
+    // of each row that continues; else scrolled (EDIT-MODE-30). The editors follow the setting,
+    // the scheme preview the choice shown; a text diff side is never wrapped (its rows align)
+    void setWrapLines(bool on);
+    bool wrapLines() const { return m_wrap && m_wrapAllowed; }
+    void setWrapAllowed(bool on);
+    // the fringe, 0 wide without the wrapping
+    int  fringeWidth() const;
+    void paintFringe(QPaintEvent* event);
+    // the rows of the visible blocks that continue on the next row, in viewport coordinates
+    QVector<QRectF> continuationRows() const;
 
 signals:
     // the bar is clicked
@@ -99,12 +112,15 @@ private:
     // the tab stop and the margins, measured in the font
     void applyFontMetrics();
     void applyCursor();
+    void applyWrap();
     void placeLineNumbers();
+    void placeFringe();
     // the hand over a link target while Ctrl is held, the editor's pointer elsewhere
     void updateLinkPointer(const QPoint& pos, bool ctrl);
 
     QWidget* lineNumbers;
     QWidget* errorBar;
+    QWidget* fringe;
     int m_errorLine = 0;
     QString m_errorMessage;
     AutoreplaceKind m_kind = autoreplaceNone;
@@ -115,6 +131,8 @@ private:
     QCursor m_textPointer;
     bool m_imageDrops = false;
     bool m_blockCursor = false;
+    bool m_wrap = false;
+    bool m_wrapAllowed = true;
 };
 
 #endif

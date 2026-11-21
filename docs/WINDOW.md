@@ -103,6 +103,7 @@ setCurrentDocument(doc)
 | Go to Line | document | the cursor of the active text tab, also on the Text toolbar; disabled elsewhere (`EDIT-KEYS-7`) |
 | Insert Image, Insert Diagram, Insert Link | document | the cursor of the active Markdown tab, one undo step; an untitled tab saved first (`EDIT-MD-2..5`, `EDIT-MD-9`) |
 | Document > Update Diagram Images | document | the diagram images of the active Markdown tab, written beside their diagrams; the text unchanged (`EDIT-MD-7`) |
+| View > Wrap Long Lines | global | a setting; every source editor but a text diff side wraps its long lines at the width (`EDIT-MODE-30`) |
 | View > Preview | global | a setting; every writable Markdown tab shows its source and its rendered page side by side (`EDIT-MD-11`) |
 | Shortcuts | global | one set of keys for the window, changed in the Preferences; the focused text takes its keys first (`EDIT-KEYS-1..12`, `docs/SHORTCUTS.md`) |
 | Autoreplace | global | the switch and the rules are settings; each text follows them by its kind (`EDIT-AUTO-1..8`, `docs/AUTOREPLACE.md`) |

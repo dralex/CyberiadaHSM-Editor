@@ -78,6 +78,7 @@ private slots:
 	void test_back_to_diagram();
 	void test_mode_toolbars();
 	void test_open_file_mode();
+	void test_wrap_action();
 	void test_compare_saved();
 	void test_compare_refresh();
 	void test_compare_tab();
@@ -447,6 +448,24 @@ void TestModes::test_back_to_diagram()
 	// closing the text tab leaves the diagram as it was
 	QVERIFY(window.closeDocument(window.tabAt(1)));
 	QCOMPARE(window.documentCount(), 1);
+}
+
+// EDIT-MODE-30: View > Wrap Long Lines, checkable, enabled in a text tab, the setting both ways
+void TestModes::test_wrap_action()
+{
+	SettingsManager& sm = SettingsManager::instance();
+	CyberiadaSMEditorWindow window;
+	QVERIFY(window.menuView->actions().contains(window.actionWrapLines));
+	QVERIFY(window.actionWrapLines->isCheckable() && !window.actionWrapLines->isChecked());
+	QVERIFY(!window.actionWrapLines->isEnabled());
+	QVERIFY(window.openFile("texts/blink.cpp"));
+	QVERIFY(window.actionWrapLines->isEnabled());
+	window.actionWrapLines->trigger();
+	QVERIFY(sm.getEditorWrap());
+	QVERIFY(window.currentText()->editor()->wrapLines());
+	sm.setEditorWrap(false);
+	QVERIFY(!window.actionWrapLines->isChecked());
+	QVERIFY(!window.currentText()->editor()->wrapLines());
 }
 
 // EDIT-MODE-13: File > Open shows first the files of the active tab's mode, a text diff's language

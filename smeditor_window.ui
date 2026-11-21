@@ -247,6 +247,7 @@
     <addaction name="actionServiceObjects"/>
     <addaction name="actionComponentComments"/>
     <addaction name="actionPreview"/>
+    <addaction name="actionWrapLines"/>
     <addaction name="actionSnapMode"/>
     <addaction name="actionLogSession"/>
     <addaction name="separator"/>
@@ -412,6 +413,17 @@
    </property>
    <property name="toolTip">
     <string>Export again the diagram images of the text whose diagrams changed</string>
+   </property>
+  </action>
+  <action name="actionWrapLines">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Wrap Long Lines</string>
+   </property>
+   <property name="toolTip">
+    <string>Fit the long lines of the text editors to the width instead of scrolling them</string>
    </property>
   </action>
   <action name="actionPreview">

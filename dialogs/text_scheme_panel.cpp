@@ -76,12 +76,21 @@ TextSchemePanel::TextSchemePanel(QWidget* parent):
     cursorLabel->setBuddy(m_cursor);
     top->addWidget(cursorLabel, 1, 0);
     top->addWidget(m_cursor, 1, 1, 1, 2, Qt::AlignLeft);
+    // the long lines scrolled or wrapped at the width (EDIT-MODE-30); the item data: wrapped
+    QLabel* wrapLabel = new QLabel(tr("Long lines"), this);
+    m_wrap = new QComboBox(this);
+    m_wrap->setObjectName("textEditorWrap");
+    m_wrap->addItem(tr("Scroll"), false);
+    m_wrap->addItem(tr("Wrap"), true);
+    wrapLabel->setBuddy(m_wrap);
+    top->addWidget(wrapLabel, 2, 0);
+    top->addWidget(m_wrap, 2, 1, 1, 2, Qt::AlignLeft);
     QLabel* label = new QLabel(tr("Scheme"), this);
     m_list = new QComboBox(this);
     m_list->setObjectName("textSchemeList");
     label->setBuddy(m_list);
-    top->addWidget(label, 2, 0);
-    top->addWidget(m_list, 2, 1, 1, 2);
+    top->addWidget(label, 3, 0);
+    top->addWidget(m_list, 3, 1, 1, 2);
     top->setColumnStretch(1, 1);
     layout->addLayout(top);
 
@@ -143,6 +152,8 @@ TextSchemePanel::TextSchemePanel(QWidget* parent):
     connect(m_fontSize, QOverload<int>::of(&QSpinBox::valueChanged), this, &TextSchemePanel::showFont);
     connect(m_cursor, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             [this]() { m_preview->setBlockCursor(m_cursor->currentData().toBool()); });
+    connect(m_wrap, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            [this]() { m_preview->setWrapLines(m_wrap->currentData().toBool()); });
     connect(m_list, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &TextSchemePanel::schemeChosen);
     connect(m_copy, &QPushButton::clicked, this, &TextSchemePanel::copyClicked);
     connect(m_rename, &QPushButton::clicked, this, &TextSchemePanel::renameClicked);
@@ -161,6 +172,8 @@ void TextSchemePanel::load()
     showFont();
     m_cursor->setCurrentIndex(m_cursor->findData(sm.getEditorBlockCursor()));
     m_preview->setBlockCursor(sm.getEditorBlockCursor());
+    m_wrap->setCurrentIndex(m_wrap->findData(sm.getEditorWrap()));
+    m_preview->setWrapLines(sm.getEditorWrap());
     m_schemes = sm.getTextSchemes();
     fill(sm.currentTextScheme().id);
 }
@@ -173,6 +186,7 @@ void TextSchemePanel::apply()
     sm.setEditorFontFamily(family == FontManager::instance().bundledFamily() ? QString() : family);
     sm.setEditorFontSize(m_fontSize->value());
     sm.setEditorBlockCursor(m_cursor->currentData().toBool());
+    sm.setEditorWrap(m_wrap->currentData().toBool());
     sm.setTextSchemes(m_schemes);
     sm.setTextScheme(shownId());
 }

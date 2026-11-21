@@ -29,6 +29,8 @@
 #include <QUrl>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QTextLayout>
+#include <QPainterPath>
 #include <QTextBlock>
 #include <QToolTip>
 
@@ -43,6 +45,10 @@
 static const int LINE_NUMBER_PADDING = 6;
 // the tab stop in spaces
 static const int TAB_SPACES = 4;
+// the continuation sign: its part of the row, the pen as a part of the fringe, the arrow head
+static const qreal FRINGE_SIGN_PART = 0.6;
+static const qreal FRINGE_PEN_DIVISOR = 8.0;
+static const qreal FRINGE_HEAD_DIVISOR = 3.0;
 // the space above and below the text of the error bar, in pixels
 static const int ERROR_BAR_PADDING = 3;
 
@@ -52,6 +58,16 @@ public:
     QSize sizeHint() const override { return QSize(editor->lineNumberAreaWidth(), 0); }
 protected:
     void paintEvent(QPaintEvent* event) override { editor->paintLineNumbers(event); }
+private:
+    CodeEditor* editor;
+};
+
+// the right margin of a wrapped text: a sign at the end of each row that continues (EDIT-MODE-30)
+class WrapFringe : public QWidget {
+public:
+    WrapFringe(CodeEditor* editor): QWidget(editor), editor(editor) { hide(); }
+protected:
+    void paintEvent(QPaintEvent* event) override { editor->paintFringe(event); }
 private:
     CodeEditor* editor;
 };
@@ -74,7 +90,8 @@ private:
 };
 
 CodeEditor::CodeEditor(QWidget* parent):
-    QPlainTextEdit(parent), lineNumbers(new LineNumberArea(this)), errorBar(new ErrorBar(this))
+    QPlainTextEdit(parent), lineNumbers(new LineNumberArea(this)), errorBar(new ErrorBar(this)),
+    fringe(new WrapFringe(this))
 {
     // the text editor font, not the diagram one (EDIT-MODE-27)
     setFont(FontManager::instance().editorFont());
@@ -88,7 +105,13 @@ CodeEditor::CodeEditor(QWidget* parent):
     m_blockCursor = SettingsManager::instance().getEditorBlockCursor();
     connect(&SettingsManager::instance(), &SettingsManager::editorCursorChanged, this,
             [this]() { setBlockCursor(SettingsManager::instance().getEditorBlockCursor()); });
+    // a row breaks at any character, as the continuation lines of Emacs (EDIT-MODE-30)
+    setWordWrapMode(QTextOption::WrapAnywhere);
+    m_wrap = SettingsManager::instance().getEditorWrap();
+    connect(&SettingsManager::instance(), &SettingsManager::editorWrapChanged, this,
+            [this]() { setWrapLines(SettingsManager::instance().getEditorWrap()); });
     applyFontMetrics();
+    applyWrap();
 }
 
 void CodeEditor::applyFontMetrics()
@@ -147,8 +170,86 @@ int CodeEditor::lineNumberAreaWidth() const
 
 void CodeEditor::updateMargin()
 {
-    setViewportMargins(lineNumberAreaWidth(), 0, 0, errorBarHeight());
+    setViewportMargins(lineNumberAreaWidth(), 0, fringeWidth(), errorBarHeight());
     placeErrorBar();
+    placeFringe();
+}
+
+void CodeEditor::setWrapLines(bool on)
+{
+    m_wrap = on;
+    applyWrap();
+}
+
+void CodeEditor::setWrapAllowed(bool on)
+{
+    m_wrapAllowed = on;
+    applyWrap();
+}
+
+void CodeEditor::applyWrap()
+{
+    bool on = wrapLines();
+    setLineWrapMode(on ? QPlainTextEdit::WidgetWidth : QPlainTextEdit::NoWrap);
+    fringe->setVisible(on);
+    updateMargin();
+}
+
+int CodeEditor::fringeWidth() const
+{
+    return wrapLines() ? fontMetrics().horizontalAdvance(QLatin1Char('9')) + LINE_NUMBER_PADDING : 0;
+}
+
+// the right margin beside the viewport, left of a vertical scroll bar
+void CodeEditor::placeFringe()
+{
+    QRect view = viewport()->geometry();
+    fringe->setGeometry(QRect(view.right() + 1, view.top(), fringeWidth(), view.height()));
+}
+
+QVector<QRectF> CodeEditor::continuationRows() const
+{
+    QVector<QRectF> rows;
+    if (!wrapLines()) return rows;
+    QTextBlock block = firstVisibleBlock();
+    QPointF offset = contentOffset();
+    int height = viewport()->height();
+    while (block.isValid()) {
+        QRectF box = blockBoundingGeometry(block).translated(offset);
+        if (box.top() > height) break;
+        QTextLayout* layout = block.layout();
+        // every row of a block but its last continues
+        for (int i = 0; block.isVisible() && layout && i + 1 < layout->lineCount(); i++) {
+            QRectF line = layout->lineAt(i).rect();
+            rows << QRectF(0, box.top() + line.top(), fringeWidth(), line.height());
+        }
+        block = block.next();
+    }
+    return rows;
+}
+
+void CodeEditor::paintFringe(QPaintEvent* event)
+{
+    QPainter painter(fringe);
+    painter.fillRect(event->rect(), palette().color(QPalette::AlternateBase));
+    painter.setRenderHint(QPainter::Antialiasing);
+    QPen pen(palette().color(QPalette::PlaceholderText));
+    pen.setWidthF(qMax(1.0, fringeWidth() / FRINGE_PEN_DIVISOR));
+    painter.setPen(pen);
+    // a hook arrow: down along the right, then to the left, as the continuation sign of Emacs
+    for (const QRectF& row : continuationRows()) {
+        qreal size = qMin(row.width(), row.height()) * FRINGE_SIGN_PART;
+        QRectF box(row.center().x() - size / 2, row.center().y() - size / 2, size, size);
+        QPainterPath hook;
+        hook.moveTo(box.right(), box.top());
+        hook.lineTo(box.right(), box.bottom());
+        hook.lineTo(box.left(), box.bottom());
+        qreal head = size / FRINGE_HEAD_DIVISOR;
+        hook.moveTo(box.left() + head, box.bottom() - head);
+        hook.lineTo(box.left(), box.bottom());
+        hook.lineTo(box.left() + head, box.bottom() + head);
+        painter.drawPath(hook);
+    }
 }
 
 void CodeEditor::setError(int line, const QString& message)
@@ -191,6 +292,11 @@ void CodeEditor::updateLineNumbers(const QRect& rect, int dy)
 {
     if (dy) lineNumbers->scroll(0, dy);
     else lineNumbers->update(0, rect.y(), lineNumbers->width(), rect.height());
+    // the fringe follows the rows the same way
+    if (fringe->isVisible()) {
+        if (dy) fringe->scroll(0, dy);
+        else fringe->update(0, rect.y(), fringe->width(), rect.height());
+    }
     if (rect.contains(viewport()->rect())) updateMargin();
 }
 
@@ -199,6 +305,7 @@ void CodeEditor::resizeEvent(QResizeEvent* event)
     QPlainTextEdit::resizeEvent(event);
     placeLineNumbers();
     placeErrorBar();
+    placeFringe();
 }
 
 void CodeEditor::placeLineNumbers()

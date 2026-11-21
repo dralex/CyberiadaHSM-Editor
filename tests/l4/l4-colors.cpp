@@ -46,6 +46,7 @@
 #include "markdown_view.h"
 #include "settings_manager.h"
 #include "text_document.h"
+#include "text_diff_view.h"
 #include "text_scheme.h"
 #include "dialogs/preferences_dialog.h"
 #include "dialogs/text_scheme_panel.h"
@@ -71,6 +72,7 @@ private slots:
 	void test_editor_font();
 	void test_page_font();
 	void test_editor_cursor();
+	void test_editor_wrap();
 
 private:
 	static QPushButton* button(QWidget* parent, const char* name) { return parent->findChild<QPushButton*>(name); }
@@ -95,6 +97,7 @@ void TestColors::init()
 	s.remove("display/editorFontFamily");
 	s.remove("display/editorFontSize");
 	s.remove("display/editorCursor");
+	s.remove("display/editorWrap");
 	SettingsManager::instance().load();
 }
 
@@ -622,6 +625,59 @@ void TestColors::test_editor_cursor()
 	dialog.findChild<QDialogButtonBox*>()->button(QDialogButtonBox::Reset)->click();
 	QVERIFY(!sm.getEditorBlockCursor() && !text.editor()->blockCursor());
 	QVERIFY(!cursor->currentData().toBool());
+}
+
+// EDIT-MODE-30: the long lines scrolled by default; wrapped at any character with a fringe sign
+// on each row that continues, the number once; a text diff side never wrapped; stored; the
+// page row with its preview, Apply and Reset
+void TestColors::test_editor_wrap()
+{
+	SettingsManager& sm = SettingsManager::instance();
+	TextDocument text(MODE_MARKDOWN);
+	text.setText(QString("short\n") + QString(400, QChar('x')) + "\nend\n");
+	text.page()->resize(400, 300);
+	text.page()->show();
+	QVERIFY(QTest::qWaitForWindowExposed(text.page()));
+	CodeEditor* editor = text.editor();
+	QCOMPARE(editor->lineWrapMode(), QPlainTextEdit::NoWrap);
+	QCOMPARE(editor->fringeWidth(), 0);
+	QVERIFY(editor->continuationRows().isEmpty());
+	sm.setEditorWrap(true);
+	QCOMPARE(QSettings().value("display/editorWrap").toString(), QString(EDITOR_LINES_WRAP));
+	QVERIFY(editor->wrapLines());
+	QCOMPARE(editor->lineWrapMode(), QPlainTextEdit::WidgetWidth);
+	QCOMPARE(editor->wordWrapMode(), QTextOption::WrapAnywhere);
+	QVERIFY(editor->fringeWidth() > 0);
+	// the long line takes several rows, all but its last marked; the short ones none
+	QTextBlock longLine = editor->document()->findBlockByNumber(1);
+	int rows = longLine.layout()->lineCount();
+	QVERIFY(rows > 1);
+	QCOMPARE(editor->continuationRows().size(), rows - 1);
+	QCOMPARE(text.lineCount(), 4);
+	// a text diff side keeps its rows
+	DiffTextPane side;
+	QCOMPARE(side.lineWrapMode(), QPlainTextEdit::NoWrap);
+	QVERIFY(!side.wrapLines());
+	sm.setEditorWrap(false);
+	QCOMPARE(editor->lineWrapMode(), QPlainTextEdit::NoWrap);
+	QCOMPARE(editor->fringeWidth(), 0);
+	text.page()->hide();
+
+	PreferencesDialog dialog;
+	TextSchemePanel* panel = dialog.textSchemePanel();
+	QComboBox* wrap = panel->findChild<QComboBox*>("textEditorWrap");
+	QVERIFY(wrap);
+	QCOMPARE(wrap->count(), 2);
+	QCOMPARE(wrap->itemText(0), QString("Scroll"));
+	QVERIFY(!wrap->currentData().toBool());
+	wrap->setCurrentIndex(wrap->findData(true));
+	QVERIFY(panel->preview()->wrapLines());
+	QVERIFY(!editor->wrapLines());
+	dialog.findChild<QDialogButtonBox*>()->button(QDialogButtonBox::Apply)->click();
+	QVERIFY(sm.getEditorWrap() && editor->wrapLines());
+	dialog.findChild<QDialogButtonBox*>()->button(QDialogButtonBox::Reset)->click();
+	QVERIFY(!sm.getEditorWrap() && !editor->wrapLines());
+	QVERIFY(!wrap->currentData().toBool());
 }
 
 QTEST_MAIN(TestColors)

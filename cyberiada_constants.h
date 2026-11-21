@@ -129,6 +129,9 @@
 // the stored cursor of the text editors (EDIT-MODE-29)
 #define EDITOR_CURSOR_LINE       "line"
 #define EDITOR_CURSOR_BLOCK      "block"
+// the stored long lines of the text editors (EDIT-MODE-30)
+#define EDITOR_LINES_SCROLL      "scroll"
+#define EDITOR_LINES_WRAP        "wrap"
 // the preview of a Markdown text is rendered again a while after its last edit (EDIT-MD-11)
 #define MARKDOWN_PREVIEW_DELAY_MS 300
 #define TEXT_ERROR_COLOR         "#ff0000"

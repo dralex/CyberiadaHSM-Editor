@@ -1,6 +1,6 @@
 # Color Schemes — Architecture
 
-**Document version:** 0.3 (2026-11-21), the cursor of the text editors. The requirements are `EDIT-COLOR-1..8` in
+**Document version:** 0.4 (2026-11-21), the cursor and the long lines of the text editors. The requirements are `EDIT-COLOR-1..8` in
 `EDITOR-SPEC.md` §4.18; the editor font beside them is `EDIT-MODE-27`.
 
 The source editor of a text tab draws in the colors of a scheme: its background, text,
@@ -92,6 +92,7 @@ diagrams; the dialog is wide enough for both.
  Text editors
    Font    [Cyberiada Mono       v] [12 pt]
    Cursor  [Line  v]                       Line | Block
+   Long lines [Scroll v]                   Scroll | Wrap
    Scheme  [White               v]
    [Copy...] [Rename...] [Delete] [Restore]
    swatches ...
@@ -100,21 +101,25 @@ diagrams; the dialog is wide enough for both.
  CodeEditor::applyCursor(): setCursorWidth(block ? the advance of a space : 1)
    on editorCursorChanged and on every font change; Qt draws a cursor wider than one pixel
    inverting what is under it, so the character shows (not the overwrite mode: typing stays)
+ CodeEditor::applyWrap(): WidgetWidth + WrapAnywhere, the right fringe (WrapFringe) beside the
+   viewport, a hook arrow per row that continues (continuationRows: every layout line of a
+   block but its last); a DiffTextPane never wraps (setWrapAllowed(false))
 ```
 
 | Event | Effect |
 |---|---|
 | the font, its size | the text editor font (`EDIT-MODE-27`), the preview in it |
 | the cursor | Line or Block (`EDIT-MODE-29`), the preview with it (it shows when clicked) |
+| the long lines | Scroll or Wrap (`EDIT-MODE-30`), the preview with it |
 | a scheme chosen | its swatches and the preview |
 | a swatch | a color dialog; the color changed in the copy, the preview follows |
 | Copy... | a name asked; a user scheme with the colors shown, chosen |
 | Rename... | a new name for a user scheme |
 | Delete | the user scheme dropped, White chosen |
 | Restore | the built-in colors of a built-in scheme |
-| Ok, Apply | the font, the cursor and the schemes stored, the scheme shown current; the open text tabs follow at once |
+| Ok, Apply | the font, the cursor, the long lines and the schemes stored, the scheme shown current; the open text tabs follow at once |
 | Cancel | nothing changes |
-| Reset of the dialog | the bundled font at 12 pt, the line cursor, the built-in schemes, no user ones, White current |
+| Reset of the dialog | the bundled font at 12 pt, the line cursor, the long lines scrolled, the built-in schemes, no user ones, White current |
 
 ## Code layout
 

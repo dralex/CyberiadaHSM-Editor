@@ -138,6 +138,11 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     actionPreview->setChecked(SettingsManager::instance().getMarkdownPreview());
     connect(actionPreview, &QAction::triggered, &SettingsManager::instance(), &SettingsManager::setMarkdownPreview);
     connect(&SettingsManager::instance(), &SettingsManager::markdownPreviewChanged, actionPreview, &QAction::setChecked);
+    // View > Wrap Long Lines: a setting of every text editor (EDIT-MODE-30)
+    actionWrapLines->setChecked(SettingsManager::instance().getEditorWrap());
+    connect(actionWrapLines, &QAction::triggered, &SettingsManager::instance(), &SettingsManager::setEditorWrap);
+    connect(&SettingsManager::instance(), &SettingsManager::editorWrapChanged, this,
+            [this]() { actionWrapLines->setChecked(SettingsManager::instance().getEditorWrap()); });
     connect(actionUpdateDiagramImages, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotUpdateDiagramImages);
     // the Markdown group of the text toolbar, shown in a Markdown tab (EDIT-MD-1)
     QAction* markdownSeparator = new QAction(this);
@@ -1059,6 +1064,7 @@ void CyberiadaSMEditorWindow::updateMarkdownActions()
     // the images are other files: a read-only text updates them too
     actionUpdateDiagramImages->setEnabled(markdown && text->hasFile());
     actionPreview->setEnabled(markdown);
+    actionWrapLines->setEnabled(text != nullptr);
     showMarkdownTools(markdown);
 }
 

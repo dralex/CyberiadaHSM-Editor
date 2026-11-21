@@ -31,6 +31,8 @@
 DiffTextPane::DiffTextPane(QWidget* parent):
     CodeEditor(parent)
 {
+    // the rows of the two sides align: a side never wraps (EDIT-MODE-30)
+    setWrapAllowed(false);
     setReadOnly(true);
     // the selection stays visible in the side the focus left: Copy acts on it
     setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard);
