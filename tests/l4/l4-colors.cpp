@@ -70,6 +70,7 @@ private slots:
 	void test_reset();
 	void test_editor_font();
 	void test_page_font();
+	void test_editor_cursor();
 
 private:
 	static QPushButton* button(QWidget* parent, const char* name) { return parent->findChild<QPushButton*>(name); }
@@ -93,6 +94,7 @@ void TestColors::init()
 	s.remove("textSchemes");
 	s.remove("display/editorFontFamily");
 	s.remove("display/editorFontSize");
+	s.remove("display/editorCursor");
 	SettingsManager::instance().load();
 }
 
@@ -571,6 +573,55 @@ void TestColors::test_page_font()
 	QCOMPARE(sm.getEditorFontFamily(), QString());
 	QCOMPARE(text.editor()->font().pointSize(), FONT_SIZE);
 	QCOMPARE(dialog.textSchemePanel()->findChild<QSpinBox*>("textEditorFontSize")->value(), FONT_SIZE);
+}
+
+// EDIT-MODE-29: the cursor a line by default, a block one space of the font wide in every
+// source editor at once, one character after a font change too; stored; the page row with its
+// preview before Apply, Apply and Reset
+void TestColors::test_editor_cursor()
+{
+	SettingsManager& sm = SettingsManager::instance();
+	TextDocument text(MODE_MARKDOWN);
+	TextDocument code("cpp");
+	QVERIFY(!sm.getEditorBlockCursor());
+	QCOMPARE(text.editor()->cursorWidth(), 1);
+	sm.setEditorBlockCursor(true);
+	int space = QFontMetrics(text.editor()->font()).horizontalAdvance(' ');
+	QVERIFY(space > 1);
+	QCOMPARE(text.editor()->cursorWidth(), space);
+	QCOMPARE(code.editor()->cursorWidth(), space);
+	QCOMPARE(QSettings().value("display/editorCursor").toString(), QString(EDITOR_CURSOR_BLOCK));
+	// a larger font: still one character
+	sm.setEditorFontSize(FONT_SIZE * 2);
+	int larger = QFontMetrics(text.editor()->font()).horizontalAdvance(' ');
+	QVERIFY(larger > space);
+	QCOMPARE(text.editor()->cursorWidth(), larger);
+	// read back; a new editor starts with it
+	sm.load();
+	QVERIFY(sm.getEditorBlockCursor());
+	CodeEditor fresh;
+	QVERIFY(fresh.blockCursor());
+	sm.setEditorBlockCursor(false);
+	QCOMPARE(text.editor()->cursorWidth(), 1);
+	QCOMPARE(QSettings().value("display/editorCursor").toString(), QString(EDITOR_CURSOR_LINE));
+
+	PreferencesDialog dialog;
+	TextSchemePanel* panel = dialog.textSchemePanel();
+	QComboBox* cursor = panel->findChild<QComboBox*>("textEditorCursor");
+	QVERIFY(cursor);
+	QCOMPARE(cursor->count(), 2);
+	QCOMPARE(cursor->itemText(0), QString("Line"));
+	QVERIFY(!cursor->currentData().toBool());
+	// the preview shows the choice, the open tabs not before Apply
+	cursor->setCurrentIndex(cursor->findData(true));
+	QVERIFY(panel->preview()->blockCursor());
+	QVERIFY(!text.editor()->blockCursor());
+	dialog.findChild<QDialogButtonBox*>()->button(QDialogButtonBox::Apply)->click();
+	QVERIFY(sm.getEditorBlockCursor() && text.editor()->blockCursor());
+	// Reset of the Preferences: the line
+	dialog.findChild<QDialogButtonBox*>()->button(QDialogButtonBox::Reset)->click();
+	QVERIFY(!sm.getEditorBlockCursor() && !text.editor()->blockCursor());
+	QVERIFY(!cursor->currentData().toBool());
 }
 
 QTEST_MAIN(TestColors)

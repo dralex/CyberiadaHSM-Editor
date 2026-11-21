@@ -1,6 +1,6 @@
 # Color Schemes — Architecture
 
-**Document version:** 0.2 (2026-11-14). The requirements are `EDIT-COLOR-1..8` in
+**Document version:** 0.3 (2026-11-21), the cursor of the text editors. The requirements are `EDIT-COLOR-1..8` in
 `EDITOR-SPEC.md` §4.18; the editor font beside them is `EDIT-MODE-27`.
 
 The source editor of a text tab draws in the colors of a scheme: its background, text,
@@ -88,18 +88,33 @@ the built-in one's, White's for a user scheme.
 The group *Text editors* on the Text page of the Preferences, beside the font of the
 diagrams; the dialog is wide enough for both.
 
+```
+ Text editors
+   Font    [Cyberiada Mono       v] [12 pt]
+   Cursor  [Line  v]                       Line | Block
+   Scheme  [White               v]
+   [Copy...] [Rename...] [Delete] [Restore]
+   swatches ...
+   preview: a Markdown text with a C++ block
+
+ CodeEditor::applyCursor(): setCursorWidth(block ? the advance of a space : 1)
+   on editorCursorChanged and on every font change; Qt draws a cursor wider than one pixel
+   inverting what is under it, so the character shows (not the overwrite mode: typing stays)
+```
+
 | Event | Effect |
 |---|---|
 | the font, its size | the text editor font (`EDIT-MODE-27`), the preview in it |
+| the cursor | Line or Block (`EDIT-MODE-29`), the preview with it (it shows when clicked) |
 | a scheme chosen | its swatches and the preview |
 | a swatch | a color dialog; the color changed in the copy, the preview follows |
 | Copy... | a name asked; a user scheme with the colors shown, chosen |
 | Rename... | a new name for a user scheme |
 | Delete | the user scheme dropped, White chosen |
 | Restore | the built-in colors of a built-in scheme |
-| Ok, Apply | the font and the schemes stored, the scheme shown current; the open text tabs follow at once |
+| Ok, Apply | the font, the cursor and the schemes stored, the scheme shown current; the open text tabs follow at once |
 | Cancel | nothing changes |
-| Reset of the dialog | the bundled font at 12 pt, the built-in schemes, no user ones, White current |
+| Reset of the dialog | the bundled font at 12 pt, the line cursor, the built-in schemes, no user ones, White current |
 
 ## Code layout
 

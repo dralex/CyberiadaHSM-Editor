@@ -85,6 +85,9 @@ CodeEditor::CodeEditor(QWidget* parent):
     connect(this, &QPlainTextEdit::updateRequest, this, &CodeEditor::updateLineNumbers);
     connect(&SettingsManager::instance(), &SettingsManager::editorFontChanged, this,
             [this]() { setFont(FontManager::instance().editorFont()); });
+    m_blockCursor = SettingsManager::instance().getEditorBlockCursor();
+    connect(&SettingsManager::instance(), &SettingsManager::editorCursorChanged, this,
+            [this]() { setBlockCursor(SettingsManager::instance().getEditorBlockCursor()); });
     applyFontMetrics();
 }
 
@@ -93,6 +96,20 @@ void CodeEditor::applyFontMetrics()
     setTabStopDistance(fontMetrics().horizontalAdvance(' ') * TAB_SPACES);
     updateMargin();
     placeLineNumbers();
+    applyCursor();
+}
+
+void CodeEditor::setBlockCursor(bool on)
+{
+    m_blockCursor = on;
+    applyCursor();
+}
+
+void CodeEditor::applyCursor()
+{
+    // a cursor wider than one pixel is drawn inverting what is under it: the character shows
+    setCursorWidth(m_blockCursor ? qMax(1, fontMetrics().horizontalAdvance(' ')) : 1);
+    viewport()->update();
 }
 
 void CodeEditor::changeEvent(QEvent* event)

@@ -58,6 +58,8 @@ public:
     void               deleteScheme();
     void               restoreScheme();
     CodeEditor*        preview() const { return m_preview; }
+    // Line or Block (EDIT-MODE-29)
+    QComboBox*         cursorBox() const { return m_cursor; }
 
 private slots:
     // the preview in the font chosen
@@ -81,6 +83,7 @@ private:
     TextSchemes        m_schemes;
     QFontComboBox*     m_fontFamily;
     QSpinBox*          m_fontSize;
+    QComboBox*         m_cursor;
     QComboBox*         m_list;
     QPushButton*       m_copy;
     QPushButton*       m_rename;

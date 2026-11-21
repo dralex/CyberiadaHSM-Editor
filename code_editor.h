@@ -59,6 +59,10 @@ public:
     // the link target under a point of the viewport: the anchor of the highlighter's format
     // under the glyph there, empty when none (EDIT-MODE-28)
     QString linkAt(const QPoint& pos) const;
+    // the cursor a block over the character, one space of the font wide, else a line; the
+    // editors follow the setting, the scheme preview the choice shown (EDIT-MODE-29)
+    void setBlockCursor(bool on);
+    bool blockCursor() const { return m_blockCursor; }
     // a dropped or pasted image is offered instead of its text (EDIT-MD-2): a Markdown text
     void setImageDrops(bool on) { m_imageDrops = on; }
     bool imageDrops() const { return m_imageDrops; }
@@ -94,6 +98,7 @@ private slots:
 private:
     // the tab stop and the margins, measured in the font
     void applyFontMetrics();
+    void applyCursor();
     void placeLineNumbers();
     // the hand over a link target while Ctrl is held, the editor's pointer elsewhere
     void updateLinkPointer(const QPoint& pos, bool ctrl);
@@ -109,6 +114,7 @@ private:
     bool m_linkPointer = false;
     QCursor m_textPointer;
     bool m_imageDrops = false;
+    bool m_blockCursor = false;
 };
 
 #endif

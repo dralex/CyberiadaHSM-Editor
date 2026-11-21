@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.72 (2026-11-18)
+**Document version:** 0.73 (2026-11-21)
 
 **Related authorities:**
 
@@ -1289,6 +1289,14 @@ has a read-only flag; the architecture is `docs/MODES.md`. Specified in 0.47, th
                            ─► pic.png doc.pdf   ─► the system's viewer
                            ─► https:// mailto:  ─► the browser, the mail client
   ```
+- `EDIT-MODE-29` SHOULD [A]: the source editors - the text tabs, the sides of a text diff tab,
+  the preview of the schemes - draw the cursor as a line, by default, or as a block over the
+  character at the cursor, one space of the editor font wide, the character shown in inverted
+  colors (a shell, Emacs); it is chosen on Preferences > Text, *Text editors*, `Cursor: Line |
+  Block`, the preview showing the choice before Apply. A change applies to the open editors at
+  once and a font change keeps the block one character wide; the choice is stored per user
+  (`display/editorCursor`: `line` or `block`), and Reset of the Preferences restores the line.
+  The line edits, the find bar and the canvas keep their cursors. Specified in 0.73. *design*
 
 ### 4.15 Find — FIND
 

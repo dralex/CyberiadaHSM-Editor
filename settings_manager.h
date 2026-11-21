@@ -97,6 +97,9 @@ public:
     void setEditorFontFamily(const QString& value);
     int getEditorFontSize() const { return editorFontSize; }
     void setEditorFontSize(int value);
+    // the cursor of the text editors: a block over the character, else a line (EDIT-MODE-29)
+    bool getEditorBlockCursor() const { return editorBlockCursor; }
+    void setEditorBlockCursor(bool value);
 
     // the reserved parts of an action are drawn bold: the entry/exit/do keyword
     // prefix, the internal transition event name, and the edge transition event
@@ -224,6 +227,7 @@ signals:
     void fontSettingsChanged();
     // the text editor font, the canvas is not laid out again
     void editorFontChanged();
+    void editorCursorChanged();
     void highlightSettingsChanged();
     void renderMarkdownCommentsChanged(bool);
     void markdownPreviewChanged(bool);
@@ -281,6 +285,7 @@ private:
     int fontSizes[fontRolesCount];
     QString editorFontFamily;
     int editorFontSize = FONT_SIZE;
+    bool editorBlockCursor = false;
 
     // files
     QString interfaceLanguage;

@@ -66,12 +66,22 @@ TextSchemePanel::TextSchemePanel(QWidget* parent):
     top->addWidget(fontLabel, 0, 0);
     top->addWidget(m_fontFamily, 0, 1);
     top->addWidget(m_fontSize, 0, 2);
+    // the cursor a line or a block over the character (EDIT-MODE-29)
+    QLabel* cursorLabel = new QLabel(tr("Cursor"), this);
+    m_cursor = new QComboBox(this);
+    m_cursor->setObjectName("textEditorCursor");
+    // the item data: a block
+    m_cursor->addItem(tr("Line"), false);
+    m_cursor->addItem(tr("Block"), true);
+    cursorLabel->setBuddy(m_cursor);
+    top->addWidget(cursorLabel, 1, 0);
+    top->addWidget(m_cursor, 1, 1, 1, 2, Qt::AlignLeft);
     QLabel* label = new QLabel(tr("Scheme"), this);
     m_list = new QComboBox(this);
     m_list->setObjectName("textSchemeList");
     label->setBuddy(m_list);
-    top->addWidget(label, 1, 0);
-    top->addWidget(m_list, 1, 1, 1, 2);
+    top->addWidget(label, 2, 0);
+    top->addWidget(m_list, 2, 1, 1, 2);
     top->setColumnStretch(1, 1);
     layout->addLayout(top);
 
@@ -112,6 +122,8 @@ TextSchemePanel::TextSchemePanel(QWidget* parent):
     m_preview = new CodeEditor(this);
     m_preview->setObjectName("textSchemePreview");
     m_preview->setReadOnly(true);
+    // a read-only text draws no cursor unless the keys select in it: the chosen cursor shows
+    m_preview->setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard);
     m_preview->setPlainText(tr("# Heading *emphasis*\n"
                                "> A quote, a [link](https://example.org), $x^2$\n"
                                "- `code` <!-- a comment -->\n"
@@ -129,6 +141,8 @@ TextSchemePanel::TextSchemePanel(QWidget* parent):
 
     connect(m_fontFamily, &QFontComboBox::currentFontChanged, this, &TextSchemePanel::showFont);
     connect(m_fontSize, QOverload<int>::of(&QSpinBox::valueChanged), this, &TextSchemePanel::showFont);
+    connect(m_cursor, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            [this]() { m_preview->setBlockCursor(m_cursor->currentData().toBool()); });
     connect(m_list, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &TextSchemePanel::schemeChosen);
     connect(m_copy, &QPushButton::clicked, this, &TextSchemePanel::copyClicked);
     connect(m_rename, &QPushButton::clicked, this, &TextSchemePanel::renameClicked);
@@ -145,6 +159,8 @@ void TextSchemePanel::load()
     m_fontFamily->setCurrentFont(QFont(family.isEmpty() ? FontManager::instance().bundledFamily() : family));
     m_fontSize->setValue(sm.getEditorFontSize());
     showFont();
+    m_cursor->setCurrentIndex(m_cursor->findData(sm.getEditorBlockCursor()));
+    m_preview->setBlockCursor(sm.getEditorBlockCursor());
     m_schemes = sm.getTextSchemes();
     fill(sm.currentTextScheme().id);
 }
@@ -156,6 +172,7 @@ void TextSchemePanel::apply()
     QString family = m_fontFamily->currentFont().family();
     sm.setEditorFontFamily(family == FontManager::instance().bundledFamily() ? QString() : family);
     sm.setEditorFontSize(m_fontSize->value());
+    sm.setEditorBlockCursor(m_cursor->currentData().toBool());
     sm.setTextSchemes(m_schemes);
     sm.setTextScheme(shownId());
 }

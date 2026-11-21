@@ -237,7 +237,8 @@ The git plugin hands the revision of a diagram to a diff tab:
   writable Markdown tab (`EDIT-MD-11`). The tools are `docs/MARKDOWN.md`, Tools.
 * A `CodeEditor` (a text tab, a side of a text diff tab) draws in the text editor font of the
   Preferences, `FontManager::editorFont()`, and follows its change (`EDIT-MODE-27`); the
-  diagram font is another one.
+  diagram font is another one. Its cursor is a line or a block over the character, as the
+  Preferences choose (`EDIT-MODE-29`).
 * File > Export of a Markdown tab saves the rendered text as a PDF (`MARKDOWN.md`, PDF); the
   other text tabs have nothing to export.
 * The link targets of a Markdown tab open by Ctrl+click (`EDIT-MODE-28`). The highlighter

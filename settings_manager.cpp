@@ -109,6 +109,7 @@ void SettingsManager::load() {
     }
     editorFontFamily = s.value("display/editorFontFamily", QString()).toString();
     editorFontSize = s.value("display/editorFontSize", FONT_SIZE).toInt();
+    editorBlockCursor = s.value("display/editorCursor", EDITOR_CURSOR_LINE).toString() == EDITOR_CURSOR_BLOCK;
     boldActionPrefix = s.value("display/boldActionPrefix", true).toBool();
     boldEventName = s.value("display/boldEventName", true).toBool();
     boldTransitionEventName = s.value("display/boldTransitionEventName", true).toBool();
@@ -201,6 +202,7 @@ void SettingsManager::loadDefaults()
     }
     setEditorFontFamily(QString());
     setEditorFontSize(FONT_SIZE);
+    setEditorBlockCursor(false);
     setBoldActionPrefix(true);
     setBoldEventName(true);
     setBoldTransitionEventName(true);
@@ -250,6 +252,15 @@ void SettingsManager::setEditorFontSize(int value)
         editorFontSize = value;
         QSettings().setValue("display/editorFontSize", value);
         emit editorFontChanged();
+    }
+}
+
+void SettingsManager::setEditorBlockCursor(bool value)
+{
+    if (editorBlockCursor != value) {
+        editorBlockCursor = value;
+        QSettings().setValue("display/editorCursor", value ? EDITOR_CURSOR_BLOCK : EDITOR_CURSOR_LINE);
+        emit editorCursorChanged();
     }
 }
 
