@@ -15,8 +15,9 @@
 # Tier 2 (per release): each container installs that lib .deb set (so the build and
 #   tests run against the real packages), then builds the distribution-dependent apps:
 #   the binding python3-libcyberiadamlpp, the python packages tested against it
-#   (python3-hsm-dispatcher, python3-hsm-to-python, python3-cybersphere-hsm-maker,
-#   the plugins python3-cybersphere-git and python3-lapki-compiler-plugin,
+#   (python3-hsm-dispatcher, python3-fa-dispatcher, python3-hsm-to-python,
+#   python3-cybersphere-hsm-maker, the plugins python3-cybersphere-git and
+#   python3-lapki-compiler-plugin,
 #   from python 3.10 on python3-cybersphere-agents, and where the release ships
 #   pydantic 2.6+ the pure-Python python3-cyberiadaml) and cyberiada-pro, version-tagged
 #   (1.0.8+ubuntu<ver>), collected into <out>/ubuntu-<ver>. The newest release also
@@ -105,6 +106,7 @@ pull_repo CyberiadaHSM-Editor "$BRANCH"
 # the distribution-independent python packages (built once, see below)
 pull_repo cyberiadaml-py         "$BRANCH"
 pull_repo hsm-dispatcher-py      "$BRANCH"
+pull_repo fa-dispatcher-py       "$BRANCH"
 pull_repo hsm-to-python          "$BRANCH"
 pull_repo cybersphere-hsm-maker  "$BRANCH"
 pull_repo cybersphere-agents     "$BRANCH"

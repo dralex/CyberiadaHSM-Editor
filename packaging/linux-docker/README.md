@@ -67,7 +67,7 @@ the host user so nothing in the mounted tree becomes root-owned.
   - the python binding `python3-libcyberiadamlpp`, built against that release's
     python 3, a separate package (not in the editor);
   - the python packages tested against that binding and that release's libraries:
-    `python3-hsm-dispatcher`, `python3-hsm-to-python`,
+    `python3-hsm-dispatcher`, `python3-fa-dispatcher`, `python3-hsm-to-python`,
     `python3-cybersphere-hsm-maker`, the editor plugins `python3-cybersphere-git`
     and `python3-lapki-compiler-plugin`, and `python3-cybersphere-agents` from
     python 3.10 on (so not on 20.04);

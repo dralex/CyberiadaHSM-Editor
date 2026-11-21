@@ -54,13 +54,14 @@ TAG="ubuntu$(printf '%s' "$VER" | tr -d .)"
 LIBS="libhtreegeom libhtreegeom-dev libcyberiadaml libcyberiadaml-dev libcyberiadaml-parser
       libcyberiadamlpp libcyberiadamlpp-dev"
 APPS="python3-libcyberiadamlpp cyberiada-pro"
-PYAPPS="python3-cyberiadaml python3-hsm-dispatcher python3-hsm-to-python
-        python3-cybersphere-hsm-maker python3-cybersphere-agents
+PYAPPS="python3-cyberiadaml python3-hsm-dispatcher python3-fa-dispatcher
+        python3-hsm-to-python python3-cybersphere-hsm-maker python3-cybersphere-agents
         python3-cybersphere-git python3-lapki-compiler-plugin"
 # the python packages and their repos (a python floor above the release's python3
 # leaves one out of that release's build)
 PYREPOS="python3-cyberiadaml:cyberiadaml-py
-         python3-hsm-dispatcher:hsm-dispatcher-py python3-hsm-to-python:hsm-to-python
+         python3-hsm-dispatcher:hsm-dispatcher-py python3-fa-dispatcher:fa-dispatcher-py
+         python3-hsm-to-python:hsm-to-python
          python3-cybersphere-hsm-maker:cybersphere-hsm-maker
          python3-cybersphere-agents:cybersphere-agents
          python3-cybersphere-git:cybersphere-git-plugin
@@ -70,7 +71,7 @@ PYDANTIC2="python3-cyberiadaml"
 # the tool packages and the id of the editor plugin each one installs
 PLUGINS="python3-hsm-to-python:hsm-to-python python3-cybersphere-hsm-maker:hsm-maker
          python3-cybersphere-agents:cybersphere-agents python3-cybersphere-git:git
-         python3-lapki-compiler-plugin:lapki-compiler"
+         python3-lapki-compiler-plugin:lapki-compiler python3-fa-dispatcher:fa-dispatcher"
 
 export DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC
 
@@ -402,6 +403,7 @@ prepare_workdir() {
     fixture libcyberiadaml/tests/diagrams/minimal.graphml          cml/minimal.graphml
     fixture libcyberiadamlpp-py/tests/04-read-meta.py-input.graphml py/read-meta.graphml
     fixture hsm-dispatcher-py/test/graphs/01-flat.graphml          py/01-flat.graphml
+    fixture fa-dispatcher-py/examples                              fa
     for d in graphs lint runner; do
         fixture "hsm-to-python/test/$d" "h2p/$d"
         fixture "hsm-to-python/test/$d" "h2p-ed/$d"
@@ -454,6 +456,7 @@ if phase checks; then
     AGENTS=python3-cybersphere-agents
     GIT=python3-cybersphere-git
     LAPKI=python3-lapki-compiler-plugin
+    FA=python3-fa-dispatcher
     ED=cyberiada-pro
 
     # the system: a consistent dpkg state, every library found, the policy notes
@@ -506,6 +509,15 @@ outcome = d.send(\"GO\")
 assert outcome.status == \"fired\", outcome
 d.send(\"STOP\")
 assert d.finished()" py/01-flat.graphml'
+
+    # the finite automata (the verdict on stderr, the output tape on stdout): the
+    # tests of the Morse decoder, a text decoded by it
+    check fa-test $FA \
+        'fa-run --test fa/morse-decoder.tests fa/morse-decoder.graphml 2>out/fa-test.txt &&
+         grep -q "^8 passed" out/fa-test.txt'
+    check fa-text $FA \
+        'fa-run --text "... --- ..." --join fa/morse-decoder.graphml >out/fa-text.txt 2>out/fa-verdict.txt &&
+         grep -qx SOS out/fa-text.txt && grep -qx accepted out/fa-verdict.txt'
 
     # hsm-to-python: the generated vacuum program prints its recorded output
     check h2p-gencode $H2P \
@@ -587,6 +599,9 @@ assert d.send('GO').status == 'fired'\" py/01-flat.graphml"
         "$NOML hsm-maker --notation maker/lift.hsm -o out/lift-cml.graphml &&
          $NOML hsm-maker --render out/lift-cml.graphml >out/lift-cml.txt &&
          grep -q 'machine Lift' out/lift-cml.txt"
+    check cml-fa "$CML $FA" \
+        "$NOML fa-run --test fa/morse-decoder.tests fa/morse-decoder.graphml 2>out/fa-test-cml.txt &&
+         grep -q '^8 passed' out/fa-test-cml.txt"
     check cml-agents "$CML $AGENTS" \
         "$NOML cybersphere check agents/develop.graphml --json out/develop-cml.json &&
          python3 -c 'import json, sys; assert json.load(open(sys.argv[1])) == []' out/develop-cml.json"
@@ -691,6 +706,10 @@ assert d.send('GO').status == 'fired'\" py/01-flat.graphml"
          cp ../diagrams/light.graphml new.graphml &&
          $B new.graphml --run-plugin git:stage --dump-plugin >o.txt &&
          grep -q 'A  new.graphml' o.txt"
+    check editor-fa-test "$ED $FA" \
+        "cd fa && $B morse-decoder.graphml --run-plugin fa-dispatcher:test \
+             --plugin-param tests=\"\$W/fa/morse-decoder.tests\" --dump-plugin >o.txt &&
+         grep -q 'state: done' o.txt && grep -q ': 8 passed' o.txt"
     check editor-lapki-no-compiler "$ED $LAPKI" \
         "$B lapki/blinker.graphml --run-plugin lapki-compiler:code \
              --plugin-param compiler=\"\$W/none\" --dump-plugin >out/ed-lapki.txt 2>&1; [ \$? -eq 6 ] &&
