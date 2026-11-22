@@ -132,6 +132,12 @@
 // the stored long lines of the text editors (EDIT-MODE-30)
 #define EDITOR_LINES_SCROLL      "scroll"
 #define EDITOR_LINES_WRAP        "wrap"
+// the text width of the fill of a Markdown or Plain text source, in characters (EDIT-MD-22)
+#define TEXT_WIDTH_DEFAULT       90
+#define TEXT_WIDTH_MIN           20
+#define TEXT_WIDTH_MAX           200
+// the columns of a tab stop in a source editor and its fill
+#define EDITOR_TAB_SPACES        4
 // the preview of a Markdown text is rendered again a while after its last edit (EDIT-MD-11)
 #define MARKDOWN_PREVIEW_DELAY_MS 300
 // the outline of a Markdown tab is read from its text at most once a second while it is shown; a

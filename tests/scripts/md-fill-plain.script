@@ -1,0 +1,3 @@
+# Fill Paragraph of a Plain text tab (EDIT-MD-23): the indent of the second line, no marker kept
+text-width 40
+fill-paragraph all

@@ -43,8 +43,6 @@
 
 // the gap between the numbers and the text, in pixels
 static const int LINE_NUMBER_PADDING = 6;
-// the tab stop in spaces
-static const int TAB_SPACES = 4;
 // the continuation sign: its part of the row, the pen as a part of the fringe, the arrow head
 static const qreal FRINGE_SIGN_PART = 0.6;
 static const qreal FRINGE_PEN_DIVISOR = 8.0;
@@ -116,7 +114,7 @@ CodeEditor::CodeEditor(QWidget* parent):
 
 void CodeEditor::applyFontMetrics()
 {
-    setTabStopDistance(fontMetrics().horizontalAdvance(' ') * TAB_SPACES);
+    setTabStopDistance(fontMetrics().horizontalAdvance(' ') * EDITOR_TAB_SPACES);
     updateMargin();
     placeLineNumbers();
     applyCursor();
@@ -444,8 +442,42 @@ void CodeEditor::keyPressEvent(QKeyEvent* event)
     if (m_replacer.before(event, textCursor())) return;
     int revision = document()->revision();
     QPlainTextEdit::keyPressEvent(event);
+    bool typed = document()->revision() != revision;
     // only a key that typed is read against the rules (EDIT-AUTO-5)
-    if (typingKey(event) && document()->revision() != revision) m_replacer.typed(textCursor(), m_kind);
+    if (typingKey(event) && typed) m_replacer.typed(textCursor(), m_kind);
+    // then a Space or a Return breaks a line past the width (EDIT-MD-21)
+    bool fillKey = event->text() == " " || ((event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) &&
+                                            !(event->modifiers() & ~Qt::KeypadModifier));
+    if (typed && fillKey) autoFill();
+}
+
+void CodeEditor::autoFill()
+{
+    SettingsManager& sm = SettingsManager::instance();
+    if (m_fillKind == textFillNone || isReadOnly() || !sm.getFillAsYouType() || textCursor().hasSelection()) return;
+    // the block begun at the cursor: an undo puts the cursor back there
+    QTextCursor edit = textCursor();
+    bool began = false;
+    // a line still past the width breaks again, each break further on
+    int done = -1;
+    TextFillBreak at;
+    while (textAutoFillBreak(toPlainText(), textCursor().position(), sm.getTextWidth(), m_fillKind, &at) &&
+           at.from > done) {
+        if (!began) {
+            emit editStepNamed(tr("fill"));
+            edit.beginEditBlock();
+            began = true;
+        }
+        edit.setPosition(at.from);
+        edit.setPosition(at.to, QTextCursor::KeepAnchor);
+        edit.insertText("\n" + at.prefix);
+        done = at.from + at.prefix.length();
+    }
+    if (!began) return;
+    edit.endEditBlock();
+    emit editStepNamed(QString());
+    // the typed pattern before the break is not given back by Backspace (EDIT-AUTO-6)
+    m_replacer.forget();
 }
 
 void CodeEditor::inputMethodEvent(QInputMethodEvent* event)

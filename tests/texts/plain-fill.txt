@@ -1,0 +1,4 @@
+The light has three states: red, yellow and green; the timer switches them one after another.
+
+  An indented paragraph of plain text, the next lines
+  keep the indent of the second line - a marker is just a word here.

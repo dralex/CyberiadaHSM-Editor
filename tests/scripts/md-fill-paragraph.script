@@ -1,0 +1,4 @@
+# Fill Paragraph in batch mode (EDIT-MD-18..20): the unit of the cursor, the heading of line 1,
+# is never filled; then every unit of the text at the default width, the blocks never filled kept
+fill-paragraph
+fill-paragraph all

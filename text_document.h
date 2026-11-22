@@ -29,6 +29,7 @@
 
 #include "editor_document.h"
 #include "json_text.h"
+#include "text_fill.h"
 #include "markdown_outline.h"
 
 class QSplitter;
@@ -81,6 +82,17 @@ public:
     // the text at the cursor, the selection replaced, one undo step of the label (EDIT-MD-9);
     // false when the text is not editable
     bool             insertInline(const QString& text, const QString& label);
+    // a Markdown text fills as Markdown, a Plain text as plain, the other modes never
+    // (EDIT-MD-18/23)
+    TextFillKind     fillKind() const;
+    // the writable source of a text that fills: Fill and Unfill act (EDIT-MD-20)
+    bool             canFill() const;
+    // the units of the cursor or the selection filled at the text width, or each joined into
+    // one line, one undo step, the selection kept at its characters; the units of the lines
+    // first..last from 1, the cursor after them; false when the text cannot fill or has not
+    // the lines, true for a text that stays the same (EDIT-MD-20)
+    bool             fill(bool unfill);
+    bool             fillLines(int first, int last, bool unfill);
     // the heading of the anchor shown: its source line, or scrolled to on a rendered page;
     // false when no heading has it (EDIT-MD-10)
     bool             showHeading(const QString& anchor);
@@ -182,6 +194,7 @@ private:
     void             showError();
     // the cursor on the source line of the heading an anchor names; false when none
     bool             goToHeading(const QString& anchor);
+    bool             fillRange(int anchor, int position, bool unfill, bool select);
     // the outline made or dropped with the Markdown mode
     void             applyOutline();
     // a change: the outline out of date, its reading started when shown and not waiting already

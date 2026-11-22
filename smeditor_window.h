@@ -241,9 +241,12 @@ private:
     void                    updateDiffActions();
     // the switches of the canvas view: off in a text tab (EDIT-MODE-15)
     void                    enableCanvasSwitches(bool on);
-    // the inserts of a Markdown tab and their group on the text toolbar (EDIT-MD-1)
+    // the inserts of a Markdown tab, the fill of a Markdown or a Plain text tab and their
+    // groups on the text toolbar, the fill first (EDIT-MD-1/20)
     void                    updateMarkdownActions();
-    void                    showMarkdownTools(bool on);
+    void                    showTextTools(bool fill, bool markdown);
+    // Fill Paragraph or Unfill Paragraph of the active text (EDIT-MD-20)
+    void                    fillText(bool unfill);
     // a text without a file is saved first, its folder holding the inserted files (EDIT-MD-4)
     bool                    ensureTextFile(TextDocument* text, const QString& title);
     // Find, Find Next and Find Previous and the bar follow the active tab (EDIT-FIND-9)
@@ -414,6 +417,7 @@ private:
     QSet<QToolBar*>         modeHiddenBars;
     // the Markdown group of the text toolbar, after a separator
     QList<QAction*>         markdownToolActions;
+    QList<QAction*>         fillToolActions;
     QTreeWidget*            m_changeList = nullptr;
     MarkdownOutlineView*    m_outlineView = nullptr;
     QString                 m_outlineMessage;

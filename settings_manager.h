@@ -106,6 +106,13 @@ public:
     // the long lines of the text editors wrapped at the width, else scrolled (EDIT-MODE-30)
     bool getEditorWrap() const { return editorWrap; }
     void setEditorWrap(bool value);
+    // the text width of the fill and fill as you type (EDIT-MD-22); the batch text-width
+    // overrides the width for the run
+    int  getTextWidth() const { return textWidth; }
+    void setTextWidth(int value);
+    void overrideTextWidth(int value);
+    bool getFillAsYouType() const { return fillAsYouType; }
+    void setFillAsYouType(bool value);
 
     // the reserved parts of an action are drawn bold: the entry/exit/do keyword
     // prefix, the internal transition event name, and the edge transition event
@@ -236,6 +243,7 @@ signals:
     void editorFontChanged();
     void editorCursorChanged();
     void editorWrapChanged();
+    void textFillChanged();
     void highlightSettingsChanged();
     void renderMarkdownCommentsChanged(bool);
     void markdownPreviewChanged(bool);
@@ -296,6 +304,8 @@ private:
     int editorFontSize = FONT_SIZE;
     bool editorBlockCursor = false;
     bool editorWrap = false;
+    int textWidth = TEXT_WIDTH_DEFAULT;
+    bool fillAsYouType = false;
 
     // files
     QString interfaceLanguage;

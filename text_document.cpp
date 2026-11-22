@@ -102,6 +102,8 @@ TextDocument::TextDocument(const QString& mode, QObject* parent):
     connect(m_editor, &CodeEditor::linkActivated, this, &TextDocument::openLink);
     connect(m_rendered, &MarkdownView::linkActivated, this, &TextDocument::openLink);
     connect(m_editor, &CodeEditor::imageOffered, this, &TextDocument::imageOffered);
+    // a break of the fill as you type is a step of its own (EDIT-MD-21)
+    connect(m_editor, &CodeEditor::editStepNamed, this, [this](const QString& name) { m_stepName = name; });
     // the preview follows the edits a while after the last one, and the cursor (EDIT-MD-11)
     m_previewTimer = new QTimer(this);
     m_previewTimer->setSingleShot(true);
@@ -158,6 +160,7 @@ void TextDocument::applyMode()
     m_highlighter = nullptr;
     // only the text of a Markdown takes the typed replacements (EDIT-AUTO-2/3)
     m_editor->setAutoreplaceKind(m_mode == MODE_MARKDOWN ? autoreplaceMarkdown : autoreplaceNone);
+    m_editor->setFillKind(fillKind());
     // a dropped or pasted image goes to Insert Image (EDIT-MD-2)
     m_editor->setImageDrops(m_mode == MODE_MARKDOWN);
     // the source of a language as its code, Markdown by its elements (EDIT-TEXT-7/11)
@@ -384,6 +387,54 @@ bool TextDocument::insertInline(const QString& text, const QString& label)
     cursor.insertText(text);
     cursor.endEditBlock();
     m_stepName.clear();
+    m_editor->setTextCursor(cursor);
+    m_editor->ensureCursorVisible();
+    return true;
+}
+
+TextFillKind TextDocument::fillKind() const
+{
+    if (m_mode == MODE_MARKDOWN) return textFillMarkdown;
+    if (m_mode == MODE_TEXT) return textFillPlain;
+    return textFillNone;
+}
+
+bool TextDocument::canFill() const
+{
+    return fillKind() != textFillNone && isEditable() && !showsRendered();
+}
+
+bool TextDocument::fill(bool unfill)
+{
+    QTextCursor cursor = m_editor->textCursor();
+    return fillRange(cursor.anchor(), cursor.position(), unfill, true);
+}
+
+bool TextDocument::fillLines(int first, int last, bool unfill)
+{
+    if (first < 1 || last < first || last > lineCount()) return false;
+    QTextBlock end = m_document->findBlockByNumber(last - 1);
+    return fillRange(m_document->findBlockByNumber(first - 1).position(), end.position() + end.length() - 1,
+                     unfill, false);
+}
+
+bool TextDocument::fillRange(int anchor, int position, bool unfill, bool select)
+{
+    if (!canFill()) return false;
+    TextFillEdit edit = textFill(text(), anchor, position, SettingsManager::instance().getTextWidth(), fillKind(),
+                                 unfill);
+    if (!edit.changed) return true;
+    // the block begun at the cursor: an undo puts the cursor back there
+    QTextCursor cursor = m_editor->textCursor();
+    m_stepName = unfill ? tr("unfill paragraph") : tr("fill paragraph");
+    cursor.beginEditBlock();
+    cursor.setPosition(edit.from);
+    cursor.setPosition(edit.to, QTextCursor::KeepAnchor);
+    cursor.insertText(edit.text);
+    cursor.endEditBlock();
+    m_stepName.clear();
+    cursor.setPosition(select ? edit.anchor : edit.cursor);
+    cursor.setPosition(edit.cursor, QTextCursor::KeepAnchor);
     m_editor->setTextCursor(cursor);
     m_editor->ensureCursorVisible();
     return true;

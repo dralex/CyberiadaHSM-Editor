@@ -1,0 +1,2 @@
+# fill-paragraph refuses a line the text has not (EDIT-MD-12)
+fill-paragraph line 999

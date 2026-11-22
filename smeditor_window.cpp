@@ -151,6 +151,17 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     connect(&SettingsManager::instance(), &SettingsManager::editorWrapChanged, this,
             [this]() { actionWrapLines->setChecked(SettingsManager::instance().getEditorWrap()); });
     connect(actionUpdateDiagramImages, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotUpdateDiagramImages);
+    // Edit > Fill Paragraph, Unfill Paragraph and Fill as You Type, a setting (EDIT-MD-20..22)
+    connect(actionFillParagraph, &QAction::triggered, this, [this]() { fillText(false); });
+    connect(actionUnfillParagraph, &QAction::triggered, this, [this]() { fillText(true); });
+    actionFillAsYouType->setChecked(SettingsManager::instance().getFillAsYouType());
+    connect(actionFillAsYouType, &QAction::triggered, &SettingsManager::instance(), &SettingsManager::setFillAsYouType);
+    connect(&SettingsManager::instance(), &SettingsManager::textFillChanged, this,
+            [this]() { actionFillAsYouType->setChecked(SettingsManager::instance().getFillAsYouType()); });
+    // the fill group of the text toolbar, shown in a Markdown or a Plain text tab (EDIT-MD-1)
+    QAction* fillSeparator = new QAction(this);
+    fillSeparator->setSeparator(true);
+    fillToolActions << fillSeparator << actionFillParagraph;
     // the Markdown group of the text toolbar, shown in a Markdown tab (EDIT-MD-1)
     QAction* markdownSeparator = new QAction(this);
     markdownSeparator->setSeparator(true);
@@ -1078,14 +1089,28 @@ void CyberiadaSMEditorWindow::updateMarkdownActions()
     actionUpdateDiagramImages->setEnabled(markdown && text->hasFile());
     actionPreview->setEnabled(markdown);
     actionWrapLines->setEnabled(text != nullptr);
-    showMarkdownTools(markdown);
+    // the writable source of a text that fills (EDIT-MD-20/22)
+    bool fills = text && text->fillKind() != textFillNone;
+    actionFillParagraph->setEnabled(fills && text->canFill());
+    actionUnfillParagraph->setEnabled(fills && text->canFill());
+    actionFillAsYouType->setEnabled(fills);
+    showTextTools(fills, markdown);
 }
 
-void CyberiadaSMEditorWindow::showMarkdownTools(bool on)
+void CyberiadaSMEditorWindow::showTextTools(bool fill, bool markdown)
 {
-    if (textToolBar->actions().contains(markdownToolActions.first()) == on) return;
-    if (on) textToolBar->addActions(markdownToolActions);
-    else for (QAction* action : markdownToolActions) textToolBar->removeAction(action);
+    bool fillShown = textToolBar->actions().contains(fillToolActions.first());
+    bool markdownShown = textToolBar->actions().contains(markdownToolActions.first());
+    if (fillShown == fill && markdownShown == markdown) return;
+    for (QAction* action : fillToolActions + markdownToolActions) textToolBar->removeAction(action);
+    if (fill) textToolBar->addActions(fillToolActions);
+    if (markdown) textToolBar->addActions(markdownToolActions);
+}
+
+void CyberiadaSMEditorWindow::fillText(bool unfill)
+{
+    TextDocument* text = currentText();
+    if (text && text->canFill()) text->fill(unfill);
 }
 
 bool CyberiadaSMEditorWindow::ensureTextFile(TextDocument* text, const QString& title)

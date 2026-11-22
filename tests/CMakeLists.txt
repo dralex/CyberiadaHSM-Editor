@@ -394,6 +394,13 @@ add_markdown_test(insert-diagram-reject texts/notes.md 4)
 add_markdown_test(update-diagram-images-reject texts/notes.md 4)
 add_markdown_test(insert-link texts/notes.md 0)
 add_markdown_test(insert-link-reject texts/notes.md 4)
+add_markdown_test(fill-paragraph texts/markdown-fill.md 0)
+add_markdown_test(fill-text-width texts/markdown-fill.md 0)
+add_markdown_test(unfill-paragraph texts/markdown-fill.md 0)
+add_markdown_test(fill-plain texts/plain-fill.txt 0)
+add_markdown_test(fill-reject texts/markdown-fill.md 4)
+add_markdown_test(fill-text-width-reject texts/markdown-fill.md 4)
+add_text_test(text-fill-reject texts/blink.cpp 4)
 
 # the outline of the active Markdown tab after the script, the == outline section alone
 # (EDIT-MD-17); the script edits the text in memory only
@@ -894,6 +901,7 @@ add_l4_test(colors)
 add_l4_test(json)
 add_l4_test(markdown-tools)
 add_l4_test(markdown-outline)
+add_l4_test(text-fill)
 
 # The plugin layer: the batch plugin stage over the example plugins of
 # plugins/<set>/, which all run one helper with no dependencies (see

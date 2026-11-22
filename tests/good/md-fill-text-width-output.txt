@@ -1,0 +1,37 @@
+== tabs
+count: 1
+0 markdown-fill.md* markdown active
+== text
+mode: markdown
+file: markdown-fill.md
+modified: yes
+rendered: no
+lines: 28
+| # Fill of the paragraphs
+| 
+| The light of a traffic light has three states: red, yellow and green; the timer of the controller switches them one after another, and a pedestrian button asks for the green light of the crossing.
+| A second line of the same paragraph, short.
+| 
+| - The first item of a list whose text
+|   runs well past the width of the text
+|   and goes on and on until the end.
+| - The second item with a continuation
+|   line that is short.
+| 
+| > A quotation that is long enough to
+| > need two lines at the default width of
+| > ninety characters, surely.
+| 
+| Two trailing spaces end a hard break here, and this first line is long enough to be filled too  
+| so this line stays its own line.
+| 
+| ```cpp
+| // code is never filled, however long the line is: this comment runs past the width of the text by far
+| ```
+| 
+| | A table | is never filled, however long its cells are, past the width of the text by far |
+| |---|---|
+| | one | two |
+| 
+| See `make all install` and the [docs](docs/README.md "the title of the docs") at https://example.com/a/very/long/path/to/the/docs for more.
+| 

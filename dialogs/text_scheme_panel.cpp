@@ -21,6 +21,7 @@
  *
  * ----------------------------------------------------------------------------- */
 
+#include <QCheckBox>
 #include <QColorDialog>
 #include <QComboBox>
 #include <QFontComboBox>
@@ -85,12 +86,27 @@ TextSchemePanel::TextSchemePanel(QWidget* parent):
     wrapLabel->setBuddy(m_wrap);
     top->addWidget(wrapLabel, 2, 0);
     top->addWidget(m_wrap, 2, 1, 1, 2, Qt::AlignLeft);
+    // the width of the fill and the fill as you type of a Markdown or Plain text (EDIT-MD-22)
+    QLabel* widthLabel = new QLabel(tr("Text width"), this);
+    m_textWidth = new QSpinBox(this);
+    m_textWidth->setObjectName("textEditorWidth");
+    m_textWidth->setRange(TEXT_WIDTH_MIN, TEXT_WIDTH_MAX);
+    m_textWidth->setSuffix(tr(" characters"));
+    m_fillAsYouType = new QCheckBox(tr("Fill as you type"), this);
+    m_fillAsYouType->setObjectName("textEditorFill");
+    widthLabel->setBuddy(m_textWidth);
+    QHBoxLayout* fillRow = new QHBoxLayout;
+    fillRow->addWidget(m_textWidth);
+    fillRow->addWidget(m_fillAsYouType);
+    fillRow->addStretch(1);
+    top->addWidget(widthLabel, 3, 0);
+    top->addLayout(fillRow, 3, 1, 1, 2);
     QLabel* label = new QLabel(tr("Scheme"), this);
     m_list = new QComboBox(this);
     m_list->setObjectName("textSchemeList");
     label->setBuddy(m_list);
-    top->addWidget(label, 3, 0);
-    top->addWidget(m_list, 3, 1, 1, 2);
+    top->addWidget(label, 4, 0);
+    top->addWidget(m_list, 4, 1, 1, 2);
     top->setColumnStretch(1, 1);
     layout->addLayout(top);
 
@@ -174,6 +190,8 @@ void TextSchemePanel::load()
     m_preview->setBlockCursor(sm.getEditorBlockCursor());
     m_wrap->setCurrentIndex(m_wrap->findData(sm.getEditorWrap()));
     m_preview->setWrapLines(sm.getEditorWrap());
+    m_textWidth->setValue(sm.getTextWidth());
+    m_fillAsYouType->setChecked(sm.getFillAsYouType());
     m_schemes = sm.getTextSchemes();
     fill(sm.currentTextScheme().id);
 }
@@ -187,6 +205,8 @@ void TextSchemePanel::apply()
     sm.setEditorFontSize(m_fontSize->value());
     sm.setEditorBlockCursor(m_cursor->currentData().toBool());
     sm.setEditorWrap(m_wrap->currentData().toBool());
+    sm.setTextWidth(m_textWidth->value());
+    sm.setFillAsYouType(m_fillAsYouType->isChecked());
     sm.setTextSchemes(m_schemes);
     sm.setTextScheme(shownId());
 }

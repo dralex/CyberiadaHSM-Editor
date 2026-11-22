@@ -173,6 +173,8 @@ add_library(CyberiadaEditorCore STATIC
   find_bar.h find_bar.cpp
   shortcut_map.h shortcut_map.cpp
   autoreplace.h autoreplace.cpp
+  markdown_lines.h markdown_lines.cpp
+  text_fill.h text_fill.cpp
   diagram_find.h diagram_find.cpp
   comparison_document.h comparison_document.cpp
   diff_document.h diff_document.cpp

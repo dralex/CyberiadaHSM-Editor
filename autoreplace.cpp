@@ -26,6 +26,7 @@
 #include <QPlainTextEdit>
 #include <QTextDocument>
 #include "autoreplace.h"
+#include "markdown_lines.h"
 #include "settings_manager.h"
 
 namespace {
@@ -59,118 +60,11 @@ const DefaultRule DEFAULT_RULES[] = {
 
 bool suspended = false;
 
-const int FENCE_LENGTH = 3;
-const int CODE_INDENT = 4;
-
 int longestPattern(const AutoreplaceRules& rules)
 {
     int n = 0;
     for (const AutoreplaceRule& rule : rules) n = qMax(n, rule.from.length());
     return n;
-}
-
-// the fence a line opens or closes: its character and length, 0 when it is none
-int fenceOf(const QString& line, QChar* mark)
-{
-    int i = 0;
-    while (i < line.length() && line[i] == ' ') i++;
-    if (i >= CODE_INDENT || i >= line.length() || (line[i] != '`' && line[i] != '~')) return 0;
-    *mark = line[i];
-    int n = 0;
-    while (i + n < line.length() && line[i + n] == *mark) n++;
-    return n >= FENCE_LENGTH ? n : 0;
-}
-
-bool indented(const QString& line)
-{
-    if (line.startsWith('\t')) return true;
-    int i = 0;
-    while (i < line.length() && line[i] == ' ') i++;
-    return i >= CODE_INDENT && i < line.length();
-}
-
-bool listItem(const QString& line)
-{
-    QString t = line.trimmed();
-    if (t.length() < 2) return false;
-    if ((t[0] == '-' || t[0] == '*' || t[0] == '+') && t[1] == ' ') return true;
-    int i = 0;
-    while (i < t.length() && t[i].isDigit()) i++;
-    return i > 0 && i + 1 < t.length() && (t[i] == '.' || t[i] == ')') && t[i + 1] == ' ';
-}
-
-// the line is inside a fenced or an indented code block; the lines are those before it
-bool codeBlockLine(const QStringList& lines, int index)
-{
-    QChar open;
-    int openLength = 0;
-    for (int i = 0; i <= index; i++) {
-        QChar mark;
-        int n = fenceOf(lines[i], &mark);
-        if (!n) continue;
-        if (!openLength) {
-            open = mark;
-            openLength = n;
-        } else if (mark == open && n >= openLength && lines[i].trimmed().length() == n) {
-            // the closing line is code too
-            if (i == index) return true;
-            openLength = 0;
-        }
-    }
-    if (openLength) return true;
-    if (!indented(lines[index])) return false;
-    // an indented line is code after an empty one or another code line, not in a list
-    for (int i = index - 1; i >= 0; i--) {
-        if (lines[i].trimmed().isEmpty()) {
-            for (int k = i - 1; k >= 0 && !lines[k].trimmed().isEmpty(); k--) {
-                if (listItem(lines[k])) return false;
-            }
-            return true;
-        }
-        if (!indented(lines[i])) return false;
-    }
-    return true;
-}
-
-// [from, to) of the line is in a code span, a formula, a tag, a link target or a URL
-bool inlineCodeAt(const QString& line, int from, int to)
-{
-    int ticks = 0;        // the length of the open code span, 0 outside one
-    bool math = false;
-    int tag = -1;         // the open '<' of a tag
-    int target = -1;      // the open "](" of a link
-    for (int i = 0; i < from; i++) {
-        QChar c = line[i];
-        if (c == '\\' && !ticks) { i++; continue; }
-        if (c == '`') {
-            int n = 1;
-            while (i + n < line.length() && line[i + n] == '`') n++;
-            if (!ticks) ticks = n;
-            else if (ticks == n) ticks = 0;
-            i += n - 1;
-            continue;
-        }
-        if (ticks) continue;
-        if (c == '$') {
-            // a dollar opens a formula before a character that is no space or digit
-            if (math) math = false;
-            else if (i + 1 < line.length() && !line[i + 1].isSpace() && !line[i + 1].isDigit() &&
-                     (i == 0 || !line[i - 1].isLetterOrNumber())) math = true;
-            continue;
-        }
-        if (math) continue;
-        if (c == '<' && i + 1 < line.length() &&
-            (line[i + 1].isLetter() || line[i + 1] == '/' || line[i + 1] == '!')) tag = i;
-        else if (c == '>') tag = -1;
-        else if (c == '(' && i > 0 && line[i - 1] == ']') target = i;
-        else if (c == ')') target = -1;
-    }
-    if (ticks || math || tag >= 0 || target >= 0) return true;
-    // a URL: the word around the range
-    int begin = from;
-    while (begin > 0 && !line[begin - 1].isSpace()) begin--;
-    QString word = line.mid(begin, to - begin);
-    return word.contains("://") || word.startsWith("www.");
 }
 
 } // namespace
@@ -206,11 +100,11 @@ bool markdownProseAt(const QString& text, int from, int to)
 
     QStringList lines = head.split('\n');
     int index = lines.size() - 1;
-    if (codeBlockLine(lines, index)) return false;
+    if (markdownCodeLines(lines)[index]) return false;
     const QString& line = lines[index];
     int start = from - (head.length() - line.length());
     if (start < 0) return true;   // a pattern over the lines is not an element of one
-    if (inlineCodeAt(line, start, line.length())) return false;
+    if (markdownInlineCodeAt(line, start, line.length())) return false;
 
     // a rule, the underline of a heading, the border of a table
     static const QString BORDER = "-|:= ";

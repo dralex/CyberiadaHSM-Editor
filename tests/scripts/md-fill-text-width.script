@@ -1,0 +1,5 @@
+# the text width for the run and the units of a line and of lines (EDIT-MD-20/22): the list
+# items of lines 6-8, then the quote, line 12 after them
+text-width 40
+fill-paragraph lines 6-8
+fill-paragraph line 12

@@ -181,6 +181,10 @@
     <addaction name="actionFindPrevious"/>
     <addaction name="actionGoToLine"/>
     <addaction name="separator"/>
+    <addaction name="actionFillParagraph"/>
+    <addaction name="actionUnfillParagraph"/>
+    <addaction name="actionFillAsYouType"/>
+    <addaction name="separator"/>
     <addaction name="actionInsertImage"/>
     <addaction name="actionInsertDiagram"/>
     <addaction name="actionInsertLink"/>
@@ -435,6 +439,37 @@
    </property>
    <property name="toolTip">
     <string>Show the rendered page of a Markdown text beside its source</string>
+   </property>
+  </action>
+  <action name="actionFillParagraph">
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/fill-paragraph.png</normaloff>:/Icons/images/fill-paragraph.png</iconset>
+   </property>
+   <property name="text">
+    <string>Fill Paragraph</string>
+   </property>
+   <property name="toolTip">
+    <string>Break the lines of the paragraph or the selection at the text width</string>
+   </property>
+  </action>
+  <action name="actionUnfillParagraph">
+   <property name="text">
+    <string>Unfill Paragraph</string>
+   </property>
+   <property name="toolTip">
+    <string>Join the lines of the paragraph or of each paragraph of the selection into one</string>
+   </property>
+  </action>
+  <action name="actionFillAsYouType">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Fill as You Type</string>
+   </property>
+   <property name="toolTip">
+    <string>Break a line past the text width when a space or a new line is typed</string>
    </property>
   </action>
   <action name="actionInsertLink">

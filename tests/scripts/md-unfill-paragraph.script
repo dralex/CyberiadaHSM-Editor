@@ -1,0 +1,5 @@
+# Unfill Paragraph (EDIT-MD-20): filled at 40, then each unit joined into one line again, the
+# hard break kept
+text-width 40
+fill-paragraph all
+unfill-paragraph all

@@ -54,6 +54,8 @@ const DefaultKeys DEFAULT_KEYS[] = {
     { "actionGoToLine",         "Alt+G",                QKeySequence::UnknownKey },
     { "actionInsertImage",      "Ctrl+Shift+I",         QKeySequence::UnknownKey },
     { "actionInsertLink",       "Ctrl+K",               QKeySequence::UnknownKey },
+    { "actionFillParagraph",    "Alt+Q",                QKeySequence::UnknownKey },
+    { "actionUnfillParagraph",  "Alt+Shift+Q",          QKeySequence::UnknownKey },
     { "actionSelectTool",       "Esc",                  QKeySequence::UnknownKey },
     { "actionPan",              "H",                    QKeySequence::UnknownKey },
     { "actionZoomTool",         "Z",                    QKeySequence::UnknownKey },

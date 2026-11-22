@@ -177,6 +177,8 @@ int main(int argc, char *argv[])
 		}
 		SettingsManager::instance().overrideSnapMode(parser.isSet(snapOption));
 		SettingsManager::instance().overrideGridSpacing(spacing);
+		// nor the stored text width of the fill (EDIT-MD-22)
+		SettingsManager::instance().overrideTextWidth(TEXT_WIDTH_DEFAULT);
 	}
 
     try {

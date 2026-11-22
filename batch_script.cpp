@@ -849,7 +849,7 @@ static bool runGesture(CyberiadaSMEditorScene* scene, const QStringList& tokens,
 // render-markdown on|off, never persisted
 static bool isSettingVerb(const QString& cmd)
 {
-	return cmd == "snap" || cmd == "grid" || cmd == "render-markdown" || cmd == "preview";
+	return cmd == "snap" || cmd == "grid" || cmd == "render-markdown" || cmd == "preview" || cmd == "text-width";
 }
 
 static bool runSettingVerb(const QStringList& tokens, QString* error)
@@ -871,6 +871,17 @@ static bool runSettingVerb(const QStringList& tokens, QString* error)
 			return false;
 		}
 		sm.overrideMarkdownPreview(tokens.at(1) == "on");
+		return true;
+	}
+	if (tokens.first() == "text-width") {
+		// the width of the fill for the run (EDIT-MD-22)
+		bool ok = false;
+		int width = tokens.at(1).toInt(&ok);
+		if (!ok || width < TEXT_WIDTH_MIN || width > TEXT_WIDTH_MAX) {
+			*error = QString("text-width requires %1..%2").arg(TEXT_WIDTH_MIN).arg(TEXT_WIDTH_MAX);
+			return false;
+		}
+		sm.overrideTextWidth(width);
 		return true;
 	}
 	if (tokens.first() == "render-markdown") {
@@ -1151,7 +1162,7 @@ static bool runDocumentVerb(CyberiadaSMEditorWindow* win, const QStringList& tok
 static bool isMarkdownVerb(const QString& cmd)
 {
 	return cmd == "insert-image" || cmd == "insert-diagram" || cmd == "insert-link" ||
-		cmd == "update-diagram-images" || cmd == "check";
+		cmd == "update-diagram-images" || cmd == "check" || cmd == "fill-paragraph" || cmd == "unfill-paragraph";
 }
 
 // the batch draws in the --font family, never in a font of the GUI settings
@@ -1371,8 +1382,47 @@ static bool insertLinkVerb(CyberiadaSMEditorWindow* win, const QStringList& toke
 	return text->insertBlock(markdownLinkLine(label, target), before, "insert link");
 }
 
+// fill-paragraph|unfill-paragraph [line <n>|lines <n>-<m>|all]: Fill or Unfill Paragraph of the
+// active Markdown or Plain text tab, the unit of the cursor without an argument (EDIT-MD-20)
+static bool fillVerb(CyberiadaSMEditorWindow* win, const QStringList& tokens, QString* error)
+{
+	TextDocument* text = win->currentText();
+	bool unfill = tokens.first() == "unfill-paragraph";
+	if (!text || text->fillKind() == textFillNone) {
+		*error = tokens.first() + " needs an active Markdown or Plain text tab";
+		return false;
+	}
+	if (!text->canFill()) { *error = "the tab is read-only"; return false; }
+	if (tokens.size() == 1) return text->fill(unfill);
+	int first = 0;
+	int last = 0;
+	bool ok = false;
+	if (tokens.size() == 2 && tokens[1] == "all") {
+		first = 1;
+		last = text->lineCount();
+		ok = true;
+	} else if (tokens.size() == 3 && tokens[1] == "line") {
+		first = last = tokens[2].toInt(&ok);
+	} else if (tokens.size() == 3 && tokens[1] == "lines") {
+		QStringList range = tokens[2].split('-');
+		bool lastOk = false;
+		if (range.size() == 2) {
+			first = range[0].toInt(&ok);
+			last = range[1].toInt(&lastOk);
+		}
+		ok = ok && lastOk;
+	}
+	if (!ok) { *error = tokens.first() + " takes line <n>, lines <n>-<m> or all"; return false; }
+	if (!text->fillLines(first, last, unfill)) {
+		*error = QString("the text has no lines %1-%2").arg(first).arg(last);
+		return false;
+	}
+	return true;
+}
+
 static bool runMarkdownVerb(CyberiadaSMEditorWindow* win, const QStringList& tokens, QString* error)
 {
+	if (tokens.first() == "fill-paragraph" || tokens.first() == "unfill-paragraph") return fillVerb(win, tokens, error);
 	if (tokens.first() == "insert-link") return insertLinkVerb(win, tokens, error);
 	if (tokens.first() == "check") return checkVerb(win, tokens, error);
 	if (tokens.first() == "insert-diagram") return insertDiagramVerb(win, tokens, error);

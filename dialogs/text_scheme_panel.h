@@ -27,6 +27,7 @@
 #include <QWidget>
 #include "text_scheme.h"
 
+class QCheckBox;
 class QComboBox;
 class QFontComboBox;
 class QPushButton;
@@ -62,6 +63,9 @@ public:
     QComboBox*         cursorBox() const { return m_cursor; }
     // Scroll or Wrap (EDIT-MODE-30)
     QComboBox*         wrapBox() const { return m_wrap; }
+    // the text width and Fill as you type (EDIT-MD-22)
+    QSpinBox*          textWidthBox() const { return m_textWidth; }
+    QCheckBox*         fillBox() const { return m_fillAsYouType; }
 
 private slots:
     // the preview in the font chosen
@@ -87,6 +91,8 @@ private:
     QSpinBox*          m_fontSize;
     QComboBox*         m_cursor;
     QComboBox*         m_wrap;
+    QSpinBox*          m_textWidth;
+    QCheckBox*         m_fillAsYouType;
     QComboBox*         m_list;
     QPushButton*       m_copy;
     QPushButton*       m_rename;

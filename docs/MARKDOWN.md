@@ -627,7 +627,7 @@ line and the key typed stays; Unfill and Fill Paragraph act on the whole unit.
 
 ### Stages
 
-1. The fill — `markdown_lines.*`, `text_fill.*` (`textFill`, `textAutoFillBreak`),
+1. The fill — done: `markdown_lines.*`, `text_fill.*` (`textFill`, `textAutoFillBreak`),
    `TextDocument::fill`, `CodeEditor::autoFill` with `setFillKind`, the settings
    (`editor/textWidth`, `editor/fillAsYouType`, `TEXT_WIDTH_*`), Edit > Fill Paragraph,
    Unfill Paragraph and Fill as You Type, the text toolbar group, the Preferences row, the
@@ -703,5 +703,6 @@ word, no break before a block marker, the cursor kept, Unfill, Plain text indent
 `textAutoFillBreak`; typing past the width (a Space, a Return, off by default, in code, Undo
 joining, after an autoreplace); the actions by the tab kind, their keys and the toolbar
 group, greyed in a read-only tab; the Preferences row, Apply and Reset; the stored keys;
-`md-fill-paragraph`, `md-unfill-paragraph`, `md-fill-text-width`, `text-fill-plain` and
-`md-fill-reject` on `texts/markdown-fill.md` and `texts/plain-fill.txt`.
+`md-fill-paragraph`, `md-unfill-paragraph`, `md-fill-text-width` and `md-fill-plain` on
+`texts/markdown-fill.md` and `texts/plain-fill.txt`, `md-fill-reject` (a line the text has not),
+`md-fill-text-width-reject` and `mode-text-fill-reject` (a C++ text).

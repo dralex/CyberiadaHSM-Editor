@@ -112,6 +112,8 @@ void SettingsManager::load() {
     editorFontSize = s.value("display/editorFontSize", FONT_SIZE).toInt();
     editorBlockCursor = s.value("display/editorCursor", EDITOR_CURSOR_LINE).toString() == EDITOR_CURSOR_BLOCK;
     editorWrap = s.value("display/editorWrap", EDITOR_LINES_SCROLL).toString() == EDITOR_LINES_WRAP;
+    textWidth = qBound(TEXT_WIDTH_MIN, s.value("editor/textWidth", TEXT_WIDTH_DEFAULT).toInt(), TEXT_WIDTH_MAX);
+    fillAsYouType = s.value("editor/fillAsYouType", false).toBool();
     boldActionPrefix = s.value("display/boldActionPrefix", true).toBool();
     boldEventName = s.value("display/boldEventName", true).toBool();
     boldTransitionEventName = s.value("display/boldTransitionEventName", true).toBool();
@@ -207,6 +209,8 @@ void SettingsManager::loadDefaults()
     setEditorFontSize(FONT_SIZE);
     setEditorBlockCursor(false);
     setEditorWrap(false);
+    setTextWidth(TEXT_WIDTH_DEFAULT);
+    setFillAsYouType(false);
     setBoldActionPrefix(true);
     setBoldEventName(true);
     setBoldTransitionEventName(true);
@@ -274,6 +278,31 @@ void SettingsManager::setEditorWrap(bool value)
         editorWrap = value;
         QSettings().setValue("display/editorWrap", value ? EDITOR_LINES_WRAP : EDITOR_LINES_SCROLL);
         emit editorWrapChanged();
+    }
+}
+
+void SettingsManager::setTextWidth(int value)
+{
+    value = qBound(TEXT_WIDTH_MIN, value, TEXT_WIDTH_MAX);
+    QSettings().setValue("editor/textWidth", value);
+    overrideTextWidth(value);
+}
+
+void SettingsManager::overrideTextWidth(int value)
+{
+    value = qBound(TEXT_WIDTH_MIN, value, TEXT_WIDTH_MAX);
+    if (textWidth != value) {
+        textWidth = value;
+        emit textFillChanged();
+    }
+}
+
+void SettingsManager::setFillAsYouType(bool value)
+{
+    if (fillAsYouType != value) {
+        fillAsYouType = value;
+        QSettings().setValue("editor/fillAsYouType", value);
+        emit textFillChanged();
     }
 }
 
