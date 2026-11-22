@@ -1608,9 +1608,10 @@ outline (`EDIT-MD-13..17`) in 0.76.
   text typed without a pause updates the tree every second. A hidden dock and a tab in the
   background read nothing; their outline is only marked out of date, and is read at once when
   the dock is shown or the tab is activated. A reading keeps a row whose heading or image is
-  the same or similar (half of its characters) under the same parent, so its expanded state and
-  the selection stay; a row whose heading changed its level or was retyped beyond that is
-  replaced. *design*
+  the same or similar (half of its characters) under the same parent, a heading of another
+  level too, so its expanded state and the selection stay; a row that moved under another
+  heading (its level changed past a sibling, its section moved) or was retyped beyond similar
+  is replaced. *design*
 - `EDIT-MD-15` SHOULD [A]: the tree and the text follow each other. A row made current (a click,
   the arrow keys) puts the cursor of the source at the heading's line or the image's
   `line:column`, scrolled into view, the focus kept in the tree; Enter does the same and
@@ -1635,7 +1636,8 @@ outline (`EDIT-MD-13..17`) in 0.76.
   | the heading retitled | kept (similar) | goes to the renamed heading |
   | the heading removed | removed | nowhere, the tooltip |
   | the heading retyped beyond similar | replaced | nowhere, the tooltip |
-  | the level changed, the section moved | replaced | goes to the added heading |
+  | the level changed, the same parent | kept | goes to the heading |
+  | the level changed past a sibling, the section moved | replaced | goes to the added heading |
 - `EDIT-MD-17` MUST [A]: `--dump-outline` reads the outline of the active tab after the script and
   writes a `== outline` section: the document row, then a line per row indented by two spaces a
   level — `h<level> <line> "<title>" #<anchor>`, `image <line>:<column> "<alt>" <target>`,

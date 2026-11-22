@@ -31,7 +31,9 @@ changed: each SVG records its source diagram in its metadata. Document > Check (
 broken links of a Markdown text: missing files and images, anchors no heading has, diagram
 images out of date. Edit > Insert Link (Ctrl+K) links a heading of this or another text, a
 file or an address; a click on `file.md#anchor` opens the text at that heading. View > Preview
-shows the rendered page beside the source while you write, following the cursor.
+shows the rendered page beside the source while you write, following the cursor. The
+Outline dock lists the headings of a Markdown text as a tree with its images as leaves; a
+click goes to the place, the tree follows the cursor, a double click opens a diagram.
 
 The Find and Text File Compare functions are available as well as other
 useful IDE features.

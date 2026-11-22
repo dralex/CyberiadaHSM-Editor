@@ -160,6 +160,9 @@ add_library(CyberiadaEditorCore STATIC
   markdown_md4c_reader.cpp
   markdown_objects.h markdown_objects.cpp
   markdown_tools.h markdown_tools.cpp
+  markdown_outline.h markdown_outline.cpp
+  markdown_outline_model.h markdown_outline_model.cpp
+  markdown_outline_view.h markdown_outline_view.cpp
   svg_source.h svg_source.cpp
   math_renderer.h math_renderer.cpp
   svg_markers.h svg_markers.cpp

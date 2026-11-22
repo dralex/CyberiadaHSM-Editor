@@ -52,6 +52,7 @@ class FindBar;
 class ShortcutMap;
 class PluginSession;
 class PluginSessionTab;
+class MarkdownOutlineView;
 
 // The window holds the documents (docs/WINDOW.md): the menus, the toolbars,
 // the clipboard and the armed tool are global; the structure tree, the
@@ -186,6 +187,12 @@ public:
     QAction*                actionChanges = nullptr;
     // the change list of a diff tab (EDIT-MODE-11/22)
     QDockWidget*            changesDock = nullptr;
+    // View > Outline and the outline of a Markdown tab (EDIT-MD-13..16)
+    QAction*                actionOutline = nullptr;
+    QDockWidget*            outlineDock = nullptr;
+    MarkdownOutlineView*    outlineView() const { return m_outlineView; }
+    // the last note of a row whose heading or image is gone, empty after a row shown (EDIT-MD-16)
+    QString                 outlineMessage() const { return m_outlineMessage; }
 
 signals:
     void                    pluginRunStarted(PluginRunner* run, EditorDocument* doc);
@@ -206,6 +213,14 @@ private:
     void                    initPaneDocks();
     // the docks the active tab has, as View chose; the others hidden, their entries greyed
     void                    applyDocks();
+    // the outline of the active Markdown tab in the tree, read while the dock shows it (EDIT-MD-14)
+    void                    bindOutline();
+    // the row of the source's cursor current, unless the outline is out of date (EDIT-MD-15)
+    void                    followOutlineCursor();
+    // a row made current or entered: its place shown after the event (EDIT-MD-15/16)
+    void                    showOutlineRow(const QModelIndex& index, bool focus);
+    void                    openOutlineDiagram(const QModelIndex& index);
+    void                    openOutlineImage(const QModelIndex& index);
     // on load: expand the tree fully and widen the right panel to fit its content
     void                    expandAndWidenTree();
     // the File > Open Recent submenu, rebuilt from the stored recent-files list
@@ -400,6 +415,10 @@ private:
     // the Markdown group of the text toolbar, after a separator
     QList<QAction*>         markdownToolActions;
     QTreeWidget*            m_changeList = nullptr;
+    MarkdownOutlineView*    m_outlineView = nullptr;
+    QString                 m_outlineMessage;
+    // a row's place is being shown: the cursor it moves is not followed back
+    bool                    m_outlineShowing = false;
     FindBar*                m_findBar = nullptr;
     ShortcutMap*            m_shortcuts = nullptr;
     void                    initShortcuts();

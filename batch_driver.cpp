@@ -141,6 +141,11 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const BatchOptions& options)
 		std::cout << "== tabs" << std::endl;
 		dumpTabs(&win, std::cout);
 	}
+	// read from the text as it is after the script (EDIT-MD-17)
+	if (options.dumpOutline) {
+		std::cout << "== outline" << std::endl;
+		dumpOutline(win.currentText(), std::cout);
+	}
 
 	// after the sections of the active tab: the actions on it (EDIT-PLUG-63), the runs
 	// of the script (EDIT-PLUG-64), then the run of the plugin stage

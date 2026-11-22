@@ -2,7 +2,8 @@
 # SCRIPT adds an edit script, DUMP_GOOD compares the --dump output (written
 # to OUTPUT), SAVE_OUT/SAVE_GOOD compare the saved document and re-open it;
 # TEXT shows the text elements, DUMP_TEXT dumps their font and layout and
-# DUMP_STACK dumps the undo stack, DUMP_TABS adds the tab line to the dump;
+# DUMP_STACK dumps the undo stack, DUMP_TABS adds the tab line to the dump,
+# DUMP_OUTLINE dumps the outline of the active Markdown tab;
 # the plugin cases: PLUGIN_PATH and PLUGIN_PARAMS ('|'-separated), PLUGIN,
 # LIST_PLUGINS, DUMP_PLUGIN, DUMP_SESSION and SESSION_SCRIPT (a plugin session),
 # NO_DUMP (stdout without --dump), CLEAN_DIR (a fresh
@@ -111,6 +112,9 @@ endif()
 if(DEFINED DUMP_TABS)
   list(APPEND _args --dump-tabs)
 endif()
+if(DEFINED DUMP_OUTLINE)
+  list(APPEND _args --dump-outline)
+endif()
 if(DEFINED LIST_PLUGINS)
   list(APPEND _args --list-plugins)
 endif()
@@ -164,9 +168,10 @@ if(DEFINED WORKDIR)
   set(_workdir WORKING_DIRECTORY ${WORKDIR})
 endif()
 if(DEFINED DUMP_GOOD)
-  # the text, stack and plugin cases compare their sections alone
+  # the text, stack, outline and plugin cases compare their sections alone
   if(NOT DEFINED DUMP_TEXT AND NOT DEFINED DUMP_STACK AND NOT DEFINED DUMP_PLUGIN AND
-     NOT DEFINED DUMP_SESSION AND NOT DEFINED LIST_PLUGINS AND NOT DEFINED NO_DUMP)
+     NOT DEFINED DUMP_SESSION AND NOT DEFINED LIST_PLUGINS AND NOT DEFINED NO_DUMP AND
+     NOT DEFINED DUMP_OUTLINE)
     list(APPEND _args --dump)
   endif()
   execute_process(COMMAND ${BATCH_BIN} ${_args}

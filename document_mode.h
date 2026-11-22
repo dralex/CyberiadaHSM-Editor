@@ -45,7 +45,8 @@ extern const char* const LANGUAGE_JSON;
 enum ModeDock {
     modeDockTree       = 1,
     modeDockProperties = 2,
-    modeDockChanges    = 4
+    modeDockChanges    = 4,
+    modeDockOutline    = 8
 };
 
 struct ModeTraits {

@@ -1,7 +1,8 @@
 # The Markdown Rendering — Architecture
 
-**Document version:** 0.14 (2026-11-21) — the authoring tools specified and implemented
-(Tools, stages 1 to 6); 0.14: the outline specified (Outline).
+**Document version:** 0.15 (2026-11-22) — the authoring tools specified and implemented
+(Tools, stages 1 to 6); 0.14: the outline specified (Outline); 0.15: the outline implemented
+(Outline, stage 1).
 The requirements are `EDIT-MODE-14`, `EDIT-MODE-17`, `EDIT-MODE-18`, `EDIT-TEXT-14`,
 `EDIT-MD-1..17` and `EDIT-IO-8` in `EDITOR-SPEC.md`.
 
@@ -513,8 +514,10 @@ nothing goes back.
 ### The reading
 
 A reading builds the new nodes and reconciles them with the old ones parent by parent: the
-child lists are compared by `TextDiff::diffLines` (`text_diff.*`) on the keys
-`h<level> <title>` and `img <target>`.
+child lists are compared by `TextDiff::diffLines` (`text_diff.*`) on the keys `#<title>` and
+`!<target>`; a changed pair is kept when its titles or targets themselves are similar, so
+`# A` and `# B` are not one row by the `#` they share. The level is not in the key: a heading
+of another level under the same parent keeps its row.
 
 ```
 old: [h1 Intro] [img board] [h2 Blink]
@@ -525,13 +528,15 @@ new: [h1 Introduction] [img board] [h2 Blink] [h2 Fade]
 | Row of the comparison | The node |
 |---|---|
 | equal | kept; `dataChanged` when its line moved |
-| changed pair (similarity ≥ 0.5) | kept, its data replaced; `dataChanged` |
+| changed pair, the names similar (≥ 0.5, `MARKDOWN_OUTLINE_SIMILARITY`) | kept, its data replaced; `dataChanged` |
 | removed | `beginRemoveRows`, the rows of a parent from the last |
 | added | `beginInsertRows`, in the order of the text |
 
-The kept nodes are compared again below; a heading that changed its level moves to another
-parent: removed and added, only its subtree loses the expanded state. The model is reset on a
-load and on a mode switch only.
+The kept nodes are compared again below; a heading whose new level moves it under another
+parent is removed and added, only its subtree loses the expanded state. The model is never
+reset: a load is a change of the text, another mode drops the model and Markdown makes a new
+one. The expanded state of a row lives in its node, so a tab shown again opens its tree as it
+was left.
 
 ### A row on an out-of-date outline
 
@@ -551,10 +556,13 @@ link targets (`CodeEditor`).
 
 ### Stages
 
-1. The navigator: `markdown_outline.*`, the model with the reading, the dirty flag and the
-   timer, the view, `outlineDock` with View > Outline (`display/showOutline`,
-   `modeDockOutline`), the tree and the source following each other, the row on an out-of-date
-   outline, `--dump-outline`.
+1. The navigator — done: `markdown_outline.*` (`markdownOutline`), `DiagramFileCache` and
+   `diagramOfImage` in `markdown_tools.*` (`markdownDiagramImages` on them), the model
+   (`markdown_outline_model.*`: the reading, `indexAt`, `addedNamesake`, the expanded state),
+   the view (`markdown_outline_view.*`), `TextDocument` (`outline`, `setOutlineShown`,
+   `readOutline`, `showOutlineRow`, `MARKDOWN_OUTLINE_INTERVAL_MS`), `outlineDock` with View >
+   Outline (`display/showOutline`, `modeDockOutline`), the window's `bindOutline`,
+   `followOutlineCursor` and `showOutlineRow`, `--dump-outline` (`dumpOutline`).
 2. *(optional)* On a rendered page the current row follows the scroll: the `MarkdownSourceLine`
    of the top block.
 
@@ -618,5 +626,6 @@ level, setext, the fences, images on one line, the diagram leaves); the model un
 changed and a mode switch; the expanded rows and the selection kept by a reading; nothing read
 while the dock is hidden or the tab is in the background; the tree and the source following
 each other; every row of the out-of-date table of `EDIT-MD-16`, a removed heading with an
-older namesake too; `md-outline` (`--dump-outline` of the texts) and `md-outline-none` (another
-tab).
+older namesake too; a diagram leaf up to date and out of date; a rendered page scrolled; a
+double click opening a diagram; the dock shown by default; `md-outline` (`texts/outline.md`),
+`md-outline-edited` (the outline after an Insert Image) and `md-outline-none` (another tab).

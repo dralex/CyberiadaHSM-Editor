@@ -1,0 +1,14 @@
+== outline
+document outline.md
+  image 1:1 "Cover" images/quadrants.png
+  h1 3 "Outline" #outline
+    h2 7 "Images" #images
+      image 9:1 "Inserted" images/quadrants.png
+      image 11:1 "Quadrants" images/quadrants.png
+      image 11:43 "" images/arrow.svg
+      h4 18 "A skipped level" #a-skipped-level
+        diagram 20:1 "Geometry" images/arrow.svg ../diagrams/geometry.graphml out-of-date
+    h2 22 "Setext heading" #setext-heading
+  h1 25 "Second ![Icon](images/arrow.svg)" #second-icon
+    image 25:10 "Icon" images/arrow.svg
+  h1 27 "Another" #another

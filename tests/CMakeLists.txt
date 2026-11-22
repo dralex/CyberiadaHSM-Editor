@@ -395,6 +395,33 @@ add_markdown_test(update-diagram-images-reject texts/notes.md 4)
 add_markdown_test(insert-link texts/notes.md 0)
 add_markdown_test(insert-link-reject texts/notes.md 4)
 
+# the outline of the active Markdown tab after the script, the == outline section alone
+# (EDIT-MD-17); the script edits the text in memory only
+function(add_outline_test name input)
+  set(_script)
+  if(ARGC GREATER 2)
+    set(_script -DSCRIPT=scripts/${ARGV2}.script)
+  endif()
+  add_test(NAME ${name}
+    COMMAND ${CMAKE_COMMAND}
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaPro>
+      -DINPUT=${input}
+      ${_script}
+      -DDUMP_OUTLINE=1
+      -DEXPECTED=0
+      -DWORKDIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/${name}.out
+      -DDUMP_GOOD=${CMAKE_CURRENT_SOURCE_DIR}/good/${name}-output.txt
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunBatchTest.cmake)
+  set_tests_properties(${name} PROPERTIES
+    TIMEOUT 60
+    ENVIRONMENT "${L0_ENVIRONMENT}")
+endfunction()
+
+add_outline_test(md-outline texts/outline.md)
+add_outline_test(md-outline-edited texts/outline.md md-outline-edited)
+add_outline_test(md-outline-none diagrams/hierarchy.graphml)
+
 # the export of a text tab: a Markdown text to PDF only (EDIT-MODE-16/18)
 function(add_text_export_test name input output expected_code)
   set(_magic)
@@ -866,6 +893,7 @@ add_l4_test(textdiff)
 add_l4_test(colors)
 add_l4_test(json)
 add_l4_test(markdown-tools)
+add_l4_test(markdown-outline)
 
 # The plugin layer: the batch plugin stage over the example plugins of
 # plugins/<set>/, which all run one helper with no dependencies (see

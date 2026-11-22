@@ -356,25 +356,65 @@ static bool hasSuffix(const QString& path, const char* suffix)
     return QFileInfo(path).suffix().compare(QLatin1String(suffix), Qt::CaseInsensitive) == 0;
 }
 
+DiagramFileCache::Stamp DiagramFileCache::stamp(const QString& path)
+{
+    QFileInfo info(path);
+    Stamp s;
+    if (info.exists()) {
+        s.modified = info.lastModified();
+        s.size = info.size();
+    }
+    return s;
+}
+
+SvgSource DiagramFileCache::source(const QString& svg)
+{
+    Stamp now = stamp(svg);
+    auto it = m_sources.constFind(svg);
+    if (it != m_sources.constEnd() && it.value().first == now) return it.value().second;
+    SvgSource read = readSvgSource(svg);
+    m_sources.insert(svg, qMakePair(now, read));
+    return read;
+}
+
+QString DiagramFileCache::digest(const QString& graphml)
+{
+    Stamp now = stamp(graphml);
+    auto it = m_digests.constFind(graphml);
+    if (it != m_digests.constEnd() && it.value().first == now) return it.value().second;
+    QString read = fileDigest(graphml);
+    m_digests.insert(graphml, qMakePair(now, read));
+    return read;
+}
+
+bool diagramOfImage(const MarkdownImage& image, const QString& baseDir, DiagramImage* diagram,
+                    DiagramFileCache* cache)
+{
+    QString svg = markdownImagePath(image.target, baseDir);
+    if (svg.isEmpty() || !isSvgFile(svg)) return false;
+    DiagramImage d;
+    d.image = image;
+    d.svg = svg;
+    d.recorded = cache ? cache->source(svg) : readSvgSource(svg);
+    QString linked = image.link.isEmpty() ? QString() : markdownImagePath(image.link, baseDir);
+    QFileInfo info(svg);
+    QString sibling = info.absoluteDir().absoluteFilePath(info.completeBaseName() + ".graphml");
+    if (!linked.isEmpty() && hasSuffix(linked, "graphml")) d.graphml = linked;
+    else if (!d.recorded.graphml.isEmpty()) d.graphml = d.recorded.graphml;
+    else if (QFileInfo::exists(sibling)) d.graphml = QDir::cleanPath(sibling);
+    else return false;
+    QString digest = cache ? cache->digest(d.graphml) : fileDigest(d.graphml);
+    d.upToDate = !d.recorded.digest.isEmpty() && d.recorded.digest == digest;
+    *diagram = d;
+    return true;
+}
+
 QList<DiagramImage> markdownDiagramImages(const QString& text, const QString& baseDir)
 {
     QList<DiagramImage> diagrams;
     for (const MarkdownImage& image : markdownImages(text)) {
-        QString svg = markdownImagePath(image.target, baseDir);
-        if (svg.isEmpty() || !isSvgFile(svg)) continue;
         DiagramImage d;
-        d.image = image;
-        d.svg = svg;
-        d.recorded = readSvgSource(svg);
-        QString linked = image.link.isEmpty() ? QString() : markdownImagePath(image.link, baseDir);
-        QFileInfo info(svg);
-        QString sibling = info.absoluteDir().absoluteFilePath(info.completeBaseName() + ".graphml");
-        if (!linked.isEmpty() && hasSuffix(linked, "graphml")) d.graphml = linked;
-        else if (!d.recorded.graphml.isEmpty()) d.graphml = d.recorded.graphml;
-        else if (QFileInfo::exists(sibling)) d.graphml = QDir::cleanPath(sibling);
-        else continue;
-        d.upToDate = !d.recorded.digest.isEmpty() && d.recorded.digest == fileDigest(d.graphml);
-        diagrams << d;
+        if (diagramOfImage(image, baseDir, &d)) diagrams << d;
     }
     return diagrams;
 }

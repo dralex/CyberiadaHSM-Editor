@@ -44,6 +44,7 @@
 #include "code_editor.h"
 #include "code_highlighter.h"
 #include "markdown_objects.h"
+#include "markdown_outline_model.h"
 #include "markdown_view.h"
 #include "markdown_pdf.h"
 #include "document_mode.h"
@@ -111,6 +112,12 @@ TextDocument::TextDocument(const QString& mode, QObject* parent):
     });
     connect(m_editor, &QPlainTextEdit::cursorPositionChanged, this, &TextDocument::followCursor);
     connect(&SettingsManager::instance(), &SettingsManager::markdownPreviewChanged, this, &TextDocument::showPage);
+    // the outline is read at most once a second after the first change (EDIT-MD-14)
+    m_outlineTimer = new QTimer(this);
+    m_outlineTimer->setSingleShot(true);
+    m_outlineTimer->setInterval(MARKDOWN_OUTLINE_INTERVAL_MS);
+    connect(m_outlineTimer, &QTimer::timeout, this, &TextDocument::readOutline);
+    connect(m_document, &QTextDocument::contentsChanged, this, &TextDocument::markOutline);
     applyMode();
 }
 
@@ -163,6 +170,71 @@ void TextDocument::applyMode()
     applyScheme();
     showPage();
     checkText();
+    applyOutline();
+}
+
+void TextDocument::applyOutline()
+{
+    if (m_mode == MODE_MARKDOWN && !m_outline) {
+        m_outline = new MarkdownOutlineModel(this);
+        markOutline();
+    } else if (m_mode != MODE_MARKDOWN && m_outline) {
+        m_outlineTimer->stop();
+        m_outlineDirty = false;
+        delete m_outline;
+        m_outline = nullptr;
+    }
+}
+
+void TextDocument::markOutline()
+{
+    if (!m_outline) return;
+    m_outlineDirty = true;
+    // the next changes do not delay the reading: a text typed on is read every second
+    if (m_outlineShown && !m_outlineTimer->isActive()) m_outlineTimer->start();
+}
+
+void TextDocument::setOutlineShown(bool on)
+{
+    m_outlineShown = on;
+    if (!on) m_outlineTimer->stop();
+    else if (m_outlineDirty) readOutline();
+}
+
+void TextDocument::readOutline()
+{
+    m_outlineTimer->stop();
+    if (!m_outline) return;
+    m_outline->refresh(title(), text(), baseDir());
+    m_outlineDirty = false;
+    emit outlineRead();
+}
+
+QModelIndex TextDocument::outlineRowAtCursor() const
+{
+    if (!m_outline || showsRendered()) return QModelIndex();
+    QTextCursor cursor = m_editor->textCursor();
+    return m_outline->indexAt(cursor.blockNumber() + 1, cursor.positionInBlock() + 1);
+}
+
+QModelIndex TextDocument::showOutlineRow(const QPersistentModelIndex& row, const OutlineEntry& named, bool focus)
+{
+    if (!m_outline) return QModelIndex();
+    if (m_outlineDirty) readOutline();
+    // the row the reading kept, else what it named moved (EDIT-MD-16)
+    QModelIndex shown = row;
+    if (!shown.isValid()) shown = m_outline->addedNamesake(named);
+    const OutlineEntry* entry = m_outline->entry(shown);
+    if (!entry) return QModelIndex();
+    if (showsRendered()) {
+        if (entry->kind != OutlineEntry::outlineHeading || !m_rendered->scrollToHeading(entry->anchor)) {
+            m_rendered->scrollToSourceLine(entry->line);
+        }
+        if (focus) m_rendered->setFocus();
+    } else {
+        goToLine(entry->line, entry->column, focus);
+    }
+    return shown;
 }
 
 bool TextDocument::isJson() const
@@ -272,7 +344,7 @@ bool TextDocument::showsRendered() const
     return m_mode == MODE_MARKDOWN && readOnlyFlag();
 }
 
-bool TextDocument::goToLine(int line, int column)
+bool TextDocument::goToLine(int line, int column, bool focus)
 {
     QTextBlock block = m_document->findBlockByNumber(line - 1);
     if (!block.isValid()) return false;
@@ -281,7 +353,7 @@ bool TextDocument::goToLine(int line, int column)
     cursor.setPosition(block.position() + qBound(0, column - 1, block.length() - 1));
     m_editor->setTextCursor(cursor);
     m_editor->centerCursor();
-    m_editor->setFocus();
+    if (focus) m_editor->setFocus();
     return true;
 }
 
@@ -488,6 +560,8 @@ bool TextDocument::saveAs(const QString& path, QString* error)
     m_path = QFileInfo(path).absoluteFilePath();
     m_undo->setClean();
     showPage();
+    // the document row and the image paths follow the file
+    markOutline();
     emit titleChanged();
     return true;
 }

@@ -134,6 +134,12 @@
 #define EDITOR_LINES_WRAP        "wrap"
 // the preview of a Markdown text is rendered again a while after its last edit (EDIT-MD-11)
 #define MARKDOWN_PREVIEW_DELAY_MS 300
+// the outline of a Markdown tab is read from its text at most once a second while it is shown; a
+// reading keeps the row of a heading or an image of half of its characters in common (EDIT-MD-14)
+#define MARKDOWN_OUTLINE_INTERVAL_MS 1000
+#define MARKDOWN_OUTLINE_SIMILARITY  0.5
+// the warning mark of an out-of-date diagram leaf: a part of the icon at its corner (EDIT-MD-13)
+#define MARKDOWN_OUTLINE_MARK_PART   2
 #define TEXT_ERROR_COLOR         "#ff0000"
 #define TEXT_ERROR_BAR_COLOR     "#c62828"
 // the color schemes of the text editors (EDIT-COLOR-2/6, docs/COLOR-SCHEMES.md)

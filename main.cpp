@@ -90,6 +90,8 @@ int main(int argc, char *argv[])
 	parser.addOption(dumpAuditOption);
 	QCommandLineOption dumpTabsOption("dump-tabs", "Dump the tab line: the open documents and the active one.");
 	parser.addOption(dumpTabsOption);
+	QCommandLineOption dumpOutlineOption("dump-outline", "Dump the outline of the active Markdown tab: its headings and images.");
+	parser.addOption(dumpOutlineOption);
 	QCommandLineOption reconstructOption("reconstruct", "Reconstruct absent or malformed geometry on load.");
 	parser.addOption(reconstructOption);
 	QCommandLineOption reconstructSMOption("reconstruct-sm", "Reconstruct the absent state machine border too (with --reconstruct).");
@@ -235,6 +237,7 @@ int main(int argc, char *argv[])
 			options.exportFont = parser.value(fontOption);
 			options.svgMetadata = parser.isSet(svgMetadataOption);
 			options.dumpTabsLine = parser.isSet(dumpTabsOption);
+			options.dumpOutline = parser.isSet(dumpOutlineOption);
 			options.plugin = parser.value(pluginOption);
 			options.pluginParams = parser.values(pluginParamOption);
 			options.listPlugins = parser.isSet(listPluginsOption);

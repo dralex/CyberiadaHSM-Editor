@@ -69,6 +69,8 @@ struct BatchOptions {
 	// the SVG export records its source diagram (EDIT-IO-8)
 	bool svgMetadata = false;
 	bool dumpTabsLine = false;
+	// == outline: the outline of the active Markdown tab (EDIT-MD-17)
+	bool dumpOutline = false;
 	// the plugin stage (docs/TESTING.md, Plugins): id[:action] and name=value items
 	QString plugin;
 	QStringList pluginParams;

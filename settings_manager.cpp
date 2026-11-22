@@ -94,6 +94,7 @@ void SettingsManager::load() {
     showStructureTree = s.value("display/showStructureTree", true).toBool();
     showProperties = s.value("display/showProperties", true).toBool();
     showChanges = s.value("display/showChanges", true).toBool();
+    showOutline = s.value("display/showOutline", true).toBool();
     showServiceObjects = s.value("display/showServiceObjects", false).toBool();
     showComponentComments = s.value("display/showComponentComments", false).toBool();
     loggingEnabled = s.value("logging/enabled", false).toBool();
@@ -189,6 +190,7 @@ void SettingsManager::loadDefaults()
     setShowStructureTree(true);
     setShowProperties(true);
     setShowChanges(true);
+    setShowOutline(true);
     setShowServiceObjects(false);
     setShowComponentComments(false);
     setLoggingEnabled(false);
@@ -418,6 +420,14 @@ void SettingsManager::setShowChanges(bool value) {
         showChanges = value;
         QSettings().setValue("display/showChanges", value);
         emit changesChanged(value);
+    }
+}
+
+void SettingsManager::setShowOutline(bool value) {
+    if (showOutline != value) {
+        showOutline = value;
+        QSettings().setValue("display/showOutline", value);
+        emit outlineChanged(value);
     }
 }
 

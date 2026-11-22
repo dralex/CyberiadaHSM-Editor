@@ -27,7 +27,10 @@
 #include <functional>
 
 #include <QByteArray>
+#include <QDateTime>
+#include <QHash>
 #include <QImage>
+#include <QPair>
 #include <QList>
 #include <QRect>
 #include <QString>
@@ -139,6 +142,27 @@ struct DiagramImage {
     bool          upToDate = false;
 };
 QList<DiagramImage> markdownDiagramImages(const QString& text, const QString& baseDir);
+
+// the recorded sources and the digests of the diagram files, read again only when the time or
+// the size of a file changed: the outline reads them every second (EDIT-MD-14)
+class DiagramFileCache {
+public:
+    SvgSource source(const QString& svg);
+    QString   digest(const QString& graphml);
+private:
+    struct Stamp {
+        QDateTime modified;
+        qint64    size = -1;
+        bool operator==(const Stamp& other) const { return modified == other.modified && size == other.size; }
+    };
+    static Stamp stamp(const QString& path);
+    QHash<QString, QPair<Stamp, SvgSource>> m_sources;
+    QHash<QString, QPair<Stamp, QString>>   m_digests;
+};
+// the diagram of an image (EDIT-MD-6), false when it has none; the files read through the
+// cache when there is one
+bool diagramOfImage(const MarkdownImage& image, const QString& baseDir, DiagramImage* diagram,
+                    DiagramFileCache* cache = nullptr);
 // [![alt](svg)](graphml), the paths relative to the directory of the text (EDIT-MD-5)
 QString markdownDiagramLine(const QString& alt, const QString& svg, const QString& graphml,
                             const QString& baseDir);

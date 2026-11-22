@@ -25,9 +25,11 @@
 #define CYBERIADA_TEXT_DOCUMENT
 
 #include <QImage>
+#include <QPersistentModelIndex>
 
 #include "editor_document.h"
 #include "json_text.h"
+#include "markdown_outline.h"
 
 class QSplitter;
 class QStackedWidget;
@@ -36,6 +38,7 @@ class QTextDocument;
 class QTimer;
 class CodeEditor;
 class MarkdownView;
+class MarkdownOutlineModel;
 class CodeHighlighter;
 
 // A text tab (docs/MODES.md, Text tabs): the text in UTF-8, highlighted by its
@@ -94,8 +97,8 @@ public:
     // the preview page, null until it is first shown
     MarkdownView*    preview() const { return m_preview; }
     // the lines of the source from 1 (EDIT-KEYS-7): the cursor to the start of the
-    // line, scrolled into view and focused; false for a line the text has not
-    bool             goToLine(int line, int column = 1);
+    // line, scrolled into view and focused unless not focus; false for a line the text has not
+    bool             goToLine(int line, int column = 1, bool focus = true);
     int              lineCount() const;
     int              currentLine() const;
     // the directory of the file, where the Markdown images are found; empty without a file
@@ -116,6 +119,21 @@ public:
     // file or a site by the system
     void             openLink(const QString& target);
 
+    // the outline of a Markdown tab, null in another mode (EDIT-MD-13)
+    MarkdownOutlineModel* outline() const { return m_outline; }
+    // the text changed since the outline was last read
+    bool             outlineOutOfDate() const { return m_outlineDirty; }
+    // the dock shows the outline: read at once when out of date, then at most once a second
+    // after a change; a hidden one is only marked out of date (EDIT-MD-14)
+    void             setOutlineShown(bool on);
+    void             readOutline();
+    // the row of the cursor's place in the source, invalid on a rendered page (EDIT-MD-15)
+    QModelIndex      outlineRowAtCursor() const;
+    // the place of a row made current or entered, the page focused with focus (EDIT-MD-15/16):
+    // the outline read first when out of date; the row the reading kept, else the only namesake
+    // it added; the row shown, invalid when what it named is gone
+    QModelIndex      showOutlineRow(const QPersistentModelIndex& row, const OutlineEntry& named, bool focus);
+
     // the shown page is searched, the editor or the rendered view (EDIT-FIND-5)
     bool             canFind() const override { return true; }
     void             setFindQuery(const FindQuery& query, bool navigate) override;
@@ -130,6 +148,8 @@ signals:
     void             openFileRequested(const QString& path, const QString& fragment);
     // an image dropped on or pasted into a Markdown source (EDIT-MD-2)
     void             imageOffered(const QString& path, const QImage& image);
+    // the outline read from the text (EDIT-MD-14)
+    void             outlineRead();
 
 protected:
     void             applyReadOnlyFlag(bool on) override;
@@ -162,6 +182,10 @@ private:
     void             showError();
     // the cursor on the source line of the heading an anchor names; false when none
     bool             goToHeading(const QString& anchor);
+    // the outline made or dropped with the Markdown mode
+    void             applyOutline();
+    // a change: the outline out of date, its reading started when shown and not waiting already
+    void             markOutline();
 
     QString          m_mode;
     QString          m_path;
@@ -188,6 +212,10 @@ private:
     // the source block the preview last followed
     int              m_previewBlock = -1;
     JsonCheck        m_jsonCheck;
+    MarkdownOutlineModel* m_outline = nullptr;
+    QTimer*          m_outlineTimer;
+    bool             m_outlineDirty = false;
+    bool             m_outlineShown = false;
     // the underlined token as the edits move it, null without an error
     QTextCursor*     m_errorPlace = nullptr;
 };

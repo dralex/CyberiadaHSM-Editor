@@ -35,6 +35,7 @@
 
 #include "cyberiadasm_dump.h"
 #include "text_document.h"
+#include "markdown_outline_model.h"
 #include "json_text.h"
 #include "diff_document.h"
 #include "text_diff_document.h"
@@ -325,6 +326,52 @@ void dumpTextDocument(const TextDocument* doc, std::ostream& os)
 	const QStringList lines = doc->text().split('\n');
 	os << "lines: " << lines.size() << std::endl;
 	for (const QString& line : lines) os << "| " << line.toStdString() << std::endl;
+}
+
+// a level of the outline is indented by two spaces
+static const int OUTLINE_DUMP_INDENT = 2;
+
+static void dumpOutlineRow(const MarkdownOutlineModel* outline, const QModelIndex& index, int depth,
+                           const QString& baseDir, std::ostream& os)
+{
+	const OutlineEntry* e = outline->entry(index);
+	if (!e) return;
+	auto shown = [&baseDir](const QString& path) {
+		return baseDir.isEmpty() ? path : QDir(baseDir).relativeFilePath(path);
+	};
+	QString place = QString::number(e->line) + ":" + QString::number(e->column);
+	QString row(depth * OUTLINE_DUMP_INDENT, ' ');
+	switch (e->kind) {
+	case OutlineEntry::outlineDocument:
+		row += "document " + e->title;
+		break;
+	case OutlineEntry::outlineHeading:
+		row += "h" + QString::number(e->level) + " " + QString::number(e->line) + " \"" + e->title +
+			"\" #" + e->anchor;
+		break;
+	case OutlineEntry::outlineImage:
+		row += "image " + place + " \"" + e->title + "\" " + e->target;
+		break;
+	case OutlineEntry::outlineDiagram:
+		row += "diagram " + place + " \"" + e->title + "\" " + shown(e->svg) + " " + shown(e->graphml) +
+			(e->upToDate ? " up-to-date" : " out-of-date");
+		break;
+	}
+	os << row.toStdString() << std::endl;
+	for (int i = 0; i < outline->rowCount(index); i++) {
+		dumpOutlineRow(outline, outline->index(i, 0, index), depth + 1, baseDir, os);
+	}
+}
+
+void dumpOutline(TextDocument* doc, std::ostream& os)
+{
+	MarkdownOutlineModel* outline = doc ? doc->outline() : nullptr;
+	if (!outline) {
+		os << "(none)" << std::endl;
+		return;
+	}
+	doc->readOutline();
+	dumpOutlineRow(outline, outline->documentIndex(), 0, doc->baseDir(), os);
 }
 
 // the equal rows printed next to a hunk

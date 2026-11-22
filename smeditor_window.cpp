@@ -46,6 +46,10 @@
 #include <QPushButton>
 #include <QTreeWidget>
 #include <QTreeWidgetItemIterator>
+#include <QCursor>
+#include <QDesktopServices>
+#include <QToolTip>
+#include <QUrl>
 
 #include "smeditor_window.h"
 #include "text_diff_view.h"
@@ -64,6 +68,9 @@
 #include "dialogs/insert_diagram_dialog.h"
 #include "dialogs/insert_link_dialog.h"
 #include "markdown_tools.h"
+#include "markdown_objects.h"
+#include "markdown_outline_model.h"
+#include "markdown_outline_view.h"
 #include "settings_manager.h"
 #include "cyberiadasm_render.h"
 #include "gesture_log.h"
@@ -342,6 +349,10 @@ TextDocument* CyberiadaSMEditorWindow::newTextDocument(const QString& mode)
             Qt::QueuedConnection);
     connect(doc, &TextDocument::imageOffered, this,
             [this, doc](const QString& path, const QImage& image) { insertImage(doc, path, image); });
+    // the outline follows the source's cursor, and its rows after each reading (EDIT-MD-15)
+    connect(doc->editor(), &QPlainTextEdit::cursorPositionChanged, this,
+            [this, doc]() { if (doc == active) followOutlineCursor(); });
+    connect(doc, &TextDocument::outlineRead, this, [this, doc]() { if (doc == active) followOutlineCursor(); });
     return doc;
 }
 
@@ -526,6 +537,8 @@ void CyberiadaSMEditorWindow::setCurrentDocument(EditorDocument* tab)
     if (!tab || tab == active) return;
     bool switched = (active != nullptr);
     if (current) unbindDocument(current);
+    // the outline of a tab in the background is only marked out of date (EDIT-MD-14)
+    if (TextDocument* left = currentText()) left->setOutlineShown(false);
     // the marks are the active tab's: the one left drops them (EDIT-FIND-9)
     bool finding = m_findBar && !m_findBar->isHidden();
     if (active && finding) active->clearFind(false);
@@ -1864,6 +1877,21 @@ void CyberiadaSMEditorWindow::initPaneDocks()
     changesDock->setWidget(m_changeList);
     addDockWidget(Qt::RightDockWidgetArea, changesDock);
     resizeDocks(QList<QDockWidget*>() << changesDock, QList<int>() << PANE_DOCK_WIDTH, Qt::Horizontal);
+    // the outline of a Markdown tab, a dock of its own (EDIT-MD-13)
+    m_outlineView = new MarkdownOutlineView();
+    m_outlineView->setObjectName("outlineView");
+    connect(m_outlineView, &MarkdownOutlineView::rowShown, this,
+            [this](const QModelIndex& index) { showOutlineRow(index, false); });
+    connect(m_outlineView, &MarkdownOutlineView::rowEntered, this,
+            [this](const QModelIndex& index) { showOutlineRow(index, true); });
+    connect(m_outlineView, &MarkdownOutlineView::diagramRequested, this, &CyberiadaSMEditorWindow::openOutlineDiagram);
+    connect(m_outlineView, &MarkdownOutlineView::imageRequested, this, &CyberiadaSMEditorWindow::openOutlineImage);
+    outlineDock = new QDockWidget(tr("Outline"), this);
+    outlineDock->setObjectName("outlineDock");
+    outlineDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    outlineDock->setWidget(m_outlineView);
+    addDockWidget(Qt::RightDockWidgetArea, outlineDock);
+    resizeDocks(QList<QDockWidget*>() << outlineDock, QList<int>() << PANE_DOCK_WIDTH, Qt::Horizontal);
 
     actionStructureTree = treeDock->toggleViewAction();
     actionStructureTree->setObjectName("actionStructureTree");
@@ -1871,20 +1899,26 @@ void CyberiadaSMEditorWindow::initPaneDocks()
     actionProperties->setObjectName("actionPropertiesPane");
     actionChanges = changesDock->toggleViewAction();
     actionChanges->setObjectName("actionChangesPane");
+    actionOutline = outlineDock->toggleViewAction();
+    actionOutline->setObjectName("actionOutlinePane");
     menuView->insertAction(actionTransitionText, actionStructureTree);
     menuView->insertAction(actionTransitionText, actionProperties);
     menuView->insertAction(actionTransitionText, actionChanges);
+    menuView->insertAction(actionTransitionText, actionOutline);
     menuView->insertSeparator(actionTransitionText);
     treeDock->installEventFilter(this);
     propertiesDock->installEventFilter(this);
     changesDock->installEventFilter(this);
+    outlineDock->installEventFilter(this);
     // the choice changes by a View entry or a close button only, never by a tab switch
     connect(actionStructureTree, &QAction::triggered, &sm, &SettingsManager::setShowStructureTree);
     connect(actionProperties, &QAction::triggered, &sm, &SettingsManager::setShowProperties);
     connect(actionChanges, &QAction::triggered, &sm, &SettingsManager::setShowChanges);
+    connect(actionOutline, &QAction::triggered, &sm, &SettingsManager::setShowOutline);
     connect(&sm, &SettingsManager::structureTreeChanged, this, &CyberiadaSMEditorWindow::applyDocks);
     connect(&sm, &SettingsManager::propertiesChanged, this, &CyberiadaSMEditorWindow::applyDocks);
     connect(&sm, &SettingsManager::changesChanged, this, &CyberiadaSMEditorWindow::applyDocks);
+    connect(&sm, &SettingsManager::outlineChanged, this, &CyberiadaSMEditorWindow::applyDocks);
     applyDocks();
 }
 
@@ -1901,13 +1935,81 @@ void CyberiadaSMEditorWindow::applyDocks()
     } rows[] = {
         { treeDock,       actionStructureTree, modeDockTree,       sm.getShowStructureTree() },
         { propertiesDock, actionProperties,    modeDockProperties, sm.getShowProperties() },
-        { changesDock,    actionChanges,       modeDockChanges,    sm.getShowChanges() }
+        { changesDock,    actionChanges,       modeDockChanges,    sm.getShowChanges() },
+        { outlineDock,    actionOutline,       modeDockOutline,    sm.getShowOutline() }
     };
     for (size_t i = 0; i < sizeof(rows) / sizeof(rows[0]); i++) {
         bool has = (docks & rows[i].flag) != 0;
         rows[i].entry->setEnabled(has);
         rows[i].dock->setVisible(has && rows[i].chosen);
     }
+    bindOutline();
+}
+
+void CyberiadaSMEditorWindow::bindOutline()
+{
+    TextDocument* text = currentText();
+    MarkdownOutlineModel* outline = text ? text->outline() : nullptr;
+    // read before the tree takes it, so it shows the text as it is
+    if (outline) text->setOutlineShown(!outlineDock->isHidden());
+    m_outlineView->setOutlineModel(outline);
+    followOutlineCursor();
+}
+
+void CyberiadaSMEditorWindow::followOutlineCursor()
+{
+    TextDocument* text = currentText();
+    if (m_outlineShowing || !text || !text->outline() || text->outlineOutOfDate()) return;
+    m_outlineView->follow(text->outlineRowAtCursor());
+}
+
+void CyberiadaSMEditorWindow::showOutlineRow(const QModelIndex& index, bool focus)
+{
+    TextDocument* text = currentText();
+    const OutlineEntry* entry = text && text->outline() ? text->outline()->entry(index) : nullptr;
+    if (!entry) return;
+    QPointer<TextDocument> tab(text);
+    QPersistentModelIndex row(index);
+    OutlineEntry named = *entry;
+    // after the event: a reading removes rows the tree may still be handling (EDIT-MD-16)
+    QMetaObject::invokeMethod(this, [this, tab, row, named, focus]() {
+        if (!tab || tab != currentText()) return;
+        m_outlineMessage.clear();
+        m_outlineShowing = true;
+        QModelIndex shown = tab->showOutlineRow(row, named, focus);
+        m_outlineShowing = false;
+        if (shown.isValid()) {
+            m_outlineView->follow(shown);
+            return;
+        }
+        m_outlineMessage = named.isImage() ? tr("The image \"%1\" is no longer in the text").arg(named.target)
+                                           : tr("The heading \"%1\" is no longer in the text").arg(named.title);
+        followOutlineCursor();
+        // at the pointer over the tree, else under the current row
+        QWidget* area = m_outlineView->viewport();
+        QPoint at = area->mapFromGlobal(QCursor::pos());
+        if (!area->rect().contains(at)) at = m_outlineView->visualRect(m_outlineView->currentIndex()).bottomLeft();
+        QToolTip::showText(area->mapToGlobal(at), m_outlineMessage, m_outlineView);
+    }, Qt::QueuedConnection);
+}
+
+void CyberiadaSMEditorWindow::openOutlineDiagram(const QModelIndex& index)
+{
+    TextDocument* text = currentText();
+    const OutlineEntry* entry = text && text->outline() ? text->outline()->entry(index) : nullptr;
+    if (!entry || entry->kind != OutlineEntry::outlineDiagram) return;
+    QString path = entry->graphml;
+    // after the event: the new tab takes the tree from under it
+    QMetaObject::invokeMethod(this, [this, path]() { openLinkedFile(path, QString()); }, Qt::QueuedConnection);
+}
+
+void CyberiadaSMEditorWindow::openOutlineImage(const QModelIndex& index)
+{
+    TextDocument* text = currentText();
+    const OutlineEntry* entry = text && text->outline() ? text->outline()->entry(index) : nullptr;
+    if (!entry || !entry->isImage()) return;
+    QString path = entry->kind == OutlineEntry::outlineDiagram ? entry->svg : markdownImagePath(entry->target, text->baseDir());
+    if (!path.isEmpty()) QDesktopServices::openUrl(QUrl::fromLocalFile(path));
 }
 
 bool CyberiadaSMEditorWindow::eventFilter(QObject* watched, QEvent* event)
@@ -1916,6 +2018,7 @@ bool CyberiadaSMEditorWindow::eventFilter(QObject* watched, QEvent* event)
         if (watched == treeDock) SettingsManager::instance().setShowStructureTree(false);
         if (watched == propertiesDock) SettingsManager::instance().setShowProperties(false);
         if (watched == changesDock) SettingsManager::instance().setShowChanges(false);
+        if (watched == outlineDock) SettingsManager::instance().setShowOutline(false);
     }
     return QMainWindow::eventFilter(watched, event);
 }

@@ -56,6 +56,9 @@ void dumpTabs(CyberiadaSMEditorWindow* win, std::ostream& os);
 class TextDocument;
 // the active text tab: its mode, its file, its state and its lines (EDIT-MODE-16)
 void dumpTextDocument(const TextDocument* doc, std::ostream& os);
+// the outline of a Markdown tab read now, a row per line indented by its level; (none) for
+// another tab or none (EDIT-MD-17)
+void dumpOutline(TextDocument* doc, std::ostream& os);
 
 class DiffDocument;
 // the active diff tab: its sides, the geometry option, the counts and the rows

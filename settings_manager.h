@@ -40,6 +40,9 @@ public:
     void setShowProperties(bool value);
     bool getShowChanges() const { return showChanges; }
     void setShowChanges(bool value);
+    // the outline dock of a Markdown tab, shown by default (EDIT-MD-13)
+    bool getShowOutline() const { return showOutline; }
+    void setShowOutline(bool value);
 
     bool getShowTransitionText() const { return showTransitionText; }
     void setShowTransitionText(bool value);
@@ -221,6 +224,7 @@ signals:
     void structureTreeChanged(bool);
     void propertiesChanged(bool);
     void changesChanged(bool);
+    void outlineChanged(bool);
     void serviceObjectsChanged(bool);
     void componentCommentsChanged(bool);
     void loggingChanged(bool);
@@ -268,6 +272,7 @@ private:
     bool showStructureTree;
     bool showProperties;
     bool showChanges;
+    bool showOutline;
     bool showServiceObjects;
     bool showComponentComments;
     bool loggingEnabled;

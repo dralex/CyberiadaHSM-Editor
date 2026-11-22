@@ -47,7 +47,7 @@ static const ModeTraits modes[] = {
     { MODE_DIFF,       QT_TRANSLATE_NOOP("DocumentMode", "diff"),   true, true, false, false, modeDockChanges },
     { MODE_TEXT_DIFF,  QT_TRANSLATE_NOOP("DocumentMode", "text diff"), true, false, false, false, modeDockChanges },
     { MODE_TEXT,       QT_TRANSLATE_NOOP("DocumentMode", "text"),   false, false, false, true, 0 },
-    { MODE_MARKDOWN,   "Markdown",                                   false, false, false, true, 0 },
+    { MODE_MARKDOWN,   "Markdown",                                   false, false, false, true, modeDockOutline },
 };
 // a language: the marker is its name
 static const ModeTraits languageTraits = { "", "", false, false, false, true, 0 };
