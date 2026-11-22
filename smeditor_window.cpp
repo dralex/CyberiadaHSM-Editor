@@ -150,6 +150,11 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     connect(actionWrapLines, &QAction::triggered, &SettingsManager::instance(), &SettingsManager::setEditorWrap);
     connect(&SettingsManager::instance(), &SettingsManager::editorWrapChanged, this,
             [this]() { actionWrapLines->setChecked(SettingsManager::instance().getEditorWrap()); });
+    // View > Mode Line: a setting of every source editor (EDIT-MODE-31)
+    actionModeLine->setChecked(SettingsManager::instance().getShowModeLine());
+    connect(actionModeLine, &QAction::triggered, &SettingsManager::instance(), &SettingsManager::setShowModeLine);
+    connect(&SettingsManager::instance(), &SettingsManager::modeLineChanged, this,
+            [this]() { actionModeLine->setChecked(SettingsManager::instance().getShowModeLine()); });
     connect(actionUpdateDiagramImages, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotUpdateDiagramImages);
     // Edit > Fill Paragraph, Unfill Paragraph and Fill as You Type, a setting (EDIT-MD-20..22)
     connect(actionFillParagraph, &QAction::triggered, this, [this]() { fillText(false); });
@@ -1089,6 +1094,7 @@ void CyberiadaSMEditorWindow::updateMarkdownActions()
     actionUpdateDiagramImages->setEnabled(markdown && text->hasFile());
     actionPreview->setEnabled(markdown);
     actionWrapLines->setEnabled(text != nullptr);
+    actionModeLine->setEnabled(text != nullptr);
     // the writable source of a text that fills (EDIT-MD-20/22)
     bool fills = text && text->fillKind() != textFillNone;
     actionFillParagraph->setEnabled(fills && text->canFill());

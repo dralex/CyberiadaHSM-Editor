@@ -79,6 +79,7 @@ private slots:
 	void test_mode_toolbars();
 	void test_open_file_mode();
 	void test_wrap_action();
+	void test_mode_line_action();
 	void test_compare_saved();
 	void test_compare_refresh();
 	void test_compare_tab();
@@ -466,6 +467,31 @@ void TestModes::test_wrap_action()
 	sm.setEditorWrap(false);
 	QVERIFY(!window.actionWrapLines->isChecked());
 	QVERIFY(!window.currentText()->editor()->wrapLines());
+}
+
+// EDIT-MODE-31: View > Mode Line, checkable, on, enabled in a text tab, the setting both ways; the
+// source beside the preview keeps its mode line
+void TestModes::test_mode_line_action()
+{
+	SettingsManager& sm = SettingsManager::instance();
+	CyberiadaSMEditorWindow window;
+	QVERIFY(window.menuView->actions().contains(window.actionModeLine));
+	QVERIFY(window.actionModeLine->isCheckable() && window.actionModeLine->isChecked());
+	QVERIFY(!window.actionModeLine->isEnabled());
+	QVERIFY(window.openFile("texts/notes.md"));
+	QVERIFY(window.actionModeLine->isEnabled());
+	TextDocument* text = window.currentText();
+	QVERIFY(text->editor()->modeLineText().startsWith("--   notes.md   (1,1)   Markdown"));
+	window.actionModeLine->trigger();
+	QVERIFY(!sm.getShowModeLine());
+	QVERIFY(!text->editor()->modeLineShown());
+	sm.setShowModeLine(true);
+	QVERIFY(window.actionModeLine->isChecked());
+	QVERIFY(text->editor()->modeLineShown());
+	sm.setMarkdownPreview(true);
+	QVERIFY(text->showsPreview());
+	QVERIFY(text->editor()->modeLineShown());
+	sm.setMarkdownPreview(false);
 }
 
 // EDIT-MODE-13: File > Open shows first the files of the active tab's mode, a text diff's language

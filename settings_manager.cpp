@@ -114,6 +114,7 @@ void SettingsManager::load() {
     editorWrap = s.value("display/editorWrap", EDITOR_LINES_SCROLL).toString() == EDITOR_LINES_WRAP;
     textWidth = qBound(TEXT_WIDTH_MIN, s.value("editor/textWidth", TEXT_WIDTH_DEFAULT).toInt(), TEXT_WIDTH_MAX);
     fillAsYouType = s.value("editor/fillAsYouType", false).toBool();
+    showModeLine = s.value("display/showModeLine", true).toBool();
     boldActionPrefix = s.value("display/boldActionPrefix", true).toBool();
     boldEventName = s.value("display/boldEventName", true).toBool();
     boldTransitionEventName = s.value("display/boldTransitionEventName", true).toBool();
@@ -211,6 +212,7 @@ void SettingsManager::loadDefaults()
     setEditorWrap(false);
     setTextWidth(TEXT_WIDTH_DEFAULT);
     setFillAsYouType(false);
+    setShowModeLine(true);
     setBoldActionPrefix(true);
     setBoldEventName(true);
     setBoldTransitionEventName(true);
@@ -294,6 +296,15 @@ void SettingsManager::overrideTextWidth(int value)
     if (textWidth != value) {
         textWidth = value;
         emit textFillChanged();
+    }
+}
+
+void SettingsManager::setShowModeLine(bool value)
+{
+    if (showModeLine != value) {
+        showModeLine = value;
+        QSettings().setValue("display/showModeLine", value);
+        emit modeLineChanged();
     }
 }
 

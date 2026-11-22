@@ -120,7 +120,19 @@ TextDocument::TextDocument(const QString& mode, QObject* parent):
     m_outlineTimer->setInterval(MARKDOWN_OUTLINE_INTERVAL_MS);
     connect(m_outlineTimer, &QTimer::timeout, this, &TextDocument::readOutline);
     connect(m_document, &QTextDocument::contentsChanged, this, &TextDocument::markOutline);
+    // the mode line follows the clean state, the file, the mode and the flags (EDIT-MODE-31)
+    connect(m_undo, &QUndoStack::cleanChanged, this, &TextDocument::updateModeLine);
+    connect(this, &EditorDocument::titleChanged, this, &TextDocument::updateModeLine);
+    connect(this, &EditorDocument::modeChanged, this, &TextDocument::updateModeLine);
+    connect(this, &EditorDocument::readOnlyChanged, this, &TextDocument::updateModeLine);
     applyMode();
+    updateModeLine();
+}
+
+void TextDocument::updateModeLine()
+{
+    QString state = !isEditable() ? "%%" : isClean() ? "--" : "**";
+    m_editor->setModeLineHead(state, title(), modeName(m_mode));
 }
 
 // the page (and the editor with it) belongs to no widget parent
@@ -464,6 +476,11 @@ int TextDocument::currentLine() const
     return m_editor->textCursor().blockNumber() + 1;
 }
 
+int TextDocument::currentColumn() const
+{
+    return m_editor->cursorColumn();
+}
+
 QString TextDocument::baseDir() const
 {
     return hasFile() ? QFileInfo(m_path).absolutePath() : QString();
@@ -484,6 +501,7 @@ void TextDocument::setLocked(bool on)
 {
     m_locked = on;
     m_editor->setReadOnly(readOnlyFlag() || on);
+    updateModeLine();
 }
 
 bool TextDocument::replaceText(const QString& text, const QString& label)

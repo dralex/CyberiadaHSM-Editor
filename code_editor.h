@@ -35,7 +35,7 @@
 struct TextScheme;
 
 // The text of a text tab (docs/MODES.md, Text tabs): the line numbers in a margin, an
-// error bar under the text; Undo and Redo belong to the window, so the undo stack of the
+// error bar and a mode line under the text; Undo and Redo belong to the window, so the undo stack of the
 // tab is the one the edits go through (EDIT-MODE-13)
 class CodeEditor : public QPlainTextEdit {
     Q_OBJECT
@@ -83,6 +83,24 @@ public:
     void paintFringe(QPaintEvent* event);
     // the rows of the visible blocks that continue on the next row, in viewport coordinates
     QVector<QRectF> continuationRows() const;
+    // the mode line under the text and the error bar (EDIT-MODE-31): the state (--, **, %%),
+    // the name and the mode come from the document of a text tab, an editor without them has
+    // none (a text diff side, the scheme preview); the position, the fill and the selection
+    // are the editor's own; View > Mode Line shows or hides it
+    void setModeLineHead(const QString& state, const QString& name, const QString& mode);
+    bool modeLineShown() const;
+    // the bar, 0 high when not shown
+    int  modeLineHeight() const;
+    void paintModeLine(QPaintEvent* event);
+    // the parts as drawn, three spaces apart; the rect of the fill part in the bar, empty
+    // without one; its tooltip
+    QString modeLineText() const;
+    QRect   modeLineFillRect() const;
+    QString modeLineToolTip(const QPoint& pos) const;
+    // a click in the bar: on the fill part it switches Fill as You Type (EDIT-MD-22)
+    void    modeLineClicked(const QPoint& pos);
+    // the column of the cursor from 1, a tab to the next stop (EDIT-MODE-31, EDIT-MD-19)
+    int  cursorColumn() const;
 
 signals:
     // the bar is clicked
@@ -123,12 +141,27 @@ private:
     void autoFill();
     void placeLineNumbers();
     void placeFringe();
+    void placeModeLine();
+    // a part of the mode line: its text, its font and color, its place in the bar
+    struct ModeLinePart {
+        QString text;
+        bool    bold = false;
+        bool    dim = false;
+        bool    fill = false;
+        QRect   rect;
+    };
+    QVector<ModeLinePart> modeLineParts() const;
     // the hand over a link target while Ctrl is held, the editor's pointer elsewhere
     void updateLinkPointer(const QPoint& pos, bool ctrl);
 
     QWidget* lineNumbers;
     QWidget* errorBar;
     QWidget* fringe;
+    QWidget* modeLine;
+    bool m_hasModeLine = false;
+    QString m_modeState;
+    QString m_modeName;
+    QString m_modeMode;
     int m_errorLine = 0;
     QString m_errorMessage;
     AutoreplaceKind m_kind = autoreplaceNone;

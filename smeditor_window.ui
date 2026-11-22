@@ -252,6 +252,7 @@
     <addaction name="actionComponentComments"/>
     <addaction name="actionPreview"/>
     <addaction name="actionWrapLines"/>
+    <addaction name="actionModeLine"/>
     <addaction name="actionSnapMode"/>
     <addaction name="actionLogSession"/>
     <addaction name="separator"/>
@@ -417,6 +418,17 @@
    </property>
    <property name="toolTip">
     <string>Export again the diagram images of the text whose diagrams changed</string>
+   </property>
+  </action>
+  <action name="actionModeLine">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Mode Line</string>
+   </property>
+   <property name="toolTip">
+    <string>Show the line of the state, the cursor position and the mode under the text editors</string>
    </property>
   </action>
   <action name="actionWrapLines">

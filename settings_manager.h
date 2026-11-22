@@ -113,6 +113,9 @@ public:
     void overrideTextWidth(int value);
     bool getFillAsYouType() const { return fillAsYouType; }
     void setFillAsYouType(bool value);
+    // the mode line under a source editor (EDIT-MODE-31)
+    bool getShowModeLine() const { return showModeLine; }
+    void setShowModeLine(bool value);
 
     // the reserved parts of an action are drawn bold: the entry/exit/do keyword
     // prefix, the internal transition event name, and the edge transition event
@@ -244,6 +247,7 @@ signals:
     void editorCursorChanged();
     void editorWrapChanged();
     void textFillChanged();
+    void modeLineChanged();
     void highlightSettingsChanged();
     void renderMarkdownCommentsChanged(bool);
     void markdownPreviewChanged(bool);
@@ -306,6 +310,7 @@ private:
     bool editorWrap = false;
     int textWidth = TEXT_WIDTH_DEFAULT;
     bool fillAsYouType = false;
+    bool showModeLine = true;
 
     // files
     QString interfaceLanguage;

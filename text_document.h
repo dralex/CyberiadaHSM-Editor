@@ -113,6 +113,8 @@ public:
     bool             goToLine(int line, int column = 1, bool focus = true);
     int              lineCount() const;
     int              currentLine() const;
+    // the column of the cursor from 1, a tab to the next stop (EDIT-MODE-31)
+    int              currentColumn() const;
     // the directory of the file, where the Markdown images are found; empty without a file
     QString          baseDir() const;
     // the rendered Markdown text saved as a PDF (EDIT-MODE-18)
@@ -195,6 +197,8 @@ private:
     // the cursor on the source line of the heading an anchor names; false when none
     bool             goToHeading(const QString& anchor);
     bool             fillRange(int anchor, int position, bool unfill, bool select);
+    // the state, the name and the mode on the mode line of the source (EDIT-MODE-31)
+    void             updateModeLine();
     // the outline made or dropped with the Markdown mode
     void             applyOutline();
     // a change: the outline out of date, its reading started when shown and not waiting already

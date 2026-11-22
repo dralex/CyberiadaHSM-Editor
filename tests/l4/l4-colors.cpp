@@ -73,6 +73,7 @@ private slots:
 	void test_page_font();
 	void test_editor_cursor();
 	void test_editor_wrap();
+	void test_mode_line();
 
 private:
 	static QPushButton* button(QWidget* parent, const char* name) { return parent->findChild<QPushButton*>(name); }
@@ -98,6 +99,9 @@ void TestColors::init()
 	s.remove("display/editorFontSize");
 	s.remove("display/editorCursor");
 	s.remove("display/editorWrap");
+	s.remove("display/showModeLine");
+	s.remove("editor/textWidth");
+	s.remove("editor/fillAsYouType");
 	SettingsManager::instance().load();
 }
 
@@ -678,6 +682,101 @@ void TestColors::test_editor_wrap()
 	dialog.findChild<QDialogButtonBox*>()->button(QDialogButtonBox::Reset)->click();
 	QVERIFY(!sm.getEditorWrap() && !editor->wrapLines());
 	QVERIFY(!wrap->currentData().toBool());
+}
+
+// EDIT-MODE-31: the parts of the mode line by the mode, the position with a tab, the state after
+// an edit, an undo to clean and read-only, the selection count, the fill part and its click, the
+// error bar above it, none on a diff side and the scheme preview, the scheme colors, the setting
+void TestColors::test_mode_line()
+{
+	SettingsManager& sm = SettingsManager::instance();
+	QVERIFY(sm.getShowModeLine());
+	TextDocument doc(MODE_MARKDOWN);
+	CodeEditor* editor = doc.editor();
+	QWidget* bar = editor->findChild<QWidget*>("modeLine");
+	QVERIFY(bar);
+	QVERIFY(editor->modeLineShown());
+	QVERIFY(editor->modeLineHeight() > 0);
+	QCOMPARE(editor->modeLineText(), QString("--   untitled   (1,1)   Markdown   Fill 90"));
+	// a tab counts to the next stop of 4, as the text width does
+	QTest::keyClicks(editor, "ab\tc");
+	QCOMPARE(doc.currentColumn(), 6);
+	QCOMPARE(editor->modeLineText(), QString("**   untitled   (1,6)   Markdown   Fill 90"));
+	while (doc.undoStack()->canUndo()) doc.undoStack()->undo();
+	QCOMPARE(editor->modeLineText(), QString("--   untitled   (1,1)   Markdown   Fill 90"));
+	// a selection: its characters, a line break one
+	doc.setText("one\ntwo");
+	editor->selectAll();
+	QCOMPARE(editor->modeLineText(), QString("--   untitled   (2,4)   Markdown   Fill 90   7 selected"));
+	doc.setReadOnlyFlag(true);
+	QVERIFY(editor->modeLineText().startsWith("%%   "));
+	doc.setReadOnlyFlag(false);
+	doc.setLocked(true);
+	QVERIFY(editor->modeLineText().startsWith("%%   "));
+	doc.setLocked(false);
+	QVERIFY(editor->modeLineText().startsWith("--   "));
+
+	// the fill part: dim while off, a click switches it, the width follows
+	QRect fill = editor->modeLineFillRect();
+	QVERIFY(fill.isValid());
+	QVERIFY(editor->modeLineToolTip(fill.center()).contains("off"));
+	QVERIFY(editor->modeLineToolTip(QPoint(1, 1)).isEmpty());
+	editor->modeLineClicked(QPoint(1, 1));
+	QVERIFY(!sm.getFillAsYouType());
+	doc.page()->resize(800, 300);
+	doc.page()->show();
+	QVERIFY(QTest::qWaitForWindowExposed(doc.page()));
+	QVERIFY(bar->isVisible());
+	QTest::mouseClick(bar, Qt::LeftButton, Qt::NoModifier, editor->modeLineFillRect().center());
+	QVERIFY(sm.getFillAsYouType());
+	QVERIFY(editor->modeLineToolTip(editor->modeLineFillRect().center()).contains("on"));
+	sm.setTextWidth(72);
+	QVERIFY(editor->modeLineText().contains("Fill 72"));
+	sm.setFillAsYouType(false);
+	sm.setTextWidth(TEXT_WIDTH_DEFAULT);
+	// the colors of the line numbers in every scheme
+	for (const char* id : { "white", "dark" }) {
+		sm.setTextScheme(id);
+		QImage image = bar->grab().toImage();
+		QCOMPARE(QColor(image.pixel(image.width() - 2, image.height() / 2)),
+				 builtinTextScheme(id).color(textSchemeLineNumbersBackground));
+		QCOMPARE(QColor(image.pixel(image.width() / 2, 0)), builtinTextScheme(id).color(textSchemeLineNumbers));
+	}
+	sm.setTextScheme(TEXT_SCHEME_DEFAULT);
+	// under the text and the error bar
+	QCOMPARE(bar->geometry().top(), editor->viewport()->geometry().bottom() + 1 + editor->errorBarHeight());
+	editor->setError(1, "a message");
+	QVERIFY(editor->errorBarHeight() > 0);
+	QCOMPARE(bar->geometry().top(), editor->viewport()->geometry().bottom() + 1 + editor->errorBarHeight());
+	editor->setError(0, QString());
+	doc.page()->hide();
+
+	// the mode of each tab; no fill but in Markdown and Plain text
+	TextDocument plain(MODE_TEXT);
+	QCOMPARE(plain.editor()->modeLineText(), QString("--   untitled   (1,1)   Plain text   Fill 90"));
+	TextDocument cpp("cpp");
+	QCOMPARE(cpp.editor()->modeLineText(), QString("--   untitled   (1,1)   C++"));
+	QVERIFY(!cpp.editor()->modeLineFillRect().isValid());
+	TextDocument json(LANGUAGE_JSON);
+	QCOMPARE(json.editor()->modeLineText(), QString("--   untitled   (1,1)   JSON"));
+	QVERIFY(json.setMode(MODE_MARKDOWN));
+	QCOMPARE(json.editor()->modeLineText(), QString("--   untitled   (1,1)   Markdown   Fill 90"));
+	// a text diff side and the scheme preview have none
+	DiffTextPane side;
+	QVERIFY(!side.modeLineShown());
+	QCOMPARE(side.modeLineHeight(), 0);
+	PreferencesDialog dialog;
+	QVERIFY(!dialog.textSchemePanel()->preview()->modeLineShown());
+
+	// View > Mode Line: the setting hides it in every editor, stored, Reset shows it
+	sm.setShowModeLine(false);
+	QVERIFY(!editor->modeLineShown());
+	QCOMPARE(editor->modeLineHeight(), 0);
+	QVERIFY(editor->modeLineText().isEmpty());
+	QVERIFY(!QSettings().value("display/showModeLine").toBool());
+	dialog.findChild<QDialogButtonBox*>()->button(QDialogButtonBox::Reset)->click();
+	QVERIFY(sm.getShowModeLine());
+	QVERIFY(editor->modeLineShown());
 }
 
 QTEST_MAIN(TestColors)

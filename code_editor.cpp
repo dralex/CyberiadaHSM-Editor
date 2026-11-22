@@ -49,6 +49,9 @@ static const qreal FRINGE_PEN_DIVISOR = 8.0;
 static const qreal FRINGE_HEAD_DIVISOR = 3.0;
 // the space above and below the text of the error bar, in pixels
 static const int ERROR_BAR_PADDING = 3;
+// the mode line: the space above and below its text, the spaces between its parts
+static const int MODE_LINE_PADDING = 3;
+static const int MODE_LINE_GAP_SPACES = 3;
 
 class LineNumberArea : public QWidget {
 public:
@@ -87,9 +90,44 @@ private:
     CodeEditor* editor;
 };
 
+// the state, the position, the mode, the fill and the selection under the text (EDIT-MODE-31)
+class ModeLineBar : public QWidget {
+public:
+    ModeLineBar(CodeEditor* editor): QWidget(editor), editor(editor)
+    {
+        setObjectName("modeLine");
+        setMouseTracking(true);
+        hide();
+    }
+protected:
+    void paintEvent(QPaintEvent* event) override { editor->paintModeLine(event); }
+    void mousePressEvent(QMouseEvent* event) override
+    {
+        if (event->button() == Qt::LeftButton) editor->modeLineClicked(event->pos());
+    }
+    void mouseMoveEvent(QMouseEvent* event) override
+    {
+        if (editor->modeLineFillRect().contains(event->pos())) setCursor(Qt::PointingHandCursor);
+        else unsetCursor();
+    }
+    bool event(QEvent* event) override
+    {
+        if (event->type() == QEvent::ToolTip) {
+            QHelpEvent* help = static_cast<QHelpEvent*>(event);
+            QString tip = editor->modeLineToolTip(help->pos());
+            if (tip.isEmpty()) QToolTip::hideText();
+            else QToolTip::showText(help->globalPos(), tip, this);
+            return true;
+        }
+        return QWidget::event(event);
+    }
+private:
+    CodeEditor* editor;
+};
+
 CodeEditor::CodeEditor(QWidget* parent):
     QPlainTextEdit(parent), lineNumbers(new LineNumberArea(this)), errorBar(new ErrorBar(this)),
-    fringe(new WrapFringe(this))
+    fringe(new WrapFringe(this)), modeLine(new ModeLineBar(this))
 {
     // the text editor font, not the diagram one (EDIT-MODE-27)
     setFont(FontManager::instance().editorFont());
@@ -108,6 +146,12 @@ CodeEditor::CodeEditor(QWidget* parent):
     m_wrap = SettingsManager::instance().getEditorWrap();
     connect(&SettingsManager::instance(), &SettingsManager::editorWrapChanged, this,
             [this]() { setWrapLines(SettingsManager::instance().getEditorWrap()); });
+    // the mode line follows the cursor, the fill and View > Mode Line (EDIT-MODE-31)
+    connect(this, &QPlainTextEdit::cursorPositionChanged, modeLine, QOverload<>::of(&QWidget::update));
+    connect(this, &QPlainTextEdit::selectionChanged, modeLine, QOverload<>::of(&QWidget::update));
+    connect(&SettingsManager::instance(), &SettingsManager::textFillChanged, modeLine,
+            QOverload<>::of(&QWidget::update));
+    connect(&SettingsManager::instance(), &SettingsManager::modeLineChanged, this, &CodeEditor::updateMargin);
     applyFontMetrics();
     applyWrap();
 }
@@ -168,8 +212,9 @@ int CodeEditor::lineNumberAreaWidth() const
 
 void CodeEditor::updateMargin()
 {
-    setViewportMargins(lineNumberAreaWidth(), 0, fringeWidth(), errorBarHeight());
+    setViewportMargins(lineNumberAreaWidth(), 0, fringeWidth(), errorBarHeight() + modeLineHeight());
     placeErrorBar();
+    placeModeLine();
     placeFringe();
 }
 
@@ -286,6 +331,132 @@ void CodeEditor::paintErrorBar(QPaintEvent* event)
                      fontMetrics().elidedText(m_errorMessage, Qt::ElideRight, text.width()));
 }
 
+void CodeEditor::setModeLineHead(const QString& state, const QString& name, const QString& mode)
+{
+    bool shown = modeLineShown();
+    m_hasModeLine = true;
+    m_modeState = state;
+    m_modeName = name;
+    m_modeMode = mode;
+    if (modeLineShown() != shown) updateMargin();
+    modeLine->update();
+}
+
+bool CodeEditor::modeLineShown() const
+{
+    return m_hasModeLine && SettingsManager::instance().getShowModeLine();
+}
+
+int CodeEditor::modeLineHeight() const
+{
+    return modeLineShown() ? fontMetrics().height() + 2 * MODE_LINE_PADDING : 0;
+}
+
+// under the error bar, the fringe column too, left of a vertical scroll bar
+void CodeEditor::placeModeLine()
+{
+    QRect cr = contentsRect();
+    QRect view = viewport()->geometry();
+    modeLine->setGeometry(QRect(cr.left(), view.bottom() + 1 + errorBarHeight(),
+                                view.right() + 1 + fringeWidth() - cr.left(), modeLineHeight()));
+    modeLine->setVisible(modeLineShown());
+    modeLine->raise();
+}
+
+int CodeEditor::cursorColumn() const
+{
+    QTextCursor cursor = textCursor();
+    return textColumns(cursor.block().text().left(cursor.positionInBlock())) + 1;
+}
+
+QVector<CodeEditor::ModeLinePart> CodeEditor::modeLineParts() const
+{
+    QVector<ModeLinePart> parts;
+    if (!modeLineShown()) return parts;
+    SettingsManager& sm = SettingsManager::instance();
+    QTextCursor cursor = textCursor();
+    auto add = [&parts](const QString& text, bool bold, bool dim, bool fill) {
+        ModeLinePart part;
+        part.text = text;
+        part.bold = bold;
+        part.dim = dim;
+        part.fill = fill;
+        parts << part;
+    };
+    add(m_modeState, false, false, false);
+    add(m_modeName, true, false, false);
+    add(QString("(%1,%2)").arg(cursor.blockNumber() + 1).arg(cursorColumn()), false, false, false);
+    add(m_modeMode, false, false, false);
+    // the fill of a Markdown or a Plain text: bold while on, dim while off (EDIT-MD-22)
+    if (m_fillKind != textFillNone) {
+        bool on = sm.getFillAsYouType();
+        add(tr("Fill %1").arg(sm.getTextWidth()), on, !on, true);
+    }
+    // the characters of a selection, a line break one
+    if (cursor.hasSelection()) add(tr("%1 selected").arg(cursor.selectedText().toUcs4().size()), false, false, false);
+    int x = LINE_NUMBER_PADDING;
+    int gap = fontMetrics().horizontalAdvance(' ') * MODE_LINE_GAP_SPACES;
+    for (ModeLinePart& part : parts) {
+        QFont f = font();
+        f.setBold(part.bold);
+        int width = QFontMetrics(f).horizontalAdvance(part.text);
+        part.rect = QRect(x, 0, width, modeLineHeight());
+        x += width + gap;
+    }
+    return parts;
+}
+
+QString CodeEditor::modeLineText() const
+{
+    QStringList texts;
+    for (const ModeLinePart& part : modeLineParts()) texts << part.text;
+    return texts.join(QString(MODE_LINE_GAP_SPACES, ' '));
+}
+
+QRect CodeEditor::modeLineFillRect() const
+{
+    for (const ModeLinePart& part : modeLineParts()) {
+        if (part.fill) return part.rect;
+    }
+    return QRect();
+}
+
+QString CodeEditor::modeLineToolTip(const QPoint& pos) const
+{
+    if (!modeLineFillRect().contains(pos)) return QString();
+    SettingsManager& sm = SettingsManager::instance();
+    return sm.getFillAsYouType() ? tr("Fill as you type at %1 characters is on: click to switch it off").arg(sm.getTextWidth())
+                                 : tr("Fill as you type at %1 characters is off: click to switch it on").arg(sm.getTextWidth());
+}
+
+void CodeEditor::modeLineClicked(const QPoint& pos)
+{
+    if (!modeLineFillRect().contains(pos)) return;
+    SettingsManager& sm = SettingsManager::instance();
+    sm.setFillAsYouType(!sm.getFillAsYouType());
+}
+
+// the line-number colors of the scheme, a rule above, the text color (EDIT-COLOR-1)
+void CodeEditor::paintModeLine(QPaintEvent* event)
+{
+    QPainter painter(modeLine);
+    painter.fillRect(event->rect(), palette().color(QPalette::AlternateBase));
+    painter.setPen(palette().color(QPalette::PlaceholderText));
+    painter.drawLine(0, 0, modeLine->width(), 0);
+    int right = modeLine->width() - LINE_NUMBER_PADDING;
+    for (const ModeLinePart& part : modeLineParts()) {
+        if (part.rect.left() >= right) break;
+        QFont f = font();
+        f.setBold(part.bold);
+        painter.setFont(f);
+        painter.setPen(palette().color(part.dim ? QPalette::PlaceholderText : QPalette::Text));
+        QRect place = part.rect;
+        place.setRight(qMin(place.right(), right));
+        painter.drawText(place, Qt::AlignLeft | Qt::AlignVCenter,
+                         QFontMetrics(f).elidedText(part.text, Qt::ElideRight, place.width() + 1));
+    }
+}
+
 void CodeEditor::updateLineNumbers(const QRect& rect, int dy)
 {
     if (dy) lineNumbers->scroll(0, dy);
@@ -303,6 +474,7 @@ void CodeEditor::resizeEvent(QResizeEvent* event)
     QPlainTextEdit::resizeEvent(event);
     placeLineNumbers();
     placeErrorBar();
+    placeModeLine();
     placeFringe();
 }
 
