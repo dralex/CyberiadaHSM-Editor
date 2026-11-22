@@ -56,7 +56,27 @@
 <context>
     <name>CodeEditor</name>
     <message>
-        <location filename="../code_editor.cpp" line="+389"/>
+        <location filename="../code_editor.cpp" line="+393"/>
+        <source>Fill %1</source>
+        <translation type="unfinished">Перенос %1</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>%1 selected</source>
+        <translation type="unfinished">выделено %1</translation>
+    </message>
+    <message>
+        <location line="+32"/>
+        <source>Fill as you type at %1 characters is on: click to switch it off</source>
+        <translation type="unfinished">Перенос при вводе по %1 символов включён: щёлкните, чтобы выключить</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Fill as you type at %1 characters is off: click to switch it on</source>
+        <translation type="unfinished">Перенос при вводе по %1 символов выключен: щёлкните, чтобы включить</translation>
+    </message>
+    <message>
+        <location line="+132"/>
         <source>%1
 Ctrl+click to open</source>
         <translation>%1
@@ -207,7 +227,7 @@ Ctrl+щелчок — открыть</translation>
 <context>
     <name>CyberiadaSMEditorWindow</name>
     <message>
-        <location filename="../smeditor_window.cpp" line="+197"/>
+        <location filename="../smeditor_window.cpp" line="+202"/>
         <source>Output panel</source>
         <translation>Панель вывода</translation>
     </message>
@@ -251,7 +271,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Markdown</translation>
     </message>
     <message>
-        <location line="+1113"/>
+        <location line="+1114"/>
         <source>Undo</source>
         <translation>Отменить</translation>
     </message>
@@ -374,8 +394,8 @@ Ctrl+щелчок — открыть</translation>
         <translation>нет документа</translation>
     </message>
     <message>
-        <location line="-1855"/>
-        <location line="+1865"/>
+        <location line="-1856"/>
+        <location line="+1866"/>
         <source>a plugin is running on the document</source>
         <translation>для документа выполняется плагин</translation>
     </message>
@@ -384,8 +404,8 @@ Ctrl+щелчок — открыть</translation>
         <translation type="vanished">в режиме инспектора документ доступен только для чтения</translation>
     </message>
     <message>
-        <location line="-1831"/>
-        <location line="+1868"/>
+        <location line="-1832"/>
+        <location line="+1869"/>
         <source>the document cannot be encoded</source>
         <translation>не удалось сериализовать документ</translation>
     </message>
@@ -417,7 +437,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Плагин: %1</translation>
     </message>
     <message>
-        <location line="-2285"/>
+        <location line="-2286"/>
         <source>Mode</source>
         <translation>Режим</translation>
     </message>
@@ -427,18 +447,18 @@ Ctrl+щелчок — открыть</translation>
         <translation>режим %1 недоступен</translation>
     </message>
     <message>
-        <location line="+1881"/>
+        <location line="+1882"/>
         <source>the inspection tab is read-only</source>
         <translation>вкладка инспекции доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1860"/>
-        <location line="+1861"/>
+        <location line="-1861"/>
+        <location line="+1862"/>
         <source>the tab is read-only</source>
         <translation>вкладка доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-2028"/>
+        <location line="-2029"/>
         <source>Text file</source>
         <translation>Текстовый файл</translation>
     </message>
@@ -482,7 +502,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Автомат не нарушает ни одного правила EXT-FA.</translation>
     </message>
     <message>
-        <location line="+730"/>
+        <location line="+731"/>
         <source>%1: not an element of a finite automaton</source>
         <translation>%1: не элемент конечного автомата</translation>
     </message>
@@ -511,12 +531,12 @@ Ctrl+щелчок — открыть</translation>
         <translation>Все файлы (*)</translation>
     </message>
     <message>
-        <location line="-1455"/>
+        <location line="-1456"/>
         <source>Refresh</source>
         <translation>Обновить</translation>
     </message>
     <message>
-        <location line="+1140"/>
+        <location line="+1141"/>
         <source>Element</source>
         <translation>Элемент</translation>
     </message>
@@ -526,7 +546,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Изменение</translation>
     </message>
     <message>
-        <location line="-1046"/>
+        <location line="-1047"/>
         <source>a diff tab is opened by Document &gt; Compare with...</source>
         <translation>вкладку сравнения открывает «Документ &gt; Сравнить с...»</translation>
     </message>
@@ -551,7 +571,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Номер строки:</translation>
     </message>
     <message>
-        <location line="+47"/>
+        <location line="+48"/>
         <source>The text has no file yet. The inserted files are saved in its folder, so the text is saved first.</source>
         <translation type="unfinished">У текста ещё нет файла. Вставляемые файлы сохраняются в его папке, поэтому сначала текст будет сохранён.</translation>
     </message>
@@ -3911,7 +3931,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Вид</translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+25"/>
         <source>Help</source>
         <translation>Справка</translation>
     </message>
@@ -3979,6 +3999,16 @@ Ctrl+щелчок — открыть</translation>
         <location line="+3"/>
         <source>Export again the diagram images of the text whose diagrams changed</source>
         <translation type="unfinished">Заново экспортировать изображения диаграмм текста, чьи диаграммы изменились</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Mode Line</source>
+        <translation type="unfinished">Строка режима</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Show the line of the state, the cursor position and the mode under the text editors</source>
+        <translation type="unfinished">Показывать под текстовыми редакторами строку состояния, позиции курсора и режима</translation>
     </message>
     <message>
         <location line="+8"/>
@@ -4484,7 +4514,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Новый текст Markdown</translation>
     </message>
     <message>
-        <location line="-957"/>
+        <location line="-969"/>
         <source>New</source>
         <translation>Создать</translation>
     </message>
@@ -4493,7 +4523,7 @@ Ctrl+щелчок — открыть</translation>
         <translation type="vanished">Новый файл</translation>
     </message>
     <message>
-        <location line="+969"/>
+        <location line="+981"/>
         <source>Service objects</source>
         <translation>Служебные объекты</translation>
     </message>
@@ -4828,7 +4858,7 @@ Ctrl+щелчок — открыть</translation>
 <context>
     <name>TextDocument</name>
     <message>
-        <location filename="../text_document.cpp" line="+207"/>
+        <location filename="../text_document.cpp" line="+219"/>
         <source>Line %1, column %2: %3</source>
         <translation>Строка %1, столбец %2: %3</translation>
     </message>
@@ -4843,7 +4873,7 @@ Ctrl+щелчок — открыть</translation>
         <translation type="unfinished">переформатирование абзаца</translation>
     </message>
     <message>
-        <location line="+123"/>
+        <location line="+129"/>
         <source>untitled</source>
         <translation>без имени</translation>
     </message>
