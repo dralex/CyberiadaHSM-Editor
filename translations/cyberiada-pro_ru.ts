@@ -202,7 +202,7 @@ Ctrl+щелчок — открыть</translation>
 <context>
     <name>CyberiadaSMEditorWindow</name>
     <message>
-        <location filename="../smeditor_window.cpp" line="+179"/>
+        <location filename="../smeditor_window.cpp" line="+186"/>
         <source>Output panel</source>
         <translation>Панель вывода</translation>
     </message>
@@ -212,7 +212,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Менеджер плагинов...</translation>
     </message>
     <message>
-        <location line="+271"/>
+        <location line="+275"/>
         <source>Close</source>
         <translation>Закрыть</translation>
     </message>
@@ -231,7 +231,7 @@ Ctrl+щелчок — открыть</translation>
 </translation>
     </message>
     <message>
-        <location line="+112"/>
+        <location line="+114"/>
         <source>Undefined</source>
         <translation>Не задан</translation>
     </message>
@@ -292,7 +292,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Выполняются плагины. Остановить их и выйти?</translation>
     </message>
     <message>
-        <location line="+163"/>
+        <location line="+253"/>
         <source>Load State Machine</source>
         <translation>Загрузка машины состояний</translation>
     </message>
@@ -369,8 +369,8 @@ Ctrl+щелчок — открыть</translation>
         <translation>нет документа</translation>
     </message>
     <message>
-        <location line="-1751"/>
-        <location line="+1761"/>
+        <location line="-1841"/>
+        <location line="+1851"/>
         <source>a plugin is running on the document</source>
         <translation>для документа выполняется плагин</translation>
     </message>
@@ -379,8 +379,8 @@ Ctrl+щелчок — открыть</translation>
         <translation type="vanished">в режиме инспектора документ доступен только для чтения</translation>
     </message>
     <message>
-        <location line="-1727"/>
-        <location line="+1764"/>
+        <location line="-1817"/>
+        <location line="+1854"/>
         <source>the document cannot be encoded</source>
         <translation>не удалось сериализовать документ</translation>
     </message>
@@ -412,7 +412,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Плагин: %1</translation>
     </message>
     <message>
-        <location line="-2181"/>
+        <location line="-2271"/>
         <source>Mode</source>
         <translation>Режим</translation>
     </message>
@@ -422,18 +422,18 @@ Ctrl+щелчок — открыть</translation>
         <translation>режим %1 недоступен</translation>
     </message>
     <message>
-        <location line="+1777"/>
+        <location line="+1867"/>
         <source>the inspection tab is read-only</source>
         <translation>вкладка инспекции доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1756"/>
-        <location line="+1757"/>
+        <location line="-1846"/>
+        <location line="+1847"/>
         <source>the tab is read-only</source>
         <translation>вкладка доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1924"/>
+        <location line="-2014"/>
         <source>Text file</source>
         <translation>Текстовый файл</translation>
     </message>
@@ -482,7 +482,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>%1: не элемент конечного автомата</translation>
     </message>
     <message>
-        <location line="+370"/>
+        <location line="+460"/>
         <location line="+26"/>
         <location line="+7"/>
         <source>Save Text</source>
@@ -499,14 +499,14 @@ Ctrl+щелчок — открыть</translation>
         <translation>%1 (*%2)</translation>
     </message>
     <message>
-        <location line="-533"/>
+        <location line="-623"/>
         <location line="+55"/>
-        <location line="+478"/>
+        <location line="+568"/>
         <source>All files (*)</source>
         <translation>Все файлы (*)</translation>
     </message>
     <message>
-        <location line="-1351"/>
+        <location line="-1441"/>
         <source>Refresh</source>
         <translation>Обновить</translation>
     </message>
@@ -723,7 +723,22 @@ Ctrl+щелчок — открыть</translation>
         <translation>Изменения</translation>
     </message>
     <message>
-        <location line="+267"/>
+        <location line="+15"/>
+        <source>Outline</source>
+        <translation type="unfinished">Оглавление</translation>
+    </message>
+    <message>
+        <location line="+96"/>
+        <source>The image &quot;%1&quot; is no longer in the text</source>
+        <translation type="unfinished">Изображения «%1» больше нет в тексте</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>The heading &quot;%1&quot; is no longer in the text</source>
+        <translation type="unfinished">Заголовка «%1» больше нет в тексте</translation>
+    </message>
+    <message>
+        <location line="+245"/>
         <source>Save the diagram first: the metadata records its saved file</source>
         <translation type="unfinished">Сначала сохраните диаграмму: метаданные указывают на её сохранённый файл</translation>
     </message>
@@ -2291,6 +2306,72 @@ Ctrl+щелчок — открыть</translation>
     </message>
 </context>
 <context>
+    <name>MarkdownOutlineModel</name>
+    <message>
+        <location filename="../markdown_outline_model.cpp" line="+289"/>
+        <source>Line %1
+#%2</source>
+        <translation type="unfinished">Строка %1
+#%2</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Line %1, column %2
+%3</source>
+        <translation type="unfinished">Строка %1, столбец %2
+%3</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Line %1, column %2
+%3
+%4
+%5</source>
+        <translation type="unfinished">Строка %1, столбец %2
+%3
+%4
+%5</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>The image is up to date</source>
+        <translation type="unfinished">Изображение актуально</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>The image is out of date</source>
+        <translation type="unfinished">Изображение устарело</translation>
+    </message>
+</context>
+<context>
+    <name>MarkdownOutlineView</name>
+    <message>
+        <location filename="../markdown_outline_view.cpp" line="+142"/>
+        <source>Go to</source>
+        <translation type="unfinished">Перейти</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Open Diagram</source>
+        <translation type="unfinished">Открыть диаграмму</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Open Image</source>
+        <translation type="unfinished">Открыть изображение</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Expand All</source>
+        <translation type="unfinished">Развернуть все</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Collapse All</source>
+        <translation type="unfinished">Свернуть все</translation>
+    </message>
+</context>
+<context>
     <name>MarkdownPdf</name>
     <message>
         <location filename="../markdown_pdf.cpp" line="+61"/>
@@ -2329,17 +2410,17 @@ Ctrl+щелчок — открыть</translation>
     </message>
     <message>
         <location line="+25"/>
-        <location line="+165"/>
+        <location line="+205"/>
         <source>Cannot make the folder %1</source>
         <translation type="unfinished">Не удаётся создать папку %1</translation>
     </message>
     <message>
-        <location line="-160"/>
+        <location line="-200"/>
         <source>Cannot write %1: %2</source>
         <translation type="unfinished">Не удаётся записать %1: %2</translation>
     </message>
     <message>
-        <location line="+178"/>
+        <location line="+218"/>
         <source>No diagram file %1</source>
         <translation type="unfinished">Нет файла диаграммы %1</translation>
     </message>
@@ -3672,7 +3753,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Сбросить положение подписи</translation>
     </message>
     <message>
-        <location filename="../text_document.cpp" line="+56"/>
+        <location filename="../text_document.cpp" line="+57"/>
         <source>typing</source>
         <translation>ввод текста</translation>
     </message>
@@ -4712,7 +4793,7 @@ Ctrl+щелчок — открыть</translation>
 <context>
     <name>TextDocument</name>
     <message>
-        <location filename="../text_document.cpp" line="+133"/>
+        <location filename="../text_document.cpp" line="+204"/>
         <source>Line %1, column %2: %3</source>
         <translation>Строка %1, столбец %2: %3</translation>
     </message>
