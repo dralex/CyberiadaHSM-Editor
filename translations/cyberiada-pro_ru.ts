@@ -56,11 +56,16 @@
 <context>
     <name>CodeEditor</name>
     <message>
-        <location filename="../code_editor.cpp" line="+391"/>
+        <location filename="../code_editor.cpp" line="+389"/>
         <source>%1
 Ctrl+click to open</source>
         <translation>%1
 Ctrl+щелчок — открыть</translation>
+    </message>
+    <message>
+        <location line="+78"/>
+        <source>fill</source>
+        <translation type="unfinished">перенос строки</translation>
     </message>
 </context>
 <context>
@@ -202,7 +207,7 @@ Ctrl+щелчок — открыть</translation>
 <context>
     <name>CyberiadaSMEditorWindow</name>
     <message>
-        <location filename="../smeditor_window.cpp" line="+186"/>
+        <location filename="../smeditor_window.cpp" line="+197"/>
         <source>Output panel</source>
         <translation>Панель вывода</translation>
     </message>
@@ -246,7 +251,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Markdown</translation>
     </message>
     <message>
-        <location line="+1099"/>
+        <location line="+1113"/>
         <source>Undo</source>
         <translation>Отменить</translation>
     </message>
@@ -369,8 +374,8 @@ Ctrl+щелчок — открыть</translation>
         <translation>нет документа</translation>
     </message>
     <message>
-        <location line="-1841"/>
-        <location line="+1851"/>
+        <location line="-1855"/>
+        <location line="+1865"/>
         <source>a plugin is running on the document</source>
         <translation>для документа выполняется плагин</translation>
     </message>
@@ -379,8 +384,8 @@ Ctrl+щелчок — открыть</translation>
         <translation type="vanished">в режиме инспектора документ доступен только для чтения</translation>
     </message>
     <message>
-        <location line="-1817"/>
-        <location line="+1854"/>
+        <location line="-1831"/>
+        <location line="+1868"/>
         <source>the document cannot be encoded</source>
         <translation>не удалось сериализовать документ</translation>
     </message>
@@ -412,7 +417,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Плагин: %1</translation>
     </message>
     <message>
-        <location line="-2271"/>
+        <location line="-2285"/>
         <source>Mode</source>
         <translation>Режим</translation>
     </message>
@@ -422,18 +427,18 @@ Ctrl+щелчок — открыть</translation>
         <translation>режим %1 недоступен</translation>
     </message>
     <message>
-        <location line="+1867"/>
+        <location line="+1881"/>
         <source>the inspection tab is read-only</source>
         <translation>вкладка инспекции доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1846"/>
-        <location line="+1847"/>
+        <location line="-1860"/>
+        <location line="+1861"/>
         <source>the tab is read-only</source>
         <translation>вкладка доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-2014"/>
+        <location line="-2028"/>
         <source>Text file</source>
         <translation>Текстовый файл</translation>
     </message>
@@ -477,7 +482,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Автомат не нарушает ни одного правила EXT-FA.</translation>
     </message>
     <message>
-        <location line="+716"/>
+        <location line="+730"/>
         <source>%1: not an element of a finite automaton</source>
         <translation>%1: не элемент конечного автомата</translation>
     </message>
@@ -506,12 +511,12 @@ Ctrl+щелчок — открыть</translation>
         <translation>Все файлы (*)</translation>
     </message>
     <message>
-        <location line="-1441"/>
+        <location line="-1455"/>
         <source>Refresh</source>
         <translation>Обновить</translation>
     </message>
     <message>
-        <location line="+1126"/>
+        <location line="+1140"/>
         <source>Element</source>
         <translation>Элемент</translation>
     </message>
@@ -521,7 +526,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Изменение</translation>
     </message>
     <message>
-        <location line="-1032"/>
+        <location line="-1046"/>
         <source>a diff tab is opened by Document &gt; Compare with...</source>
         <translation>вкладку сравнения открывает «Документ &gt; Сравнить с...»</translation>
     </message>
@@ -546,7 +551,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Номер строки:</translation>
     </message>
     <message>
-        <location line="+33"/>
+        <location line="+47"/>
         <source>The text has no file yet. The inserted files are saved in its folder, so the text is saved first.</source>
         <translation type="unfinished">У текста ещё нет файла. Вставляемые файлы сохраняются в его папке, поэтому сначала текст будет сохранён.</translation>
     </message>
@@ -2346,7 +2351,7 @@ Ctrl+щелчок — открыть</translation>
 <context>
     <name>MarkdownOutlineView</name>
     <message>
-        <location filename="../markdown_outline_view.cpp" line="+142"/>
+        <location filename="../markdown_outline_view.cpp" line="+148"/>
         <source>Go to</source>
         <translation type="unfinished">Перейти</translation>
     </message>
@@ -3880,7 +3885,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Инструменты</translation>
     </message>
     <message>
-        <location line="+40"/>
+        <location line="+44"/>
         <source>&amp;Document</source>
         <translation>&amp;Документ</translation>
     </message>
@@ -3994,6 +3999,36 @@ Ctrl+щелчок — открыть</translation>
         <location line="+3"/>
         <source>Show the rendered page of a Markdown text beside its source</source>
         <translation type="unfinished">Показывать отформатированную страницу текста Markdown рядом с исходным текстом</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Fill Paragraph</source>
+        <translation type="unfinished">Переформатировать абзац</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Break the lines of the paragraph or the selection at the text width</source>
+        <translation type="unfinished">Разбить строки абзаца или выделения по ширине текста</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Unfill Paragraph</source>
+        <translation type="unfinished">Собрать абзац в строку</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Join the lines of the paragraph or of each paragraph of the selection into one</source>
+        <translation type="unfinished">Объединить строки абзаца или каждого абзаца выделения в одну</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Fill as You Type</source>
+        <translation type="unfinished">Переносить при вводе</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Break a line past the text width when a space or a new line is typed</source>
+        <translation type="unfinished">Переносить строку длиннее ширины текста при вводе пробела или новой строки</translation>
     </message>
     <message>
         <location line="+9"/>
@@ -4449,7 +4484,7 @@ Ctrl+щелчок — открыть</translation>
         <translation>Новый текст Markdown</translation>
     </message>
     <message>
-        <location line="-922"/>
+        <location line="-957"/>
         <source>New</source>
         <translation>Создать</translation>
     </message>
@@ -4458,7 +4493,7 @@ Ctrl+щелчок — открыть</translation>
         <translation type="vanished">Новый файл</translation>
     </message>
     <message>
-        <location line="+934"/>
+        <location line="+969"/>
         <source>Service objects</source>
         <translation>Служебные объекты</translation>
     </message>
@@ -4793,12 +4828,22 @@ Ctrl+щелчок — открыть</translation>
 <context>
     <name>TextDocument</name>
     <message>
-        <location filename="../text_document.cpp" line="+204"/>
+        <location filename="../text_document.cpp" line="+207"/>
         <source>Line %1, column %2: %3</source>
         <translation>Строка %1, столбец %2: %3</translation>
     </message>
     <message>
-        <location line="+240"/>
+        <location line="+165"/>
+        <source>unfill paragraph</source>
+        <translation type="unfinished">сборка абзаца в строку</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>fill paragraph</source>
+        <translation type="unfinished">переформатирование абзаца</translation>
+    </message>
+    <message>
+        <location line="+123"/>
         <source>untitled</source>
         <translation>без имени</translation>
     </message>
@@ -4923,7 +4968,7 @@ Ctrl+щелчок — открыть</translation>
 <context>
     <name>TextSchemePanel</name>
     <message>
-        <location filename="../dialogs/text_scheme_panel.cpp" line="+57"/>
+        <location filename="../dialogs/text_scheme_panel.cpp" line="+58"/>
         <source>Font</source>
         <translation>Шрифт</translation>
     </message>
@@ -4963,7 +5008,22 @@ Ctrl+щелчок — открыть</translation>
         <translation type="unfinished">Переносить</translation>
     </message>
     <message>
+        <location line="+5"/>
+        <source>Text width</source>
+        <translation type="unfinished">Ширина текста</translation>
+    </message>
+    <message>
         <location line="+4"/>
+        <source> characters</source>
+        <translation type="unfinished"> символов</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Fill as you type</source>
+        <translation type="unfinished">Переносить при вводе</translation>
+    </message>
+    <message>
+        <location line="+9"/>
         <source>Scheme</source>
         <translation>Схема</translation>
     </message>
@@ -5012,7 +5072,7 @@ int main() { return printf(&quot;%d&quot;, 42); }
 ```</translation>
     </message>
     <message>
-        <location line="+198"/>
+        <location line="+202"/>
         <source>Name</source>
         <translation>Имя</translation>
     </message>
