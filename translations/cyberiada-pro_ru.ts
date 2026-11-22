@@ -58,34 +58,35 @@
     <message>
         <location filename="../code_editor.cpp" line="+393"/>
         <source>Fill %1</source>
-        <translation type="unfinished">Перенос %1</translation>
+        <translation>Перенос %1</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>%1 selected</source>
-        <translation type="unfinished">выделено %1</translation>
+        <translation>выделено %1</translation>
     </message>
     <message>
         <location line="+32"/>
         <source>Fill as you type at %1 characters is on: click to switch it off</source>
-        <translation type="unfinished">Перенос при вводе по %1 символов включён: щёлкните, чтобы выключить</translation>
+        <translation>Перенос при достижении строки в %1 символов включён: кликните, чтобы выключить</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Fill as you type at %1 characters is off: click to switch it on</source>
-        <translation type="unfinished">Перенос при вводе по %1 символов выключен: щёлкните, чтобы включить</translation>
+        <translation>Перенос при достижении строки в %1 символов выключен: кликните
+, чтобы включить</translation>
     </message>
     <message>
         <location line="+132"/>
         <source>%1
 Ctrl+click to open</source>
         <translation>%1
-Ctrl+щелчок — открыть</translation>
+Ctrl+клик мыши — открыть</translation>
     </message>
     <message>
         <location line="+78"/>
         <source>fill</source>
-        <translation type="unfinished">перенос строки</translation>
+        <translation>перенос строки</translation>
     </message>
 </context>
 <context>
@@ -553,7 +554,7 @@ Ctrl+щелчок — открыть</translation>
     <message>
         <location line="+117"/>
         <source>The text has no broken link.</source>
-        <translation type="unfinished">В тексте нет битых ссылок.</translation>
+        <translation>В тексте нет битых ссылок.</translation>
     </message>
     <message>
         <location line="+102"/>
@@ -573,12 +574,12 @@ Ctrl+щелчок — открыть</translation>
     <message>
         <location line="+48"/>
         <source>The text has no file yet. The inserted files are saved in its folder, so the text is saved first.</source>
-        <translation type="unfinished">У текста ещё нет файла. Вставляемые файлы сохраняются в его папке, поэтому сначала текст будет сохранён.</translation>
+        <translation>У текста ещё нет файла. Вставляемые файлы сохраняются в его папке, поэтому сначала текст будет сохранён.</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Save and Insert</source>
-        <translation type="unfinished">Сохранить и вставить</translation>
+        <translation>Сохранить и вставить</translation>
     </message>
     <message>
         <location line="+13"/>
@@ -588,83 +589,83 @@ Ctrl+щелчок — открыть</translation>
         <location line="+4"/>
         <location line="+15"/>
         <source>Insert Image</source>
-        <translation type="unfinished">Вставка изображения</translation>
+        <translation>Вставить изображение</translation>
     </message>
     <message>
         <location line="-14"/>
         <location line="+50"/>
         <source>%1 exists with another content.</source>
-        <translation type="unfinished">%1 уже существует с другим содержимым.</translation>
+        <translation>%1 уже существует с другим содержимым.</translation>
     </message>
     <message>
         <location line="-48"/>
         <location line="+50"/>
         <source>Replace</source>
-        <translation type="unfinished">Заменять</translation>
+        <translation>Заменять</translation>
     </message>
     <message>
         <location line="-49"/>
         <location line="+50"/>
         <source>Keep Both</source>
-        <translation type="unfinished">Сохранить оба</translation>
+        <translation>Сохранить оба</translation>
     </message>
     <message>
         <location line="-35"/>
         <source>insert image</source>
-        <translation type="unfinished">вставка изображения</translation>
+        <translation>вставить изображение</translation>
     </message>
     <message>
         <location line="+9"/>
         <location line="+22"/>
         <location line="+17"/>
         <source>Insert Diagram</source>
-        <translation type="unfinished">Вставка диаграммы</translation>
+        <translation>Вставить диаграмму</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>insert diagram</source>
-        <translation type="unfinished">вставка диаграммы</translation>
+        <translation>вставить диаграмму</translation>
     </message>
     <message>
         <location line="+9"/>
         <source>Insert Link</source>
-        <translation type="unfinished">Вставка ссылки</translation>
+        <translation>Вставить ссылку</translation>
     </message>
     <message>
         <location line="+10"/>
         <source>insert link</source>
-        <translation type="unfinished">вставка ссылки</translation>
+        <translation>вставить ссылку</translation>
     </message>
     <message>
         <location line="+17"/>
         <source>%1 exported again from %2</source>
-        <translation type="unfinished">%1 экспортировано заново из %2</translation>
+        <translation>%1 экспортировано заново из %2</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>%1 is not exported: %2</source>
-        <translation type="unfinished">%1 не экспортировано: %2</translation>
+        <translation>%1 не экспортировано: %2</translation>
     </message>
     <message>
         <location line="+18"/>
         <location line="+7"/>
         <source>Update Diagram Images</source>
-        <translation type="unfinished">Обновить изображения диаграмм</translation>
+        <translation>Обновить изображения диаграмм в документе</translation>
     </message>
     <message>
         <location line="-7"/>
         <source>The text has no diagram images.</source>
-        <translation type="unfinished">В тексте нет изображений диаграмм.</translation>
+        <translation>В тексте нет изображений диаграмм.</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>The diagram images of the text are up to date.</source>
-        <translation type="unfinished">Изображения диаграмм текста актуальны.</translation>
+        <translation>Изображения диаграмм в документе актуальны.</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Re-export All</source>
-        <translation type="unfinished">Экспортировать все заново</translation>
+        <translation>Экспортировать заново</translation>
     </message>
     <message>
         <location line="+83"/>
@@ -701,7 +702,7 @@ Ctrl+щелчок — открыть</translation>
     <message>
         <location line="+21"/>
         <source>the active tab holds no text</source>
-        <translation type="unfinished">в активной вкладке нет текста</translation>
+        <translation>в активной вкладке нет текста</translation>
     </message>
     <message>
         <location line="+31"/>
@@ -750,22 +751,22 @@ Ctrl+щелчок — открыть</translation>
     <message>
         <location line="+15"/>
         <source>Outline</source>
-        <translation type="unfinished">Оглавление</translation>
+        <translation>Оглавление</translation>
     </message>
     <message>
         <location line="+96"/>
         <source>The image &quot;%1&quot; is no longer in the text</source>
-        <translation type="unfinished">Изображения «%1» больше нет в тексте</translation>
+        <translation>Изображения «%1» больше нет в тексте</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>The heading &quot;%1&quot; is no longer in the text</source>
-        <translation type="unfinished">Заголовка «%1» больше нет в тексте</translation>
+        <translation>Заголовка «%1» больше нет в тексте</translation>
     </message>
     <message>
         <location line="+245"/>
         <source>Save the diagram first: the metadata records its saved file</source>
-        <translation type="unfinished">Сначала сохраните диаграмму: метаданные указывают на её сохранённый файл</translation>
+        <translation>Сначала сохраните диаграмму: метаданные указывают на сохранённый файл</translation>
     </message>
     <message>
         <location line="+23"/>
@@ -945,7 +946,7 @@ Ctrl+щелчок — открыть</translation>
     <message>
         <location line="+256"/>
         <source>comment geometry</source>
-        <translation type="unfinished"></translation>
+        <translation>геометрия комментария</translation>
     </message>
     <message>
         <location line="+587"/>
@@ -1702,7 +1703,7 @@ Ctrl+щелчок — открыть</translation>
     <message>
         <location line="+1"/>
         <source>text diff</source>
-        <translation type="unfinished">сравнение текстов</translation>
+        <translation>сравнение текстов</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -1732,7 +1733,7 @@ Ctrl+щелчок — открыть</translation>
     <message>
         <location line="+1"/>
         <source>Text diff</source>
-        <translation type="unfinished">Сравнение текстов</translation>
+        <translation>Сравнение текстов</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -1793,12 +1794,12 @@ Ctrl+щелчок — открыть</translation>
     <message>
         <location line="+9"/>
         <source>Record the source diagram in the SVG metadata</source>
-        <translation type="unfinished">Записать исходную диаграмму в метаданные SVG</translation>
+        <translation>Записать исходную диаграмму в метаданные SVG</translation>
     </message>
     <message>
         <location line="+61"/>
         <source>SVG only</source>
-        <translation type="unfinished">Только для SVG</translation>
+        <translation>Только для SVG</translation>
     </message>
 </context>
 <context>
@@ -1964,77 +1965,77 @@ Ctrl+щелчок — открыть</translation>
         <location filename="../dialogs/insert_diagram_dialog.cpp" line="+46"/>
         <location line="+112"/>
         <source>Insert Diagram</source>
-        <translation type="unfinished">Вставка диаграммы</translation>
+        <translation>Вставить диаграмму</translation>
     </message>
     <message>
         <location line="-107"/>
         <source>open tab</source>
-        <translation type="unfinished">открытая вкладка</translation>
+        <translation>открытая вкладка</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>file</source>
-        <translation type="unfinished">файл</translation>
+        <translation>файл</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Browse...</source>
-        <translation type="unfinished">Обзор...</translation>
+        <translation>Обзор...</translation>
     </message>
     <message>
         <location line="+7"/>
         <source>Diagram:</source>
-        <translation type="unfinished">Диаграмма:</translation>
+        <translation>Диаграмма:</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Copy to:</source>
-        <translation type="unfinished">Копировать в:</translation>
+        <translation>Копировать в:</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>Font:</source>
-        <translation type="unfinished">Шрифт:</translation>
+        <translation>Шрифт:</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Alt text:</source>
-        <translation type="unfinished">Альтернативный текст:</translation>
+        <translation>Альтернативный текст:</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Writes:</source>
-        <translation type="unfinished">Записывает:</translation>
+        <translation>Записывает:</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Inserts:</source>
-        <translation type="unfinished">Вставляет:</translation>
+        <translation>Вставляет:</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>Insert</source>
-        <translation type="unfinished">Вставить</translation>
+        <translation>Вставить</translation>
     </message>
     <message>
         <location line="+72"/>
         <source>CyberiadaML diagrams (*.graphml)</source>
-        <translation type="unfinished">Диаграммы CyberiadaML (*.graphml)</translation>
+        <translation>Диаграммы CyberiadaML (*.graphml)</translation>
     </message>
     <message>
         <location line="+36"/>
         <source>No such diagram file.</source>
-        <translation type="unfinished">Нет такого файла диаграммы.</translation>
+        <translation>Нет такого файла диаграммы.</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>The tab has unsaved changes: its saved file is drawn.</source>
-        <translation type="unfinished">Во вкладке есть несохранённые изменения: рисуется её сохранённый файл.</translation>
+        <translation>Во вкладке есть несохранённые изменения: рисуется её сохранённый файл.</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>The diagram lies in the folder of the text: the image is written beside it.</source>
-        <translation type="unfinished">Диаграмма лежит в папке текста: изображение записывается рядом с ней.</translation>
+        <translation>Диаграмма лежит в папке текста: изображение записывается рядом с ней.</translation>
     </message>
 </context>
 <context>
@@ -2043,117 +2044,117 @@ Ctrl+щелчок — открыть</translation>
         <location filename="../dialogs/insert_image_dialog.cpp" line="+225"/>
         <location line="+273"/>
         <source>Insert Image</source>
-        <translation type="unfinished">Вставка изображения</translation>
+        <translation>Вставка изображения</translation>
     </message>
     <message>
         <location line="-269"/>
         <source>Source:</source>
-        <translation type="unfinished">Источник:</translation>
+        <translation>Источник:</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>Browse...</source>
-        <translation type="unfinished">Обзор...</translation>
+        <translation>Обзор...</translation>
     </message>
     <message>
         <location line="+18"/>
         <source>Crop</source>
-        <translation type="unfinished">Обрезка</translation>
+        <translation>Обрезка</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>x</source>
-        <translation type="unfinished">x</translation>
+        <translation>x</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>y</source>
-        <translation type="unfinished">y</translation>
+        <translation>y</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>w</source>
-        <translation type="unfinished">ш</translation>
+        <translation>ш</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>h</source>
-        <translation type="unfinished">в</translation>
+        <translation>в</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Rotate Left</source>
-        <translation type="unfinished">Повернуть влево</translation>
+        <translation>Повернуть влево</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Rotate Right</source>
-        <translation type="unfinished">Повернуть вправо</translation>
+        <translation>Повернуть вправо</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Width at most</source>
-        <translation type="unfinished">Ширина не более</translation>
+        <translation>Ширина не более</translation>
     </message>
     <message>
         <location line="+2"/>
         <source> px</source>
-        <translation type="unfinished"> пикс.</translation>
+        <translation> пикс.</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Reset</source>
-        <translation type="unfinished">Сбросить</translation>
+        <translation>Сбросить</translation>
     </message>
     <message>
         <location line="+10"/>
         <source>Alt text:</source>
-        <translation type="unfinished">Альтернативный текст:</translation>
+        <translation>Альтернативный текст:</translation>
     </message>
     <message>
         <location line="+7"/>
         <source>Save as:</source>
-        <translation type="unfinished">Сохранить как:</translation>
+        <translation>Сохранить как:</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Inserts:</source>
-        <translation type="unfinished">Вставляет:</translation>
+        <translation>Вставляет:</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>Insert</source>
-        <translation type="unfinished">Вставить</translation>
+        <translation>Вставить</translation>
     </message>
     <message>
         <location line="+24"/>
         <source>the clipboard</source>
-        <translation type="unfinished">буфер обмена</translation>
+        <translation>буфер обмена</translation>
     </message>
     <message>
         <location line="+111"/>
         <source>The image cannot be read</source>
-        <translation type="unfinished">Изображение не читается</translation>
+        <translation>Изображение не читается</translation>
     </message>
     <message>
         <location line="+0"/>
         <source>Result: %1 × %2 px</source>
-        <translation type="unfinished">Результат: %1 × %2 пикс.</translation>
+        <translation>Результат: %1 × %2 пикс.</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>An SVG image is copied as it is, without the edits.</source>
-        <translation type="unfinished">Изображение SVG копируется как есть, без правок.</translation>
+        <translation>Изображение SVG копируется как есть, без правок.</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>The image lies in the folder of the text: it is linked where it is.</source>
-        <translation type="unfinished">Изображение лежит в папке текста: ссылка указывает на него на месте.</translation>
+        <translation>Изображение лежит в папке текста: ссылка указывает на него на месте.</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>The pasted image is saved as a new file.</source>
-        <translation type="unfinished">Вставленное изображение сохраняется в новый файл.</translation>
+        <translation>Вставленное изображение сохраняется в новый файл.</translation>
     </message>
 </context>
 <context>
@@ -2163,79 +2164,79 @@ Ctrl+щелчок — открыть</translation>
         <location line="+124"/>
         <location line="+7"/>
         <source>Insert Link</source>
-        <translation type="unfinished">Вставка ссылки</translation>
+        <translation>Вставка ссылки</translation>
     </message>
     <message>
         <location line="-127"/>
         <location line="+19"/>
         <source>Text:</source>
-        <translation type="unfinished">Текст:</translation>
+        <translation>Текст:</translation>
     </message>
     <message>
         <location line="-16"/>
         <source>heading</source>
-        <translation type="unfinished">заголовок</translation>
+        <translation>заголовок</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>this text</source>
-        <translation type="unfinished">этот текст</translation>
+        <translation>этот текст</translation>
     </message>
     <message>
         <location line="+5"/>
         <location line="+4"/>
         <source>Browse...</source>
-        <translation type="unfinished">Обзор...</translation>
+        <translation>Обзор...</translation>
     </message>
     <message>
         <location line="-2"/>
         <source>file</source>
-        <translation type="unfinished">файл</translation>
+        <translation>файл</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>address</source>
-        <translation type="unfinished">адрес</translation>
+        <translation>адрес</translation>
     </message>
     <message>
         <location line="+7"/>
         <source>Heading:</source>
-        <translation type="unfinished">Заголовок:</translation>
+        <translation>Заголовок:</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>Target:</source>
-        <translation type="unfinished">Цель:</translation>
+        <translation>Цель:</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Inserts:</source>
-        <translation type="unfinished">Вставляет:</translation>
+        <translation>Вставляет:</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>Insert</source>
-        <translation type="unfinished">Вставить</translation>
+        <translation>Вставить</translation>
     </message>
     <message>
         <location line="+79"/>
         <source>Markdown texts (%1)</source>
-        <translation type="unfinished">Тексты Markdown (%1)</translation>
+        <translation>Тексты Markdown (%1)</translation>
     </message>
     <message>
         <location line="+7"/>
         <source>All files (*)</source>
-        <translation type="unfinished">Все файлы (*)</translation>
+        <translation>Все файлы (*)</translation>
     </message>
     <message>
         <location line="+47"/>
         <source>The text has no headings.</source>
-        <translation type="unfinished">В тексте нет заголовков.</translation>
+        <translation>В тексте нет заголовков.</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>No such file.</source>
-        <translation type="unfinished">Нет такого файла.</translation>
+        <translation>Нет такого файла.</translation>
     </message>
 </context>
 <context>
@@ -2336,14 +2337,14 @@ Ctrl+щелчок — открыть</translation>
         <location filename="../markdown_outline_model.cpp" line="+289"/>
         <source>Line %1
 #%2</source>
-        <translation type="unfinished">Строка %1
+        <translation>Строка %1
 #%2</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Line %1, column %2
 %3</source>
-        <translation type="unfinished">Строка %1, столбец %2
+        <translation>Строка %1, столбец %2
 %3</translation>
     </message>
     <message>
@@ -2352,7 +2353,7 @@ Ctrl+щелчок — открыть</translation>
 %3
 %4
 %5</source>
-        <translation type="unfinished">Строка %1, столбец %2
+        <translation>Строка %1, столбец %2
 %3
 %4
 %5</translation>
@@ -2360,12 +2361,12 @@ Ctrl+щелчок — открыть</translation>
     <message>
         <location line="+1"/>
         <source>The image is up to date</source>
-        <translation type="unfinished">Изображение актуально</translation>
+        <translation>Изображение актуально</translation>
     </message>
     <message>
         <location line="+0"/>
         <source>The image is out of date</source>
-        <translation type="unfinished">Изображение устарело</translation>
+        <translation>Изображение устарело</translation>
     </message>
 </context>
 <context>
@@ -2373,27 +2374,27 @@ Ctrl+щелчок — открыть</translation>
     <message>
         <location filename="../markdown_outline_view.cpp" line="+148"/>
         <source>Go to</source>
-        <translation type="unfinished">Перейти</translation>
+        <translation>Перейти</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Open Diagram</source>
-        <translation type="unfinished">Открыть диаграмму</translation>
+        <translation>Открыть диаграмму</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Open Image</source>
-        <translation type="unfinished">Открыть изображение</translation>
+        <translation>Открыть изображение</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Expand All</source>
-        <translation type="unfinished">Развернуть все</translation>
+        <translation>Развернуть все</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Collapse All</source>
-        <translation type="unfinished">Свернуть все</translation>
+        <translation>Свернуть все</translation>
     </message>
 </context>
 <context>
@@ -2410,84 +2411,84 @@ Ctrl+щелчок — открыть</translation>
     <message>
         <location filename="../markdown_tools.cpp" line="+139"/>
         <source>Images (%1)</source>
-        <translation type="unfinished">Изображения (%1)</translation>
+        <translation>Изображения (%1)</translation>
     </message>
     <message>
         <location line="+51"/>
         <location line="+81"/>
         <source>Cannot read %1</source>
-        <translation type="unfinished">Не удаётся прочитать %1</translation>
+        <translation>Не удаётся прочитать %1</translation>
     </message>
     <message>
         <location line="-71"/>
         <source>An SVG image is copied as it is, without the edits</source>
-        <translation type="unfinished">Изображение SVG копируется как есть, без правок</translation>
+        <translation>Изображение SVG копируется как есть, без правок</translation>
     </message>
     <message>
         <location line="+7"/>
         <source>Cannot read the image %1: %2</source>
-        <translation type="unfinished">Не удаётся прочитать изображение %1: %2</translation>
+        <translation>Не удаётся прочитать изображение %1: %2</translation>
     </message>
     <message>
         <location line="+13"/>
         <source>Cannot encode the image: %1</source>
-        <translation type="unfinished">Не удаётся закодировать изображение: %1</translation>
+        <translation>Не удаётся закодировать изображение: %1</translation>
     </message>
     <message>
         <location line="+25"/>
         <location line="+205"/>
         <source>Cannot make the folder %1</source>
-        <translation type="unfinished">Не удаётся создать папку %1</translation>
+        <translation>Не удаётся создать папку %1</translation>
     </message>
     <message>
         <location line="-200"/>
         <source>Cannot write %1: %2</source>
-        <translation type="unfinished">Не удаётся записать %1: %2</translation>
+        <translation>Не удаётся записать %1: %2</translation>
     </message>
     <message>
         <location line="+218"/>
         <source>No diagram file %1</source>
-        <translation type="unfinished">Нет файла диаграммы %1</translation>
+        <translation>Нет файла диаграммы %1</translation>
     </message>
     <message>
         <location line="+146"/>
         <source>no heading for #%1</source>
-        <translation type="unfinished">нет заголовка для #%1</translation>
+        <translation>нет заголовка для #%1</translation>
     </message>
     <message>
         <location line="+9"/>
         <source>image not found: %1</source>
-        <translation type="unfinished">изображение не найдено: %1</translation>
+        <translation>изображение не найдено: %1</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>file not found: %1</source>
-        <translation type="unfinished">файл не найден: %1</translation>
+        <translation>файл не найден: %1</translation>
     </message>
     <message>
         <location line="+9"/>
         <source>no heading for %1#%2</source>
-        <translation type="unfinished">нет заголовка для %1#%2</translation>
+        <translation>нет заголовка для %1#%2</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>no diagram file %1</source>
-        <translation type="unfinished">нет файла диаграммы %1</translation>
+        <translation>нет файла диаграммы %1</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>diagram image without a recorded source: Update Diagram Images records %1</source>
-        <translation type="unfinished">изображение диаграммы без записанного источника: «Обновить изображения диаграмм» запишет %1</translation>
+        <translation>изображение диаграммы без записанного источника: «Обновить изображения диаграмм» запишет %1</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>diagram image out of date: %1 changed</source>
-        <translation type="unfinished">изображение диаграммы устарело: %1 изменён</translation>
+        <translation>изображение диаграммы устарело: %1 изменён</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>linked to %1, its SVG names %2</source>
-        <translation type="unfinished">ссылка ведёт на %1, а SVG указывает на %2</translation>
+        <translation>ссылка ведёт на %1, а SVG указывает на %2</translation>
     </message>
 </context>
 <context>
@@ -2540,7 +2541,7 @@ Ctrl+щелчок — открыть</translation>
     <message>
         <location line="+10"/>
         <source>%1 files (%2)</source>
-        <translation type="unfinished">Файлы %1 (%2)</translation>
+        <translation>Файлы %1 (%2)</translation>
     </message>
     <message>
         <location line="+13"/>
@@ -3943,7 +3944,7 @@ Ctrl+щелчок — открыть</translation>
     <message>
         <location line="+26"/>
         <source>Diagram</source>
-        <translation type="unfinished">Диаграмма</translation>
+        <translation>Диаграмма</translation>
     </message>
     <message>
         <location line="+22"/>
@@ -3953,7 +3954,7 @@ Ctrl+щелчок — открыть</translation>
     <message>
         <location line="+32"/>
         <source>Text</source>
-        <translation type="unfinished">Текст</translation>
+        <translation>Текст</translation>
     </message>
     <message>
         <location line="+16"/>
@@ -3983,102 +3984,102 @@ Ctrl+щелчок — открыть</translation>
     <message>
         <location line="+9"/>
         <source>Insert Diagram...</source>
-        <translation type="unfinished">Вставить диаграмму...</translation>
+        <translation>Вставить диаграмму...</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Insert a diagram image linked to its diagram into the Markdown text</source>
-        <translation type="unfinished">Вставить в текст Markdown изображение диаграммы со ссылкой на неё</translation>
+        <translation>Вставить в текст Markdown изображение диаграммы со ссылкой на неё</translation>
     </message>
     <message>
         <location line="+9"/>
         <source>Update Diagram Images</source>
-        <translation type="unfinished">Обновить изображения диаграмм</translation>
+        <translation>Обновить изображения диаграмм</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Export again the diagram images of the text whose diagrams changed</source>
-        <translation type="unfinished">Заново экспортировать изображения диаграмм текста, чьи диаграммы изменились</translation>
+        <translation>Заново экспортировать изображения диаграмм текста, чьи диаграммы изменились</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>Mode Line</source>
-        <translation type="unfinished">Строка режима</translation>
+        <translation>Строка режима</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Show the line of the state, the cursor position and the mode under the text editors</source>
-        <translation type="unfinished">Показывать под текстовыми редакторами строку состояния, позиции курсора и режима</translation>
+        <translation>Показывать под текстовыми редакторами строку состояния, позиции курсора и режима</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>Wrap Long Lines</source>
-        <translation type="unfinished">Переносить длинные строки</translation>
+        <translation>Переносить длинные строки</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Fit the long lines of the text editors to the width instead of scrolling them</source>
-        <translation type="unfinished">Укладывать длинные строки текстовых редакторов в ширину окна вместо прокрутки</translation>
+        <translation>Укладывать длинные строки текстовых редакторов в ширину окна вместо прокрутки</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>Preview</source>
-        <translation type="unfinished">Предпросмотр</translation>
+        <translation>Предпросмотр</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Show the rendered page of a Markdown text beside its source</source>
-        <translation type="unfinished">Показывать отформатированную страницу текста Markdown рядом с исходным текстом</translation>
+        <translation>Показывать отформатированную страницу текста Markdown рядом с исходным текстом</translation>
     </message>
     <message>
         <location line="+9"/>
         <source>Fill Paragraph</source>
-        <translation type="unfinished">Переформатировать абзац</translation>
+        <translation>Переформатировать абзац</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Break the lines of the paragraph or the selection at the text width</source>
-        <translation type="unfinished">Разбить строки абзаца или выделения по ширине текста</translation>
+        <translation>Разбить строки абзаца или выделения по ширине текста</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>Unfill Paragraph</source>
-        <translation type="unfinished">Собрать абзац в строку</translation>
+        <translation>Собрать абзац в строку</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Join the lines of the paragraph or of each paragraph of the selection into one</source>
-        <translation type="unfinished">Объединить строки абзаца или каждого абзаца выделения в одну</translation>
+        <translation>Объединить строки абзаца или каждого абзаца выделения в одну</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>Fill as You Type</source>
-        <translation type="unfinished">Переносить при вводе</translation>
+        <translation>Переносить при вводе</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Break a line past the text width when a space or a new line is typed</source>
-        <translation type="unfinished">Переносить строку длиннее ширины текста при вводе пробела или новой строки</translation>
+        <translation>Переносить строку длиннее ширины текста при вводе пробела или новой строки</translation>
     </message>
     <message>
         <location line="+9"/>
         <source>Insert Link...</source>
-        <translation type="unfinished">Вставить ссылку...</translation>
+        <translation>Вставить ссылку...</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Insert a link to a heading, a file or an address into the Markdown text</source>
-        <translation type="unfinished">Вставить в текст Markdown ссылку на заголовок, файл или адрес</translation>
+        <translation>Вставить в текст Markdown ссылку на заголовок, файл или адрес</translation>
     </message>
     <message>
         <location line="+9"/>
         <source>Insert Image...</source>
-        <translation type="unfinished">Вставить изображение...</translation>
+        <translation>Вставить изображение...</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Insert an image into the Markdown text</source>
-        <translation type="unfinished">Вставить изображение в текст Markdown</translation>
+        <translation>Вставить изображение в текст Markdown</translation>
     </message>
     <message>
         <location line="+9"/>
@@ -4170,7 +4171,7 @@ Ctrl+щелчок — открыть</translation>
     <message>
         <location line="+126"/>
         <source>Check the finite automaton against the EXT-FA rules, or the links of a Markdown text</source>
-        <translation type="unfinished">Проверить конечный автомат по правилам EXT-FA или ссылки текста Markdown</translation>
+        <translation>Проверить конечный автомат по правилам EXT-FA или ссылки текста Markdown</translation>
     </message>
     <message>
         <source>Inspector mode</source>
@@ -4216,42 +4217,42 @@ Ctrl+щелчок — открыть</translation>
     <message>
         <location line="+8"/>
         <source>Text diff</source>
-        <translation type="unfinished">Сравнение текстов</translation>
+        <translation>Сравнение текстов</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Two texts side by side, line by line: opened by Compare with... on a text tab</source>
-        <translation type="unfinished">Два текста рядом, построчно: открывается командой «Сравнить с...» в текстовой вкладке</translation>
+        <translation>Два текста рядом, построчно: открывается командой «Сравнить с...» в текстовой вкладке</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>Next Change</source>
-        <translation type="unfinished">Следующее изменение</translation>
+        <translation>Следующее изменение</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Show the next change of the comparison</source>
-        <translation type="unfinished">Показать следующее изменение сравнения</translation>
+        <translation>Показать следующее изменение сравнения</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>Previous Change</source>
-        <translation type="unfinished">Предыдущее изменение</translation>
+        <translation>Предыдущее изменение</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Show the previous change of the comparison</source>
-        <translation type="unfinished">Показать предыдущее изменение сравнения</translation>
+        <translation>Показать предыдущее изменение сравнения</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>Ignore Whitespace</source>
-        <translation type="unfinished">Без учёта пробелов</translation>
+        <translation>Без учёта пробелов</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Compare the lines of the texts without their runs of spaces and tabs</source>
-        <translation type="unfinished">Сравнивать строки текстов без учёта пробелов и табуляций</translation>
+        <translation>Сравнивать строки текстов без учёта пробелов и табуляций</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -4832,27 +4833,27 @@ Ctrl+щелчок — открыть</translation>
     <message>
         <location filename="../text_diff_document.cpp" line="+125"/>
         <source>Base: %1</source>
-        <translation type="unfinished">База: %1</translation>
+        <translation>База: %1</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Target: %1</source>
-        <translation type="unfinished">Сравниваемый: %1</translation>
+        <translation>Сравниваемый: %1</translation>
     </message>
     <message>
         <location line="+118"/>
         <source>changed %1 → %2</source>
-        <translation type="unfinished">изменено %1 → %2</translation>
+        <translation>изменено %1 → %2</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>removed %1</source>
-        <translation type="unfinished">удалено %1</translation>
+        <translation>удалено %1</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>added %1</source>
-        <translation type="unfinished">добавлено %1</translation>
+        <translation>добавлено %1</translation>
     </message>
 </context>
 <context>
@@ -4865,12 +4866,12 @@ Ctrl+щелчок — открыть</translation>
     <message>
         <location line="+165"/>
         <source>unfill paragraph</source>
-        <translation type="unfinished">сборка абзаца в строку</translation>
+        <translation>сборка абзаца в строку</translation>
     </message>
     <message>
         <location line="+0"/>
         <source>fill paragraph</source>
-        <translation type="unfinished">переформатирование абзаца</translation>
+        <translation>переформатирование абзаца</translation>
     </message>
     <message>
         <location line="+129"/>
@@ -5010,47 +5011,47 @@ Ctrl+щелчок — открыть</translation>
     <message>
         <location line="+6"/>
         <source>Cursor</source>
-        <translation type="unfinished">Курсор</translation>
+        <translation>Курсор</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>Line</source>
-        <translation type="unfinished">Линия</translation>
+        <translation>Линия</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Block</source>
-        <translation type="unfinished">Блок</translation>
+        <translation>Блок</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>Long lines</source>
-        <translation type="unfinished">Длинные строки</translation>
+        <translation>Длинные строки</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Scroll</source>
-        <translation type="unfinished">Прокручивать</translation>
+        <translation>Прокручивать</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Wrap</source>
-        <translation type="unfinished">Переносить</translation>
+        <translation>Переносить</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>Text width</source>
-        <translation type="unfinished">Ширина текста</translation>
+        <translation>Ширина текста</translation>
     </message>
     <message>
         <location line="+4"/>
         <source> characters</source>
-        <translation type="unfinished"> символов</translation>
+        <translation> символов</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Fill as you type</source>
-        <translation type="unfinished">Переносить при вводе</translation>
+        <translation>Переносить при вводе</translation>
     </message>
     <message>
         <location line="+9"/>
