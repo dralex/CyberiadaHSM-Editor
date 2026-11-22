@@ -1,6 +1,6 @@
 # Color Schemes — Architecture
 
-**Document version:** 0.5 (2026-11-22), the text width of the fill; 0.4: the cursor and the long lines of the text editors. The requirements are `EDIT-COLOR-1..8` in
+**Document version:** 0.6 (2026-11-22), the mode line; 0.5: the text width of the fill; 0.4: the cursor and the long lines of the text editors. The requirements are `EDIT-COLOR-1..8` in
 `EDITOR-SPEC.md` §4.18; the editor font beside them is `EDIT-MODE-27`.
 
 The source editor of a text tab draws in the colors of a scheme: its background, text,
@@ -112,6 +112,7 @@ diagrams; the dialog is wide enough for both.
 | the font, its size | the text editor font (`EDIT-MODE-27`), the preview in it |
 | the cursor | Line or Block (`EDIT-MODE-29`), the preview with it (it shows when clicked) |
 | the long lines | Scroll or Wrap (`EDIT-MODE-30`), the preview with it |
+| the mode line (`EDIT-MODE-31`) | drawn in AlternateBase (the line-number background) with a rule and the dim parts in PlaceholderText (the line numbers), the text in Text: a scheme colors it as it colors the margin; the preview has none |
 | the text width, Fill as you type | the width of the fill and its switch (`EDIT-MD-20..22`), on Apply; the preview stays |
 | a scheme chosen | its swatches and the preview |
 | a swatch | a color dialog; the color changed in the copy, the preview follows |

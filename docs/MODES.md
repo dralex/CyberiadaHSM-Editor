@@ -1,9 +1,9 @@
 # The Document Modes — Architecture
 
-**Document version:** 0.18 (2026-11-22) — stages 1 to 9 implemented (see Stages); 0.16: the
+**Document version:** 0.19 (2026-11-22) — stages 1 to 9 implemented (see Stages); 0.16: the
 text toolbar and the Markdown tools of a text tab (`EDIT-MD-1..12`, `docs/MARKDOWN.md`, Tools);
 0.17: the outline dock of a Markdown tab (`EDIT-MD-13..17`); 0.18: the fill of a Markdown and a
-Plain text tab (`EDIT-MD-18..23`).
+Plain text tab (`EDIT-MD-18..23`); 0.19: the mode line of a source editor (`EDIT-MODE-31`).
 The requirements are `EDIT-MODE-1..28` in `EDITOR-SPEC.md` §4.14, the plugin parts
 `EDIT-PLUG-56..60`.
 
@@ -249,7 +249,9 @@ The git plugin hands the revision of a diagram to a diff tab:
   diagram font is another one. Its cursor is a line or a block over the character, as the
   Preferences choose (`EDIT-MODE-29`); its long lines scroll or wrap at the width with a sign at
   the end of each continued row (`EDIT-MODE-30`, View > Wrap Long Lines), a text diff side
-  always scrolling.
+  always scrolling. Under the text a mode line (`EDIT-MODE-31`, View > Mode Line) tells the
+  state, the name, the `(line,column)` of the cursor, the mode, the fill switch of a Markdown
+  and a Plain text tab and the size of a selection; a text diff side has none.
 * File > Export of a Markdown tab saves the rendered text as a PDF (`MARKDOWN.md`, PDF); the
   other text tabs have nothing to export.
 * The link targets of a Markdown tab open by Ctrl+click (`EDIT-MODE-28`). The highlighter

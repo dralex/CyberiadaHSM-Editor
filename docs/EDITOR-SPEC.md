@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.77 (2026-11-22)
+**Document version:** 0.78 (2026-11-22)
 
 **Related authorities:**
 
@@ -1314,6 +1314,29 @@ has a read-only flag; the architecture is `docs/MODES.md`. Specified in 0.47, th
   of the Preferences restores scroll. The sides of a text diff tab always scroll: their rows
   align. Lines stay lines for Go to Line, Find, the errors and the links. Specified in 0.75.
   *design*
+- `EDIT-MODE-31` SHOULD [A]: the source editor of a text tab, also beside the preview, has an
+  Emacs-like mode line under its text and its error bar (`EDIT-MODE-26`): one row in the editor
+  font, a long one elided at the right, of the parts
+
+  | Part | Shows |
+  |---|---|
+  | state | `--` saved, `**` modified, `%%` read-only or locked by a plugin run |
+  | name | the title of the tab without its marker |
+  | `(line,column)` | of the cursor, from 1; the column counts a tab to the next stop of 4, as the text width does (`EDIT-MD-19`) |
+  | mode | the name of the mode: `Markdown`, `Plain text`, `C++`, `JSON` |
+  | `Fill <width>` | in a Markdown and a Plain text tab: bold while Fill as You Type is on, in the color of the line numbers while off; a click switches it (`EDIT-MD-22`) |
+  | `<n> selected` | with a selection only: its characters, a line break one |
+
+  in the line-number colors of the scheme, the text in the text color, a rule above. A
+  rendered Markdown page and the sides of a text diff tab have none. View > Mode Line,
+  checkable, on by default, shows or hides it in every editor; stored per user
+  (`display/showModeLine`), Reset of the Preferences shows it. Specified in 0.78. *design*
+
+  ```
+   12 | The light has three states: red, yellow and green; the tim|er
+   13 |
+  ** notes.md   (12,61)   Markdown   Fill 90   24 selected
+  ```
 
 ### 4.15 Find — FIND
 
@@ -1447,8 +1470,9 @@ the Preferences. The architecture, the colors and the storage are in `docs/COLOR
 Specified in 0.63.
 
 - `EDIT-COLOR-1` MUST [A]: the source editor of a text tab (`EDIT-MODE-13`) draws its
-  background, its text, the selection, the line numbers and the highlighting
-  (`EDIT-TEXT-7/11`) in the colors of the current scheme; the canvas, the text dialogs, the
+  background, its text, the selection, the line numbers, the highlighting (`EDIT-TEXT-7/11`)
+  and its mode line (`EDIT-MODE-31`, 0.78) in the colors of the current scheme; the canvas, the
+  text dialogs, the
   exported images and the rendered Markdown (`EDIT-COLOR-7`) keep the colors of the White
   scheme as built in, whatever the current one. *design*
 - `EDIT-COLOR-2` MUST [I]: two schemes are built in: *White*, the default — black text on white
