@@ -1,6 +1,6 @@
 # The Editor Window — Documents and Tabs
 
-**Document version:** 0.24 (2026-11-21) — the modes, the read-only flag and the plugins in
+**Document version:** 0.25 (2026-11-22) — the modes, the read-only flag and the plugins in
 the modes (`modes`, the text tabs, a plugin run as a diff base, the plugin languages) are
 implemented, the git compare with them (stage 6 of `docs/MODES.md`); a switch keeps the dock
 sizes; a Markdown tab exports its rendered PDF; the find bar (`docs/FIND.md`); the shortcuts
@@ -11,6 +11,7 @@ text editors (`docs/COLOR-SCHEMES.md`) and their font; the text diff tab (stage 
 0.23: the toolbars follow the tab — Main, Diagram, Elements, Text (`EDIT-MD-1`); the Markdown
 tools (`docs/MARKDOWN.md`, Tools).
 0.24: the Outline dock of a Markdown tab (`EDIT-MD-13..17`, `docs/MARKDOWN.md`, Outline).
+0.25: Fill Paragraph, Unfill Paragraph and Fill as You Type (`EDIT-MD-18..23`).
 
 The window holds several documents at once. The menus, the toolbars, the tab line and the
 docks (the structure tree, the properties, the changes, the outline, the plugins) are one set; each document brings its
@@ -108,6 +109,8 @@ setCurrentDocument(doc)
 | Find bar, Find, Find Next, Find Previous | global | one bar and query; the marks are the active tab's, dropped on a switch and searched again in the new tab; disabled in a diff tab, one side of a text diff tab (`EDIT-FIND-9`, `EDIT-MODE-24`, `docs/FIND.md`) |
 | Go to Line | document | the cursor of the active text tab, also on the Text toolbar; disabled elsewhere (`EDIT-KEYS-7`) |
 | Insert Image, Insert Diagram, Insert Link | document | the cursor of the active Markdown tab, one undo step; an untitled tab saved first (`EDIT-MD-2..5`, `EDIT-MD-9`) |
+| Fill Paragraph, Unfill Paragraph | document | the unit of the cursor or the units of the selection in the active Markdown or Plain text tab, one undo step; Fill Paragraph also on the Text toolbar (`EDIT-MD-18..23`) |
+| Edit > Fill as You Type | global | a setting; a Space or a Return typed past the text width breaks the line in every Markdown and Plain text tab (`EDIT-MD-21/22`) |
 | Document > Update Diagram Images | document | the diagram images of the active Markdown tab, written beside their diagrams; the text unchanged (`EDIT-MD-7`) |
 | View > Wrap Long Lines | global | a setting; every source editor but a text diff side wraps its long lines at the width (`EDIT-MODE-30`) |
 | View > Preview | global | a setting; every writable Markdown tab shows its source and its rendered page side by side (`EDIT-MD-11`) |

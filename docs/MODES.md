@@ -1,8 +1,9 @@
 # The Document Modes — Architecture
 
-**Document version:** 0.17 (2026-11-21) — stages 1 to 9 implemented (see Stages); 0.16: the
+**Document version:** 0.18 (2026-11-22) — stages 1 to 9 implemented (see Stages); 0.16: the
 text toolbar and the Markdown tools of a text tab (`EDIT-MD-1..12`, `docs/MARKDOWN.md`, Tools);
-0.17: the outline dock of a Markdown tab (`EDIT-MD-13..17`).
+0.17: the outline dock of a Markdown tab (`EDIT-MD-13..17`); 0.18: the fill of a Markdown and a
+Plain text tab (`EDIT-MD-18..23`).
 The requirements are `EDIT-MODE-1..28` in `EDITOR-SPEC.md` §4.14, the plugin parts
 `EDIT-PLUG-56..60`.
 
@@ -238,8 +239,10 @@ The git plugin hands the revision of a diagram to a diff tab:
   undo, and the stack's clean state gives the `*` of the title.
 * Save writes the text as it is, in UTF-8; Save As proposes the mode's first extension.
 * A text tab shows the Text toolbar in the place of the element tools and hides the Diagram
-  toolbar (`EDIT-MD-1`): Go to Line; in a Markdown tab Insert Image, Insert Diagram, Insert
-  Link and Update Diagram Images. View > Preview puts the rendered page beside the source of a
+  toolbar (`EDIT-MD-1`): Go to Line; Fill Paragraph in a Markdown and a Plain text tab; in a
+  Markdown tab Insert Image, Insert Diagram, Insert Link and Update Diagram Images. A Markdown
+  and a Plain text source fill their paragraphs to the text width, by Edit > Fill Paragraph
+  and as they are typed (`EDIT-MD-18..23`, `docs/MARKDOWN.md`, Fill). View > Preview puts the rendered page beside the source of a
   writable Markdown tab (`EDIT-MD-11`). The tools are `docs/MARKDOWN.md`, Tools.
 * A `CodeEditor` (a text tab, a side of a text diff tab) draws in the text editor font of the
   Preferences, `FontManager::editorFont()`, and follows its change (`EDIT-MODE-27`); the

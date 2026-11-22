@@ -1,10 +1,10 @@
 # The Markdown Rendering — Architecture
 
-**Document version:** 0.15 (2026-11-22) — the authoring tools specified and implemented
+**Document version:** 0.16 (2026-11-22) — the authoring tools specified and implemented
 (Tools, stages 1 to 6); 0.14: the outline specified (Outline); 0.15: the outline implemented
-(Outline, stage 1).
+(Outline, stage 1); 0.16: the fill of the paragraphs (Fill).
 The requirements are `EDIT-MODE-14`, `EDIT-MODE-17`, `EDIT-MODE-18`, `EDIT-TEXT-14`,
-`EDIT-MD-1..17` and `EDIT-IO-8` in `EDITOR-SPEC.md`.
+`EDIT-MD-1..23` and `EDIT-IO-8` in `EDITOR-SPEC.md`.
 
 The editor renders Markdown itself: a read-only Markdown tab (`docs/MODES.md`, Text tabs) and,
 when the preference is on, a Markdown comment body on the canvas. md4c reads the text, a TeX
@@ -566,6 +566,73 @@ link targets (`CodeEditor`).
 2. *(optional)* On a rendered page the current row follows the scroll: the `MarkdownSourceLine`
    of the top block.
 
+## Fill
+
+The source of a Markdown or a Plain text tab keeps its lines within a text width, as Emacs'
+`fill-paragraph` and `auto-fill-mode` do (`EDIT-MD-18..23`). The width is of the source; the
+display wraps apart (`EDIT-MODE-30`).
+
+```
+ Edit > Fill Paragraph (Alt+Q), Unfill Paragraph (Alt+Shift+Q),   a Space or a Return typed,
+ the text toolbar, batch fill-paragraph / unfill-paragraph         Fill as You Type on
+        |                                                                  |
+        v                                                                  v
+ TextDocument::fill(unfill, from, to)                        CodeEditor::keyPressEvent
+   textFill(text, from, to, width, kind, unfill)               QPlainTextEdit types the key,
+   -> {from, to, replacement, cursor}: one undo step           Autoreplacer::typed, autoFill():
+        |                                                     textAutoFillBreak(text, cursor,
+        |                                                       width, kind) -> {at, prefix}:
+        |                                                       an edit block, a step of its own
+        +------------------------+-----------------------------------+
+                                 v
+ text_fill.*: the units, the prefixes, the break points, the refill
+        | fenceOf, indented, listItem, codeBlockLine, inlineCodeAt
+        v
+ markdown_lines.*  (shared with autoreplace.*, EDIT-AUTO-4)
+
+ SettingsManager: editor/textWidth (90), editor/fillAsYouType (off), textFillChanged()
+   <- Preferences > Text > Text editors (Text width, Fill as you type), Edit > Fill as You Type
+```
+
+### The units
+
+A unit is what one Fill makes into one run of lines. `textFill` reads the lines of the text
+once: the fences and the indented code (`codeBlockLine`), then each block by its first line.
+
+| Block | Unit |
+|---|---|
+| a paragraph | its lines, to a blank line, to a line opening another block, through a hard break |
+| a list item | its marker line and its continuation lines, lazy ones too; the next item is another unit |
+| a quote | the lines of its paragraph, the quote marks taken off and put back |
+| a heading, code, a table, an HTML block, a rule, a reference definition, a `$$` formula | none: never filled |
+| Plain text | the lines between blank lines |
+
+The prefix of the first line stays as written; the next lines take the quote marks of the
+first one, then the marker width of a list item (`- ` two, `10. ` four), else the indent of
+the second line, of the first one when the unit has one line.
+
+### The breaks
+
+The words of a unit are its runs of non-spaces, where a code span, a formula, a tag, a link
+target or a URL counts as one word with its spaces (`inlineCodeAt`). The refill puts words on a
+line while it holds the width (a tab to the next multiple of `EDITOR_TAB_SPACES` columns), a
+longer word alone, and moves a word that would open a block at the start of a line (`-`, `*`,
+`+`, `1.`, `#`, `>`, a fence, a tag, `=` or `-` alone) back to the line before it. A hard break
+ends the unit: its line keeps its two spaces or its `\`.
+
+Fill as you type breaks only the line of the cursor, after the key: the last break point
+within the width, else the first one after it before the key typed; the rest goes to a new
+line with the prefix. The edit block makes it a step of its own, so Undo right after joins the
+line and the key typed stays; Unfill and Fill Paragraph act on the whole unit.
+
+### Stages
+
+1. The fill — `markdown_lines.*`, `text_fill.*` (`textFill`, `textAutoFillBreak`),
+   `TextDocument::fill`, `CodeEditor::autoFill` with `setFillKind`, the settings
+   (`editor/textWidth`, `editor/fillAsYouType`, `TEXT_WIDTH_*`), Edit > Fill Paragraph,
+   Unfill Paragraph and Fill as You Type, the text toolbar group, the Preferences row, the
+   batch `fill-paragraph`, `unfill-paragraph` and `text-width`.
+
 ## Build
 
 | Part | Where | Licence |
@@ -629,3 +696,12 @@ each other; every row of the out-of-date table of `EDIT-MD-16`, a removed headin
 older namesake too; a diagram leaf up to date and out of date; a rendered page scrolled; a
 double click opening a diagram; the dock shown by default; `md-outline` (`texts/outline.md`),
 `md-outline-edited` (the outline after an Insert Image) and `md-outline-none` (another tab).
+
+The fill: `l4-text-fill` — `textFill` on a table of texts (a paragraph, a list item, a nested
+quote and list, the blocks never filled, a hard break, a code span and a URL kept whole, a long
+word, no break before a block marker, the cursor kept, Unfill, Plain text indents) and
+`textAutoFillBreak`; typing past the width (a Space, a Return, off by default, in code, Undo
+joining, after an autoreplace); the actions by the tab kind, their keys and the toolbar
+group, greyed in a read-only tab; the Preferences row, Apply and Reset; the stored keys;
+`md-fill-paragraph`, `md-unfill-paragraph`, `md-fill-text-width`, `text-fill-plain` and
+`md-fill-reject` on `texts/markdown-fill.md` and `texts/plain-fill.txt`.

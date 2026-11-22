@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.76 (2026-11-21)
+**Document version:** 0.77 (2026-11-22)
 
 **Related authorities:**
 
@@ -1480,25 +1480,28 @@ Specified in 0.63.
 ### 4.19 Markdown tools — MD
 
 The authoring tools of a Markdown tab: the text toolbar, the image and the diagram inserts,
-the diagram images kept up to date, the link check, the link insert, the live preview and the
-outline. The architecture is `docs/MARKDOWN.md`, Tools and Outline. Specified in 0.72, the
-outline (`EDIT-MD-13..17`) in 0.76.
+the diagram images kept up to date, the link check, the link insert, the live preview, the
+outline and the fill of the paragraphs. The architecture is `docs/MARKDOWN.md`, Tools, Outline
+and Fill. Specified in 0.72, the outline (`EDIT-MD-13..17`) in 0.76, the fill (`EDIT-MD-18..23`,
+of a Plain text tab too) in 0.77.
 
 - `EDIT-MD-1` MUST [A]: the toolbars follow the active tab: *Main* (the file, history and
   clipboard actions, Read-only) always; *Diagram* (Delete, the geometry, the centring, Grid,
   Snap, Service objects, Log session) in a diagram or a diff tab; *Elements* in a diagram tab;
-  *Text* in a text tab, in the place of Elements: Go to Line in every text tab, Insert Image,
-  Insert Diagram, Insert Link and Update Diagram Images in a Markdown one; a text diff tab has
-  none of the three. The entries of a hidden
-  toolbar stay in the menus, greyed; a toolbar the user closed stays closed. In a rendered
-  (read-only) Markdown tab Go to Line and the inserts are greyed, Update Diagram Images is not.
+  *Text* in a text tab, in the place of Elements: Go to Line in every text tab, Fill Paragraph
+  in a Markdown and a Plain text one (0.77), Insert Image, Insert Diagram, Insert Link and
+  Update Diagram Images in a Markdown one; a text diff tab has none of the three. The entries
+  of a hidden toolbar stay in the menus, greyed; a toolbar the user closed stays closed. In a
+  rendered (read-only) Markdown tab Go to Line, Fill Paragraph and the inserts are greyed,
+  Update Diagram Images is not.
   *design*
 
   ```
   diagram tab   [Main ............ Read-only][Diagram: Delete Geometry Centre Grid Snap ...]
                 [Elements (left)]
   Markdown tab  [Main ............ Read-only]
-                [Text (left): Go to Line | Image Diagram Link | Update Diagram Images]
+                [Text (left): Go to Line | Fill Paragraph | Image Diagram Link | Update Diagram Images]
+  Plain text    [Text (left): Go to Line | Fill Paragraph]
   ```
 - `EDIT-MD-2` MUST [A]: Edit > Insert Image... (`Ctrl+Shift+I`), the text toolbar, an image
   file dropped on the source and an image pasted from the clipboard open the Insert Image
@@ -1577,8 +1580,12 @@ outline (`EDIT-MD-13..17`) in 0.76.
   | `insert-link <target> [line <n>] [<text>]` | Insert Link; an anchor no heading has is refused (exit 4) |
   | `check` | Check: `== check` and a `<line>:<column> <message>` per finding, or `none`, on stdout |
   | `preview on\|off` | View > Preview |
+  | `fill-paragraph [line <n>\|lines <n>-<m>\|all]` | Fill Paragraph: the unit of the cursor, of line `n`, of the lines `n` to `m`, every unit (`EDIT-MD-20`) |
+  | `unfill-paragraph [line <n>\|lines <n>-<m>\|all]` | Unfill Paragraph, the same units |
+  | `text-width <n>` | the text width for the run, 20..200 (`EDIT-MD-22`) |
 
-  A name clash keeps both (`<name>-<n>.<ext>`); a verb on another tab is refused (exit 4).
+  A name clash keeps both (`<name>-<n>.<ext>`); a verb on another tab is refused (exit 4); the
+  fill verbs act on a Plain text tab too, a read-only one or a line it has not is refused.
   *design*
 - `EDIT-MD-13` SHOULD [A]: the Outline dock of a Markdown tab, read-only too (`EDIT-UI-6`, View >
   Outline, `display/showOutline`), shows the headings of the text as a tree and its images as
@@ -1653,6 +1660,51 @@ outline (`EDIT-MD-13..17`) in 0.76.
           h4 128 "Что такое машины состояний?" #что-такое-машины-состояний
             diagram 141:1 "Машина состояний для микроволновки" diagrams/2/microwave.svg diagrams/2/microwave.graphml out-of-date
   ```
+- `EDIT-MD-18` MUST [A]: a Markdown text is filled by units: a unit is the lines of one
+  paragraph, in a list item or a quote too; it ends at a blank line, before a line opening
+  another block (a list item, a quote, a heading, a fence, a tag, a rule) and after a hard break
+  (two trailing spaces or a `\`). Headings (ATX and setext), fenced and indented code, tables
+  (a block with a delimiter row), HTML blocks, thematic breaks, link reference definitions and
+  `$$` formulas are never filled. The first line of a unit keeps its prefix; the next ones take
+  the quote marks of the first one, then the width of the marker of a list item, else the
+  indent of the second line (of the first one when it is alone). *design*
+- `EDIT-MD-19` MUST [A]: a line breaks only at a run of spaces outside a code span, a formula, a
+  tag, a link target and a URL (as `EDIT-AUTO-4`), and not where the next line would open a
+  block: `-`, `*` or `+` and a space, `1.` or `1)` and a space, `#`, `>`, a fence, a tag, a line
+  of `=` or `-` alone. A filled line holds at most the text width, a tab counting to the next
+  multiple of 4 columns; a longer word stays whole on a line of its own. *design*
+- `EDIT-MD-20` MUST [A]: Edit > Fill Paragraph (`Alt+Q`, the text toolbar) fills the unit of the
+  cursor, or each unit the selection touches: its words joined by one space and broken again
+  at the text width, the cursor at the same character of a word; Edit > Unfill Paragraph
+  (`Alt+Shift+Q`) joins each unit into one line. Each is one undo step (`fill paragraph`,
+  `unfill paragraph`); a text that stays the same takes none. They act in the writable source
+  of a Markdown or a Plain text tab and are greyed in another tab, a rendered, a read-only or a
+  locked one. *design*
+
+  ```
+  width 30, Alt+Q                           ->
+  - A list item whose text runs well           - A list item whose text runs
+  past the width and on                          well past the width and on
+  > quoted words that go on and on and on      > quoted words that go on and
+                                               > on and on
+  ```
+- `EDIT-MD-21` SHOULD [A]: with Fill as you type, off by default, a Space or a Return typed in
+  such a source (after the autoreplace, `EDIT-AUTO-1`) breaks a line longer than the text width
+  at its last break point within the width, else at the first one after it before the key
+  typed, none: nothing; the rest goes to a new line with the prefix of the unit and the
+  following lines are not touched (Fill Paragraph refills them). The break is an undo step of
+  its own: Undo right after it joins the line and the key typed stays. Nothing breaks in a
+  block never filled, nor by a paste, a drop, an undo or redo, a load, a plugin result or a
+  batch verb (as `EDIT-AUTO-5`). *design*
+- `EDIT-MD-22` SHOULD [A]: the text width, 90 characters by default (20..200), and the switch
+  are set on Preferences > Text, *Text editors*, `Text width: [n] characters [ ] Fill as you
+  type`, applied by Ok and Apply; Edit > Fill as You Type, checkable and enabled in a Markdown
+  or a Plain text tab, is the same switch. Both are stored per user (`editor/textWidth`,
+  `editor/fillAsYouType`); Reset of the Preferences restores 90 and off. The width changes no
+  display: Wrap Long Lines (`EDIT-MODE-30`) stays apart. *design*
+- `EDIT-MD-23` MUST [A]: a Plain text tab fills the same way without the Markdown rules: a unit
+  is the lines between blank lines, a line breaks at any run of spaces, the next lines take
+  the indent of the second line (of the first one when it is alone). *design*
 
 ## 5. Coverage
 
