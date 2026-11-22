@@ -63,6 +63,12 @@ void MarkdownOutlineView::setOutlineModel(MarkdownOutlineModel* model)
     restoreExpanded(QModelIndex(), 0, model->rowCount() - 1);
 }
 
+// out of line: the header knows the model by its name only
+MarkdownOutlineModel* MarkdownOutlineView::outlineModel() const
+{
+    return m_outline;
+}
+
 void MarkdownOutlineView::restoreExpanded(const QModelIndex& parent, int first, int last)
 {
     if (!m_outline) return;

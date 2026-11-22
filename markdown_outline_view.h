@@ -38,7 +38,7 @@ public:
 
     // the model of the active Markdown tab, null for another tab; its rows expanded as it keeps them
     void                  setOutlineModel(MarkdownOutlineModel* model);
-    MarkdownOutlineModel* outlineModel() const { return m_outline; }
+    MarkdownOutlineModel* outlineModel() const;
     // the row of the source's place made current and scrolled into view, without rowShown
     void                  follow(const QModelIndex& index);
 
