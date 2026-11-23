@@ -1,6 +1,6 @@
 # Keyboard Shortcuts — Architecture
 
-**Document version:** 0.5 (2026-11-23), the key of Insert Formula; 0.4: the keys of the fill; 0.3: of the Markdown tools. The requirements are
+**Document version:** 0.6 (2026-11-23), the keys of the Git menu; 0.5: the key of Insert Formula; 0.4: the keys of the fill; 0.3: of the Markdown tools. The requirements are
 `EDIT-KEYS-1..12` in `EDITOR-SPEC.md` §4.16.
 
 Every built-in action of the window has a name, a list of default keys and, perhaps, the
@@ -70,13 +70,17 @@ have before 0.62.
 | Document | Properties | `Alt+Return` | *new* |
 | | Check | `F7` | *new* |
 | | Next Change, Previous Change | `Alt+Down`, `Alt+Up` | *new* (0.2) |
+| Git | Stage File | `Ctrl+Alt+A` | *new* (0.6, `EDIT-GIT-16`) |
+| | Compare with HEAD | `Ctrl+D` | *new* (0.6) |
+| | Commit... | `Ctrl+Shift+K` | *new* (0.6) |
+| Repository dock | Rename..., Delete... | `F2`, `Del` while the dock has the focus | *new* (0.6, `EDIT-GIT-8`) |
 | Plugins > Session | Step, Run, Pause, Stop | `F10`, `F5`, `F6`, `Shift+F5` | |
 
 Without a default key: Open Terminal, the other element tools (terminate, the histories, the
 submachine state, the entry and exit points, the state machine), Center Horizontally /
 Vertically, Insert Diagram, Update Diagram Images, Fill as You Type, Preview, the modes, Read-only, the geometry
 entries, Compare, Refresh, the other View toggles and docks, Zoom to SM, the other session
-entries, Plugin manager, About.
+entries, Plugin manager, About; the other Git entries, the branches and the History entries.
 
 ## The keys of a text
 

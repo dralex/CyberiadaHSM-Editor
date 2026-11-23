@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.79 (2026-11-23)
+**Document version:** 0.80 (2026-11-23)
 
 **Related authorities:**
 
@@ -719,7 +719,9 @@ diff tab are inspected the same way (`EDIT-MODE-10`).
 
 ### 4.11 Documents and tabs — DOC
 
-The window holds several documents; the structure is drawn in `docs/WINDOW.md`.
+The window holds several documents; the structure is drawn in `docs/WINDOW.md`. The check of
+the files changed on disk (`EDIT-DOC-13..18`) is specified in 0.80, the architecture in
+`docs/GIT.md`, The disk check.
 
 - `EDIT-DOC-1` MUST [A]: the window starts with one untitled document and no tab line; the tab
   line appears with the second open document and disappears when one is left. *design*
@@ -765,6 +767,40 @@ The window holds several documents; the structure is drawn in `docs/WINDOW.md`.
   enabled only for a tab with a file — an untitled tab, a plugin's `new-document` result
   before its save and a diff tab have none; a folder gone or a terminal that cannot start is
   reported. It has no default key (0.70). *design*
+- `EDIT-DOC-13` MUST [A]: a tab with a file remembers the size, the modification time and the
+  digest of the bytes it last read from the file or wrote to it. The file is checked when it
+  changes on disk (a watcher on the files of the open tabs), on the window activation, after
+  a git command of the editor (`EDIT-GIT-17`) and by the batch verb `disk-check`; a size and a
+  time as remembered end the check, a digest as remembered only takes the new time (a touch,
+  a save of the editor). An untitled, a diff and a text diff tab are not checked. *design*
+- `EDIT-DOC-14` MUST [A]: a tab without unsaved edits whose file changed is read again from it,
+  in its mode and with its read-only flag, the undo history emptied, the zoom and the scroll
+  kept where they still apply. A file that cannot be read keeps the tab as it was, with the
+  bar of `EDIT-DOC-15` saying `<name> changed on disk and cannot be read`. *design*
+- `EDIT-DOC-15` MUST [A]: a tab with unsaved edits whose file changed gets a bar above its page,
+  `<name> changed on disk`: *Reload* reads the file, the edits lost and the undo history
+  emptied; *Keep my edits* closes the bar and remembers the file as it is now, so a Save
+  writes over it without a question; *Compare* opens a diff tab — a text diff tab for a text —
+  of the file on disk against the tab, the bar kept. The bar stays until a choice, a Save or
+  a reload. *design*
+
+  ```
+  +- traffic.graphml* ------------------------------------------------------+
+  | traffic.graphml changed on disk      [Reload] [Keep my edits] [Compare] |
+  +-------------------------------------------------------------------------+
+  |   the canvas or the source, the edits kept until a choice               |
+  ```
+- `EDIT-DOC-16` MUST [A]: a tab whose file is gone gets the bar `<name> is not on disk` —
+  *Close* closes the tab without a question, *Keep* closes the bar — and counts as modified, so
+  closing it asks and Save writes the file again. The file back with the remembered bytes
+  closes the bar and the tab is unmodified again, unless it was edited. *design*
+- `EDIT-DOC-17` MUST [A]: a Save of a tab whose file changed since it was remembered — the bar
+  shown or the change not seen yet — asks `<name> changed on disk. Overwrite it?`, Cancel the
+  default; the batch `save` of such a tab is a script error. *design*
+- `EDIT-DOC-18` MUST [A]: the batch verb `disk-check` checks the open tabs as the window
+  activation does; `disk reload`, `disk keep`, `disk compare` and `disk close` answer the bar of
+  the active tab, a script error without one; `--dump-tabs` adds `disk changed` or
+  `disk absent` to a tab with a bar. *design*
 
 ### 4.12 Plugins — PLUG
 
@@ -1068,7 +1104,10 @@ The interface translations and their workflow are in `docs/TRANSLATION.md`.
   other tabs it is hidden and its View entry greyed, the choice unchanged (0.69). A hidden
   tree or panel keeps following the active document and the canvas selection, so showing it
   again needs no refresh; a tab switch keeps the sizes of the docks, the tree only grows once
-  to fit a wider structure. *design*
+  to fit a wider structure. The Repository and the History docks (`EDIT-GIT-3/15`, 0.80) are
+  at the left of the canvas, tabbed together with the Repository in front, in every tab, with
+  their View entries *Repository* and *History*, shown by default; without a git program or
+  with *Use git* off (`EDIT-GIT-1`) they are hidden and their entries greyed. *design*
 
   ```
   tab                         Structure tree   Properties   Changes   Outline
@@ -1787,6 +1826,212 @@ the fill (`EDIT-MD-18..23`, of a Plain text tab too) in 0.77, the formulas (`EDI
   the entry takes a space before a letter (`\alpha b`, not `\alphab`). An entry is a
   command of LaTeX math as MathJax and KaTeX read it (`\mathbb{R}`, never JKQTMathText's own
   `\bbR`) that JKQTMathText draws without errors. *design*
+
+### 4.20 Git — GIT
+
+The git repository of the active tab in the editor itself: the Repository and the History
+docks, the Git menu, the commit, the compares with a revision and the local branches. The
+architecture is `docs/GIT.md`. Specified in 0.80; it supersedes the git plugin of
+cybersphere-git-plugin, whose textconv driver is `cybparser listing` of libcyberiadaml.
+
+```
+ File Edit Document View Git Plugins Help
+                         Stage File                      Ctrl+Alt+A
+                         Unstage File
+                         Discard Changes of the File...
+                         -------------------------------------------
+                         Compare with HEAD               Ctrl+D
+                         Compare with the Index
+                         Compare with a Revision...
+                         File History
+                         -------------------------------------------
+                         Commit...                       Ctrl+Shift+K
+                         Branch                        > [x] devel  ↑1
+                         Refresh                           main
+                                                           -------------
+                                                           New Branch...
+                                                           Delete Branch...
+
+ +- Repository: hsm-arduino-course  [devel ↑1 v] --------------------------------+
+ | [Tree|Groups] [Changed only] [Ignored]   [Stage] [Unstage] [Commit] [Refresh] |
+ | Name                                              Index  Tree                 |
+ | v diagrams/                                              *                    |
+ |     blink.graphml  ●                                     M                    |
+ |     traffic.graphml                               M                           |
+ |   v 6/                                                                        |
+ |       greenhouse.graphml                          A                           |
+ |   notes.md                                               ?                    |
+ |   README.md                                                                   |
+ +-------------------------------------------------------------------------------+
+```
+
+- `EDIT-GIT-1` MUST [A]: the git program is the one of Preferences > Git, else `git` found in
+  `PATH`; a git before 2.23 counts as not found. The Git page has the program (a path, empty
+  for `PATH`, with Browse...), the line of the program found — `git version 2.43.0
+  (/usr/bin/git)` or `git is not found` — and *Use git*, on by default; both are stored per user
+  and act at Ok and Apply. Without a program or with *Use git* off the editor starts no git
+  process: the docks are hidden (`EDIT-UI-6`) and the Git menu greyed with the reason.
+  *design*
+- `EDIT-GIT-2` MUST [A]: the repository of a tab is the work tree of its file — `git rev-parse
+  --show-toplevel` in the folder of the file, so a linked work tree and a submodule are
+  repositories of their own; a diff and a text diff tab have the repository of the file of
+  their target. An untitled tab and a file outside any work tree have none. The work tree of
+  a folder is looked up once and kept; a Save As and the window activation look it up again.
+  *design*
+- `EDIT-GIT-3` MUST [A]: the Repository dock shows the repository of the active tab, titled
+  `Repository: <the folder of the work tree>` with the branch button (`EDIT-GIT-18`). A switch
+  to a tab of the same repository keeps the dock as it is, the tab's file made the current row
+  and scrolled into view; a switch to another repository shows it with the folders expanded
+  and the scroll it had when last shown. Without a repository the dock holds one line:
+  `<file> is not in a git repository`, `The document has no file`, `git is not found` or
+  `git is off`. *design*
+- `EDIT-GIT-4` MUST [A]: the rows are the files of the work tree: the tracked ones (`git
+  ls-files`), the untracked ones (`git status --untracked-files=all`) and, with *Ignored*, the
+  ignored ones. A file has two letters of `git status --porcelain=v2`, the index and the work
+  tree: `M` modified, `T` type changed, `A` added, `D` deleted, `R` renamed (the old path in the
+  tooltip), `U` conflicted (both letters), `?` untracked, `!` ignored, none unchanged. The row
+  of a file whose tab has unsaved edits shows `●` after the name. *design*
+- `EDIT-GIT-5` MUST [A]: the dock toolbar switches the layout. *Tree*: the folders and the
+  files, the folders first, the changed entries before the unchanged ones, then by name; a
+  folder holding a change has `*` in the Tree column. *Groups*: *Conflicts*, *Staged*,
+  *Changes*, *Untracked* and, with *Ignored*, *Ignored*, the paths flat in each, a file staged
+  and changed again in both Staged and Changes, the empty groups and the unchanged files left
+  out. *Changed only* keeps in the tree the changed files and the folders holding them. The
+  layout, *Changed only* and *Ignored* are stored per user. *design*
+- `EDIT-GIT-6` MUST [A]: the status is read again after a save of a tab of the repository,
+  after every git command of the editor, when the git folder changes (the index, `HEAD`, the
+  refs), on the window activation and on Refresh (the dock toolbar, Git > Refresh): at most
+  once a second, only while the Repository or the History dock is shown, never blocking the
+  window — the rows change when the read ends, and a read of a repository no longer shown is
+  dropped. The reads pass `--no-optional-locks`, so they never hold the index lock against a
+  git the user runs. *design*
+- `EDIT-GIT-7` MUST [A]: a double-click, Return or *Open* on a file row opens it as Open does
+  (`EDIT-DOC-2`) — a diagram or a text of a known mode — or activates its tab; another file
+  opens in the program of the system. On a folder or a group they expand or collapse it.
+  *design*
+- `EDIT-GIT-8` MUST [A]: the context menu of the dock acts on the selected rows, a folder or a
+  group standing for its files: *Open*; *Stage*, *Unstage*, *Discard Changes...*; *Compare with
+  HEAD*, *Compare with the Index*, *Compare with a Revision...*, *History*; *Rename...* (F2),
+  *Delete...* (Del); *Copy Path*, *Copy Relative Path*. An entry with nothing to act on is
+  greyed: Stage without a changed or untracked file, Unstage without a staged one, Discard
+  without a change in the work tree, the compares without exactly one file the editor opens,
+  History and Rename without exactly one file. The dock toolbar has Stage, Unstage, Commit...
+  and Refresh. *design*
+- `EDIT-GIT-9` MUST [A]: Stage runs `git add -- <files>`: the files as saved — the unsaved edits
+  of a tab are not staged and its row keeps `●`; Unstage runs `git restore --staged --
+  <files>`, before the first commit `git rm --cached -q -- <files>`. Neither changes a file on
+  disk. *design*
+- `EDIT-GIT-10` MUST [A]: Discard Changes... asks first, No the default, naming the files and
+  the open tabs whose unsaved edits are lost too; Yes runs `git restore -- <files>` — the work
+  tree back to the index, the staged changes kept — and deletes the untracked files. The open
+  tabs of the files are read again, their edits dropped (`EDIT-DOC-14`); a tab of a deleted
+  file gets the bar of `EDIT-DOC-16`. A conflicted file is not discarded. *design*
+- `EDIT-GIT-11` MUST [A]: Rename... asks the new name, a path relative to the folder of the
+  file; a tracked file moves by `git mv`, another file is renamed; a name taken or outside the
+  work tree is refused. The tab of the file follows it: the title, the Save target, the
+  repository. Delete... asks first, No the default, naming the files and the open tabs it
+  closes; a tracked file is removed by `git rm -q`, which refuses a file with changes not
+  committed, another file is deleted; the tabs of the deleted files close without a question.
+  The Markdown links and the submachine references to the file are not changed (`docs/GIT.md`,
+  Later). *design*
+- `EDIT-GIT-12` MUST [A]: Compare with HEAD, with the Index and with a Revision... open the diff
+  tab of the file (`EDIT-MODE-10`), a text diff tab for a text (`EDIT-MODE-19`): the base is the
+  file in the revision (`git cat-file blob <revision>:<path>`) or in the index (its stage 0
+  entry), the target the file's tab, opened first when it is not open. A file the base lacks is
+  compared with an empty document, a staged rename with its old path; a conflicted file has no
+  index base, so Compare with the Index is greyed for it. The tab is labelled `<name> ↔ HEAD`,
+  `<name> ↔ index` or `<name> ↔ <the revision as typed>`; Document > Refresh reads the base
+  again, `HEAD` resolved anew. *design*
+- `EDIT-GIT-13` MUST [A]: Compare with a Revision... asks the revision in an editable list of the
+  last commits of the file, `HEAD` first; a branch, a tag, a hash or `HEAD~1` is taken as
+  typed; a revision starting with `-` or one git does not know keeps the dialog open with the
+  reason. *design*
+- `EDIT-GIT-14` MUST [A]: Git > Commit... and Commit... of the dock open the commit dialog,
+  titled `Commit to <branch>` (`Commit at <hash>` when detached): the staged files with their
+  letters, a rename as `old → new`; a warning for each tab of the repository with unsaved edits
+  (they are not committed); a message of several lines; *Amend the last commit*, which fills an
+  empty message with the last one and names the commit it amends. Commit is greyed with a
+  blank message, with nothing staged and Amend off, and with a conflicted file; during a merge
+  the dialog says the commit concludes it. Commit runs `git commit -F -` (`--amend`), the
+  message on stdin, the hooks without a terminal; a failure keeps the dialog open with git's
+  message, a success closes it and reads the status. A message not committed is offered again
+  at the next open, until the editor exits. *design*
+
+  ```
+  +- Commit to devel -----------------------+
+  | Staged (2):                              |
+  |   M  diagrams/traffic.graphml            |
+  |   A  diagrams/6/greenhouse.graphml       |
+  | ! blink.graphml has unsaved edits        |
+  | Message:                                 |
+  | +--------------------------------------+ |
+  | | traffic light: night mode            | |
+  | +--------------------------------------+ |
+  | [ ] Amend the last commit                |
+  |                      [Commit] [Cancel]   |
+  +------------------------------------------+
+  ```
+- `EDIT-GIT-15` MUST [A]: the History dock lists the commits — the short hash, the date, the
+  author, the subject — of the file of the current row of the Repository dock, else of the
+  active tab, its renames followed (`git log --follow`); with *Repository* those of the whole
+  repository. It lists the last 100, a *More...* row adds 100. A double-click on a commit, or
+  *Compare with This Revision* of its menu, compares the file — in the Repository scope the
+  active tab's — with it (`EDIT-GIT-12`); *Copy Hash* copies the full hash. Without commits it
+  holds `no commits`; Git > File History and History of the dock show it on the file. *design*
+- `EDIT-GIT-16` MUST [A]: the Git menu, between View and Plugins, acts on the file of the active
+  tab, a diff tab on the file of its target: *Stage File* (Ctrl+Alt+A), *Unstage File*,
+  *Discard Changes of the File...*; *Compare with HEAD* (Ctrl+D), *Compare with the Index*,
+  *Compare with a Revision...*, *File History*; *Commit...* (Ctrl+Shift+K), *Branch*
+  (`EDIT-GIT-18`), *Refresh*. In a tab without a repository the entries are greyed, the reason
+  in the tooltip. *design*
+- `EDIT-GIT-17` MUST [A]: every git command of the editor that may change the repository, and
+  every one that fails, is written with its output into the *Git output* tab of the plugin dock
+  (`EDIT-PLUG-17`), headed `== git <command> - <work tree>`; a failure outside the commit and
+  the branch dialogs is also shown with git's message in a message box. git runs with stdin
+  closed (the commit message aside), `GIT_TERMINAL_PROMPT=0` and `GIT_LITERAL_PATHSPECS=1`;
+  only its `-z` output is read, its messages are passed on as they are. *design*
+- `EDIT-GIT-18` MUST [A]: the branch button of the Repository dock and Git > Branch show the
+  branch — `devel`, `devel ↑1 ↓2` when it is ahead or behind its upstream, `detached at
+  3f2a9c1`, `devel (no commits)`, with `, merging` or `, rebasing` while one is in progress —
+  and list the local branches, the current one checked, then *New Branch...* and *Delete
+  Branch...*. *design*
+- `EDIT-GIT-19` MUST [A]: a click on another branch switches to it: the tabs of the work tree
+  with unsaved edits are named in `Save <n> documents before switching?` — *Save and Switch*,
+  *Cancel* — then `git switch <branch>` runs; a refusal (the local changes it would
+  overwrite) shows git's message and changes nothing; after the switch the status is read
+  and the open tabs are checked against the disk (`EDIT-DOC-13..16`). The branches are greyed
+  while a merge or a rebase is in progress, the reason in the tooltip. *design*
+- `EDIT-GIT-20` MUST [A]: New Branch... asks the name, the start — the current commit or a local
+  branch — and *Switch to it*, on by default: `git switch -c <name> <start>`, or `git branch
+  <name> <start>` without the switch; a start other than the current commit asks the question
+  of `EDIT-GIT-19` first; a name git refuses keeps the dialog open with git's message. Delete
+  Branch... lists the local branches but the current one and deletes the chosen one by `git
+  branch -d`: a branch not merged is refused with git's message. *design*
+- `EDIT-GIT-21` MUST [A]: the batch verbs act as the GUI without a dialog — a verb is the
+  confirmed action — and wait for git; a verb without a repository, a refused one and a git
+  failure are script errors (4), git's message on stderr. *design*
+
+  | Verb | Does |
+  |---|---|
+  | `git refresh` | looks the repository of the active tab up again and reads its status |
+  | `git stage <path>...`, `git unstage <path>...` | `EDIT-GIT-9`; a path relative to the work tree |
+  | `git discard <path>...` | `EDIT-GIT-10`, the open tabs read again |
+  | `git mv <from> <to>`, `git rm <path>...` | `EDIT-GIT-11` |
+  | `git commit "<message>" [amend]` | `EDIT-GIT-14`; `\"`, `\\` and `\n` in the message |
+  | `git compare <path> head\|index\|<revision>` | `EDIT-GIT-12` |
+  | `git history <path>\|repository` | `EDIT-GIT-15` |
+  | `git switch <branch>` | `EDIT-GIT-19`, the unsaved tabs of the work tree saved |
+  | `git branch <name> [from <start>] [switch]`, `git branch-delete <name>` | `EDIT-GIT-20` |
+  | `repository layout tree\|groups`, `repository filter all\|changed`, `repository ignored on\|off` | `EDIT-GIT-5` |
+- `EDIT-GIT-22` MUST [A]: `--dump-repository` writes `== repository`: `root <the folder of the
+  work tree>`; `branch <name>` or `detached <hash>`; `upstream <name> ahead <n> behind <n>`
+  and `state merging|rebasing` when they apply; `layout`, `filter` and `ignored`; a line per
+  local branch, `* ` before the current one; then the rows of the dock in its order, `<index
+  letter><tree letter> <path>` with `.` for no letter, ` open` and ` unsaved` after the path of
+  an open file; `none <the line of the dock>` without a repository. `--dump-history` writes
+  `== history`, a line `<short hash> <subject>` per row. *design*
+- `EDIT-GIT-23` MUST [A]: the plugin token `git` keeps its `.git` lookup (`EDIT-PLUG-55`): the
+  plugins do not depend on the git of the editor, nor on *Use git*. *design*
 
 ## 5. Coverage
 

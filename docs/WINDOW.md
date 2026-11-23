@@ -1,6 +1,6 @@
 # The Editor Window — Documents and Tabs
 
-**Document version:** 0.27 (2026-11-23) — the modes, the read-only flag and the plugins in
+**Document version:** 0.28 (2026-11-23) — the modes, the read-only flag and the plugins in
 the modes (`modes`, the text tabs, a plugin run as a diff base, the plugin languages) are
 implemented, the git compare with them (stage 6 of `docs/MODES.md`); a switch keeps the dock
 sizes; a Markdown tab exports its rendered PDF; the find bar (`docs/FIND.md`); the shortcuts
@@ -14,11 +14,14 @@ tools (`docs/MARKDOWN.md`, Tools).
 0.25: Fill Paragraph, Unfill Paragraph and Fill as You Type (`EDIT-MD-18..23`).
 0.26: View > Mode Line (`EDIT-MODE-31`).
 0.27: Insert Formula (`EDIT-MD-24..27`).
+0.28: the Git menu, the Repository and History docks at the left, the disk bar of a tab
+(`EDIT-GIT-1..23`, `EDIT-DOC-13..18`, `docs/GIT.md`), specified.
 
 The window holds several documents at once. The menus, the toolbars, the tab line and the
-docks (the structure tree, the properties, the changes, the outline, the plugins) are one set; each document brings its
+docks (the structure tree, the properties, the changes, the outline, the repository, the
+history, the plugins) are one set; each document brings its
 own page — a diagram its model, scene and canvas view — and its mode (`docs/MODES.md`). The
-requirements are `EDIT-DOC-1..12` in `EDITOR-SPEC.md` §4.11, `EDIT-MODE-1..17` §4.14 and
+requirements are `EDIT-DOC-1..18` in `EDITOR-SPEC.md` §4.11, `EDIT-GIT-1..23` §4.20 for git, `EDIT-MODE-1..17` §4.14 and
 `EDIT-UI-6` for the docks, `EDIT-FIND-1..9` §4.15 for the find bar; the plugin parts follow `docs/PLUGINS.md` (`EDIT-PLUG-n`, §4.12), the
 plugin sessions its chapter Level 2 (`EDIT-PLUG-36..49`).
 
@@ -26,13 +29,19 @@ plugin sessions its chapter Level 2 (`EDIT-PLUG-36..49`).
 
 ```
 CyberiadaSMEditorWindow (QMainWindow)                                   GLOBAL
- | menuBar (File, Edit, Document, View, Plugins, Help)   ModeTraits (document_mode.h)
+ | menuBar (File, Edit, Document, View, Git, Plugins, Help)   ModeTraits (document_mode.h)
  | mainToolBar, diagramToolBar (top)  elementToolBar | textToolBar (left)
  | zoomOptionsToolBar  zoomCombo
  | Plugins menu + plugin toolbars (PluginsMenu, before zoomOptionsToolBar)
  | clipboard (a detached element copy)   armed tool (toolGroup)   QUndoGroup
  | documents : QList<EditorDocument*>   current
  |
+ | left dock area (EDIT-UI-6, EDIT-GIT-3/15)  RepositoryRegistry (docs/GIT.md)
+ |  +------------------------------------+   one RepositoryService per work tree
+ |  | repositoryDock "Repository: <root>"|   DiskWatcher: the files of the open tabs
+ |  |   RepositoryView over the model    |
+ |  | historyDock "History"  (tabbed)    |
+ |  +------------------------------------+
  | central widget (QVBoxLayout)              | right dock area (EDIT-UI-6)
  |  +--------------------------------------+ | +---------------------------------+
  |  | documentTabs : QTabBar  hidden < 2   | | | treeDock "Structure tree" [_][x]|
@@ -41,17 +50,20 @@ CyberiadaSMEditorWindow (QMainWindow)                                   GLOBAL
  |  | documentStack : QStackedWidget       | | | propertiesDock "Properties"[_][x]|
  |  |   page i = documents[i]->page()      | | |   propertiesWidget              |
  |  |   a canvas, two canvases (diff), a   | | |   (re-targeted on switch)       |
- |  |   CodeEditor (text), two (text diff) | | +---------------------------------+
+ |  |   CodeEditor (text), two (text diff) | | |                                 |
+ |  |   the disk bar above (EDIT-DOC-15)   | | +---------------------------------+
  |  +--------------------------------------+ | | changesDock "Changes"      [_][x]|
  |  | findBar : FindBar  hidden until Find | | |   changeList (a (text) diff tab)|
  |  +--------------------------------------+ | +---------------------------------+
  |                                           | | outlineDock "Outline"      [_][x]|
  |                                           | |   outlineView (a Markdown tab)  |
  |                                           | +---------------------------------+
- |  View > Structure tree / Properties / Changes / Outline: the docks' toggle actions, kept in the
- |  settings; applyDocks shows the docks of ModeTraits::docks as chosen, greys the others
+ |  View > Structure tree / Properties / Changes / Outline / Repository / History: the docks'
+ |  toggle actions, kept in the settings; applyDocks shows the docks of ModeTraits::docks as
+ |  chosen, greys the others; the git docks in every tab while git is in use
  +-------------------------------------------+-------------------------------------
  | pluginDock (QDockWidget, bottom, full width, hidden until the first run)   pluginRuns
+ |   + the "Git output" tab of the editor's git commands (EDIT-GIT-17)
  |
  +-- EditorDocument (QObject): mode, read-only flag, title marker, page    PER DOCUMENT
  |     DiffDocument, TextDocument: docs/MODES.md
@@ -60,6 +72,8 @@ CyberiadaSMEditorWindow (QMainWindow)                                   GLOBAL
        scene : CyberiadaSMEditorScene   the canvas items (parent: the document)
        view  : CyberiadaSMGraphicsView  the stacked page (zoom, pan)
        pendingViewState                 the saved viewport, applied on the first activation
+       disk()                           the size, time and digest last read or written;
+                                        the disk bar (EDIT-DOC-13..18)
        pluginRun()                      the running plugin (one); a replace run and a
                                         session lock; a session marks the scene (RunMark)
        title()                          the file basename, else "[document name]", else "untitled"
@@ -139,10 +153,16 @@ setCurrentDocument(doc)
 | Plugin session | bound to one document | a run (one at a time); locks the document with the view interactive; marks the elements on the document's own scene; its tab "<document> session" in the plugin dock (`EDIT-PLUG-37/40/41/42`) |
 | Plugins > Session, F10, F5, F6, Shift+F5 | document | act on the session of the active document; disabled without one (`EDIT-PLUG-46`) |
 | Plugin dock | global | the findings link to the document of their run; one output tab per plugin, not per document, each run headed by its document; a session tab per session, named by its document (`EDIT-PLUG-15/17/32/35/42`) |
+| Git menu, Repository dock, History dock | global | the repository of the active tab (a diff tab: of its target's file); a tab of another work tree rebuilds the dock, its view state restored; no work tree, a placeholder (`EDIT-GIT-2/3/16`) |
+| RepositoryService | per work tree | one per root while the editor runs; its snapshot, its queue of git commands, its watcher; reads only while a git dock is shown (`EDIT-GIT-6`) |
+| Commit dialog, branches | the repository | the index and the branches of the active tab's work tree; a switch saves the unsaved tabs of that work tree first (`EDIT-GIT-14/19`) |
+| Disk state, disk bar | document | each tab with a file remembers its bytes; the watcher, the activation and a git verb check them; a clean tab reloads, an edited one shows its bar (`EDIT-DOC-13..17`) |
 | Command-line files (GUI) | global | each opens a tab, the last one active (`EDIT-DOC-7`); `--inspect` makes them inspection tabs (`EDIT-MODE-6`) |
 
 ## Lifetimes and traps
 
+- The git docks never hold a document: a closed tab only drops its open and unsaved marks;
+  a service outlives the tabs of its work tree.
 - A `QModelIndex` belongs to one model: the tree and the scene of a background document are never
   linked, and `setRootIndex` follows every `setModel` of the tree.
 - The right docks and the undo group are re-targeted before a document is deleted; the properties
