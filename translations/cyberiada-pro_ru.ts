@@ -1867,6 +1867,54 @@ Ctrl+клик мыши — открыть</translation>
     </message>
 </context>
 <context>
+    <name>FormulaPalette</name>
+    <message>
+        <location filename="../markdown_formula.cpp" line="+198"/>
+        <source>Greek</source>
+        <translation type="unfinished">Греческие</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Operators</source>
+        <translation type="unfinished">Операции</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Relations</source>
+        <translation type="unfinished">Отношения</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Arrows</source>
+        <translation type="unfinished">Стрелки</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Structures</source>
+        <translation type="unfinished">Структуры</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Brackets</source>
+        <translation type="unfinished">Скобки</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Matrices</source>
+        <translation type="unfinished">Матрицы</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Functions</source>
+        <translation type="unfinished">Функции</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Other</source>
+        <translation type="unfinished">Прочее</translation>
+    </message>
+</context>
+<context>
     <name>FragmentDialog</name>
     <message>
         <location filename="../dialogs/fragmentdialog.cpp" line="+47"/>
@@ -2057,7 +2105,7 @@ Ctrl+клик мыши — открыть</translation>
 <context>
     <name>InsertFormulaDialog</name>
     <message>
-        <location filename="../dialogs/insert_formula_dialog.cpp" line="+72"/>
+        <location filename="../dialogs/insert_formula_dialog.cpp" line="+121"/>
         <source>Edit Formula</source>
         <translation type="unfinished">Изменение формулы</translation>
     </message>
@@ -2067,7 +2115,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation type="unfinished">Вставка формулы</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+11"/>
         <source>TeX:</source>
         <translation type="unfinished">TeX:</translation>
     </message>
