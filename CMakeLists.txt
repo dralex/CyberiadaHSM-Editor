@@ -174,6 +174,9 @@ add_library(CyberiadaEditorCore STATIC
   find_bar.h find_bar.cpp
   disk_state.h disk_state.cpp
   disk_bar.h disk_bar.cpp
+  git_process.h git_process.cpp
+  repository_status.h repository_status.cpp
+  repository_service.h repository_service.cpp
   shortcut_map.h shortcut_map.cpp
   autoreplace.h autoreplace.cpp
   markdown_lines.h markdown_lines.cpp
@@ -191,6 +194,7 @@ add_library(CyberiadaEditorCore STATIC
   cyberiadasm_editor_items.cpp
   batch_driver.h batch_driver.cpp
   batch_script.h batch_script.cpp
+  batch_git.h batch_git.cpp
   cyberiadasm_dump.h cyberiadasm_dump.cpp
   cyberiadasm_render.h cyberiadasm_render.cpp
   dotsignal.h dotsignal.cpp

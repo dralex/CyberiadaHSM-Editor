@@ -114,6 +114,8 @@ void SettingsManager::load() {
     editorWrap = s.value("display/editorWrap", EDITOR_LINES_SCROLL).toString() == EDITOR_LINES_WRAP;
     textWidth = qBound(TEXT_WIDTH_MIN, s.value("editor/textWidth", TEXT_WIDTH_DEFAULT).toInt(), TEXT_WIDTH_MAX);
     fillAsYouType = s.value("editor/fillAsYouType", false).toBool();
+    gitProgram = s.value("git/program", QString()).toString();
+    gitEnabled = s.value("git/enabled", true).toBool();
     showModeLine = s.value("display/showModeLine", true).toBool();
     boldActionPrefix = s.value("display/boldActionPrefix", true).toBool();
     boldEventName = s.value("display/boldEventName", true).toBool();
@@ -212,6 +214,8 @@ void SettingsManager::loadDefaults()
     setEditorWrap(false);
     setTextWidth(TEXT_WIDTH_DEFAULT);
     setFillAsYouType(false);
+    setGitProgram(QString());
+    setGitEnabled(true);
     setShowModeLine(true);
     setBoldActionPrefix(true);
     setBoldEventName(true);
@@ -314,6 +318,24 @@ void SettingsManager::setFillAsYouType(bool value)
         fillAsYouType = value;
         QSettings().setValue("editor/fillAsYouType", value);
         emit textFillChanged();
+    }
+}
+
+void SettingsManager::setGitProgram(const QString& value)
+{
+    if (gitProgram != value) {
+        gitProgram = value;
+        QSettings().setValue("git/program", value);
+        emit gitSettingsChanged();
+    }
+}
+
+void SettingsManager::setGitEnabled(bool value)
+{
+    if (gitEnabled != value) {
+        gitEnabled = value;
+        QSettings().setValue("git/enabled", value);
+        emit gitSettingsChanged();
     }
 }
 

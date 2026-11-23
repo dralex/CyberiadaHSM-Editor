@@ -87,6 +87,8 @@
 #include "find_bar.h"
 #include "disk_bar.h"
 #include "disk_state.h"
+#include "git_process.h"
+#include "repository_service.h"
 #include "shortcut_map.h"
 #include "system_terminal.h"
 #include "dialogs/plugin_manager_dialog.h"
@@ -801,6 +803,31 @@ void CyberiadaSMEditorWindow::updateDiskWatch()
     for (const QString& path : wanted) {
         if (!watched.contains(path) && QFileInfo::exists(path)) m_diskWatcher->addPath(path);
     }
+}
+
+QString CyberiadaSMEditorWindow::gitFilePath(EditorDocument* doc) const
+{
+    if (ComparisonDocument* diff = qobject_cast<ComparisonDocument*>(doc)) {
+        EditorDocument* target = diff->target().tab.data();
+        return target && target != doc ? target->filePath() : QString();
+    }
+    return doc ? doc->filePath() : QString();
+}
+
+RepositoryService* CyberiadaSMEditorWindow::repositoryOf(EditorDocument* doc, bool again) const
+{
+    QString path = gitFilePath(doc);
+    if (path.isEmpty()) return nullptr;
+    return RepositoryService::forRoot(RepositoryService::rootOf(QFileInfo(path).absolutePath(), again));
+}
+
+QString CyberiadaSMEditorWindow::noRepositoryReason(EditorDocument* doc) const
+{
+    QString path = gitFilePath(doc);
+    if (path.isEmpty()) return tr("The document has no file");
+    QString reason = GitProcess::unavailableReason();
+    if (!reason.isEmpty()) return reason;
+    return tr("%1 is not in a git repository").arg(QFileInfo(path).fileName());
 }
 
 void CyberiadaSMEditorWindow::slotDiskChanged(const QString& path)

@@ -50,6 +50,7 @@ class PluginsMenu;
 class PluginDock;
 class FindBar;
 class DiskBar;
+class RepositoryService;
 class QFileSystemWatcher;
 class QTimer;
 class ShortcutMap;
@@ -166,6 +167,13 @@ public:
     bool                    answerDiskBar(const QString& answer, QString* error);
     // the bar above the page of the active tab
     DiskBar*                diskBar() const { return m_diskBar; }
+
+    // GIT (EDIT-GIT-2/3, docs/GIT.md): the file of a tab for git, a diff tab's target's file
+    QString                 gitFilePath(EditorDocument* doc) const;
+    // the work tree of the tab, looked up anew with again; nullptr without one
+    RepositoryService*      repositoryOf(EditorDocument* doc, bool again = false) const;
+    // the line of the Repository dock for a tab without a work tree
+    QString                 noRepositoryReason(EditorDocument* doc) const;
     // a Save may write the file: unchanged on disk since the tab read or wrote it, or
     // the user agreed; the batch refuses with the reason (EDIT-DOC-17)
     bool                    confirmDiskOverwrite(EditorDocument* doc, QString* error);

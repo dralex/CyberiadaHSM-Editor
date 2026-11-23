@@ -439,6 +439,62 @@ add_disk_test(answer-reload diagrams/hierarchy.graphml 0)
 add_disk_test(compare diagrams/hierarchy.graphml 0)
 add_disk_test(save-reject diagrams/hierarchy.graphml 4)
 add_disk_test(answer-reject diagrams/hierarchy.graphml 4)
+
+# the git cases (EDIT-GIT-21/22, docs/TESTING.md, Git): the repository of the case made in a
+# fresh work dir by its setup, the input opened there; only with git 2.23 or later
+find_program(GIT_EXECUTABLE git)
+set(EDITOR_TEST_GIT OFF)
+if(GIT_EXECUTABLE)
+  execute_process(COMMAND ${GIT_EXECUTABLE} --version OUTPUT_VARIABLE _git_version ERROR_QUIET)
+  string(REGEX MATCH "[0-9]+\\.[0-9]+" _git_version "${_git_version}")
+  if(_git_version AND NOT _git_version VERSION_LESS 2.23)
+    set(EDITOR_TEST_GIT ON)
+  endif()
+endif()
+function(add_git_test name input expected_code)
+  if(NOT EDITOR_TEST_GIT)
+    return()
+  endif()
+  set(_work ${CMAKE_CURRENT_BINARY_DIR}/git-${name})
+  set(_good)
+  if(expected_code EQUAL 0)
+    set(_good -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/git-${name}.out
+              -DDUMP_GOOD=${CMAKE_CURRENT_SOURCE_DIR}/good/git-${name}-output.txt)
+  endif()
+  set(_script)
+  if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/scripts/git-${name}.script)
+    set(_script -DSCRIPT=${CMAKE_CURRENT_SOURCE_DIR}/scripts/git-${name}.script)
+  endif()
+  add_test(NAME git-${name}
+    COMMAND ${CMAKE_COMMAND}
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaPro>
+      -DGIT=${GIT_EXECUTABLE}
+      -DCLEAN_DIR=${_work}
+      -DGIT_SETUP=${CMAKE_CURRENT_SOURCE_DIR}/scripts/git-${name}.setup
+      -DTESTS_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DINPUT=${input}
+      ${_script}
+      -DDUMP_TABS=1
+      -DDUMP_REPOSITORY=1
+      -DNO_DUMP=1
+      -DEXPECTED=${expected_code}
+      -DWORKDIR=${_work}
+      ${_good}
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunBatchTest.cmake)
+  set_tests_properties(git-${name} PROPERTIES
+    TIMEOUT 60
+    ENVIRONMENT "${L0_ENVIRONMENT}")
+endfunction()
+
+add_git_test(status h.graphml 0)
+add_git_test(unborn notes.md 0)
+add_git_test(detached h.graphml 0)
+add_git_test(rename h.graphml 0)
+add_git_test(conflict h.graphml 0)
+add_git_test(none h.graphml 0)
+add_git_test(untitled h.graphml 0)
+add_git_test(refresh h.graphml 0)
+add_git_test(refresh-reject h.graphml 4)
 add_text_test(text-fill-reject texts/blink.cpp 4)
 
 # the outline of the active Markdown tab after the script, the == outline section alone
@@ -934,6 +990,7 @@ add_l4_test(modes)
 add_l4_test(markdown)
 add_l4_test(find)
 add_l4_test(disk)
+add_l4_test(git)
 add_l4_test(keys)
 add_l4_test(autoreplace)
 add_l4_test(textdiff)

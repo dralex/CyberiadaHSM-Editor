@@ -1,0 +1,11 @@
+== tabs
+count: 1
+0 h.graphml hsm active
+== repository
+root git-conflict
+branch main
+state merging
+* main
+  other
+UU c.txt
+.. h.graphml open

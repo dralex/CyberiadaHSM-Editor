@@ -1,0 +1,10 @@
+# a commit checked out: no branch
+git init -q
+git symbolic-ref HEAD refs/heads/main
+copy diagrams/hierarchy.graphml h.graphml
+git add -A
+git commit -q -m first
+write second.txt second
+git add -A
+git commit -q -m second
+git checkout -q HEAD~1

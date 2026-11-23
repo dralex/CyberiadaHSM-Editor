@@ -1,7 +1,7 @@
 # Git in the Editor — Architecture
 
-**Document version:** 0.2 (2026-11-23) — specified (stage 0); the disk check implemented
-(stage 2). The requirements are
+**Document version:** 0.3 (2026-11-23) — specified (stage 0); the disk check (stage 2) and
+the git core (stage 3) implemented. The requirements are
 `EDIT-GIT-1..23` in `EDITOR-SPEC.md` §4.20, the disk check `EDIT-DOC-13..18` §4.11 and the
 docks `EDIT-UI-6`.
 
@@ -17,7 +17,7 @@ knows: the dock follows the active tab, and a tab of another repository brings i
  | Commit dialog  Revision dialog  Branch dialog            Preferences > Git
  |        | verbs, paths, revisions                 ^ snapshot, log, results, errors
  |        v                                         |
- | RepositoryRegistry   folder -> work tree root (cached); root -> RepositoryService
+ | RepositoryService::rootOf  folder -> work tree root (cached); ::forRoot -> the service
  |        |
  | RepositoryService (QtCore, one per work tree)
  |   status: --no-optional-locks status --porcelain=v2 -z --branch --untracked-files=all
@@ -58,8 +58,8 @@ knows: the dock follows the active tab, and a tab of another repository brings i
 ```
  tab activated / saved (Save As) / window activated
    -> EditorDocument::filePath() (a diff tab: its target's file)
-   -> RepositoryRegistry::rootFor(folder): cached, else git rev-parse --show-toplevel
-                                           --absolute-git-dir (async, then cached)
+   -> RepositoryService::rootOf(folder): cached, else git rev-parse --show-toplevel
+                                           --absolute-git-dir (waited: a few ms, then cached)
    same root as the dock        -> the dock stays; the tab's file is the current row
    another root                 -> RepositoryModel::setService(that root): the cached
                                    snapshot at once, the view state of the root restored,
@@ -69,8 +69,9 @@ knows: the dock follows the active tab, and a tab of another repository brings i
 
 * `rev-parse` gives the root of a linked work tree and of a submodule, and the git folder,
   which may lie outside the root (`.git` as a file).
-* The registry keeps a service per root while the editor runs. The view state — the expanded
-  folders and the scroll — is kept per root in the dock.
+* A service per root lasts while the editor runs; `RepositoryService::reset()` forgets the
+  lookups and the services when the git program or Use git changes. The view state — the
+  expanded folders and the scroll — is kept per root in the dock.
 * The plugin token `git` keeps its own `.git` lookup (`EDIT-PLUG-55`); the registry does not
   change the plugins.
 
@@ -272,13 +273,13 @@ hashes in the dumps are the same on every run.
 |---|---|
 | `git_process.{h,cpp}` | `GitProcess`, `GitResult`: the program, the environment, the runs |
 | `repository_status.{h,cpp}` | `RepositorySnapshot`, `StatusEntry`, `parseStatus()`, `parseFiles()`, `parseLog()` |
-| `repository_service.{h,cpp}` | `RepositoryRegistry`, `RepositoryService`: the roots, the reads, the verbs, the queue, the watcher |
+| `repository_service.{h,cpp}` | `RepositoryService`: the roots of the folders and the services (static), the reads one command after the other, the watcher |
 | `repository_model.{h,cpp}` | `RepositoryModel`: the layouts, the filters, the marks |
 | `repository_view.{h,cpp}` | `RepositoryView`: the dock contents, the toolbar, the branch button, the placeholder, the context menu |
 | `history_view.{h,cpp}` | `HistoryModel`, `HistoryView` |
 | `dialogs/commit_dialog.*`, `dialogs/revision_dialog.*`, `dialogs/branch_dialog.*` | the dialogs |
 | `disk_state.{h,cpp}`, `disk_bar.{h,cpp}` | `DiskState`, `checkDiskState()`, `DiskBar`; the watcher, the checks and the answers in the window |
-| `batch_git.{h,cpp}` | the `git`, `repository` and `disk` verbs, `--dump-repository`, `--dump-history` |
+| `batch_git.{h,cpp}` | the `git` and `repository` verbs, `--dump-repository`, `--dump-history`; the `disk` verbs are document verbs of `batch_script.cpp` |
 | `comparison_document.h` | `DiffOrigin::originGit` |
 | `smeditor_window.*`, `editor_document.*`, `dialogs/preferences_dialog.*` | the menu, the docks, the wiring; the disk state of a tab; the Git page |
 
@@ -301,8 +302,9 @@ second Git.
 
 * `repository_status` on recorded outputs: every entry kind, a rename, the `-z` paths with
   spaces and newlines, the branch headers (initial, detached, an upstream).
-* The service, the dock, the dialogs and the disk check in `l4-git` on temporary
-  repositories; `QSKIP` without git.
+* The service on temporary repositories in `l4-git` (`QSKIP` without git): the roots, a read
+  waited for and one in the background, the ignored files, the watcher; the disk check in
+  `l4-disk`; the dock and the dialogs follow.
 * The `git-*`, `repository-*` and `disk-*` batch cases with `--dump-repository`,
   `--dump-history` and `--dump-tabs` goods (`docs/TESTING.md`, Git).
 

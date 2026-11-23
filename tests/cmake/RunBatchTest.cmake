@@ -9,7 +9,9 @@
 # NO_DUMP (stdout without --dump), CLEAN_DIR (a fresh
 # work dir), SEED (src>dst copies before the run), MARKERS (directories made before
 # the run, '|'-separated), FORBID (absent from the output), SVG_METADATA (--svg-metadata),
-# IMAGE_CONTAINS (the '|'-separated texts the exported image holds)
+# IMAGE_CONTAINS (the '|'-separated texts the exported image holds); the git cases:
+# GIT (the program), GIT_SETUP (the steps that make the repository in CLEAN_DIR, see
+# below) with TESTS_DIR (the copies come from there), DUMP_REPOSITORY
 
 # what differs between a good file and the output: diff -u where there is one, else
 # the first lines that differ (Windows has no diff)
@@ -60,6 +62,8 @@ function(normalize_subject_coords in_file out_file)
   string(REGEX REPLACE "underline: \\[[^]]*\\]" "underline: [#]" _text "${_text}")
   # the view state a save writes is the zoom and the scroll of the offscreen view
   string(REGEX REPLACE "cyberiadaEditorView: '[^']*'" "cyberiadaEditorView: '#'" _text "${_text}")
+  # a commit hash: the bytes of the test files differ on Windows (CRLF), so do the hashes
+  string(REGEX REPLACE "detached [0-9a-f]+" "detached #" _text "${_text}")
   file(WRITE "${out_file}" "${_text}")
 endfunction()
 
@@ -73,6 +77,57 @@ endif()
 if(DEFINED CLEAN_DIR)
   file(REMOVE_RECURSE ${CLEAN_DIR})
   file(MAKE_DIRECTORY ${CLEAN_DIR})
+endif()
+# the repository of a git case: git isolated as the settings are - an empty configuration
+# of its own, no system one, fixed names and dates, so the hashes are the same everywhere;
+# no folder above the work dir is searched. A step a line: git <args> (git! when it may
+# fail), copy <tests file> <file>, write <file> <text>, remove <file>
+if(DEFINED GIT_SETUP)
+  set(_home ${CLEAN_DIR}.home)
+  file(REMOVE_RECURSE ${_home})
+  file(MAKE_DIRECTORY ${_home})
+  file(WRITE ${_home}/.gitconfig "")
+  set(ENV{HOME} ${_home})
+  set(ENV{XDG_CONFIG_HOME} ${_home}/.config)
+  set(ENV{GIT_CONFIG_NOSYSTEM} 1)
+  set(ENV{GIT_CONFIG_GLOBAL} ${_home}/.gitconfig)
+  get_filename_component(_ceiling ${CLEAN_DIR} DIRECTORY)
+  set(ENV{GIT_CEILING_DIRECTORIES} ${_ceiling})
+  set(ENV{GIT_AUTHOR_NAME} "Cyberiada Test")
+  set(ENV{GIT_AUTHOR_EMAIL} "test@localhost")
+  set(ENV{GIT_COMMITTER_NAME} "Cyberiada Test")
+  set(ENV{GIT_COMMITTER_EMAIL} "test@localhost")
+  set(ENV{GIT_AUTHOR_DATE} "2026-01-01T00:00:00Z")
+  set(ENV{GIT_COMMITTER_DATE} "2026-01-01T00:00:00Z")
+  file(STRINGS ${GIT_SETUP} _steps)
+  foreach(_step ${_steps})
+    if(_step STREQUAL "" OR _step MATCHES "^#")
+      continue()
+    endif()
+    separate_arguments(_words UNIX_COMMAND "${_step}")
+    list(GET _words 0 _verb)
+    list(REMOVE_AT _words 0)
+    if(_verb STREQUAL "git" OR _verb STREQUAL "git!")
+      execute_process(COMMAND ${GIT} ${_words} WORKING_DIRECTORY ${CLEAN_DIR}
+                      RESULT_VARIABLE _result OUTPUT_QUIET ERROR_VARIABLE _error)
+      if(_verb STREQUAL "git" AND NOT _result EQUAL 0)
+        message(FATAL_ERROR "the setup step '${_step}' failed: ${_error}")
+      endif()
+    elseif(_verb STREQUAL "copy")
+      list(GET _words 0 _src)
+      list(GET _words 1 _dst)
+      configure_file(${TESTS_DIR}/${_src} ${CLEAN_DIR}/${_dst} COPYONLY)
+    elseif(_verb STREQUAL "write")
+      list(GET _words 0 _dst)
+      list(REMOVE_AT _words 0)
+      string(REPLACE ";" " " _text "${_words}")
+      file(WRITE ${CLEAN_DIR}/${_dst} "${_text}\n")
+    elseif(_verb STREQUAL "remove")
+      file(REMOVE ${CLEAN_DIR}/${_words})
+    else()
+      message(FATAL_ERROR "unknown setup step: ${_step}")
+    endif()
+  endforeach()
 endif()
 if(DEFINED SEED)
   string(REPLACE ">" ";" _seed "${SEED}")
@@ -116,6 +171,9 @@ if(DEFINED DUMP_TABS)
 endif()
 if(DEFINED DUMP_OUTLINE)
   list(APPEND _args --dump-outline)
+endif()
+if(DEFINED DUMP_REPOSITORY)
+  list(APPEND _args --dump-repository)
 endif()
 if(DEFINED LIST_PLUGINS)
   list(APPEND _args --list-plugins)

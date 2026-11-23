@@ -36,6 +36,7 @@
 #include <QTextCursor>
 
 #include "batch_script.h"
+#include "batch_git.h"
 #include "autoreplace.h"
 #include "batch_plugin.h"
 #include "batch_driver.h"
@@ -1541,11 +1542,13 @@ bool runEditScript(CyberiadaSMEditorWindow* win, const QString& path, QString* e
 		bool markdownVerb = isMarkdownVerb(cmd);
 		// a plugin run pushes its own step, a replace result (EDIT-PLUG-12)
 		bool pluginVerb = cmd == "plugin";
-		bool step = !docVerb && !markdownVerb && !pluginVerb && !isSettingVerb(cmd) && cmd != "undo" && cmd != "redo" &&
-			!isGesture(cmd);
-		// a text tab takes the document, the Markdown, the plugin and the setting verbs only
-		// (EDIT-MODE-16, EDIT-MD-12)
-		if (!model && !docVerb && !markdownVerb && !pluginVerb && !isSettingVerb(cmd)) {
+		// the git verbs act on the work tree of the tab, any tab (EDIT-GIT-21)
+		bool gitVerb = isGitVerb(cmd);
+		bool step = !docVerb && !markdownVerb && !pluginVerb && !gitVerb && !isSettingVerb(cmd) && cmd != "undo" &&
+			cmd != "redo" && !isGesture(cmd);
+		// a text tab takes the document, the Markdown, the plugin, the git and the setting verbs
+		// only (EDIT-MODE-16, EDIT-MD-12)
+		if (!model && !docVerb && !markdownVerb && !pluginVerb && !gitVerb && !isSettingVerb(cmd)) {
 			*error = QString("line %1: the active tab holds no diagram").arg(lineno);
 			return false;
 		}
@@ -1556,6 +1559,11 @@ bool runEditScript(CyberiadaSMEditorWindow* win, const QString& path, QString* e
 				ok = docVerb ? runDocumentVerb(win, tokens, &message)
 							 : runPluginVerb(win, trimmed, in, &lineno, plugins, &message);
 				// the verbs change the active document
+				model = win->getModel();
+				scene = win->getScene();
+			} else if (gitVerb) {
+				ok = runGitVerb(win, trimmed, &message);
+				// a verb may read the tabs of the work tree again
 				model = win->getModel();
 				scene = win->getScene();
 			} else if (markdownVerb) {

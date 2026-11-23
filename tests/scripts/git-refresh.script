@@ -1,0 +1,5 @@
+# git refresh reads the status again: the edit saved shows (EDIT-GIT-6/21)
+git refresh
+rename n0 Edited
+save
+git refresh

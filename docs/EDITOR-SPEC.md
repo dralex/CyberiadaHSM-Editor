@@ -2028,13 +2028,15 @@ cybersphere-git-plugin, whose textconv driver is `cybparser listing` of libcyber
   | `git switch <branch>` | `EDIT-GIT-19`, the unsaved tabs of the work tree saved |
   | `git branch <name> [from <start>] [switch]`, `git branch-delete <name>` | `EDIT-GIT-20` |
   | `repository layout tree\|groups`, `repository filter all\|changed`, `repository ignored on\|off` | `EDIT-GIT-5` |
-- `EDIT-GIT-22` MUST [A]: `--dump-repository` writes `== repository`: `root <the folder of the
-  work tree>`; `branch <name>` or `detached <hash>`; `upstream <name> ahead <n> behind <n>`
-  and `state merging|rebasing` when they apply; `layout`, `filter` and `ignored`; a line per
-  local branch, `* ` before the current one; then the rows of the dock in its order, `<index
-  letter><tree letter> <path>` with `.` for no letter, ` open` and ` unsaved` after the path of
-  an open file; `none <the line of the dock>` without a repository. `--dump-history` writes
-  `== history`, a line `<short hash> <subject>` per row. *design*
+- `EDIT-GIT-22` MUST [A]: `--dump-repository` writes `== repository` of the active tab:
+  `root <the folder of the work tree>`; `branch <name>`, ` (no commits)` before the first one,
+  or `detached <short hash>`; `upstream <name> ahead <n> behind <n>` and `state
+  merging|rebasing` when they apply; a line per local branch, `* ` before the current one;
+  then a line per file of the status in the order of the paths, `<index letter><tree
+  letter> <path>` with `.` for no letter, ` from <old path>` after a rename, ` open` and
+  ` unsaved` after the path of an open file, the ignored files only with *Ignored*; `none
+  <the line of the dock>` without a repository. `--dump-history` writes `== history`, a line
+  `<short hash> <subject>` per row. *design*
 - `EDIT-GIT-23` MUST [A]: the plugin token `git` keeps its `.git` lookup (`EDIT-PLUG-55`): the
   plugins do not depend on the git of the editor, nor on *Use git*. *design*
 

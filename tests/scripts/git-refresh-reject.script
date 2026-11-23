@@ -1,0 +1,2 @@
+# a git verb without a repository is a script error (EDIT-GIT-21)
+git refresh

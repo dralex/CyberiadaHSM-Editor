@@ -623,9 +623,13 @@ init`, the files copied from `tests/diagrams/` and `tests/texts/`, the commits o
 The cases isolate git as they isolate the settings: `GIT_CONFIG_GLOBAL` and
 `GIT_CONFIG_SYSTEM` name empty files, `HOME` is the work folder, and `GIT_AUTHOR_DATE`,
 `GIT_COMMITTER_DATE`, the author and the committer are fixed, so the hashes in
-`--dump-repository` and `--dump-history` are the same on every machine. A case without a git of 2.23 or later exits 77 and ctest counts it as skipped.
-The cases compare `== repository`, `== history` and `== tabs` with
-`good/git-<case>-output.txt`. The batch disk cases (`EDIT-DOC-18`) change the files under
+`--dump-repository` and `--dump-history` are the same on every machine; `GIT_CEILING_DIRECTORIES` keeps git from the work tree the build folder lies
+in. The setup of a case (`scripts/git-<case>.setup`) is a step a line: `git <args>` (`git!`
+when it may fail, a merge stopped on a conflict), `copy <tests file> <file>`, `write <file>
+<text>`, `remove <file>`. The git cases are added only when the configure finds git 2.23 or
+later. They compare `== tabs`, `== repository` and `== history` with
+`good/git-<case>-output.txt`, a commit hash masked as the bytes of the test files differ on
+Windows. The batch disk cases (`EDIT-DOC-18`) change the files under
 the open tabs by the git verbs of the script — a switch, a discard; a file changed by another
 program while the editor runs is an `l4-git` case.
 

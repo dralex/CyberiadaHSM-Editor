@@ -113,6 +113,12 @@ public:
     void overrideTextWidth(int value);
     bool getFillAsYouType() const { return fillAsYouType; }
     void setFillAsYouType(bool value);
+
+    // git (EDIT-GIT-1): the program, empty for the git of PATH, and Use git
+    QString getGitProgram() const { return gitProgram; }
+    void setGitProgram(const QString& value);
+    bool getGitEnabled() const { return gitEnabled; }
+    void setGitEnabled(bool value);
     // the mode line under a source editor (EDIT-MODE-31)
     bool getShowModeLine() const { return showModeLine; }
     void setShowModeLine(bool value);
@@ -227,6 +233,8 @@ public:
 signals:
     void settingsChanged();
     void recentFilesChanged();
+    // the git program or Use git changed (EDIT-GIT-1)
+    void gitSettingsChanged();
 
     void gridSettingsChanged();
     void showTransitionTextChanged(bool);
@@ -310,6 +318,8 @@ private:
     bool editorWrap = false;
     int textWidth = TEXT_WIDTH_DEFAULT;
     bool fillAsYouType = false;
+    QString gitProgram;
+    bool gitEnabled = true;
     bool showModeLine = true;
 
     // files

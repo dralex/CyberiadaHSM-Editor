@@ -71,6 +71,8 @@ struct BatchOptions {
 	bool dumpTabsLine = false;
 	// == outline: the outline of the active Markdown tab (EDIT-MD-17)
 	bool dumpOutline = false;
+	// the repository of the active tab (EDIT-GIT-22)
+	bool dumpRepository = false;
 	// the plugin stage (docs/TESTING.md, Plugins): id[:action] and name=value items
 	QString plugin;
 	QStringList pluginParams;

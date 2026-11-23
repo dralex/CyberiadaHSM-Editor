@@ -1,0 +1,8 @@
+== tabs
+count: 1
+0 notes.md markdown active
+== repository
+root git-unborn
+branch main (no commits)
+.? notes.md open
+A. staged.txt

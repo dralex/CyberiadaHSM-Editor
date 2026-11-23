@@ -1,0 +1,2 @@
+# no repository: the folder is outside any work tree
+copy diagrams/hierarchy.graphml h.graphml

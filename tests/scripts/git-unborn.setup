@@ -1,0 +1,6 @@
+# before the first commit: a staged file and an untracked one
+git init -q
+git symbolic-ref HEAD refs/heads/main
+copy texts/notes.md notes.md
+write staged.txt staged
+git add staged.txt

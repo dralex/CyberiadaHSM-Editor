@@ -1,0 +1,4 @@
+# a repository the active tab is not in: an untitled document
+git init -q
+git symbolic-ref HEAD refs/heads/main
+copy diagrams/hierarchy.graphml h.graphml

@@ -1,0 +1,12 @@
+== tabs
+count: 1
+0 h.graphml hsm active
+== repository
+root git-status
+branch main
+* main
+AM added.txt
+.. docs/guide.md
+.M h.graphml open
+.. notes.md
+.? untracked.txt
