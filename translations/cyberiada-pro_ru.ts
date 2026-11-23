@@ -95,6 +95,54 @@ Ctrl+клик мыши — открыть</translation>
     </message>
 </context>
 <context>
+    <name>CommitDialog</name>
+    <message>
+        <location filename="../dialogs/commit_dialog.cpp" line="+43"/>
+        <source>Commit at %1</source>
+        <translation type="unfinished">Коммит на %1</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Commit to %1</source>
+        <translation type="unfinished">Коммит в %1</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Staged (%1):</source>
+        <translation type="unfinished">В индексе (%1):</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>! %1 has unsaved edits, they are not committed</source>
+        <translation type="unfinished">! В %1 есть несохранённые правки, они не попадут в коммит</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>The commit concludes the merge</source>
+        <translation type="unfinished">Коммит завершит слияние</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>A file is in conflict: resolve it and stage it first</source>
+        <translation type="unfinished">Файл в конфликте: сначала разрешите его и добавьте в индекс</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Message:</source>
+        <translation type="unfinished">Сообщение:</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Amend the last commit</source>
+        <translation type="unfinished">Исправить последний коммит</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Commit</source>
+        <translation type="unfinished">Коммит</translation>
+    </message>
+</context>
+<context>
     <name>CyberiadaFileDialog</name>
     <message>
         <location filename="../dialogs/file_dialog.cpp" line="+56"/>
@@ -105,7 +153,12 @@ Ctrl+клик мыши — открыть</translation>
 <context>
     <name>CyberiadaSMEditorDocument</name>
     <message>
-        <location filename="../cyberiadasm_editor_document.cpp" line="+234"/>
+        <location filename="../cyberiadasm_editor_document.cpp" line="+145"/>
+        <source>%1 has unsaved edits: save it before renaming it</source>
+        <translation type="unfinished">В %1 есть несохранённые правки: сохраните его перед переименованием</translation>
+    </message>
+    <message>
+        <location line="+105"/>
         <source>untitled</source>
         <translation>без имени</translation>
     </message>
@@ -233,7 +286,7 @@ Ctrl+клик мыши — открыть</translation>
 <context>
     <name>CyberiadaSMEditorWindow</name>
     <message>
-        <location filename="../smeditor_window.cpp" line="+222"/>
+        <location filename="../smeditor_window.cpp" line="+226"/>
         <source>Output panel</source>
         <translation>Панель вывода</translation>
     </message>
@@ -243,7 +296,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Менеджер плагинов...</translation>
     </message>
     <message>
-        <location line="+292"/>
+        <location line="+293"/>
         <source>Close</source>
         <translation>Закрыть</translation>
     </message>
@@ -262,7 +315,7 @@ Ctrl+клик мыши — открыть</translation>
 </translation>
     </message>
     <message>
-        <location line="+487"/>
+        <location line="+1140"/>
         <source>Undefined</source>
         <translation>Не задан</translation>
     </message>
@@ -277,7 +330,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Markdown</translation>
     </message>
     <message>
-        <location line="+1179"/>
+        <location line="+1193"/>
         <source>Undo</source>
         <translation>Отменить</translation>
     </message>
@@ -323,7 +376,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Выполняются плагины. Остановить их и выйти?</translation>
     </message>
     <message>
-        <location line="+268"/>
+        <location line="+276"/>
         <source>Load State Machine</source>
         <translation>Загрузка машины состояний</translation>
     </message>
@@ -400,8 +453,8 @@ Ctrl+клик мыши — открыть</translation>
         <translation>нет документа</translation>
     </message>
     <message>
-        <location line="-1938"/>
-        <location line="+1948"/>
+        <location line="-1960"/>
+        <location line="+1970"/>
         <source>a plugin is running on the document</source>
         <translation>для документа выполняется плагин</translation>
     </message>
@@ -410,8 +463,8 @@ Ctrl+клик мыши — открыть</translation>
         <translation type="vanished">в режиме инспектора документ доступен только для чтения</translation>
     </message>
     <message>
-        <location line="-1914"/>
-        <location line="+1951"/>
+        <location line="-1936"/>
+        <location line="+1973"/>
         <source>the document cannot be encoded</source>
         <translation>не удалось сериализовать документ</translation>
     </message>
@@ -443,7 +496,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Плагин: %1</translation>
     </message>
     <message>
-        <location line="-2369"/>
+        <location line="-2391"/>
         <source>Mode</source>
         <translation>Режим</translation>
     </message>
@@ -453,18 +506,270 @@ Ctrl+клик мыши — открыть</translation>
         <translation>режим %1 недоступен</translation>
     </message>
     <message>
-        <location line="+1964"/>
+        <location line="+1986"/>
         <source>the inspection tab is read-only</source>
         <translation>вкладка инспекции доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1943"/>
-        <location line="+1944"/>
+        <location line="-1965"/>
+        <location line="+1966"/>
         <source>the tab is read-only</source>
         <translation>вкладка доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-2111"/>
+        <location line="-3037"/>
+        <location line="+9"/>
+        <location line="+306"/>
+        <source>History</source>
+        <translation type="unfinished">История</translation>
+    </message>
+    <message>
+        <location line="-147"/>
+        <source>Gi&amp;t</source>
+        <translation type="unfinished">G&amp;it</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Stage File</source>
+        <translation type="unfinished">Добавить файл в индекс</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Unstage File</source>
+        <translation type="unfinished">Убрать файл из индекса</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Discard Changes of the File...</source>
+        <translation type="unfinished">Отменить изменения файла...</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <location line="+129"/>
+        <source>Compare with HEAD</source>
+        <translation type="unfinished">Сравнить с HEAD</translation>
+    </message>
+    <message>
+        <location line="-128"/>
+        <location line="+130"/>
+        <source>Compare with the Index</source>
+        <translation type="unfinished">Сравнить с индексом</translation>
+    </message>
+    <message>
+        <location line="-129"/>
+        <location line="+131"/>
+        <source>Compare with a Revision...</source>
+        <translation type="unfinished">Сравнить с ревизией...</translation>
+    </message>
+    <message>
+        <location line="-130"/>
+        <source>File History</source>
+        <translation type="unfinished">История файла</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Commit...</source>
+        <translation type="unfinished">Коммит...</translation>
+    </message>
+    <message>
+        <location line="+18"/>
+        <location line="+99"/>
+        <location line="+344"/>
+        <source>Stage</source>
+        <translation type="unfinished">В индекс</translation>
+    </message>
+    <message>
+        <location line="-441"/>
+        <location line="+99"/>
+        <location line="+348"/>
+        <source>Unstage</source>
+        <translation type="unfinished">Из индекса</translation>
+    </message>
+    <message>
+        <location line="-438"/>
+        <source>Rename...</source>
+        <translation type="unfinished">Переименовать...</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Delete...</source>
+        <translation type="unfinished">Удалить...</translation>
+    </message>
+    <message>
+        <location line="+43"/>
+        <source>%1 is in conflict</source>
+        <translation type="unfinished">%1 в конфликте</translation>
+    </message>
+    <message>
+        <location line="+45"/>
+        <source>Discard Changes...</source>
+        <translation type="unfinished">Отменить изменения...</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Copy Path</source>
+        <translation type="unfinished">Копировать путь</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Copy Relative Path</source>
+        <translation type="unfinished">Копировать относительный путь</translation>
+    </message>
+    <message>
+        <location line="+73"/>
+        <source>no file to stage</source>
+        <translation type="unfinished">нет файла для индекса</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>no file to unstage</source>
+        <translation type="unfinished">нет файла в индексе</translation>
+    </message>
+    <message>
+        <location line="+24"/>
+        <source>no change to discard</source>
+        <translation type="unfinished">нет изменений для отмены</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>removed %1</source>
+        <translation type="unfinished">удалено %1</translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <source>%1 is not a path of the work tree</source>
+        <translation type="unfinished">%1 не путь рабочей копии</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>%1 exists</source>
+        <translation type="unfinished">%1 уже существует</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>%1 has unsaved edits: save it before renaming it</source>
+        <translation type="unfinished">В %1 есть несохранённые правки: сохраните его перед переименованием</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>%1 is not renamed</source>
+        <translation type="unfinished">%1 не переименован</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>renamed %1 to %2</source>
+        <translation type="unfinished">%1 переименован в %2</translation>
+    </message>
+    <message>
+        <location line="+28"/>
+        <source>deleted %1</source>
+        <translation type="unfinished">удалён %1</translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <source>the message is empty</source>
+        <translation type="unfinished">сообщение пусто</translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <source>%1 is not a diagram or a text the editor opens</source>
+        <translation type="unfinished">%1 не диаграмма и не текст, который открывает редактор</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>%1 is in conflict: the index has no file of it</source>
+        <translation type="unfinished">%1 в конфликте: в индексе нет его файла</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>index</source>
+        <translation type="unfinished">индекс</translation>
+    </message>
+    <message>
+        <location line="+32"/>
+        <source>No file</source>
+        <translation type="unfinished">Нет файла</translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>History of %1: %2</source>
+        <translation type="unfinished">История %1: %2</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>History of %1: no commits</source>
+        <translation type="unfinished">История %1: нет коммитов</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>History of %1</source>
+        <translation type="unfinished">История %1</translation>
+    </message>
+    <message>
+        <location line="+26"/>
+        <source>Discard the changes of these files? The untracked ones are deleted.</source>
+        <translation type="unfinished">Отменить изменения этих файлов? Неотслеживаемые будут удалены.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>The unsaved edits of these tabs are lost too:</source>
+        <translation type="unfinished">Несохранённые правки этих вкладок тоже будут потеряны:</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+5"/>
+        <source>Discard Changes</source>
+        <translation type="unfinished">Отмена изменений</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <location line="+7"/>
+        <source>Rename</source>
+        <translation type="unfinished">Переименование</translation>
+    </message>
+    <message>
+        <location line="-7"/>
+        <source>The new name of %1:</source>
+        <translation type="unfinished">Новое имя %1:</translation>
+    </message>
+    <message>
+        <location line="+20"/>
+        <source>Delete these files?</source>
+        <translation type="unfinished">Удалить эти файлы?</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>These tabs are closed:</source>
+        <translation type="unfinished">Эти вкладки закроются:</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+5"/>
+        <source>Delete</source>
+        <translation type="unfinished">Удалить</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Compare with a Revision</source>
+        <translation type="unfinished">Сравнение с ревизией</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>a revision does not start with -</source>
+        <translation type="unfinished">ревизия не начинается с -</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>%1 is not a revision of the repository</source>
+        <translation type="unfinished">%1 не ревизия репозитория</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>Commit</source>
+        <translation type="unfinished">Коммит</translation>
+    </message>
+    <message>
+        <location line="+158"/>
         <source>Text file</source>
         <translation>Текстовый файл</translation>
     </message>
@@ -508,12 +813,12 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Автомат не нарушает ни одного правила EXT-FA.</translation>
     </message>
     <message>
-        <location line="+796"/>
+        <location line="+810"/>
         <source>%1: not an element of a finite automaton</source>
         <translation>%1: не элемент конечного автомата</translation>
     </message>
     <message>
-        <location line="+476"/>
+        <location line="+484"/>
         <location line="+27"/>
         <location line="+7"/>
         <source>Save Text</source>
@@ -530,19 +835,20 @@ Ctrl+клик мыши — открыть</translation>
         <translation>%1 (*%2)</translation>
     </message>
     <message>
-        <location line="-640"/>
+        <location line="-648"/>
         <location line="+55"/>
-        <location line="+585"/>
+        <location line="+593"/>
         <source>All files (*)</source>
         <translation>Все файлы (*)</translation>
     </message>
     <message>
-        <location line="-1538"/>
+        <location line="-2320"/>
+        <location line="+760"/>
         <source>Refresh</source>
         <translation>Обновить</translation>
     </message>
     <message>
-        <location line="+1206"/>
+        <location line="+1220"/>
         <source>Element</source>
         <translation>Элемент</translation>
     </message>
@@ -552,12 +858,12 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Изменение</translation>
     </message>
     <message>
-        <location line="-1112"/>
+        <location line="-1126"/>
         <source>a diff tab is opened by Document &gt; Compare with...</source>
         <translation>вкладку сравнения открывает «Документ &gt; Сравнить с...»</translation>
     </message>
     <message>
-        <location line="-516"/>
+        <location line="-1169"/>
         <source>Reload</source>
         <translation type="unfinished">Перечитать</translation>
     </message>
@@ -568,11 +874,12 @@ Ctrl+клик мыши — открыть</translation>
     </message>
     <message>
         <location line="+9"/>
+        <location line="+821"/>
         <source>Compare</source>
         <translation type="unfinished">Сравнить</translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location line="-800"/>
         <source>%1 changed on disk. Overwrite it?</source>
         <translation type="unfinished">Файл %1 изменён на диске. Перезаписать его?</translation>
     </message>
@@ -584,27 +891,26 @@ Ctrl+клик мыши — открыть</translation>
     <message>
         <location line="+72"/>
         <location line="+8"/>
-        <location line="+94"/>
         <source>Repository</source>
         <translation type="unfinished">Репозиторий</translation>
     </message>
     <message>
-        <location line="+3"/>
         <source>Repository: %1</source>
-        <translation type="unfinished">Репозиторий: %1</translation>
+        <translation type="obsolete">Репозиторий: %1</translation>
     </message>
     <message>
-        <location line="+22"/>
+        <location line="+772"/>
         <source>The document has no file</source>
         <translation type="unfinished">У документа нет файла</translation>
     </message>
     <message>
         <location line="+3"/>
+        <location line="+957"/>
         <source>%1 is not in a git repository</source>
         <translation type="unfinished">%1 не в репозитории git</translation>
     </message>
     <message>
-        <location line="+386"/>
+        <location line="-571"/>
         <source>The text has no broken link.</source>
         <translation>В тексте нет битых ссылок.</translation>
     </message>
@@ -746,7 +1052,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>документ %1 не удаётся закодировать</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+19"/>
         <source>Cannot read %1:
 %2</source>
         <translation>Не удаётся прочитать %1:
@@ -817,7 +1123,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Оглавление</translation>
     </message>
     <message>
-        <location line="+106"/>
+        <location line="+113"/>
         <source>The image &quot;%1&quot; is no longer in the text</source>
         <translation>Изображения «%1» больше нет в тексте</translation>
     </message>
@@ -827,7 +1133,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Заголовка «%1» больше нет в тексте</translation>
     </message>
     <message>
-        <location line="+251"/>
+        <location line="+252"/>
         <source>Save the diagram first: the metadata records its saved file</source>
         <translation>Сначала сохраните диаграмму: метаданные указывают на сохранённый файл</translation>
     </message>
@@ -910,8 +1216,9 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Сохранить журнал...</translation>
     </message>
     <message>
-        <location line="-2640"/>
-        <location line="+2891"/>
+        <location line="-3270"/>
+        <location line="+148"/>
+        <location line="+3373"/>
         <source>Open</source>
         <translation>Открыть</translation>
     </message>
@@ -921,8 +1228,8 @@ Ctrl+клик мыши — открыть</translation>
         <translation>%1 - Параметры</translation>
     </message>
     <message>
-        <location line="-3033"/>
-        <location line="+3034"/>
+        <location line="-3708"/>
+        <location line="+3709"/>
         <source>Save</source>
         <translation>Сохранить</translation>
     </message>
@@ -2144,6 +2451,67 @@ Ctrl+клик мыши — открыть</translation>
     </message>
 </context>
 <context>
+    <name>HistoryModel</name>
+    <message>
+        <location filename="../history_view.cpp" line="+77"/>
+        <source>More...</source>
+        <translation type="unfinished">Ещё...</translation>
+    </message>
+    <message>
+        <location line="+26"/>
+        <source>Commit</source>
+        <translation type="unfinished">Коммит</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Date</source>
+        <translation type="unfinished">Дата</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Author</source>
+        <translation type="unfinished">Автор</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Subject</source>
+        <translation type="unfinished">Предмет</translation>
+    </message>
+</context>
+<context>
+    <name>HistoryView</name>
+    <message>
+        <location line="+14"/>
+        <source>File</source>
+        <translation type="unfinished">Файл</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>The commits of the file, its renames followed</source>
+        <translation type="unfinished">Коммиты файла с учётом переименований</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Repository</source>
+        <translation type="unfinished">Репозиторий</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>The commits of the whole repository</source>
+        <translation type="unfinished">Коммиты всего репозитория</translation>
+    </message>
+    <message>
+        <location line="+75"/>
+        <source>Compare with This Revision</source>
+        <translation type="unfinished">Сравнить с этой ревизией</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Copy Hash</source>
+        <translation type="unfinished">Копировать хеш</translation>
+    </message>
+</context>
+<context>
     <name>InsertDiagramDialog</name>
     <message>
         <location filename="../dialogs/insert_diagram_dialog.cpp" line="+46"/>
@@ -3104,7 +3472,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>%1 не установлено: в документе нет машины состояний или он только для чтения</translation>
     </message>
     <message>
-        <location line="+62"/>
+        <location line="+70"/>
         <source>%1: running %2:%3</source>
         <translation>%1: выполняется %2:%3</translation>
     </message>
@@ -4190,9 +4558,27 @@ Ctrl+клик мыши — открыть</translation>
     </message>
 </context>
 <context>
+    <name>RepositoryService</name>
+    <message>
+        <location filename="../repository_service.cpp" line="+236"/>
+        <source>%1 is not merged: the index has no file of it</source>
+        <translation type="unfinished">%1 не слит: в индексе нет его файла</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>a revision does not start with -</source>
+        <translation type="unfinished">ревизия не начинается с -</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>%1 is not a revision of the repository</source>
+        <translation type="unfinished">%1 не ревизия репозитория</translation>
+    </message>
+</context>
+<context>
     <name>RepositoryView</name>
     <message>
-        <location filename="../repository_view.cpp" line="+47"/>
+        <location filename="../repository_view.cpp" line="+56"/>
         <source>Tree</source>
         <translation type="unfinished">Дерево</translation>
     </message>
@@ -4240,6 +4626,34 @@ Ctrl+клик мыши — открыть</translation>
         <location line="+2"/>
         <source>Read the status of the work tree again</source>
         <translation type="unfinished">Перечитать состояние рабочей копии</translation>
+    </message>
+</context>
+<context>
+    <name>RevisionDialog</name>
+    <message>
+        <location filename="../dialogs/revision_dialog.cpp" line="+40"/>
+        <source>Compare with a Revision</source>
+        <translation type="unfinished">Сравнение с ревизией</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>The revision to compare %1 with:</source>
+        <translation type="unfinished">Ревизия для сравнения с %1:</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Compare</source>
+        <translation type="unfinished">Сравнить</translation>
+    </message>
+    <message>
+        <location line="+23"/>
+        <source>Type a revision: a branch, a tag, a hash, HEAD~1</source>
+        <translation type="unfinished">Введите ревизию: ветку, тег, хеш, HEAD~1</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>%1 is not a revision of the repository</source>
+        <translation type="unfinished">%1 не ревизия репозитория</translation>
     </message>
 </context>
 <context>
@@ -5264,7 +5678,7 @@ Ctrl+клик мыши — открыть</translation>
 %2</translation>
     </message>
     <message>
-        <location line="+28"/>
+        <location line="+38"/>
         <source>Cannot write %1:
 %2</source>
         <translation>Не удаётся записать %1:
