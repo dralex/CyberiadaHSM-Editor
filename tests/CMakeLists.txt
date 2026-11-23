@@ -400,6 +400,11 @@ add_markdown_test(unfill-paragraph texts/markdown-fill.md 0)
 add_markdown_test(fill-plain texts/plain-fill.txt 0)
 add_markdown_test(fill-reject texts/markdown-fill.md 4)
 add_markdown_test(fill-text-width-reject texts/markdown-fill.md 4)
+add_markdown_test(insert-formula texts/notes.md 0)
+add_markdown_test(insert-formula-untitled texts/notes.md 0)
+add_markdown_test(insert-formula-reject texts/notes.md 4)
+add_markdown_test(edit-formula texts/markdown-formula.md 0)
+add_markdown_test(edit-formula-reject texts/markdown-formula.md 4)
 add_text_test(text-fill-reject texts/blink.cpp 4)
 
 # the outline of the active Markdown tab after the script, the == outline section alone
@@ -902,6 +907,7 @@ add_l4_test(json)
 add_l4_test(markdown-tools)
 add_l4_test(markdown-outline)
 add_l4_test(text-fill)
+add_l4_test(markdown-formula)
 
 # The plugin layer: the batch plugin stage over the example plugins of
 # plugins/<set>/, which all run one helper with no dependencies (see

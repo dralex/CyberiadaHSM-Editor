@@ -1,0 +1,4 @@
+# Edit Formula in batch mode (EDIT-MD-25/26): an inline formula at its dollar, a display one from
+# a line inside it made inline, its lines replaced by one
+edit-formula 3 25 S = \pi r^{2}
+edit-formula 7 3 inline \det A = ad - bc

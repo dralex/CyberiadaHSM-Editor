@@ -1,0 +1,21 @@
+== tabs
+count: 1
+0 notes.md* markdown active
+== text
+mode: markdown
+file: notes.md
+modified: yes
+rendered: no
+lines: 12
+| $E = mc^2$
+| 
+| # The traffic light
+| 
+| The light has three states: **red**, *yellow* and green.
+| 
+| - the timer switches the states
+| - the button asks for green
+| 
+| $$\sum_{i=1}^{n} i = \frac{n(n+1)}{2}$$
+| 
+| $\nu \neq 5 \$$

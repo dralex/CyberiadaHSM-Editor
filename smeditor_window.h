@@ -121,6 +121,11 @@ public:
     QList<PluginDiagnostic> updateDiagramImages(TextDocument* text, bool all);
     // Check of a Markdown tab: the broken links in Diagnostics, returned for the tests (EDIT-MD-8)
     QList<PluginDiagnostic> checkMarkdown(TextDocument* text);
+    // Insert Formula of a Markdown tab at its cursor, or Edit Formula of the formula the cursor or
+    // an end of the selection stands in (EDIT-MD-24/25)
+    void                    insertFormula(TextDocument* text);
+    // Edit Formula of the formula holding the character at the position (EDIT-MD-25)
+    void                    editFormulaAt(TextDocument* text, int position);
     // the text tab of a file, null when it is not open
     TextDocument*           findTextTab(const QString& path) const;
     // the mode whose files File > Open shows first: the active tab's, a text diff's language
@@ -348,6 +353,8 @@ private slots:
     void                    slotInsertDiagram();
     // Edit > Insert Link... (EDIT-MD-9)
     void                    slotInsertLink();
+    // Edit > Insert Formula... (EDIT-MD-24)
+    void                    slotInsertFormula();
     // Document > Update Diagram Images (EDIT-MD-7)
     void                    slotUpdateDiagramImages();
     void                    slotFindStep(int step);

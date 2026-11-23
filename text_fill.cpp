@@ -115,15 +115,6 @@ bool hardBreak(const QString& line, QString* tail)
     return slashes % 2;
 }
 
-// a word that opens a block at the start of a line (EDIT-MD-19)
-bool opensBlock(const QString& word)
-{
-    static const QRegularExpression MARKER(R"(^(?:[-*+]|\d{1,9}[.)]|#{1,6}|=+|-+)$)");
-    if (MARKER.match(word).hasMatch()) return true;
-    if (word.startsWith('>') || word.startsWith("```") || word.startsWith("~~~")) return true;
-    return word.length() > 1 && word[0] == '<' && (word[1].isLetter() || word[1] == '/' || word[1] == '!');
-}
-
 QList<Unit> plainUnits(const QStringList& lines)
 {
     QList<Unit> units;
@@ -358,10 +349,10 @@ FilledUnit fillUnit(const Unit& u, const QStringList& lines, const QVector<int>&
             if (kind == textFillMarkdown && j < n) {
                 // a word that would open a block goes back with the words before it
                 int k = j;
-                while (k < n && k - i > 1 && opensBlock(words[k])) k--;
-                if (k < n && opensBlock(words[k])) {
+                while (k < n && k - i > 1 && markdownOpensBlock(words[k])) k--;
+                if (k < n && markdownOpensBlock(words[k])) {
                     k = j;
-                    while (k < n && opensBlock(words[k])) k++;
+                    while (k < n && markdownOpensBlock(words[k])) k++;
                 }
                 j = k;
             }
@@ -522,7 +513,7 @@ bool textAutoFillBreak(const QString& text, int cursor, int width, TextFillKind 
         if (kind == textFillMarkdown) {
             int wordEnd = end;
             while (wordEnd < before.length() && !before[wordEnd].isSpace()) wordEnd++;
-            if (opensBlock(before.mid(end, wordEnd - end))) continue;
+            if (markdownOpensBlock(before.mid(end, wordEnd - end))) continue;
         }
         bool fits = textColumns(before.left(i)) <= width;
         if (fits || chosen < 0) {

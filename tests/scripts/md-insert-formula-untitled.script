@@ -1,0 +1,3 @@
+# Insert Formula writes no file: an untitled text takes it (EDIT-MD-24)
+new-document markdown
+insert-formula x^2

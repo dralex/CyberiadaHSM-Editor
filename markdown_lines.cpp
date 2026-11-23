@@ -21,6 +21,8 @@
  *
  * ----------------------------------------------------------------------------- */
 
+#include <QRegularExpression>
+
 #include "markdown_lines.h"
 
 namespace {
@@ -57,6 +59,14 @@ bool markdownListItem(const QString& line)
     int i = 0;
     while (i < t.length() && t[i].isDigit()) i++;
     return i > 0 && i + 1 < t.length() && (t[i] == '.' || t[i] == ')') && t[i + 1] == ' ';
+}
+
+bool markdownOpensBlock(const QString& word)
+{
+    static const QRegularExpression MARKER(R"(^(?:[-*+]|\d{1,9}[.)]|#{1,6}|=+|-+)$)");
+    if (MARKER.match(word).hasMatch()) return true;
+    if (word.startsWith('>') || word.startsWith("```") || word.startsWith("~~~")) return true;
+    return word.length() > 1 && word[0] == '<' && (word[1].isLetter() || word[1] == '/' || word[1] == '!');
 }
 
 QVector<bool> markdownCodeLines(const QStringList& lines)

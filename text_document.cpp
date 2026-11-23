@@ -404,6 +404,22 @@ bool TextDocument::insertInline(const QString& text, const QString& label)
     return true;
 }
 
+bool TextDocument::replaceRange(int begin, int end, const QString& text, const QString& label)
+{
+    if (!isEditable() || begin < 0 || end < begin || end >= m_document->characterCount()) return false;
+    QTextCursor cursor(m_document);
+    cursor.setPosition(begin);
+    cursor.setPosition(end, QTextCursor::KeepAnchor);
+    m_stepName = label;
+    cursor.beginEditBlock();
+    cursor.insertText(text);
+    cursor.endEditBlock();
+    m_stepName.clear();
+    m_editor->setTextCursor(cursor);
+    m_editor->ensureCursorVisible();
+    return true;
+}
+
 TextFillKind TextDocument::fillKind() const
 {
     if (m_mode == MODE_MARKDOWN) return textFillMarkdown;
@@ -556,7 +572,8 @@ bool TextDocument::insertBlock(const QString& line, int before, const QString& l
     }
     cursor.endEditBlock();
     m_stepName.clear();
-    QTextCursor end(m_document->findBlockByNumber(at + (blankBefore ? 0 : 1)));
+    // at the end of the paragraph's last line
+    QTextCursor end(m_document->findBlockByNumber(at + (blankBefore ? 0 : 1) + line.count('\n')));
     end.movePosition(QTextCursor::EndOfBlock);
     m_editor->setTextCursor(end);
     m_editor->ensureCursorVisible();

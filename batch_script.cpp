@@ -49,6 +49,7 @@
 #include "settings_manager.h"
 #include "markdown_tools.h"
 #include "markdown_objects.h"
+#include "markdown_formula.h"
 #include "text_document.h"
 
 static bool toNumbers(const QStringList& tokens, int from, int count, double* values)
@@ -1162,7 +1163,8 @@ static bool runDocumentVerb(CyberiadaSMEditorWindow* win, const QStringList& tok
 static bool isMarkdownVerb(const QString& cmd)
 {
 	return cmd == "insert-image" || cmd == "insert-diagram" || cmd == "insert-link" ||
-		cmd == "update-diagram-images" || cmd == "check" || cmd == "fill-paragraph" || cmd == "unfill-paragraph";
+		cmd == "update-diagram-images" || cmd == "check" || cmd == "fill-paragraph" || cmd == "unfill-paragraph" ||
+		cmd == "insert-formula" || cmd == "edit-formula";
 }
 
 // the batch draws in the --font family, never in a font of the GUI settings
@@ -1173,8 +1175,10 @@ void setBatchDiagramFont(const QString& family)
 	batchDiagramFont = family;
 }
 
-// the active Markdown tab with a file: the inserted files go into its folder (EDIT-MD-4)
-static TextDocument* markdownTab(CyberiadaSMEditorWindow* win, const QString& cmd, QString* error)
+// the active Markdown tab with a file: the inserted files go into its folder (EDIT-MD-4); a
+// formula writes no file (EDIT-MD-24)
+static TextDocument* markdownTab(CyberiadaSMEditorWindow* win, const QString& cmd, QString* error,
+								 bool needsFile = true)
 {
 	TextDocument* text = win->currentText();
 	if (!text || text->mode() != MODE_MARKDOWN) {
@@ -1185,7 +1189,7 @@ static TextDocument* markdownTab(CyberiadaSMEditorWindow* win, const QString& cm
 		*error = "the tab is read-only";
 		return nullptr;
 	}
-	if (!text->hasFile()) {
+	if (needsFile && !text->hasFile()) {
 		*error = "the text has no file: save <file> names one";
 		return nullptr;
 	}
@@ -1382,6 +1386,65 @@ static bool insertLinkVerb(CyberiadaSMEditorWindow* win, const QStringList& toke
 	return text->insertBlock(markdownLinkLine(label, target), before, "insert link");
 }
 
+// the TeX of a formula verb: the rest of the line as written, the \n of restOfLine would break \nu
+static QString formulaTex(const QStringList& tokens, int from)
+{
+	return tokens.mid(from).join(" ");
+}
+
+// insert-formula [display] [line <n>] <tex>: Insert Formula as a paragraph of its own
+// (EDIT-MD-24/26)
+static bool insertFormulaVerb(CyberiadaSMEditorWindow* win, const QStringList& tokens, QString* error)
+{
+	TextDocument* text = markdownTab(win, tokens.first(), error, false);
+	if (!text) return false;
+	int i = 1;
+	bool display = i < tokens.size() && tokens[i] == "display";
+	if (display) i++;
+	int before = text->lineCount() + 1;
+	if (i + 1 < tokens.size() && tokens[i] == "line") {
+		bool ok = false;
+		before = tokens[i + 1].toInt(&ok);
+		if (!ok || before <= 0) { *error = "bad line value " + tokens[i + 1]; return false; }
+		i += 2;
+	}
+	QString written = markdownFormulaText(formulaTex(tokens, i), display);
+	if (written.isEmpty()) { *error = "insert-formula needs a TeX"; return false; }
+	return text->insertBlock(written, before, "insert formula");
+}
+
+// edit-formula <line> <column> [inline|display] <tex>: Edit Formula of the formula holding the
+// character at line:column from 1, its kind kept unless given (EDIT-MD-25/26)
+static bool editFormulaVerb(CyberiadaSMEditorWindow* win, const QStringList& tokens, QString* error)
+{
+	TextDocument* text = markdownTab(win, tokens.first(), error, false);
+	if (!text) return false;
+	bool lineOk = false, columnOk = false;
+	int line = tokens.size() > 2 ? tokens[1].toInt(&lineOk) : 0;
+	int column = tokens.size() > 2 ? tokens[2].toInt(&columnOk) : 0;
+	if (!lineOk || !columnOk) { *error = "edit-formula needs <line> <column>"; return false; }
+	QString source = text->text();
+	QStringList lines = source.split('\n');
+	if (line <= 0 || line > lines.size() || column <= 0 || column > lines[line - 1].length()) {
+		*error = QString("the text has no %1:%2").arg(line).arg(column);
+		return false;
+	}
+	int position = column - 1;
+	for (int k = 0; k < line - 1; k++) position += lines[k].length() + 1;
+	MarkdownFormula formula = markdownFormulaAt(source, position);
+	if (formula.isNull()) { *error = QString("no formula at %1:%2").arg(line).arg(column); return false; }
+	int i = 3;
+	bool display = formula.display;
+	if (i < tokens.size() && (tokens[i] == "inline" || tokens[i] == "display")) {
+		display = tokens[i] == "display";
+		i++;
+	}
+	QString written = markdownFormulaText(formulaTex(tokens, i), display, markdownCharBefore(source, formula.begin),
+										  markdownCharAfter(source, formula.end));
+	if (written.isEmpty()) { *error = "edit-formula needs a TeX"; return false; }
+	return text->replaceRange(formula.begin, formula.end, written, "edit formula");
+}
+
 // fill-paragraph|unfill-paragraph [line <n>|lines <n>-<m>|all]: Fill or Unfill Paragraph of the
 // active Markdown or Plain text tab, the unit of the cursor without an argument (EDIT-MD-20)
 static bool fillVerb(CyberiadaSMEditorWindow* win, const QStringList& tokens, QString* error)
@@ -1424,6 +1487,8 @@ static bool runMarkdownVerb(CyberiadaSMEditorWindow* win, const QStringList& tok
 {
 	if (tokens.first() == "fill-paragraph" || tokens.first() == "unfill-paragraph") return fillVerb(win, tokens, error);
 	if (tokens.first() == "insert-link") return insertLinkVerb(win, tokens, error);
+	if (tokens.first() == "insert-formula") return insertFormulaVerb(win, tokens, error);
+	if (tokens.first() == "edit-formula") return editFormulaVerb(win, tokens, error);
 	if (tokens.first() == "check") return checkVerb(win, tokens, error);
 	if (tokens.first() == "insert-diagram") return insertDiagramVerb(win, tokens, error);
 	if (tokens.first() == "update-diagram-images") return updateDiagramImagesVerb(win, tokens, error);

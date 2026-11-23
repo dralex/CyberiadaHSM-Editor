@@ -160,6 +160,7 @@ add_library(CyberiadaEditorCore STATIC
   markdown_md4c_reader.cpp
   markdown_objects.h markdown_objects.cpp
   markdown_tools.h markdown_tools.cpp
+  markdown_formula.h markdown_formula.cpp
   markdown_outline.h markdown_outline.cpp
   markdown_outline_model.h markdown_outline_model.cpp
   markdown_outline_view.h markdown_outline_view.cpp
@@ -213,6 +214,7 @@ add_library(CyberiadaEditorCore STATIC
   dialogs/insert_image_dialog.h dialogs/insert_image_dialog.cpp
   dialogs/insert_diagram_dialog.h dialogs/insert_diagram_dialog.cpp
   dialogs/insert_link_dialog.h dialogs/insert_link_dialog.cpp
+  dialogs/insert_formula_dialog.h dialogs/insert_formula_dialog.cpp
   dialogs/file_dialog.h dialogs/file_dialog.cpp
   dialogs/open_file_dialog.h dialogs/open_file_dialog.cpp dialogs/open_file_dialog.ui
   dialogs/save_file_dialog.h dialogs/save_file_dialog.cpp dialogs/save_file_dialog.ui

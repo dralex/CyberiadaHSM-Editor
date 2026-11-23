@@ -67,6 +67,8 @@
 #include "dialogs/insert_image_dialog.h"
 #include "dialogs/insert_diagram_dialog.h"
 #include "dialogs/insert_link_dialog.h"
+#include "dialogs/insert_formula_dialog.h"
+#include "markdown_formula.h"
 #include "markdown_tools.h"
 #include "markdown_objects.h"
 #include "markdown_outline_model.h"
@@ -141,6 +143,7 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     connect(actionInsertImage, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotInsertImage);
     connect(actionInsertDiagram, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotInsertDiagram);
     connect(actionInsertLink, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotInsertLink);
+    connect(actionInsertFormula, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotInsertFormula);
     // View > Preview: a setting of every Markdown tab (EDIT-MD-11)
     actionPreview->setChecked(SettingsManager::instance().getMarkdownPreview());
     connect(actionPreview, &QAction::triggered, &SettingsManager::instance(), &SettingsManager::setMarkdownPreview);
@@ -171,7 +174,7 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     QAction* markdownSeparator = new QAction(this);
     markdownSeparator->setSeparator(true);
     markdownToolActions << markdownSeparator << actionInsertImage << actionInsertDiagram
-                        << actionInsertLink << actionUpdateDiagramImages;
+                        << actionInsertLink << actionInsertFormula << actionUpdateDiagramImages;
     connect(actionFind, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotFind);
     connect(actionFindNext, &QAction::triggered, this, [this]() { slotFindStep(1); });
     connect(actionFindPrevious, &QAction::triggered, this, [this]() { slotFindStep(-1); });
@@ -1090,6 +1093,7 @@ void CyberiadaSMEditorWindow::updateMarkdownActions()
     actionInsertImage->setEnabled(inserts);
     actionInsertDiagram->setEnabled(inserts);
     actionInsertLink->setEnabled(inserts);
+    actionInsertFormula->setEnabled(inserts);
     // the images are other files: a read-only text updates them too
     actionUpdateDiagramImages->setEnabled(markdown && text->hasFile());
     actionPreview->setEnabled(markdown);
@@ -1255,6 +1259,58 @@ void CyberiadaSMEditorWindow::slotInsertLink()
     if (dlg.exec() == QDialog::Accepted && !dlg.insertedLine().isEmpty()) {
         text->insertInline(dlg.insertedLine(), tr("insert link"));
     }
+}
+
+void CyberiadaSMEditorWindow::slotInsertFormula()
+{
+    insertFormula(currentText());
+}
+
+// the dialog of a formula of the text: its place kept, the same formula changes nothing
+static void editFormula(QWidget* parent, TextDocument* text, const MarkdownFormula& formula)
+{
+    QString source = text->text();
+    FormulaPlace place;
+    place.before = markdownCharBefore(source, formula.begin);
+    place.after = markdownCharAfter(source, formula.end);
+    InsertFormulaDialog dlg(formula.tex, formula.display, place, true, parent);
+    if (dlg.exec() != QDialog::Accepted || dlg.insertedText().isEmpty()) return;
+    if (dlg.tex() == formula.tex && dlg.display() == formula.display) return;
+    QString written = dlg.insertedText();
+    if (written == source.mid(formula.begin, formula.end - formula.begin)) return;
+    text->replaceRange(formula.begin, formula.end, written, CyberiadaSMEditorWindow::tr("edit formula"));
+}
+
+void CyberiadaSMEditorWindow::insertFormula(TextDocument* text)
+{
+    if (!text || text->mode() != MODE_MARKDOWN || !text->isEditable() || text->showsRendered()) return;
+    QString source = text->text();
+    QTextCursor cursor = text->editor()->textCursor();
+    // a formula is edited, never nested in another (EDIT-MD-24)
+    for (int end : {cursor.position(), cursor.anchor()}) {
+        MarkdownFormula formula = markdownFormulaAround(source, end);
+        if (!formula.isNull()) {
+            editFormula(this, text, formula);
+            return;
+        }
+    }
+    FormulaPlace place;
+    place.before = markdownCharBefore(source, cursor.selectionStart());
+    place.after = markdownCharAfter(source, cursor.selectionEnd());
+    place.displayBlock = !cursor.hasSelection();
+    QString selection = cursor.selectedText();
+    selection.replace(QChar::ParagraphSeparator, '\n');
+    InsertFormulaDialog dlg(selection, false, place, false, this);
+    if (dlg.exec() != QDialog::Accepted || dlg.insertedText().isEmpty()) return;
+    if (dlg.display() && place.displayBlock) text->insertBlock(dlg.insertedText(), 0, tr("insert formula"));
+    else text->insertInline(dlg.insertedText(), tr("insert formula"));
+}
+
+void CyberiadaSMEditorWindow::editFormulaAt(TextDocument* text, int position)
+{
+    if (!text || text->mode() != MODE_MARKDOWN || !text->isEditable()) return;
+    MarkdownFormula formula = markdownFormulaAt(text->text(), position);
+    if (!formula.isNull()) editFormula(this, text, formula);
 }
 
 QList<PluginDiagnostic> CyberiadaSMEditorWindow::updateDiagramImages(TextDocument* text, bool all)

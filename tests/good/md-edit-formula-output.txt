@@ -1,0 +1,17 @@
+== tabs
+count: 1
+0 markdown-formula.md* markdown active
+== text
+mode: markdown
+file: markdown-formula.md
+modified: yes
+rendered: no
+lines: 8
+| # Formulas
+| 
+| The area of a circle is $S = \pi r^{2}$, its length $l = 2\pi r$.
+| 
+| $\det A = ad - bc$
+| 
+| Code `$not a formula$` stays.
+| 

@@ -188,6 +188,7 @@
     <addaction name="actionInsertImage"/>
     <addaction name="actionInsertDiagram"/>
     <addaction name="actionInsertLink"/>
+    <addaction name="actionInsertFormula"/>
     <addaction name="separator"/>
     <addaction name="menuTools"/>
    </widget>
@@ -494,6 +495,18 @@
    </property>
    <property name="toolTip">
     <string>Insert a link to a heading, a file or an address into the Markdown text</string>
+   </property>
+  </action>
+  <action name="actionInsertFormula">
+   <property name="icon">
+    <iconset resource="smeditor.qrc">
+     <normaloff>:/Icons/images/insert-formula.png</normaloff>:/Icons/images/insert-formula.png</iconset>
+   </property>
+   <property name="text">
+    <string>Insert Formula...</string>
+   </property>
+   <property name="toolTip">
+    <string>Insert a TeX formula into the Markdown text, or edit the formula at the cursor</string>
    </property>
   </action>
   <action name="actionInsertImage">

@@ -82,6 +82,9 @@ public:
     // the text at the cursor, the selection replaced, one undo step of the label (EDIT-MD-9);
     // false when the text is not editable
     bool             insertInline(const QString& text, const QString& label);
+    // [begin, end) of the text replaced, one undo step of the label, the cursor after it
+    // (EDIT-MD-25); false when the text is not editable or the range is not in it
+    bool             replaceRange(int begin, int end, const QString& text, const QString& label);
     // a Markdown text fills as Markdown, a Plain text as plain, the other modes never
     // (EDIT-MD-18/23)
     TextFillKind     fillKind() const;

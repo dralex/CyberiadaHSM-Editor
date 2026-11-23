@@ -34,6 +34,8 @@ int  markdownFenceOf(const QString& line, QChar* mark);
 bool markdownIndented(const QString& line);
 // a bullet or an ordered list item: its marker and a space
 bool markdownListItem(const QString& line);
+// a word that opens a block at the start of a line (EDIT-MD-19/26)
+bool markdownOpensBlock(const QString& word);
 // the lines inside a fenced or an indented code block, the fences too (EDIT-AUTO-4)
 QVector<bool> markdownCodeLines(const QStringList& lines);
 // for each position from 0 to `to` of a line, a code span, a formula, a tag or a link

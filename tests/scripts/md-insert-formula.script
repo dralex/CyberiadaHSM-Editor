@@ -1,0 +1,5 @@
+# Insert Formula in batch mode (EDIT-MD-24/26): before line 1, a display one at the end, a lone $
+# escaped and \nu kept as written
+insert-formula line 1 E = mc^2
+insert-formula display \sum_{i=1}^{n} i = \frac{n(n+1)}{2}
+insert-formula \nu \neq 5 $
