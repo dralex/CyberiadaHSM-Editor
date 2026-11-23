@@ -1,7 +1,9 @@
 # The Plugin Polygon
 
 The plugin polygon extends the test polygon (`POLYGON.md`) from editing diagrams to the
-editor's plugins (`PLUGINS.md`, `PLUGIN-API.md`). A plugin run is one more line of the
+editor's plugins (`PLUGINS.md`, `PLUGIN-API.md`). The examples below use the git plugin of
+cybersphere-git-plugin, superseded when git came into the editor (`docs/GIT.md`); the git
+world serves any plugin that works on a repository. A plugin run is one more line of the
 accumulated script, so the script stays the reproduction. The external state a plugin works on,
 such as a git repository or a model API, is its **world**, and it is rebuilt for every editor
 run. The oracles judge a run by the plugin requirements of `EDITOR-SPEC` §4.12 and by the

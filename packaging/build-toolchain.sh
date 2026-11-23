@@ -60,7 +60,7 @@ usage: $0 [options]
                  editor); needs --lib-prefix
   --python-apps  build only the python binding and the python packages (hsm-dispatcher,
                  fa-dispatcher, hsm-to-python, cybersphere-hsm-maker, cybersphere-agents,
-                 cybersphere-git-plugin, lapki-compiler-plugin), with
+                 lapki-compiler-plugin), with
                  their .zip and wheels (--wheel-dir defaults to --out)
   --wheel-dir D  also put the .zip and the pip wheel of each python package into D
   --lib-prefix D extra install prefix holding the once-built libraries (apps mode)
@@ -301,7 +301,7 @@ with open(os.path.join(d, 'cyberiada-toolchain.pth'), 'w') as f:
 
 # build one of the python packages (python3-cyberiadaml, python3-hsm-dispatcher,
 # python3-fa-dispatcher, python3-hsm-to-python, python3-cybersphere-hsm-maker,
-# python3-cybersphere-agents, python3-cybersphere-git, python3-lapki-compiler-plugin):
+# python3-cybersphere-agents, python3-lapki-compiler-plugin):
 # a CPack DEB, Architecture: all, tagged with DISTRO_TAG, not installed into the
 # shared prefix. A package whose python floor (requires-python, or the python of
 # a Poetry project) this python does not meet is skipped (the agents need 3.10, so
@@ -415,8 +415,8 @@ fi
 # (the pure-Python CyberiadaML interface, the tools' CyberiadaML where the binding
 # is not installed, e.g. on Windows); hsm-dispatcher, fa-dispatcher and the maker
 # need only CyberiadaML; hsm-to-python and the agents also need the dispatcher's
-# hsmd (on PYTHONPATH via the source); the git plugin (Document.diff) and the
-# lapki-compiler plugin (the Lapki writer) need the binding itself
+# hsmd (on PYTHONPATH via the source); the lapki-compiler plugin (the Lapki writer)
+# needs the binding itself
 PY_USERBASE=""                # the test user site holding the binding (see build_python)
 build_pyapps() {
     build_pydeb cyberiadaml-py pydantic2
@@ -425,7 +425,6 @@ build_pyapps() {
     build_pydeb cybersphere-hsm-maker
     build_pydeb hsm-to-python
     build_pydeb cybersphere-agents pydantic
-    build_pydeb cybersphere-git-plugin
     build_pydeb lapki-compiler-plugin
 }
 

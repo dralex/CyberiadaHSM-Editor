@@ -513,10 +513,10 @@ line N failed`, and the batch exits 6 at the end. A session action takes the lin
 ```
 rename n0 Ready
 save
-plugin git:commit message="rename the idle state"
-plugin git:compare revision=HEAD~1
+plugin vcs:commit message="rename the idle state"
+plugin vcs:compare revision=HEAD~1
 switch 0
-plugin git:commit-session
+plugin vcs:commit-session
   answer the second commit
   wait ended
 end

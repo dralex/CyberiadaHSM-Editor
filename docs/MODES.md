@@ -140,7 +140,7 @@ CyberiadaSMEditorWindow                                                         
 
 * The pairs come from the library, never from the editor: the same `Document::diff` the git
   plugin prints. Without Document > Geometry the ids, the geometry and the
-  `cyberiadaEditorView` metainformation are not reported, as `hsm-git diff` does, nor the
+  `cyberiadaEditorView` metainformation are not reported, as `cybparser listing` does, nor the
   `regionGeometry` marker the editor writes itself on a save.
 * A pair reads in the names of the target, a removed element in those of the base. Two
   elements of one id pair on enough evidence only (the library's rule): a rename without
@@ -420,7 +420,8 @@ Edit > Insert Image..., Insert Diagram..., Insert Link..., Insert Formula...
    rebuilt on `languagesChanged`, the `files` links and the line links of a text tab.
 6. The git plugin: Compare with a Revision... — done in cybersphere-git-plugin: `hsm-git
    revision` writes the base, `modes` on every git action, its text diff hides
-   `regionGeometry` without the geometry as the tab does.
+   `regionGeometry` without the geometry as the tab does. Superseded: the compares with a
+   revision are the editor's own (`EDIT-GIT-12`, `docs/GIT.md`).
 7. The text diff tab — done in the editor (0.11, `EDIT-MODE-19..25`): `text_diff` and its
    tests, `ComparisonDocument` taken out of `DiffDocument` (the window's Compare, Refresh,
    plugin result and change list one path), `TextDiffDocument` with its `DiffTextPane`s and

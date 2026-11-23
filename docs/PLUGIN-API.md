@@ -466,7 +466,7 @@ modes an action works in; in a tab of another mode the action is greyed out.
 ```json
 { "id": "compare", "label": "Compare with a Revision...", "result": "diff",
   "modes": ["hsm", "fa", "inspection"], "when": ["git"], "parameters": ["revision"],
-  "argv": ["-m", "hsm_git", "revision", "${document}", "--revision=${param:revision}",
+  "argv": ["-m", "vcs", "revision", "${document}", "--revision=${param:revision}",
            "--output", "${output}"] }
 ```
 
@@ -606,7 +606,7 @@ and `git` conditions need:
 #     --script compare.script --dump --dump-tabs
 rename n0 Ready
 save
-plugin git:compare revision=HEAD
+plugin vcs:compare revision=HEAD
 ```
 
 Each run gets its own sections, `== plugin 1`, `== plugin 2`, ...; a refused action stops
@@ -999,7 +999,7 @@ F10 marks the next node.
 |---|---|---|---|
 | `hsm-to-python` "Run step by step..." | driven, async | the generated program on the `hsmd` dispatcher; posting events, timers on the virtual clock, replay of a stream, Save Log | available: hsm-to-python 2.1, hsm-dispatcher-py 0.2 (`hsmd.session`) |
 | `cybersphere-agents` "Run the agent..." | supervised | the agent diagram marked as it runs; the agent's questions as `ask`; Pause before the next model request; `replaces` the one-shot run and its continuation | available: the session action `session` (`run --session`) |
-| `git` "Commit..." | supervised | the branch and the staged files listed, the commit message asked as the answer, the index committed; `replaces` the one-shot commit with a message | available: cybersphere-git-plugin 0.1 (`commit --session`) |
+| `git` "Commit..." | supervised | the branch and the staged files listed, the commit message asked as the answer, the index committed; `replaces` the one-shot commit with a message | retired: the editor commits itself (`EDIT-GIT-14`, `docs/GIT.md`), cybersphere-git-plugin is superseded |
 | a finite automaton plugin | driven, stream | a tape of symbols, `EOF`, the verdict and the output (the FA extension, `type/fa`) | planned |
 | `hsm-ros2` "Test with the fake robot...", `hsm-turtle` "Run the turtle..." | observed | the controller's steps relayed from its ROS 2 trace topic and marked on the diagram; Stop; `replaces` the one-shot test and run | available: hsm_generator (the `trace` parameter), hsm_tests (`--session`) |
 

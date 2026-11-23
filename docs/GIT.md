@@ -1,8 +1,9 @@
 # Git in the Editor — Architecture
 
-**Document version:** 0.6 (2026-11-23) — specified (stage 0); the disk check (stage 2), the
-git core (stage 3), the Repository dock (stage 4), the verbs, the commit, the compares and the
-history (stage 5) and the branches (stage 6) implemented. The requirements are
+**Document version:** 0.7 (2026-11-23) — specified (stage 0) and implemented: the disk check
+(stage 2), the git core (stage 3), the Repository dock (stage 4), the verbs, the commit, the
+compares and the history (stage 5), the branches (stage 6); the git plugin retired from the
+packaging (stage 7). The requirements are
 `EDIT-GIT-1..23` in `EDITOR-SPEC.md` §4.20, the disk check `EDIT-DOC-13..18` §4.11 and the
 docks `EDIT-UI-6`.
 
@@ -316,8 +317,11 @@ outside the editor, the listing of a diagram that makes `git diff` show the elem
  git config diff.cyberiada.textconv "cybparser listing"
 ```
 
-The `cyberiada-pro` package breaks the old plugin package, so the Plugins menu never shows a
-second Git.
+The `cyberiada-pro` package breaks the old plugin package (`Breaks: python3-cybersphere-git`)
+and the Windows installer removes its plugin folder, so the Plugins menu never shows a second
+Git; the build scripts, the package tests (`git-textconv`, `git-diff` by `cybparser listing`,
+`editor-git` by the batch verbs) and `check-plugins.py` (the editor stages a sample, a note
+without git) no longer know the plugin.
 
 ## Testing
 

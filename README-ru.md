@@ -64,7 +64,20 @@ SVG хранит свою исходную диаграмму в метадан�
 * ![Конечные автоматы](https://github.com/kruzhok-team/fa-dispatcher-py/): запуск диаграмм конечных автоматов;
 * ![Генерация кода для ROS2](https://github.com/kruzhok-team/hsm_robot_ros_generator): генерация и проверка кода для нод ROS2 на Python; 
 * ![Черепашка ROS2](https://github.com/dralex/turtle_driver): запуск диаграмм ПРИМС по управлению черепашки ROS2;
-* ![Git](https://github.com/dralex/cybersphere-git-plugin): добавление диаграммы в индекс и коммит, её изменения с ревизии по состояниям.
+
+## Git
+
+Редактор сам показывает и изменяет git-репозиторий активной вкладки
+([docs/GIT.md](docs/GIT.md)): панель «Репозиторий» перечисляет файлы рабочей копии с их
+состоянием, деревом папок или по состояниям; меню Git добавляет файлы в индекс и убирает их
+оттуда, отменяет изменения, делает коммит, сравнивает диаграмму или текст с HEAD, индексом
+или ревизией во вкладке сравнения, показывает историю и переключает локальные ветки.
+Редактор запускает программу git (в Windows — Git для Windows). Чтобы `git diff` в командной
+строке показывал диаграммы по их элементам, задайте драйвер textconv `cybparser listing` из
+libcyberiadaml:
+
+    echo '*.graphml diff=cyberiada' >> .gitattributes
+    git config diff.cyberiada.textconv "cybparser listing"
 
 ## Установка
 

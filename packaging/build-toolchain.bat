@@ -13,7 +13,7 @@ rem Order: libhtreegeom -> libcyberiadaml -> libcyberiadamlpp -> (libcyberiadaml
 rem        + cyberiadaml-py + the python packages) -> QtPropertyBrowser
 rem        -> CyberiadaHSM-Editor
 rem The python packages are hsm-dispatcher, hsm-to-python, cybersphere-hsm-maker and
-rem the git plugin (cybersphere-agents and lapki-compiler-plugin are not in the Windows
+rem fa-dispatcher (cybersphere-agents and lapki-compiler-plugin are not in the Windows
 rem release); they and cyberiadaml-py
 rem are .zip + pip wheel; on Windows the
 rem packages read the diagrams with the pure-Python cyberiadaml-py, which pip
@@ -225,7 +225,6 @@ if "%PYTHON%"=="1" (
   call :build_pydeb hsm-dispatcher-py     %BRANCH% || exit /b 1
   call :build_pydeb cybersphere-hsm-maker %BRANCH% || exit /b 1
   call :build_pydeb hsm-to-python         %BRANCH% || exit /b 1
-  call :build_pydeb cybersphere-git-plugin %BRANCH% || exit /b 1
   call :build_pydeb fa-dispatcher-py      %BRANCH% || exit /b 1
 )
 if "%EDITOR%"=="0" goto editor_done
@@ -427,7 +426,7 @@ exit /b 0
 rem ---------------------------------------------------------------------------
 rem :build_pydeb  name  branch
 rem a distribution-independent python package (cyberiadaml-py, hsm-dispatcher,
-rem hsm-to-python, cybersphere-hsm-maker, cybersphere-git-plugin, fa-dispatcher-py):
+rem hsm-to-python, cybersphere-hsm-maker, fa-dispatcher-py):
 rem LANGUAGES NONE, nothing to compile. Produces a .zip (its files, incl. the editor
 rem plugin under share/cyberiada-pro/plugins/<id>) and a pip wheel (console-script .exe
 rem shims + the plugin data-files). The wheel of cyberiadaml-py needs Python 3.8.1+, and

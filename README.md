@@ -57,7 +57,19 @@ The most interesting plugins are:
 * ![Finite Automata](https://github.com/kruzhok-team/fa-dispatcher-py/): running FA diargams;
 * ![HSM-ROS2 Node Generator](https://github.com/kruzhok-team/hsm_robot_ros_generator): generating and checking HSM-based ROS2 code; 
 * ![HSM-ROS2 Turtle](https://github.com/dralex/turtle_driver): running ROS2 turtle controlled by a HSM diagram;
-* ![Git](https://github.com/dralex/cybersphere-git-plugin): staging and committing the diagram, its changes since a revision state by state.
+
+## Git
+
+The editor shows and changes the git repository of the active tab itself
+([docs/GIT.md](docs/GIT.md)): the Repository dock lists the files of the work tree with their
+status, as a tree of folders or by status; the Git menu stages, unstages, discards, commits,
+compares a diagram or a text with HEAD, the index or a revision in a diff tab, shows the
+history and switches the local branches. It runs the git program (Git for Windows on Windows).
+To see the diagrams by their elements in `git diff` on the command line, set the textconv
+driver `cybparser listing` of libcyberiadaml:
+
+    echo '*.graphml diff=cyberiada' >> .gitattributes
+    git config diff.cyberiada.textconv "cybparser listing"
 
 ## Installation
 

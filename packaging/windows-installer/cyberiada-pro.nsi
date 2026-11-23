@@ -48,12 +48,13 @@ RequestExecutionLevel admin
 !define PLUGINS_DIR "share\cyberiada-pro\plugins"
 !define PROGID "CyberiadaPro.graphml"
 ; what pip installs (the dispatcher, cyberiadaml-py and pydantic come with them)
-!define PIP_PACKAGES "hsm-to-python cybersphere-hsm-maker cybersphere-git-plugin fa-dispatcher-py"
+!define PIP_PACKAGES "hsm-to-python cybersphere-hsm-maker fa-dispatcher-py"
 ; on Windows 7-8.1 cyberiadaml-py by name: the plugins leave it out of their
 ; dependencies on a Windows Python below 3.10 (pip would fetch a pydantic-core that
 ; needs Windows 10), the bundled pydantic of Python 3.8 loads there
-!define LEGACY_PIP_PACKAGES "hsm-to-python cybersphere-hsm-maker cybersphere-git-plugin fa-dispatcher-py cyberiadaml-py"
-; what the uninstaller removes (pydantic may serve other programs: it stays)
+!define LEGACY_PIP_PACKAGES "hsm-to-python cybersphere-hsm-maker fa-dispatcher-py cyberiadaml-py"
+; what the uninstaller removes (pydantic may serve other programs: it stays); the git
+; plugin of the releases before git came into the editor goes too
 !define OUR_PACKAGES "hsm-to-python cybersphere-hsm-maker cybersphere-git-plugin fa-dispatcher-py hsm-dispatcher-py cyberiadaml-py"
 
 Name "CyberiadaPro ${VERSION}"
@@ -274,12 +275,8 @@ Section "$(SecToolsName)" SecTools
   ${If} $0 != 0
     StrCpy $Problems "$Problems$(PinFailed)$\r$\n"
   ${EndIf}
-  StrCpy $1 "git"
-  nsExec::ExecToLog '"$PythonExe" -m hsm_git --install-editor-plugin "$INSTDIR\${PLUGINS_DIR}"'
-  Pop $0
-  ${If} $0 != 0
-    StrCpy $Problems "$Problems$(PinFailed)$\r$\n"
-  ${EndIf}
+  ; git is the editor's own: the git plugin of an older release would show a second Git
+  RMDir /r "$INSTDIR\${PLUGINS_DIR}\git"
   StrCpy $1 "fa-dispatcher"
   nsExec::ExecToLog '"$PythonExe" -m fad --install-editor-plugin "$INSTDIR\${PLUGINS_DIR}"'
   Pop $0

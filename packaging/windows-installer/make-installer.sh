@@ -31,9 +31,9 @@ PYTHONS="3.10 3.11 3.12 3.13 3.14"
 # the python packages of the Windows release (not cybersphere-agents, nor
 # lapki-compiler-plugin: its Lapki writer is the binding's)
 REPOS="cyberiadaml-py hsm-dispatcher-py hsm-to-python cybersphere-hsm-maker
-       cybersphere-git-plugin fa-dispatcher-py"
+       fa-dispatcher-py"
 # the editor plugins the installer pins (keep in sync with cyberiada-pro.nsi)
-PLUGINS="hsm-to-python hsm-maker git fa-dispatcher"
+PLUGINS="hsm-to-python hsm-maker fa-dispatcher"
 
 say() { printf '\n\033[1;34m== %s\033[0m\n' "$*"; }
 die() { printf '\033[1;31merror: %s\033[0m\n' "$*" >&2; exit 1; }

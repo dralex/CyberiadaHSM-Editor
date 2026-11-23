@@ -56,7 +56,7 @@ LIBS="libhtreegeom libhtreegeom-dev libcyberiadaml libcyberiadaml-dev libcyberia
 APPS="python3-libcyberiadamlpp cyberiada-pro"
 PYAPPS="python3-cyberiadaml python3-hsm-dispatcher python3-fa-dispatcher
         python3-hsm-to-python python3-cybersphere-hsm-maker python3-cybersphere-agents
-        python3-cybersphere-git python3-lapki-compiler-plugin"
+        python3-lapki-compiler-plugin"
 # the python packages and their repos (a python floor above the release's python3
 # leaves one out of that release's build)
 PYREPOS="python3-cyberiadaml:cyberiadaml-py
@@ -64,13 +64,12 @@ PYREPOS="python3-cyberiadaml:cyberiadaml-py
          python3-hsm-to-python:hsm-to-python
          python3-cybersphere-hsm-maker:cybersphere-hsm-maker
          python3-cybersphere-agents:cybersphere-agents
-         python3-cybersphere-git:cybersphere-git-plugin
          python3-lapki-compiler-plugin:lapki-compiler-plugin"
 # the packages that need pydantic 2.6+: not built where the release ships pydantic 1
 PYDANTIC2="python3-cyberiadaml"
 # the tool packages and the id of the editor plugin each one installs
 PLUGINS="python3-hsm-to-python:hsm-to-python python3-cybersphere-hsm-maker:hsm-maker
-         python3-cybersphere-agents:cybersphere-agents python3-cybersphere-git:git
+         python3-cybersphere-agents:cybersphere-agents
          python3-lapki-compiler-plugin:lapki-compiler python3-fa-dispatcher:fa-dispatcher"
 
 export DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC
@@ -412,8 +411,9 @@ prepare_workdir() {
     fixture cybersphere-hsm-maker/tests/good/lift.graphml          maker/lift.graphml
     fixture cybersphere-agents/examples/develop.graphml            agents/develop.graphml
     fixture cybersphere-agents/examples/mini/mini.graphml          agents/mini/mini.graphml
-    fixture cybersphere-git-plugin/test/diagrams                   git/diagrams
-    fixture cybersphere-git-plugin/test/good/listing-light.txt     git/listing-light.txt
+    fixture libcyberiadaml/tests/diagrams/diff-light.graphml       git/diagrams/light.graphml
+    fixture libcyberiadaml/tests/diagrams/diff-light-edited.graphml git/diagrams/light-edited.graphml
+    fixture libcyberiadaml/tests/good/parser-listing-diff-light.txt git/listing-light.txt
     fixture lapki-compiler-plugin/tests/diagrams/blinker.graphml   lapki/blinker.graphml
     fixture CyberiadaHSM-Editor/tests/diagrams                     editor/diagrams
     fixture CyberiadaHSM-Editor/tests/good                         editor/good
@@ -454,7 +454,7 @@ if phase checks; then
     H2P=python3-hsm-to-python
     MAKER=python3-cybersphere-hsm-maker
     AGENTS=python3-cybersphere-agents
-    GIT=python3-cybersphere-git
+    PARSER=libcyberiadaml-parser
     LAPKI=python3-lapki-compiler-plugin
     FA=python3-fa-dispatcher
     ED=cyberiada-pro
@@ -547,19 +547,17 @@ assert d.finished()" py/01-flat.graphml'
         'cybersphere platform agents/develop.graphml >out/platform.txt &&
          grep -qF "signals: PASSED(), FAILED(code)" out/platform.txt'
 
-    # the git plugin, offline: the listing of a diagram, its diff in a repository
-    gver=$(upstream $GIT)
-    check git-version $GIT "hsm-git --version >out/git-version.txt &&
-                            grep -q 'hsm-git ${gver}' out/git-version.txt"
-    check git-textconv $GIT \
-        'hsm-git textconv git/diagrams/light.graphml >out/listing.txt &&
+    # the textconv driver of git, offline: the listing of a diagram, git diff showing it
+    check git-textconv $PARSER \
+        'cybparser listing git/diagrams/light.graphml >out/listing.txt &&
          diff -u git/listing-light.txt out/listing.txt'
-    check git-diff $GIT \
+    check git-diff $PARSER \
         'git init -q git/repo && cp git/diagrams/light.graphml git/repo/ && cd git/repo &&
+         echo "*.graphml diff=cyberiada" >.gitattributes &&
+         git config diff.cyberiada.textconv "cybparser listing" &&
          git add light.graphml && git -c user.name=test -c user.email=test@test commit -qm one &&
          cp ../diagrams/light-edited.graphml light.graphml &&
-         hsm-git diff light.graphml --revision=HEAD >"$W/out/git-diff.txt" &&
-         grep -q "state Blink" "$W/out/git-diff.txt"'
+         git diff >"$W/out/git-diff.txt" && grep -q "state Blink" "$W/out/git-diff.txt"'
 
     # the lapki-compiler plugin, offline: the Lapki dialect by the binding, no compiler
     lver=$(upstream $LAPKI)
@@ -699,13 +697,13 @@ assert d.send('GO').status == 'fired'\" py/01-flat.graphml"
     check editor-agents-platform "$ED $AGENTS" \
         "$B agents/develop.graphml --run-plugin cybersphere-agents:platform --dump-plugin >out/ed-platform.txt &&
          grep -qF 'signals: PASSED(), FAILED(code)' out/ed-platform.txt"
-    # in the repository of the git-diff check: the diff of the edit, a new diagram staged
-    check editor-git-diff "$ED $GIT" \
-        "cd git/repo && $B light.graphml --run-plugin git:diff --dump-plugin >o.txt &&
-         grep -q 'state: done' o.txt && grep -q 'state Blink' o.txt &&
-         cp ../diagrams/light.graphml new.graphml &&
-         $B new.graphml --run-plugin git:stage --dump-plugin >o.txt &&
-         grep -q 'A  new.graphml' o.txt"
+    # the git of the editor, in the repository of the git-diff check: the edit shown, a new
+    # diagram staged by the batch verb
+    check editor-git "$ED $PARSER" \
+        "cd git/repo && cp ../diagrams/light.graphml new.graphml &&
+         printf 'git stage new.graphml\\n' >stage.script &&
+         $B light.graphml --script stage.script --dump-repository >o.txt &&
+         grep -q '^.M light.graphml open' o.txt && grep -q '^A. new.graphml' o.txt"
     check editor-fa-test "$ED $FA" \
         "cd fa && $B morse-decoder.graphml --run-plugin fa-dispatcher:test \
              --plugin-param tests=\"\$W/fa/morse-decoder.tests\" --dump-plugin >o.txt &&

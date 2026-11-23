@@ -475,7 +475,7 @@ hsm-to-python/
 ```json
 { "id": "compare", "label": "Compare with a Revision...", "result": "diff",
   "modes": ["hsm", "fa", "inspection"], "when": ["git"], "parameters": ["revision"],
-  "argv": ["-m", "hsm_git", "revision", "${document}", "--revision=${param:revision}",
+  "argv": ["-m", "vcs", "revision", "${document}", "--revision=${param:revision}",
            "--output", "${output}"] }
 ```
 
@@ -617,7 +617,7 @@ stdout редактора. stderr всегда идёт в stderr редакто
 #     --script compare.script --dump --dump-tabs
 rename n0 Ready
 save
-plugin git:compare revision=HEAD
+plugin vcs:compare revision=HEAD
 ```
 
 Каждый запуск получает свои разделы: `== plugin 1`, `== plugin 2`, ...; отклонённое
@@ -1010,7 +1010,7 @@ the nodes»; F10 отмечает следующий узел.
 |---|---|---|---|
 | `hsm-to-python` «Run step by step...» | driven, async | сгенерированная программа на диспетчере `hsmd`; отправка событий, таймеры на виртуальных часах, воспроизведение потока, сохранение журнала | готов: hsm-to-python 2.1, hsm-dispatcher-py 0.2 (`hsmd.session`) |
 | `cybersphere-agents` «Run the agent...» | supervised | диаграмма агента отмечается по ходу работы; вопросы агента — `ask`; пауза перед следующим запросом к модели; `replaces` однократного прогона и его продолжения | готов: действие-сессия `session` (`run --session`) |
-| `git` «Commit...» | supervised | перечисляются ветка и файлы в индексе, сообщение коммита запрашивается как ответ, коммитится индекс; `replaces` однократного коммита с сообщением | готов: cybersphere-git-plugin 0.1 (`commit --session`) |
+| `git` «Commit...» | supervised | перечисляются ветка и файлы в индексе, сообщение коммита запрашивается как ответ, коммитится индекс; `replaces` однократного коммита с сообщением | снят: коммит делает сам редактор (`EDIT-GIT-14`, `docs/GIT.md`), cybersphere-git-plugin упразднён |
 | плагин конечных автоматов | driven, stream | лента символов, `EOF`, вердикт и выход (расширение КА, `type/fa`) | запланирован |
 | `hsm-ros2` «Испытать на программном симуляторе робота...», `hsm-turtle` «Запустить черепашку...» | observed | шаги контроллера пересылаются из его топика трассировки ROS 2 и отмечаются на диаграмме; стоп; `replaces` заменяет разовые испытание и запуск | доступен: hsm_generator (параметр `trace`), hsm_tests (`--session`) |
 

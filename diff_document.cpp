@@ -37,7 +37,7 @@
 #include "subject_fragment.h"
 
 // the geometry metainformation is shown with the geometry only: the editor's view
-// state, as hsm-git does, and the stored regions mark the editor writes on a save
+// state, as cybparser listing does, and the stored regions mark the editor writes on a save
 static bool geometryMeta(const Cyberiada::String& name)
 {
     return name == "cyberiadaEditorView" || name == CYBERIADA_META_REGION_GEOMETRY;
@@ -127,7 +127,7 @@ void DiffDocument::setGeometry(bool on)
     compare();
 }
 
-// the word of an element in a row, as hsm-git names it
+// the word of an element in a row, as cybparser listing names it
 static QString elementWord(Cyberiada::ElementType type)
 {
     switch (type) {

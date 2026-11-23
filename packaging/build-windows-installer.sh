@@ -95,7 +95,6 @@ pull_repo cyberiadaml-py
 pull_repo hsm-dispatcher-py
 pull_repo hsm-to-python
 pull_repo cybersphere-hsm-maker
-pull_repo cybersphere-git-plugin
 pull_repo fa-dispatcher-py
 
 # apt (as root) adds makensis and poetry-core when the image predates them; the
