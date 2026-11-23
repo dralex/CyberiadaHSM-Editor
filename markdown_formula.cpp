@@ -21,6 +21,7 @@
  *
  * ----------------------------------------------------------------------------- */
 
+#include <QCoreApplication>
 #include <QRegularExpression>
 #include <QStringList>
 
@@ -61,7 +62,187 @@ QString firstWord(const QString& line)
     return line.trimmed().section(SPACES, 0, 0);
 }
 
+// the face drawn in a slot
+const char* const SLOT_FACE = "\\square";
+
+// an entry of the tables: its face given only when the slots alone would not show it
+struct PaletteSource {
+    const char* snippet;
+    const char* face;
+};
+
+const PaletteSource GREEK[] = {
+    {"\\alpha", nullptr}, {"\\beta", nullptr}, {"\\gamma", nullptr}, {"\\delta", nullptr},
+    {"\\epsilon", nullptr}, {"\\varepsilon", nullptr}, {"\\zeta", nullptr}, {"\\eta", nullptr},
+    {"\\theta", nullptr}, {"\\vartheta", nullptr}, {"\\iota", nullptr}, {"\\kappa", nullptr},
+    {"\\lambda", nullptr}, {"\\mu", nullptr}, {"\\nu", nullptr}, {"\\xi", nullptr},
+    {"\\pi", nullptr}, {"\\varpi", nullptr}, {"\\rho", nullptr}, {"\\varrho", nullptr},
+    {"\\sigma", nullptr}, {"\\varsigma", nullptr}, {"\\tau", nullptr}, {"\\upsilon", nullptr},
+    {"\\phi", nullptr}, {"\\varphi", nullptr}, {"\\chi", nullptr}, {"\\psi", nullptr},
+    {"\\omega", nullptr}, {"\\Gamma", nullptr}, {"\\Delta", nullptr}, {"\\Theta", nullptr},
+    {"\\Lambda", nullptr}, {"\\Xi", nullptr}, {"\\Pi", nullptr}, {"\\Sigma", nullptr},
+    {"\\Upsilon", nullptr}, {"\\Phi", nullptr}, {"\\Psi", nullptr}, {"\\Omega", nullptr},
+};
+
+const PaletteSource OPERATORS[] = {
+    {"\\pm", nullptr}, {"\\mp", nullptr}, {"\\times", nullptr}, {"\\div", nullptr},
+    {"\\cdot", nullptr}, {"\\ast", nullptr}, {"\\star", nullptr}, {"\\circ", nullptr},
+    {"\\bullet", nullptr}, {"\\cap", nullptr}, {"\\cup", nullptr}, {"\\setminus", nullptr},
+    {"\\wedge", nullptr}, {"\\vee", nullptr}, {"\\neg", nullptr}, {"\\oplus", nullptr},
+    {"\\ominus", nullptr}, {"\\otimes", nullptr}, {"\\odot", nullptr}, {"\\oslash", nullptr},
+    {"\\sqcap", nullptr}, {"\\sqcup", nullptr}, {"\\dagger", nullptr}, {"\\ddagger", nullptr},
+};
+
+const PaletteSource RELATIONS[] = {
+    {"\\neq", nullptr}, {"\\leq", nullptr}, {"\\geq", nullptr}, {"\\ll", nullptr},
+    {"\\gg", nullptr}, {"\\approx", nullptr}, {"\\equiv", nullptr}, {"\\sim", nullptr},
+    {"\\simeq", nullptr}, {"\\cong", nullptr}, {"\\propto", nullptr}, {"\\prec", nullptr},
+    {"\\succ", nullptr}, {"\\in", nullptr}, {"\\notin", nullptr}, {"\\ni", nullptr},
+    {"\\subset", nullptr}, {"\\supset", nullptr}, {"\\subseteq", nullptr}, {"\\supseteq", nullptr},
+    {"\\perp", nullptr}, {"\\parallel", nullptr}, {"\\mid", nullptr}, {"\\models", nullptr},
+    {"\\vdash", nullptr}, {"\\dashv", nullptr},
+};
+
+const PaletteSource ARROWS[] = {
+    {"\\to", nullptr}, {"\\leftarrow", nullptr}, {"\\leftrightarrow", nullptr}, {"\\Rightarrow", nullptr},
+    {"\\Leftarrow", nullptr}, {"\\Leftrightarrow", nullptr}, {"\\longrightarrow", nullptr},
+    {"\\longleftarrow", nullptr}, {"\\longleftrightarrow", nullptr}, {"\\Longrightarrow", nullptr},
+    {"\\Longleftarrow", nullptr}, {"\\Longleftrightarrow", nullptr}, {"\\mapsto", nullptr},
+    {"\\iff", nullptr}, {"\\uparrow", nullptr}, {"\\downarrow", nullptr}, {"\\updownarrow", nullptr},
+    {"\\Uparrow", nullptr}, {"\\Downarrow", nullptr}, {"\\Updownarrow", nullptr},
+    {"\\nearrow", nullptr}, {"\\searrow", nullptr}, {"\\swarrow", nullptr}, {"\\nwarrow", nullptr},
+    {"\\leftharpoonup", nullptr}, {"\\rightharpoonup", nullptr}, {"\\leftharpoondown", nullptr},
+    {"\\rightharpoondown", nullptr},
+};
+
+const PaletteSource STRUCTURES[] = {
+    {"^{#}", "x^{\\square}"}, {"_{#}", "x_{\\square}"}, {"_{#}^{#}", "x_{\\square}^{\\square}"},
+    {"\\frac{#}{#}", nullptr}, {"\\dfrac{#}{#}", nullptr}, {"\\sqrt{#}", nullptr},
+    {"\\sqrt[#]{#}", nullptr}, {"\\binom{#}{#}", nullptr}, {"\\sum_{#}^{#}", nullptr},
+    {"\\prod_{#}^{#}", nullptr}, {"\\coprod_{#}^{#}", nullptr}, {"\\int_{#}^{#}", nullptr},
+    {"\\iint_{#}", nullptr}, {"\\iiint_{#}", nullptr}, {"\\oint_{#}", nullptr},
+    {"\\lim_{# \\to #}", nullptr}, {"\\bigcup_{#}^{#}", nullptr}, {"\\bigcap_{#}^{#}", nullptr},
+    {"\\bigoplus_{#}", nullptr}, {"\\bigotimes_{#}", nullptr}, {"\\overline{#}", nullptr},
+    {"\\underline{#}", nullptr}, {"\\vec{#}", nullptr}, {"\\hat{#}", nullptr},
+    {"\\widehat{#}", nullptr}, {"\\bar{#}", nullptr}, {"\\dot{#}", nullptr}, {"\\ddot{#}", nullptr},
+    {"\\tilde{#}", nullptr}, {"\\widetilde{#}", nullptr}, {"\\overset{#}{#}", nullptr},
+    {"\\underset{#}{#}", nullptr},
+    {"\\stackrel{#}{#}", nullptr}, {"\\boxed{#}", nullptr}, {"\\text{#}", "\\text{abc}"},
+    {"\\mathrm{#}", "\\mathrm{d}"}, {"\\mathbf{#}", "\\mathbf{x}"}, {"\\mathit{#}", "\\mathit{x}"},
+    {"\\mathbb{#}", "\\mathbb{R}"}, {"\\mathcal{#}", "\\mathcal{A}"}, {"\\mathfrak{#}", "\\mathfrak{g}"},
+    {"\\operatorname{#}", "\\operatorname{rot}"},
+};
+
+const PaletteSource BRACKETS[] = {
+    {"\\left( # \\right)", nullptr}, {"\\left[ # \\right]", nullptr}, {"\\left\\{ # \\right\\}", nullptr},
+    {"\\left| # \\right|", nullptr}, {"\\left\\| # \\right\\|", nullptr},
+    {"\\left\\langle # \\right\\rangle", nullptr}, {"\\left\\lfloor # \\right\\rfloor", nullptr},
+    {"\\left\\lceil # \\right\\rceil", nullptr}, {"\\{", nullptr}, {"\\}", nullptr},
+    {"\\langle", nullptr}, {"\\rangle", nullptr}, {"\\lfloor", nullptr}, {"\\rfloor", nullptr},
+    {"\\lceil", nullptr}, {"\\rceil", nullptr}, {"\\|", nullptr},
+};
+
+const PaletteSource MATRICES[] = {
+    {"\\begin{matrix} # & # \\\\ # & # \\end{matrix}", nullptr},
+    {"\\begin{pmatrix} # & # \\\\ # & # \\end{pmatrix}", nullptr},
+    {"\\begin{bmatrix} # & # \\\\ # & # \\end{bmatrix}", nullptr},
+    {"\\begin{Bmatrix} # & # \\\\ # & # \\end{Bmatrix}", nullptr},
+    {"\\begin{vmatrix} # & # \\\\ # & # \\end{vmatrix}", nullptr},
+    {"\\begin{Vmatrix} # & # \\\\ # & # \\end{Vmatrix}", nullptr},
+    {"\\begin{pmatrix} # & # & # \\\\ # & # & # \\\\ # & # & # \\end{pmatrix}", nullptr},
+    {"\\begin{pmatrix} # \\\\ # \\end{pmatrix}", nullptr},
+    {"\\begin{cases} # & \\text{if } # \\\\ # & \\text{otherwise} \\end{cases}", nullptr},
+    {"\\begin{aligned} # &= # \\\\ &= # \\end{aligned}", nullptr},
+    {"\\begin{array}{cc} # & # \\\\ # & # \\end{array}", nullptr},
+};
+
+const PaletteSource FUNCTIONS[] = {
+    {"\\sin", nullptr}, {"\\cos", nullptr}, {"\\tan", nullptr}, {"\\cot", nullptr},
+    {"\\sec", nullptr}, {"\\arcsin", nullptr}, {"\\arccos", nullptr}, {"\\arctan", nullptr},
+    {"\\sinh", nullptr}, {"\\cosh", nullptr}, {"\\tanh", nullptr}, {"\\coth", nullptr},
+    {"\\exp", nullptr}, {"\\log", nullptr}, {"\\ln", nullptr}, {"\\lim", nullptr},
+    {"\\limsup", nullptr}, {"\\liminf", nullptr}, {"\\min", nullptr}, {"\\max", nullptr},
+    {"\\det", nullptr}, {"\\dim", nullptr}, {"\\ker", nullptr}, {"\\deg", nullptr},
+    {"\\gcd", nullptr}, {"\\arg", nullptr}, {"\\Pr", nullptr}, {"\\hom", nullptr},
+};
+
+const PaletteSource OTHER[] = {
+    {"\\infty", nullptr}, {"\\partial", nullptr}, {"\\nabla", nullptr}, {"\\forall", nullptr},
+    {"\\exists", nullptr}, {"\\nexists", nullptr}, {"\\emptyset", nullptr}, {"\\varnothing", nullptr},
+    {"\\hbar", nullptr}, {"\\ell", nullptr}, {"\\Re", nullptr}, {"\\Im", nullptr},
+    {"\\aleph", nullptr}, {"\\angle", nullptr}, {"\\triangle", nullptr}, {"\\therefore", nullptr},
+    {"\\because", nullptr}, {"\\ldots", nullptr}, {"\\cdots", nullptr}, {"\\vdots", nullptr},
+    {"\\ddots", nullptr}, {"\\prime", nullptr}, {"\\top", nullptr}, {"\\bot", nullptr},
+    {"\\square", nullptr}, {"\\checkmark", nullptr}, {"\\quad", "a \\quad b"}, {"\\qquad", "a \\qquad b"},
+};
+
+template <size_t N>
+FormulaTab paletteTab(const char* title, const PaletteSource (&sources)[N])
+{
+    FormulaTab tab;
+    tab.title = title;
+    for (size_t i = 0; i < N; i++) {
+        tab.entries.append(FormulaEntry{QString::fromLatin1(sources[i].snippet),
+                                        sources[i].face ? QString::fromLatin1(sources[i].face) : QString()});
+    }
+    return tab;
+}
+
 } // namespace
+
+const QChar FORMULA_SLOT('#');
+
+const QVector<FormulaTab>& formulaPalette()
+{
+    static const QVector<FormulaTab> tabs = {
+        paletteTab(QT_TRANSLATE_NOOP("FormulaPalette", "Greek"), GREEK),
+        paletteTab(QT_TRANSLATE_NOOP("FormulaPalette", "Operators"), OPERATORS),
+        paletteTab(QT_TRANSLATE_NOOP("FormulaPalette", "Relations"), RELATIONS),
+        paletteTab(QT_TRANSLATE_NOOP("FormulaPalette", "Arrows"), ARROWS),
+        paletteTab(QT_TRANSLATE_NOOP("FormulaPalette", "Structures"), STRUCTURES),
+        paletteTab(QT_TRANSLATE_NOOP("FormulaPalette", "Brackets"), BRACKETS),
+        paletteTab(QT_TRANSLATE_NOOP("FormulaPalette", "Matrices"), MATRICES),
+        paletteTab(QT_TRANSLATE_NOOP("FormulaPalette", "Functions"), FUNCTIONS),
+        paletteTab(QT_TRANSLATE_NOOP("FormulaPalette", "Other"), OTHER),
+    };
+    return tabs;
+}
+
+QString formulaSnippetTex(const QString& snippet)
+{
+    return QString(snippet).remove(FORMULA_SLOT);
+}
+
+QString formulaEntryFace(const FormulaEntry& entry)
+{
+    return entry.face.isEmpty() ? QString(entry.snippet).replace(FORMULA_SLOT, SLOT_FACE) : entry.face;
+}
+
+FormulaEdit applyFormulaSnippet(const QString& text, int selectionStart, int selectionEnd, const QString& snippet)
+{
+    static const QRegularExpression COMMAND_END("\\\\[A-Za-z]+$");
+    int start = qBound(0, qMin(selectionStart, selectionEnd), text.length());
+    int end = qBound(start, qMax(selectionStart, selectionEnd), text.length());
+    QString selected = text.mid(start, end - start);
+    QString inserted;
+    int cursor = -1;
+    bool first = true;
+    for (QChar c : snippet) {
+        if (c != FORMULA_SLOT) {
+            inserted += c;
+        } else {
+            if (first && !selected.isEmpty()) inserted += selected;
+            else if (cursor < 0) cursor = inserted.length();
+            first = false;
+        }
+    }
+    // \alpha before b would read as \alphab
+    if (end < text.length() && text[end].isLetter() && COMMAND_END.match(inserted).hasMatch()) inserted += ' ';
+    FormulaEdit edit;
+    edit.text = text.left(start) + inserted + text.mid(end);
+    edit.cursor = start + (cursor < 0 ? inserted.length() : cursor);
+    return edit;
+}
 
 MarkdownFormula markdownFormulaAt(const QString& text, int position)
 {

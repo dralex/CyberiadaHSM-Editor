@@ -26,6 +26,7 @@
 
 #include <QChar>
 #include <QString>
+#include <QVector>
 
 // docs/MARKDOWN.md, Insert Formula; EDIT-MD-24..27
 
@@ -53,5 +54,35 @@ QString markdownFormulaTex(const QString& tex);
 // the text of a formula (EDIT-MD-26): before and after are the characters around it in its
 // line, null at a line end or for a paragraph of its own; empty for a blank TeX
 QString markdownFormulaText(const QString& tex, bool display, QChar before = QChar(), QChar after = QChar());
+
+// the slot of a palette entry
+extern const QChar FORMULA_SLOT;
+
+// an entry of the palette (EDIT-MD-27): the TeX written with its slots, and the face drawn on
+// its button, empty for the TeX with \square in the slots
+struct FormulaEntry {
+    QString snippet;
+    QString face;
+};
+// a tab of the palette, its title translated in the context FormulaPalette
+struct FormulaTab {
+    const char*           title;
+    QVector<FormulaEntry> entries;
+};
+// the tabs in the order of EDIT-MD-27, commands MathJax and KaTeX read
+const QVector<FormulaTab>& formulaPalette();
+// the TeX of an entry with its slots empty, as its tooltip shows it
+QString formulaSnippetTex(const QString& snippet);
+// the TeX drawn on the button of an entry
+QString formulaEntryFace(const FormulaEntry& entry);
+
+// an entry put into a TeX: the selection [selectionStart, selectionEnd) goes into its first
+// slot, the other slots are emptied, a command ending it takes a space before a letter; the
+// cursor at the first empty slot, else after the entry
+struct FormulaEdit {
+    QString text;
+    int     cursor = 0;
+};
+FormulaEdit applyFormulaSnippet(const QString& text, int selectionStart, int selectionEnd, const QString& snippet);
 
 #endif

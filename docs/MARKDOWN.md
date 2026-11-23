@@ -720,8 +720,15 @@ it has its own:
 
 `applyFormulaSnippet(text, selectionStart, selectionEnd, snippet)`: the selection goes into
 the first slot, the other slots are emptied, the cursor goes to the first empty slot, else to
-the end of the entry. A button is the face drawn by `MathRenderer` in the palette text colour,
-the TeX in its tooltip; without the formulas the TeX is its text.
+the end of the entry; a command ending the entry takes a space before a letter. A button is the
+face drawn by `MathRenderer` in the palette text colour, the TeX in its tooltip; without the
+formulas the TeX is its text. The dialog puts the entry over the selection of the TeX field,
+one undo step of the field.
+
+JKQTMathText leaves out `\gets`, `\csc`, `\lg`, `\sup`, `\inf`, `\bmod`, `\pmod`, `\doteq`,
+`\preceq`, `\succeq`, `\asymp`, `\uplus`, `\amalg` and `\rightleftharpoons`, and reads
+`\overbrace{x}{label}` as a fraction, so the palette has none of them. Every entry renders in
+KaTeX 0.16.11 with `strict: 'error'` (checked once, outside the tests).
 
 ### Stages
 
@@ -734,7 +741,8 @@ the TeX in its tooltip; without the formulas the TeX is its text.
    `CodeFormulaProperty` of `CodeHighlighter`, `CodeEditor::formulaAt` (`glyphAt` shared with
    `linkAt`) and `formulaActivated`, `TextDocument::editFormulaRequested`, the window's
    `editFormulaAt` after the click.
-3. The palette: `formulaPalette`, `applyFormulaSnippet`, `FormulaPalette`.
+3. The palette — done: `formulaPalette` (244 entries), `formulaSnippetTex`, `formulaEntryFace`,
+   `applyFormulaSnippet`, `FormulaPalette` above the TeX field.
 
 ## Build
 

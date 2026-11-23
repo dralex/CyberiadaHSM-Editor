@@ -23,6 +23,7 @@
 
 #include "insert_formula_dialog.h"
 
+#include <QCoreApplication>
 #include <QDialogButtonBox>
 #include <QFontDatabase>
 #include <QFormLayout>
@@ -32,8 +33,10 @@
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QRadioButton>
+#include <QGridLayout>
 #include <QScrollArea>
 #include <QTimer>
+#include <QToolButton>
 #include <QVBoxLayout>
 #include <QtMath>
 
@@ -50,6 +53,9 @@ const int PREVIEW_MARGIN = 8;
 const int PREVIEW_LINES = 4;
 const int TEX_LINES = 4;
 const int DIALOG_WIDTH = 560;
+// the buttons in a row of a palette tab, the margin around a face
+const int PALETTE_COLUMNS = 12;
+const int FACE_MARGIN = 2;
 
 // the formula on a background, the margin around it
 QPixmap formulaPixmap(const MathBox& box, const QColor& background, int margin, qreal ratio)
@@ -65,12 +71,57 @@ QPixmap formulaPixmap(const MathBox& box, const QColor& background, int margin, 
 
 } // namespace
 
+FormulaPalette::FormulaPalette(QWidget* parent):
+    QTabWidget(parent)
+{
+    QColor ink = palette().color(QPalette::ButtonText);
+    for (const FormulaTab& tab : formulaPalette()) {
+        QWidget* page = new QWidget(this);
+        QGridLayout* grid = new QGridLayout(page);
+        grid->setSpacing(0);
+        for (int i = 0; i < tab.entries.size(); i++) {
+            const FormulaEntry& entry = tab.entries.at(i);
+            QToolButton* button = new QToolButton(page);
+            button->setAutoRaise(true);
+            button->setToolTip(formulaSnippetTex(entry.snippet));
+            // a build without the formulas shows the TeX
+            const MathBox& box = MathRenderer::instance().render(formulaEntryFace(entry), false, font(), ink);
+            if (box.errors.isEmpty()) {
+                QPixmap face = formulaPixmap(box, Qt::transparent, FACE_MARGIN, devicePixelRatioF());
+                button->setIcon(QIcon(face));
+                button->setIconSize(face.size() / face.devicePixelRatio());
+            } else {
+                button->setText(formulaSnippetTex(entry.snippet));
+            }
+            QString snippet = entry.snippet;
+            connect(button, &QToolButton::clicked, this, [this, snippet]() { emit entryChosen(snippet); });
+            grid->addWidget(button, i / PALETTE_COLUMNS, i % PALETTE_COLUMNS);
+        }
+        grid->setColumnStretch(PALETTE_COLUMNS, 1);
+        grid->setRowStretch(grid->rowCount(), 1);
+        addTab(page, QCoreApplication::translate("FormulaPalette", tab.title));
+    }
+}
+
+QList<QToolButton*> FormulaPalette::buttons(int tab) const
+{
+    QList<QToolButton*> result;
+    QWidget* page = widget(tab);
+    QGridLayout* grid = page ? qobject_cast<QGridLayout*>(page->layout()) : nullptr;
+    for (int i = 0; grid && i < grid->count(); i++) {
+        if (QToolButton* button = qobject_cast<QToolButton*>(grid->itemAt(i)->widget())) result << button;
+    }
+    return result;
+}
+
 InsertFormulaDialog::InsertFormulaDialog(const QString& tex, bool display, const FormulaPlace& place, bool editing,
                                          QWidget* parent):
     QDialog(parent), m_place(place)
 {
     setWindowTitle(editing ? tr("Edit Formula") : tr("Insert Formula"));
     QVBoxLayout* layout = new QVBoxLayout(this);
+    m_palette = new FormulaPalette(this);
+    layout->addWidget(m_palette);
     QFormLayout* form = new QFormLayout();
     m_texEdit = new QPlainTextEdit(this);
     m_texEdit->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
@@ -128,6 +179,7 @@ InsertFormulaDialog::InsertFormulaDialog(const QString& tex, bool display, const
     connect(m_previewTimer, &QTimer::timeout, this, &InsertFormulaDialog::renderPreview);
     connect(buttons, &QDialogButtonBox::accepted, this, &QDialog::accept);
     connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
+    connect(m_palette, &FormulaPalette::entryChosen, this, &InsertFormulaDialog::insertSnippet);
     connect(m_texEdit, &QPlainTextEdit::textChanged, this, [this]() {
         refresh();
         m_previewTimer->start();
@@ -165,6 +217,21 @@ void InsertFormulaDialog::refresh()
     QString text = insertedText();
     m_lineLabel->setText(text);
     m_insertButton->setEnabled(!text.isEmpty());
+}
+
+void InsertFormulaDialog::insertSnippet(const QString& snippet)
+{
+    QString text = tex();
+    QTextCursor cursor = m_texEdit->textCursor();
+    int start = cursor.selectionStart();
+    int end = cursor.selectionEnd();
+    FormulaEdit edit = applyFormulaSnippet(text, start, end, snippet);
+    // the text around the selection stays: only the entry goes in
+    QString inserted = edit.text.mid(start, edit.text.length() - (text.length() - end) - start);
+    cursor.insertText(inserted);
+    cursor.setPosition(edit.cursor);
+    m_texEdit->setTextCursor(cursor);
+    m_texEdit->setFocus();
 }
 
 void InsertFormulaDialog::renderPreview()

@@ -1783,7 +1783,8 @@ the fill (`EDIT-MD-18..23`, of a Plain text tab too) in 0.77, the formulas (`EDI
   drawn as their formulas (their TeX as text in a build without the formulas), the TeX in the
   tooltip. A click puts the entry's TeX at the cursor of the TeX field: the selection of the
   field goes into the first slot of a template (`a+b` selected, `\frac{}{}` gives
-  `\frac{a+b}{}`), the cursor to the first empty slot, else after the entry. An entry is a
+  `\frac{a+b}{}`), the cursor to the first empty slot, else after the entry; a command ending
+  the entry takes a space before a letter (`\alpha b`, not `\alphab`). An entry is a
   command of LaTeX math as MathJax and KaTeX read it (`\mathbb{R}`, never JKQTMathText's own
   `\bbR`) that JKQTMathText draws without errors. *design*
 

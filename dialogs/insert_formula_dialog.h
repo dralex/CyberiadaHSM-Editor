@@ -26,9 +26,12 @@
 
 #include <QChar>
 #include <QDialog>
+#include <QList>
 #include <QPixmap>
+#include <QTabWidget>
 
 class QLabel;
+class QToolButton;
 class QPlainTextEdit;
 class QPushButton;
 class QRadioButton;
@@ -40,6 +43,19 @@ struct FormulaPlace {
     QChar before;
     QChar after;
     bool  displayBlock = false;
+};
+
+// the palette of EDIT-MD-27: a tab of buttons per formulaPalette() tab, each drawn as its face
+class FormulaPalette : public QTabWidget {
+    Q_OBJECT
+
+public:
+    explicit FormulaPalette(QWidget* parent = nullptr);
+    // the buttons of a tab in the order of its entries, for the tests
+    QList<QToolButton*> buttons(int tab) const;
+
+signals:
+    void entryChosen(const QString& snippet);
 };
 
 // Insert Formula and Edit Formula (EDIT-MD-24/25): the TeX, the kind, the preview and the text
@@ -61,6 +77,7 @@ public:
     QPixmap preview() const { return m_preview; }
 
     // the controls, for the tests
+    FormulaPalette* palette() const { return m_palette; }
     QPlainTextEdit* texEdit() const { return m_texEdit; }
     QRadioButton*   inlineChoice() const { return m_inlineRadio; }
     QRadioButton*   displayChoice() const { return m_displayRadio; }
@@ -71,9 +88,12 @@ public:
 
 private slots:
     void refresh();
+    // an entry of the palette at the cursor of the TeX, one undo step of the field
+    void insertSnippet(const QString& snippet);
 
 private:
     FormulaPlace    m_place;
+    FormulaPalette* m_palette;
     QPlainTextEdit* m_texEdit;
     QRadioButton*   m_inlineRadio;
     QRadioButton*   m_displayRadio;

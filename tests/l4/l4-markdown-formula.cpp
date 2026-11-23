@@ -33,6 +33,7 @@
 #include <QSettings>
 #include <QTemporaryDir>
 #include <QToolBar>
+#include <QToolButton>
 #include <QUndoStack>
 #include "code_editor.h"
 #include "document_mode.h"
@@ -83,6 +84,10 @@ private slots:
     void test_insert();
     void test_edit();
     void test_ctrl_click();
+    void test_palette();
+    void test_snippet_data();
+    void test_snippet();
+    void test_palette_dialog();
     void test_actions();
 
 private:
@@ -517,6 +522,110 @@ void TestMarkdownFormula::test_ctrl_click()
     QCOMPARE(text->text(), QString("a $z$ b `$y$`\n\n$$\nw\n$$"));
     text->setLocked(false);
     window.hide();
+}
+
+// EDIT-MD-27: the tabs in their order, every entry and face drawn without errors, the slots
+// filled, no command of JKQTMathText alone
+void TestMarkdownFormula::test_palette()
+{
+    const QVector<FormulaTab>& tabs = formulaPalette();
+    QStringList titles;
+    for (const FormulaTab& tab : tabs) titles << tab.title;
+    QCOMPARE(titles, QStringList({ "Greek", "Operators", "Relations", "Arrows", "Structures", "Brackets",
+                                   "Matrices", "Functions", "Other" }));
+    // the names of JKQTMathText that MathJax and KaTeX do not read
+    const QStringList own = { "\\bb", "\\degC", "\\degF", "\\celsius", "\\benzene", "\\euro", "\\ohm", "\\EUR" };
+    QSet<QString> seen;
+    QStringList failed;
+    for (const FormulaTab& tab : tabs) {
+        QVERIFY(!tab.entries.isEmpty());
+        for (const FormulaEntry& entry : tab.entries) {
+            QVERIFY2(!seen.contains(entry.snippet), qPrintable(entry.snippet));
+            seen.insert(entry.snippet);
+            QString filled = QString(entry.snippet).replace(FORMULA_SLOT, "x");
+            for (const QString& name : own) QVERIFY2(!filled.contains(name), qPrintable(filled));
+#ifdef CYBERIADA_WITH_MATH
+            for (const QString& tex : { filled, formulaEntryFace(entry) }) {
+                if (!MathRenderer::instance().render(tex, false, QFont(), Qt::black).errors.isEmpty()) failed << tex;
+            }
+#endif
+        }
+    }
+    QVERIFY2(failed.isEmpty(), qPrintable(failed.join("  ")));
+    QCOMPARE(formulaSnippetTex("\\frac{#}{#}"), QString("\\frac{}{}"));
+    QCOMPARE(formulaEntryFace(FormulaEntry{"\\sqrt{#}", QString()}), QString("\\sqrt{\\square}"));
+    QCOMPARE(formulaEntryFace(FormulaEntry{"\\mathbb{#}", "\\mathbb{R}"}), QString("\\mathbb{R}"));
+
+    FormulaPalette palette;
+    QCOMPARE(palette.count(), tabs.size());
+    QCOMPARE(palette.tabText(0), QString("Greek"));
+    for (int i = 0; i < tabs.size(); i++) QCOMPARE(palette.buttons(i).size(), tabs.at(i).entries.size());
+    QToolButton* frac = palette.buttons(4).at(3);
+    QCOMPARE(frac->toolTip(), QString("\\frac{}{}"));
+#ifdef CYBERIADA_WITH_MATH
+    QVERIFY(!frac->icon().isNull());
+#else
+    QCOMPARE(frac->text(), QString("\\frac{}{}"));
+#endif
+    QSignalSpy chosen(&palette, &FormulaPalette::entryChosen);
+    frac->click();
+    QCOMPARE(chosen.size(), 1);
+    QCOMPARE(chosen.at(0).at(0).toString(), QString("\\frac{#}{#}"));
+}
+
+// EDIT-MD-27: the selection into the first slot, the cursor to the first empty one, else after
+// the entry; a command takes a space before a letter
+void TestMarkdownFormula::test_snippet_data()
+{
+    QTest::addColumn<QString>("text");
+    QTest::addColumn<int>("start");
+    QTest::addColumn<int>("end");
+    QTest::addColumn<QString>("snippet");
+    QTest::addColumn<QString>("result");
+    QTest::addColumn<int>("cursor");
+
+    QTest::newRow("symbol") << "x+" << 2 << 2 << "\\alpha" << "x+\\alpha" << 8;
+    QTest::newRow("symbol before a letter") << "b" << 0 << 0 << "\\alpha" << "\\alpha b" << 7;
+    QTest::newRow("symbol before a digit") << "2" << 0 << 0 << "\\alpha" << "\\alpha2" << 6;
+    QTest::newRow("symbol over a selection") << "a+b" << 0 << 1 << "\\beta" << "\\beta+b" << 5;
+    QTest::newRow("template") << "" << 0 << 0 << "\\frac{#}{#}" << "\\frac{}{}" << 6;
+    QTest::newRow("template over a selection") << "x = a+b" << 4 << 7 << "\\frac{#}{#}" << "x = \\frac{a+b}{}" << 15;
+    QTest::newRow("one slot over a selection") << "a+b" << 3 << 0 << "\\sqrt{#}" << "\\sqrt{a+b}" << 10;
+    QTest::newRow("script") << "x" << 1 << 1 << "^{#}" << "x^{}" << 3;
+    QTest::newRow("brackets") << "a" << 0 << 1 << "\\left( # \\right)" << "\\left( a \\right)" << 16;
+    QTest::newRow("limit") << "" << 0 << 0 << "\\lim_{# \\to #}" << "\\lim_{ \\to }" << 6;
+}
+
+void TestMarkdownFormula::test_snippet()
+{
+    QFETCH(QString, text);
+    QFETCH(int, start);
+    QFETCH(int, end);
+    QFETCH(QString, snippet);
+    QFETCH(QString, result);
+    QFETCH(int, cursor);
+    FormulaEdit edit = applyFormulaSnippet(text, start, end, snippet);
+    QCOMPARE(edit.text, result);
+    QCOMPARE(edit.cursor, cursor);
+}
+
+// EDIT-MD-27: a button of the dialog's palette puts its entry at the cursor of the TeX field,
+// the selection in its slot, one undo step of the field
+void TestMarkdownFormula::test_palette_dialog()
+{
+    InsertFormulaDialog dlg("x = a+b", false, FormulaPlace(), false);
+    QTextCursor cursor = dlg.texEdit()->textCursor();
+    cursor.setPosition(4);
+    cursor.setPosition(7, QTextCursor::KeepAnchor);
+    dlg.texEdit()->setTextCursor(cursor);
+    dlg.palette()->buttons(4).at(3)->click();
+    QCOMPARE(dlg.tex(), QString("x = \\frac{a+b}{}"));
+    QCOMPARE(dlg.texEdit()->textCursor().position(), 15);
+    QCOMPARE(dlg.insertedText(), QString("$x = \\frac{a+b}{}$"));
+    dlg.palette()->buttons(0).at(0)->click();
+    QCOMPARE(dlg.tex(), QString("x = \\frac{a+b}{\\alpha}"));
+    dlg.texEdit()->undo();
+    QCOMPARE(dlg.tex(), QString("x = \\frac{a+b}{}"));
 }
 
 // EDIT-MD-1/24: Insert Formula in Edit, on the text toolbar after Insert Link, Ctrl+Shift+M, a
