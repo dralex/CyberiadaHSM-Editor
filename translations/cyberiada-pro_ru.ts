@@ -105,7 +105,7 @@ Ctrl+клик мыши — открыть</translation>
 <context>
     <name>CyberiadaSMEditorDocument</name>
     <message>
-        <location filename="../cyberiadasm_editor_document.cpp" line="+214"/>
+        <location filename="../cyberiadasm_editor_document.cpp" line="+234"/>
         <source>untitled</source>
         <translation>без имени</translation>
     </message>
@@ -233,7 +233,7 @@ Ctrl+клик мыши — открыть</translation>
 <context>
     <name>CyberiadaSMEditorWindow</name>
     <message>
-        <location filename="../smeditor_window.cpp" line="+205"/>
+        <location filename="../smeditor_window.cpp" line="+219"/>
         <source>Output panel</source>
         <translation>Панель вывода</translation>
     </message>
@@ -243,7 +243,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Менеджер плагинов...</translation>
     </message>
     <message>
-        <location line="+278"/>
+        <location line="+285"/>
         <source>Close</source>
         <translation>Закрыть</translation>
     </message>
@@ -253,7 +253,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Для документа %1 выполняется плагин. Остановить его и закрыть?</translation>
     </message>
     <message>
-        <location line="+64"/>
+        <location line="+65"/>
         <source>Cannot open %1:
 %2
 </source>
@@ -262,7 +262,7 @@ Ctrl+клик мыши — открыть</translation>
 </translation>
     </message>
     <message>
-        <location line="+114"/>
+        <location line="+307"/>
         <source>Undefined</source>
         <translation>Не задан</translation>
     </message>
@@ -345,7 +345,7 @@ Ctrl+клик мыши — открыть</translation>
 </translation>
     </message>
     <message>
-        <location line="+25"/>
+        <location line="+27"/>
         <location line="+46"/>
         <source>Save State Machine</source>
         <translation>Сохранение машины состояний</translation>
@@ -400,8 +400,8 @@ Ctrl+клик мыши — открыть</translation>
         <translation>нет документа</translation>
     </message>
     <message>
-        <location line="-1909"/>
-        <location line="+1919"/>
+        <location line="-1911"/>
+        <location line="+1921"/>
         <source>a plugin is running on the document</source>
         <translation>для документа выполняется плагин</translation>
     </message>
@@ -410,14 +410,14 @@ Ctrl+клик мыши — открыть</translation>
         <translation type="vanished">в режиме инспектора документ доступен только для чтения</translation>
     </message>
     <message>
-        <location line="-1885"/>
-        <location line="+1922"/>
+        <location line="-1887"/>
+        <location line="+1924"/>
         <source>the document cannot be encoded</source>
         <translation>не удалось сериализовать документ</translation>
     </message>
     <message>
         <location line="+71"/>
-        <location line="+9"/>
+        <location line="+10"/>
         <source>the document is not saved</source>
         <translation>документ не сохранен</translation>
     </message>
@@ -437,13 +437,13 @@ Ctrl+клик мыши — открыть</translation>
         <translation>документ закрыт</translation>
     </message>
     <message>
-        <location line="-173"/>
-        <location line="+185"/>
+        <location line="-174"/>
+        <location line="+186"/>
         <source>Plugin: %1</source>
         <translation>Плагин: %1</translation>
     </message>
     <message>
-        <location line="-2339"/>
+        <location line="-2342"/>
         <source>Mode</source>
         <translation>Режим</translation>
     </message>
@@ -453,18 +453,18 @@ Ctrl+клик мыши — открыть</translation>
         <translation>режим %1 недоступен</translation>
     </message>
     <message>
-        <location line="+1935"/>
+        <location line="+1937"/>
         <source>the inspection tab is read-only</source>
         <translation>вкладка инспекции доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1914"/>
-        <location line="+1915"/>
+        <location line="-1916"/>
+        <location line="+1917"/>
         <source>the tab is read-only</source>
         <translation>вкладка доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-2082"/>
+        <location line="-2084"/>
         <source>Text file</source>
         <translation>Текстовый файл</translation>
     </message>
@@ -513,8 +513,8 @@ Ctrl+клик мыши — открыть</translation>
         <translation>%1: не элемент конечного автомата</translation>
     </message>
     <message>
-        <location line="+460"/>
-        <location line="+26"/>
+        <location line="+461"/>
+        <location line="+27"/>
         <location line="+7"/>
         <source>Save Text</source>
         <translation>Сохранение текста</translation>
@@ -530,14 +530,14 @@ Ctrl+клик мыши — открыть</translation>
         <translation>%1 (*%2)</translation>
     </message>
     <message>
-        <location line="-623"/>
+        <location line="-625"/>
         <location line="+55"/>
-        <location line="+568"/>
+        <location line="+570"/>
         <source>All files (*)</source>
         <translation>Все файлы (*)</translation>
     </message>
     <message>
-        <location line="-1509"/>
+        <location line="-1511"/>
         <source>Refresh</source>
         <translation>Обновить</translation>
     </message>
@@ -557,7 +557,32 @@ Ctrl+клик мыши — открыть</translation>
         <translation>вкладку сравнения открывает «Документ &gt; Сравнить с...»</translation>
     </message>
     <message>
-        <location line="+117"/>
+        <location line="-341"/>
+        <source>Reload</source>
+        <translation type="unfinished">Перечитать</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>on disk</source>
+        <translation type="unfinished">на диске</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Compare</source>
+        <translation type="unfinished">Сравнить</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>%1 changed on disk. Overwrite it?</source>
+        <translation type="unfinished">Файл %1 изменён на диске. Перезаписать его?</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Overwrite</source>
+        <translation type="unfinished">Перезаписать</translation>
+    </message>
+    <message>
+        <location line="+413"/>
         <source>The text has no broken link.</source>
         <translation>В тексте нет битых ссылок.</translation>
     </message>
@@ -780,7 +805,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Заголовка «%1» больше нет в тексте</translation>
     </message>
     <message>
-        <location line="+245"/>
+        <location line="+247"/>
         <source>Save the diagram first: the metadata records its saved file</source>
         <translation>Сначала сохраните диаграмму: метаданные указывают на сохранённый файл</translation>
     </message>
@@ -806,7 +831,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>вкладка сравнения не даёт плагину входных данных</translation>
     </message>
     <message>
-        <location line="+254"/>
+        <location line="+255"/>
         <location line="+10"/>
         <source>the document is read-only</source>
         <translation>документ доступен только для чтения</translation>
@@ -873,7 +898,8 @@ Ctrl+клик мыши — открыть</translation>
         <translation>%1 - Параметры</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="-2831"/>
+        <location line="+2832"/>
         <source>Save</source>
         <translation>Сохранить</translation>
     </message>
@@ -1697,6 +1723,49 @@ Ctrl+клик мыши — открыть</translation>
         <location line="+35"/>
         <source>link of %1</source>
         <translation>связь %1</translation>
+    </message>
+</context>
+<context>
+    <name>DiskBar</name>
+    <message>
+        <location filename="../disk_bar.cpp" line="+44"/>
+        <source>Reload</source>
+        <translation type="unfinished">Перечитать</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Compare</source>
+        <translation type="unfinished">Сравнить</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Close</source>
+        <translation type="unfinished">Закрыть</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>%1 changed on disk</source>
+        <translation type="unfinished">Файл %1 изменён на диске</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>%1 changed on disk and cannot be read</source>
+        <translation type="unfinished">Файл %1 изменён на диске и не читается</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>%1 is not on disk</source>
+        <translation type="unfinished">Файла %1 нет на диске</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Keep</source>
+        <translation type="unfinished">Оставить</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Keep my edits</source>
+        <translation type="unfinished">Оставить мои правки</translation>
     </message>
 </context>
 <context>
@@ -5006,14 +5075,14 @@ Ctrl+клик мыши — открыть</translation>
         <translation>без имени</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+27"/>
         <source>Cannot read %1:
 %2</source>
         <translation>Не удаётся прочитать %1:
 %2</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+28"/>
         <source>Cannot write %1:
 %2</source>
         <translation>Не удаётся записать %1:
