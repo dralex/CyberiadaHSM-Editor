@@ -102,6 +102,7 @@ TextDocument::TextDocument(const QString& mode, QObject* parent):
     connect(m_editor, &CodeEditor::linkActivated, this, &TextDocument::openLink);
     connect(m_rendered, &MarkdownView::linkActivated, this, &TextDocument::openLink);
     connect(m_editor, &CodeEditor::imageOffered, this, &TextDocument::imageOffered);
+    connect(m_editor, &CodeEditor::formulaActivated, this, &TextDocument::editFormulaRequested);
     // a break of the fill as you type is a step of its own (EDIT-MD-21)
     connect(m_editor, &CodeEditor::editStepNamed, this, [this](const QString& name) { m_stepName = name; });
     // the preview follows the edits a while after the last one, and the cursor (EDIT-MD-11)

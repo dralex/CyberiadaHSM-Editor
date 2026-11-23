@@ -480,9 +480,10 @@ static void addParagraphSpans(QVector<CodeSpan>& result, const QVector<InlinePie
 }
 
 QVector<CodeSpan> CodeStyle::markdownSpans(const QString& text, const CodeLanguage* fallback,
-                                           QVector<CodeSpan>* targets) const
+                                           QVector<CodeSpan>* targets, QVector<CodeSpan>* formulas) const
 {
     if (targets) targets->clear();
+    if (formulas) formulas->clear();
     static const QRegularExpression fence(R"(^ {0,3}(`{3,}|~{3,})\s*([^\s`]*)\s*$)");
     static const QRegularExpression heading(R"(^ {0,3}#{1,6}(\s|$))");
     static const QRegularExpression rule(R"(^ {0,3}([-*_])( *\1){2,} *$)");
@@ -500,6 +501,9 @@ QVector<CodeSpan> CodeStyle::markdownSpans(const QString& text, const CodeLangua
     bool inQuote = false;
     // the formulas and the HTML comments as the reader finds them (EDIT-TEXT-11)
     const MarkdownSourceRanges src = markdownSourceRanges(text);
+    if (formulas) {
+        for (const MarkdownMathRange& m : src.math) formulas->append(CodeSpan{m.begin, m.end - m.begin, codeTokenMath});
+    }
     auto holds = [&](int from, int to) {
         if (from >= to) return false;
         for (const MarkdownMathRange& m : src.math) if (m.begin <= from && m.end >= to) return true;
@@ -694,9 +698,10 @@ void CodeHighlighter::highlightBlock(const QString& text)
         QVector<CodeSpan> before;
         before.swap(cachedSpans);
         cachedTargets.clear();
+        cachedFormulas.clear();
         if (role == codeRoleMarkup) {
             if (markup == codeMarkupMarkdown && style.isActive()) {
-                cachedSpans = style.markdownSpans(whole, language, &cachedTargets);
+                cachedSpans = style.markdownSpans(whole, language, &cachedTargets, &cachedFormulas);
             }
         } else if (const CodeLanguage* lang = style.effective(language)) {
             cachedSpans = CodeStyle::spans(whole, role, *lang);
@@ -738,6 +743,18 @@ void CodeHighlighter::highlightBlock(const QString& text)
         fmt.setAnchor(true);
         fmt.setAnchorHref(cachedText.mid(target.start, target.length));
         setFormat(from - blockStart, to - from, fmt);
+    }
+    // a formula keeps the colours of its dollars and its TeX, the flag tells the editor (EDIT-MD-25)
+    for (int i = 0; openLinks && i < cachedFormulas.size(); i++) {
+        const CodeSpan& formula = cachedFormulas.at(i);
+        int from = qMax(formula.start, blockStart);
+        int to = qMin(formula.start + formula.length, blockEnd);
+        for (int at = from - blockStart; at < to - blockStart; at++) {
+            QTextCharFormat fmt = QSyntaxHighlighter::format(at);
+            fmt.setFontUnderline(true);
+            fmt.setProperty(CodeFormulaProperty, true);
+            setFormat(at, 1, fmt);
+        }
     }
     setCurrentBlockState(int(tail & 0x7fffffff));
 }

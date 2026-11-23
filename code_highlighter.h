@@ -73,6 +73,9 @@ struct CodeSpan {
     CodeTokenKind kind;
 };
 
+// a character of a Markdown formula the source editor edits on Ctrl+click (EDIT-MD-25)
+const int CodeFormulaProperty = QTextFormat::UserProperty + 50;
+
 // one rule set of syntax/<language>.json
 struct CodeLanguage {
     // the file name without .json: the id of its text mode (EDIT-MODE-1)
@@ -147,9 +150,11 @@ public:
     // the coloured spans of the whole text
     static QVector<CodeSpan> spans(const QString& text, CodeRole role, const CodeLanguage& lang);
     // the Markdown spans; a fenced block by the language of its tag, else by the fallback;
-    // the targets of the links given apart when asked (EDIT-MODE-28)
+    // the targets of the links (EDIT-MODE-28) and the formulas with their dollars (EDIT-MD-25)
+    // given apart when asked
     QVector<CodeSpan> markdownSpans(const QString& text, const CodeLanguage* fallback,
-                                    QVector<CodeSpan>* targets = nullptr) const;
+                                    QVector<CodeSpan>* targets = nullptr,
+                                    QVector<CodeSpan>* formulas = nullptr) const;
 
 signals:
     void styleChanged();
@@ -183,7 +188,8 @@ public:
     void setMarkup(CodeMarkup newMarkup);
     // the colors of a text editor's scheme instead of CodeStyle's (EDIT-COLOR-1)
     void setScheme(const TextScheme& scheme);
-    // the Markdown link targets underlined, their format an anchor of the target (EDIT-MODE-28)
+    // the Markdown link targets underlined, their format an anchor of the target (EDIT-MODE-28);
+    // the formulas underlined in their colours with CodeFormulaProperty (EDIT-MD-25)
     void setOpenLinks(bool on);
 
 protected:
@@ -206,6 +212,7 @@ private:
     QString cachedText;
     QVector<CodeSpan> cachedSpans;
     QVector<CodeSpan> cachedTargets;
+    QVector<CodeSpan> cachedFormulas;
     bool cacheValid = false;
     bool openLinks = false;
     // the earlier lines to re-highlight, [from, end), from -1 when none

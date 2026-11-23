@@ -165,6 +165,8 @@ signals:
     void             openFileRequested(const QString& path, const QString& fragment);
     // an image dropped on or pasted into a Markdown source (EDIT-MD-2)
     void             imageOffered(const QString& path, const QImage& image);
+    // a formula of the source Ctrl+clicked at the text position (EDIT-MD-25)
+    void             editFormulaRequested(int position);
     // the outline read from the text (EDIT-MD-14)
     void             outlineRead();
 

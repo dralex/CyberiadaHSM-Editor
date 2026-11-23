@@ -368,6 +368,9 @@ TextDocument* CyberiadaSMEditorWindow::newTextDocument(const QString& mode)
             Qt::QueuedConnection);
     connect(doc, &TextDocument::imageOffered, this,
             [this, doc](const QString& path, const QImage& image) { insertImage(doc, path, image); });
+    // a Ctrl+clicked formula opens its dialog after the click (EDIT-MD-25)
+    connect(doc, &TextDocument::editFormulaRequested, this,
+            [this, doc](int position) { editFormulaAt(doc, position); }, Qt::QueuedConnection);
     // the outline follows the source's cursor, and its rows after each reading (EDIT-MD-15)
     connect(doc->editor(), &QPlainTextEdit::cursorPositionChanged, this,
             [this, doc]() { if (doc == active) followOutlineCursor(); });

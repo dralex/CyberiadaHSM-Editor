@@ -730,9 +730,10 @@ the TeX in its tooltip; without the formulas the TeX is its text.
    `dialogs/insert_formula_dialog.*` without the palette, `TextDocument::replaceRange`, Edit >
    Insert Formula (`Ctrl+Shift+M`, the text toolbar, `images/insert-formula.svg`), the formula
    under the cursor edited, the batch `insert-formula` and `edit-formula`.
-2. Ctrl+click: the formula ranges of `markdownSpans`, the underline and `CodeFormulaProperty`
-   of `CodeHighlighter`, `CodeEditor::formulaAt` and `formulaActivated`, the window's
-   `editFormulaAt`.
+2. Ctrl+click — done: the formula ranges of `markdownSpans`, the underline and
+   `CodeFormulaProperty` of `CodeHighlighter`, `CodeEditor::formulaAt` (`glyphAt` shared with
+   `linkAt`) and `formulaActivated`, `TextDocument::editFormulaRequested`, the window's
+   `editFormulaAt` after the click.
 3. The palette: `formulaPalette`, `applyFormulaSnippet`, `FormulaPalette`.
 
 ## Build
@@ -815,7 +816,8 @@ the cursor between two formulas), `applyFormulaSnippet` (the slots, a selection)
 entry and face drawn without errors (with the formulas); the dialog (the preview and its
 errors, Insert greyed while blank, the kind, the inserted text); the insert, the display
 paragraph, the edit, a selection end inside a formula, their undo steps, an untitled tab; the
-underline and the flag on a formula, none in code, Ctrl+click opening the dialog, a locked tab;
+underline and the flag on a formula, none in code (also `l4-highlight test_markdown_formulas`),
+Ctrl+click opening the dialog, the hand, a locked tab;
 the action by the tab kind and its key; `md-insert-formula`, `md-insert-formula-untitled`,
 `md-edit-formula` (`texts/markdown-formula.md`) and the rejects `md-insert-formula-reject`,
 `md-edit-formula-reject`.

@@ -35,6 +35,7 @@
 #include <QToolTip>
 
 #include "code_editor.h"
+#include "code_highlighter.h"
 #include "cyberiada_constants.h"
 #include "fontmanager.h"
 #include "markdown_tools.h"
@@ -521,15 +522,22 @@ bool CodeEditor::event(QEvent* event)
     return QPlainTextEdit::event(event);
 }
 
-QString CodeEditor::linkAt(const QPoint& pos) const
+int CodeEditor::glyphAt(const QPoint& pos, QTextBlock* block) const
 {
     // the nearest gap to the point: the glyph is on the point's side of it, in its line
     QTextCursor cursor = cursorForPosition(pos);
     QRect gap = cursorRect(cursor);
-    if (pos.y() < gap.top() || pos.y() > gap.bottom()) return QString();
-    QTextBlock block = cursor.block();
+    if (pos.y() < gap.top() || pos.y() > gap.bottom()) return -1;
+    *block = cursor.block();
     int glyph = cursor.positionInBlock() - (pos.x() < gap.left() ? 1 : 0);
-    if (glyph < 0 || glyph >= block.length() - 1) return QString();
+    return glyph < 0 || glyph >= block->length() - 1 ? -1 : glyph;
+}
+
+QString CodeEditor::linkAt(const QPoint& pos) const
+{
+    QTextBlock block;
+    int glyph = glyphAt(pos, &block);
+    if (glyph < 0) return QString();
     for (const QTextLayout::FormatRange& range : block.layout()->formats()) {
         if (range.format.isAnchor() && glyph >= range.start && glyph < range.start + range.length) {
             return range.format.anchorHref();
@@ -538,9 +546,23 @@ QString CodeEditor::linkAt(const QPoint& pos) const
     return QString();
 }
 
+int CodeEditor::formulaAt(const QPoint& pos) const
+{
+    QTextBlock block;
+    int glyph = isReadOnly() ? -1 : glyphAt(pos, &block);
+    if (glyph < 0) return -1;
+    for (const QTextLayout::FormatRange& range : block.layout()->formats()) {
+        if (range.format.boolProperty(CodeFormulaProperty) && glyph >= range.start &&
+            glyph < range.start + range.length) {
+            return block.position() + glyph;
+        }
+    }
+    return -1;
+}
+
 void CodeEditor::updateLinkPointer(const QPoint& pos, bool ctrl)
 {
-    bool hand = ctrl && !linkAt(pos).isEmpty();
+    bool hand = ctrl && (!linkAt(pos).isEmpty() || formulaAt(pos) >= 0);
     if (hand == m_linkPointer) return;
     m_linkPointer = hand;
     if (hand) {
@@ -561,6 +583,10 @@ bool CodeEditor::viewportEvent(QEvent* event)
             QToolTip::showText(help->globalPos(), tr("%1\nCtrl+click to open").arg(link), viewport());
             return true;
         }
+        if (formulaAt(help->pos()) >= 0) {
+            QToolTip::showText(help->globalPos(), tr("Ctrl+click to edit the formula"), viewport());
+            return true;
+        }
         QToolTip::hideText();
     }
     return QPlainTextEdit::viewportEvent(event);
@@ -570,7 +596,8 @@ void CodeEditor::mousePressEvent(QMouseEvent* event)
 {
     if (event->button() == Qt::LeftButton && (event->modifiers() & Qt::ControlModifier)) {
         m_pressedLink = linkAt(event->pos());
-        if (!m_pressedLink.isEmpty()) {
+        m_pressedFormula = m_pressedLink.isEmpty() ? formulaAt(event->pos()) : -1;
+        if (!m_pressedLink.isEmpty() || m_pressedFormula >= 0) {
             event->accept();
             return;
         }
@@ -581,13 +608,20 @@ void CodeEditor::mousePressEvent(QMouseEvent* event)
 void CodeEditor::mouseMoveEvent(QMouseEvent* event)
 {
     updateLinkPointer(event->pos(), event->modifiers() & Qt::ControlModifier);
-    // a press on a target selects nothing
-    if (!m_pressedLink.isEmpty()) return;
+    // a press on a target or a formula selects nothing
+    if (!m_pressedLink.isEmpty() || m_pressedFormula >= 0) return;
     QPlainTextEdit::mouseMoveEvent(event);
 }
 
 void CodeEditor::mouseReleaseEvent(QMouseEvent* event)
 {
+    if (m_pressedFormula >= 0) {
+        int formula = m_pressedFormula;
+        m_pressedFormula = -1;
+        event->accept();
+        if (event->button() == Qt::LeftButton && formulaAt(event->pos()) >= 0) emit formulaActivated(formula);
+        return;
+    }
     if (m_pressedLink.isEmpty()) {
         QPlainTextEdit::mouseReleaseEvent(event);
         return;

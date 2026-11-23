@@ -26,6 +26,7 @@
 
 #include <QtTest>
 #include <QLabel>
+#include <QMouseEvent>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QRadioButton>
@@ -81,6 +82,7 @@ private slots:
     void test_dialog();
     void test_insert();
     void test_edit();
+    void test_ctrl_click();
     void test_actions();
 
 private:
@@ -441,6 +443,80 @@ void TestMarkdownFormula::test_edit()
     window.editFormulaAt(text, 0);
     window.editFormulaAt(text, 8);
     QCOMPARE(text->text(), QString("plain `$x$`"));
+}
+
+// EDIT-MD-25: Ctrl+click on a formula of the source opens it, a display one over lines too; a
+// plain click edits; the hand with Ctrl; code and a locked tab open none
+void TestMarkdownFormula::test_ctrl_click()
+{
+    CyberiadaSMEditorWindow window;
+    window.resize(1000, 600);
+    window.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    TextDocument* text = window.newTextDocument(MODE_MARKDOWN);
+    window.setCurrentDocument(text);
+    text->setText("a $x$ b `$y$`\n\n$$\nw\n$$");
+    CodeEditor* editor = text->editor();
+    QWidget* viewport = editor->viewport();
+    // a point in the glyph at a text position
+    auto at = [&](int position) {
+        QTextCursor c(editor->document());
+        c.setPosition(position + 1);
+        QRect gap = editor->cursorRect(c);
+        return QPoint(gap.left() - 2, gap.center().y());
+    };
+    int x = text->text().indexOf('x');
+    int w = text->text().indexOf('w');
+    QCOMPARE(editor->formulaAt(at(x)), x);
+    QCOMPARE(editor->formulaAt(at(x - 1)), x - 1);
+    QCOMPARE(editor->formulaAt(at(x + 2)), -1);
+    QCOMPARE(editor->formulaAt(at(text->text().indexOf('y'))), -1);
+    QCOMPARE(editor->formulaAt(at(w)), w);
+
+    QTest::mouseClick(viewport, Qt::LeftButton, Qt::NoModifier, at(x));
+    QCOMPARE(text->text(), QString("a $x$ b `$y$`\n\n$$\nw\n$$"));
+
+    bool seen = false;
+    QString title, proposed;
+    bool proposedDisplay = false;
+    answerDialog([&](InsertFormulaDialog* dlg) {
+        title = dlg->windowTitle();
+        proposed = dlg->tex();
+        dlg->texEdit()->setPlainText("z");
+        return true;
+    }, &seen);
+    QTest::mouseClick(viewport, Qt::LeftButton, Qt::ControlModifier, at(x));
+    QTRY_VERIFY(seen);
+    QCOMPARE(title, QString("Edit Formula"));
+    QCOMPARE(proposed, QString("x"));
+    QCOMPARE(text->text(), QString("a $z$ b `$y$`\n\n$$\nw\n$$"));
+
+    answerDialog([&](InsertFormulaDialog* dlg) {
+        proposed = dlg->tex();
+        proposedDisplay = dlg->display();
+        return false;
+    }, &seen);
+    QTest::mouseClick(viewport, Qt::LeftButton, Qt::ControlModifier, at(w));
+    QTRY_VERIFY(seen);
+    QCOMPARE(proposed, QString("w"));
+    QVERIFY(proposedDisplay);
+
+    Qt::CursorShape shape = viewport->cursor().shape();
+    QMouseEvent over(QEvent::MouseMove, at(x), Qt::NoButton, Qt::NoButton, Qt::ControlModifier);
+    QApplication::sendEvent(viewport, &over);
+    QCOMPARE(viewport->cursor().shape(), Qt::PointingHandCursor);
+    QMouseEvent away(QEvent::MouseMove, at(0), Qt::NoButton, Qt::NoButton, Qt::ControlModifier);
+    QApplication::sendEvent(viewport, &away);
+    QCOMPARE(viewport->cursor().shape(), shape);
+
+    // a locked tab only underlines
+    text->setLocked(true);
+    QCOMPARE(editor->formulaAt(at(x)), -1);
+    QTest::mouseClick(viewport, Qt::LeftButton, Qt::ControlModifier, at(x));
+    QTest::qWait(DIALOG_WAIT_MS);
+    QCOMPARE(text->text(), QString("a $z$ b `$y$`\n\n$$\nw\n$$"));
+    text->setLocked(false);
+    window.hide();
 }
 
 // EDIT-MD-1/24: Insert Formula in Edit, on the text toolbar after Insert Link, Ctrl+Shift+M, a

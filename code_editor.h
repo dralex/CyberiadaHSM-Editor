@@ -65,6 +65,9 @@ public:
     // the link target under a point of the viewport: the anchor of the highlighter's format
     // under the glyph there, empty when none (EDIT-MODE-28)
     QString linkAt(const QPoint& pos) const;
+    // the text position of the formula character under a point of the viewport, flagged by
+    // the highlighter; -1 when none or the text is read-only (EDIT-MD-25)
+    int     formulaAt(const QPoint& pos) const;
     // the cursor a block over the character, one space of the font wide, else a line; the
     // editors follow the setting, the scheme preview the choice shown (EDIT-MODE-29)
     void setBlockCursor(bool on);
@@ -107,6 +110,8 @@ signals:
     void errorClicked();
     // a link target is Ctrl+clicked
     void linkActivated(const QString& target);
+    // a formula is Ctrl+clicked at the text position (EDIT-MD-25)
+    void formulaActivated(int position);
     // an image file or a clipboard image dropped or pasted at the cursor, after the event
     void imageOffered(const QString& path, const QImage& image);
     // the name of the undo step of the edit that follows, empty after it (EDIT-MD-21)
@@ -151,8 +156,10 @@ private:
         QRect   rect;
     };
     QVector<ModeLinePart> modeLineParts() const;
-    // the hand over a link target while Ctrl is held, the editor's pointer elsewhere
+    // the hand over a link target or a formula while Ctrl is held, the editor's pointer elsewhere
     void updateLinkPointer(const QPoint& pos, bool ctrl);
+    // the glyph under a point of the viewport, its place in its block; -1 off the text
+    int  glyphAt(const QPoint& pos, QTextBlock* block) const;
 
     QWidget* lineNumbers;
     QWidget* errorBar;
@@ -169,6 +176,8 @@ private:
     Autoreplacer m_replacer;
     // the target a Ctrl+press started on, opened when released over it
     QString m_pressedLink;
+    // the formula position a Ctrl+press started on, -1 without one
+    int m_pressedFormula = -1;
     bool m_linkPointer = false;
     QCursor m_textPointer;
     bool m_imageDrops = false;

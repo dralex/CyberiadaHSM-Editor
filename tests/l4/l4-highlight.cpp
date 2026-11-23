@@ -60,6 +60,7 @@ private slots:
 	void test_markdown_spans();
 	void test_markdown_fence_lines();
 	void test_markdown_targets();
+	void test_markdown_formulas();
 	void test_markdown_canvas();
 	void test_markdown_dialog();
 
@@ -621,6 +622,40 @@ void TestHighlight::test_markdown_targets()
 	QVERIFY(!formatAt(&doc, doc.toPlainText().indexOf("b](")).fontUnderline());
 	highlighter.setOpenLinks(false);
 	QVERIFY(!formatAt(&doc, target).isAnchor());
+}
+
+// the formulas with their dollars, none in code; underlined in their colours with the flag the
+// editor reads, only where the host opens the links (EDIT-MD-25)
+void TestHighlight::test_markdown_formulas()
+{
+	const CodeStyle& style = CodeStyle::instance();
+	QString text = "a $x$ b `$y$` \\$5\n\n$$\nw\n$$";
+	QVector<CodeSpan> formulas;
+	style.markdownSpans(text, nullptr, nullptr, &formulas);
+	QCOMPARE(targetTexts(text, formulas), QStringList({ "$x$", "$$\nw\n$$" }));
+
+	QTextDocument doc;
+	doc.documentLayout();
+	CodeHighlighter highlighter(&doc, codeRoleMarkup, nullptr, codeMarkupMarkdown);
+	doc.setPlainText(text);
+	int x = text.indexOf("$x$");
+	QVERIFY(!formatAt(&doc, x + 1).fontUnderline());
+	QVERIFY(!formatAt(&doc, x + 1).boolProperty(CodeFormulaProperty));
+	highlighter.setOpenLinks(true);
+	for (int at = x; at < x + 3; at++) {
+		QVERIFY(formatAt(&doc, at).fontUnderline());
+		QVERIFY(formatAt(&doc, at).boolProperty(CodeFormulaProperty));
+	}
+	QCOMPARE(colorAt(&doc, x), kindColor(codeTokenMarker));
+	QCOMPARE(colorAt(&doc, x + 1), kindColor(codeTokenMath));
+	QVERIFY(!formatAt(&doc, x + 3).boolProperty(CodeFormulaProperty));
+	QVERIFY(!formatAt(&doc, text.indexOf('y')).boolProperty(CodeFormulaProperty));
+	QVERIFY(!formatAt(&doc, text.indexOf("5")).boolProperty(CodeFormulaProperty));
+	// every line of a display formula: the dollars and the TeX
+	int display = text.indexOf("$$\nw");
+	for (int at : { display, display + 3, text.length() - 1 }) QVERIFY(formatAt(&doc, at).boolProperty(CodeFormulaProperty));
+	highlighter.setOpenLinks(false);
+	QVERIFY(!formatAt(&doc, x + 1).boolProperty(CodeFormulaProperty));
 }
 
 void TestHighlight::test_markdown_canvas()
