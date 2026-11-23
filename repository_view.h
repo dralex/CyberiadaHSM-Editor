@@ -34,6 +34,7 @@ class QAction;
 class QLabel;
 class QStackedWidget;
 class QToolBar;
+class QToolButton;
 class QTreeView;
 
 // The contents of the Repository dock (EDIT-GIT-3..8, docs/GIT.md): the toolbar, the
@@ -61,9 +62,11 @@ public:
     QString           lineText() const;
     // a new status of the shown work tree: the expanded folders and the current row stay
     void              setSnapshot(const RepositorySnapshot& snapshot);
-    // the first line: the folder of the work tree and its branch, empty without one
+    // the first line: the folder of the work tree, empty without one, and the button of its
+    // branch (EDIT-GIT-18)
     void              setHeading(const QString& text);
     QString           heading() const;
+    QToolButton*      branchButton() const { return m_branch; }
     // the row of the file of the active tab made current and shown
     void              setCurrentFile(const QString& path);
     // the files of the selected rows, a folder or a group standing for its files
@@ -96,7 +99,9 @@ private:
 
     RepositoryModel*  m_model;
     QToolBar*         m_toolBar;
+    QWidget*          m_headingRow;
     QLabel*           m_heading;
+    QToolButton*      m_branch;
     QStackedWidget*   m_pages;
     QTreeView*        m_tree;
     QLabel*           m_line;

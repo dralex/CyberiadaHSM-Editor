@@ -93,6 +93,8 @@
 #include "history_view.h"
 #include "dialogs/commit_dialog.h"
 #include "dialogs/revision_dialog.h"
+#include "dialogs/branch_dialog.h"
+#include <QToolButton>
 #include <QClipboard>
 #include "shortcut_map.h"
 #include "system_terminal.h"
@@ -1015,10 +1017,205 @@ void CyberiadaSMEditorWindow::updateRepositoryTitle()
         m_repositoryView->setHeading(QString());
         return;
     }
-    QString heading = QFileInfo(m_repository->root()).fileName();
-    const RepositorySnapshot& s = m_repository->snapshot();
-    if (m_repository->hasSnapshot() && !s.branch.isEmpty()) heading += " (" + s.branch + ")";
-    m_repositoryView->setHeading(heading);
+    m_repositoryView->setHeading(QFileInfo(m_repository->root()).fileName());
+    QToolButton* branch = m_repositoryView->branchButton();
+    branch->setText(m_repository->hasSnapshot() ? branchLabel(m_repository->snapshot()) : QString());
+    branch->setToolTip(tr("The branch: switch, new, delete"));
+}
+
+QString CyberiadaSMEditorWindow::branchLabel(const RepositorySnapshot& s)
+{
+    QString label;
+    if (s.detached()) {
+        label = tr("detached at %1").arg(s.oid.left(GIT_SHORT_HASH));
+    } else if (s.unborn()) {
+        label = tr("%1 (no commits)").arg(s.branch);
+    } else {
+        label = s.branch;
+        // the arrows of the upstream counts (EDIT-GIT-18)
+        if (s.ahead > 0) label += QString(" %1%2").arg(QChar(0x2191)).arg(s.ahead);
+        if (s.behind > 0) label += QString(" %1%2").arg(QChar(0x2193)).arg(s.behind);
+    }
+    if (s.state == "merging") label += tr(", merging");
+    if (s.state == "rebasing") label += tr(", rebasing");
+    return label;
+}
+
+void CyberiadaSMEditorWindow::fillBranchMenu()
+{
+    m_branchMenu->clear();
+    RepositoryService* service = m_repository.data();
+    if (!service) {
+        QAction* none = m_branchMenu->addAction(noRepositoryReason(active));
+        none->setEnabled(false);
+        return;
+    }
+    service->refresh(true);
+    const RepositorySnapshot& s = service->snapshot();
+    // a merge or a rebase in progress keeps the branches (EDIT-GIT-19)
+    bool busy = !s.state.isEmpty();
+    for (const QString& branch : s.branches) {
+        QAction* entry = m_branchMenu->addAction(branch);
+        entry->setCheckable(true);
+        entry->setChecked(branch == s.branch);
+        entry->setEnabled(!busy);
+        if (busy) entry->setToolTip(tr("finish the %1 in a terminal first").arg(s.state == "merging" ? tr("merge") : tr("rebase")));
+        if (branch != s.branch) connect(entry, &QAction::triggered, this, [this, branch]() { switchBranch(branch); });
+        else connect(entry, &QAction::triggered, this, [entry]() { entry->setChecked(true); });
+    }
+    if (!s.branches.isEmpty()) m_branchMenu->addSeparator();
+    QAction* create = m_branchMenu->addAction(tr("New Branch..."));
+    create->setEnabled(!busy && !s.unborn());
+    connect(create, &QAction::triggered, this, &CyberiadaSMEditorWindow::newBranch);
+    QAction* remove = m_branchMenu->addAction(tr("Delete Branch..."));
+    remove->setEnabled(s.branches.size() > (s.detached() ? 0 : 1));
+    connect(remove, &QAction::triggered, this, &CyberiadaSMEditorWindow::deleteBranch);
+}
+
+QStringList CyberiadaSMEditorWindow::unsavedTabs(RepositoryService* service) const
+{
+    QStringList tabs;
+    QDir root(service->root());
+    for (EditorDocument* doc : documents) {
+        if (!doc->hasFile() || !doc->hasEdits() || qobject_cast<ComparisonDocument*>(doc)) continue;
+        if (!root.relativeFilePath(QFileInfo(doc->filePath()).absoluteFilePath()).startsWith("..")) tabs << doc->title();
+    }
+    return tabs;
+}
+
+bool CyberiadaSMEditorWindow::saveRepositoryTabs(RepositoryService* service, QString* error)
+{
+    QDir root(service->root());
+    const QList<EditorDocument*> tabs = documents;
+    for (EditorDocument* doc : tabs) {
+        if (!doc->hasFile() || !doc->hasEdits() || qobject_cast<ComparisonDocument*>(doc)) continue;
+        if (root.relativeFilePath(QFileInfo(doc->filePath()).absoluteFilePath()).startsWith("..")) continue;
+        if (!confirmDiskOverwrite(doc, error) || !doc->save(error)) return false;
+    }
+    return true;
+}
+
+bool CyberiadaSMEditorWindow::askSaveForSwitch(RepositoryService* service, const QString& branch)
+{
+    QStringList unsaved = unsavedTabs(service);
+    if (unsaved.isEmpty()) return true;
+    QMessageBox box(QMessageBox::Question, tr("Switch to %1").arg(branch),
+                    tr("Save %1 documents before switching?").arg(unsaved.size()) + "\n\n" + unsaved.join('\n'),
+                    QMessageBox::NoButton, this);
+    QPushButton* save = box.addButton(tr("Save and Switch"), QMessageBox::AcceptRole);
+    QPushButton* cancel = box.addButton(QMessageBox::Cancel);
+    box.setDefaultButton(cancel);
+    box.exec();
+    return box.clickedButton() == save;
+}
+
+void CyberiadaSMEditorWindow::switchBranch(const QString& branch)
+{
+    QString error;
+    RepositoryService* service = gitService(&error);
+    if (!service) {
+        reportGitFailure(tr("Switch"), error);
+        return;
+    }
+    if (!askSaveForSwitch(service, branch)) return;
+    if (!gitSwitch(branch, &error)) reportGitFailure(tr("Switch to %1").arg(branch), error);
+}
+
+void CyberiadaSMEditorWindow::newBranch()
+{
+    QString error;
+    RepositoryService* service = gitService(&error);
+    if (!service) {
+        reportGitFailure(tr("New Branch"), error);
+        return;
+    }
+    BranchDialog dialog(service->snapshot().branches,
+                        [this, service](const QString& name, const QString& start, bool switchTo, QString* reason) {
+                            // a start of its own changes the files: the tabs are saved first (EDIT-GIT-20)
+                            if (switchTo && !start.isEmpty() && start != service->snapshot().branch &&
+                                !askSaveForSwitch(service, name)) {
+                                *reason = tr("not switched: the documents are not saved");
+                                return false;
+                            }
+                            return gitCreateBranch(name, start, switchTo, reason);
+                        }, this);
+    dialog.exec();
+}
+
+void CyberiadaSMEditorWindow::deleteBranch()
+{
+    QString error;
+    RepositoryService* service = gitService(&error);
+    if (!service) {
+        reportGitFailure(tr("Delete Branch"), error);
+        return;
+    }
+    QStringList others = service->snapshot().branches;
+    others.removeAll(service->snapshot().branch);
+    if (others.isEmpty()) return;
+    bool ok = false;
+    QString branch = QInputDialog::getItem(this, tr("Delete Branch"), tr("The branch to delete (merged only):"),
+                                           others, 0, false, &ok);
+    if (!ok || branch.isEmpty()) return;
+    if (!gitDeleteBranch(branch, &error)) reportGitFailure(tr("Delete Branch"), error);
+}
+
+bool CyberiadaSMEditorWindow::gitSwitch(const QString& branch, QString* error)
+{
+    RepositoryService* service = gitService(error);
+    if (!service) return false;
+    service->refresh(true);
+    if (!service->snapshot().state.isEmpty()) {
+        if (error) *error = tr("a %1 is in progress: finish it in a terminal first").arg(
+                                service->snapshot().state == "merging" ? tr("merge") : tr("rebase"));
+        return false;
+    }
+    if (branch.isEmpty() || branch.startsWith('-')) {
+        if (error) *error = tr("%1 is not a branch").arg(branch);
+        return false;
+    }
+    // the tabs of the work tree are saved: git switches the files on disk (EDIT-GIT-19)
+    if (!saveRepositoryTabs(service, error)) return false;
+    GitResult r = service->command(QStringList() << "switch" << branch);
+    afterGitCommand(service);
+    updateRepositoryTitle();
+    if (!r.ok() && error) *error = r.message();
+    return r.ok();
+}
+
+bool CyberiadaSMEditorWindow::gitCreateBranch(const QString& name, const QString& start, bool switchTo,
+                                              QString* error)
+{
+    RepositoryService* service = gitService(error);
+    if (!service) return false;
+    if (name.isEmpty() || name.startsWith('-') || start.startsWith('-')) {
+        if (error) *error = tr("%1 is not a branch name").arg(name);
+        return false;
+    }
+    bool moves = switchTo && !start.isEmpty() && start != service->snapshot().branch;
+    if (moves && !saveRepositoryTabs(service, error)) return false;
+    QStringList args = switchTo ? QStringList() << "switch" << "-c" << name : QStringList() << "branch" << name;
+    if (!start.isEmpty()) args << start;
+    GitResult r = service->command(args);
+    afterGitCommand(service);
+    updateRepositoryTitle();
+    if (!r.ok() && error) *error = r.message();
+    return r.ok();
+}
+
+bool CyberiadaSMEditorWindow::gitDeleteBranch(const QString& name, QString* error)
+{
+    RepositoryService* service = gitService(error);
+    if (!service) return false;
+    if (name.isEmpty() || name.startsWith('-')) {
+        if (error) *error = tr("%1 is not a branch").arg(name);
+        return false;
+    }
+    // an unmerged branch is refused by git itself (EDIT-GIT-20)
+    GitResult r = service->command(QStringList() << "branch" << "-d" << name);
+    afterGitCommand(service);
+    if (!r.ok() && error) *error = r.message();
+    return r.ok();
 }
 
 void CyberiadaSMEditorWindow::openRepositoryFile(const QString& path)
@@ -1063,6 +1260,12 @@ void CyberiadaSMEditorWindow::initGitMenu()
     actionGitHistory = add("actionGitHistory", tr("File History"));
     m_gitMenu->addSeparator();
     actionGitCommit = add("actionGitCommit", tr("Commit..."));
+    // the branches: one menu for Git > Branch and the button of the dock (EDIT-GIT-18)
+    m_branchMenu = new QMenu(tr("Branch"), this);
+    m_branchMenu->setObjectName("menuGitBranch");
+    m_gitMenu->addMenu(m_branchMenu);
+    connect(m_branchMenu, &QMenu::aboutToShow, this, &CyberiadaSMEditorWindow::fillBranchMenu);
+    m_repositoryView->branchButton()->setMenu(m_branchMenu);
     actionGitRefresh = add("actionGitRefresh", tr("Refresh"));
     connect(actionGitStage, &QAction::triggered, this, [this]() { stageFiles(QStringList() << gitRelativePath(active)); });
     connect(actionGitUnstage, &QAction::triggered, this, [this]() { unstageFiles(QStringList() << gitRelativePath(active)); });

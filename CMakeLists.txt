@@ -226,6 +226,7 @@ add_library(CyberiadaEditorCore STATIC
   dialogs/insert_formula_dialog.h dialogs/insert_formula_dialog.cpp
   dialogs/commit_dialog.h dialogs/commit_dialog.cpp
   dialogs/revision_dialog.h dialogs/revision_dialog.cpp
+  dialogs/branch_dialog.h dialogs/branch_dialog.cpp
   dialogs/file_dialog.h dialogs/file_dialog.cpp
   dialogs/open_file_dialog.h dialogs/open_file_dialog.cpp dialogs/open_file_dialog.ui
   dialogs/save_file_dialog.h dialogs/save_file_dialog.cpp dialogs/save_file_dialog.ui

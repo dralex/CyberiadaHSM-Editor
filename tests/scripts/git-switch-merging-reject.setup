@@ -1,0 +1,14 @@
+# a merge stopped on a conflict: both letters U, the state merging
+git init -q
+git symbolic-ref HEAD refs/heads/main
+copy diagrams/hierarchy.graphml h.graphml
+write c.txt base
+git add -A
+git commit -q -m base
+git checkout -q -b other
+write c.txt other
+git commit -q -a -m other
+git checkout -q main
+write c.txt main
+git commit -q -a -m main
+git! merge -q other

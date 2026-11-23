@@ -1998,11 +1998,12 @@ cybersphere-git-plugin, whose textconv driver is `cybparser listing` of libcyber
   the branch dialogs is also shown with git's message in a message box. git runs with stdin
   closed (the commit message aside), `GIT_TERMINAL_PROMPT=0` and `GIT_LITERAL_PATHSPECS=1`;
   only its `-z` output is read, its messages are passed on as they are. *design*
-- `EDIT-GIT-18` MUST [A]: the branch button of the Repository dock and Git > Branch show the
-  branch — `devel`, `devel ↑1 ↓2` when it is ahead or behind its upstream, `detached at
+- `EDIT-GIT-18` MUST [A]: the branch button in the first line of the Repository dock and Git >
+  Branch, one menu, show the branch — `devel`, `devel ↑1 ↓2` when it is ahead or behind its upstream, `detached at
   3f2a9c1`, `devel (no commits)`, with `, merging` or `, rebasing` while one is in progress —
   and list the local branches, the current one checked, then *New Branch...* and *Delete
-  Branch...*. *design*
+  Branch...*; New Branch... is greyed before the first commit, Delete Branch... with no branch
+  but the current one. *design*
 - `EDIT-GIT-19` MUST [A]: a click on another branch switches to it: the tabs of the work tree
   with unsaved edits are named in `Save <n> documents before switching?` — *Save and Switch*,
   *Cancel* — then `git switch <branch>` runs; a refusal (the local changes it would

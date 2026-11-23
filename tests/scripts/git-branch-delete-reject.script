@@ -1,0 +1,2 @@
+# an unmerged branch is refused by git branch -d (EDIT-GIT-20)
+git branch-delete other

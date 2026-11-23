@@ -28,8 +28,10 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QToolBar>
+#include <QToolButton>
 #include <QTreeView>
 #include "smeditor_window.h"
+#include "cyberiadasm_model.h"
 #include "dialogs/preferences_dialog.h"
 #include "code_editor.h"
 #include "git_process.h"
@@ -73,6 +75,8 @@ private slots:
 	void test_stage_output();
 	void test_discard_asks();
 	void test_history_dock();
+	void test_branch_label();
+	void test_branch_menu();
 
 private:
 	static RepositorySnapshot sample();
@@ -303,7 +307,8 @@ void TestRepository::test_dock_follows_tab()
 	QCOMPARE(view->root(), first);
 	QTRY_VERIFY_WITH_TIMEOUT(view->model()->indexOf("h.graphml").isValid(), 10000);
 	QCOMPARE(window.repositoryDock->windowTitle(), QString("Repository"));
-	QCOMPARE(view->heading(), QString("first (main)"));
+	QCOMPARE(view->heading(), QString("first"));
+	QCOMPARE(view->branchButton()->text(), QString("main"));
 	// the file of the tab is the current row
 	QCOMPARE(view->tree()->currentIndex().data(RepositoryModel::PathRole).toString(), QString("h.graphml"));
 	EditorDocument* inFirst = window.currentTab();
@@ -663,6 +668,59 @@ void TestRepository::test_history_dock()
 	QCOMPARE(window.documentCount(), tabs + 1);
 	QVERIFY(window.currentComparison());
 	QVERIFY(window.currentComparison()->title().contains("h.graphml"));
+}
+
+// EDIT-GIT-18: the branch, ahead and behind, detached, before the first commit, a merge
+void TestRepository::test_branch_label()
+{
+	RepositorySnapshot s;
+	s.branch = "devel";
+	s.oid = "0123456789abcdef";
+	QCOMPARE(CyberiadaSMEditorWindow::branchLabel(s), QString("devel"));
+	s.upstream = "origin/devel";
+	s.ahead = 1;
+	s.behind = 2;
+	QCOMPARE(CyberiadaSMEditorWindow::branchLabel(s), QString("devel ") + QChar(0x2191) + "1 " + QChar(0x2193) + "2");
+	s.behind = 0;
+	s.state = "merging";
+	QCOMPARE(CyberiadaSMEditorWindow::branchLabel(s), QString("devel ") + QChar(0x2191) + "1, merging");
+	RepositorySnapshot detached;
+	detached.oid = "3f2a9c1abcdef";
+	QCOMPARE(CyberiadaSMEditorWindow::branchLabel(detached), QString("detached at 3f2a9c1"));
+	RepositorySnapshot unborn;
+	unborn.branch = "main";
+	QCOMPARE(CyberiadaSMEditorWindow::branchLabel(unborn), QString("main (no commits)"));
+}
+
+// EDIT-GIT-18/19: the branch menu lists the branches, the current one checked; a switch reads
+// the clean tab again
+void TestRepository::test_branch_menu()
+{
+	if (!haveGit) QSKIP("no git 2.23 or later");
+	QString root = makeRepository("branch-menu");
+	git(root, QStringList() << "checkout" << "-q" << "-b" << "other");
+	QFile::remove(QDir(root).filePath("h.graphml"));
+	QFile::copy("diagrams/geometry.graphml", QDir(root).filePath("h.graphml"));
+	git(root, QStringList() << "commit" << "-q" << "-a" << "-m" << "geometry");
+	git(root, QStringList() << "checkout" << "-q" << "main");
+	CyberiadaSMEditorWindow window;
+	QString error;
+	QVERIFY(window.openFile(QDir(root).filePath("h.graphml"), &error));
+	QMenu* menu = window.gitBranchMenu();
+	QVERIFY(menu);
+	QCOMPARE(window.repositoryView()->branchButton()->menu(), menu);
+	QMetaObject::invokeMethod(menu, "aboutToShow");
+	QStringList entries;
+	for (QAction* action : menu->actions()) {
+		if (!action->isSeparator()) entries << action->text() + (action->isChecked() ? "*" : "");
+	}
+	QCOMPARE(entries, QStringList() << "main*" << "other" << "New Branch..." << "Delete Branch...");
+	CyberiadaSMEditorDocument* doc = window.currentDocument();
+	const Cyberiada::LocalDocument* before = doc->model()->rootDocument();
+	QVERIFY(window.gitSwitch("other", &error));
+	QVERIFY(doc->model()->rootDocument() != before);
+	QVERIFY(doc->isClean());
+	QTRY_COMPARE(window.repositoryView()->branchButton()->text(), QString("other"));
 }
 
 QTEST_MAIN(TestRepository)

@@ -218,6 +218,17 @@ public:
     void                    gitHistory(const QString& path, bool repository);
     // the path of the active tab's file relative to its work tree, empty without one
     QString                 gitRelativePath(EditorDocument* doc) const;
+    // the branches (EDIT-GIT-18..20): the switch saves the unsaved tabs of the work tree first
+    // (the GUI asked), the files under the tabs are checked after it; a merge or a rebase in
+    // progress refuses it
+    bool                    gitSwitch(const QString& branch, QString* error);
+    bool                    gitCreateBranch(const QString& name, const QString& start, bool switchTo,
+                                            QString* error);
+    bool                    gitDeleteBranch(const QString& name, QString* error);
+    // the menu of the branch button and Git > Branch, filled when it opens
+    QMenu*                  gitBranchMenu() const { return m_branchMenu; }
+    // devel, devel ↑1 ↓2, detached at 3f2a9c1, devel (no commits), ", merging"
+    static QString          branchLabel(const RepositorySnapshot& snapshot);
     // a Save may write the file: unchanged on disk since the tab read or wrote it, or
     // the user agreed; the batch refuses with the reason (EDIT-DOC-17)
     bool                    confirmDiskOverwrite(EditorDocument* doc, QString* error);
@@ -528,6 +539,15 @@ private:
     QString                 m_historyPath;
     bool                    m_historyRepository = false;
     QMenu*                  m_gitMenu = nullptr;
+    QMenu*                  m_branchMenu = nullptr;
+    void                    fillBranchMenu();
+    // the save question of a switch: false when the user cancelled or a save failed
+    bool                    askSaveForSwitch(RepositoryService* service, const QString& branch);
+    QStringList             unsavedTabs(RepositoryService* service) const;
+    bool                    saveRepositoryTabs(RepositoryService* service, QString* error);
+    void                    switchBranch(const QString& branch);
+    void                    newBranch();
+    void                    deleteBranch();
     // the dock toolbar acts on the selected rows, the menu on the active tab's file
     QAction*                m_dockStage = nullptr;
     QAction*                m_dockUnstage = nullptr;

@@ -1,0 +1,2 @@
+# no switch while a merge is in progress (EDIT-GIT-19)
+git switch other

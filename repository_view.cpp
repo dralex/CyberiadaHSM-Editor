@@ -22,6 +22,7 @@
  * ----------------------------------------------------------------------------- */
 
 #include <QActionGroup>
+#include <QHBoxLayout>
 #include <QHeaderView>
 #include <QItemSelectionModel>
 #include <QLabel>
@@ -29,6 +30,7 @@
 #include <QStackedWidget>
 #include <QStyle>
 #include <QToolBar>
+#include <QToolButton>
 #include <QTreeView>
 #include <QVBoxLayout>
 
@@ -41,14 +43,24 @@ RepositoryView::RepositoryView(QWidget* parent):
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
 
-    // the line of the work tree; it never widens the dock
-    m_heading = new QLabel(this);
+    // the line of the work tree and its branch; it never widens the dock
+    m_headingRow = new QWidget(this);
+    QHBoxLayout* row = new QHBoxLayout(m_headingRow);
+    row->setContentsMargins(0, 0, 0, 0);
+    m_heading = new QLabel(m_headingRow);
     m_heading->setObjectName("repositoryHeading");
     m_heading->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
     m_heading->setMargin(m_heading->fontMetrics().averageCharWidth() / 2);
     m_heading->setTextInteractionFlags(Qt::TextSelectableByMouse);
-    m_heading->hide();
-    layout->addWidget(m_heading);
+    row->addWidget(m_heading, 1);
+    m_branch = new QToolButton(m_headingRow);
+    m_branch->setObjectName("repositoryBranch");
+    m_branch->setPopupMode(QToolButton::InstantPopup);
+    m_branch->setToolButtonStyle(Qt::ToolButtonTextOnly);
+    m_branch->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
+    row->addWidget(m_branch, 1);
+    m_headingRow->hide();
+    layout->addWidget(m_headingRow);
 
     m_toolBar = new QToolBar(this);
     m_toolBar->setObjectName("repositoryToolBar");
@@ -121,7 +133,7 @@ RepositoryView::RepositoryView(QWidget* parent):
 void RepositoryView::setHeading(const QString& text)
 {
     m_heading->setText(text);
-    m_heading->setVisible(!text.isEmpty());
+    m_headingRow->setVisible(!text.isEmpty());
 }
 
 QString RepositoryView::heading() const

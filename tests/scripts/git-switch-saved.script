@@ -1,0 +1,3 @@
+# the unsaved tab is saved before the switch; git carries the change to the branch (EDIT-GIT-19)
+rename n0 Edited
+git switch other

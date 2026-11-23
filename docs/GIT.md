@@ -1,8 +1,8 @@
 # Git in the Editor — Architecture
 
-**Document version:** 0.5 (2026-11-23) — specified (stage 0); the disk check (stage 2), the
-git core (stage 3), the Repository dock (stage 4) and the verbs, the commit, the compares and
-the history (stage 5) implemented. The requirements are
+**Document version:** 0.6 (2026-11-23) — specified (stage 0); the disk check (stage 2), the
+git core (stage 3), the Repository dock (stage 4), the verbs, the commit, the compares and the
+history (stage 5) and the branches (stage 6) implemented. The requirements are
 `EDIT-GIT-1..23` in `EDITOR-SPEC.md` §4.20, the disk check `EDIT-DOC-13..18` §4.11 and the
 docks `EDIT-UI-6`.
 
@@ -235,6 +235,13 @@ first line of the dock, a label that never widens it.
 New Branch... (`dialogs/branch_dialog.*`) takes the name, the start (the current commit or a
 local branch) and *Switch to it*; git checks the name. Delete Branch... lists the local
 branches but the current one; `branch -d` refuses the unmerged ones.
+
+* The menu is one `QMenu`, the submenu of Git > Branch and the menu of the branch button,
+  filled anew when it opens, after a status read waited for.
+* The window's `gitSwitch` saves the unsaved tabs of the work tree; the GUI asks the question
+  of `EDIT-GIT-19` before it, the batch does not ask. A switch git refuses leaves the files as
+  they were, the saved tabs saved.
+* The label is `CyberiadaSMEditorWindow::branchLabel()`: the arrows are U+2191 and U+2193.
 
 ## The disk check
 

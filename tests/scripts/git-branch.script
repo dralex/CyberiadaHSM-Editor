@@ -1,0 +1,3 @@
+# a new branch made, then another one switched to (EDIT-GIT-20)
+git branch night
+git branch day switch

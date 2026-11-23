@@ -1,0 +1,12 @@
+# a branch to start from
+git init -q
+git symbolic-ref HEAD refs/heads/main
+copy diagrams/hierarchy.graphml h.graphml
+copy texts/notes.md notes.md
+write other.txt other
+git add -A
+git commit -q -m first
+git checkout -q -b other
+copy diagrams/geometry.graphml h.graphml
+git commit -q -a -m geometry
+git checkout -q main

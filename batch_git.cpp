@@ -148,6 +148,36 @@ bool runGitVerb(CyberiadaSMEditorWindow* win, const QString& line, QString* erro
 		QString revision = args.at(1) == "head" ? QString("HEAD") : args.at(1) == "index" ? QString() : args.at(1);
 		return win->gitCompare(args.at(0), revision, error) != nullptr;
 	}
+	if (verb == "switch") {
+		if (args.size() != 1) {
+			*error = "git switch needs a branch";
+			return false;
+		}
+		return win->gitSwitch(args.at(0), error);
+	}
+	if (verb == "branch") {
+		// git branch <name> [from <start>] [switch]
+		QString start;
+		bool switchTo = false;
+		bool ok = !args.isEmpty();
+		for (int i = 1; ok && i < args.size(); i++) {
+			if (args.at(i) == "from" && i + 1 < args.size()) start = args.at(++i);
+			else if (args.at(i) == "switch") switchTo = true;
+			else ok = false;
+		}
+		if (!ok) {
+			*error = "git branch needs a name, from <start> and switch at most";
+			return false;
+		}
+		return win->gitCreateBranch(args.at(0), start, switchTo, error);
+	}
+	if (verb == "branch-delete") {
+		if (args.size() != 1) {
+			*error = "git branch-delete needs a branch";
+			return false;
+		}
+		return win->gitDeleteBranch(args.at(0), error);
+	}
 	if (verb == "history") {
 		if (args.size() != 1) {
 			*error = "git history needs a file or repository";

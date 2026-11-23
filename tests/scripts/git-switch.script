@@ -1,0 +1,2 @@
+# a switch: the clean tab of the diagram reads the file of the branch (EDIT-GIT-19, EDIT-DOC-14)
+git switch other
