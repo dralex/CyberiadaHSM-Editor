@@ -1,6 +1,6 @@
 # Keyboard Shortcuts — Architecture
 
-**Document version:** 0.4 (2026-11-22), the keys of the fill; 0.3: of the Markdown tools. The requirements are
+**Document version:** 0.5 (2026-11-23), the key of Insert Formula; 0.4: the keys of the fill; 0.3: of the Markdown tools. The requirements are
 `EDIT-KEYS-1..12` in `EDITOR-SPEC.md` §4.16.
 
 Every built-in action of the window has a name, a list of default keys and, perhaps, the
@@ -56,6 +56,7 @@ have before 0.62.
 | | Go to Line | `Alt+G` | *new* |
 | | Insert Image, Insert Link | `Ctrl+Shift+I`, `Ctrl+K` | *new* (0.3, `EDIT-MD-2/9`) |
 | | Fill Paragraph, Unfill Paragraph | `Alt+Q`, `Alt+Shift+Q` | *new* (0.4, `EDIT-MD-20`, Emacs `M-q`) |
+| | Insert Formula | `Ctrl+Shift+M` | *new* (0.5, `EDIT-MD-24`) |
 | Tools | Select | `Esc` | *new* |
 | | Pan, Zoom | `H`, `Z` | *new* |
 | | New State, Transition Tool | `S`, `T` | *new* |

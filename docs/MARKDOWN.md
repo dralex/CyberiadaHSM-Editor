@@ -2,9 +2,10 @@
 
 **Document version:** 0.16 (2026-11-22) — the authoring tools specified and implemented
 (Tools, stages 1 to 6); 0.14: the outline specified (Outline); 0.15: the outline implemented
-(Outline, stage 1); 0.16: the fill of the paragraphs (Fill).
+(Outline, stage 1); 0.16: the fill of the paragraphs (Fill); 0.17: the formula insert and edit
+(Insert Formula).
 The requirements are `EDIT-MODE-14`, `EDIT-MODE-17`, `EDIT-MODE-18`, `EDIT-TEXT-14`,
-`EDIT-MD-1..23` and `EDIT-IO-8` in `EDITOR-SPEC.md`.
+`EDIT-MD-1..27` and `EDIT-IO-8` in `EDITOR-SPEC.md`.
 
 The editor renders Markdown itself: a read-only Markdown tab (`docs/MODES.md`, Text tabs) and,
 when the preference is on, a Markdown comment body on the canvas. md4c reads the text, a TeX
@@ -633,6 +634,106 @@ line and the key typed stays; Unfill and Fill Paragraph act on the whole unit.
    Unfill Paragraph and Fill as You Type, the text toolbar group, the Preferences row, the
    batch `fill-paragraph`, `unfill-paragraph` and `text-width`.
 
+## Insert Formula
+
+A formula is built in a dialog - typed as TeX or picked from a palette, seen as the page draws
+it - and written into the source; a formula of the source opens in it again by Ctrl+click
+(`EDIT-MD-24..27`). TeX is the only format: the dialog writes what the reader reads.
+
+```
+ Edit > Insert Formula (Ctrl+Shift+M),       Ctrl+click on an underlined formula
+ the text toolbar, batch insert-formula      in the source, batch edit-formula
+        |                                            | CodeEditor::formulaActivated(position)
+        v                                            v
+ window insertFormula(text)                  window editFormulaAt(text, position)
+   the cursor or a selection end inside a formula? markdownFormulaAt(text, position)
+        | none: the selection as TeX                 | found: {begin, end, tex, display}
+        v                                            v
+ InsertFormulaDialog(tex, display, place, editing)           dialogs/insert_formula_dialog.*
+   FormulaPalette: formulaPalette() tabs, a click ->         markdown_formula.*
+     applyFormulaSnippet(field, selection, snippet) -> {text, cursor}
+   TeX field ─ 200 ms ─> MathRenderer::render(tex, display, font, black) -> preview, errors
+   Inserts:  markdownFormulaText(tex, display, before, after)
+        |
+        v
+ TextDocument::replaceRange(begin, end, text) | insertInline(text) | insertBlock(text, 0)
+   one undo step: insert formula / edit formula
+```
+
+The underline in the source:
+
+```
+ CodeStyle::markdownSpans(text, fallback, targets, formulas)  markdownSourceRanges(text).math
+        v
+ CodeHighlighter::highlightBlock: each character of a formula keeps its colour and gets the
+   underline and CodeFormulaProperty (a flag in the format, no target)
+        v
+ CodeEditor::formulaAt(point): the flag of the glyph -> its text position, else -1
+   with Ctrl: the hand, the tooltip; Ctrl+click -> formulaActivated(position)
+```
+
+* `markdownFormulaAt(text, position)` takes the formulas md4c reads (`markdownSourceRanges`,
+  never in code) and returns the one whose `[begin, end)`, dollars included, holds the
+  character at the position; display is two dollars. The cursor is inside a formula when the
+  characters on both sides of it are.
+* `place` tells the dialog what is around the insert: the characters before and after it in
+  their line (none at a line end), and whether a display formula goes as a paragraph of its own
+  (an insert without a selection). The window writes the dialog's `insertedText()`.
+* The preview draws the formula as the page does, black on white, at 1.5 times the dialog
+  font, 200 ms after the last keystroke (a switch of the kind at once); the errors of
+  `MathBox::errors` go under it in red, a build without the formulas tells it there.
+* Insert Formula needs no file: no path is written, so an untitled tab and its verbs take it.
+
+### The written text
+
+`markdownFormulaText(tex, display, before, after)` (`EDIT-MD-26`):
+
+| Step | Rule |
+|---|---|
+| lines | trimmed, blank lines dropped; inline: one line, the breaks as spaces |
+| dollars | a `$` without a `\` before it written `\$` |
+| block starts | a line opening a block (`-`, `+`, `*` and a space, `1.`, `>`, `#`, a fence, a rule, `=` or `-` alone) joined to the line before |
+| wrapping | `$tex$`; display `$$tex$$`, or `$$` / the lines / `$$` for more lines |
+| spaces | before when `before` is neither a space, a P or S character nor absent, or is `$`; the same after |
+
+md4c opens a formula only at a dollar after a space or a punctuation or a symbol character
+and closes it only before one, so the spaces make the formula read where it is written; a `$`
+beside the dollars would merge with them.
+
+### The palette
+
+`formulaPalette()` holds the tabs in the order of `EDIT-MD-27`; an entry is the TeX written, a
+slot marked `#`, and the face drawn on its button, the TeX with `\square` in the slots unless
+it has its own:
+
+| Tab | Entries, for example |
+|---|---|
+| Greek | `\alpha` .. `\omega`, `\varepsilon`, `\varphi`, `\Gamma` .. `\Omega` |
+| Operators | `\pm`, `\times`, `\cdot`, `\div`, `\cap`, `\cup`, `\oplus`, `\wedge` |
+| Relations | `\neq`, `\leq`, `\approx`, `\equiv`, `\sim`, `\in`, `\subseteq`, `\perp` |
+| Arrows | `\to`, `\Rightarrow`, `\Leftrightarrow`, `\mapsto`, `\uparrow`, `\nearrow` |
+| Structures | `^{#}`, `_{#}`, `\frac{#}{#}`, `\sqrt{#}`, `\sqrt[#]{#}`, `\sum_{#}^{#}`, `\int_{#}^{#}`, `\lim_{# \to #}`, `\vec{#}`, `\hat{#}`, `\overline{#}`, `\mathbb{#}`, `\text{#}` |
+| Brackets | `\left( # \right)`, `\left\{ # \right\}`, `\left\langle # \right\rangle`, `\lfloor`, `\rceil` |
+| Matrices | `pmatrix`, `bmatrix`, `vmatrix` 2x2, a column, `cases`, `aligned` |
+| Functions | `\sin`, `\cos`, `\log`, `\ln`, `\exp`, `\min`, `\max`, `\det` |
+| Other | `\infty`, `\partial`, `\nabla`, `\forall`, `\exists`, `\emptyset`, `\hbar`, `\dots` |
+
+`applyFormulaSnippet(text, selectionStart, selectionEnd, snippet)`: the selection goes into
+the first slot, the other slots are emptied, the cursor goes to the first empty slot, else to
+the end of the entry. A button is the face drawn by `MathRenderer` in the palette text colour,
+the TeX in its tooltip; without the formulas the TeX is its text.
+
+### Stages
+
+1. The dialog: `markdown_formula.*` (`markdownFormulaAt`, `markdownFormulaText`),
+   `dialogs/insert_formula_dialog.*` without the palette, `TextDocument::replaceRange`, Edit >
+   Insert Formula (`Ctrl+Shift+M`, the text toolbar), the formula under the cursor edited, the
+   batch `insert-formula` and `edit-formula`.
+2. Ctrl+click: the formula ranges of `markdownSpans`, the underline and `CodeFormulaProperty`
+   of `CodeHighlighter`, `CodeEditor::formulaAt` and `formulaActivated`, the window's
+   `editFormulaAt`.
+3. The palette: `formulaPalette`, `applyFormulaSnippet`, `FormulaPalette`.
+
 ## Build
 
 | Part | Where | Licence |
@@ -706,3 +807,13 @@ group, greyed in a read-only tab; the Preferences row, Apply and Reset; the stor
 `md-fill-paragraph`, `md-unfill-paragraph`, `md-fill-text-width` and `md-fill-plain` on
 `texts/markdown-fill.md` and `texts/plain-fill.txt`, `md-fill-reject` (a line the text has not),
 `md-fill-text-width-reject` and `mode-text-fill-reject` (a C++ text).
+
+The formulas: `l4-markdown-formula` — `markdownFormulaText` on a table (the kinds, one and more
+lines, a `$`, a block start, the spaces by the neighbours), `markdownFormulaAt` (dollars, code,
+the cursor between two formulas), `applyFormulaSnippet` (the slots, a selection), every palette
+entry and face drawn without errors (with the formulas); the dialog (the preview and its
+errors, Insert greyed while blank, the kind, the inserted text); the insert, the display
+paragraph, the edit, a selection end inside a formula, their undo steps, an untitled tab; the
+underline and the flag on a formula, none in code, Ctrl+click opening the dialog, a locked tab;
+the action by the tab kind and its key; `md-insert-formula`, `md-edit-formula` and
+`md-insert-formula-reject`.

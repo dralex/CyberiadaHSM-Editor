@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.78 (2026-11-22)
+**Document version:** 0.79 (2026-11-23)
 
 **Related authorities:**
 
@@ -1288,7 +1288,8 @@ has a read-only flag; the architecture is `docs/MODES.md`. Specified in 0.47, th
   warning), `file.md#anchor` to the line of its heading (`EDIT-MD-10`, 0.72), another file
   and a site go to the system (an image to its viewer, a page to the
   browser). A relative path is taken from the directory of the tab's file; in an untitled tab it
-  opens nothing. A plain click edits as before. Specified in 0.68. *design*
+  opens nothing. A plain click edits as before. A formula is underlined too and Ctrl+click edits
+  it (`EDIT-MD-25`, 0.79). Specified in 0.68. *design*
 
   ```
   Ctrl+click on a target ─► #anchor            ─► the heading's source line
@@ -1505,26 +1506,26 @@ Specified in 0.63.
 
 The authoring tools of a Markdown tab: the text toolbar, the image and the diagram inserts,
 the diagram images kept up to date, the link check, the link insert, the live preview, the
-outline and the fill of the paragraphs. The architecture is `docs/MARKDOWN.md`, Tools, Outline
-and Fill. Specified in 0.72, the outline (`EDIT-MD-13..17`) in 0.76, the fill (`EDIT-MD-18..23`,
-of a Plain text tab too) in 0.77.
+outline, the fill of the paragraphs and the formula insert. The architecture is `docs/MARKDOWN.md`,
+Tools, Outline, Fill and Insert Formula. Specified in 0.72, the outline (`EDIT-MD-13..17`) in 0.76,
+the fill (`EDIT-MD-18..23`, of a Plain text tab too) in 0.77, the formulas (`EDIT-MD-24..27`) in 0.79.
 
 - `EDIT-MD-1` MUST [A]: the toolbars follow the active tab: *Main* (the file, history and
   clipboard actions, Read-only) always; *Diagram* (Delete, the geometry, the centring, Grid,
   Snap, Service objects, Log session) in a diagram or a diff tab; *Elements* in a diagram tab;
   *Text* in a text tab, in the place of Elements: Go to Line in every text tab, Fill Paragraph
-  in a Markdown and a Plain text one (0.77), Insert Image, Insert Diagram, Insert Link and
-  Update Diagram Images in a Markdown one; a text diff tab has none of the three. The entries
-  of a hidden toolbar stay in the menus, greyed; a toolbar the user closed stays closed. In a
-  rendered (read-only) Markdown tab Go to Line, Fill Paragraph and the inserts are greyed,
-  Update Diagram Images is not.
+  in a Markdown and a Plain text one (0.77), Insert Image, Insert Diagram, Insert Link, Insert
+  Formula (0.79) and Update Diagram Images in a Markdown one; a text diff tab has none of the
+  three. The entries of a hidden toolbar stay in the menus, greyed; a toolbar the user closed
+  stays closed. In a rendered (read-only) Markdown tab Go to Line, Fill Paragraph and the
+  inserts are greyed, Update Diagram Images is not.
   *design*
 
   ```
   diagram tab   [Main ............ Read-only][Diagram: Delete Geometry Centre Grid Snap ...]
                 [Elements (left)]
   Markdown tab  [Main ............ Read-only]
-                [Text (left): Go to Line | Fill Paragraph | Image Diagram Link | Update Diagram Images]
+                [Text (left): Go to Line | Fill Paragraph | Image Diagram Link Formula | Update Diagram Images]
   Plain text    [Text (left): Go to Line | Fill Paragraph]
   ```
 - `EDIT-MD-2` MUST [A]: Edit > Insert Image... (`Ctrl+Shift+I`), the text toolbar, an image
@@ -1546,7 +1547,8 @@ of a Plain text tab too) in 0.77.
 - `EDIT-MD-4` MUST [A]: the paths are relative to the directory of the tab's file, with `/`; a
   path with a space or a parenthesis is written as `<path>`, a `\`, `[` or `]` of an alt or link
   text with a `\` before it. An untitled tab has no directory: Insert Image, Insert Diagram and Insert Link
-  first ask Save and Insert or Cancel; the batch verbs refuse it (exit 4). *design*
+  first ask Save and Insert or Cancel; the batch verbs refuse it (exit 4). Insert Formula writes
+  no file and inserts into an untitled tab, its verbs too (`EDIT-MD-24`). *design*
 - `EDIT-MD-5` MUST [A]: Edit > Insert Diagram... opens the Insert Diagram dialog: the diagram —
   an open diagram tab with a file (its saved file is drawn, a modified tab is told so) or a
   `.graphml` file —, the folder it is copied to when it lies outside the directory of the tab's
@@ -1593,8 +1595,8 @@ of a Plain text tab too) in 0.77.
   another block. A read-only tab shows the rendered page alone (`EDIT-MODE-14`); Find, Go to
   Line and the inserts act on the source; `--dump` of such a tab adds `preview: yes`. *design*
 - `EDIT-MD-12` MUST [A]: the batch verbs act on the active Markdown tab as the dialogs do,
-  inserting before line `n` of `line <n>`, else at the end; the trailing text is the alt or the
-  link text; the diagram is drawn in the `--font` family, the bundled one without it:
+  inserting before line `n` of `line <n>`, else at the end; the trailing text is the alt, the
+  link text or the TeX; the diagram is drawn in the `--font` family, the bundled one without it:
 
   | Verb | Acts as |
   |---|---|
@@ -1602,6 +1604,8 @@ of a Plain text tab too) in 0.77.
   | `insert-diagram <graphml> [to <dir>] [line <n>] [<alt>]` | Insert Diagram |
   | `update-diagram-images [all]` | Update Diagram Images; `all` = Re-export All; `== update` and a `<line> updated <svg>` or `<line> failed <svg>: <reason>` per image, or `none`, on stdout |
   | `insert-link <target> [line <n>] [<text>]` | Insert Link; an anchor no heading has is refused (exit 4) |
+  | `insert-formula [display] [line <n>] <tex>` | Insert Formula as a paragraph of its own (`EDIT-MD-26`); the TeX is the rest of the line as written, no `\n` escape |
+  | `edit-formula <line> <column> [inline\|display] <tex>` | Edit Formula of the formula holding the character at `line`:`column` (from 1), its kind kept unless given; none there is refused (exit 4) |
   | `check` | Check: `== check` and a `<line>:<column> <message>` per finding, or `none`, on stdout |
   | `preview on\|off` | View > Preview |
   | `fill-paragraph [line <n>\|lines <n>-<m>\|all]` | Fill Paragraph: the unit of the cursor, of line `n`, of the lines `n` to `m`, every unit (`EDIT-MD-20`) |
@@ -1729,6 +1733,59 @@ of a Plain text tab too) in 0.77.
 - `EDIT-MD-23` MUST [A]: a Plain text tab fills the same way without the Markdown rules: a unit
   is the lines between blank lines, a line breaks at any run of spaces, the next lines take
   the indent of the second line (of the first one when it is alone). *design*
+- `EDIT-MD-24` SHOULD [A]: Edit > Insert Formula... (`Ctrl+Shift+M`, the text toolbar) opens the
+  Insert Formula dialog: the palette (`EDIT-MD-27`), the TeX (the selection proposed), the kind
+  — *inline* `$..$` or *display* `$$..$$` —, the preview, black on white as the rendered page
+  draws it, 200 ms after the last edit, with the errors of the TeX under it, and the text it
+  inserts (`EDIT-MD-26`). Insert, disabled while the TeX is blank, puts the formula at the cursor,
+  the selection replaced, one undo step (`insert formula`); a display formula without a
+  selection goes as a paragraph of its own after the paragraph of the cursor, as an image does
+  (`EDIT-MD-2`). A TeX with errors is inserted too, the page draws it as its red source. With
+  the cursor, or an end of the selection, inside a formula (between its first and its last
+  dollar) the action edits that formula (`EDIT-MD-25`). Greyed in a rendered, a read-only or a
+  locked tab and in the other tabs. *design*
+
+  ```
+  Insert Formula ──────────────────────────────────────────────────────
+  [Greek][Operators][Relations][Arrows][Structures][Brackets][Matrices][Functions][Other]
+  │ α β γ δ ε θ λ μ π σ φ ω  Γ Δ Θ Λ Π Σ Φ Ω │   the buttons drawn as their formulas
+  TeX:      [\frac{a}{b} + \sqrt{x^2+y^2}                    ]
+  Kind:     (•) inline $..$   ( ) display $$..$$
+  Preview:  [          a/b + √(x²+y²)  drawn            ]
+            the errors of the TeX, red
+  Inserts:  $\frac{a}{b} + \sqrt{x^2+y^2}$
+                                                 [Insert] [Cancel]
+  ```
+- `EDIT-MD-25` SHOULD [A]: in the source editor of a Markdown tab, highlighted (`EDIT-TEXT-11`),
+  a formula — its dollars and its TeX, never in code — is underlined in its colors; with Ctrl
+  held the pointer over it is a hand and the tooltip says *Ctrl+click to edit the formula*, as
+  over a link target (`EDIT-MODE-28`). Ctrl+click opens the dialog as *Edit Formula* with its
+  TeX and its kind; Replace puts the new formula in place of the old one, its dollars included,
+  one undo step (`edit formula`); Cancel or the same text changes nothing. A locked tab only
+  underlines; a plain click edits as before. *design*
+- `EDIT-MD-26` MUST [A]: the text of a formula: inline `$<tex>$` on one line, the line breaks of
+  the TeX as spaces; display `$$<tex>$$` for a TeX of one line, else `$$`, the lines of the TeX
+  and `$$`, each on a line of its own. The TeX is trimmed, its blank lines dropped (a blank line
+  ends the paragraph), a `$` without a `\` before it written `\$`, a line Markdown would read as
+  the start of a block (a list item, a quote, a heading, a fence, a rule, a setext underline)
+  joined to the line before it with a space. A space goes before the formula when the
+  character before it in its line is neither a space nor a punctuation or a symbol (Unicode P
+  and S, as md4c reads a dollar), or is a `$`; the same after it. *design*
+
+  ```
+  at the cursor   TeX      written
+  area|is         S        area $S$ is
+  «|»             x        «$x$»
+  $a$|            b        $a$ $b$
+  ```
+- `EDIT-MD-27` SHOULD [A]: the palette of the dialog: the tabs *Greek*, *Operators*,
+  *Relations*, *Arrows*, *Structures*, *Brackets*, *Matrices*, *Functions* and *Other* of buttons
+  drawn as their formulas (their TeX as text in a build without the formulas), the TeX in the
+  tooltip. A click puts the entry's TeX at the cursor of the TeX field: the selection of the
+  field goes into the first slot of a template (`a+b` selected, `\frac{}{}` gives
+  `\frac{a+b}{}`), the cursor to the first empty slot, else after the entry. An entry is a
+  command of LaTeX math as MathJax and KaTeX read it (`\mathbb{R}`, never JKQTMathText's own
+  `\bbR`) that JKQTMathText draws without errors. *design*
 
 ## 5. Coverage
 

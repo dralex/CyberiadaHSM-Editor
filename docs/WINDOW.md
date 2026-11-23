@@ -1,6 +1,6 @@
 # The Editor Window — Documents and Tabs
 
-**Document version:** 0.26 (2026-11-22) — the modes, the read-only flag and the plugins in
+**Document version:** 0.27 (2026-11-23) — the modes, the read-only flag and the plugins in
 the modes (`modes`, the text tabs, a plugin run as a diff base, the plugin languages) are
 implemented, the git compare with them (stage 6 of `docs/MODES.md`); a switch keeps the dock
 sizes; a Markdown tab exports its rendered PDF; the find bar (`docs/FIND.md`); the shortcuts
@@ -13,6 +13,7 @@ tools (`docs/MARKDOWN.md`, Tools).
 0.24: the Outline dock of a Markdown tab (`EDIT-MD-13..17`, `docs/MARKDOWN.md`, Outline).
 0.25: Fill Paragraph, Unfill Paragraph and Fill as You Type (`EDIT-MD-18..23`).
 0.26: View > Mode Line (`EDIT-MODE-31`).
+0.27: Insert Formula (`EDIT-MD-24..27`).
 
 The window holds several documents at once. The menus, the toolbars, the tab line and the
 docks (the structure tree, the properties, the changes, the outline, the plugins) are one set; each document brings its
@@ -110,6 +111,7 @@ setCurrentDocument(doc)
 | Find bar, Find, Find Next, Find Previous | global | one bar and query; the marks are the active tab's, dropped on a switch and searched again in the new tab; disabled in a diff tab, one side of a text diff tab (`EDIT-FIND-9`, `EDIT-MODE-24`, `docs/FIND.md`) |
 | Go to Line | document | the cursor of the active text tab, also on the Text toolbar; disabled elsewhere (`EDIT-KEYS-7`) |
 | Insert Image, Insert Diagram, Insert Link | document | the cursor of the active Markdown tab, one undo step; an untitled tab saved first (`EDIT-MD-2..5`, `EDIT-MD-9`) |
+| Insert Formula | document | the cursor of the active Markdown tab, one undo step, an untitled tab too; the formula under the cursor edited, as by Ctrl+click on it (`EDIT-MD-24..27`) |
 | Fill Paragraph, Unfill Paragraph | document | the unit of the cursor or the units of the selection in the active Markdown or Plain text tab, one undo step; Fill Paragraph also on the Text toolbar (`EDIT-MD-18..23`) |
 | Edit > Fill as You Type | global | a setting; a Space or a Return typed past the text width breaks the line in every Markdown and Plain text tab (`EDIT-MD-21/22`) |
 | Document > Update Diagram Images | document | the diagram images of the active Markdown tab, written beside their diagrams; the text unchanged (`EDIT-MD-7`) |
