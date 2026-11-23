@@ -56,7 +56,7 @@
 <context>
     <name>CodeEditor</name>
     <message>
-        <location filename="../code_editor.cpp" line="+393"/>
+        <location filename="../code_editor.cpp" line="+394"/>
         <source>Fill %1</source>
         <translation>Перенос %1</translation>
     </message>
@@ -77,14 +77,19 @@
 , чтобы включить</translation>
     </message>
     <message>
-        <location line="+132"/>
+        <location line="+153"/>
         <source>%1
 Ctrl+click to open</source>
         <translation>%1
 Ctrl+клик мыши — открыть</translation>
     </message>
     <message>
-        <location line="+78"/>
+        <location line="+4"/>
+        <source>Ctrl+click to edit the formula</source>
+        <translation type="unfinished">Ctrl+клик мыши — изменить формулу</translation>
+    </message>
+    <message>
+        <location line="+86"/>
         <source>fill</source>
         <translation>перенос строки</translation>
     </message>
@@ -238,7 +243,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Менеджер плагинов...</translation>
     </message>
     <message>
-        <location line="+275"/>
+        <location line="+278"/>
         <source>Close</source>
         <translation>Закрыть</translation>
     </message>
@@ -4933,7 +4938,7 @@ Ctrl+клик мыши — открыть</translation>
 <context>
     <name>TextDocument</name>
     <message>
-        <location filename="../text_document.cpp" line="+219"/>
+        <location filename="../text_document.cpp" line="+220"/>
         <source>Line %1, column %2: %3</source>
         <translation>Строка %1, столбец %2: %3</translation>
     </message>
