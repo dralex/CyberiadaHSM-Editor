@@ -37,6 +37,17 @@
 #include "repository_service.h"
 #include "repository_view.h"
 #include "settings_manager.h"
+#include "history_view.h"
+#include "plugin_dock.h"
+#include "comparison_document.h"
+#include "dialogs/commit_dialog.h"
+#include "dialogs/revision_dialog.h"
+#include <QComboBox>
+#include <QListWidget>
+#include <QMenu>
+#include <QMessageBox>
+#include <QPlainTextEdit>
+#include <QPushButton>
 
 // the Repository dock (EDIT-GIT-3..7, EDIT-UI-6, docs/GIT.md): the model in both layouts,
 // the dock following the active tab, the Git page of the Preferences
@@ -56,6 +67,12 @@ private slots:
 	void test_toolbar_stored();
 	void test_preferences();
 	void test_read_after_save();
+	void test_commit_dialog();
+	void test_revision_dialog();
+	void test_git_menu();
+	void test_stage_output();
+	void test_discard_asks();
+	void test_history_dock();
 
 private:
 	static RepositorySnapshot sample();
@@ -285,7 +302,8 @@ void TestRepository::test_dock_follows_tab()
 	QVERIFY(!view->showsLine());
 	QCOMPARE(view->root(), first);
 	QTRY_VERIFY_WITH_TIMEOUT(view->model()->indexOf("h.graphml").isValid(), 10000);
-	QCOMPARE(window.repositoryDock->windowTitle(), QString("Repository: first (main)"));
+	QCOMPARE(window.repositoryDock->windowTitle(), QString("Repository"));
+	QCOMPARE(view->heading(), QString("first (main)"));
 	// the file of the tab is the current row
 	QCOMPARE(view->tree()->currentIndex().data(RepositoryModel::PathRole).toString(), QString("h.graphml"));
 	EditorDocument* inFirst = window.currentTab();
@@ -295,7 +313,7 @@ void TestRepository::test_dock_follows_tab()
 	QVERIFY(window.openFile(QDir(outside).filePath("o.graphml"), &error));
 	QVERIFY(view->showsLine());
 	QCOMPARE(view->lineText(), QString("o.graphml is not in a git repository"));
-	QCOMPARE(window.repositoryDock->windowTitle(), QString("Repository"));
+	QCOMPARE(view->heading(), QString());
 	window.setCurrentDocument(inFirst);
 	QCOMPARE(view->root(), first);
 	QVERIFY(view->model()->indexOf("h.graphml").isValid());
@@ -438,6 +456,213 @@ void TestRepository::test_read_after_save()
 	QTRY_VERIFY_WITH_TIMEOUT(view->model()->entry(view->model()->indexOf("docs/notes.md")) &&
 	                         view->model()->entry(view->model()->indexOf("docs/notes.md"))->modified(), 10000);
 	QCOMPARE(view->model()->data(view->model()->indexOf("docs/notes.md")).toString(), QString("notes.md"));
+}
+
+// EDIT-GIT-14: Commit greyed without a message, nothing staged or with a conflict; Amend
+// fills the last message; a failure keeps the dialog open with git's message
+void TestRepository::test_commit_dialog()
+{
+	RepositorySnapshot s;
+	s.branch = "devel";
+	s.oid = "0123456789abcdef";
+	s.entries << entry("a.txt", 'M', '.') << entry("b.txt", '.', 'M') << entry("new.txt", 'R', '.', "old.txt");
+	QString committed;
+	int calls = 0;
+	CommitDialog::Commit commit = [&](const QString& message, bool amend, QString* error) {
+		calls++;
+		if (calls == 1) {
+			*error = "hook refused";
+			return false;
+		}
+		committed = message + (amend ? " amend" : "");
+		return true;
+	};
+	CommitDialog dialog(s, QStringList() << "blink.graphml", QString(), commit, []() { return QString("last one"); });
+	QCOMPARE(dialog.windowTitle(), QString("Commit to devel"));
+	QCOMPARE(dialog.stagedList()->count(), 2);
+	QCOMPARE(dialog.stagedList()->item(0)->text(), QString("M  a.txt"));
+	QVERIFY(dialog.stagedList()->item(1)->text().contains("old.txt"));
+	QVERIFY(dialog.notes().contains("blink.graphml has unsaved edits"));
+	QVERIFY(!dialog.commitButton()->isEnabled());
+	dialog.messageEdit()->setPlainText("   ");
+	QVERIFY(!dialog.commitButton()->isEnabled());
+	dialog.messageEdit()->setPlainText("night mode\n\nthe body");
+	QVERIFY(dialog.commitButton()->isEnabled());
+	dialog.commitButton()->click();
+	QCOMPARE(calls, 1);
+	QVERIFY(dialog.notes().contains("hook refused"));
+	QCOMPARE(dialog.result(), int(QDialog::Rejected));
+	dialog.commitButton()->click();
+	QCOMPARE(committed, QString("night mode\n\nthe body"));
+	QCOMPARE(dialog.result(), int(QDialog::Accepted));
+
+	// nothing staged: Amend alone enables Commit and fills the message
+	RepositorySnapshot empty;
+	empty.branch = "main";
+	empty.oid = "0123456789abcdef";
+	CommitDialog amend(empty, QStringList(), QString(), commit, []() { return QString("last one"); });
+	QVERIFY(!amend.commitButton()->isEnabled());
+	amend.amendBox()->setChecked(true);
+	QCOMPARE(amend.message(), QString("last one"));
+	QVERIFY(amend.commitButton()->isEnabled());
+	// a conflict keeps Commit off; a detached HEAD names the commit
+	RepositorySnapshot conflict;
+	conflict.oid = "fedcba9876543210";
+	conflict.entries << entry("c.txt", 'U', 'U') << entry("a.txt", 'M', '.');
+	CommitDialog stopped(conflict, QStringList(), QString("message"), commit, CommitDialog::LastMessage());
+	QCOMPARE(stopped.windowTitle(), QString("Commit at fedcba9"));
+	QVERIFY(!stopped.commitButton()->isEnabled());
+	QVERIFY(stopped.notes().contains("conflict"));
+}
+
+// EDIT-GIT-13: HEAD first, a commit chosen gives its hash, a revision refused keeps the dialog
+void TestRepository::test_revision_dialog()
+{
+	LogEntry e;
+	e.hash = "0123456789abcdef0123456789abcdef01234567";
+	e.shortHash = "0123456";
+	e.subject = "night mode";
+	RevisionDialog dialog("h.graphml", QVector<LogEntry>() << e, [](const QString& revision, QString* error) {
+		if (revision == "nope") {
+			*error = "nope is not a revision";
+			return false;
+		}
+		return true;
+	});
+	QCOMPARE(dialog.revisionBox()->count(), 2);
+	QCOMPARE(dialog.revision(), QString("HEAD"));
+	dialog.revisionBox()->setCurrentIndex(1);
+	QCOMPARE(dialog.revision(), e.hash);
+	dialog.revisionBox()->setEditText("HEAD~1");
+	QCOMPARE(dialog.revision(), QString("HEAD~1"));
+	dialog.revisionBox()->setEditText("nope");
+	QPushButton* compare = nullptr;
+	for (QPushButton* button : dialog.findChildren<QPushButton*>()) {
+		if (button->text() == "Compare") compare = button;
+	}
+	QVERIFY(compare);
+	compare->click();
+	QCOMPARE(dialog.errorText(), QString("nope is not a revision"));
+	QCOMPARE(dialog.result(), int(QDialog::Rejected));
+}
+
+// EDIT-GIT-16: the Git menu between View and Plugins, its keys, greyed without a repository
+void TestRepository::test_git_menu()
+{
+	CyberiadaSMEditorWindow window;
+	QMenu* git = window.gitMenu();
+	QVERIFY(git);
+	QStringList titles;
+	for (QAction* top : window.QMainWindow::menuBar()->actions()) titles << top->text().remove('&');
+	int at = titles.indexOf("Git");
+	QVERIFY(at > 0);
+	QCOMPARE(titles.at(at - 1), QString("View"));
+	QCOMPARE(titles.at(at + 1), QString("Plugins"));
+	QCOMPARE(window.actionGitStage->shortcut(), QKeySequence("Ctrl+Alt+A"));
+	QCOMPARE(window.actionGitCompareHead->shortcut(), QKeySequence("Ctrl+D"));
+	QCOMPARE(window.actionGitCommit->shortcut(), QKeySequence("Ctrl+Shift+K"));
+	// an untitled tab has no repository
+	QVERIFY(!window.actionGitStage->isEnabled());
+	QCOMPARE(window.actionGitStage->toolTip(), QString("The document has no file"));
+	if (!haveGit) return;
+	QString root = makeRepository("menu");
+	QString error;
+	QVERIFY(window.openFile(QDir(root).filePath("h.graphml"), &error));
+	QVERIFY(window.actionGitStage->isEnabled());
+	QVERIFY(window.actionGitCompareHead->isEnabled());
+	QVERIFY(window.actionGitCommit->isEnabled());
+}
+
+// EDIT-GIT-9/17: Stage of the menu writes the command and its result in the Git output
+void TestRepository::test_stage_output()
+{
+	if (!haveGit) QSKIP("no git 2.23 or later");
+	QString root = makeRepository("stage-output");
+	write(QDir(root).filePath("docs/notes.md"), "# Changed\n");
+	CyberiadaSMEditorWindow window;
+	QString error;
+	QVERIFY(window.openFile(QDir(root).filePath("docs/notes.md"), &error));
+	window.actionGitStage->trigger();
+	QPlainTextEdit* output = window.pluginDock()->output("git");
+	QVERIFY(output);
+	QVERIFY(output->toPlainText().contains("== git add -- docs/notes.md"));
+	RepositoryService* service = window.shownRepository();
+	QVERIFY(service);
+	service->refresh(true);
+	QVERIFY(service->snapshot().entry("docs/notes.md")->staged());
+	// a failure is written too: the index of an untracked file cannot be restored
+	QVERIFY(!window.gitUnstage(QStringList() << "missing.txt", &error));
+	QVERIFY(!error.isEmpty());
+	QVERIFY(output->toPlainText().contains("== git restore --staged -- missing.txt"));
+}
+
+// EDIT-GIT-10: Discard asks first, No the default: No changes nothing
+void TestRepository::test_discard_asks()
+{
+	if (!haveGit) QSKIP("no git 2.23 or later");
+	QString root = makeRepository("discard-asks");
+	write(QDir(root).filePath("docs/notes.md"), "# Changed\n");
+	CyberiadaSMEditorWindow window;
+	window.show();
+	QVERIFY(QTest::qWaitForWindowExposed(&window));
+	QString error;
+	QVERIFY(window.openFile(QDir(root).filePath("docs/notes.md"), &error));
+	bool asked = false;
+	QTimer::singleShot(50, [&asked]() {
+		QMessageBox* box = qobject_cast<QMessageBox*>(QApplication::activeModalWidget());
+		if (!box) return;
+		asked = box->defaultButton() == box->button(QMessageBox::No) && box->text().contains("docs/notes.md");
+		box->button(QMessageBox::No)->click();
+	});
+	window.actionGitDiscard->trigger();
+	QVERIFY(asked);
+	QFile file(QDir(root).filePath("docs/notes.md"));
+	QVERIFY(file.open(QIODevice::ReadOnly));
+	QCOMPARE(file.readAll(), QByteArray("# Changed\n"));
+	// the command itself discards and reads the open tab again
+	QVERIFY(window.gitDiscard(QStringList() << "docs/notes.md", &error));
+	QCOMPARE(window.currentText()->text(), QString("# Notes\n"));
+}
+
+// EDIT-GIT-15: the History follows the current file row, compares on a double click, More...
+void TestRepository::test_history_dock()
+{
+	if (!haveGit) QSKIP("no git 2.23 or later");
+	QString root = makeRepository("history-dock");
+	for (int i = 0; i < 3; i++) {
+		write(QDir(root).filePath("h-log.txt"), QByteArray::number(i));
+		git(root, QStringList() << "add" << "-A");
+		git(root, QStringList() << "commit" << "-q" << "-m" << QString("log %1").arg(i));
+	}
+	CyberiadaSMEditorWindow window;
+	window.resize(1200, 800);
+	window.show();
+	QVERIFY(QTest::qWaitForWindowExposed(&window));
+	window.historyDock->show();
+	window.historyDock->raise();
+	QString error;
+	QVERIFY(window.openFile(QDir(root).filePath("h.graphml"), &error));
+	HistoryView* history = window.historyView();
+	QTRY_COMPARE(history->model()->entries().size(), 1);
+	QCOMPARE(history->model()->entries().first().subject, QString("first"));
+	QCOMPARE(history->title(), QString("History of h.graphml"));
+	RepositoryView* view = window.repositoryView();
+	QTRY_VERIFY_WITH_TIMEOUT(view->model()->indexOf("h-log.txt").isValid(), 10000);
+	view->tree()->setCurrentIndex(view->model()->indexOf("h-log.txt"));
+	QTRY_COMPARE(history->model()->entries().size(), 3);
+	QCOMPARE(history->title(), QString("History of h-log.txt"));
+	history->repositoryAction()->trigger();
+	QCOMPARE(history->model()->entries().size(), 4);
+	QVERIFY(!history->model()->hasMore());
+	// a double click compares the active tab's file with the commit
+	history->fileAction()->trigger();
+	view->tree()->setCurrentIndex(view->model()->indexOf("h.graphml"));
+	QTRY_COMPARE(history->model()->entries().size(), 1);
+	int tabs = window.documentCount();
+	emit history->list()->activated(history->model()->index(0, HistoryModel::columnHash));
+	QCOMPARE(window.documentCount(), tabs + 1);
+	QVERIFY(window.currentComparison());
+	QVERIFY(window.currentComparison()->title().contains("h.graphml"));
 }
 
 QTEST_MAIN(TestRepository)

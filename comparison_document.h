@@ -39,7 +39,8 @@ struct DiffOrigin {
         originTab = 0,      // the snapshot of an open tab
         originFile,         // a file
         originSaved,        // the saved file of a tab
-        originPlugin        // the output of a plugin run on a tab (EDIT-PLUG-58)
+        originPlugin,       // the output of a plugin run on a tab (EDIT-PLUG-58)
+        originGit           // the file in a git revision, or in the index (EDIT-GIT-12)
     };
     Kind                     kind = originTab;
     QPointer<EditorDocument> tab;
@@ -51,6 +52,8 @@ struct DiffOrigin {
     QString                  pluginId;
     QString                  actionId;
     PluginValues             values;
+    // a git base: the revision as typed, empty for the index; path is the file of the work tree
+    QString                  revision;
 };
 
 // a row of the change list in the tree dock (EDIT-MODE-11/22)

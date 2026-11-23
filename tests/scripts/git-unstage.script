@@ -1,0 +1,2 @@
+# Unstage takes the file out of the index, the file kept (EDIT-GIT-9)
+git unstage h.graphml

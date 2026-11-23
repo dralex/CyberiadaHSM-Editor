@@ -179,6 +179,7 @@ add_library(CyberiadaEditorCore STATIC
   repository_service.h repository_service.cpp
   repository_model.h repository_model.cpp
   repository_view.h repository_view.cpp
+  history_view.h history_view.cpp
   shortcut_map.h shortcut_map.cpp
   autoreplace.h autoreplace.cpp
   markdown_lines.h markdown_lines.cpp
@@ -223,6 +224,8 @@ add_library(CyberiadaEditorCore STATIC
   dialogs/insert_diagram_dialog.h dialogs/insert_diagram_dialog.cpp
   dialogs/insert_link_dialog.h dialogs/insert_link_dialog.cpp
   dialogs/insert_formula_dialog.h dialogs/insert_formula_dialog.cpp
+  dialogs/commit_dialog.h dialogs/commit_dialog.cpp
+  dialogs/revision_dialog.h dialogs/revision_dialog.cpp
   dialogs/file_dialog.h dialogs/file_dialog.cpp
   dialogs/open_file_dialog.h dialogs/open_file_dialog.cpp dialogs/open_file_dialog.ui
   dialogs/save_file_dialog.h dialogs/save_file_dialog.cpp dialogs/save_file_dialog.ui

@@ -90,6 +90,10 @@
 #include "git_process.h"
 #include "repository_service.h"
 #include "repository_view.h"
+#include "history_view.h"
+#include "dialogs/commit_dialog.h"
+#include "dialogs/revision_dialog.h"
+#include <QClipboard>
 #include "shortcut_map.h"
 #include "system_terminal.h"
 #include "dialogs/plugin_manager_dialog.h"
@@ -265,6 +269,7 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     connect(undoGroup, &QUndoGroup::indexChanged, this, &CyberiadaSMEditorWindow::updatePluginActions);
     actionUndo->setEnabled(false);
     actionRedo->setEnabled(false);
+    initGitMenu();
     initShortcuts();
     updateEditActions();
     updateTitle();   // start as a clean "untitled" document
@@ -869,6 +874,40 @@ void CyberiadaSMEditorWindow::createRepositoryDock()
     actionRepository = repositoryDock->toggleViewAction();
     actionRepository->setObjectName("actionRepositoryPane");
     actionRepository->setText(tr("Repository"));
+    // the commits of a file or of the work tree, tabbed behind the Repository (EDIT-GIT-15)
+    m_historyView = new HistoryView();
+    m_historyView->setObjectName("historyView");
+    historyDock = new QDockWidget(tr("History"), this);
+    historyDock->setObjectName("historyDock");
+    historyDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    historyDock->setWidget(m_historyView);
+    addDockWidget(Qt::LeftDockWidgetArea, historyDock);
+    tabifyDockWidget(repositoryDock, historyDock);
+    repositoryDock->raise();
+    actionHistory = historyDock->toggleViewAction();
+    actionHistory->setObjectName("actionHistoryPane");
+    actionHistory->setText(tr("History"));
+    connect(historyDock, &QDockWidget::visibilityChanged, this, [this](bool shown) {
+        if (shown) updateHistory();
+    });
+    connect(m_historyView, &HistoryView::moreRequested, this, [this]() { updateHistory(true); });
+    connect(m_historyView, &HistoryView::scopeChanged, this, [this](bool repository) {
+        m_historyRepository = repository;
+        updateHistory();
+    });
+    connect(m_historyView, &HistoryView::compareRequested, this, [this](const QString& hash) {
+        compareFile(m_historyRepository ? gitRelativePath(active) : m_historyPath, hash);
+    });
+    // the history follows the current file row (EDIT-GIT-15)
+    connect(m_repositoryView->tree()->selectionModel(), &QItemSelectionModel::currentChanged, this,
+            [this](const QModelIndex& current) {
+                QModelIndex row = current.sibling(current.row(), RepositoryModel::columnName);
+                if (!m_repositoryView->model()->entry(row)) return;
+                QString path = m_repositoryView->model()->data(row, RepositoryModel::PathRole).toString();
+                if (path == m_historyPath) return;
+                m_historyPath = path;
+                updateHistory();
+            });
     // shown again, the dock reads what it missed (EDIT-GIT-6)
     connect(repositoryDock, &QDockWidget::visibilityChanged, this, [this](bool shown) {
         if (m_repository) m_repository->setWatching(shown && !qApp->property("batchMode").toBool());
@@ -919,6 +958,13 @@ void CyberiadaSMEditorWindow::updateRepositoryDock(bool again)
         scheduleRepositoryRead();
     }
     updateRepositoryTitle();
+    // the history of the file of the tab (EDIT-GIT-15)
+    QString file = gitRelativePath(active);
+    if (switched || !service || file != m_historyPath) {
+        m_historyPath = file;
+        updateHistory();
+    }
+    updateGitActions();
 }
 
 void CyberiadaSMEditorWindow::scheduleRepositoryRead()
@@ -942,6 +988,9 @@ void CyberiadaSMEditorWindow::repositoryStatusChanged()
     m_repositoryView->setSnapshot(m_repository->snapshot());
     updateRepositoryMarks();
     updateRepositoryTitle();
+    updateGitActions();
+    // a commit made elsewhere, a rename staged: the history read again (EDIT-GIT-15)
+    updateHistory();
 }
 
 void CyberiadaSMEditorWindow::updateRepositoryMarks()
@@ -960,15 +1009,16 @@ void CyberiadaSMEditorWindow::updateRepositoryMarks()
 
 void CyberiadaSMEditorWindow::updateRepositoryTitle()
 {
-    if (!repositoryDock) return;
+    // the dock title stays: a title sets the least width of its dock (EDIT-GIT-3)
+    if (!m_repositoryView) return;
     if (!m_repository) {
-        repositoryDock->setWindowTitle(tr("Repository"));
+        m_repositoryView->setHeading(QString());
         return;
     }
-    QString title = tr("Repository: %1").arg(QFileInfo(m_repository->root()).fileName());
+    QString heading = QFileInfo(m_repository->root()).fileName();
     const RepositorySnapshot& s = m_repository->snapshot();
-    if (m_repository->hasSnapshot() && !s.branch.isEmpty()) title += " (" + s.branch + ")";
-    repositoryDock->setWindowTitle(title);
+    if (m_repository->hasSnapshot() && !s.branch.isEmpty()) heading += " (" + s.branch + ")";
+    m_repositoryView->setHeading(heading);
 }
 
 void CyberiadaSMEditorWindow::openRepositoryFile(const QString& path)
@@ -982,6 +1032,614 @@ void CyberiadaSMEditorWindow::openRepositoryFile(const QString& path)
         return;
     }
     QDesktopServices::openUrl(QUrl::fromLocalFile(file));
+}
+
+QString CyberiadaSMEditorWindow::gitRelativePath(EditorDocument* doc) const
+{
+    RepositoryService* service = repositoryOf(doc);
+    QString path = gitFilePath(doc);
+    if (!service || path.isEmpty()) return QString();
+    return QDir(service->root()).relativeFilePath(QFileInfo(path).absoluteFilePath());
+}
+
+void CyberiadaSMEditorWindow::initGitMenu()
+{
+    // Alt+G is Go to Line: the menu takes Alt+T
+    m_gitMenu = new QMenu(tr("Gi&t"), this);
+    m_gitMenu->setObjectName("menuGit");
+    QMainWindow::menuBar()->insertMenu(pluginMenu->menu()->menuAction(), m_gitMenu);
+    auto add = [this](const QString& name, const QString& text) {
+        QAction* action = m_gitMenu->addAction(text);
+        action->setObjectName(name);
+        return action;
+    };
+    actionGitStage = add("actionGitStage", tr("Stage File"));
+    actionGitUnstage = add("actionGitUnstage", tr("Unstage File"));
+    actionGitDiscard = add("actionGitDiscard", tr("Discard Changes of the File..."));
+    m_gitMenu->addSeparator();
+    actionGitCompareHead = add("actionGitCompareHead", tr("Compare with HEAD"));
+    actionGitCompareIndex = add("actionGitCompareIndex", tr("Compare with the Index"));
+    actionGitCompareRevision = add("actionGitCompareRevision", tr("Compare with a Revision..."));
+    actionGitHistory = add("actionGitHistory", tr("File History"));
+    m_gitMenu->addSeparator();
+    actionGitCommit = add("actionGitCommit", tr("Commit..."));
+    actionGitRefresh = add("actionGitRefresh", tr("Refresh"));
+    connect(actionGitStage, &QAction::triggered, this, [this]() { stageFiles(QStringList() << gitRelativePath(active)); });
+    connect(actionGitUnstage, &QAction::triggered, this, [this]() { unstageFiles(QStringList() << gitRelativePath(active)); });
+    connect(actionGitDiscard, &QAction::triggered, this, [this]() { discardFiles(QStringList() << gitRelativePath(active)); });
+    connect(actionGitCompareHead, &QAction::triggered, this, [this]() { compareFile(gitRelativePath(active), "HEAD"); });
+    connect(actionGitCompareIndex, &QAction::triggered, this, [this]() { compareFile(gitRelativePath(active), QString()); });
+    connect(actionGitCompareRevision, &QAction::triggered, this, [this]() { compareFileWithRevision(gitRelativePath(active)); });
+    connect(actionGitHistory, &QAction::triggered, this, [this]() { gitHistory(gitRelativePath(active), false); });
+    connect(actionGitCommit, &QAction::triggered, this, &CyberiadaSMEditorWindow::commitIndex);
+    connect(actionGitRefresh, &QAction::triggered, this, [this]() {
+        updateRepositoryDock(true);
+        if (m_repository) m_repository->refresh();
+    });
+
+    // the dock acts on the selected rows: its toolbar, its menu, F2 and Del (EDIT-GIT-8)
+    QToolBar* bar = m_repositoryView->toolBar();
+    QAction* refresh = m_repositoryView->refreshAction();
+    m_dockStage = new QAction(tr("Stage"), bar);
+    m_dockStage->setObjectName("actionRepositoryStage");
+    m_dockUnstage = new QAction(tr("Unstage"), bar);
+    m_dockUnstage->setObjectName("actionRepositoryUnstage");
+    bar->insertAction(refresh, m_dockStage);
+    bar->insertAction(refresh, m_dockUnstage);
+    bar->insertAction(refresh, actionGitCommit);
+    bar->insertSeparator(refresh);
+    connect(m_dockStage, &QAction::triggered, this, [this]() { stageFiles(m_repositoryView->selectedFiles()); });
+    connect(m_dockUnstage, &QAction::triggered, this, [this]() { unstageFiles(m_repositoryView->selectedFiles()); });
+    QTreeView* tree = m_repositoryView->tree();
+    m_dockRename = new QAction(tr("Rename..."), tree);
+    m_dockRename->setObjectName("actionRepositoryRename");
+    m_dockRename->setShortcut(QKeySequence(Qt::Key_F2));
+    m_dockRename->setShortcutContext(Qt::WidgetShortcut);
+    m_dockDelete = new QAction(tr("Delete..."), tree);
+    m_dockDelete->setObjectName("actionRepositoryDelete");
+    m_dockDelete->setShortcut(QKeySequence(QKeySequence::Delete));
+    m_dockDelete->setShortcutContext(Qt::WidgetShortcut);
+    tree->addAction(m_dockRename);
+    tree->addAction(m_dockDelete);
+    connect(m_dockRename, &QAction::triggered, this, [this]() {
+        QStringList files = m_repositoryView->selectedFiles();
+        if (files.size() == 1) renameFile(files.first());
+    });
+    connect(m_dockDelete, &QAction::triggered, this, [this]() {
+        QStringList files = m_repositoryView->selectedFiles();
+        if (!files.isEmpty()) deleteFiles(files);
+    });
+    tree->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(tree, &QWidget::customContextMenuRequested, this, &CyberiadaSMEditorWindow::showRepositoryMenu);
+    connect(tree->selectionModel(), &QItemSelectionModel::selectionChanged, this,
+            [this]() { updateGitActions(); });
+    updateGitActions();
+}
+
+void CyberiadaSMEditorWindow::updateGitActions()
+{
+    if (!m_gitMenu) return;
+    RepositoryService* service = m_repository.data();
+    QString reason = service ? QString() : noRepositoryReason(active);
+    const QList<QAction*> fileActions = QList<QAction*>() << actionGitStage << actionGitUnstage << actionGitDiscard
+        << actionGitCompareHead << actionGitCompareIndex << actionGitCompareRevision << actionGitHistory
+        << actionGitCommit << actionGitRefresh;
+    for (QAction* action : fileActions) {
+        action->setEnabled(service != nullptr);
+        action->setToolTip(reason);
+    }
+    if (!service) {
+        for (QAction* action : {m_dockStage, m_dockUnstage, m_dockRename, m_dockDelete}) action->setEnabled(false);
+        return;
+    }
+    QString file = gitRelativePath(active);
+    const StatusEntry* entry = service->hasSnapshot() ? service->snapshot().entry(file) : nullptr;
+    bool opens = !file.isEmpty() && isDocumentFile(file);
+    for (QAction* action : {actionGitCompareHead, actionGitCompareRevision}) action->setEnabled(opens);
+    // a conflicted file has no index base (EDIT-GIT-12)
+    actionGitCompareIndex->setEnabled(opens && !(entry && entry->conflicted()));
+    if (entry && entry->conflicted()) actionGitCompareIndex->setToolTip(tr("%1 is in conflict").arg(file));
+    bool stage = false, unstage = false;
+    const QStringList selected = m_repositoryView->selectedFiles();
+    for (const QString& path : selected) {
+        const StatusEntry* e = service->snapshot().entry(path);
+        if (!e) continue;
+        stage = stage || e->modified() || e->untracked() || e->conflicted();
+        unstage = unstage || e->staged();
+    }
+    m_dockStage->setEnabled(stage);
+    m_dockUnstage->setEnabled(unstage);
+    m_dockRename->setEnabled(selected.size() == 1);
+    m_dockDelete->setEnabled(!selected.isEmpty());
+}
+
+void CyberiadaSMEditorWindow::showRepositoryMenu(const QPoint& pos)
+{
+    if (!m_repository) return;
+    QTreeView* tree = m_repositoryView->tree();
+    QModelIndex at = tree->indexAt(pos);
+    if (at.isValid() && !tree->selectionModel()->isSelected(at)) {
+        tree->selectionModel()->select(at, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+    }
+    const QStringList files = m_repositoryView->selectedFiles();
+    if (files.isEmpty()) return;
+    const RepositorySnapshot& s = m_repository->snapshot();
+    bool stage = false, unstage = false, discard = false, conflicted = false;
+    for (const QString& path : files) {
+        const StatusEntry* e = s.entry(path);
+        if (!e) continue;
+        stage = stage || e->modified() || e->untracked() || e->conflicted();
+        unstage = unstage || e->staged();
+        discard = discard || e->modified() || e->untracked();
+        conflicted = conflicted || e->conflicted();
+    }
+    bool one = files.size() == 1 && !files.first().endsWith('/');
+    bool opens = one && isDocumentFile(files.first());
+    QMenu menu(this);
+    QAction* open = menu.addAction(tr("Open"));
+    open->setEnabled(one);
+    menu.addSeparator();
+    QAction* stageEntry = menu.addAction(tr("Stage"));
+    stageEntry->setEnabled(stage);
+    QAction* unstageEntry = menu.addAction(tr("Unstage"));
+    unstageEntry->setEnabled(unstage);
+    QAction* discardEntry = menu.addAction(tr("Discard Changes..."));
+    discardEntry->setEnabled(discard);
+    menu.addSeparator();
+    QAction* head = menu.addAction(tr("Compare with HEAD"));
+    head->setEnabled(opens);
+    QAction* index = menu.addAction(tr("Compare with the Index"));
+    index->setEnabled(opens && !conflicted);
+    QAction* revision = menu.addAction(tr("Compare with a Revision..."));
+    revision->setEnabled(opens);
+    QAction* history = menu.addAction(tr("History"));
+    history->setEnabled(one);
+    menu.addSeparator();
+    menu.addAction(m_dockRename);
+    menu.addAction(m_dockDelete);
+    menu.addSeparator();
+    QAction* copyPath = menu.addAction(tr("Copy Path"));
+    QAction* copyRelative = menu.addAction(tr("Copy Relative Path"));
+    QAction* chosen = menu.exec(tree->viewport()->mapToGlobal(pos));
+    if (!chosen) return;
+    const QString first = files.first();
+    if (chosen == open) openRepositoryFile(first);
+    else if (chosen == stageEntry) stageFiles(files);
+    else if (chosen == unstageEntry) unstageFiles(files);
+    else if (chosen == discardEntry) discardFiles(files);
+    else if (chosen == head) compareFile(first, "HEAD");
+    else if (chosen == index) compareFile(first, QString());
+    else if (chosen == revision) compareFileWithRevision(first);
+    else if (chosen == history) gitHistory(first, false);
+    else if (chosen == copyPath || chosen == copyRelative) {
+        QStringList lines;
+        QDir root(m_repository->root());
+        for (const QString& path : files) {
+            lines << (chosen == copyPath ? QDir::toNativeSeparators(root.filePath(path)) : path);
+        }
+        QApplication::clipboard()->setText(lines.join('\n'));
+    }
+}
+
+RepositoryService* CyberiadaSMEditorWindow::gitService(QString* error)
+{
+    RepositoryService* service = repositoryOf(active);
+    if (!service) {
+        if (error) *error = noRepositoryReason(active);
+        return nullptr;
+    }
+    connect(service, &RepositoryService::commandRun, this, &CyberiadaSMEditorWindow::slotGitCommand,
+            Qt::UniqueConnection);
+    if (!service->hasSnapshot()) service->refresh(true);
+    return service;
+}
+
+void CyberiadaSMEditorWindow::gitOutput(const QString& text, bool isError)
+{
+    pluginDockWidget->appendTool("git", "Git", text, isError);
+}
+
+void CyberiadaSMEditorWindow::slotGitCommand(const QStringList& args, const GitResult& result)
+{
+    // every command and its answer in the Git output (EDIT-GIT-17)
+    RepositoryService* service = qobject_cast<RepositoryService*>(sender());
+    gitOutput(QString("== git %1 - %2").arg(args.join(' '),
+                                           service ? QDir::toNativeSeparators(service->root()) : QString()),
+              false);
+    QString out = QString::fromUtf8(result.out).trimmed();
+    if (!out.isEmpty()) gitOutput(out, false);
+    if (!result.ok()) gitOutput(result.message(), true);
+    else if (!result.err.trimmed().isEmpty()) gitOutput(result.err.trimmed(), false);
+}
+
+void CyberiadaSMEditorWindow::afterGitCommand(RepositoryService* service)
+{
+    // a command may rewrite the files under the tabs (EDIT-DOC-13) and changes the status
+    checkDisk();
+    service->refresh(qApp->property("batchMode").toBool());
+    updateRepositoryMarks();
+    updateHistory();
+}
+
+void CyberiadaSMEditorWindow::reportGitFailure(const QString& title, const QString& error)
+{
+    if (error.isEmpty() || qApp->property("batchMode").toBool()) return;
+    QMessageBox::warning(this, title, error);
+}
+
+bool CyberiadaSMEditorWindow::gitStage(const QStringList& paths, QString* error)
+{
+    RepositoryService* service = gitService(error);
+    if (!service) return false;
+    if (paths.isEmpty() || paths.contains(QString())) {
+        if (error) *error = tr("no file to stage");
+        return false;
+    }
+    GitResult r = service->command(QStringList() << "add" << "--" << paths);
+    afterGitCommand(service);
+    if (!r.ok() && error) *error = r.message();
+    return r.ok();
+}
+
+bool CyberiadaSMEditorWindow::gitUnstage(const QStringList& paths, QString* error)
+{
+    RepositoryService* service = gitService(error);
+    if (!service) return false;
+    if (paths.isEmpty() || paths.contains(QString())) {
+        if (error) *error = tr("no file to unstage");
+        return false;
+    }
+    // before the first commit there is no HEAD to restore the index from (EDIT-GIT-9)
+    QStringList args = service->snapshot().unborn() ? QStringList() << "rm" << "--cached" << "-q"
+                                                    : QStringList() << "restore" << "--staged";
+    GitResult r = service->command(args << "--" << paths);
+    afterGitCommand(service);
+    if (!r.ok() && error) *error = r.message();
+    return r.ok();
+}
+
+bool CyberiadaSMEditorWindow::gitDiscard(const QStringList& paths, QString* error)
+{
+    RepositoryService* service = gitService(error);
+    if (!service) return false;
+    QStringList tracked, untracked;
+    for (const QString& path : paths) {
+        const StatusEntry* e = service->snapshot().entry(path);
+        if (!e || e->conflicted()) continue;
+        if (e->untracked()) untracked << path;
+        else if (e->modified()) tracked << path;
+    }
+    if (tracked.isEmpty() && untracked.isEmpty()) {
+        if (error) *error = tr("no change to discard");
+        return false;
+    }
+    QDir root(service->root());
+    if (!tracked.isEmpty()) {
+        GitResult r = service->command(QStringList() << "restore" << "--" << tracked);
+        if (!r.ok()) {
+            afterGitCommand(service);
+            if (error) *error = r.message();
+            return false;
+        }
+    }
+    for (const QString& path : untracked) {
+        if (QFile::remove(root.filePath(path))) gitOutput(tr("removed %1").arg(path), false);
+    }
+    // the open tabs follow their files, their edits dropped: the question named them (EDIT-GIT-10)
+    const QList<EditorDocument*> tabs = documents;
+    for (EditorDocument* doc : tabs) {
+        if (!doc->hasFile() || qobject_cast<ComparisonDocument*>(doc)) continue;
+        QString relative = root.relativeFilePath(QFileInfo(doc->filePath()).absoluteFilePath());
+        if (!tracked.contains(relative)) continue;
+        QString reason;
+        if (!reloadTab(doc, &reason)) doc->setDiskStatus(EditorDocument::diskUnreadable);
+    }
+    afterGitCommand(service);
+    return true;
+}
+
+bool CyberiadaSMEditorWindow::gitRename(const QString& from, const QString& to, QString* error)
+{
+    RepositoryService* service = gitService(error);
+    if (!service) return false;
+    QDir root(service->root());
+    QString target = QDir::cleanPath(to);
+    if (target.isEmpty() || QDir::isAbsolutePath(target) || target.startsWith("..")) {
+        if (error) *error = tr("%1 is not a path of the work tree").arg(to);
+        return false;
+    }
+    if (QFileInfo::exists(root.filePath(target))) {
+        if (error) *error = tr("%1 exists").arg(target);
+        return false;
+    }
+    QString source = root.filePath(from);
+    EditorDocument* tab = nullptr;
+    for (EditorDocument* doc : documents) {
+        if (doc->hasFile() && !qobject_cast<ComparisonDocument*>(doc) &&
+            QFileInfo(doc->filePath()).absoluteFilePath() == QFileInfo(source).absoluteFilePath()) {
+            tab = doc;
+        }
+    }
+    // an edited diagram follows its file only saved (EDIT-GIT-11)
+    if (tab && qobject_cast<CyberiadaSMEditorDocument*>(tab) && tab->hasEdits()) {
+        if (error) *error = tr("%1 has unsaved edits: save it before renaming it").arg(tab->title());
+        return false;
+    }
+    const StatusEntry* e = service->snapshot().entry(from);
+    bool ok;
+    QString reason;
+    // git mv makes no folder
+    root.mkpath(QFileInfo(root.filePath(target)).path());
+    if (e && !e->untracked() && !e->ignored()) {
+        GitResult r = service->command(QStringList() << "mv" << "--" << from << target);
+        ok = r.ok();
+        reason = r.message();
+    } else {
+        ok = QFile::rename(source, root.filePath(target));
+        reason = tr("%1 is not renamed").arg(from);
+        if (ok) gitOutput(tr("renamed %1 to %2").arg(from, target), false);
+    }
+    if (ok && tab) tab->followFile(root.filePath(target), nullptr);
+    afterGitCommand(service);
+    if (!ok && error) *error = reason;
+    return ok;
+}
+
+bool CyberiadaSMEditorWindow::gitDelete(const QStringList& paths, QString* error)
+{
+    RepositoryService* service = gitService(error);
+    if (!service) return false;
+    QDir root(service->root());
+    QStringList tracked, other;
+    for (const QString& path : paths) {
+        const StatusEntry* e = service->snapshot().entry(path);
+        if (e && !e->untracked() && !e->ignored()) tracked << path;
+        else other << path;
+    }
+    bool ok = true;
+    QString reason;
+    if (!tracked.isEmpty()) {
+        // git refuses a file with changes not committed (EDIT-GIT-11)
+        GitResult r = service->command(QStringList() << "rm" << "-q" << "--" << tracked);
+        ok = r.ok();
+        reason = r.message();
+    }
+    for (const QString& path : other) {
+        if (QFile::remove(root.filePath(path))) gitOutput(tr("deleted %1").arg(path), false);
+    }
+    // the tabs of the deleted files close without a question: the question named them
+    const QList<EditorDocument*> tabs = documents;
+    for (EditorDocument* doc : tabs) {
+        if (!doc->hasFile() || qobject_cast<ComparisonDocument*>(doc)) continue;
+        QString relative = root.relativeFilePath(QFileInfo(doc->filePath()).absoluteFilePath());
+        if (paths.contains(relative) && !QFileInfo::exists(doc->filePath())) closeDocument(doc, true);
+    }
+    afterGitCommand(service);
+    if (!ok && error) *error = reason;
+    return ok;
+}
+
+bool CyberiadaSMEditorWindow::gitCommit(const QString& message, bool amend, QString* error)
+{
+    RepositoryService* service = gitService(error);
+    if (!service) return false;
+    if (message.trimmed().isEmpty()) {
+        if (error) *error = tr("the message is empty");
+        return false;
+    }
+    QStringList args = QStringList() << "commit" << "-F" << "-";
+    if (amend) args << "--amend";
+    GitResult r = service->command(args, message.toUtf8());
+    afterGitCommand(service);
+    if (!r.ok()) {
+        service->setPendingMessage(message);
+        if (error) *error = r.message();
+        return false;
+    }
+    service->setPendingMessage(QString());
+    return true;
+}
+
+ComparisonDocument* CyberiadaSMEditorWindow::gitCompare(const QString& path, const QString& revision, QString* error)
+{
+    RepositoryService* service = gitService(error);
+    if (!service) return nullptr;
+    QString file = QDir(service->root()).filePath(path);
+    if (path.isEmpty() || !isDocumentFile(file)) {
+        if (error) *error = tr("%1 is not a diagram or a text the editor opens").arg(path);
+        return nullptr;
+    }
+    const StatusEntry* e = service->snapshot().entry(path);
+    if (revision.isEmpty() && e && e->conflicted()) {
+        if (error) *error = tr("%1 is in conflict: the index has no file of it").arg(path);
+        return nullptr;
+    }
+    // the tab of the file, opened first (EDIT-GIT-12)
+    EditorDocument* tab = modeForFile(file) == MODE_HSM ? static_cast<EditorDocument*>(findDocument(file, false))
+                                                        : static_cast<EditorDocument*>(findTextTab(file));
+    if (!tab) {
+        if (!openFile(file, error)) return nullptr;
+        tab = active;
+    }
+    DiffOrigin base;
+    base.kind = DiffOrigin::originGit;
+    base.path = file;
+    base.revision = revision;
+    static const QRegularExpression fullHash("^[0-9a-f]{40}$");
+    base.label = revision.isEmpty() ? tr("index") :
+                 fullHash.match(revision).hasMatch() ? revision.left(GIT_SHORT_HASH) : revision;
+    if (TextDocument* text = qobject_cast<TextDocument*>(tab)) return compareText(text, base, error);
+    return compareDocument(qobject_cast<CyberiadaSMEditorDocument*>(tab), base, error);
+}
+
+void CyberiadaSMEditorWindow::gitHistory(const QString& path, bool repository)
+{
+    m_historyPath = path;
+    m_historyRepository = repository;
+    m_historyView->setRepositoryScope(repository);
+    if (!qApp->property("batchMode").toBool()) {
+        SettingsManager::instance().setShowHistory(true);
+        historyDock->raise();
+    }
+    updateHistory();
+}
+
+void CyberiadaSMEditorWindow::updateHistory(bool more)
+{
+    if (!m_historyView) return;
+    bool batch = qApp->property("batchMode").toBool();
+    // only while shown; the batch reads as its verbs ask (EDIT-GIT-6/15)
+    if (!batch && historyDock->isHidden()) return;
+    RepositoryService* service = m_repository.data();
+    if (!service) {
+        m_historyView->setTitle(noRepositoryReason(active));
+        m_historyView->model()->setEntries(QVector<LogEntry>(), false);
+        return;
+    }
+    QString path = m_historyRepository ? QString() : m_historyPath;
+    if (!m_historyRepository && path.isEmpty()) {
+        m_historyView->setTitle(tr("No file"));
+        m_historyView->model()->setEntries(QVector<LogEntry>(), false);
+        return;
+    }
+    // the batch reads the status first: a staged rename is in it (EDIT-GIT-15)
+    if (batch && !service->hasSnapshot()) service->refresh(true);
+    QString what = m_historyRepository ? QFileInfo(service->root()).fileName() : path;
+    // a staged rename is not committed yet: its commits are those of its old path
+    const StatusEntry* entry = path.isEmpty() ? nullptr : service->snapshot().entry(path);
+    if (entry && !entry->oldPath.isEmpty()) path = entry->oldPath;
+    int skip = more ? m_historyView->model()->entries().size() : 0;
+    QString error;
+    QVector<LogEntry> rows = service->log(path, HISTORY_PAGE + 1, skip, &error);
+    bool hasMore = rows.size() > HISTORY_PAGE;
+    if (hasMore) rows.removeLast();
+    if (more) m_historyView->model()->appendEntries(rows, hasMore);
+    else m_historyView->model()->setEntries(rows, hasMore);
+    if (!error.isEmpty()) m_historyView->setTitle(tr("History of %1: %2").arg(what, error));
+    else if (m_historyView->model()->entries().isEmpty()) m_historyView->setTitle(tr("History of %1: no commits").arg(what));
+    else m_historyView->setTitle(tr("History of %1").arg(what));
+}
+
+void CyberiadaSMEditorWindow::stageFiles(const QStringList& paths)
+{
+    QString error;
+    if (!gitStage(paths, &error)) reportGitFailure(tr("Stage"), error);
+}
+
+void CyberiadaSMEditorWindow::unstageFiles(const QStringList& paths)
+{
+    QString error;
+    if (!gitUnstage(paths, &error)) reportGitFailure(tr("Unstage"), error);
+}
+
+void CyberiadaSMEditorWindow::discardFiles(const QStringList& paths)
+{
+    RepositoryService* service = m_repository.data();
+    if (!service || paths.isEmpty()) return;
+    // the files and the tabs whose edits go too, No the default (EDIT-GIT-10)
+    QStringList tabs;
+    QDir root(service->root());
+    for (EditorDocument* doc : documents) {
+        if (!doc->hasFile() || !doc->hasEdits()) continue;
+        if (paths.contains(root.relativeFilePath(QFileInfo(doc->filePath()).absoluteFilePath()))) tabs << doc->title();
+    }
+    QString text = tr("Discard the changes of these files? The untracked ones are deleted.") + "\n\n" +
+                   paths.join('\n');
+    if (!tabs.isEmpty()) text += "\n\n" + tr("The unsaved edits of these tabs are lost too:") + "\n" + tabs.join('\n');
+    if (QMessageBox::question(this, tr("Discard Changes"), text, QMessageBox::Yes | QMessageBox::No,
+                              QMessageBox::No) != QMessageBox::Yes) {
+        return;
+    }
+    QString error;
+    if (!gitDiscard(paths, &error)) reportGitFailure(tr("Discard Changes"), error);
+}
+
+void CyberiadaSMEditorWindow::renameFile(const QString& path)
+{
+    if (!m_repository || path.isEmpty()) return;
+    bool ok = false;
+    QString name = QInputDialog::getText(this, tr("Rename"), tr("The new name of %1:").arg(path),
+                                         QLineEdit::Normal, QFileInfo(path).fileName(), &ok);
+    if (!ok || name.trimmed().isEmpty() || name == QFileInfo(path).fileName()) return;
+    // a name relative to the folder of the file (EDIT-GIT-11)
+    QString folder = QFileInfo(path).path();
+    QString target = QDir::cleanPath(folder == "." ? name.trimmed() : folder + "/" + name.trimmed());
+    QString error;
+    if (!gitRename(path, target, &error)) reportGitFailure(tr("Rename"), error);
+}
+
+void CyberiadaSMEditorWindow::deleteFiles(const QStringList& paths)
+{
+    if (!m_repository || paths.isEmpty()) return;
+    QStringList tabs;
+    QDir root(m_repository->root());
+    for (EditorDocument* doc : documents) {
+        if (doc->hasFile() && paths.contains(root.relativeFilePath(QFileInfo(doc->filePath()).absoluteFilePath()))) {
+            tabs << doc->title();
+        }
+    }
+    QString text = tr("Delete these files?") + "\n\n" + paths.join('\n');
+    if (!tabs.isEmpty()) text += "\n\n" + tr("These tabs are closed:") + "\n" + tabs.join('\n');
+    if (QMessageBox::question(this, tr("Delete"), text, QMessageBox::Yes | QMessageBox::No,
+                              QMessageBox::No) != QMessageBox::Yes) {
+        return;
+    }
+    QString error;
+    if (!gitDelete(paths, &error)) reportGitFailure(tr("Delete"), error);
+}
+
+void CyberiadaSMEditorWindow::compareFile(const QString& path, const QString& revision)
+{
+    QString error;
+    if (!gitCompare(path, revision, &error)) reportGitFailure(tr("Compare"), error);
+}
+
+void CyberiadaSMEditorWindow::compareFileWithRevision(const QString& path)
+{
+    QString error;
+    RepositoryService* service = gitService(&error);
+    if (!service) {
+        reportGitFailure(tr("Compare with a Revision"), error);
+        return;
+    }
+    QString root = service->root();
+    RevisionDialog dialog(path, service->log(path, REVISION_CHOICES, 0, nullptr),
+                          [root](const QString& revision, QString* reason) {
+                              if (revision.startsWith('-')) {
+                                  *reason = tr("a revision does not start with -");
+                                  return false;
+                              }
+                              GitResult r = GitProcess::run(root, QStringList() << "rev-parse" << "--verify" << "-q"
+                                                                               << revision + "^{commit}");
+                              if (!r.ok()) *reason = tr("%1 is not a revision of the repository").arg(revision);
+                              return r.ok();
+                          }, this);
+    if (dialog.exec() != QDialog::Accepted) return;
+    compareFile(path, dialog.revision());
+}
+
+void CyberiadaSMEditorWindow::commitIndex()
+{
+    QString error;
+    RepositoryService* service = gitService(&error);
+    if (!service) {
+        reportGitFailure(tr("Commit"), error);
+        return;
+    }
+    // what the commit takes as it is now
+    service->refresh(true);
+    QStringList unsaved;
+    QDir root(service->root());
+    for (EditorDocument* doc : documents) {
+        if (!doc->hasFile() || !doc->hasEdits() || qobject_cast<ComparisonDocument*>(doc)) continue;
+        if (!root.relativeFilePath(QFileInfo(doc->filePath()).absoluteFilePath()).startsWith("..")) unsaved << doc->title();
+    }
+    CommitDialog dialog(service->snapshot(), unsaved, service->pendingMessage(),
+                        [this](const QString& message, bool amend, QString* reason) {
+                            return gitCommit(message, amend, reason);
+                        },
+                        [service]() { return service->lastMessage(); }, this);
+    if (dialog.exec() != QDialog::Accepted) service->setPendingMessage(dialog.message());
 }
 
 QString CyberiadaSMEditorWindow::noRepositoryReason(EditorDocument* doc) const
@@ -1942,6 +2600,20 @@ bool CyberiadaSMEditorWindow::originBuffer(const DiffOrigin& origin, const std::
         if (!ok && error) *error = tr("the document %1 cannot be encoded").arg(doc->title());
         return ok;
     }
+    if (origin.kind == DiffOrigin::originGit) {
+        // the file in the revision, HEAD resolved anew at every Refresh (EDIT-GIT-12)
+        QString folder = QFileInfo(origin.path).absolutePath();
+        RepositoryService* service = RepositoryService::forRoot(RepositoryService::rootOf(folder));
+        if (!service) {
+            if (error) *error = tr("%1 is not in a git repository").arg(QFileInfo(origin.path).fileName());
+            return false;
+        }
+        QString relative = QDir(service->root()).relativeFilePath(QFileInfo(origin.path).absoluteFilePath());
+        QByteArray bytes;
+        if (!service->base(relative, origin.revision, &bytes, error)) return false;
+        *buffer = std::string(bytes.constData(), size_t(bytes.size()));
+        return true;
+    }
     QFile file(origin.path);
     if (!file.open(QIODevice::ReadOnly)) {
         if (error) *error = tr("Cannot read %1:\n%2").arg(origin.path, file.errorString());
@@ -2415,23 +3087,27 @@ void CyberiadaSMEditorWindow::initPaneDocks()
     menuView->insertAction(actionTransitionText, actionChanges);
     menuView->insertAction(actionTransitionText, actionOutline);
     menuView->insertAction(actionTransitionText, actionRepository);
+    menuView->insertAction(actionTransitionText, actionHistory);
     menuView->insertSeparator(actionTransitionText);
     treeDock->installEventFilter(this);
     propertiesDock->installEventFilter(this);
     changesDock->installEventFilter(this);
     outlineDock->installEventFilter(this);
     repositoryDock->installEventFilter(this);
+    historyDock->installEventFilter(this);
     // the choice changes by a View entry or a close button only, never by a tab switch
     connect(actionStructureTree, &QAction::triggered, &sm, &SettingsManager::setShowStructureTree);
     connect(actionProperties, &QAction::triggered, &sm, &SettingsManager::setShowProperties);
     connect(actionChanges, &QAction::triggered, &sm, &SettingsManager::setShowChanges);
     connect(actionOutline, &QAction::triggered, &sm, &SettingsManager::setShowOutline);
     connect(actionRepository, &QAction::triggered, &sm, &SettingsManager::setShowRepository);
+    connect(actionHistory, &QAction::triggered, &sm, &SettingsManager::setShowHistory);
     connect(&sm, &SettingsManager::structureTreeChanged, this, &CyberiadaSMEditorWindow::applyDocks);
     connect(&sm, &SettingsManager::propertiesChanged, this, &CyberiadaSMEditorWindow::applyDocks);
     connect(&sm, &SettingsManager::changesChanged, this, &CyberiadaSMEditorWindow::applyDocks);
     connect(&sm, &SettingsManager::outlineChanged, this, &CyberiadaSMEditorWindow::applyDocks);
     connect(&sm, &SettingsManager::repositoryChanged, this, &CyberiadaSMEditorWindow::applyDocks);
+    connect(&sm, &SettingsManager::historyChanged, this, &CyberiadaSMEditorWindow::applyDocks);
     applyDocks();
 }
 
@@ -2461,6 +3137,9 @@ void CyberiadaSMEditorWindow::applyDocks()
     actionRepository->setEnabled(git);
     actionRepository->setToolTip(git ? QString() : GitProcess::unavailableReason());
     repositoryDock->setVisible(git && sm.getShowRepository());
+    actionHistory->setEnabled(git);
+    actionHistory->setToolTip(actionRepository->toolTip());
+    historyDock->setVisible(git && sm.getShowHistory());
     bindOutline();
 }
 
@@ -2541,6 +3220,7 @@ bool CyberiadaSMEditorWindow::eventFilter(QObject* watched, QEvent* event)
         if (watched == changesDock) SettingsManager::instance().setShowChanges(false);
         if (watched == outlineDock) SettingsManager::instance().setShowOutline(false);
         if (watched == repositoryDock) SettingsManager::instance().setShowRepository(false);
+        if (watched == historyDock) SettingsManager::instance().setShowHistory(false);
     }
     return QMainWindow::eventFilter(watched, event);
 }

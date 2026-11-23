@@ -1,0 +1,2 @@
+# a commit of an empty index is refused with git's message (EDIT-GIT-14/21)
+git commit "nothing"

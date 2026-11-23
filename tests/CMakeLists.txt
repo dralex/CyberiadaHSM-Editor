@@ -476,6 +476,7 @@ function(add_git_test name input expected_code)
       ${_script}
       -DDUMP_TABS=1
       -DDUMP_REPOSITORY=1
+      -DDUMP_HISTORY=1
       -DNO_DUMP=1
       -DEXPECTED=${expected_code}
       -DWORKDIR=${_work}
@@ -497,6 +498,20 @@ add_git_test(refresh h.graphml 0)
 add_git_test(refresh-reject h.graphml 4)
 add_git_test(ignored h.graphml 0)
 add_git_test(repository-reject h.graphml 4)
+add_git_test(stage h.graphml 0)
+add_git_test(unstage h.graphml 0)
+add_git_test(unstage-unborn notes.md 0)
+add_git_test(discard h.graphml 0)
+add_git_test(mv h.graphml 0)
+add_git_test(mv-reject h.graphml 4)
+add_git_test(rm h.graphml 0)
+add_git_test(commit h.graphml 0)
+add_git_test(commit-amend h.graphml 0)
+add_git_test(commit-reject h.graphml 4)
+add_git_test(compare h.graphml 0)
+add_git_test(compare-text h.graphml 0)
+add_git_test(compare-reject h.graphml 4)
+add_git_test(history old.graphml 0)
 add_text_test(text-fill-reject texts/blink.cpp 4)
 
 # the outline of the active Markdown tab after the script, the == outline section alone

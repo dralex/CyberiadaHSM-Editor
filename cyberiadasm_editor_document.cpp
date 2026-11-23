@@ -138,6 +138,22 @@ bool CyberiadaSMEditorDocument::load(const QString& path, QString* error,
     return true;
 }
 
+bool CyberiadaSMEditorDocument::followFile(const QString& path, QString* error)
+{
+    // the library keeps the path of the file it read: the edits would be written to the old one
+    if (hasEdits()) {
+        if (error) *error = tr("%1 has unsaved edits: save it before renaming it").arg(title());
+        return false;
+    }
+    QString view = m_view->viewState();
+    if (!load(path, error, m_loadReconstruct, m_loadReconstructSM, m_loadStrict, mode() == MODE_INSPECTION)) {
+        return false;
+    }
+    m_model->setReadOnlyFlag(readOnlyFlag());
+    if (!view.isEmpty()) pendingViewState = view;
+    return true;
+}
+
 bool CyberiadaSMEditorDocument::reload(QString* error)
 {
     if (!hasFile()) return false;

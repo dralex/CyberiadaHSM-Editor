@@ -94,6 +94,8 @@ int main(int argc, char *argv[])
 	parser.addOption(dumpOutlineOption);
 	QCommandLineOption dumpRepositoryOption("dump-repository", "Dump the git repository of the active tab: the branch and the files with their status.");
 	parser.addOption(dumpRepositoryOption);
+	QCommandLineOption dumpHistoryOption("dump-history", "Dump the History dock: the commits of the file or the repository asked.");
+	parser.addOption(dumpHistoryOption);
 	QCommandLineOption reconstructOption("reconstruct", "Reconstruct absent or malformed geometry on load.");
 	parser.addOption(reconstructOption);
 	QCommandLineOption reconstructSMOption("reconstruct-sm", "Reconstruct the absent state machine border too (with --reconstruct).");
@@ -243,6 +245,7 @@ int main(int argc, char *argv[])
 			options.dumpTabsLine = parser.isSet(dumpTabsOption);
 			options.dumpOutline = parser.isSet(dumpOutlineOption);
 			options.dumpRepository = parser.isSet(dumpRepositoryOption);
+			options.dumpHistory = parser.isSet(dumpHistoryOption);
 			options.plugin = parser.value(pluginOption);
 			options.pluginParams = parser.values(pluginParamOption);
 			options.listPlugins = parser.isSet(listPluginsOption);

@@ -1,0 +1,2 @@
+# a text compared with HEAD in a text diff tab, the file opened first (EDIT-GIT-12)
+git compare notes.md head

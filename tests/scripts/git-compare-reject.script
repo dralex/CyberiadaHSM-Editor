@@ -1,0 +1,2 @@
+# a conflicted file has no index base (EDIT-GIT-12)
+git compare c.txt index

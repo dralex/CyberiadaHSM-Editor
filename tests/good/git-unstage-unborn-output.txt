@@ -1,0 +1,10 @@
+== tabs
+count: 1
+0 notes.md markdown active
+== repository
+root git-unstage-unborn
+branch main (no commits)
+.? notes.md open
+.? staged.txt
+== history
+none History of notes.md: no commits

@@ -6,3 +6,5 @@ root git-unborn
 branch main (no commits)
 .? notes.md open
 A. staged.txt
+== history
+none History of notes.md: no commits

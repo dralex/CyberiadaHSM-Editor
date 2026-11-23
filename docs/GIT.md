@@ -1,7 +1,8 @@
 # Git in the Editor — Architecture
 
-**Document version:** 0.4 (2026-11-23) — specified (stage 0); the disk check (stage 2), the
-git core (stage 3) and the Repository dock (stage 4) implemented. The requirements are
+**Document version:** 0.5 (2026-11-23) — specified (stage 0); the disk check (stage 2), the
+git core (stage 3), the Repository dock (stage 4) and the verbs, the commit, the compares and
+the history (stage 5) implemented. The requirements are
 `EDIT-GIT-1..23` in `EDITOR-SPEC.md` §4.20, the disk check `EDIT-DOC-13..18` §4.11 and the
 docks `EDIT-UI-6`.
 
@@ -152,7 +153,12 @@ knows: the dock follows the active tab, and a tab of another repository brings i
 
 * Every verb that may change the repository, and every failure, goes to the *Git output* tab
   of the plugin dock, headed `== git <command> - <root>` (`EDIT-GIT-17`): the plugin dock's
-  output tabs are reused under the id `git`.
+  output tabs are reused under the id `git` (`PluginDock::appendTool`).
+* A verb is waited for: git adds, restores and moves at once; a commit whose hooks run long
+  holds the window while they do.
+* The GUI forms ask first where the spec says so (Discard, Delete, No the default) and show a
+  failure in a message box; the window's `git*` functions do the work for the menu, the dock
+  and the batch alike.
 * A verb then runs the disk check (`EDIT-DOC-13`): any of them may rewrite a file under an
   open tab.
 * The paths of a verb are relative to the root and passed after `--`; a revision typed by the
@@ -201,8 +207,14 @@ fails, its message shown.
 
 `HistoryModel` holds the rows of one query — a file (`--follow`) or the repository — and
 fetches the next 100 on *More...*. The dock follows the current row of the Repository dock,
-else the active tab. A double-click compares the file of the query (in the repository scope
-the active tab's file) with the row's hash. A read of a query no longer shown is dropped.
+else the active tab, and reads its query again after each status read while it is shown; a
+staged rename is read by its old path, as `--follow` follows only the committed ones. A
+double-click compares the file of the query (in the repository scope the active tab's file)
+with the row's hash.
+
+The dock titles stay `Repository` and `History`: the least width of a dock counts its title,
+so a long work tree name would widen it on every tab switch; the name and the branch are the
+first line of the dock, a label that never widens it.
 
 ## Branches
 

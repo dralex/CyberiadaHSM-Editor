@@ -151,6 +151,10 @@ int runBatchMode(CyberiadaSMEditorApplication& app, const BatchOptions& options)
 		std::cout << "== repository" << std::endl;
 		dumpRepository(&win, std::cout);
 	}
+	if (options.dumpHistory) {
+		std::cout << "== history" << std::endl;
+		dumpHistory(&win, std::cout);
+	}
 
 	// after the sections of the active tab: the actions on it (EDIT-PLUG-63), the runs
 	// of the script (EDIT-PLUG-64), then the run of the plugin stage

@@ -70,7 +70,8 @@ have before 0.62.
 | Document | Properties | `Alt+Return` | *new* |
 | | Check | `F7` | *new* |
 | | Next Change, Previous Change | `Alt+Down`, `Alt+Up` | *new* (0.2) |
-| Git | Stage File | `Ctrl+Alt+A` | *new* (0.6, `EDIT-GIT-16`) |
+| Git | the menu | `Alt+T` (the mnemonic: `Alt+G` is Go to Line) | *new* (0.6) |
+| | Stage File | `Ctrl+Alt+A` | *new* (0.6, `EDIT-GIT-16`) |
 | | Compare with HEAD | `Ctrl+D` | *new* (0.6) |
 | | Commit... | `Ctrl+Shift+K` | *new* (0.6) |
 | Repository dock | Rename..., Delete... | `F2`, `Del` while the dock has the focus | *new* (0.6, `EDIT-GIT-8`) |

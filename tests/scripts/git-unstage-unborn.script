@@ -1,0 +1,2 @@
+# Unstage before the first commit: git rm --cached (EDIT-GIT-9)
+git unstage staged.txt

@@ -31,10 +31,8 @@
 #include "editor_document.h"
 #include "repository_service.h"
 #include "repository_view.h"
+#include "history_view.h"
 #include "smeditor_window.h"
-
-// the length of a short hash, as git abbreviates it by default
-static const int SHORT_HASH = 7;
 
 bool isGitVerb(const QString& cmd)
 {
@@ -73,6 +71,27 @@ static bool runRepositoryVerb(CyberiadaSMEditorWindow* win, const QStringList& t
 	return false;
 }
 
+// the message of git commit "<message>" [amend]: \" \\ and \n inside; *rest gets what follows
+static bool quotedMessage(const QString& text, QString* message, QString* rest)
+{
+	QString t = text.trimmed();
+	if (!t.startsWith('"')) return false;
+	message->clear();
+	for (int i = 1; i < t.size(); i++) {
+		QChar c = t.at(i);
+		if (c == '\\' && i + 1 < t.size()) {
+			QChar next = t.at(++i);
+			message->append(next == 'n' ? QChar('\n') : next);
+		} else if (c == '"') {
+			*rest = t.mid(i + 1).trimmed();
+			return true;
+		} else {
+			message->append(c);
+		}
+	}
+	return false;
+}
+
 bool runGitVerb(CyberiadaSMEditorWindow* win, const QString& line, QString* error)
 {
 	QStringList tokens = line.trimmed().split(QRegularExpression("\\s+"));
@@ -100,8 +119,59 @@ bool runGitVerb(CyberiadaSMEditorWindow* win, const QString& line, QString* erro
 		}
 		return true;
 	}
+	QStringList args = tokens.mid(2);
+	if (verb == "stage") return win->gitStage(args, error);
+	if (verb == "unstage") return win->gitUnstage(args, error);
+	if (verb == "discard") return win->gitDiscard(args, error);
+	if (verb == "rm") return win->gitDelete(args, error);
+	if (verb == "mv") {
+		if (args.size() != 2) {
+			*error = "git mv needs the file and its new path";
+			return false;
+		}
+		return win->gitRename(args.at(0), args.at(1), error);
+	}
+	if (verb == "commit") {
+		QString message, rest;
+		QString after = line.trimmed().section(QRegularExpression("\\s+"), 2);
+		if (!quotedMessage(after, &message, &rest) || (!rest.isEmpty() && rest != "amend")) {
+			*error = "git commit needs a \"message\" and amend at most";
+			return false;
+		}
+		return win->gitCommit(message, rest == "amend", error);
+	}
+	if (verb == "compare") {
+		if (args.size() != 2) {
+			*error = "git compare needs the file and head, index or a revision";
+			return false;
+		}
+		QString revision = args.at(1) == "head" ? QString("HEAD") : args.at(1) == "index" ? QString() : args.at(1);
+		return win->gitCompare(args.at(0), revision, error) != nullptr;
+	}
+	if (verb == "history") {
+		if (args.size() != 1) {
+			*error = "git history needs a file or repository";
+			return false;
+		}
+		bool repository = args.at(0) == "repository";
+		win->gitHistory(repository ? QString() : args.at(0), repository);
+		return true;
+	}
 	*error = "unknown git verb " + verb;
 	return false;
+}
+
+void dumpHistory(CyberiadaSMEditorWindow* win, std::ostream& os)
+{
+	HistoryModel* model = win->historyView()->model();
+	if (model->entries().isEmpty()) {
+		os << "none " << win->historyView()->title().toStdString() << std::endl;
+		return;
+	}
+	for (const LogEntry& e : model->entries()) {
+		os << e.shortHash.toStdString() << " " << e.subject.toStdString() << std::endl;
+	}
+	if (model->hasMore()) os << "more" << std::endl;
 }
 
 void dumpRepository(CyberiadaSMEditorWindow* win, std::ostream& os)
@@ -116,7 +186,7 @@ void dumpRepository(CyberiadaSMEditorWindow* win, std::ostream& os)
 	const RepositorySnapshot& s = service->snapshot();
 	os << "root " << QFileInfo(s.root).fileName().toStdString() << std::endl;
 	if (s.detached()) {
-		os << "detached " << s.oid.left(SHORT_HASH).toStdString() << std::endl;
+		os << "detached " << s.oid.left(GIT_SHORT_HASH).toStdString() << std::endl;
 	} else {
 		os << "branch " << s.branch.toStdString() << (s.unborn() ? " (no commits)" : "") << std::endl;
 	}

@@ -128,6 +128,10 @@
 #define DISK_CHECK_DELAY_MS      200
 // the status of the work tree read at most once in this time (EDIT-GIT-6)
 #define REPOSITORY_READ_INTERVAL_MS 1000
+// the commits the History dock lists at a time, More... adds as many (EDIT-GIT-15)
+#define HISTORY_PAGE             100
+// the commits Compare with a Revision... offers (EDIT-GIT-13)
+#define REVISION_CHOICES         30
 // a JSON tab (EDIT-MODE-26, docs/MODES.md, JSON): the check after an edit, the underline and
 // the margin number of the error, the bar under the text
 #define JSON_CHECK_DELAY_MS      300

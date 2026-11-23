@@ -1,0 +1,4 @@
+# Compare with HEAD and with the index: diff tabs labelled by the base (EDIT-GIT-12)
+git compare h.graphml head
+switch 0
+git compare h.graphml index

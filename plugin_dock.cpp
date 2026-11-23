@@ -321,6 +321,14 @@ void PluginDock::append(const QString& pluginId, const QString& text, bool isErr
     edit->ensureCursorVisible();
 }
 
+void PluginDock::appendTool(const QString& id, const QString& name, const QString& text, bool isError)
+{
+    outputs[id].name = name;
+    append(id, text, isError);
+    tabWidget->setCurrentWidget(outputs[id].text);
+    if (!qApp->property("batchMode").toBool()) show();
+}
+
 void PluginDock::appendLink(const QString& pluginId, const QString& text, const QString& path)
 {
     QPlainTextEdit* edit = outputTab(pluginId);

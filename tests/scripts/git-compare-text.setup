@@ -1,0 +1,9 @@
+# a changed text
+git init -q
+git symbolic-ref HEAD refs/heads/main
+copy diagrams/hierarchy.graphml h.graphml
+copy texts/notes.md notes.md
+write other.txt other
+git add -A
+git commit -q -m first
+write notes.md # Changed

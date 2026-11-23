@@ -68,6 +68,8 @@ public:
     bool             load(const QString& path, QString* error);
     // the file read again, the cursor and the scroll kept (EDIT-DOC-14)
     bool             reload(QString* error) override;
+    // the text keeps its edits under the new name (EDIT-GIT-11)
+    bool             followFile(const QString& path, QString* error) override;
     bool             save(QString* error) override;
     // and no plugin run locks the text (EDIT-PLUG-22)
     bool             isEditable() const override { return !isReadOnly() && !m_locked; }

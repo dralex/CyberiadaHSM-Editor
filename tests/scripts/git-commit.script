@@ -1,0 +1,3 @@
+# Commit: the index committed with a message of two lines; the history shows its subject (EDIT-GIT-14/15)
+git commit "night mode\n\nthe body"
+git history repository

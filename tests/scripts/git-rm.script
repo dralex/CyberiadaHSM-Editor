@@ -1,0 +1,2 @@
+# git rm: the file removed and staged as deleted (EDIT-GIT-11)
+git rm other.txt

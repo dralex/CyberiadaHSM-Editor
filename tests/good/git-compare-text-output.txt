@@ -1,0 +1,14 @@
+== tabs
+count: 3
+0 h.graphml hsm
+1 notes.md markdown
+2 notes.md ↔ HEAD text-diff active
+== repository
+root git-compare-text
+branch main
+* main
+.. h.graphml open
+.M notes.md open
+.. other.txt
+== history
+44eaa61 first

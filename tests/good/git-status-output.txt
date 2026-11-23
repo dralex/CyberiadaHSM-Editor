@@ -10,3 +10,5 @@ AM added.txt
 .M h.graphml open
 .. notes.md
 .? untracked.txt
+== history
+0b03be5 first

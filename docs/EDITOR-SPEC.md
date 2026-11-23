@@ -1857,7 +1857,8 @@ cybersphere-git-plugin, whose textconv driver is `cybparser listing` of libcyber
                                                            New Branch...
                                                            Delete Branch...
 
- +- Repository: hsm-arduino-course  [devel ↑1 v] --------------------------------+
+ +- Repository -------------------------------------------------------------------+
+ | hsm-arduino-course  [devel ↑1 v]                                              |
  | [Tree|Groups] [Changed only] [Ignored]   [Stage] [Unstage] [Commit] [Refresh] |
  | Name                                              Index  Tree                 |
  | v diagrams/                                              *                    |
@@ -1883,8 +1884,9 @@ cybersphere-git-plugin, whose textconv driver is `cybparser listing` of libcyber
   their target. An untitled tab and a file outside any work tree have none. The work tree of
   a folder is looked up once and kept; a Save As and the window activation look it up again.
   *design*
-- `EDIT-GIT-3` MUST [A]: the Repository dock shows the repository of the active tab, titled
-  `Repository: <the folder of the work tree>` with the branch button (`EDIT-GIT-18`). A switch
+- `EDIT-GIT-3` MUST [A]: the Repository dock shows the repository of the active tab: its title
+  stays `Repository`, its first line is `<the folder of the work tree> (<branch>)` with the
+  branch button (`EDIT-GIT-18`), so a long name never widens the dock. A switch
   to a tab of the same repository keeps the dock as it is, the tab's file made the current row
   and scrolled into view; a switch to another repository shows it with the folders expanded
   and the scroll it had when last shown. Without a repository the dock holds one line:
@@ -1932,9 +1934,10 @@ cybersphere-git-plugin, whose textconv driver is `cybparser listing` of libcyber
   tabs of the files are read again, their edits dropped (`EDIT-DOC-14`); a tab of a deleted
   file gets the bar of `EDIT-DOC-16`. A conflicted file is not discarded. *design*
 - `EDIT-GIT-11` MUST [A]: Rename... asks the new name, a path relative to the folder of the
-  file; a tracked file moves by `git mv`, another file is renamed; a name taken or outside the
-  work tree is refused. The tab of the file follows it: the title, the Save target, the
-  repository. Delete... asks first, No the default, naming the files and the open tabs it
+  file; a tracked file moves by `git mv`, another file is renamed, the folder made; a name
+  taken or outside the work tree is refused. The tab of the file follows it: the title, the
+  Save target, the repository; a text tab keeps its edits, a diagram tab with unsaved edits
+  is refused with `save it before renaming it` (the library writes the file it read). Delete... asks first, No the default, naming the files and the open tabs it
   closes; a tracked file is removed by `git rm -q`, which refuses a file with changes not
   committed, another file is deleted; the tabs of the deleted files close without a question.
   The Markdown links and the submachine references to the file are not changed (`docs/GIT.md`,
@@ -1978,12 +1981,12 @@ cybersphere-git-plugin, whose textconv driver is `cybparser listing` of libcyber
   ```
 - `EDIT-GIT-15` MUST [A]: the History dock lists the commits — the short hash, the date, the
   author, the subject — of the file of the current row of the Repository dock, else of the
-  active tab, its renames followed (`git log --follow`); with *Repository* those of the whole
-  repository. It lists the last 100, a *More...* row adds 100. A double-click on a commit, or
+  active tab, its renames followed (`git log --follow`), a staged rename by its old path; with
+  *Repository* those of the whole repository; read again after each status read. It lists the last 100, a *More...* row adds 100. A double-click on a commit, or
   *Compare with This Revision* of its menu, compares the file — in the Repository scope the
   active tab's — with it (`EDIT-GIT-12`); *Copy Hash* copies the full hash. Without commits it
   holds `no commits`; Git > File History and History of the dock show it on the file. *design*
-- `EDIT-GIT-16` MUST [A]: the Git menu, between View and Plugins, acts on the file of the active
+- `EDIT-GIT-16` MUST [A]: the Git menu (Alt+T: Alt+G is Go to Line), between View and Plugins, acts on the file of the active
   tab, a diff tab on the file of its target: *Stage File* (Ctrl+Alt+A), *Unstage File*,
   *Discard Changes of the File...*; *Compare with HEAD* (Ctrl+D), *Compare with the Index*,
   *Compare with a Revision...*, *File History*; *Commit...* (Ctrl+Shift+K), *Branch*
@@ -2036,7 +2039,8 @@ cybersphere-git-plugin, whose textconv driver is `cybparser listing` of libcyber
   letter> <path>` with `.` for no letter, ` from <old path>` after a rename, ` open` and
   ` unsaved` after the path of an open file, the ignored files only with *Ignored*; `none
   <the line of the dock>` without a repository. `--dump-history` writes `== history`, a line
-  `<short hash> <subject>` per row. *design*
+  `<short hash> <subject>` per row, `more` for the *More...* row, `none <the title>` without a
+  commit. *design*
 - `EDIT-GIT-23` MUST [A]: the plugin token `git` keeps its `.git` lookup (`EDIT-PLUG-55`): the
   plugins do not depend on the git of the editor, nor on *Use git*. *design*
 

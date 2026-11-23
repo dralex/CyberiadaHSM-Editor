@@ -63,9 +63,27 @@ public:
     // the git folder watched: gitChanged after the index, HEAD or a branch changed
     void                      setWatching(bool on);
 
+    // a command of the user on the work tree, waited for (EDIT-GIT-9..20): commandRun after
+    // it, for the Git output (EDIT-GIT-17); the caller reads the status again
+    GitResult                 command(const QStringList& args, const QByteArray& input = QByteArray());
+    // the bytes of a file of the work tree in a revision, or in the index for an empty one
+    // (EDIT-GIT-12): a file the revision lacks is empty, a staged rename has its old path; false
+    // with the reason for a revision git does not know and an unmerged file in the index
+    bool                      base(const QString& path, const QString& revision, QByteArray* bytes,
+                                   QString* error) const;
+    // the commits of a file, its renames followed, or of the work tree for an empty path
+    // (EDIT-GIT-15)
+    QVector<LogEntry>         log(const QString& path, int count, int skip, QString* error) const;
+    // the message of the last commit, empty before the first one (Amend, EDIT-GIT-14)
+    QString                   lastMessage() const;
+    // the message typed and not committed, kept until the editor exits (EDIT-GIT-14)
+    QString                   pendingMessage() const { return m_pendingMessage; }
+    void                      setPendingMessage(const QString& message) { m_pendingMessage = message; }
+
 signals:
     void                      statusChanged();
     void                      gitChanged();
+    void                      commandRun(const QStringList& args, const GitResult& result);
 
 private:
     RepositoryService(const QString& root, const QString& gitDir, QObject* parent);
@@ -89,6 +107,7 @@ private:
     QByteArray                m_outputs[readSteps];
     QPointer<QProcess>        m_process;
     QFileSystemWatcher*       m_watcher = nullptr;
+    QString                   m_pendingMessage;
 };
 
 #endif

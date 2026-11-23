@@ -1,0 +1,4 @@
+# Discard: the work tree back to the index, the open tab read again with its edits dropped,
+# the untracked file deleted (EDIT-GIT-10)
+rename node-0 Edited
+git discard h.graphml untracked.txt

@@ -210,6 +210,91 @@ void RepositoryService::stepFinished()
     applyRead(m_outputs);
 }
 
+GitResult RepositoryService::command(const QStringList& args, const QByteArray& input)
+{
+    GitResult r = GitProcess::run(m_root, args, input);
+    emit commandRun(args, r);
+    return r;
+}
+
+bool RepositoryService::base(const QString& path, const QString& revision, QByteArray* bytes,
+                             QString* error) const
+{
+    bytes->clear();
+    if (revision.isEmpty()) {
+        // <mode> <hash> <stage> TAB <path> a record; stage 0 is a merged file
+        GitResult r = GitProcess::run(m_root, QStringList() << "ls-files" << "--stage" << "-z" << "--" << path);
+        if (!r.ok()) {
+            if (error) *error = r.message();
+            return false;
+        }
+        QString hash;
+        for (const QByteArray& record : r.out.split('\0')) {
+            QList<QByteArray> fields = record.left(record.indexOf('\t')).split(' ');
+            if (fields.size() < 3) continue;
+            if (fields.at(2) != "0") {
+                if (error) *error = tr("%1 is not merged: the index has no file of it").arg(path);
+                return false;
+            }
+            hash = QString::fromLatin1(fields.at(1));
+        }
+        // not in the index: an empty document
+        if (hash.isEmpty()) return true;
+        GitResult blob = GitProcess::run(m_root, QStringList() << "cat-file" << "blob" << hash);
+        if (!blob.ok()) {
+            if (error) *error = blob.message();
+            return false;
+        }
+        *bytes = blob.out;
+        return true;
+    }
+    if (revision.startsWith('-')) {
+        if (error) *error = tr("a revision does not start with -");
+        return false;
+    }
+    GitResult commit = GitProcess::run(m_root, QStringList() << "rev-parse" << "--verify" << "-q"
+                                                             << revision + "^{commit}");
+    if (!commit.ok()) {
+        if (error) *error = tr("%1 is not a revision of the repository").arg(revision);
+        return false;
+    }
+    QString hash = QString::fromLatin1(commit.out).trimmed();
+    QStringList paths = QStringList() << path;
+    // a staged rename: the revision has the old path
+    const StatusEntry* entry = m_snapshot.entry(path);
+    if (entry && !entry->oldPath.isEmpty()) paths << entry->oldPath;
+    for (const QString& p : paths) {
+        GitResult blob = GitProcess::run(m_root, QStringList() << "cat-file" << "blob" << hash + ":" + p);
+        if (blob.ok()) {
+            *bytes = blob.out;
+            return true;
+        }
+    }
+    // the revision lacks the file: an empty document
+    return true;
+}
+
+QVector<LogEntry> RepositoryService::log(const QString& path, int count, int skip, QString* error) const
+{
+    QStringList args = QStringList() << "log" << "-z" << "--date=short"
+                                     << "--format=%H%x1f%h%x1f%ad%x1f%an%x1f%s"
+                                     << QString("-n%1").arg(count) << QString("--skip=%1").arg(skip);
+    if (!path.isEmpty()) args << "--follow" << "--" << path;
+    GitResult r = GitProcess::run(m_root, args);
+    // a repository without commits has no log
+    if (!r.ok()) {
+        if (error && !m_snapshot.unborn()) *error = r.message();
+        return QVector<LogEntry>();
+    }
+    return parseLog(r.out);
+}
+
+QString RepositoryService::lastMessage() const
+{
+    GitResult r = GitProcess::run(m_root, QStringList() << "log" << "-1" << "--format=%B");
+    return r.ok() ? QString::fromUtf8(r.out).trimmed() : QString();
+}
+
 void RepositoryService::setWatching(bool on)
 {
     if (!on) {

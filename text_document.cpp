@@ -623,6 +623,16 @@ bool TextDocument::load(const QString& path, QString* error)
     return true;
 }
 
+bool TextDocument::followFile(const QString& path, QString* error)
+{
+    Q_UNUSED(error);
+    m_path = QFileInfo(path).absoluteFilePath();
+    rememberDisk();
+    markOutline();
+    emit titleChanged();
+    return true;
+}
+
 bool TextDocument::reload(QString* error)
 {
     if (!hasFile()) return false;

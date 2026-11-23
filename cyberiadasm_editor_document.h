@@ -67,6 +67,8 @@ public:
                                   bool strict = false, bool inspect = false);
     // the file read again with the options of its load, the view kept (EDIT-DOC-14)
     bool                     reload(QString* error) override;
+    // a clean diagram is read from its new path, an edited one is saved first (EDIT-GIT-11)
+    bool                     followFile(const QString& path, QString* error) override;
     // inspect the snapshot of an unsaved document, titled as its source (EDIT-MODE-6)
     void                     inspectSnapshot(const std::string& snapshot, const QString& sourceTitle,
                                              const QString& viewState);

@@ -1,0 +1,2 @@
+# git mv: the tab follows its file to the new path (EDIT-GIT-11)
+git mv h.graphml moved/renamed.graphml

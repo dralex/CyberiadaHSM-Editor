@@ -61,8 +61,13 @@ public:
     QString           lineText() const;
     // a new status of the shown work tree: the expanded folders and the current row stay
     void              setSnapshot(const RepositorySnapshot& snapshot);
+    // the first line: the folder of the work tree and its branch, empty without one
+    void              setHeading(const QString& text);
+    QString           heading() const;
     // the row of the file of the active tab made current and shown
     void              setCurrentFile(const QString& path);
+    // the files of the selected rows, a folder or a group standing for its files
+    QStringList       selectedFiles() const;
 
     // the state of the toolbar (EDIT-GIT-5); the signals tell the user's changes only
     void              setLayoutMode(RepositoryModel::Layout layout);
@@ -91,6 +96,7 @@ private:
 
     RepositoryModel*  m_model;
     QToolBar*         m_toolBar;
+    QLabel*           m_heading;
     QStackedWidget*   m_pages;
     QTreeView*        m_tree;
     QLabel*           m_line;

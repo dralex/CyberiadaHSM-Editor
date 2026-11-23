@@ -4,3 +4,5 @@ count: 2
 1 untitled hsm active
 == repository
 none The document has no file
+== history
+none The document has no file

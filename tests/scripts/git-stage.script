@@ -1,0 +1,2 @@
+# Stage takes the files as saved: a change and an untracked file (EDIT-GIT-9)
+git stage h.graphml untracked.txt

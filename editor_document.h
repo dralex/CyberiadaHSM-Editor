@@ -68,6 +68,9 @@ public:
     // read the file again in the mode and the flag of the tab, the undo history emptied
     // (EDIT-DOC-14); false without a file, or with the error and the tab as it was
     virtual bool             reload(QString* error) { Q_UNUSED(error); return false; }
+    // the file renamed (EDIT-GIT-11): the tab follows it to the path; false with the reason
+    virtual bool             followFile(const QString& path, QString* error)
+                                 { Q_UNUSED(path); Q_UNUSED(error); return false; }
 
     // the file against the disk (EDIT-DOC-13..18, docs/GIT.md): the bytes last read or
     // written and what the bar of the tab says about the file now

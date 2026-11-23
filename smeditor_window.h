@@ -54,6 +54,7 @@ class PluginDock;
 class FindBar;
 class DiskBar;
 class RepositoryView;
+class HistoryView;
 class QFileSystemWatcher;
 class QTimer;
 class ShortcutMap;
@@ -185,6 +186,38 @@ public:
     RepositoryService*      shownRepository() const { return m_repository.data(); }
     // the dock follows the active tab, its work tree looked up anew with again (EDIT-GIT-3)
     void                    updateRepositoryDock(bool again = false);
+    // the History dock (EDIT-GIT-15): its contents, the dock, its View entry
+    HistoryView*            historyView() const { return m_historyView; }
+    QDockWidget*            historyDock = nullptr;
+    QAction*                actionHistory = nullptr;
+    // the Git menu (EDIT-GIT-16): the entries act on the file of the active tab
+    QMenu*                  gitMenu() const { return m_gitMenu; }
+    QAction*                actionGitStage = nullptr;
+    QAction*                actionGitUnstage = nullptr;
+    QAction*                actionGitDiscard = nullptr;
+    QAction*                actionGitCompareHead = nullptr;
+    QAction*                actionGitCompareIndex = nullptr;
+    QAction*                actionGitCompareRevision = nullptr;
+    QAction*                actionGitHistory = nullptr;
+    QAction*                actionGitCommit = nullptr;
+    QAction*                actionGitRefresh = nullptr;
+
+    // the git commands of the editor on the work tree of the active tab (EDIT-GIT-9..15,
+    // docs/GIT.md, The verbs): the paths relative to its root, false with the reason; each
+    // is written to the Git output, then the tabs are checked and the status read again
+    bool                    gitStage(const QStringList& paths, QString* error);
+    bool                    gitUnstage(const QStringList& paths, QString* error);
+    bool                    gitDiscard(const QStringList& paths, QString* error);
+    bool                    gitRename(const QString& from, const QString& to, QString* error);
+    bool                    gitDelete(const QStringList& paths, QString* error);
+    bool                    gitCommit(const QString& message, bool amend, QString* error);
+    // the diff tab of a file against a revision, the index for an empty one; the file opened
+    // first when it is not
+    ComparisonDocument*     gitCompare(const QString& path, const QString& revision, QString* error);
+    // the History dock on a file, the work tree for an empty path
+    void                    gitHistory(const QString& path, bool repository);
+    // the path of the active tab's file relative to its work tree, empty without one
+    QString                 gitRelativePath(EditorDocument* doc) const;
     // a Save may write the file: unchanged on disk since the tab read or wrote it, or
     // the user agreed; the batch refuses with the reason (EDIT-DOC-17)
     bool                    confirmDiskOverwrite(EditorDocument* doc, QString* error);
@@ -490,6 +523,34 @@ private:
     void                    updateRepositoryMarks();
     void                    updateRepositoryTitle();
     void                    openRepositoryFile(const QString& path);
+    // the History dock: the query, its rows read only while it is shown
+    HistoryView*            m_historyView = nullptr;
+    QString                 m_historyPath;
+    bool                    m_historyRepository = false;
+    QMenu*                  m_gitMenu = nullptr;
+    // the dock toolbar acts on the selected rows, the menu on the active tab's file
+    QAction*                m_dockStage = nullptr;
+    QAction*                m_dockUnstage = nullptr;
+    QAction*                m_dockRename = nullptr;
+    QAction*                m_dockDelete = nullptr;
+    void                    initGitMenu();
+    void                    updateGitActions();
+    void                    updateHistory(bool more = false);
+    void                    showRepositoryMenu(const QPoint& pos);
+    RepositoryService*      gitService(QString* error);
+    void                    slotGitCommand(const QStringList& args, const GitResult& result);
+    void                    afterGitCommand(RepositoryService* service);
+    void                    gitOutput(const QString& text, bool isError);
+    // the GUI forms of the commands: the files of the menu or the dock, the questions asked
+    void                    stageFiles(const QStringList& paths);
+    void                    unstageFiles(const QStringList& paths);
+    void                    discardFiles(const QStringList& paths);
+    void                    renameFile(const QString& path);
+    void                    deleteFiles(const QStringList& paths);
+    void                    compareFile(const QString& path, const QString& revision);
+    void                    compareFileWithRevision(const QString& path);
+    void                    commitIndex();
+    void                    reportGitFailure(const QString& title, const QString& error);
     ShortcutMap*            m_shortcuts = nullptr;
     void                    initShortcuts();
     void                    commitPendingEdit();

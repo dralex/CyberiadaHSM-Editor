@@ -41,6 +41,15 @@ RepositoryView::RepositoryView(QWidget* parent):
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
 
+    // the line of the work tree; it never widens the dock
+    m_heading = new QLabel(this);
+    m_heading->setObjectName("repositoryHeading");
+    m_heading->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+    m_heading->setMargin(m_heading->fontMetrics().averageCharWidth() / 2);
+    m_heading->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    m_heading->hide();
+    layout->addWidget(m_heading);
+
     m_toolBar = new QToolBar(this);
     m_toolBar->setObjectName("repositoryToolBar");
     QActionGroup* layouts = new QActionGroup(this);
@@ -109,6 +118,17 @@ RepositoryView::RepositoryView(QWidget* parent):
     connect(m_refreshAction, &QAction::triggered, this, &RepositoryView::refreshRequested);
 }
 
+void RepositoryView::setHeading(const QString& text)
+{
+    m_heading->setText(text);
+    m_heading->setVisible(!text.isEmpty());
+}
+
+QString RepositoryView::heading() const
+{
+    return m_heading->text();
+}
+
 void RepositoryView::setRepository(const QString& root, const QString& line)
 {
     if (root != m_root) {
@@ -159,6 +179,11 @@ void RepositoryView::setCurrentFile(const QString& path)
     m_tree->selectionModel()->setCurrentIndex(at, QItemSelectionModel::ClearAndSelect |
                                                   QItemSelectionModel::Rows);
     m_tree->scrollTo(at);
+}
+
+QStringList RepositoryView::selectedFiles() const
+{
+    return m_model->files(m_tree->selectionModel()->selectedRows(RepositoryModel::columnName));
 }
 
 void RepositoryView::setLayoutMode(RepositoryModel::Layout layout)

@@ -32,6 +32,8 @@
 
 // the letter of no change
 #define STATUS_NONE      QLatin1Char('.')
+// the length of a short hash, as git abbreviates it by default
+#define GIT_SHORT_HASH   7
 
 // A file of the work tree and its two letters, the index and the work tree (EDIT-GIT-4):
 // M modified, T type changed, A added, D deleted, R renamed, U conflicted (both), ?

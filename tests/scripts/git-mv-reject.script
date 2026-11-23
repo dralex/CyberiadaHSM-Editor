@@ -1,0 +1,3 @@
+# an edited diagram is saved before its rename (EDIT-GIT-11)
+rename n0 Edited
+git mv h.graphml renamed.graphml

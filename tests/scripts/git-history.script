@@ -1,0 +1,2 @@
+# the history of a file follows its rename (EDIT-GIT-15)
+git history old.graphml

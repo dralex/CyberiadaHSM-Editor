@@ -35,5 +35,7 @@ bool isGitVerb(const QString& cmd);
 bool runGitVerb(CyberiadaSMEditorWindow* win, const QString& line, QString* error);
 // --dump-repository: the repository of the active tab (EDIT-GIT-22)
 void dumpRepository(CyberiadaSMEditorWindow* win, std::ostream& os);
+// --dump-history: the rows of the History dock (EDIT-GIT-22)
+void dumpHistory(CyberiadaSMEditorWindow* win, std::ostream& os);
 
 #endif

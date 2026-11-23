@@ -1,0 +1,4 @@
+# Amend: the last commit replaced (EDIT-GIT-14)
+git commit "night mode"
+git commit "night and day" amend
+git history repository

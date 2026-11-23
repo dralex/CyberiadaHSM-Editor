@@ -64,6 +64,9 @@ public:
     // the context menu of an open output tab, else nullptr; the caller owns it
     QMenu*        createOutputMenu(const QString& pluginId);
     void          clearOutput(const QString& pluginId);
+    // the output of a command of the editor itself (the git commands, EDIT-GIT-17): the tab
+    // "<name> output", the text appended, the tab current, the dock shown in the GUI
+    void          appendTool(const QString& id, const QString& name, const QString& text, bool isError);
     bool          saveOutput(const QString& pluginId, const QString& path, QString* error = nullptr) const;
     // the Cancel button of a running plugin, the Stop of a session (the tests press it)
     QPushButton*  cancelButton(PluginRunner* run) const;

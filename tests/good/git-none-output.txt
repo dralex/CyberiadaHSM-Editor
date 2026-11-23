@@ -3,3 +3,5 @@ count: 1
 0 h.graphml hsm active
 == repository
 none h.graphml is not in a git repository
+== history
+none h.graphml is not in a git repository

@@ -117,6 +117,7 @@ void SettingsManager::load() {
     gitProgram = s.value("git/program", QString()).toString();
     gitEnabled = s.value("git/enabled", true).toBool();
     showRepository = s.value("display/showRepository", true).toBool();
+    showHistory = s.value("display/showHistory", true).toBool();
     repositoryLayout = s.value("git/layout", 0).toInt();
     repositoryChangedOnly = s.value("git/changedOnly", false).toBool();
     repositoryIgnored = s.value("git/ignored", false).toBool();
@@ -201,6 +202,7 @@ void SettingsManager::loadDefaults()
     setShowChanges(true);
     setShowOutline(true);
     setShowRepository(true);
+    setShowHistory(true);
     setShowServiceObjects(false);
     setShowComponentComments(false);
     setLoggingEnabled(false);
@@ -353,6 +355,15 @@ void SettingsManager::setShowRepository(bool value)
         showRepository = value;
         QSettings().setValue("display/showRepository", value);
         emit repositoryChanged(value);
+    }
+}
+
+void SettingsManager::setShowHistory(bool value)
+{
+    if (showHistory != value) {
+        showHistory = value;
+        QSettings().setValue("display/showHistory", value);
+        emit historyChanged(value);
     }
 }
 
