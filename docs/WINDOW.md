@@ -14,7 +14,8 @@ tools (`docs/MARKDOWN.md`, Tools).
 0.25: Fill Paragraph, Unfill Paragraph and Fill as You Type (`EDIT-MD-18..23`).
 0.26: View > Mode Line (`EDIT-MODE-31`).
 0.27: Insert Formula (`EDIT-MD-24..27`).
-0.28: the Git menu, the Repository and History docks at the left, the disk bar of a tab
+0.28: the Git menu, the Repository and History docks (tabs of the structure tree at the
+right, as Inkscape docks its dialogs), the disk bar of a tab
 (`EDIT-GIT-1..23`, `EDIT-DOC-13..18`, `docs/GIT.md`), specified.
 
 The window holds several documents at once. The menus, the toolbars, the tab line and the
@@ -36,16 +37,13 @@ CyberiadaSMEditorWindow (QMainWindow)                                   GLOBAL
  | clipboard (a detached element copy)   armed tool (toolGroup)   QUndoGroup
  | documents : QList<EditorDocument*>   current
  |
- | left dock area (EDIT-UI-6, EDIT-GIT-3/15)  RepositoryRegistry (docs/GIT.md)
- |  +------------------------------------+   one RepositoryService per work tree
- |  | repositoryDock "Repository: <root>"|   DiskWatcher: the files of the open tabs
- |  |   RepositoryView over the model    |
- |  | historyDock "History"  (tabbed)    |
- |  +------------------------------------+
+ | RepositoryService (docs/GIT.md): one per work tree   the window watches the files of the tabs
+ |
  | central widget (QVBoxLayout)              | right dock area (EDIT-UI-6)
  |  +--------------------------------------+ | +---------------------------------+
- |  | documentTabs : QTabBar  hidden < 2   | | | treeDock "Structure tree" [_][x]|
- |  | [ a.graphml ][ a.graphml [FA]* ]     | | |   SMView (structure tree)       |
+ |  | documentTabs : QTabBar  hidden < 2   | | | [Structure tree|Repository|Hi..]|
+ |  | [ a.graphml ][ a.graphml [FA]* ]     | | |   treeDock: SMView; tabbed with |
+ |  |                                      | | |   repositoryDock, historyDock   |
  |  +--------------------------------------+ | +---------------------------------+
  |  | documentStack : QStackedWidget       | | | propertiesDock "Properties"[_][x]|
  |  |   page i = documents[i]->page()      | | |   propertiesWidget              |

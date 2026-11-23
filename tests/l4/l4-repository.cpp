@@ -29,6 +29,7 @@
 #include <QLineEdit>
 #include <QToolBar>
 #include <QToolButton>
+#include <QTabBar>
 #include <QTreeView>
 #include "smeditor_window.h"
 #include "cyberiadasm_model.h"
@@ -77,6 +78,7 @@ private slots:
 	void test_history_dock();
 	void test_branch_label();
 	void test_branch_menu();
+	void test_docks_right();
 
 private:
 	static RepositorySnapshot sample();
@@ -721,6 +723,49 @@ void TestRepository::test_branch_menu()
 	QVERIFY(doc->model()->rootDocument() != before);
 	QVERIFY(doc->isClean());
 	QTRY_COMPARE(window.repositoryView()->branchButton()->text(), QString("other"));
+}
+
+// EDIT-UI-6: the git docks at the right, tabs of the structure tree, the tree in front in a
+// diagram tab, the Repository in a tab without the tree
+static QString frontTab(QMainWindow* window, const QString& title)
+{
+	for (QTabBar* bar : window->findChildren<QTabBar*>()) {
+		for (int i = 0; i < bar->count(); i++) {
+			if (bar->tabText(i) == title) return bar->tabText(bar->currentIndex());
+		}
+	}
+	return QString();
+}
+
+void TestRepository::test_docks_right()
+{
+	CyberiadaSMEditorWindow window;
+	window.resize(1200, 800);
+	window.show();
+	QVERIFY(QTest::qWaitForWindowExposed(&window));
+	QCOMPARE(window.dockWidgetArea(window.repositoryDock), Qt::RightDockWidgetArea);
+	QCOMPARE(window.dockWidgetArea(window.historyDock), Qt::RightDockWidgetArea);
+	QList<QDockWidget*> tabs = window.tabifiedDockWidgets(window.treeDock);
+	QVERIFY(tabs.contains(window.repositoryDock) && tabs.contains(window.historyDock));
+	if (!haveGit) return;
+	QCOMPARE(frontTab(&window, "Structure tree"), QString("Structure tree"));
+	QString error;
+	QVERIFY(window.openFile("texts/notes.md", &error));
+	QTest::qWait(50);
+	QVERIFY(window.treeDock->isHidden());
+	QCOMPARE(frontTab(&window, "Repository"), QString("Repository"));
+	QVERIFY(window.openFile("diagrams/hierarchy.graphml", &error));
+	QTest::qWait(50);
+	QCOMPARE(frontTab(&window, "Structure tree"), QString("Structure tree"));
+	// the Repository in front over a work tree with a change, for the eye
+	QString root = makeRepository("docks-right");
+	write(QDir(root).filePath("docs/notes.md"), "# Changed\n");
+	QVERIFY(window.openFile(QDir(root).filePath("h.graphml"), &error));
+	window.repositoryDock->raise();
+	QTRY_VERIFY_WITH_TIMEOUT(window.repositoryView()->model()->indexOf("docs/notes.md").isValid() &&
+	                         window.repositoryView()->model()->entry(
+	                             window.repositoryView()->model()->indexOf("docs/notes.md"))->modified(), 10000);
+	QVERIFY(window.grab().save(QT_TESTCASE_BUILDDIR "/tests/repository-docks.png"));
 }
 
 QTEST_MAIN(TestRepository)

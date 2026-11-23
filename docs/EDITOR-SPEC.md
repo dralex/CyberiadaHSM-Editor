@@ -1110,9 +1110,11 @@ The interface translations and their workflow are in `docs/TRANSLATION.md`.
   tree or panel keeps following the active document and the canvas selection, so showing it
   again needs no refresh; a tab switch keeps the sizes of the docks, the tree only grows once
   to fit a wider structure. The Repository and the History docks (`EDIT-GIT-3/15`, 0.80) are
-  at the left of the canvas, tabbed together with the Repository in front, in every tab, with
-  their View entries *Repository* and *History*, shown by default; without a git program or
-  with *Use git* off (`EDIT-GIT-1`) they are hidden and their entries greyed. *design*
+  at the right too, tabs of the structure tree as Inkscape docks its dialogs, the tabs over the
+  docks: in every tab, the tree in front in a diagram tab — again when it comes back with one —
+  the Repository in a tab without the tree. Their View entries are *Repository* and *History*,
+  shown by default; without a git program or with *Use git* off (`EDIT-GIT-1`) they are
+  hidden and their entries greyed. *design*
 
   ```
   tab                         Structure tree   Properties   Changes   Outline

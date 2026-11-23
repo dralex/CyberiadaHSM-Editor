@@ -1,6 +1,6 @@
 # Git in the Editor — Architecture
 
-**Document version:** 0.7 (2026-11-23) — specified (stage 0) and implemented: the disk check
+**Document version:** 0.7 (2026-11-23), the docks at the right — specified (stage 0) and implemented: the disk check
 (stage 2), the git core (stage 3), the Repository dock (stage 4), the verbs, the commit, the
 compares and the history (stage 5), the branches (stage 6); the git plugin retired from the
 packaging (stage 7). The requirements are
@@ -15,7 +15,7 @@ knows: the dock follows the active tab, and a tab of another repository brings i
 
 ```
  CyberiadaSMEditorWindow
- | Git menu       Repository dock (left)        History dock (left, behind)
+ | Git menu       Repository dock, History dock: tabs of the structure tree (right)
  | Commit dialog  Revision dialog  Branch dialog            Preferences > Git
  |        | verbs, paths, revisions                 ^ snapshot, log, results, errors
  |        v                                         |
