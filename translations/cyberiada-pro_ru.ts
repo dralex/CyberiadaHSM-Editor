@@ -228,7 +228,7 @@ Ctrl+клик мыши — открыть</translation>
 <context>
     <name>CyberiadaSMEditorWindow</name>
     <message>
-        <location filename="../smeditor_window.cpp" line="+202"/>
+        <location filename="../smeditor_window.cpp" line="+205"/>
         <source>Output panel</source>
         <translation>Панель вывода</translation>
     </message>
@@ -272,7 +272,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Markdown</translation>
     </message>
     <message>
-        <location line="+1114"/>
+        <location line="+1167"/>
         <source>Undo</source>
         <translation>Отменить</translation>
     </message>
@@ -395,8 +395,8 @@ Ctrl+клик мыши — открыть</translation>
         <translation>нет документа</translation>
     </message>
     <message>
-        <location line="-1856"/>
-        <location line="+1866"/>
+        <location line="-1909"/>
+        <location line="+1919"/>
         <source>a plugin is running on the document</source>
         <translation>для документа выполняется плагин</translation>
     </message>
@@ -405,8 +405,8 @@ Ctrl+клик мыши — открыть</translation>
         <translation type="vanished">в режиме инспектора документ доступен только для чтения</translation>
     </message>
     <message>
-        <location line="-1832"/>
-        <location line="+1869"/>
+        <location line="-1885"/>
+        <location line="+1922"/>
         <source>the document cannot be encoded</source>
         <translation>не удалось сериализовать документ</translation>
     </message>
@@ -438,7 +438,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Плагин: %1</translation>
     </message>
     <message>
-        <location line="-2286"/>
+        <location line="-2339"/>
         <source>Mode</source>
         <translation>Режим</translation>
     </message>
@@ -448,18 +448,18 @@ Ctrl+клик мыши — открыть</translation>
         <translation>режим %1 недоступен</translation>
     </message>
     <message>
-        <location line="+1882"/>
+        <location line="+1935"/>
         <source>the inspection tab is read-only</source>
         <translation>вкладка инспекции доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1861"/>
-        <location line="+1862"/>
+        <location line="-1914"/>
+        <location line="+1915"/>
         <source>the tab is read-only</source>
         <translation>вкладка доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-2029"/>
+        <location line="-2082"/>
         <source>Text file</source>
         <translation>Текстовый файл</translation>
     </message>
@@ -503,7 +503,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Автомат не нарушает ни одного правила EXT-FA.</translation>
     </message>
     <message>
-        <location line="+731"/>
+        <location line="+784"/>
         <source>%1: not an element of a finite automaton</source>
         <translation>%1: не элемент конечного автомата</translation>
     </message>
@@ -532,12 +532,12 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Все файлы (*)</translation>
     </message>
     <message>
-        <location line="-1456"/>
+        <location line="-1509"/>
         <source>Refresh</source>
         <translation>Обновить</translation>
     </message>
     <message>
-        <location line="+1141"/>
+        <location line="+1194"/>
         <source>Element</source>
         <translation>Элемент</translation>
     </message>
@@ -547,7 +547,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Изменение</translation>
     </message>
     <message>
-        <location line="-1047"/>
+        <location line="-1100"/>
         <source>a diff tab is opened by Document &gt; Compare with...</source>
         <translation>вкладку сравнения открывает «Документ &gt; Сравнить с...»</translation>
     </message>
@@ -572,7 +572,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Номер строки:</translation>
     </message>
     <message>
-        <location line="+48"/>
+        <location line="+49"/>
         <source>The text has no file yet. The inserted files are saved in its folder, so the text is saved first.</source>
         <translation>У текста ещё нет файла. Вставляемые файлы сохраняются в его папке, поэтому сначала текст будет сохранён.</translation>
     </message>
@@ -637,7 +637,18 @@ Ctrl+клик мыши — открыть</translation>
         <translation>вставить ссылку</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+21"/>
+        <source>edit formula</source>
+        <translation type="unfinished">изменить формулу</translation>
+    </message>
+    <message>
+        <location line="+24"/>
+        <location line="+1"/>
+        <source>insert formula</source>
+        <translation type="unfinished">вставить формулу</translation>
+    </message>
+    <message>
+        <location line="+23"/>
         <source>%1 exported again from %2</source>
         <translation>%1 экспортировано заново из %2</translation>
     </message>
@@ -2036,6 +2047,59 @@ Ctrl+клик мыши — открыть</translation>
         <location line="+2"/>
         <source>The diagram lies in the folder of the text: the image is written beside it.</source>
         <translation>Диаграмма лежит в папке текста: изображение записывается рядом с ней.</translation>
+    </message>
+</context>
+<context>
+    <name>InsertFormulaDialog</name>
+    <message>
+        <location filename="../dialogs/insert_formula_dialog.cpp" line="+72"/>
+        <source>Edit Formula</source>
+        <translation type="unfinished">Изменение формулы</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Insert Formula</source>
+        <translation type="unfinished">Вставка формулы</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>TeX:</source>
+        <translation type="unfinished">TeX:</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>inline $..$</source>
+        <translation type="unfinished">в строке $..$</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>display $$..$$</source>
+        <translation type="unfinished">выключная $$..$$</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Kind:</source>
+        <translation type="unfinished">Вид:</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Preview:</source>
+        <translation type="unfinished">Предпросмотр:</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Inserts:</source>
+        <translation type="unfinished">Вставляет:</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Replace</source>
+        <translation type="unfinished">Заменить</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Insert</source>
+        <translation type="unfinished">Вставить</translation>
     </message>
 </context>
 <context>
@@ -3906,7 +3970,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Инструменты</translation>
     </message>
     <message>
-        <location line="+44"/>
+        <location line="+45"/>
         <source>&amp;Document</source>
         <translation>&amp;Документ</translation>
     </message>
@@ -4070,6 +4134,16 @@ Ctrl+клик мыши — открыть</translation>
         <location line="+3"/>
         <source>Insert a link to a heading, a file or an address into the Markdown text</source>
         <translation>Вставить в текст Markdown ссылку на заголовок, файл или адрес</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Insert Formula...</source>
+        <translation type="unfinished">Вставить формулу...</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Insert a TeX formula into the Markdown text, or edit the formula at the cursor</source>
+        <translation type="unfinished">Вставить в текст Markdown формулу TeX или изменить формулу у курсора</translation>
     </message>
     <message>
         <location line="+9"/>
@@ -4515,7 +4589,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Новый текст Markdown</translation>
     </message>
     <message>
-        <location line="-969"/>
+        <location line="-982"/>
         <source>New</source>
         <translation>Создать</translation>
     </message>
@@ -4524,7 +4598,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation type="vanished">Новый файл</translation>
     </message>
     <message>
-        <location line="+981"/>
+        <location line="+994"/>
         <source>Service objects</source>
         <translation>Служебные объекты</translation>
     </message>
@@ -4864,7 +4938,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Строка %1, столбец %2: %3</translation>
     </message>
     <message>
-        <location line="+165"/>
+        <location line="+181"/>
         <source>unfill paragraph</source>
         <translation>сборка абзаца в строку</translation>
     </message>
@@ -4874,7 +4948,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>переформатирование абзаца</translation>
     </message>
     <message>
-        <location line="+129"/>
+        <location line="+130"/>
         <source>untitled</source>
         <translation>без имени</translation>
     </message>
