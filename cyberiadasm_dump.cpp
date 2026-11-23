@@ -302,6 +302,11 @@ void dumpTabs(CyberiadaSMEditorWindow* win, std::ostream& os)
 		os << i << " " << doc->title().toStdString() << (doc->isClean() ? "" : "*");
 		// the mode and the flag (EDIT-MODE-16)
 		os << " " << doc->mode().toStdString() << (doc->readOnlyFlag() ? " ro" : "");
+		// the bar of a file changed on disk (EDIT-DOC-18)
+		if (doc->diskBarShown()) {
+			os << " disk " << (doc->diskStatus() == EditorDocument::diskAbsent ? "absent" :
+			                   doc->diskStatus() == EditorDocument::diskUnreadable ? "unreadable" : "changed");
+		}
 		if (doc == win->currentTab()) os << " active";
 		os << std::endl;
 	}

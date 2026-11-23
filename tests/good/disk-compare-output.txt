@@ -1,0 +1,24 @@
+== tabs
+count: 3
+0 h.graphml* hsm disk changed
+1 h.graphml hsm
+2 h.graphml ↔ on disk diff active
+== diff
+base: on disk
+target: h.graphml
+geometry: no
+changed: 1, added: 11, removed: 1
+meta geometry: removed (- / -)
+state machine SM
+  state machine SM: title (G0 / G0)
+  state Edited: added (- / n0)
+  region n0:: added (- / n0:)
+  state State 0-0: added (- / n0::n0)
+  state Subparent 0-1: added (- / n0::n1)
+  region n0::n1:: added (- / n0::n1:)
+  state State 0-1-0: added (- / n0::n1::n0)
+  state State 0-1-1: added (- / n0::n1::n1)
+  state Parent 1: added (- / n1)
+  region n1:: added (- / n1:)
+  state State 1-0: added (- / n1::n0)
+  state State 1-1: added (- / n1::n1)

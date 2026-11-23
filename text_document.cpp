@@ -590,7 +590,8 @@ QString TextDocument::title() const
 
 bool TextDocument::isClean() const
 {
-    return m_undo->isClean();
+    // a file gone counts as modified until it is saved again (EDIT-DOC-16)
+    return m_undo->isClean() && diskStatus() != diskAbsent;
 }
 
 QString TextDocument::text() const
@@ -617,7 +618,21 @@ bool TextDocument::load(const QString& path, QString* error)
     // the path first: a rendered page finds its images next to the file
     m_path = QFileInfo(path).absoluteFilePath();
     setText(QString::fromUtf8(file.readAll()));
+    rememberDisk();
     emit titleChanged();
+    return true;
+}
+
+bool TextDocument::reload(QString* error)
+{
+    if (!hasFile()) return false;
+    int position = m_editor->textCursor().position();
+    int scroll = m_editor->verticalScrollBar()->value();
+    if (!load(m_path, error)) return false;
+    QTextCursor cursor = m_editor->textCursor();
+    cursor.setPosition(qBound(0, position, m_document->characterCount() - 1));
+    m_editor->setTextCursor(cursor);
+    m_editor->verticalScrollBar()->setValue(scroll);
     return true;
 }
 
@@ -637,6 +652,7 @@ bool TextDocument::save(QString* error)
     dropGitFact();
     if (!write(m_path, error)) return false;
     m_undo->setClean();
+    rememberDisk();
     return true;
 }
 
@@ -646,6 +662,7 @@ bool TextDocument::saveAs(const QString& path, QString* error)
     if (!write(path, error)) return false;
     m_path = QFileInfo(path).absoluteFilePath();
     m_undo->setClean();
+    rememberDisk();
     showPage();
     // the document row and the image paths follow the file
     markOutline();

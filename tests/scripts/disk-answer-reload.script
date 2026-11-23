@@ -1,0 +1,8 @@
+# Reload drops the edits and reads the file the other tab wrote (EDIT-DOC-15)
+rename n0 Edited
+new-document
+new-sm G0
+save h.graphml
+switch 0
+disk-check
+disk reload

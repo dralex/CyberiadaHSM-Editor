@@ -405,6 +405,40 @@ add_markdown_test(insert-formula-untitled texts/notes.md 0)
 add_markdown_test(insert-formula-reject texts/notes.md 4)
 add_markdown_test(edit-formula texts/markdown-formula.md 0)
 add_markdown_test(edit-formula-reject texts/markdown-formula.md 4)
+
+# the disk check (EDIT-DOC-13..18): a diagram copied into a fresh work dir as h.graphml,
+# the script run there, so a second tab can write the file of the first one
+function(add_disk_test name input expected_code)
+  set(_work ${CMAKE_CURRENT_BINARY_DIR}/disk-${name})
+  set(_good)
+  if(expected_code EQUAL 0)
+    set(_good -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/disk-${name}.out
+              -DDUMP_GOOD=${CMAKE_CURRENT_SOURCE_DIR}/good/disk-${name}-output.txt)
+  endif()
+  add_test(NAME disk-${name}
+    COMMAND ${CMAKE_COMMAND}
+      -DBATCH_BIN=$<TARGET_FILE:CyberiadaPro>
+      -DCLEAN_DIR=${_work}
+      "-DSEED=${CMAKE_CURRENT_SOURCE_DIR}/${input}>${_work}/h.graphml"
+      -DINPUT=h.graphml
+      -DSCRIPT=${CMAKE_CURRENT_SOURCE_DIR}/scripts/disk-${name}.script
+      -DDUMP_TABS=1
+      -DEXPECTED=${expected_code}
+      -DWORKDIR=${_work}
+      ${_good}
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/RunBatchTest.cmake)
+  set_tests_properties(disk-${name} PROPERTIES
+    TIMEOUT 60
+    ENVIRONMENT "${L0_ENVIRONMENT}")
+endfunction()
+
+add_disk_test(reload diagrams/hierarchy.graphml 0)
+add_disk_test(edited diagrams/hierarchy.graphml 0)
+add_disk_test(keep diagrams/hierarchy.graphml 0)
+add_disk_test(answer-reload diagrams/hierarchy.graphml 0)
+add_disk_test(compare diagrams/hierarchy.graphml 0)
+add_disk_test(save-reject diagrams/hierarchy.graphml 4)
+add_disk_test(answer-reject diagrams/hierarchy.graphml 4)
 add_text_test(text-fill-reject texts/blink.cpp 4)
 
 # the outline of the active Markdown tab after the script, the == outline section alone
@@ -899,6 +933,7 @@ add_l4_test(translation)
 add_l4_test(modes)
 add_l4_test(markdown)
 add_l4_test(find)
+add_l4_test(disk)
 add_l4_test(keys)
 add_l4_test(autoreplace)
 add_l4_test(textdiff)

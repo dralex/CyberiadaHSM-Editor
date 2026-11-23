@@ -1,0 +1,7 @@
+# a Save over a file changed on disk is refused, the change not seen yet too (EDIT-DOC-17)
+rename n0 Edited
+new-document
+new-sm G0
+save h.graphml
+switch 0
+save

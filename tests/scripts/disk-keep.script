@@ -1,0 +1,9 @@
+# Keep my edits takes the file as it is now: the Save writes over it (EDIT-DOC-15/17)
+rename n0 Edited
+new-document
+new-sm G0
+save h.graphml
+switch 0
+disk-check
+disk keep
+save

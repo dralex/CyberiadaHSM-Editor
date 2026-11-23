@@ -1,6 +1,7 @@
 # Git in the Editor — Architecture
 
-**Document version:** 0.1 (2026-11-23) — specified (stage 0). The requirements are
+**Document version:** 0.2 (2026-11-23) — specified (stage 0); the disk check implemented
+(stage 2). The requirements are
 `EDIT-GIT-1..23` in `EDITOR-SPEC.md` §4.20, the disk check `EDIT-DOC-13..18` §4.11 and the
 docks `EDIT-UI-6`.
 
@@ -225,13 +226,13 @@ branches but the current one; `branch -d` refuses the unmerged ones.
 ```
  EditorDocument::disk(): DiskState { size, mtime, digest (SHA-1 of the bytes) }
    set by every read and every write of the tab's file                disk_state.*
- DiskWatcher (window): QFileSystemWatcher on the files of the open tabs
-   (a path re-added after git or a save replaced the file by a rename)
+ the window: a QFileSystemWatcher on the files of the open tabs, the events joined
+   for DISK_CHECK_DELAY_MS (a path re-added after git or a save replaced the file by a rename)
  triggers: the watcher, the window activation, a git verb's end, the batch disk-check
         |
         v
- check(tab):  size+mtime same          -> nothing
-              digest same              -> take the new mtime (a touch, our own save)
+ check(tab):  size+mtime same          -> nothing, unless read within 2 s of the mtime
+              digest same              -> take the new state (a touch, our own save)
               file gone                -> bar "not on disk" [Close] [Keep]; modified
               changed, tab clean       -> read again (mode, flag, zoom, scroll kept)
               changed, tab edited      -> bar "changed on disk" [Reload] [Keep my edits]
@@ -240,7 +241,15 @@ branches but the current one; `branch -d` refuses the unmerged ones.
  Save: the file changed since the remembered state -> "Overwrite it?" (Cancel default)
 ```
 
-* The bar (`disk_bar.*`) is a strip above the page of the tab, like the find bar under it.
+* The bar (`disk_bar.*`) is one strip of the window between the tab line and the pages,
+  like the find bar under them; it shows the status of the active tab.
+* Two seconds is the time step of the coarsest file system (FAT): a file written again
+  within it keeps its time, so a state read that close to the time of its file is checked
+  by its bytes, and the state read then is taken (git's racy check).
+* The batch mode has no watcher: a script checks with `disk-check` and the git verbs, so
+  it runs the same on every machine.
+* A tab with a running plugin is treated as an edited one: the run read the old bytes, and a
+  reload under it would break its result.
 * *Keep my edits* takes the file's state as the remembered one: the next Save writes without
   a question, as the user chose.
 * A reload empties the undo history: the history of the old bytes does not apply to the new
@@ -268,7 +277,7 @@ hashes in the dumps are the same on every run.
 | `repository_view.{h,cpp}` | `RepositoryView`: the dock contents, the toolbar, the branch button, the placeholder, the context menu |
 | `history_view.{h,cpp}` | `HistoryModel`, `HistoryView` |
 | `dialogs/commit_dialog.*`, `dialogs/revision_dialog.*`, `dialogs/branch_dialog.*` | the dialogs |
-| `disk_state.{h,cpp}`, `disk_bar.{h,cpp}` | `DiskState`, `DiskWatcher`, `DiskBar` |
+| `disk_state.{h,cpp}`, `disk_bar.{h,cpp}` | `DiskState`, `checkDiskState()`, `DiskBar`; the watcher, the checks and the answers in the window |
 | `batch_git.{h,cpp}` | the `git`, `repository` and `disk` verbs, `--dump-repository`, `--dump-history` |
 | `comparison_document.h` | `DiffOrigin::originGit` |
 | `smeditor_window.*`, `editor_document.*`, `dialogs/preferences_dialog.*` | the menu, the docks, the wiring; the disk state of a tab; the Git page |

@@ -65,6 +65,8 @@ public:
     bool                     load(const QString& path, QString* error,
                                   bool reconstruct = false, bool reconstruct_sm = false,
                                   bool strict = false, bool inspect = false);
+    // the file read again with the options of its load, the view kept (EDIT-DOC-14)
+    bool                     reload(QString* error) override;
     // inspect the snapshot of an unsaved document, titled as its source (EDIT-MODE-6)
     void                     inspectSnapshot(const std::string& snapshot, const QString& sourceTitle,
                                              const QString& viewState);
@@ -126,6 +128,10 @@ private:
     CyberiadaSMGraphicsView* m_view;
     DiagramFind*             m_find;
     QString                  pendingViewState;
+    // the options of the last load, for a reload
+    bool                     m_loadReconstruct = false;
+    bool                     m_loadReconstructSM = false;
+    bool                     m_loadStrict = false;
     mutable PluginDocumentFacts m_pluginFacts;
     mutable bool             m_pluginFactsValid = false;
 };

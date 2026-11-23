@@ -66,6 +66,8 @@ public:
 
     // read the file as UTF-8 with a clean history
     bool             load(const QString& path, QString* error);
+    // the file read again, the cursor and the scroll kept (EDIT-DOC-14)
+    bool             reload(QString* error) override;
     bool             save(QString* error) override;
     // and no plugin run locks the text (EDIT-PLUG-22)
     bool             isEditable() const override { return !isReadOnly() && !m_locked; }

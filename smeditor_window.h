@@ -49,6 +49,9 @@ class QTreeWidgetItem;
 class PluginsMenu;
 class PluginDock;
 class FindBar;
+class DiskBar;
+class QFileSystemWatcher;
+class QTimer;
 class ShortcutMap;
 class PluginSession;
 class PluginSessionTab;
@@ -156,6 +159,16 @@ public:
     QTabBar*                tabBar() const { return documentTabs; }
     // the find bar under the documents (EDIT-FIND-1, docs/FIND.md)
     FindBar*                findBar() const { return m_findBar; }
+    // the disk check (EDIT-DOC-13..18, docs/GIT.md): the tab given, else every tab
+    void                    checkDisk(EditorDocument* doc = nullptr);
+    // an answer of the bar of the active tab — reload, keep, compare, close; false with
+    // the reason without a bar or with an answer it does not offer (EDIT-DOC-18)
+    bool                    answerDiskBar(const QString& answer, QString* error);
+    // the bar above the page of the active tab
+    DiskBar*                diskBar() const { return m_diskBar; }
+    // a Save may write the file: unchanged on disk since the tab read or wrote it, or
+    // the user agreed; the batch refuses with the reason (EDIT-DOC-17)
+    bool                    confirmDiskOverwrite(EditorDocument* doc, QString* error);
     // the keys of the built-in actions (docs/SHORTCUTS.md)
     ShortcutMap*            shortcuts() const { return m_shortcuts; }
 
@@ -206,6 +219,8 @@ signals:
 
 protected:
     void                    closeEvent(QCloseEvent* event) override;
+    // the window activated: the files of the tabs are checked (EDIT-DOC-13)
+    void                    changeEvent(QEvent* event) override;
     void                    showEvent(QShowEvent* event) override;
     bool                    eventFilter(QObject* watched, QEvent* event) override;
 
@@ -431,6 +446,18 @@ private:
     // a row's place is being shown: the cursor it moves is not followed back
     bool                    m_outlineShowing = false;
     FindBar*                m_findBar = nullptr;
+    // the disk check: the bar of the active tab, the watcher of the files of the tabs
+    // (none in the batch mode, which checks by its verbs), the changes joined
+    DiskBar*                m_diskBar = nullptr;
+    QFileSystemWatcher*     m_diskWatcher = nullptr;
+    QTimer*                 m_diskTimer = nullptr;
+    QSet<QString>           m_diskPending;
+    void                    checkDiskTab(EditorDocument* doc);
+    bool                    reloadTab(EditorDocument* doc, QString* error);
+    void                    updateDiskBar();
+    void                    updateDiskWatch();
+    void                    slotDiskChanged(const QString& path);
+    void                    slotDiskPending();
     ShortcutMap*            m_shortcuts = nullptr;
     void                    initShortcuts();
     void                    commitPendingEdit();

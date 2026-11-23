@@ -907,7 +907,7 @@ static bool isDocumentVerb(const QString& cmd)
 	return cmd == "open" || cmd == "new-document" || cmd == "switch" || cmd == "close" ||
 		cmd == "mode" || cmd == "read-only" || cmd == "compare" || cmd == "geometry" ||
 		cmd == "refresh" || cmd == "save" || cmd == "next-change" || cmd == "previous-change" ||
-		cmd == "ignore-whitespace";
+		cmd == "ignore-whitespace" || cmd == "disk-check" || cmd == "disk";
 }
 
 // save [<file>]: Save, or Save As the file with the defaults of its dialog (EDIT-DOC-11)
@@ -929,6 +929,8 @@ static bool saveDocument(CyberiadaSMEditorWindow* win, const QStringList& tokens
 			*error = "the tab is read-only";
 			return false;
 		}
+		// the file changed on disk is not written over (EDIT-DOC-17)
+		if (!win->confirmDiskOverwrite(doc, error)) return false;
 		return doc->save(error);
 	}
 	QString path = tokens.mid(1).join(' ');
@@ -1122,6 +1124,17 @@ static bool runDocumentVerb(CyberiadaSMEditorWindow* win, const QStringList& tok
 		}
 		diff->setIgnoreWhitespace(tokens[1] == "on");
 		return true;
+	}
+	// disk-check and disk reload|keep|compare|close: the check of the window activation and
+	// the answers of the bar (EDIT-DOC-18)
+	if (cmd == "disk-check") {
+		if (tokens.size() != 1) { *error = "disk-check takes no argument"; return false; }
+		win->checkDisk();
+		return true;
+	}
+	if (cmd == "disk") {
+		if (tokens.size() != 2) { *error = "disk needs reload, keep, compare or close"; return false; }
+		return win->answerDiskBar(tokens[1], error);
 	}
 	if (cmd == "refresh") {
 		ComparisonDocument* diff = win->currentComparison();

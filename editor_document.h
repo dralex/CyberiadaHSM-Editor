@@ -29,6 +29,7 @@
 #include <QPointer>
 #include <QString>
 
+#include "disk_state.h"
 #include "document_mode.h"
 #include "find_query.h"
 #include "plugin_conditions.h"
@@ -64,6 +65,25 @@ public:
     virtual bool             isClean() const = 0;
     // write the document back to its file (false without one, or with the error)
     virtual bool             save(QString* error) { Q_UNUSED(error); return false; }
+    // read the file again in the mode and the flag of the tab, the undo history emptied
+    // (EDIT-DOC-14); false without a file, or with the error and the tab as it was
+    virtual bool             reload(QString* error) { Q_UNUSED(error); return false; }
+
+    // the file against the disk (EDIT-DOC-13..18, docs/GIT.md): the bytes last read or
+    // written and what the bar of the tab says about the file now
+    enum DiskStatus { diskOk = 0, diskChanged, diskUnreadable, diskAbsent };
+    const DiskState&         diskState() const { return m_disk; }
+    // after a read or a write: the file as it is now, the status cleared
+    void                     rememberDisk();
+    // the same bytes at another time (a touch, a save of the editor)
+    void                     setDiskState(const DiskState& state) { m_disk = state; }
+    DiskStatus               diskStatus() const { return m_diskStatus; }
+    void                     setDiskStatus(DiskStatus status);
+    // the bar shows a status until Keep dismisses it; a gone file stays modified
+    bool                     diskBarShown() const { return m_diskStatus != diskOk && !m_diskBarDismissed; }
+    void                     dismissDiskBar();
+    // the undo history holds edits, the disk status aside
+    bool                     hasEdits() const;
 
     // the plugin run of the tab, at most one (EDIT-PLUG-21); nullptr when idle
     PluginRunner*            pluginRun() const;
@@ -99,6 +119,8 @@ signals:
     void                     readOnlyChanged(bool on);
     // every search: the current match from 0 (-1 without one), the count, more past the limit
     void                     findResultChanged(int current, int total, bool more);
+    // the disk status or its bar changed (EDIT-DOC-15/16)
+    void                     diskStatusChanged();
 
 protected:
     // the kind applies the flag to its parts
@@ -111,6 +133,9 @@ private:
     mutable QString          m_gitPath;
     mutable bool             m_git = false;
     mutable bool             m_gitValid = false;
+    DiskState                m_disk;
+    DiskStatus               m_diskStatus = diskOk;
+    bool                     m_diskBarDismissed = false;
 };
 
 #endif

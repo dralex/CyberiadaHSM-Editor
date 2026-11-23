@@ -770,18 +770,22 @@ the files changed on disk (`EDIT-DOC-13..18`) is specified in 0.80, the architec
 - `EDIT-DOC-13` MUST [A]: a tab with a file remembers the size, the modification time and the
   digest of the bytes it last read from the file or wrote to it. The file is checked when it
   changes on disk (a watcher on the files of the open tabs), on the window activation, after
-  a git command of the editor (`EDIT-GIT-17`) and by the batch verb `disk-check`; a size and a
-  time as remembered end the check, a digest as remembered only takes the new time (a touch,
-  a save of the editor). An untitled, a diff and a text diff tab are not checked. *design*
+  a git command of the editor (`EDIT-GIT-17`) and by the batch verb `disk-check`; the batch
+  mode has no watcher, so a script checks by its verbs only. A size and a time as remembered
+  end the check, unless the bytes were read within two seconds of the time of the file (the
+  time step of a file system, as git's racy check); a digest as remembered only takes the new
+  state (a touch, a save of the editor). An untitled, a diff and a text diff tab are not
+  checked. *design*
 - `EDIT-DOC-14` MUST [A]: a tab without unsaved edits whose file changed is read again from it,
   in its mode and with its read-only flag, the undo history emptied, the zoom and the scroll
   kept where they still apply. A file that cannot be read keeps the tab as it was, with the
   bar of `EDIT-DOC-15` saying `<name> changed on disk and cannot be read`. *design*
-- `EDIT-DOC-15` MUST [A]: a tab with unsaved edits whose file changed gets a bar above its page,
+- `EDIT-DOC-15` MUST [A]: a tab with unsaved edits, or with a plugin running on it, whose file
+  changed gets a bar above its page,
   `<name> changed on disk`: *Reload* reads the file, the edits lost and the undo history
   emptied; *Keep my edits* closes the bar and remembers the file as it is now, so a Save
   writes over it without a question; *Compare* opens a diff tab — a text diff tab for a text —
-  of the file on disk against the tab, the bar kept. The bar stays until a choice, a Save or
+  of the file on disk against the tab, labelled `<name> ↔ on disk`, the bar kept. The bar stays until a choice, a Save or
   a reload. *design*
 
   ```
@@ -799,8 +803,9 @@ the files changed on disk (`EDIT-DOC-13..18`) is specified in 0.80, the architec
   default; the batch `save` of such a tab is a script error. *design*
 - `EDIT-DOC-18` MUST [A]: the batch verb `disk-check` checks the open tabs as the window
   activation does; `disk reload`, `disk keep`, `disk compare` and `disk close` answer the bar of
-  the active tab, a script error without one; `--dump-tabs` adds `disk changed` or
-  `disk absent` to a tab with a bar. *design*
+  the active tab, a script error without one, or with an answer the bar does not offer;
+  `--dump-tabs` adds `disk changed`, `disk unreadable` or `disk absent` to a tab with a bar.
+  *design*
 
 ### 4.12 Plugins — PLUG
 

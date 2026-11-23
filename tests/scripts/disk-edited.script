@@ -1,0 +1,7 @@
+# an edited tab keeps its edits under the bar when another tab writes its file (EDIT-DOC-15/18)
+rename n0 Edited
+new-document
+new-sm G0
+save h.graphml
+switch 0
+disk-check

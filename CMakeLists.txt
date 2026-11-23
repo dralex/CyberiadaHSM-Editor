@@ -172,6 +172,8 @@ add_library(CyberiadaEditorCore STATIC
   system_terminal.h system_terminal.cpp
   find_query.h find_query.cpp
   find_bar.h find_bar.cpp
+  disk_state.h disk_state.cpp
+  disk_bar.h disk_bar.cpp
   shortcut_map.h shortcut_map.cpp
   autoreplace.h autoreplace.cpp
   markdown_lines.h markdown_lines.cpp

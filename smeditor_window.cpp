@@ -34,6 +34,7 @@
 #include <QMenu>
 #include <QSignalBlocker>
 #include <QTimer>
+#include <QFileSystemWatcher>
 #include <QShowEvent>
 #include <QScrollBar>
 #include <QUndoGroup>
@@ -84,6 +85,8 @@
 #include "plugin_session.h"
 #include "plugin_session_view.h"
 #include "find_bar.h"
+#include "disk_bar.h"
+#include "disk_state.h"
 #include "shortcut_map.h"
 #include "system_terminal.h"
 #include "dialogs/plugin_manager_dialog.h"
@@ -126,6 +129,17 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     documentTabs->setExpanding(false);
     documentTabs->setDocumentMode(true);
     centralLayout->insertWidget(0, documentTabs);
+    // the bar of a file changed on disk, between the tab line and the page (EDIT-DOC-15/16)
+    m_diskBar = new DiskBar(centralwidget);
+    centralLayout->insertWidget(1, m_diskBar);
+    connect(m_diskBar, &DiskBar::reloadRequested, this, [this]() { answerDiskBar("reload", nullptr); });
+    connect(m_diskBar, &DiskBar::keepRequested, this, [this]() { answerDiskBar("keep", nullptr); });
+    connect(m_diskBar, &DiskBar::compareRequested, this, [this]() { answerDiskBar("compare", nullptr); });
+    connect(m_diskBar, &DiskBar::closeRequested, this, [this]() { answerDiskBar("close", nullptr); });
+    m_diskTimer = new QTimer(this);
+    m_diskTimer->setSingleShot(true);
+    m_diskTimer->setInterval(DISK_CHECK_DELAY_MS);
+    connect(m_diskTimer, &QTimer::timeout, this, &CyberiadaSMEditorWindow::slotDiskPending);
     connect(documentTabs, &QTabBar::currentChanged, this, &CyberiadaSMEditorWindow::activateDocument);
     connect(documentTabs, &QTabBar::tabCloseRequested, this, &CyberiadaSMEditorWindow::closeTab);
     connect(documentTabs, &QTabBar::tabMoved, this,
@@ -327,9 +341,16 @@ void CyberiadaSMEditorWindow::addTab(EditorDocument* doc)
                 updateTabTitle(doc);
                 // a Save As of an unmodified document changes the file, not the clean state
                 if (doc == active) { updateTitle(); updatePluginActions(); updateTerminalAction(); }
+                updateDiskWatch();
             });
     connect(doc, &EditorDocument::modeChanged, this, [this, doc]() { documentStateChanged(doc); });
     connect(doc, &EditorDocument::readOnlyChanged, this, [this, doc]() { documentStateChanged(doc); });
+    connect(doc, &EditorDocument::diskStatusChanged, this,
+            [this, doc]() {
+                documentStateChanged(doc);
+                if (doc == active) updateDiskBar();
+            });
+    updateDiskWatch();
 }
 
 CyberiadaSMEditorDocument* CyberiadaSMEditorWindow::newDocument()
@@ -510,6 +531,7 @@ bool CyberiadaSMEditorWindow::closeDocument(EditorDocument* doc, bool discard)
     doc->undoStack()->disconnect(this);
     doc->disconnect(this);
     delete doc;
+    updateDiskWatch();
     return true;
 }
 
@@ -606,7 +628,200 @@ void CyberiadaSMEditorWindow::setCurrentDocument(EditorDocument* tab)
         GestureLog::instance().endSession();
         if (current) GestureLog::instance().startSession(current->model());
     }
+    updateDiskBar();
     QTimer::singleShot(0, this, &CyberiadaSMEditorWindow::restoreSavedView);
+}
+
+void CyberiadaSMEditorWindow::changeEvent(QEvent* event)
+{
+    QMainWindow::changeEvent(event);
+    // back from a terminal or another program, the files of the tabs may have changed
+    if (event->type() == QEvent::ActivationChange && isActiveWindow() &&
+        !qApp->property("batchMode").toBool()) {
+        QMetaObject::invokeMethod(this, [this]() { checkDisk(); }, Qt::QueuedConnection);
+    }
+}
+
+void CyberiadaSMEditorWindow::checkDisk(EditorDocument* doc)
+{
+    if (doc) {
+        checkDiskTab(doc);
+        return;
+    }
+    const QList<EditorDocument*> tabs = documents;
+    for (EditorDocument* tab : tabs) {
+        if (documents.contains(tab)) checkDiskTab(tab);
+    }
+}
+
+void CyberiadaSMEditorWindow::checkDiskTab(EditorDocument* doc)
+{
+    if (!doc->hasFile() || qobject_cast<ComparisonDocument*>(doc)) return;
+    DiskState now;
+    switch (checkDiskState(doc->diskState(), doc->filePath(), &now)) {
+    case DiskCheck::touched:
+        doc->setDiskState(now);
+        Q_FALLTHROUGH();    // the bytes are the ones the tab knows
+    case DiskCheck::same:
+        // the file is back as the tab read it: the bar goes (EDIT-DOC-16)
+        doc->setDiskStatus(EditorDocument::diskOk);
+        break;
+    case DiskCheck::gone:
+        if (doc->diskStatus() != EditorDocument::diskAbsent) doc->setDiskStatus(EditorDocument::diskAbsent);
+        break;
+    case DiskCheck::changed:
+        // a clean tab follows its file; the edits and a running plugin keep the tab (EDIT-DOC-14/15)
+        if (!doc->hasEdits() && !doc->pluginRun()) {
+            QString error;
+            if (reloadTab(doc, &error)) return;
+            doc->setDiskStatus(EditorDocument::diskUnreadable);
+        } else if (doc->diskStatus() != EditorDocument::diskChanged) {
+            doc->setDiskStatus(EditorDocument::diskChanged);
+        }
+        break;
+    }
+}
+
+bool CyberiadaSMEditorWindow::reloadTab(EditorDocument* doc, QString* error)
+{
+    bool finding = doc == active && m_findBar && !m_findBar->isHidden() && doc->canFind();
+    if (finding) doc->clearFind(false);
+    if (!doc->reload(error)) {
+        if (finding) doc->setFindQuery(m_findBar->query(), false);
+        return false;
+    }
+    if (doc == active) {
+        // the model reset gave the tree its root back (slotModelReset)
+        if (doc == current) {
+            QModelIndex sm = model()->firstSMIndex();
+            if (sm.isValid()) SMView->select(sm);
+            QTimer::singleShot(0, this, &CyberiadaSMEditorWindow::restoreSavedView);
+        }
+        if (finding) doc->setFindQuery(m_findBar->query(), false);
+        updateTitle();
+        updateEditActions();
+    }
+    documentStateChanged(doc);
+    return true;
+}
+
+void CyberiadaSMEditorWindow::updateDiskBar()
+{
+    if (!m_diskBar) return;
+    if (active && active->diskBarShown()) {
+        m_diskBar->setStatus(active->diskStatus(), active->title());
+    } else {
+        m_diskBar->setStatus(EditorDocument::diskOk, QString());
+    }
+}
+
+bool CyberiadaSMEditorWindow::answerDiskBar(const QString& answer, QString* error)
+{
+    EditorDocument* doc = active;
+    if (!doc || !doc->diskBarShown()) {
+        if (error) *error = "the active tab has no disk bar";
+        return false;
+    }
+    EditorDocument::DiskStatus status = doc->diskStatus();
+    bool absent = status == EditorDocument::diskAbsent;
+    QString reason;
+    if (answer == "reload" && !absent) {
+        if (reloadTab(doc, &reason)) return true;
+        if (error) *error = reason;
+        else QMessageBox::critical(this, tr("Reload"), reason);
+        return false;
+    }
+    if (answer == "keep") {
+        // a gone file keeps the tab modified; a changed one is taken as it is now (EDIT-DOC-15/16)
+        if (absent) doc->dismissDiskBar();
+        else doc->rememberDisk();
+        return true;
+    }
+    if (answer == "compare" && status == EditorDocument::diskChanged) {
+        DiffOrigin base;
+        base.kind = DiffOrigin::originFile;
+        base.path = doc->filePath();
+        base.label = tr("on disk");
+        bool ok = false;
+        if (TextDocument* text = qobject_cast<TextDocument*>(doc)) {
+            ok = compareText(text, base, &reason) != nullptr;
+        } else {
+            ok = compareDocument(qobject_cast<CyberiadaSMEditorDocument*>(doc), base, &reason) != nullptr;
+        }
+        if (!ok) {
+            if (error) *error = reason;
+            else QMessageBox::critical(this, tr("Compare"), reason);
+        }
+        return ok;
+    }
+    if (answer == "close" && absent) return closeDocument(doc, true);
+    if (error) *error = QString("the disk bar of the tab offers no %1").arg(answer);
+    return false;
+}
+
+bool CyberiadaSMEditorWindow::confirmDiskOverwrite(EditorDocument* doc, QString* error)
+{
+    if (!doc || !doc->hasFile()) return true;
+    DiskState now;
+    DiskCheck check = checkDiskState(doc->diskState(), doc->filePath(), &now);
+    if (check == DiskCheck::touched) doc->setDiskState(now);
+    // a gone file is written again; one changed since the tab read it is asked about
+    if (check != DiskCheck::changed) return true;
+    if (qApp->property("batchMode").toBool()) {
+        if (error) *error = QString("%1 changed on disk: disk keep or disk reload first").arg(doc->title());
+        return false;
+    }
+    QMessageBox box(QMessageBox::Question, tr("Save"), tr("%1 changed on disk. Overwrite it?").arg(doc->title()),
+                    QMessageBox::NoButton, this);
+    QPushButton* overwrite = box.addButton(tr("Overwrite"), QMessageBox::AcceptRole);
+    QPushButton* cancel = box.addButton(QMessageBox::Cancel);
+    box.setDefaultButton(cancel);
+    box.exec();
+    return box.clickedButton() == overwrite;
+}
+
+void CyberiadaSMEditorWindow::updateDiskWatch()
+{
+    // the batch checks by its verbs, so a script runs the same on every machine
+    if (qApp->property("batchMode").toBool()) return;
+    if (!m_diskWatcher) {
+        m_diskWatcher = new QFileSystemWatcher(this);
+        connect(m_diskWatcher, &QFileSystemWatcher::fileChanged, this, &CyberiadaSMEditorWindow::slotDiskChanged);
+    }
+    QSet<QString> wanted;
+    for (EditorDocument* doc : documents) {
+        if (doc->hasFile() && !qobject_cast<ComparisonDocument*>(doc)) {
+            wanted.insert(QFileInfo(doc->filePath()).absoluteFilePath());
+        }
+    }
+    const QStringList watched = m_diskWatcher->files();
+    for (const QString& path : watched) {
+        if (!wanted.contains(path)) m_diskWatcher->removePath(path);
+    }
+    for (const QString& path : wanted) {
+        if (!watched.contains(path) && QFileInfo::exists(path)) m_diskWatcher->addPath(path);
+    }
+}
+
+void CyberiadaSMEditorWindow::slotDiskChanged(const QString& path)
+{
+    m_diskPending.insert(path);
+    m_diskTimer->start();
+}
+
+void CyberiadaSMEditorWindow::slotDiskPending()
+{
+    QSet<QString> paths;
+    paths.swap(m_diskPending);
+    const QList<EditorDocument*> tabs = documents;
+    for (EditorDocument* doc : tabs) {
+        if (documents.contains(doc) && doc->hasFile() &&
+            paths.contains(QFileInfo(doc->filePath()).absoluteFilePath())) {
+            checkDiskTab(doc);
+        }
+    }
+    // a file replaced by a rename (git, a save) is watched no more: it is watched again
+    updateDiskWatch();
 }
 
 void CyberiadaSMEditorWindow::showDiagramParts(bool on)
@@ -2241,6 +2456,7 @@ void CyberiadaSMEditorWindow::slotFileSave()
             slotFileSaveAs();
             return;
         }
+        if (!confirmDiskOverwrite(text, nullptr)) return;
         QString error;
         if (!text->save(&error)) QMessageBox::critical(this, tr("Save Text"), error);
         return;
@@ -2252,6 +2468,7 @@ void CyberiadaSMEditorWindow::slotFileSave()
     }
     // an edit that changed nothing leaves nothing to save
     if (current->isClean()) return;
+    if (!confirmDiskOverwrite(current, nullptr)) return;
     QString error;
     if (!current->save(&error)) {
         QMessageBox::critical(this, tr("Save State Machine"),
@@ -2909,7 +3126,8 @@ bool CyberiadaSMEditorWindow::savePluginDocument(EditorDocument* doc, QString* e
         }
         setCurrentDocument(doc);
         slotFileSaveAs();
-    } else if (!doc->save(error)) {
+    } else if (!confirmDiskOverwrite(doc, error) || !doc->save(error)) {
+        // a file changed on disk is not written over unasked (EDIT-DOC-17)
         return false;
     }
     if (!doc->hasFile() || !doc->isClean()) {

@@ -123,6 +123,9 @@
 #define FIND_NO_MATCH_COLOR      "#ffcdd2"
 // the matches marked in a tab at most
 #define FIND_MATCH_LIMIT         10000
+
+// the changes of the watched files joined into one disk check (EDIT-DOC-13)
+#define DISK_CHECK_DELAY_MS      200
 // a JSON tab (EDIT-MODE-26, docs/MODES.md, JSON): the check after an edit, the underline and
 // the margin number of the error, the bar under the text
 #define JSON_CHECK_DELAY_MS      300

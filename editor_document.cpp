@@ -21,6 +21,8 @@
  *
  * ----------------------------------------------------------------------------- */
 
+#include <QUndoStack>
+
 #include "editor_document.h"
 #include "plugin_runner.h"
 
@@ -56,6 +58,32 @@ void EditorDocument::setReadOnlyFlag(bool on)
     m_readOnly = on;
     applyReadOnlyFlag(on);
     emit readOnlyChanged(on);
+}
+
+void EditorDocument::rememberDisk()
+{
+    m_disk = hasFile() ? DiskState::read(filePath()) : DiskState();
+    setDiskStatus(diskOk);
+}
+
+void EditorDocument::setDiskStatus(DiskStatus status)
+{
+    if (m_diskStatus == status && !m_diskBarDismissed) return;
+    m_diskStatus = status;
+    m_diskBarDismissed = false;
+    emit diskStatusChanged();
+}
+
+void EditorDocument::dismissDiskBar()
+{
+    if (m_diskStatus == diskOk || m_diskBarDismissed) return;
+    m_diskBarDismissed = true;
+    emit diskStatusChanged();
+}
+
+bool EditorDocument::hasEdits() const
+{
+    return undoStack() && !undoStack()->isClean();
 }
 
 QString EditorDocument::modeMarker(bool window) const

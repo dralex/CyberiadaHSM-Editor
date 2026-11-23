@@ -46,7 +46,7 @@ function(show_difference good out)
   endwhile()
 endfunction()
 
-# a subject link's ends and underline (its "from:"/"to:"/"underline:" fields) derive
+# the masks of the comparison: a subject link's ends and underline (its "from:"/"to:"/"underline:" fields) derive
 # from the drawn text layout, so they jitter sub-pixel across freetype versions; mask
 # those coordinate groups before comparing, leaving element pos/rect and the rest
 # byte-exact. These three tokens occur only on the scene "Subject Link:" lines - "from:"
@@ -58,6 +58,8 @@ function(normalize_subject_coords in_file out_file)
   string(REGEX REPLACE "from: \\([^)]*\\)" "from: (#)" _text "${_text}")
   string(REGEX REPLACE "to: \\([^)]*\\)" "to: (#)" _text "${_text}")
   string(REGEX REPLACE "underline: \\[[^]]*\\]" "underline: [#]" _text "${_text}")
+  # the view state a save writes is the zoom and the scroll of the offscreen view
+  string(REGEX REPLACE "cyberiadaEditorView: '[^']*'" "cyberiadaEditorView: '#'" _text "${_text}")
   file(WRITE "${out_file}" "${_text}")
 endfunction()
 

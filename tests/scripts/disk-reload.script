@@ -1,0 +1,6 @@
+# a clean tab reads its file again when another tab writes it (EDIT-DOC-13/14)
+new-document
+new-sm G0
+save h.graphml
+switch 0
+disk-check

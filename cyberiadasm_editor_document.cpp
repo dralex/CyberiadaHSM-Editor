@@ -125,12 +125,30 @@ bool CyberiadaSMEditorDocument::load(const QString& path, QString* error,
         return false;
     }
     m_sourceTitle.clear();
+    m_loadReconstruct = reconstruct;
+    m_loadReconstructSM = reconstruct_sm;
+    m_loadStrict = strict;
     refreshMode();
     if (m_model->firstSMIndex().isValid()) {
         m_scene->loadScene();
     }
     pendingViewState = m_model->editorView();
+    rememberDisk();
     announceTitle();
+    return true;
+}
+
+bool CyberiadaSMEditorDocument::reload(QString* error)
+{
+    if (!hasFile()) return false;
+    QString view = m_view->viewState();
+    if (!load(filePath(), error, m_loadReconstruct, m_loadReconstructSM, m_loadStrict,
+              mode() == MODE_INSPECTION)) {
+        return false;
+    }
+    m_model->setReadOnlyFlag(readOnlyFlag());
+    // the zoom and the scroll stay where they were
+    if (!view.isEmpty()) pendingViewState = view;
     return true;
 }
 
@@ -171,6 +189,7 @@ bool CyberiadaSMEditorDocument::save(QString* error)
         if (error) *error = QString(e.str().c_str());
         return false;
     }
+    rememberDisk();
     return true;
 }
 
@@ -189,6 +208,7 @@ bool CyberiadaSMEditorDocument::saveAs(const QString& path, Cyberiada::DocumentF
         if (error) *error = QString(e.str().c_str());
         return false;
     }
+    rememberDisk();
     announceTitle();
     return true;
 }
@@ -248,7 +268,8 @@ PluginDocumentFacts CyberiadaSMEditorDocument::pluginFacts() const
 
 bool CyberiadaSMEditorDocument::isClean() const
 {
-    return m_model->undoStack()->isClean();
+    // a file gone counts as modified until it is saved again (EDIT-DOC-16)
+    return m_model->undoStack()->isClean() && diskStatus() != diskAbsent;
 }
 
 bool CyberiadaSMEditorDocument::isUntitled() const
