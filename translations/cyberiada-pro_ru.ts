@@ -54,6 +54,39 @@
     </message>
 </context>
 <context>
+    <name>BranchDialog</name>
+    <message>
+        <location filename="../dialogs/branch_dialog.cpp" line="+39"/>
+        <source>New Branch</source>
+        <translation type="unfinished">Новая ветка</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Name:</source>
+        <translation type="unfinished">Имя:</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>The current commit</source>
+        <translation type="unfinished">Текущий коммит</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>From:</source>
+        <translation type="unfinished">От:</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Switch to it</source>
+        <translation type="unfinished">Переключиться на неё</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Create</source>
+        <translation type="unfinished">Создать</translation>
+    </message>
+</context>
+<context>
     <name>CodeEditor</name>
     <message>
         <location filename="../code_editor.cpp" line="+394"/>
@@ -286,7 +319,7 @@ Ctrl+клик мыши — открыть</translation>
 <context>
     <name>CyberiadaSMEditorWindow</name>
     <message>
-        <location filename="../smeditor_window.cpp" line="+226"/>
+        <location filename="../smeditor_window.cpp" line="+228"/>
         <source>Output panel</source>
         <translation>Панель вывода</translation>
     </message>
@@ -315,7 +348,7 @@ Ctrl+клик мыши — открыть</translation>
 </translation>
     </message>
     <message>
-        <location line="+1140"/>
+        <location line="+1341"/>
         <source>Undefined</source>
         <translation>Не задан</translation>
     </message>
@@ -517,14 +550,125 @@ Ctrl+клик мыши — открыть</translation>
         <translation>вкладка доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-3037"/>
+        <location line="-3238"/>
         <location line="+9"/>
-        <location line="+306"/>
+        <location line="+507"/>
         <source>History</source>
         <translation type="unfinished">История</translation>
     </message>
     <message>
-        <location line="-147"/>
+        <location line="-375"/>
+        <source>The branch: switch, new, delete</source>
+        <translation type="unfinished">Ветка: переключить, создать, удалить</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>detached at %1</source>
+        <translation type="unfinished">отсоединено на %1</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>%1 (no commits)</source>
+        <translation type="unfinished">%1 (нет коммитов)</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>, merging</source>
+        <translation type="unfinished">, слияние</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>, rebasing</source>
+        <translation type="unfinished">, перебазирование</translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <source>finish the %1 in a terminal first</source>
+        <translation type="unfinished">сначала завершите %1 в терминале</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <location line="+108"/>
+        <source>merge</source>
+        <translation type="unfinished">слияние</translation>
+    </message>
+    <message>
+        <location line="-108"/>
+        <location line="+108"/>
+        <source>rebase</source>
+        <translation type="unfinished">перебазирование</translation>
+    </message>
+    <message>
+        <location line="-103"/>
+        <source>New Branch...</source>
+        <translation type="unfinished">Новая ветка...</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Delete Branch...</source>
+        <translation type="unfinished">Удалить ветку...</translation>
+    </message>
+    <message>
+        <location line="+32"/>
+        <location line="+19"/>
+        <source>Switch to %1</source>
+        <translation type="unfinished">Переключение на %1</translation>
+    </message>
+    <message>
+        <location line="-18"/>
+        <source>Save %1 documents before switching?</source>
+        <translation type="unfinished">Сохранить документы (%1) перед переключением?</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Save and Switch</source>
+        <translation type="unfinished">Сохранить и переключить</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>Switch</source>
+        <translation type="unfinished">Переключение</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>New Branch</source>
+        <translation type="unfinished">Новая ветка</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>not switched: the documents are not saved</source>
+        <translation type="unfinished">не переключено: документы не сохранены</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <location line="+7"/>
+        <location line="+3"/>
+        <source>Delete Branch</source>
+        <translation type="unfinished">Удаление ветки</translation>
+    </message>
+    <message>
+        <location line="-3"/>
+        <source>The branch to delete (merged only):</source>
+        <translation type="unfinished">Удаляемая ветка (только слитая):</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>a %1 is in progress: finish it in a terminal first</source>
+        <translation type="unfinished">идёт %1: сначала завершите его в терминале</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <location line="+37"/>
+        <source>%1 is not a branch</source>
+        <translation type="unfinished">%1 не ветка</translation>
+    </message>
+    <message>
+        <location line="-19"/>
+        <source>%1 is not a branch name</source>
+        <translation type="unfinished">%1 не имя ветки</translation>
+    </message>
+    <message>
+        <location line="+53"/>
         <source>Gi&amp;t</source>
         <translation type="unfinished">G&amp;it</translation>
     </message>
@@ -545,24 +689,24 @@ Ctrl+клик мыши — открыть</translation>
     </message>
     <message>
         <location line="+2"/>
-        <location line="+129"/>
+        <location line="+135"/>
         <source>Compare with HEAD</source>
         <translation type="unfinished">Сравнить с HEAD</translation>
     </message>
     <message>
-        <location line="-128"/>
-        <location line="+130"/>
+        <location line="-134"/>
+        <location line="+136"/>
         <source>Compare with the Index</source>
         <translation type="unfinished">Сравнить с индексом</translation>
     </message>
     <message>
-        <location line="-129"/>
-        <location line="+131"/>
+        <location line="-135"/>
+        <location line="+137"/>
         <source>Compare with a Revision...</source>
         <translation type="unfinished">Сравнить с ревизией...</translation>
     </message>
     <message>
-        <location line="-130"/>
+        <location line="-136"/>
         <source>File History</source>
         <translation type="unfinished">История файла</translation>
     </message>
@@ -572,7 +716,12 @@ Ctrl+клик мыши — открыть</translation>
         <translation type="unfinished">Коммит...</translation>
     </message>
     <message>
-        <location line="+18"/>
+        <location line="+2"/>
+        <source>Branch</source>
+        <translation type="unfinished">Ветка</translation>
+    </message>
+    <message>
+        <location line="+22"/>
         <location line="+99"/>
         <location line="+344"/>
         <source>Stage</source>
@@ -863,7 +1012,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>вкладку сравнения открывает «Документ &gt; Сравнить с...»</translation>
     </message>
     <message>
-        <location line="-1169"/>
+        <location line="-1370"/>
         <source>Reload</source>
         <translation type="unfinished">Перечитать</translation>
     </message>
@@ -874,12 +1023,12 @@ Ctrl+клик мыши — открыть</translation>
     </message>
     <message>
         <location line="+9"/>
-        <location line="+821"/>
+        <location line="+1022"/>
         <source>Compare</source>
         <translation type="unfinished">Сравнить</translation>
     </message>
     <message>
-        <location line="-800"/>
+        <location line="-1001"/>
         <source>%1 changed on disk. Overwrite it?</source>
         <translation type="unfinished">Файл %1 изменён на диске. Перезаписать его?</translation>
     </message>
@@ -899,7 +1048,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation type="obsolete">Репозиторий: %1</translation>
     </message>
     <message>
-        <location line="+772"/>
+        <location line="+973"/>
         <source>The document has no file</source>
         <translation type="unfinished">У документа нет файла</translation>
     </message>
@@ -1216,8 +1365,8 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Сохранить журнал...</translation>
     </message>
     <message>
-        <location line="-3270"/>
-        <location line="+148"/>
+        <location line="-3276"/>
+        <location line="+154"/>
         <location line="+3373"/>
         <source>Open</source>
         <translation>Открыть</translation>
@@ -1228,8 +1377,8 @@ Ctrl+клик мыши — открыть</translation>
         <translation>%1 - Параметры</translation>
     </message>
     <message>
-        <location line="-3708"/>
-        <location line="+3709"/>
+        <location line="-3909"/>
+        <location line="+3910"/>
         <source>Save</source>
         <translation>Сохранить</translation>
     </message>
@@ -4578,7 +4727,7 @@ Ctrl+клик мыши — открыть</translation>
 <context>
     <name>RepositoryView</name>
     <message>
-        <location filename="../repository_view.cpp" line="+56"/>
+        <location filename="../repository_view.cpp" line="+68"/>
         <source>Tree</source>
         <translation type="unfinished">Дерево</translation>
     </message>
