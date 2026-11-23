@@ -89,6 +89,7 @@
 #include "disk_state.h"
 #include "git_process.h"
 #include "repository_service.h"
+#include "repository_view.h"
 #include "shortcut_map.h"
 #include "system_terminal.h"
 #include "dialogs/plugin_manager_dialog.h"
@@ -333,7 +334,12 @@ void CyberiadaSMEditorWindow::addTab(EditorDocument* doc)
     }
     updateTabTitle(doc);
     connect(doc->undoStack(), &QUndoStack::cleanChanged, this,
-            [this, doc](bool) { updateTabTitle(doc); });
+            [this, doc](bool clean) {
+                updateTabTitle(doc);
+                updateRepositoryMarks();
+                // a save writes a file of the work tree (EDIT-GIT-6)
+                if (clean) scheduleRepositoryRead();
+            });
     connect(doc, &EditorDocument::findResultChanged, this,
             [this, doc](int current, int total, bool more) {
                 if (doc == active) m_findBar->setResult(current, total, more);
@@ -344,6 +350,8 @@ void CyberiadaSMEditorWindow::addTab(EditorDocument* doc)
                 // a Save As of an unmodified document changes the file, not the clean state
                 if (doc == active) { updateTitle(); updatePluginActions(); updateTerminalAction(); }
                 updateDiskWatch();
+                // a Save As may move the tab to another work tree (EDIT-GIT-2)
+                if (doc == active) updateRepositoryDock(true);
             });
     connect(doc, &EditorDocument::modeChanged, this, [this, doc]() { documentStateChanged(doc); });
     connect(doc, &EditorDocument::readOnlyChanged, this, [this, doc]() { documentStateChanged(doc); });
@@ -631,6 +639,7 @@ void CyberiadaSMEditorWindow::setCurrentDocument(EditorDocument* tab)
         if (current) GestureLog::instance().startSession(current->model());
     }
     updateDiskBar();
+    updateRepositoryDock();
     QTimer::singleShot(0, this, &CyberiadaSMEditorWindow::restoreSavedView);
 }
 
@@ -640,7 +649,11 @@ void CyberiadaSMEditorWindow::changeEvent(QEvent* event)
     // back from a terminal or another program, the files of the tabs may have changed
     if (event->type() == QEvent::ActivationChange && isActiveWindow() &&
         !qApp->property("batchMode").toBool()) {
-        QMetaObject::invokeMethod(this, [this]() { checkDisk(); }, Qt::QueuedConnection);
+        QMetaObject::invokeMethod(this, [this]() {
+            checkDisk();
+            // a work tree made or gone meanwhile: the folder is looked up again (EDIT-GIT-2)
+            updateRepositoryDock(true);
+        }, Qt::QueuedConnection);
     }
 }
 
@@ -819,6 +832,156 @@ RepositoryService* CyberiadaSMEditorWindow::repositoryOf(EditorDocument* doc, bo
     QString path = gitFilePath(doc);
     if (path.isEmpty()) return nullptr;
     return RepositoryService::forRoot(RepositoryService::rootOf(QFileInfo(path).absolutePath(), again));
+}
+
+void CyberiadaSMEditorWindow::createRepositoryDock()
+{
+    SettingsManager& sm = SettingsManager::instance();
+    m_repositoryView = new RepositoryView();
+    m_repositoryView->setObjectName("repositoryView");
+    // the batch starts from the defaults, so a script runs the same everywhere
+    if (!qApp->property("batchMode").toBool()) {
+        m_repositoryView->setLayoutMode(RepositoryModel::Layout(sm.getRepositoryLayout()));
+        m_repositoryView->setChangedOnly(sm.getRepositoryChangedOnly());
+        m_repositoryView->setIgnored(sm.getRepositoryIgnored());
+    }
+    connect(m_repositoryView, &RepositoryView::layoutModeChanged, this,
+            [](RepositoryModel::Layout layout) { SettingsManager::instance().setRepositoryLayout(int(layout)); });
+    connect(m_repositoryView, &RepositoryView::changedOnlyChanged, this,
+            [](bool on) { SettingsManager::instance().setRepositoryChangedOnly(on); });
+    connect(m_repositoryView, &RepositoryView::ignoredChanged, this, [this](bool on) {
+        SettingsManager::instance().setRepositoryIgnored(on);
+        if (!m_repository) return;
+        m_repository->setIgnored(on);
+        m_repository->refresh();
+    });
+    connect(m_repositoryView, &RepositoryView::refreshRequested, this, [this]() {
+        if (m_repository) m_repository->refresh();
+    });
+    connect(m_repositoryView, &RepositoryView::openRequested, this, &CyberiadaSMEditorWindow::openRepositoryFile);
+
+    repositoryDock = new QDockWidget(tr("Repository"), this);
+    repositoryDock->setObjectName("repositoryDock");
+    repositoryDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    repositoryDock->setWidget(m_repositoryView);
+    addDockWidget(Qt::LeftDockWidgetArea, repositoryDock);
+    resizeDocks(QList<QDockWidget*>() << repositoryDock, QList<int>() << PANE_DOCK_WIDTH, Qt::Horizontal);
+    actionRepository = repositoryDock->toggleViewAction();
+    actionRepository->setObjectName("actionRepositoryPane");
+    actionRepository->setText(tr("Repository"));
+    // shown again, the dock reads what it missed (EDIT-GIT-6)
+    connect(repositoryDock, &QDockWidget::visibilityChanged, this, [this](bool shown) {
+        if (m_repository) m_repository->setWatching(shown && !qApp->property("batchMode").toBool());
+        if (shown && m_repositoryStale) scheduleRepositoryRead();
+    });
+    m_repositoryTimer = new QTimer(this);
+    m_repositoryTimer->setSingleShot(true);
+    connect(m_repositoryTimer, &QTimer::timeout, this, [this]() {
+        if (!m_repository) return;
+        m_repositoryRead.start();
+        m_repository->refresh();
+    });
+    // another program or no git: every work tree is looked up again (EDIT-GIT-1)
+    connect(&sm, &SettingsManager::gitSettingsChanged, this, [this]() {
+        if (m_repository) m_repository->disconnect(this);
+        m_repository = nullptr;
+        RepositoryService::reset();
+        applyDocks();
+        updateRepositoryDock(true);
+    });
+}
+
+void CyberiadaSMEditorWindow::updateRepositoryDock(bool again)
+{
+    if (!m_repositoryView) return;
+    RepositoryService* service = repositoryOf(active, again);
+    bool switched = service != m_repository.data();
+    if (switched) {
+        if (m_repository) {
+            m_repository->disconnect(this);
+            m_repository->setWatching(false);
+        }
+        m_repository = service;
+        if (service) {
+            connect(service, &RepositoryService::statusChanged, this, &CyberiadaSMEditorWindow::repositoryStatusChanged);
+            connect(service, &RepositoryService::gitChanged, this, &CyberiadaSMEditorWindow::scheduleRepositoryRead);
+            service->setIgnored(m_repositoryView->ignored());
+            service->setWatching(!repositoryDock->isHidden() && !qApp->property("batchMode").toBool());
+        }
+    }
+    m_repositoryView->setRepository(service ? service->root() : QString(),
+                                    service ? QString() : noRepositoryReason(active));
+    if (service) {
+        if (switched && service->hasSnapshot()) m_repositoryView->setSnapshot(service->snapshot());
+        QString path = gitFilePath(active);
+        m_repositoryView->setCurrentFile(QDir(service->root()).relativeFilePath(QFileInfo(path).absoluteFilePath()));
+        updateRepositoryMarks();
+        scheduleRepositoryRead();
+    }
+    updateRepositoryTitle();
+}
+
+void CyberiadaSMEditorWindow::scheduleRepositoryRead()
+{
+    // the batch reads by its verbs only, so a script runs the same everywhere
+    if (!m_repository || !m_repositoryTimer || qApp->property("batchMode").toBool()) return;
+    // only while the dock is shown; shown again, it reads what it missed (EDIT-GIT-6)
+    if (repositoryDock->isHidden()) {
+        m_repositoryStale = true;
+        return;
+    }
+    m_repositoryStale = false;
+    if (m_repositoryTimer->isActive()) return;
+    qint64 since = m_repositoryRead.isValid() ? m_repositoryRead.elapsed() : REPOSITORY_READ_INTERVAL_MS;
+    m_repositoryTimer->start(int(qMax<qint64>(0, REPOSITORY_READ_INTERVAL_MS - since)));
+}
+
+void CyberiadaSMEditorWindow::repositoryStatusChanged()
+{
+    if (!m_repository || sender() != m_repository.data()) return;
+    m_repositoryView->setSnapshot(m_repository->snapshot());
+    updateRepositoryMarks();
+    updateRepositoryTitle();
+}
+
+void CyberiadaSMEditorWindow::updateRepositoryMarks()
+{
+    if (!m_repositoryView || !m_repository) return;
+    QHash<QString, bool> open;
+    QDir root(m_repository->root());
+    for (EditorDocument* doc : documents) {
+        if (!doc->hasFile() || qobject_cast<ComparisonDocument*>(doc)) continue;
+        QString relative = root.relativeFilePath(QFileInfo(doc->filePath()).absoluteFilePath());
+        if (relative.startsWith("..")) continue;
+        open[relative] = open.value(relative) || doc->hasEdits();
+    }
+    m_repositoryView->model()->setOpenFiles(open);
+}
+
+void CyberiadaSMEditorWindow::updateRepositoryTitle()
+{
+    if (!repositoryDock) return;
+    if (!m_repository) {
+        repositoryDock->setWindowTitle(tr("Repository"));
+        return;
+    }
+    QString title = tr("Repository: %1").arg(QFileInfo(m_repository->root()).fileName());
+    const RepositorySnapshot& s = m_repository->snapshot();
+    if (m_repository->hasSnapshot() && !s.branch.isEmpty()) title += " (" + s.branch + ")";
+    repositoryDock->setWindowTitle(title);
+}
+
+void CyberiadaSMEditorWindow::openRepositoryFile(const QString& path)
+{
+    if (!m_repository || path.endsWith('/')) return;
+    QString file = QDir(m_repository->root()).filePath(path);
+    // the editor opens a diagram and a text of a known mode, the system the rest (EDIT-GIT-7)
+    if (isDocumentFile(file)) {
+        QString error;
+        if (!openFile(file, &error)) QMessageBox::warning(this, tr("Open"), error);
+        return;
+    }
+    QDesktopServices::openUrl(QUrl::fromLocalFile(file));
 }
 
 QString CyberiadaSMEditorWindow::noRepositoryReason(EditorDocument* doc) const
@@ -1707,7 +1870,19 @@ void CyberiadaSMEditorWindow::fillChangeList()
         item->setForeground(1, color);
     }
     m_changeList->expandAll();
+    fitChangeColumn();
     selectChange(diff->currentChange());
+}
+
+// what differs stays in view: the change column as wide as its texts, at most what the
+// element column leaves at its least, elided past it (EDIT-MODE-11)
+void CyberiadaSMEditorWindow::fitChangeColumn()
+{
+    QHeaderView* header = m_changeList->header();
+    int available = m_changeList->viewport()->width() - header->minimumSectionSize();
+    int content = qMax(header->sectionSizeHint(1),
+                       static_cast<QAbstractItemView*>(m_changeList)->sizeHintForColumn(1));
+    header->resizeSection(1, qMax(header->minimumSectionSize(), qMin(content, available)));
 }
 
 // the row of the current change selected in the list, none for -1
@@ -2200,7 +2375,8 @@ void CyberiadaSMEditorWindow::initPaneDocks()
     // what differs stays in view: the element column takes the rest, elided (EDIT-MODE-11)
     m_changeList->header()->setStretchLastSection(false);
     m_changeList->header()->setSectionResizeMode(0, QHeaderView::Stretch);
-    m_changeList->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+    m_changeList->header()->setSectionResizeMode(1, QHeaderView::Fixed);
+    m_changeList->viewport()->installEventFilter(this);
     connect(m_changeList, &QTreeWidget::itemActivated, this, &CyberiadaSMEditorWindow::slotChangeActivated);
     connect(m_changeList, &QTreeWidget::itemClicked, this, &CyberiadaSMEditorWindow::slotChangeActivated);
     changesDock = new QDockWidget(tr("Changes"), this);
@@ -2224,6 +2400,7 @@ void CyberiadaSMEditorWindow::initPaneDocks()
     outlineDock->setWidget(m_outlineView);
     addDockWidget(Qt::RightDockWidgetArea, outlineDock);
     resizeDocks(QList<QDockWidget*>() << outlineDock, QList<int>() << PANE_DOCK_WIDTH, Qt::Horizontal);
+    createRepositoryDock();
 
     actionStructureTree = treeDock->toggleViewAction();
     actionStructureTree->setObjectName("actionStructureTree");
@@ -2237,20 +2414,24 @@ void CyberiadaSMEditorWindow::initPaneDocks()
     menuView->insertAction(actionTransitionText, actionProperties);
     menuView->insertAction(actionTransitionText, actionChanges);
     menuView->insertAction(actionTransitionText, actionOutline);
+    menuView->insertAction(actionTransitionText, actionRepository);
     menuView->insertSeparator(actionTransitionText);
     treeDock->installEventFilter(this);
     propertiesDock->installEventFilter(this);
     changesDock->installEventFilter(this);
     outlineDock->installEventFilter(this);
+    repositoryDock->installEventFilter(this);
     // the choice changes by a View entry or a close button only, never by a tab switch
     connect(actionStructureTree, &QAction::triggered, &sm, &SettingsManager::setShowStructureTree);
     connect(actionProperties, &QAction::triggered, &sm, &SettingsManager::setShowProperties);
     connect(actionChanges, &QAction::triggered, &sm, &SettingsManager::setShowChanges);
     connect(actionOutline, &QAction::triggered, &sm, &SettingsManager::setShowOutline);
+    connect(actionRepository, &QAction::triggered, &sm, &SettingsManager::setShowRepository);
     connect(&sm, &SettingsManager::structureTreeChanged, this, &CyberiadaSMEditorWindow::applyDocks);
     connect(&sm, &SettingsManager::propertiesChanged, this, &CyberiadaSMEditorWindow::applyDocks);
     connect(&sm, &SettingsManager::changesChanged, this, &CyberiadaSMEditorWindow::applyDocks);
     connect(&sm, &SettingsManager::outlineChanged, this, &CyberiadaSMEditorWindow::applyDocks);
+    connect(&sm, &SettingsManager::repositoryChanged, this, &CyberiadaSMEditorWindow::applyDocks);
     applyDocks();
 }
 
@@ -2275,6 +2456,11 @@ void CyberiadaSMEditorWindow::applyDocks()
         rows[i].entry->setEnabled(has);
         rows[i].dock->setVisible(has && rows[i].chosen);
     }
+    // the git dock is in every tab while git is in use (EDIT-UI-6, EDIT-GIT-1)
+    bool git = !GitProcess::program().isEmpty();
+    actionRepository->setEnabled(git);
+    actionRepository->setToolTip(git ? QString() : GitProcess::unavailableReason());
+    repositoryDock->setVisible(git && sm.getShowRepository());
     bindOutline();
 }
 
@@ -2346,11 +2532,15 @@ void CyberiadaSMEditorWindow::openOutlineImage(const QModelIndex& index)
 
 bool CyberiadaSMEditorWindow::eventFilter(QObject* watched, QEvent* event)
 {
+    if (m_changeList && watched == m_changeList->viewport() && event->type() == QEvent::Resize) {
+        fitChangeColumn();
+    }
     if (event->type() == QEvent::Close) {
         if (watched == treeDock) SettingsManager::instance().setShowStructureTree(false);
         if (watched == propertiesDock) SettingsManager::instance().setShowProperties(false);
         if (watched == changesDock) SettingsManager::instance().setShowChanges(false);
         if (watched == outlineDock) SettingsManager::instance().setShowOutline(false);
+        if (watched == repositoryDock) SettingsManager::instance().setShowRepository(false);
     }
     return QMainWindow::eventFilter(watched, event);
 }

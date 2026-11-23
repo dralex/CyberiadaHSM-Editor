@@ -3,6 +3,9 @@
 
 #include <QDialog>
 
+class QCheckBox;
+class QLabel;
+class QLineEdit;
 class QTableWidget;
 class ShortcutMap;
 class ShortcutsPage;
@@ -28,6 +31,9 @@ private slots:
     void slotApplySettings();
     void slotResetSettings();
     void slotInterfaceLanguageChanged();
+    // the line of the git program found for the path typed (EDIT-GIT-1)
+    void slotGitProgramChanged();
+    void slotGitBrowse();
 
 private:
     void loadFromSettings();
@@ -38,6 +44,10 @@ private:
     QColor selectionColor;
     // the plugin interpreters by logical name (EDIT-PLUG-31)
     QTableWidget* interpreters = nullptr;
+    // the Git page (EDIT-GIT-1): the program, the line of the program found, Use git
+    QLineEdit* gitProgram = nullptr;
+    QLabel* gitFound = nullptr;
+    QCheckBox* gitEnabled = nullptr;
     ShortcutMap* shortcutMap = nullptr;
     ShortcutsPage* shortcuts = nullptr;
     AutoreplacePage* autoreplace = nullptr;
@@ -46,6 +56,9 @@ private:
 public:
     AutoreplacePage* autoreplacePage() const { return autoreplace; }
     QTableWidget* interpreterTable() const { return interpreters; }
+    QLineEdit* gitProgramEdit() const { return gitProgram; }
+    QLabel* gitFoundLabel() const { return gitFound; }
+    QCheckBox* gitEnabledBox() const { return gitEnabled; }
     ShortcutsPage* shortcutsPage() const { return shortcuts; }
     TextSchemePanel* textSchemePanel() const { return textSchemes; }
 };

@@ -1,7 +1,7 @@
 # Git in the Editor — Architecture
 
-**Document version:** 0.3 (2026-11-23) — specified (stage 0); the disk check (stage 2) and
-the git core (stage 3) implemented. The requirements are
+**Document version:** 0.4 (2026-11-23) — specified (stage 0); the disk check (stage 2), the
+git core (stage 3) and the Repository dock (stage 4) implemented. The requirements are
 `EDIT-GIT-1..23` in `EDITOR-SPEC.md` §4.20, the disk check `EDIT-DOC-13..18` §4.11 and the
 docks `EDIT-UI-6`.
 
@@ -124,11 +124,13 @@ knows: the dock follows the active tab, and a tab of another repository brings i
                  menu, the branch button                           repository_view.*
 ```
 
-* One model with a layout, not two proxies: both layouts are a rebuild of the same snapshot,
-  and the tree keeps the expansion by path across a rebuild.
-* A rebuild after a read replaces the rows with `beginResetModel` only when the structure
-  changed; otherwise the letters change in place (`dataChanged`), so the selection and the
-  scroll stay.
+* One model with a layout, not two proxies: both layouts are a rebuild of the same snapshot.
+* Every read rebuilds the rows (`beginResetModel`); the view keeps the expanded folders and
+  groups by their paths, the scroll and the chosen files across it, per root. A folder or a
+  group shown first opens when it holds a change.
+* The open and unsaved marks change the names in place (`dataChanged`).
+* The batch mode starts the dock from the defaults and stores nothing, so a script runs the
+  same on every machine; the GUI stores the layout, Changed only and Ignored per user.
 * `RepositoryModel::files(indexes)` turns a selection into files: a folder or a group gives
   all its files.
 
@@ -304,7 +306,9 @@ second Git.
   spaces and newlines, the branch headers (initial, detached, an upstream).
 * The service on temporary repositories in `l4-git` (`QSKIP` without git): the roots, a read
   waited for and one in the background, the ignored files, the watcher; the disk check in
-  `l4-disk`; the dock and the dialogs follow.
+  `l4-disk`; the model under `QAbstractItemModelTester`, the dock following the tabs, the
+  rows opened, the view state per root, the stored toolbar, the Git page and a save read in
+  `l4-repository`.
 * The `git-*`, `repository-*` and `disk-*` batch cases with `--dump-repository`,
   `--dump-history` and `--dump-tabs` goods (`docs/TESTING.md`, Git).
 

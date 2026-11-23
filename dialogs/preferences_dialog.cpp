@@ -12,6 +12,12 @@
 #include <QDebug>
 
 #include <QSet>
+#include <QCheckBox>
+#include <QDir>
+#include <QFileDialog>
+#include <QHBoxLayout>
+#include <QLineEdit>
+#include <QPushButton>
 
 #include "settings_manager.h"
 #include "fontmanager.h"
@@ -20,6 +26,7 @@
 #include "shortcuts_page.h"
 #include "autoreplace_page.h"
 #include "text_scheme_panel.h"
+#include "git_process.h"
 
 PreferencesDialog::PreferencesDialog(QWidget *parent, ShortcutMap* keys) :
     QDialog(parent),
@@ -40,6 +47,28 @@ PreferencesDialog::PreferencesDialog(QWidget *parent, ShortcutMap* keys) :
     interpreters->verticalHeader()->hide();
     pluginsLayout->addWidget(interpreters);
     ui->tabWidget->addTab(pluginsTab, tr("Plugins"));
+    // git: the program, empty for the git of PATH, and the switch of all git (EDIT-GIT-1)
+    QWidget* gitTab = new QWidget(this);
+    QVBoxLayout* gitLayout = new QVBoxLayout(gitTab);
+    gitEnabled = new QCheckBox(tr("Use git"), gitTab);
+    gitEnabled->setObjectName("gitEnabledCheckBox");
+    gitLayout->addWidget(gitEnabled);
+    gitLayout->addWidget(new QLabel(tr("The git program (empty: looked up in PATH)"), gitTab));
+    QHBoxLayout* programRow = new QHBoxLayout();
+    gitProgram = new QLineEdit(gitTab);
+    gitProgram->setObjectName("gitProgramEdit");
+    programRow->addWidget(gitProgram, 1);
+    QPushButton* browse = new QPushButton(tr("Browse..."), gitTab);
+    programRow->addWidget(browse);
+    gitLayout->addLayout(programRow);
+    gitFound = new QLabel(gitTab);
+    gitFound->setObjectName("gitFoundLabel");
+    gitFound->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    gitLayout->addWidget(gitFound);
+    gitLayout->addStretch(1);
+    ui->tabWidget->addTab(gitTab, tr("Git"));
+    connect(gitProgram, &QLineEdit::textChanged, this, &PreferencesDialog::slotGitProgramChanged);
+    connect(browse, &QPushButton::clicked, this, &PreferencesDialog::slotGitBrowse);
     autoreplace = new AutoreplacePage(this);
     ui->tabWidget->addTab(autoreplace, tr("Autoreplace"));
     textSchemes = new TextSchemePanel(ui->textSchemeGroup);
@@ -101,6 +130,19 @@ void PreferencesDialog::slotInterfaceLanguageChanged()
     QString chosen = resolveUiLanguage(ui->interfaceLanguageComboBox->currentData().toString(),
                                        QLocale::system().uiLanguages());
     ui->interfaceLanguageNote->setVisible(chosen != currentUiLanguage());
+}
+
+void PreferencesDialog::slotGitProgramChanged()
+{
+    QString found = GitProcess::describe(gitProgram->text().trimmed());
+    gitFound->setText(found.isEmpty() ? tr("git is not found") : found);
+}
+
+void PreferencesDialog::slotGitBrowse()
+{
+    QString path = QFileDialog::getOpenFileName(this, tr("The git program"), gitProgram->text(), QString(),
+                                                nullptr, QFileDialog::DontUseNativeDialog);
+    if (!path.isEmpty()) gitProgram->setText(QDir::toNativeSeparators(path));
 }
 
 void PreferencesDialog::slotAcceptSettings()
@@ -172,6 +214,9 @@ void PreferencesDialog::loadFromSettings()
         interpreters->setItem(row, 1, new QTableWidgetItem(i.value()));
     }
     interpreters->insertRow(interpreters->rowCount());
+    gitEnabled->setChecked(sm.getGitEnabled());
+    gitProgram->setText(QDir::toNativeSeparators(sm.getGitProgram()));
+    slotGitProgramChanged();
     if (shortcuts) shortcuts->load();
     autoreplace->load();
     textSchemes->load();
@@ -227,6 +272,8 @@ void PreferencesDialog::saveSettings()
     for (QMap<QString, QString>::const_iterator i = old.begin(); i != old.end(); i++) {
         if (!kept.contains(i.key())) sm.setInterpreterPath(i.key(), QString());
     }
+    sm.setGitProgram(QDir::fromNativeSeparators(gitProgram->text().trimmed()));
+    sm.setGitEnabled(gitEnabled->isChecked());
     if (shortcuts) shortcuts->apply();
     autoreplace->apply();
     textSchemes->apply();

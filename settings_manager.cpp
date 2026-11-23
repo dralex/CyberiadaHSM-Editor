@@ -116,6 +116,10 @@ void SettingsManager::load() {
     fillAsYouType = s.value("editor/fillAsYouType", false).toBool();
     gitProgram = s.value("git/program", QString()).toString();
     gitEnabled = s.value("git/enabled", true).toBool();
+    showRepository = s.value("display/showRepository", true).toBool();
+    repositoryLayout = s.value("git/layout", 0).toInt();
+    repositoryChangedOnly = s.value("git/changedOnly", false).toBool();
+    repositoryIgnored = s.value("git/ignored", false).toBool();
     showModeLine = s.value("display/showModeLine", true).toBool();
     boldActionPrefix = s.value("display/boldActionPrefix", true).toBool();
     boldEventName = s.value("display/boldEventName", true).toBool();
@@ -196,6 +200,7 @@ void SettingsManager::loadDefaults()
     setShowProperties(true);
     setShowChanges(true);
     setShowOutline(true);
+    setShowRepository(true);
     setShowServiceObjects(false);
     setShowComponentComments(false);
     setLoggingEnabled(false);
@@ -216,6 +221,9 @@ void SettingsManager::loadDefaults()
     setFillAsYouType(false);
     setGitProgram(QString());
     setGitEnabled(true);
+    setRepositoryLayout(0);
+    setRepositoryChangedOnly(false);
+    setRepositoryIgnored(false);
     setShowModeLine(true);
     setBoldActionPrefix(true);
     setBoldEventName(true);
@@ -336,6 +344,39 @@ void SettingsManager::setGitEnabled(bool value)
         gitEnabled = value;
         QSettings().setValue("git/enabled", value);
         emit gitSettingsChanged();
+    }
+}
+
+void SettingsManager::setShowRepository(bool value)
+{
+    if (showRepository != value) {
+        showRepository = value;
+        QSettings().setValue("display/showRepository", value);
+        emit repositoryChanged(value);
+    }
+}
+
+void SettingsManager::setRepositoryLayout(int value)
+{
+    if (repositoryLayout != value) {
+        repositoryLayout = value;
+        QSettings().setValue("git/layout", value);
+    }
+}
+
+void SettingsManager::setRepositoryChangedOnly(bool value)
+{
+    if (repositoryChangedOnly != value) {
+        repositoryChangedOnly = value;
+        QSettings().setValue("git/changedOnly", value);
+    }
+}
+
+void SettingsManager::setRepositoryIgnored(bool value)
+{
+    if (repositoryIgnored != value) {
+        repositoryIgnored = value;
+        QSettings().setValue("git/ignored", value);
     }
 }
 

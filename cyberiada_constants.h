@@ -126,6 +126,8 @@
 
 // the changes of the watched files joined into one disk check (EDIT-DOC-13)
 #define DISK_CHECK_DELAY_MS      200
+// the status of the work tree read at most once in this time (EDIT-GIT-6)
+#define REPOSITORY_READ_INTERVAL_MS 1000
 // a JSON tab (EDIT-MODE-26, docs/MODES.md, JSON): the check after an edit, the underline and
 // the margin number of the error, the bar under the text
 #define JSON_CHECK_DELAY_MS      300

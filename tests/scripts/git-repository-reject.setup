@@ -1,0 +1,2 @@
+git init -q
+copy diagrams/hierarchy.graphml h.graphml

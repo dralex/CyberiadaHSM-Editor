@@ -119,6 +119,16 @@ public:
     void setGitProgram(const QString& value);
     bool getGitEnabled() const { return gitEnabled; }
     void setGitEnabled(bool value);
+    // the Repository dock (EDIT-UI-6, EDIT-GIT-5): shown, its layout (0 tree, 1 groups),
+    // Changed only and Ignored
+    bool getShowRepository() const { return showRepository; }
+    void setShowRepository(bool value);
+    int getRepositoryLayout() const { return repositoryLayout; }
+    void setRepositoryLayout(int value);
+    bool getRepositoryChangedOnly() const { return repositoryChangedOnly; }
+    void setRepositoryChangedOnly(bool value);
+    bool getRepositoryIgnored() const { return repositoryIgnored; }
+    void setRepositoryIgnored(bool value);
     // the mode line under a source editor (EDIT-MODE-31)
     bool getShowModeLine() const { return showModeLine; }
     void setShowModeLine(bool value);
@@ -243,6 +253,7 @@ signals:
     void propertiesChanged(bool);
     void changesChanged(bool);
     void outlineChanged(bool);
+    void repositoryChanged(bool);
     void serviceObjectsChanged(bool);
     void componentCommentsChanged(bool);
     void loggingChanged(bool);
@@ -320,6 +331,10 @@ private:
     bool fillAsYouType = false;
     QString gitProgram;
     bool gitEnabled = true;
+    bool showRepository = true;
+    int repositoryLayout = 0;
+    bool repositoryChangedOnly = false;
+    bool repositoryIgnored = false;
     bool showModeLine = true;
 
     // files

@@ -1,0 +1,8 @@
+# ignored files: a pattern and a folder
+git init -q
+git symbolic-ref HEAD refs/heads/main
+copy diagrams/hierarchy.graphml h.graphml
+write .gitignore *.log
+write run.log log
+git add -A
+git commit -q -m first

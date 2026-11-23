@@ -30,6 +30,7 @@
 #include "batch_git.h"
 #include "editor_document.h"
 #include "repository_service.h"
+#include "repository_view.h"
 #include "smeditor_window.h"
 
 // the length of a short hash, as git abbreviates it by default
@@ -37,12 +38,45 @@ static const int SHORT_HASH = 7;
 
 bool isGitVerb(const QString& cmd)
 {
-	return cmd == "git";
+	return cmd == "git" || cmd == "repository";
+}
+
+// repository layout tree|groups, filter all|changed, ignored on|off: the state of the dock
+// (EDIT-GIT-5), not stored
+static bool runRepositoryVerb(CyberiadaSMEditorWindow* win, const QStringList& tokens, QString* error)
+{
+	RepositoryView* view = win->repositoryView();
+	if (tokens.size() != 3) {
+		*error = "repository needs layout, filter or ignored and its value";
+		return false;
+	}
+	const QString& what = tokens.at(1);
+	const QString& value = tokens.at(2);
+	if (what == "layout" && (value == "tree" || value == "groups")) {
+		view->setLayoutMode(value == "tree" ? RepositoryModel::layoutTree : RepositoryModel::layoutGroups);
+		return true;
+	}
+	if (what == "filter" && (value == "all" || value == "changed")) {
+		view->setChangedOnly(value == "changed");
+		return true;
+	}
+	if (what == "ignored" && (value == "on" || value == "off")) {
+		view->setIgnored(value == "on");
+		RepositoryService* service = win->repositoryOf(win->currentTab());
+		if (service) {
+			service->setIgnored(value == "on");
+			service->refresh(true);
+		}
+		return true;
+	}
+	*error = QString("repository %1 %2: layout tree|groups, filter all|changed, ignored on|off").arg(what, value);
+	return false;
 }
 
 bool runGitVerb(CyberiadaSMEditorWindow* win, const QString& line, QString* error)
 {
 	QStringList tokens = line.trimmed().split(QRegularExpression("\\s+"));
+	if (tokens.first() == "repository") return runRepositoryVerb(win, tokens, error);
 	if (tokens.size() < 2) {
 		*error = "git needs a verb";
 		return false;

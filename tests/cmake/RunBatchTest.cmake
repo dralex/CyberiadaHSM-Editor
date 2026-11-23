@@ -62,6 +62,7 @@ function(normalize_subject_coords in_file out_file)
   string(REGEX REPLACE "underline: \\[[^]]*\\]" "underline: [#]" _text "${_text}")
   # the view state a save writes is the zoom and the scroll of the offscreen view
   string(REGEX REPLACE "cyberiadaEditorView: '[^']*'" "cyberiadaEditorView: '#'" _text "${_text}")
+  string(REGEX REPLACE "cyberiadaEditorView/ [-0-9. ]*" "cyberiadaEditorView/ #" _text "${_text}")
   # a commit hash: the bytes of the test files differ on Windows (CRLF), so do the hashes
   string(REGEX REPLACE "detached [0-9a-f]+" "detached #" _text "${_text}")
   file(WRITE "${out_file}" "${_text}")

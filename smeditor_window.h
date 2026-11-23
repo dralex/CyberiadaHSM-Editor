@@ -24,6 +24,8 @@
 #ifndef CYBERIADA_SM_WINDOW
 #define CYBERIADA_SM_WINDOW
 
+#include <QElapsedTimer>
+#include <QPointer>
 #include <QMainWindow>
 #include <QList>
 #include <QSet>
@@ -33,6 +35,7 @@
 #include "cyberiadasm_editor_document.h"
 #include "text_document.h"
 #include "diff_document.h"
+#include "repository_service.h"
 #include "text_diff_document.h"
 #include "plugin_runner.h"
 #include "meta_choice_menu.h"
@@ -50,7 +53,7 @@ class PluginsMenu;
 class PluginDock;
 class FindBar;
 class DiskBar;
-class RepositoryService;
+class RepositoryView;
 class QFileSystemWatcher;
 class QTimer;
 class ShortcutMap;
@@ -174,6 +177,14 @@ public:
     RepositoryService*      repositoryOf(EditorDocument* doc, bool again = false) const;
     // the line of the Repository dock for a tab without a work tree
     QString                 noRepositoryReason(EditorDocument* doc) const;
+    // the Repository dock (EDIT-GIT-3..8, EDIT-UI-6): its contents, the dock, its View entry
+    RepositoryView*         repositoryView() const { return m_repositoryView; }
+    QDockWidget*            repositoryDock = nullptr;
+    QAction*                actionRepository = nullptr;
+    // the work tree the dock shows, nullptr without one
+    RepositoryService*      shownRepository() const { return m_repository.data(); }
+    // the dock follows the active tab, its work tree looked up anew with again (EDIT-GIT-3)
+    void                    updateRepositoryDock(bool again = false);
     // a Save may write the file: unchanged on disk since the tab read or wrote it, or
     // the user agreed; the batch refuses with the reason (EDIT-DOC-17)
     bool                    confirmDiskOverwrite(EditorDocument* doc, QString* error);
@@ -466,6 +477,19 @@ private:
     void                    updateDiskWatch();
     void                    slotDiskChanged(const QString& path);
     void                    slotDiskPending();
+    // the Repository dock: the status read at most once a second, only while it is shown
+    RepositoryView*         m_repositoryView = nullptr;
+    QPointer<RepositoryService> m_repository;
+    QTimer*                 m_repositoryTimer = nullptr;
+    QElapsedTimer           m_repositoryRead;
+    bool                    m_repositoryStale = false;
+    void                    createRepositoryDock();
+    void                    fitChangeColumn();
+    void                    scheduleRepositoryRead();
+    void                    repositoryStatusChanged();
+    void                    updateRepositoryMarks();
+    void                    updateRepositoryTitle();
+    void                    openRepositoryFile(const QString& path);
     ShortcutMap*            m_shortcuts = nullptr;
     void                    initShortcuts();
     void                    commitPendingEdit();
