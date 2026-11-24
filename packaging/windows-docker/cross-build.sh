@@ -83,6 +83,9 @@ if [ "$TEST" = "1" ]; then
     fi
     export WINEDEBUG=-all
     export WINEPREFIX=/tmp/wine
+    # Wine maps the file names through the locale charset: ASCII in the bare
+    # container, so the non-ASCII names of the suites (UTF-8 path tests) fail
+    export LC_ALL=C.UTF-8
     # let Wine find the cross-built test exes' DLLs: the MinGW runtime and the
     # installed dep DLLs live in the prefix bin, htgeom.dll in the prefix lib
     export WINEPATH="$MXE_PREFIX/bin;$MXE_PREFIX/lib"

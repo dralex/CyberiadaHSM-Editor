@@ -74,7 +74,9 @@ The library suites run under **Wine** inside the container by default (`--no-tes
 skips them). `add_test` executables launch through `CMAKE_CROSSCOMPILING_EMULATOR`;
 for suites whose harness spawns the exe itself, the container also registers a
 Wine binfmt when `/proc/sys/fs/binfmt_misc` is writable (a host that provides it,
-or `docker run --privileged`). The editor GUI tests stay on the native-Linux path
+or `docker run --privileged`). The tests run with `LC_ALL=C.UTF-8`: Wine maps
+the file names through the locale charset, ASCII in the bare container, and the
+suites create files with non-ASCII names. The editor GUI tests stay on the native-Linux path
 (`../build-toolchain.sh`) — their offscreen/fontconfig setup does not translate to
 Wine.
 
