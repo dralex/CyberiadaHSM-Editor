@@ -60,6 +60,9 @@ FileKind fileKind(const QString& path)
         "tsx", "jsx", "cs", "java", "kt", "lua", "rs", "go", "rb", "pl", "php", "swift", "sh",
         "bash", "bat", "cmd", "ps1", "cmake", "qml", "json", "xml", "yaml", "yml", "toml", "sql"
     };
+    static const QSet<QString> imageSuffixes = {
+        "png", "jpg", "jpeg", "gif", "bmp", "svg", "webp", "ico", "tif", "tiff", "xpm"
+    };
     QString name = path.mid(path.lastIndexOf(PATH_SEPARATOR) + 1);
     if (codeNames.contains(name)) return FileKind::code;
     int dot = name.lastIndexOf(SUFFIX_SEPARATOR);
@@ -67,6 +70,7 @@ FileKind fileKind(const QString& path)
     if (suffix == "graphml") return FileKind::diagram;
     if (suffix == "md" || suffix == "markdown") return FileKind::markdown;
     if (codeSuffixes.contains(suffix)) return FileKind::code;
+    if (imageSuffixes.contains(suffix)) return FileKind::image;
     return FileKind::text;
 }
 
@@ -214,6 +218,7 @@ static QIcon kindIcon(FileKind kind)
     case FileKind::diagram:  return QIcon(":/Icons/images/document-new.png");
     case FileKind::markdown: return QIcon(":/Icons/images/document-new-md.png");
     case FileKind::code:     return QIcon(":/Icons/images/file-code.png");
+    case FileKind::image:    return QIcon(":/Icons/images/insert-image.png");
     case FileKind::folder:   return QIcon(":/Icons/images/folder.png");
     default:                 return QIcon(":/Icons/images/file-text.png");
     }

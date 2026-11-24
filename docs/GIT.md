@@ -1,7 +1,7 @@
 # Git in the Editor — Architecture
 
 **Document version:** 0.8 (2026-11-24), the status markers on the icons, the icon tools of
-the dock in one row, the alternating History rows; 0.7, the docks at the right — specified (stage 0) and implemented: the disk check
+the dock in one row, the alternating History rows, the docks apart from the structure tree; 0.7, the docks at the right — specified (stage 0) and implemented: the disk check
 (stage 2), the git core (stage 3), the Repository dock (stage 4), the verbs, the commit, the
 compares and the history (stage 5), the branches (stage 6); the git plugin retired from the
 packaging (stage 7). The requirements are
@@ -16,7 +16,7 @@ knows: the dock follows the active tab, and a tab of another repository brings i
 
 ```
  CyberiadaSMEditorWindow
- | Git menu       Repository dock, History dock: tabs of the structure tree (right)
+ | Git menu       Repository dock, History dock: tabs of each other (right, below the tree)
  | Commit dialog  Revision dialog  Branch dialog            Preferences > Git
  |        | verbs, paths, revisions                 ^ snapshot, log, results, errors
  |        v                                         |
@@ -147,7 +147,8 @@ knows: the dock follows the active tab, and a tab of another repository brings i
   them, so the marker stays sharp at any icon size and device pixel ratio.
 * The kind of a file is told by its name only (`fileKind`): nothing is read from the disk.
 * The batch mode starts the dock from the defaults and stores nothing, so a script runs the
-  same on every machine; the GUI stores the layout, Changed only and Ignored per user.
+  same on every machine; the GUI stores the layout and Changed only per user, Ignored is off
+  at every start.
 * `RepositoryModel::files(indexes)` turns a selection into files: a folder or a group gives
   all its files.
 

@@ -14,8 +14,9 @@ tools (`docs/MARKDOWN.md`, Tools).
 0.25: Fill Paragraph, Unfill Paragraph and Fill as You Type (`EDIT-MD-18..23`).
 0.26: View > Mode Line (`EDIT-MODE-31`).
 0.27: Insert Formula (`EDIT-MD-24..27`).
-0.28: the Git menu, the Repository and History docks (tabs of the structure tree at the
-right, as Inkscape docks its dialogs), the disk bar of a tab
+0.28: the Git menu, the Repository and History docks (tabs of each other at the right,
+below the structure tree and the properties, as Inkscape stacks its dialogs), the disk bar
+of a tab
 (`EDIT-GIT-1..23`, `EDIT-DOC-13..18`, `docs/GIT.md`), specified.
 
 The window holds several documents at once. The menus, the toolbars, the tab line and the
@@ -41,9 +42,9 @@ CyberiadaSMEditorWindow (QMainWindow)                                   GLOBAL
  |
  | central widget (QVBoxLayout)              | right dock area (EDIT-UI-6)
  |  +--------------------------------------+ | +---------------------------------+
- |  | documentTabs : QTabBar  hidden < 2   | | | [Structure tree|Repository|Hi..]|
- |  | [ a.graphml ][ a.graphml [FA]* ]     | | |   treeDock: SMView; tabbed with |
- |  |                                      | | |   repositoryDock, historyDock   |
+ |  | documentTabs : QTabBar  hidden < 2   | | | treeDock "Structure tree"  [_][x]|
+ |  | [ a.graphml ][ a.graphml [FA]* ]     | | |   SMView                        |
+ |  |                                      | | |                                 |
  |  +--------------------------------------+ | +---------------------------------+
  |  | documentStack : QStackedWidget       | | | propertiesDock "Properties"[_][x]|
  |  |   page i = documents[i]->page()      | | |   propertiesWidget              |
@@ -55,6 +56,10 @@ CyberiadaSMEditorWindow (QMainWindow)                                   GLOBAL
  |  +--------------------------------------+ | +---------------------------------+
  |                                           | | outlineDock "Outline"      [_][x]|
  |                                           | |   outlineView (a Markdown tab)  |
+ |                                           | +---------------------------------+
+ |                                           | | [Repository|History]  (tabs)    |
+ |                                           | |   repositoryDock, historyDock:  |
+ |                                           | |   every tab, git in use         |
  |                                           | +---------------------------------+
  |  View > Structure tree / Properties / Changes / Outline / Repository / History: the docks'
  |  toggle actions, kept in the settings; applyDocks shows the docks of ModeTraits::docks as

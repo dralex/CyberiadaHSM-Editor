@@ -249,7 +249,10 @@ void TestRepository::test_file_kinds()
 	                         "Makefile", "sub/CMakeLists.txt", "Dockerfile", "data.json", "ci.yml"}) {
 		QCOMPARE(fileKind(code), FileKind::code);
 	}
-	for (const char* text : {"notes.txt", "run.log", "LICENSE", ".gitignore", "image.svg", "dir.d/file"}) {
+	for (const char* image : {"image.svg", "docs/blink.PNG", "photo.jpeg", "icon.ico"}) {
+		QCOMPARE(fileKind(image), FileKind::image);
+	}
+	for (const char* text : {"notes.txt", "run.log", "LICENSE", ".gitignore", "dir.d/file", "image.svg.bak"}) {
 		QCOMPARE(fileKind(text), FileKind::text);
 	}
 	QCOMPARE(fileKind("build/"), FileKind::folder);
@@ -492,20 +495,20 @@ void TestRepository::test_toolbar_stored()
 	QVERIFY(view->model()->changedOnly());
 	QVERIFY(SettingsManager::instance().getRepositoryChangedOnly());
 	view->ignoredAction()->trigger();
-	QVERIFY(SettingsManager::instance().getRepositoryIgnored());
+	QVERIFY(view->ignored());
 	{
-		// a new window starts as the user left the dock
+		// a new window starts as the user left the dock, but with no ignored files (0.81)
 		CyberiadaSMEditorWindow again;
 		QCOMPARE(again.repositoryView()->model()->layout(), RepositoryModel::layoutGroups);
 		QVERIFY(again.repositoryView()->model()->changedOnly());
-		QVERIFY(again.repositoryView()->ignored());
+		QVERIFY(!again.repositoryView()->ignored());
 	}
+	QVERIFY(!QSettings().contains("git/ignored"));
 	view->treeAction()->trigger();
 	view->changedOnlyAction()->trigger();
 	view->ignoredAction()->trigger();
 	QCOMPARE(SettingsManager::instance().getRepositoryLayout(), int(RepositoryModel::layoutTree));
 	QVERIFY(!SettingsManager::instance().getRepositoryChangedOnly());
-	QVERIFY(!SettingsManager::instance().getRepositoryIgnored());
 }
 
 // EDIT-GIT-1: the Git page: the program found, Use git off hides the dock
@@ -847,10 +850,11 @@ void TestRepository::test_docks_right()
 	QVERIFY(QTest::qWaitForWindowExposed(&window));
 	QCOMPARE(window.dockWidgetArea(window.repositoryDock), Qt::RightDockWidgetArea);
 	QCOMPARE(window.dockWidgetArea(window.historyDock), Qt::RightDockWidgetArea);
-	QList<QDockWidget*> tabs = window.tabifiedDockWidgets(window.treeDock);
-	QVERIFY(tabs.contains(window.repositoryDock) && tabs.contains(window.historyDock));
+	// tabs of each other, apart from the structure tree (EDIT-UI-6, 0.81)
+	QVERIFY(window.tabifiedDockWidgets(window.treeDock).isEmpty());
+	QCOMPARE(window.tabifiedDockWidgets(window.repositoryDock), QList<QDockWidget*>() << window.historyDock);
 	if (!haveGit) return;
-	QCOMPARE(frontTab(&window, "Structure tree"), QString("Structure tree"));
+	QCOMPARE(frontTab(&window, "History"), QString("Repository"));
 	QString error;
 	QVERIFY(window.openFile("texts/notes.md", &error));
 	QTest::qWait(50);
@@ -858,7 +862,10 @@ void TestRepository::test_docks_right()
 	QCOMPARE(frontTab(&window, "Repository"), QString("Repository"));
 	QVERIFY(window.openFile("diagrams/hierarchy.graphml", &error));
 	QTest::qWait(50);
-	QCOMPARE(frontTab(&window, "Structure tree"), QString("Structure tree"));
+	// a diagram tab shows the tree and the Repository at once
+	QVERIFY(!window.treeDock->visibleRegion().isEmpty());
+	QVERIFY(!window.repositoryDock->visibleRegion().isEmpty());
+	QVERIFY(window.repositoryDock->geometry().top() > window.treeDock->geometry().bottom());
 	// the Repository in front over a work tree with the markers of every kind, for the eye:
 	// changed, staged, staged and changed again, added, deleted, untracked code
 	QString root = makeRepository("docks-right");

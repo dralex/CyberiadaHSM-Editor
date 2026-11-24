@@ -1110,18 +1110,19 @@ The interface translations and their workflow are in `docs/TRANSLATION.md`.
   tree or panel keeps following the active document and the canvas selection, so showing it
   again needs no refresh; a tab switch keeps the sizes of the docks, the tree only grows once
   to fit a wider structure. The Repository and the History docks (`EDIT-GIT-3/15`, 0.80) are
-  at the right too, tabs of the structure tree as Inkscape docks its dialogs, the tabs over the
-  docks: in every tab, the tree in front in a diagram tab — again when it comes back with one —
-  the Repository in a tab without the tree. Their View entries are *Repository* and *History*,
+  at the right too, below the others as Inkscape stacks its dialogs: tabs of each other, apart
+  from the structure tree (0.81), the tabs over the docks, the Repository in front; they are in
+  every tab, so a diagram tab shows the tree, the properties and the Repository at once. Their
+  View entries are *Repository* and *History*,
   shown by default; without a git program or with *Use git* off (`EDIT-GIT-1`) they are
   hidden and their entries greyed. *design*
 
   ```
-  tab                         Structure tree   Properties   Changes   Outline
-  HSM, inspection, FA               x              x
-  diff, text diff                                               x
-  Markdown                                                                x
-  text, a language
+  tab                         Structure tree   Properties   Changes   Outline   Repository|History
+  HSM, inspection, FA               x              x                                 x
+  diff, text diff                                               x                    x
+  Markdown                                                                x          x
+  text, a language                                                                   x
   ```
 - `EDIT-UI-7` MUST [A]: `CYBERIADA_PRO_CONFIG_HOME` keeps the preferences in the ini file
   `<folder>/Cyberiada/CyberiadaPro.ini` and `CYBERIADA_PRO_DATA_HOME` the user data, the user
@@ -1841,7 +1842,8 @@ docks, the Git menu, the commit, the compares with a revision and the local bran
 architecture is `docs/GIT.md`. Specified in 0.80; it supersedes the git plugin of
 cybersphere-git-plugin, whose textconv driver is `cybparser listing` of libcyberiadaml. The
 icons of the files with the status markers instead of the Index and Tree columns, the bold
-open files, the icon tools of the dock in one row and the alternating rows of the History in
+open files, the icon tools of the dock in one row, the image kind, *Ignored* off at every
+start, the docks apart from the structure tree and the alternating rows of the History in
 0.81.
 
 ```
@@ -1916,8 +1918,9 @@ open files, the icon tools of the dock in one row and the alternating rows of th
   *markdown* `.md`, `.markdown` (the page of New Markdown), *code* (a page with `</>`): `.c .h
   .cc .cpp .cxx .hh .hpp .hxx .ino .py .pyw .js .mjs .ts .tsx .jsx .cs .java .kt .lua .rs .go
   .rb .pl .php .swift .sh .bash .bat .cmd .ps1 .cmake .qml .json .xml .yaml .yml .toml .sql`
-  and the names `Makefile`, `makefile`, `GNUmakefile`, `CMakeLists.txt`, `Dockerfile`; *text*
-  (a page with lines) the rest; a folder. The marker is a disk in the lower right corner of the
+  and the names `Makefile`, `makefile`, `GNUmakefile`, `CMakeLists.txt`, `Dockerfile`; *image*
+  (the picture of Insert Image): `.png .jpg .jpeg .gif .bmp .svg .webp .ico .tif .tiff .xpm`;
+  *text* (a page with lines) the rest; a folder. The marker is a disk in the lower right corner of the
   icon: green when the change is staged only (an index
   letter), orange when it is in the work tree only (a work tree letter, an untracked file),
   green and orange halves when both, red when conflicted; its glyph is the kind of the change —
@@ -1931,13 +1934,12 @@ open files, the icon tools of the dock in one row and the alternating rows of th
   files, the folders first, the changed entries before the unchanged ones, then by name; a
   folder holding a change has the marker of the changes under it, without a glyph — green,
   orange, both halves or red (`EDIT-GIT-4`), its tooltip saying which. *Groups*: *Conflicts*,
-  *Staged*,
-  *Changes*, *Untracked* and, with *Ignored*, *Ignored*, the paths flat in each, a file staged
+  *Staged*, *Changes*, *Untracked* and, with *Ignored*, *Ignored*, the paths flat in each, a file staged
   and changed again in both Staged and Changes, the empty groups and the unchanged files left
   out; the icon of a group is its marker alone — red `!`, green, orange, orange `?`, a grey
   disk — so the groups are the legend of the markers. *Changed only* keeps in the tree the
-  changed files and the folders holding them. The layout, *Changed only* and *Ignored* are
-  stored per user. *design*
+  changed files and the folders holding them. The layout and *Changed only* are stored per
+  user; *Ignored* is not (0.81): every start of the editor shows no ignored files. *design*
 - `EDIT-GIT-6` MUST [A]: the status is read again after a save of a tab of the repository,
   after every git command of the editor, when the git folder changes (the index, `HEAD`, the
   refs), on the window activation and on Refresh (the dock toolbar, Git > Refresh): at most

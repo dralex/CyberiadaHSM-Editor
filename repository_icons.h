@@ -30,7 +30,7 @@
 #include "repository_status.h"
 
 // the kind of a file told by its name (EDIT-GIT-4)
-enum class FileKind { diagram = 0, markdown, code, text, folder };
+enum class FileKind { diagram = 0, markdown, code, image, text, folder };
 
 FileKind fileKind(const QString& path);
 

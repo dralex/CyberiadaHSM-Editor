@@ -129,8 +129,6 @@ public:
     void setRepositoryLayout(int value);
     bool getRepositoryChangedOnly() const { return repositoryChangedOnly; }
     void setRepositoryChangedOnly(bool value);
-    bool getRepositoryIgnored() const { return repositoryIgnored; }
-    void setRepositoryIgnored(bool value);
     // the mode line under a source editor (EDIT-MODE-31)
     bool getShowModeLine() const { return showModeLine; }
     void setShowModeLine(bool value);
@@ -338,7 +336,6 @@ private:
     bool showHistory = true;
     int repositoryLayout = 0;
     bool repositoryChangedOnly = false;
-    bool repositoryIgnored = false;
     bool showModeLine = true;
 
     // files

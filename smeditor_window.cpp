@@ -850,14 +850,13 @@ void CyberiadaSMEditorWindow::createRepositoryDock()
     if (!qApp->property("batchMode").toBool()) {
         m_repositoryView->setLayoutMode(RepositoryModel::Layout(sm.getRepositoryLayout()));
         m_repositoryView->setChangedOnly(sm.getRepositoryChangedOnly());
-        m_repositoryView->setIgnored(sm.getRepositoryIgnored());
     }
+    // Ignored is not stored: every start shows no ignored files (EDIT-GIT-5)
     connect(m_repositoryView, &RepositoryView::layoutModeChanged, this,
             [](RepositoryModel::Layout layout) { SettingsManager::instance().setRepositoryLayout(int(layout)); });
     connect(m_repositoryView, &RepositoryView::changedOnlyChanged, this,
             [](bool on) { SettingsManager::instance().setRepositoryChangedOnly(on); });
     connect(m_repositoryView, &RepositoryView::ignoredChanged, this, [this](bool on) {
-        SettingsManager::instance().setRepositoryIgnored(on);
         if (!m_repository) return;
         m_repository->setIgnored(on);
         m_repository->refresh();
@@ -871,10 +870,9 @@ void CyberiadaSMEditorWindow::createRepositoryDock()
     repositoryDock->setObjectName("repositoryDock");
     repositoryDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     repositoryDock->setWidget(m_repositoryView);
-    // all the docks at the right, as Inkscape docks its dialogs: the git docks are tabs of
-    // the structure tree, the tree in front (EDIT-UI-6)
-    addDockWidget(Qt::RightDockWidgetArea, repositoryDock);
-    tabifyDockWidget(treeDock, repositoryDock);
+    // all the docks at the right, as Inkscape stacks its dialogs: the git docks below the
+    // others, apart from the structure tree, so a diagram tab shows both (EDIT-UI-6)
+    addDockWidget(Qt::RightDockWidgetArea, repositoryDock, Qt::Vertical);
     // the tabs over the docks, as Inkscape shows them
     setTabPosition(Qt::RightDockWidgetArea, QTabWidget::North);
     actionRepository = repositoryDock->toggleViewAction();
@@ -889,7 +887,7 @@ void CyberiadaSMEditorWindow::createRepositoryDock()
     historyDock->setWidget(m_historyView);
     addDockWidget(Qt::RightDockWidgetArea, historyDock);
     tabifyDockWidget(repositoryDock, historyDock);
-    treeDock->raise();
+    repositoryDock->raise();
     actionHistory = historyDock->toggleViewAction();
     actionHistory->setObjectName("actionHistoryPane");
     actionHistory->setText(tr("History"));
@@ -3351,14 +3349,11 @@ void CyberiadaSMEditorWindow::applyDocks()
         { changesDock,    actionChanges,       modeDockChanges,    sm.getShowChanges() },
         { outlineDock,    actionOutline,       modeDockOutline,    sm.getShowOutline() }
     };
-    // the tree back with a diagram tab comes in front of the git tabs it shares
-    bool treeBack = treeDock->isHidden();
     for (size_t i = 0; i < sizeof(rows) / sizeof(rows[0]); i++) {
         bool has = (docks & rows[i].flag) != 0;
         rows[i].entry->setEnabled(has);
         rows[i].dock->setVisible(has && rows[i].chosen);
     }
-    if (treeBack && !treeDock->isHidden()) treeDock->raise();
     // the git dock is in every tab while git is in use (EDIT-UI-6, EDIT-GIT-1)
     bool git = !GitProcess::program().isEmpty();
     actionRepository->setEnabled(git);
