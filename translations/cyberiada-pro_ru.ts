@@ -26,8 +26,12 @@
     </message>
     <message>
         <location line="+7"/>
+        <source>&lt;p align=&quot;center&quot;&gt;&lt;a href=&quot;https://cyberiada.dev&quot;&gt;Cyberiada Project&lt;/a&gt;&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p align=&quot;center&quot;&gt;&lt;a href=&quot;https://cyberiada.dev&quot;&gt;Проект Cyberiada&lt;/a&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
         <source>&lt;p align=&quot;center&quot;&gt;&lt;a href=&quot;https://platform.kruzhok.org/programming&quot;&gt;Cyberiada Project&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;p align=&quot;center&quot;&gt;&lt;a href=&quot;https://platform.kruzhok.org/programming&quot;&gt;Проект Cyberiada&lt;/a&gt;&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p align=&quot;center&quot;&gt;&lt;a href=&quot;https://platform.kruzhok.org/programming&quot;&gt;Проект Cyberiada&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -348,7 +352,7 @@ Ctrl+клик мыши — открыть</translation>
 </translation>
     </message>
     <message>
-        <location line="+1350"/>
+        <location line="+1353"/>
         <source>Undefined</source>
         <translation>Не задан</translation>
     </message>
@@ -1010,7 +1014,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>вкладку сравнения открывает «Документ &gt; Сравнить с...»</translation>
     </message>
     <message>
-        <location line="-1379"/>
+        <location line="-1382"/>
         <source>Reload</source>
         <translation>Перечитать</translation>
     </message>
@@ -1021,12 +1025,12 @@ Ctrl+клик мыши — открыть</translation>
     </message>
     <message>
         <location line="+9"/>
-        <location line="+1031"/>
+        <location line="+1034"/>
         <source>Compare</source>
         <translation>Сравнить</translation>
     </message>
     <message>
-        <location line="-1010"/>
+        <location line="-1013"/>
         <source>%1 changed on disk. Overwrite it?</source>
         <translation>Файл %1 изменён на диске. Перезаписать его?</translation>
     </message>
@@ -1036,7 +1040,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Перезаписать</translation>
     </message>
     <message>
-        <location line="+71"/>
+        <location line="+74"/>
         <location line="+9"/>
         <source>Repository</source>
         <translation>Репозиторий</translation>
@@ -1365,18 +1369,18 @@ Ctrl+клик мыши — открыть</translation>
     <message>
         <location line="-3285"/>
         <location line="+161"/>
-        <location line="+3375"/>
+        <location line="+3381"/>
         <source>Open</source>
         <translation>Открыть</translation>
     </message>
     <message>
-        <location line="-50"/>
+        <location line="-56"/>
         <source>%1 - Settings</source>
         <translation>%1 - Параметры</translation>
     </message>
     <message>
-        <location line="-3910"/>
-        <location line="+3911"/>
+        <location line="-3913"/>
+        <location line="+3914"/>
         <source>Save</source>
         <translation>Сохранить</translation>
     </message>
@@ -3669,7 +3673,7 @@ Ctrl+клик мыши — открыть</translation>
 <context>
     <name>PluginManagerDialog</name>
     <message>
-        <location filename="../dialogs/plugin_manager_dialog.cpp" line="+51"/>
+        <location filename="../dialogs/plugin_manager_dialog.cpp" line="+52"/>
         <source>Plugin Manager</source>
         <translation>Менеджер плагинов</translation>
     </message>
@@ -3699,7 +3703,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Сканировать заново</translation>
     </message>
     <message>
-        <location line="+49"/>
+        <location line="+54"/>
         <source>Languages</source>
         <translation>Языки</translation>
     </message>
@@ -3744,7 +3748,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>отклонен</translation>
     </message>
     <message>
-        <location line="+131"/>
+        <location line="+142"/>
         <source>cannot read %1</source>
         <translation>не удается прочитать %1</translation>
     </message>
@@ -4269,7 +4273,7 @@ Ctrl+клик мыши — открыть</translation>
 <context>
     <name>PluginsMenu</name>
     <message>
-        <location filename="../plugins_menu.cpp" line="+41"/>
+        <location filename="../plugins_menu.cpp" line="+42"/>
         <source>Plugins</source>
         <translation>Плагины</translation>
     </message>
@@ -4279,7 +4283,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Панели плагинов</translation>
     </message>
     <message>
-        <location line="+83"/>
+        <location line="+94"/>
         <source>Settings...</source>
         <translation>Параметры...</translation>
     </message>
@@ -4714,7 +4718,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>скопирован</translation>
     </message>
     <message>
-        <location line="+268"/>
+        <location line="+277"/>
         <source>Conflicts inside</source>
         <translation>Внутри есть конфликты</translation>
     </message>
@@ -4840,6 +4844,16 @@ Ctrl+клик мыши — открыть</translation>
         <location line="+3"/>
         <source>Only the changed files and the folders holding them</source>
         <translation>Только изменённые файлы и содержащие их папки</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Untracked</source>
+        <translation type="unfinished">Неотслеживаемые</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>The files git does not track yet</source>
+        <translation type="unfinished">Файлы, которые git ещё не отслеживает</translation>
     </message>
     <message>
         <location line="+1"/>
