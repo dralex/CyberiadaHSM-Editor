@@ -348,7 +348,7 @@ Ctrl+клик мыши — открыть</translation>
 </translation>
     </message>
     <message>
-        <location line="+1362"/>
+        <location line="+1350"/>
         <source>Undefined</source>
         <translation>Не задан</translation>
     </message>
@@ -409,7 +409,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Выполняются плагины. Остановить их и выйти?</translation>
     </message>
     <message>
-        <location line="+279"/>
+        <location line="+268"/>
         <source>Load State Machine</source>
         <translation>Загрузка машины состояний</translation>
     </message>
@@ -486,8 +486,8 @@ Ctrl+клик мыши — открыть</translation>
         <translation>нет документа</translation>
     </message>
     <message>
-        <location line="-1963"/>
-        <location line="+1973"/>
+        <location line="-1952"/>
+        <location line="+1962"/>
         <source>a plugin is running on the document</source>
         <translation>для документа выполняется плагин</translation>
     </message>
@@ -496,8 +496,8 @@ Ctrl+клик мыши — открыть</translation>
         <translation type="vanished">в режиме инспектора документ доступен только для чтения</translation>
     </message>
     <message>
-        <location line="-1939"/>
-        <location line="+1976"/>
+        <location line="-1928"/>
+        <location line="+1965"/>
         <source>the document cannot be encoded</source>
         <translation>не удалось сериализовать документ</translation>
     </message>
@@ -529,7 +529,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Плагин: %1</translation>
     </message>
     <message>
-        <location line="-2394"/>
+        <location line="-2383"/>
         <source>Mode</source>
         <translation>Режим</translation>
     </message>
@@ -539,20 +539,18 @@ Ctrl+клик мыши — открыть</translation>
         <translation>режим %1 недоступен</translation>
     </message>
     <message>
-        <location line="+1989"/>
+        <location line="+1978"/>
         <source>the inspection tab is read-only</source>
         <translation>вкладка инспекции доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1968"/>
-        <location line="+1969"/>
+        <location line="-1957"/>
+        <location line="+1958"/>
         <source>the tab is read-only</source>
         <translation>вкладка доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-3258"/>
-        <location line="+9"/>
-        <location line="+515"/>
+        <location line="-2724"/>
         <source>History</source>
         <translation type="unfinished">История</translation>
     </message>
@@ -723,19 +721,19 @@ Ctrl+клик мыши — открыть</translation>
     <message>
         <location line="+25"/>
         <location line="+103"/>
-        <location line="+353"/>
+        <location line="+354"/>
         <source>Stage</source>
         <translation type="unfinished">В индекс</translation>
     </message>
     <message>
-        <location line="-454"/>
+        <location line="-455"/>
         <location line="+103"/>
-        <location line="+357"/>
+        <location line="+358"/>
         <source>Unstage</source>
         <translation type="unfinished">Из индекса</translation>
     </message>
     <message>
-        <location line="-447"/>
+        <location line="-448"/>
         <source>Rename...</source>
         <translation type="unfinished">Переименовать...</translation>
     </message>
@@ -835,7 +833,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation type="unfinished">индекс</translation>
     </message>
     <message>
-        <location line="+33"/>
+        <location line="+34"/>
         <source>No file</source>
         <translation type="unfinished">Нет файла</translation>
     </message>
@@ -967,7 +965,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>%1: не элемент конечного автомата</translation>
     </message>
     <message>
-        <location line="+487"/>
+        <location line="+476"/>
         <location line="+27"/>
         <location line="+7"/>
         <source>Save Text</source>
@@ -984,15 +982,15 @@ Ctrl+клик мыши — открыть</translation>
         <translation>%1 (*%2)</translation>
     </message>
     <message>
-        <location line="-651"/>
+        <location line="-640"/>
         <location line="+55"/>
-        <location line="+596"/>
+        <location line="+585"/>
         <source>All files (*)</source>
         <translation>Все файлы (*)</translation>
     </message>
     <message>
-        <location line="-2339"/>
-        <location line="+776"/>
+        <location line="-2329"/>
+        <location line="+777"/>
         <source>Refresh</source>
         <translation>Обновить</translation>
     </message>
@@ -1012,7 +1010,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>вкладку сравнения открывает «Документ &gt; Сравнить с...»</translation>
     </message>
     <message>
-        <location line="-1391"/>
+        <location line="-1379"/>
         <source>Reload</source>
         <translation type="unfinished">Перечитать</translation>
     </message>
@@ -1023,12 +1021,12 @@ Ctrl+клик мыши — открыть</translation>
     </message>
     <message>
         <location line="+9"/>
-        <location line="+1043"/>
+        <location line="+1031"/>
         <source>Compare</source>
         <translation type="unfinished">Сравнить</translation>
     </message>
     <message>
-        <location line="-1022"/>
+        <location line="-1010"/>
         <source>%1 changed on disk. Overwrite it?</source>
         <translation type="unfinished">Файл %1 изменён на диске. Перезаписать его?</translation>
     </message>
@@ -1038,8 +1036,8 @@ Ctrl+клик мыши — открыть</translation>
         <translation type="unfinished">Перезаписать</translation>
     </message>
     <message>
-        <location line="+72"/>
-        <location line="+12"/>
+        <location line="+71"/>
+        <location line="+9"/>
         <source>Repository</source>
         <translation type="unfinished">Репозиторий</translation>
     </message>
@@ -1048,7 +1046,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation type="obsolete">Репозиторий: %1</translation>
     </message>
     <message>
-        <location line="+990"/>
+        <location line="+982"/>
         <source>The document has no file</source>
         <translation type="unfinished">У документа нет файла</translation>
     </message>
@@ -1272,7 +1270,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Оглавление</translation>
     </message>
     <message>
-        <location line="+116"/>
+        <location line="+106"/>
         <source>The image &quot;%1&quot; is no longer in the text</source>
         <translation>Изображения «%1» больше нет в тексте</translation>
     </message>
@@ -1282,7 +1280,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Заголовка «%1» больше нет в тексте</translation>
     </message>
     <message>
-        <location line="+252"/>
+        <location line="+251"/>
         <source>Save the diagram first: the metadata records its saved file</source>
         <translation>Сначала сохраните диаграмму: метаданные указывают на сохранённый файл</translation>
     </message>
@@ -1365,9 +1363,9 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Сохранить журнал...</translation>
     </message>
     <message>
-        <location line="-3295"/>
+        <location line="-3285"/>
         <location line="+161"/>
-        <location line="+3385"/>
+        <location line="+3375"/>
         <source>Open</source>
         <translation>Открыть</translation>
     </message>
@@ -1377,8 +1375,8 @@ Ctrl+клик мыши — открыть</translation>
         <translation>%1 - Параметры</translation>
     </message>
     <message>
-        <location line="-3933"/>
-        <location line="+3934"/>
+        <location line="-3910"/>
+        <location line="+3911"/>
         <source>Save</source>
         <translation>Сохранить</translation>
     </message>
@@ -4814,7 +4812,7 @@ Ctrl+клик мыши — открыть</translation>
 <context>
     <name>RepositoryView</name>
     <message>
-        <location filename="../repository_view.cpp" line="+81"/>
+        <location filename="../repository_view.cpp" line="+92"/>
         <source>Tree</source>
         <translation type="unfinished">Дерево</translation>
     </message>
@@ -4862,6 +4860,16 @@ Ctrl+клик мыши — открыть</translation>
         <location line="+2"/>
         <source>Read the status of the work tree again</source>
         <translation type="unfinished">Перечитать состояние рабочей копии</translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <source>Files</source>
+        <translation type="unfinished">Файлы</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>History</source>
+        <translation type="unfinished">История</translation>
     </message>
 </context>
 <context>
