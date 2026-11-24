@@ -240,7 +240,7 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     connect(&SettingsManager::instance(), &SettingsManager::pluginsChanged,
             this, &CyberiadaSMEditorWindow::slotPluginSettingsChanged);
     connect(&SettingsManager::instance(), &SettingsManager::pluginSwitchesChanged,
-            this, &CyberiadaSMEditorWindow::updatePluginActions);
+            this, &CyberiadaSMEditorWindow::slotPluginSwitchesChanged);
     PluginRegistry::instance().setInterpreterPaths(SettingsManager::instance().getInterpreterPaths());
     PluginRegistry::instance().scan();
 
@@ -4719,6 +4719,12 @@ void CyberiadaSMEditorWindow::slotPluginSettingsChanged()
 {
     PluginRegistry::instance().setInterpreterPaths(SettingsManager::instance().getInterpreterPaths());
     PluginRegistry::instance().scan();
+}
+
+void CyberiadaSMEditorWindow::slotPluginSwitchesChanged()
+{
+    updatePluginActions();
+    PluginRegistry::instance().scanLater();
 }
 
 void CyberiadaSMEditorWindow::slotPluginManager()

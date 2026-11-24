@@ -164,8 +164,19 @@ QString PluginRegistry::language() const
     return languageOverride.isEmpty() ? currentUiLanguage() : languageOverride;
 }
 
+void PluginRegistry::scanLater()
+{
+    if (scanPending) return;
+    scanPending = true;
+    QMetaObject::invokeMethod(this, [this]() {
+        if (scanPending) scan();
+    }, Qt::QueuedConnection);
+}
+
 void PluginRegistry::scan()
 {
+    // a scan asked for later is this one
+    scanPending = false;
     list.clear();
     // the source texts are English; another language comes from i18n/ (EDIT-UI-4)
     QString translation = language() == UI_LANGUAGE_SOURCE ? QString() : language();

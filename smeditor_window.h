@@ -416,8 +416,10 @@ private slots:
     // the Session menu follows the active document's session
     void                    updateSessionActions();
     void                    slotPluginsScanned();
-    // the interpreters or the switches changed: the plugins are scanned again
+    // the interpreters changed: the plugins are scanned again (EDIT-PLUG-31)
     void                    slotPluginSettingsChanged();
+    // the switch of the plugin manager: greyed at once, then the scan rebuilds (EDIT-PLUG-30)
+    void                    slotPluginSwitchesChanged();
     // undo and redo wait for a read-only tab and a plugin lock (EDIT-MODE-4, EDIT-PLUG-22)
     void                    updateUndoActions();
     // Edit > Find, Find Next, Find Previous and the bar (EDIT-FIND-1..3)

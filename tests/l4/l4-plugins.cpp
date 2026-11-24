@@ -34,6 +34,7 @@
 #include <QMessageBox>
 #include <QPlainTextEdit>
 #include <QPushButton>
+#include <QScrollBar>
 #include <QSettings>
 #include <QSpinBox>
 #include <QTabBar>
@@ -482,26 +483,84 @@ void TestPlugins::test_document_values()
     QVERIFY(QSettings().childGroups().contains("plugins"));
 }
 
-// the switch of the plugin manager is kept, Rescan rebuilds the menu (EDIT-PLUG-30)
+static QStringList actionTexts(const QMenu* menu)
+{
+    QStringList texts;
+    for (const QAction* a: menu->actions()) texts.append(a->text());
+    return texts;
+}
+
+static QTreeWidgetItem* managerRow(QTreeWidget* list, const QString& id)
+{
+    for (int i = 0; i < list->topLevelItemCount(); i++) {
+        if (list->topLevelItem(i)->data(0, Qt::UserRole).toString() == id) return list->topLevelItem(i);
+    }
+    return nullptr;
+}
+
+// the switch of the plugin manager is kept and acts at once: a plugin switched off leaves
+// the menu and the toolbars, the other toolbars stay where they are (EDIT-PLUG-30)
 void TestPlugins::test_manager_switch()
 {
     CyberiadaSMEditorWindow win;
+    win.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&win));
+    PluginsMenu* pm = win.pluginsMenu();
+    QToolBar* checker = pm->toolbar("checker");
+    QVERIFY(checker && pm->toolbar("echo"));
+    win.addToolBar(Qt::LeftToolBarArea, checker);
     PluginManagerDialog dlg(&win);
-    QTreeWidget* list = dlg.list();
-    QTreeWidgetItem* echo = nullptr;
-    for (int i = 0; i < list->topLevelItemCount(); i++) {
-        if (list->topLevelItem(i)->data(0, Qt::UserRole).toString() == "echo") echo = list->topLevelItem(i);
-    }
+    dlg.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&dlg));
+    QTreeWidgetItem* echo = managerRow(dlg.list(), "echo");
     QVERIFY(echo);
+    dlg.list()->setCurrentItem(echo);
+    QScrollBar* scroll = dlg.list()->verticalScrollBar();
+    scroll->setValue(scroll->maximum());
+    int position = scroll->value();
+
+    // greyed at once, gone with the scan after the click
     echo->setCheckState(0, Qt::Unchecked);
     QVERIFY(!SettingsManager::instance().getPluginEnabled("echo"));
-    QAction* say = win.pluginsMenu()->action("echo", "say");
+    QAction* say = pm->action("echo", "say");
     QVERIFY(say && !say->isEnabled());
     QVERIFY(say->toolTip().contains("switched off"));
+    QString label = say->text();
+    QTRY_VERIFY(!pm->action("echo", "say"));
+    QVERIFY(!actionTexts(pm->menu()).contains(label));
+    QVERIFY(!pm->toolbar("echo"));
+    QVERIFY(!actionTexts(pm->toolbarsMenu()).contains("Echo"));
+    QCOMPARE(pm->toolbar("checker"), checker);
+    QCOMPARE(win.toolBarArea(checker), Qt::LeftToolBarArea);
+    QVERIFY(actionTexts(pm->toolbarsMenu()).contains("Checker"));
+    // the list was filled again under the click: the row and the scroll stay
+    echo = dlg.list()->currentItem();
+    QVERIFY(echo && echo->data(0, Qt::UserRole).toString() == "echo");
+    QCOMPARE(echo->checkState(0), Qt::Unchecked);
+    QCOMPARE(dlg.list()->verticalScrollBar()->value(), position);
+
+    // on again: back with its stored visibility, the last toolbar at the top
+    echo->setCheckState(0, Qt::Checked);
+    QTRY_VERIFY(pm->action("echo", "say"));
+    QVERIFY(pm->action("echo", "say")->isEnabled());
+    QToolBar* back = pm->toolbar("echo");
+    QVERIFY(back);
+    QTRY_VERIFY(back->isVisible());
+    QCOMPARE(win.toolBarArea(back), Qt::TopToolBarArea);
+    QTRY_VERIFY(back->geometry().x() > 0);
+    for (QToolBar* tb: win.findChildren<QToolBar*>()) {
+        if (tb == back || !tb->isVisible() || win.toolBarArea(tb) != Qt::TopToolBarArea) continue;
+        QVERIFY2(tb->geometry().right() < back->geometry().x(), qPrintable(tb->objectName()));
+    }
+    QVERIFY(actionTexts(pm->toolbarsMenu()).contains("Echo"));
+    QCOMPARE(pm->toolbar("checker"), checker);
+
+    // Rescan rebuilds the same, the toolbars in their places
     dlg.rescan();
-    QVERIFY(win.pluginsMenu()->action("echo", "say"));
-    SettingsManager::instance().setPluginEnabled("echo", true);
-    QVERIFY(win.pluginsMenu()->action("echo", "say")->isEnabled());
+    QCOMPARE(pm->toolbar("checker"), checker);
+    QCOMPARE(win.toolBarArea(checker), Qt::LeftToolBarArea);
+    QCOMPARE(pm->toolbar("echo"), back);
+    QVERIFY(pm->action("echo", "say")->isEnabled());
 }
 
 // an interpreter set in the Preferences counts at the next scan (EDIT-PLUG-31)

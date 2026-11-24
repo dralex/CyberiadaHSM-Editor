@@ -53,7 +53,8 @@ public:
     QMenu*      toolbarsMenu() const { return viewToolbars; }
     // the entries below the plugins: the output panel, the plugin manager
     void        setTailActions(const QList<QAction*>& actions);
-    // the menu and the toolbars from the registry, after a scan
+    // the menu and the toolbars of the plugins switched on, after a scan; a toolbar
+    // is kept by the plugin id, in its place
     void        rebuild();
 
     // the action of a plugin action; the toolbar of a plugin (the tests use them)

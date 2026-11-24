@@ -92,6 +92,9 @@ public:
                                    QString* program, QStringList* arguments);
 
     void scan();
+    // a scan after the current event, one for several calls: the switch of the plugin
+    // manager rescans after its click, not under it (EDIT-PLUG-30)
+    void scanLater();
     // every plugin directory found, in the scan order
     const QList<PluginEntry>& entries() const { return list; }
     // the enabled or disabled entry of the id, nullptr if none
@@ -116,6 +119,7 @@ private:
     QString languageOverride;
     QMap<QString, QString> interpreterPaths;
     QList<PluginEntry> list;
+    bool scanPending = false;
 };
 
 #endif

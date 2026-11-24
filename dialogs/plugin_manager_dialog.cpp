@@ -24,6 +24,7 @@
 #include <QDialogButtonBox>
 #include <QHeaderView>
 #include <QPushButton>
+#include <QScrollBar>
 #include <QStyle>
 #include <QTreeWidget>
 #include <QVBoxLayout>
@@ -85,6 +86,11 @@ void PluginManagerDialog::rescan()
 void PluginManagerDialog::fill()
 {
     QSignalBlocker block(tree);
+    // a switch rescans under the list: the row and the scroll stay (EDIT-PLUG-30)
+    QTreeWidgetItem* current = tree->currentItem();
+    while (current && current->parent()) current = current->parent();
+    int row = current ? tree->indexOfTopLevelItem(current) : -1;
+    int scroll = tree->verticalScrollBar()->value();
     tree->clear();
     for (const PluginEntry& e: PluginRegistry::instance().entries()) {
         QTreeWidgetItem* item = new QTreeWidgetItem(tree);
@@ -122,6 +128,10 @@ void PluginManagerDialog::fill()
         item->setExpanded(true);
     }
     for (int c = 0; c < columnsCount - 1; c++) tree->resizeColumnToContents(c);
+    if (row >= 0 && row < tree->topLevelItemCount()) tree->setCurrentItem(tree->topLevelItem(row));
+    // the range of the scroll bar comes with the layout
+    tree->doItemsLayout();
+    tree->verticalScrollBar()->setValue(scroll);
 }
 
 void PluginManagerDialog::slotItemChanged(QTreeWidgetItem* item, int column)

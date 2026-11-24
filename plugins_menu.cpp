@@ -22,6 +22,7 @@
  * ----------------------------------------------------------------------------- */
 
 #include <QAction>
+#include <QCoreApplication>
 #include <QFile>
 #include <QIcon>
 #include <QMainWindow>
@@ -63,19 +64,22 @@ void PluginsMenu::clear()
     settings.clear();
     qDeleteAll(submenus);
     submenus.clear();
-    for (QToolBar* tb: toolbars) {
-        window->removeToolBar(tb);
-        delete tb;
-    }
-    toolbars.clear();
+    // the toolbars stay where the user put them, rebuild() fills them again (EDIT-PLUG-30)
+    for (QToolBar* tb: toolbars) tb->clear();
 }
 
 void PluginsMenu::rebuild()
 {
     clear();
+    QMap<QString, QToolBar*> kept = toolbars;
+    toolbars.clear();
+    // a plugin switched off has no entry (EDIT-PLUG-30); the batch mode ignores the switch
+    bool batch = qApp->property("batchMode").toBool();
     QList<const PluginEntry*> entries;
     for (const PluginEntry& e: PluginRegistry::instance().entries()) {
-        if (e.usable()) entries.append(&e);
+        if (!e.usable()) continue;
+        if (!batch && !SettingsManager::instance().getPluginEnabled(e.descriptor.id)) continue;
+        entries.append(&e);
     }
     std::sort(entries.begin(), entries.end(), [](const PluginEntry* a, const PluginEntry* b) {
         return a->descriptor.name.compare(b->descriptor.name, Qt::CaseInsensitive) < 0;
@@ -117,9 +121,17 @@ void PluginsMenu::rebuild()
             actions.insert(qMakePair(pluginId, actionId), act);
             if (!a.toolbar) continue;
             if (!tb) {
-                tb = new QToolBar(d.name, window);
-                tb->setObjectName("pluginToolBar-" + pluginId);
-                window->insertToolBar(anchor, tb);
+                tb = kept.take(pluginId);
+                if (!tb) {
+                    tb = new QToolBar(window);
+                    tb->setObjectName("pluginToolBar-" + pluginId);
+                    window->insertToolBar(anchor, tb);
+                    // only the user's choice is kept (EDIT-PLUG-6)
+                    connect(tb->toggleViewAction(), &QAction::triggered, this, [pluginId](bool on) {
+                        SettingsManager::instance().setPluginToolbarVisible(pluginId, on);
+                    });
+                }
+                tb->setWindowTitle(d.name);
                 toolbars.insert(pluginId, tb);
             }
             tb->addAction(act);
@@ -132,13 +144,13 @@ void PluginsMenu::rebuild()
         }
         if (tb) {
             tb->setVisible(SettingsManager::instance().getPluginToolbarVisible(pluginId));
-            QAction* toggle = tb->toggleViewAction();
-            viewToolbars->addAction(toggle);
-            // only the user's choice is kept (EDIT-PLUG-6)
-            connect(toggle, &QAction::triggered, this, [pluginId](bool on) {
-                SettingsManager::instance().setPluginToolbarVisible(pluginId, on);
-            });
+            viewToolbars->addAction(tb->toggleViewAction());
         }
+    }
+    // the toolbars of the plugins gone or switched off
+    for (QToolBar* tb: kept) {
+        window->removeToolBar(tb);
+        delete tb;
     }
     if (entries.isEmpty()) {
         QAction* none = pluginsMenu->addAction(tr("No plugins"));

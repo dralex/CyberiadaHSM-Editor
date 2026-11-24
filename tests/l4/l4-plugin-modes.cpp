@@ -223,23 +223,34 @@ void TestPluginModes::test_languages()
 	QVERIFY(diagram->scene()->codeLanguage());
 	QCOMPARE(diagram->scene()->codeLanguage()->name, QString("Lua"));
 
-	// switched off: the tab turns Plain text, the value an unknown one
+	// switched off in the manager, no Rescan (EDIT-PLUG-30): the tab turns Plain text, the
+	// value an unknown one, the mode of the action unknown
 	SettingsManager::instance().setPluginEnabled("lua-tools", false);
-	PluginRegistry::instance().scan();
-	QVERIFY(!CodeStyle::instance().findId("lua"));
+	QTRY_VERIFY(!CodeStyle::instance().findId("lua"));
 	QVERIFY(CodeStyle::instance().findId("words"));
 	QCOMPARE(script->mode(), QString(MODE_TEXT));
 	QVERIFY(!diagram->scene()->codeLanguage());
 	QVERIFY(!menuTexts(win.findChild<QMenu*>("menuModeCode")).contains("Lua"));
 	QVERIFY(menuTexts(win.menuLanguage).contains("Lua (no highlighting)"));
+	QVERIFY(!win.pluginsMenu()->action("lua-tools", "run"));
+	QVERIFY(PluginRegistry::instance().find("lua-tools")->unavailable.value("run").contains("newer editor"));
 
-	// on again: the same value is the language again
+	// on again: the same value is the language again, the action of its mode usable
 	SettingsManager::instance().setPluginEnabled("lua-tools", true);
-	PluginRegistry::instance().scan();
-	QVERIFY(diagram->scene()->codeLanguage());
+	QTRY_VERIFY(diagram->scene()->codeLanguage());
 	QCOMPARE(diagram->scene()->codeLanguage()->name, QString("Lua"));
 	QVERIFY(!menuTexts(win.menuLanguage).contains("Lua (no highlighting)"));
 	QCOMPARE(script->mode(), QString(MODE_TEXT));
+	const PluginEntry* lua = PluginRegistry::instance().find("lua-tools");
+	QVERIFY(lua && !lua->unavailable.contains("run"));
+	QVERIFY(win.pluginsMenu()->action("lua-tools", "run"));
+	QCOMPARE(win.pluginDisabledReason(*lua, *lua->descriptor.action("run"), script),
+	         QString("the action works in: Lua"));
+
+	// Rescan gives the same
+	PluginRegistry::instance().scan();
+	QCOMPARE(diagram->scene()->codeLanguage()->name, QString("Lua"));
+	QVERIFY(win.pluginsMenu()->action("lua-tools", "run"));
 }
 
 // a files result links the files a tab opens
