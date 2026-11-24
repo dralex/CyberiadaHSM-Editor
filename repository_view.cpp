@@ -106,6 +106,12 @@ RepositoryView::RepositoryView(QWidget* parent):
     m_changedOnlyAction->setObjectName("actionRepositoryChangedOnly");
     m_changedOnlyAction->setCheckable(true);
     m_changedOnlyAction->setToolTip(tr("Only the changed files and the folders holding them"));
+    m_untrackedAction = m_toolBar->addAction(QIcon(":/Icons/images/repository-untracked.png"),
+                                             tr("Untracked"));
+    m_untrackedAction->setObjectName("actionRepositoryUntracked");
+    m_untrackedAction->setCheckable(true);
+    m_untrackedAction->setChecked(true);
+    m_untrackedAction->setToolTip(tr("The files git does not track yet"));
     m_ignoredAction = m_toolBar->addAction(QIcon(":/Icons/images/repository-ignored.png"), tr("Ignored"));
     m_ignoredAction->setObjectName("actionRepositoryIgnored");
     m_ignoredAction->setCheckable(true);
@@ -155,6 +161,10 @@ RepositoryView::RepositoryView(QWidget* parent):
     connect(m_changedOnlyAction, &QAction::triggered, this, [this](bool on) {
         setChangedOnly(on);
         emit changedOnlyChanged(on);
+    });
+    connect(m_untrackedAction, &QAction::triggered, this, [this](bool on) {
+        setUntracked(on);
+        emit untrackedChanged(on);
     });
     connect(m_ignoredAction, &QAction::triggered, this, &RepositoryView::ignoredChanged);
     connect(m_refreshAction, &QAction::triggered, this, &RepositoryView::refreshRequested);
@@ -271,6 +281,16 @@ void RepositoryView::setChangedOnly(bool on)
     if (on == m_model->changedOnly()) return;
     saveViewState();
     m_model->setChangedOnly(on);
+    restoreViewState();
+    setCurrentFile(m_currentFile);
+}
+
+void RepositoryView::setUntracked(bool on)
+{
+    m_untrackedAction->setChecked(on);
+    if (on == m_model->untracked()) return;
+    saveViewState();
+    m_model->setUntracked(on);
     restoreViewState();
     setCurrentFile(m_currentFile);
 }

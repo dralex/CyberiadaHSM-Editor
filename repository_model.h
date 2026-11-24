@@ -59,6 +59,9 @@ public:
     // only the changed files and the folders holding them (the tree)
     void                  setChangedOnly(bool on);
     bool                  changedOnly() const { return m_changedOnly; }
+    // the untracked files shown: off leaves them out of the rows and the folder markers
+    void                  setUntracked(bool on);
+    bool                  untracked() const { return m_untracked; }
 
     // the files of the rows: a folder or a group stands for its files, each file once
     QStringList           files(const QModelIndexList& indexes) const;
@@ -105,6 +108,7 @@ private:
     QHash<QString, bool>  m_open;
     Layout                m_layout = layoutTree;
     bool                  m_changedOnly = false;
+    bool                  m_untracked = true;
     Node*                 m_root;
     // the icons built, by the kind, the marker and the greying
     mutable QHash<int, QIcon> m_icons;

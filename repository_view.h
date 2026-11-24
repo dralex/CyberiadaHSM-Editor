@@ -53,6 +53,7 @@ public:
     QAction*          treeAction() const { return m_treeAction; }
     QAction*          groupsAction() const { return m_groupsAction; }
     QAction*          changedOnlyAction() const { return m_changedOnlyAction; }
+    QAction*          untrackedAction() const { return m_untrackedAction; }
     QAction*          ignoredAction() const { return m_ignoredAction; }
     QAction*          refreshAction() const { return m_refreshAction; }
     QTabWidget*       tabs() const { return m_tabs; }
@@ -83,6 +84,7 @@ public:
     // the state of the tools (EDIT-GIT-5); the signals tell the user's changes only
     void              setLayoutMode(RepositoryModel::Layout layout);
     void              setChangedOnly(bool on);
+    void              setUntracked(bool on);
     void              setIgnored(bool on);
     bool              ignored() const;
 
@@ -91,6 +93,7 @@ signals:
     void              openRequested(const QString& path);
     void              layoutModeChanged(RepositoryModel::Layout layout);
     void              changedOnlyChanged(bool on);
+    void              untrackedChanged(bool on);
     void              ignoredChanged(bool on);
     void              refreshRequested();
     // the History tab came in front or went behind
@@ -123,6 +126,7 @@ private:
     QAction*          m_treeAction;
     QAction*          m_groupsAction;
     QAction*          m_changedOnlyAction;
+    QAction*          m_untrackedAction;
     QAction*          m_ignoredAction;
     QAction*          m_refreshAction;
     QString           m_root;

@@ -1868,7 +1868,7 @@ cybersphere-git-plugin, whose textconv driver is `cybparser listing` of libcyber
 icons of the files with the status markers instead of the Index and Tree columns, the bold
 open files, the icon tools of the dock in one row, the image kind, *Ignored* off at every
 start, the dock apart from the structure tree, the History a tab of it and its alternating rows in
-0.81.
+0.81; the *Untracked* tool in 0.83.
 
 ```
  File Edit Document View Git Plugins Help
@@ -1902,7 +1902,7 @@ start, the dock apart from the structure tree, the History a tab of it and its a
  |   [code] blink.ino                                    |
  |   [text] LICENSE                                      |
  +-------------------------------------------------------+
- tools: T Tree, G Groups | C Changed only, I Ignored | + Stage, - Unstage, K Commit... | R Refresh
+ tools: T Tree, G Groups | C Changed only, U Untracked, I Ignored | + Stage, - Unstage, K Commit... | R Refresh
  [kind:marker]: the icon of the kind (EDIT-GIT-4) and its marker — g green, o orange, go both
  halves, r red, then the glyph
 ```
@@ -1924,7 +1924,7 @@ start, the dock apart from the structure tree, the History a tab of it and its a
   stays `Repository`, its first line is the folder of the work tree and the branch button
   (`EDIT-GIT-18`), the tabs *Files* and *History* (`EDIT-GIT-15`) under it (0.81), the
   first line serving both. *Files* starts with the tools (0.81) — the icon buttons *Tree*,
-  *Groups*, *Changed only*, *Ignored*, *Stage*, *Unstage*, *Commit...* and *Refresh*, their
+  *Groups*, *Changed only*, *Untracked*, *Ignored*, *Stage*, *Unstage*, *Commit...* and *Refresh*, their
   names in the tooltips, all in one row in the dock as it opens. A long name never widens the
   dock: the branch button keeps its text first, the folder is cut with `…` (the full path in
   its tooltip), and in a narrower dock the tools that do not fit go behind `»`. Without a
@@ -1935,10 +1935,10 @@ start, the dock apart from the structure tree, the History a tab of it and its a
   `<file> is not in a git repository`, `The document has no file`, `git is not found` or
   `git is off` in *Files*, the same reason in *History*. *design*
 - `EDIT-GIT-4` MUST [A]: the rows are the files of the work tree: the tracked ones (`git
-  ls-files`), the untracked ones (`git status --untracked-files=all`) and, with *Ignored*, the
-  ignored ones. A file has two letters of `git status --porcelain=v2`, the index and the work
-  tree: `M` modified, `T` type changed, `A` added, `D` deleted, `R` renamed, `C` copied, `U`
-  conflicted (both letters), `?` untracked, `!` ignored, none unchanged. The tree is one column
+  ls-files`), with *Untracked* the untracked ones (`git status --untracked-files=all`) and,
+  with *Ignored*, the ignored ones. A file has two letters of `git status --porcelain=v2`,
+  the index and the work tree: `M` modified, `T` type changed, `A` added, `D` deleted, `R`
+  renamed, `C` copied, `U` conflicted (both letters), `?` untracked, `!` ignored, none unchanged. The tree is one column
   (0.81): the letters are a marker on the icon of the row, the icon tells the kind of the file
   by its name, the case of a suffix aside — *diagram* `.graphml` (the page of New Diagram),
   *markdown* `.md`, `.markdown` (the page of New Markdown), *code* (a page with `</>`): `.c .h
@@ -1960,12 +1960,16 @@ start, the dock apart from the structure tree, the History a tab of it and its a
   files, the folders first, the changed entries before the unchanged ones, then by name; a
   folder holding a change has the marker of the changes under it, without a glyph — green,
   orange, both halves or red (`EDIT-GIT-4`), its tooltip saying which. *Groups*: *Conflicts*,
-  *Staged*, *Changes*, *Untracked* and, with *Ignored*, *Ignored*, the paths flat in each, a file staged
-  and changed again in both Staged and Changes, the empty groups and the unchanged files left
+  *Staged*, *Changes*, with *Untracked* *Untracked* and, with *Ignored*, *Ignored*, the
+  paths flat in each, a file staged and changed again in both Staged and Changes, the empty groups and the unchanged files left
   out; the icon of a group is its marker alone — red `!`, green, orange, orange `?`, a grey
   disk — so the groups are the legend of the markers. *Changed only* keeps in the tree the
-  changed files and the folders holding them. The layout and *Changed only* are stored per
-  user; *Ignored* is not (0.81): every start of the editor shows no ignored files. *design*
+  changed files and the folders holding them. *Untracked* (0.83), on by default, shows the
+  untracked files; off, they leave the tree, the groups and the markers of the folders, and a
+  folder or a group stands only for the files shown — the status itself is read as before,
+  since git refuses `--ignored=matching` with `--untracked-files=no`. The layout, *Changed
+  only* and *Untracked* are stored per user; *Ignored* is not (0.81): every start of the
+  editor shows no ignored files. *design*
 - `EDIT-GIT-6` MUST [A]: the status is read again after a save of a tab of the repository,
   after every git command of the editor, when the git folder changes (the index, `HEAD`, the
   refs), on the window activation and on Refresh (the dock toolbar, Git > Refresh): at most
@@ -2098,14 +2102,15 @@ start, the dock apart from the structure tree, the History a tab of it and its a
   | `git history <path>\|repository` | `EDIT-GIT-15` |
   | `git switch <branch>` | `EDIT-GIT-19`, the unsaved tabs of the work tree saved |
   | `git branch <name> [from <start>] [switch]`, `git branch-delete <name>` | `EDIT-GIT-20` |
-  | `repository layout tree\|groups`, `repository filter all\|changed`, `repository ignored on\|off` | `EDIT-GIT-5` |
+  | `repository layout tree\|groups`, `repository filter all\|changed`, `repository untracked on\|off`, `repository ignored on\|off` | `EDIT-GIT-5` |
 - `EDIT-GIT-22` MUST [A]: `--dump-repository` writes `== repository` of the active tab:
   `root <the folder of the work tree>`; `branch <name>`, ` (no commits)` before the first one,
   or `detached <short hash>`; `upstream <name> ahead <n> behind <n>` and `state
   merging|rebasing` when they apply; a line per local branch, `* ` before the current one;
   then a line per file of the status in the order of the paths, `<index letter><tree
   letter> <path>` with `.` for no letter, ` from <old path>` after a rename, ` open` and
-  ` unsaved` after the path of an open file, the ignored files only with *Ignored*; `none
+  ` unsaved` after the path of an open file, the ignored files only with *Ignored*, the
+  untracked ones whatever *Untracked* and *Changed only* (they filter the rows only); `none
   <the line of the dock>` without a repository. `--dump-history` writes `== history`, a line
   `<short hash> <subject>` per row, `more` for the *More...* row, `none <the title>` without a
   commit. *design*

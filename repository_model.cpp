@@ -169,6 +169,13 @@ void RepositoryModel::setChangedOnly(bool on)
     rebuild();
 }
 
+void RepositoryModel::setUntracked(bool on)
+{
+    if (on == m_untracked) return;
+    m_untracked = on;
+    rebuild();
+}
+
 void RepositoryModel::rebuild()
 {
     beginResetModel();
@@ -211,6 +218,7 @@ void RepositoryModel::buildTree()
         const StatusEntry& e = m_snapshot.entries.at(i);
         bool change = isChange(e);
         if (m_changedOnly && !change) continue;
+        if (!m_untracked && e.untracked()) continue;
         // an ignored folder is one row of its own, its name ending with '/'
         bool folderEntry = e.path.endsWith(PATH_SEPARATOR);
         QString path = folderEntry ? e.path.left(e.path.size() - 1) : e.path;
@@ -250,6 +258,7 @@ void RepositoryModel::sortTree(Node* node)
 void RepositoryModel::buildGroups()
 {
     for (int group = 0; group < groupCount; group++) {
+        if (group == groupUntracked && !m_untracked) continue;
         QVector<int> members;
         for (int i = 0; i < m_snapshot.entries.size(); i++) {
             if (inGroup(m_snapshot.entries.at(i), group)) members.append(i);

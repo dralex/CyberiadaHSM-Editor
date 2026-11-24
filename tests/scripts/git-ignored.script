@@ -1,4 +1,5 @@
-# Ignored lists the ignored files; the layout and the filter leave the status as it is (EDIT-GIT-5/21/22)
+# Ignored lists the ignored files; the layout and the filters leave the status as it is (EDIT-GIT-5/21/22)
 repository layout groups
 repository filter changed
+repository untracked off
 repository ignored on

@@ -39,13 +39,13 @@ bool isGitVerb(const QString& cmd)
 	return cmd == "git" || cmd == "repository";
 }
 
-// repository layout tree|groups, filter all|changed, ignored on|off: the state of the dock
+// repository layout tree|groups, filter all|changed, untracked on|off, ignored on|off: the state of the dock
 // (EDIT-GIT-5), not stored
 static bool runRepositoryVerb(CyberiadaSMEditorWindow* win, const QStringList& tokens, QString* error)
 {
 	RepositoryView* view = win->repositoryView();
 	if (tokens.size() != 3) {
-		*error = "repository needs layout, filter or ignored and its value";
+		*error = "repository needs layout, filter, untracked or ignored and its value";
 		return false;
 	}
 	const QString& what = tokens.at(1);
@@ -58,6 +58,10 @@ static bool runRepositoryVerb(CyberiadaSMEditorWindow* win, const QStringList& t
 		view->setChangedOnly(value == "changed");
 		return true;
 	}
+	if (what == "untracked" && (value == "on" || value == "off")) {
+		view->setUntracked(value == "on");
+		return true;
+	}
 	if (what == "ignored" && (value == "on" || value == "off")) {
 		view->setIgnored(value == "on");
 		RepositoryService* service = win->repositoryOf(win->currentTab());
@@ -67,7 +71,8 @@ static bool runRepositoryVerb(CyberiadaSMEditorWindow* win, const QStringList& t
 		}
 		return true;
 	}
-	*error = QString("repository %1 %2: layout tree|groups, filter all|changed, ignored on|off").arg(what, value);
+	*error = QString("repository %1 %2: layout tree|groups, filter all|changed, untracked on|off, ignored on|off")
+	             .arg(what, value);
 	return false;
 }
 

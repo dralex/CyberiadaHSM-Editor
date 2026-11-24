@@ -1,7 +1,7 @@
 # Git in the Editor — Architecture
 
 **Document version:** 0.8 (2026-11-24), the status markers on the icons, the icon tools of
-the dock in one row, the alternating History rows, one dock apart from the structure tree,
+the dock in one row, Untracked a filter of the model, the alternating History rows, one dock apart from the structure tree,
 the History its tab; 0.7, the docks at the right — specified (stage 0) and implemented: the disk check
 (stage 2), the git core (stage 3), the Repository dock (stage 4), the verbs, the commit, the
 compares and the history (stage 5), the branches (stage 6); the git plugin retired from the
@@ -115,7 +115,7 @@ knows: the dock follows the active tab, and a tab of another repository brings i
  RepositorySnapshot + the open tabs (path -> unsaved)
           |
           v
- RepositoryModel::rebuild(layout, changedOnly, ignored)            repository_model.*
+ RepositoryModel::rebuild(layout, changedOnly, untracked)          repository_model.*
    tree:   folder nodes and file nodes; per folder the folders, then the files, the
            changed before the unchanged, then by name; a folder gets the marker of the
            changes under it
@@ -156,8 +156,11 @@ knows: the dock follows the active tab, and a tab of another repository brings i
   them, so the marker stays sharp at any icon size and device pixel ratio.
 * The kind of a file is told by its name only (`fileKind`): nothing is read from the disk.
 * The batch mode starts the dock from the defaults and stores nothing, so a script runs the
-  same on every machine; the GUI stores the layout and Changed only per user, Ignored is off
-  at every start.
+  same on every machine; the GUI stores the layout, Changed only and Untracked per user,
+  Ignored is off at every start.
+* Ignored is a status option (`--ignored`), Untracked a filter of the model: git refuses
+  `--ignored=matching` with `--untracked-files=no`, so the status keeps the untracked files
+  and the model leaves them out of the rows, the groups and the folder markers.
 * `RepositoryModel::files(indexes)` turns a selection into files: a folder or a group gives
   all its files.
 

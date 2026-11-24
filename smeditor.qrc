@@ -64,6 +64,7 @@
         <file>images/repository-tree.png</file>
         <file>images/repository-groups.png</file>
         <file>images/repository-changed.png</file>
+        <file>images/repository-untracked.png</file>
         <file>images/repository-ignored.png</file>
         <file>images/git-stage.png</file>
         <file>images/git-unstage.png</file>

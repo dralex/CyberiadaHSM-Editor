@@ -850,12 +850,15 @@ void CyberiadaSMEditorWindow::createRepositoryDock()
     if (!qApp->property("batchMode").toBool()) {
         m_repositoryView->setLayoutMode(RepositoryModel::Layout(sm.getRepositoryLayout()));
         m_repositoryView->setChangedOnly(sm.getRepositoryChangedOnly());
+        m_repositoryView->setUntracked(sm.getRepositoryUntracked());
     }
     // Ignored is not stored: every start shows no ignored files (EDIT-GIT-5)
     connect(m_repositoryView, &RepositoryView::layoutModeChanged, this,
             [](RepositoryModel::Layout layout) { SettingsManager::instance().setRepositoryLayout(int(layout)); });
     connect(m_repositoryView, &RepositoryView::changedOnlyChanged, this,
             [](bool on) { SettingsManager::instance().setRepositoryChangedOnly(on); });
+    connect(m_repositoryView, &RepositoryView::untrackedChanged, this,
+            [](bool on) { SettingsManager::instance().setRepositoryUntracked(on); });
     connect(m_repositoryView, &RepositoryView::ignoredChanged, this, [this](bool on) {
         if (!m_repository) return;
         m_repository->setIgnored(on);

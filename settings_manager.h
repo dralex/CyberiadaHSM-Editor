@@ -120,13 +120,15 @@ public:
     bool getGitEnabled() const { return gitEnabled; }
     void setGitEnabled(bool value);
     // the Repository dock (EDIT-UI-6, EDIT-GIT-5): shown, its layout (0 tree, 1 groups),
-    // Changed only and Ignored
+    // Changed only and Untracked; Ignored is not stored
     bool getShowRepository() const { return showRepository; }
     void setShowRepository(bool value);
     int getRepositoryLayout() const { return repositoryLayout; }
     void setRepositoryLayout(int value);
     bool getRepositoryChangedOnly() const { return repositoryChangedOnly; }
     void setRepositoryChangedOnly(bool value);
+    bool getRepositoryUntracked() const { return repositoryUntracked; }
+    void setRepositoryUntracked(bool value);
     // the mode line under a source editor (EDIT-MODE-31)
     bool getShowModeLine() const { return showModeLine; }
     void setShowModeLine(bool value);
@@ -332,6 +334,7 @@ private:
     bool showRepository = true;
     int repositoryLayout = 0;
     bool repositoryChangedOnly = false;
+    bool repositoryUntracked = true;
     bool showModeLine = true;
 
     // files

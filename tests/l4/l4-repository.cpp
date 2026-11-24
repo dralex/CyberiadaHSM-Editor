@@ -66,6 +66,7 @@ private slots:
 	void test_marker_icons();
 	void test_model_groups();
 	void test_model_changed_only();
+	void test_model_untracked();
 	void test_model_files();
 	void test_model_marks();
 	void test_dock_follows_tab();
@@ -332,6 +333,36 @@ void TestRepository::test_model_changed_only()
 	QVERIFY(names(model).contains("README.md"));
 }
 
+// EDIT-GIT-5: Untracked off leaves the untracked files out of the rows, the groups and the
+// folder markers
+void TestRepository::test_model_untracked()
+{
+	RepositoryModel model;
+	QAbstractItemModelTester tester(&model, QAbstractItemModelTester::FailureReportingMode::QtTest);
+	RepositorySnapshot s = sample();
+	s.entries << entry("d/e/fresh.md", '.', '?');
+	std::sort(s.entries.begin(), s.entries.end(), [](const StatusEntry& a, const StatusEntry& b) { return a.path < b.path; });
+	model.setSnapshot(s);
+	QVERIFY(model.untracked());
+	QCOMPARE(model.data(model.folderIndex("d/"), RepositoryModel::MarkerRole).toInt(), marker(StatusMarker::placeTree));
+	QVERIFY(model.indexOf("new.txt").isValid());
+	model.setUntracked(false);
+	QVERIFY(!model.indexOf("new.txt").isValid());
+	QVERIFY(!model.indexOf("d/e/fresh.md").isValid());
+	// the folder of an untracked file only: no marker, its shown files only
+	QModelIndex d = model.folderIndex("d/");
+	QCOMPARE(model.data(d, RepositoryModel::MarkerRole).toInt(), 0);
+	QCOMPARE(model.files(QModelIndexList() << d), QStringList() << "d/e/deep.md");
+	// with Changed only that folder goes too
+	model.setChangedOnly(true);
+	QCOMPARE(names(model), QStringList() << "b" << "c" << "conflict.txt" << "light.graphml");
+	model.setChangedOnly(false);
+	model.setLayout(RepositoryModel::layoutGroups);
+	QVERIFY(!names(model).join(' ').contains("Untracked"));
+	model.setUntracked(true);
+	QVERIFY(names(model).contains("Untracked (2)"));
+}
+
 // EDIT-GIT-8: a folder or a group stands for its files, each file once
 void TestRepository::test_model_files()
 {
@@ -495,6 +526,12 @@ void TestRepository::test_toolbar_stored()
 	view->changedOnlyAction()->trigger();
 	QVERIFY(view->model()->changedOnly());
 	QVERIFY(SettingsManager::instance().getRepositoryChangedOnly());
+	// the untracked files shown by default (0.83)
+	QVERIFY(view->untrackedAction()->isChecked());
+	QVERIFY(view->model()->untracked());
+	view->untrackedAction()->trigger();
+	QVERIFY(!view->model()->untracked());
+	QVERIFY(!SettingsManager::instance().getRepositoryUntracked());
 	view->ignoredAction()->trigger();
 	QVERIFY(view->ignored());
 	{
@@ -502,14 +539,18 @@ void TestRepository::test_toolbar_stored()
 		CyberiadaSMEditorWindow again;
 		QCOMPARE(again.repositoryView()->model()->layout(), RepositoryModel::layoutGroups);
 		QVERIFY(again.repositoryView()->model()->changedOnly());
+		QVERIFY(!again.repositoryView()->model()->untracked());
+		QVERIFY(!again.repositoryView()->untrackedAction()->isChecked());
 		QVERIFY(!again.repositoryView()->ignored());
 	}
 	QVERIFY(!QSettings().contains("git/ignored"));
 	view->treeAction()->trigger();
 	view->changedOnlyAction()->trigger();
+	view->untrackedAction()->trigger();
 	view->ignoredAction()->trigger();
 	QCOMPARE(SettingsManager::instance().getRepositoryLayout(), int(RepositoryModel::layoutTree));
 	QVERIFY(!SettingsManager::instance().getRepositoryChangedOnly());
+	QVERIFY(SettingsManager::instance().getRepositoryUntracked());
 }
 
 // EDIT-GIT-1: the Git page: the program found, Use git off hides the dock

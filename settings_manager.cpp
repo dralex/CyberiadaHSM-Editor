@@ -121,6 +121,7 @@ void SettingsManager::load() {
     s.remove("display/showHistory");
     repositoryLayout = s.value("git/layout", 0).toInt();
     repositoryChangedOnly = s.value("git/changedOnly", false).toBool();
+    repositoryUntracked = s.value("git/untracked", true).toBool();
     // Ignored is off at every start, no longer stored (EDIT-GIT-5, 0.81): the old key goes
     s.remove("git/ignored");
     showModeLine = s.value("display/showModeLine", true).toBool();
@@ -371,6 +372,14 @@ void SettingsManager::setRepositoryChangedOnly(bool value)
     if (repositoryChangedOnly != value) {
         repositoryChangedOnly = value;
         QSettings().setValue("git/changedOnly", value);
+    }
+}
+
+void SettingsManager::setRepositoryUntracked(bool value)
+{
+    if (repositoryUntracked != value) {
+        repositoryUntracked = value;
+        QSettings().setValue("git/untracked", value);
     }
 }
 
