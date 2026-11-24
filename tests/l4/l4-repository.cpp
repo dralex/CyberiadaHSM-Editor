@@ -30,6 +30,7 @@
 #include <QToolBar>
 #include <QToolButton>
 #include <QTabBar>
+#include <QTabWidget>
 #include <QTreeView>
 #include "smeditor_window.h"
 #include "cyberiadasm_model.h"
@@ -741,8 +742,7 @@ void TestRepository::test_history_dock()
 	window.resize(1200, 800);
 	window.show();
 	QVERIFY(QTest::qWaitForWindowExposed(&window));
-	window.historyDock->show();
-	window.historyDock->raise();
+	window.repositoryView()->showHistory();
 	QString error;
 	QVERIFY(window.openFile(QDir(root).filePath("h.graphml"), &error));
 	HistoryView* history = window.historyView();
@@ -832,16 +832,6 @@ void TestRepository::test_branch_menu()
 
 // EDIT-UI-6: the git docks at the right, tabs of the structure tree, the tree in front in a
 // diagram tab, the Repository in a tab without the tree
-static QString frontTab(QMainWindow* window, const QString& title)
-{
-	for (QTabBar* bar : window->findChildren<QTabBar*>()) {
-		for (int i = 0; i < bar->count(); i++) {
-			if (bar->tabText(i) == title) return bar->tabText(bar->currentIndex());
-		}
-	}
-	return QString();
-}
-
 void TestRepository::test_docks_right()
 {
 	CyberiadaSMEditorWindow window;
@@ -849,17 +839,23 @@ void TestRepository::test_docks_right()
 	window.show();
 	QVERIFY(QTest::qWaitForWindowExposed(&window));
 	QCOMPARE(window.dockWidgetArea(window.repositoryDock), Qt::RightDockWidgetArea);
-	QCOMPARE(window.dockWidgetArea(window.historyDock), Qt::RightDockWidgetArea);
-	// tabs of each other, apart from the structure tree (EDIT-UI-6, 0.81)
+	// one dock apart from the structure tree, the tabs Files and History under its title and
+	// the work tree line (EDIT-UI-6, EDIT-GIT-3/15, 0.81)
 	QVERIFY(window.tabifiedDockWidgets(window.treeDock).isEmpty());
-	QCOMPARE(window.tabifiedDockWidgets(window.repositoryDock), QList<QDockWidget*>() << window.historyDock);
+	QVERIFY(window.tabifiedDockWidgets(window.repositoryDock).isEmpty());
+	RepositoryView* view = window.repositoryView();
+	QCOMPARE(view->tabs()->count(), 2);
+	QCOMPARE(view->tabs()->tabText(0), QString("Files"));
+	QCOMPARE(view->tabs()->tabText(1), QString("History"));
+	QCOMPARE(view->tabs()->widget(1), static_cast<QWidget*>(window.historyView()));
+	QVERIFY(!view->historyShown());
+	QVERIFY(!window.findChild<QDockWidget*>("historyDock"));
 	if (!haveGit) return;
-	QCOMPARE(frontTab(&window, "History"), QString("Repository"));
 	QString error;
 	QVERIFY(window.openFile("texts/notes.md", &error));
 	QTest::qWait(50);
 	QVERIFY(window.treeDock->isHidden());
-	QCOMPARE(frontTab(&window, "Repository"), QString("Repository"));
+	QVERIFY(!window.repositoryDock->isHidden());
 	QVERIFY(window.openFile("diagrams/hierarchy.graphml", &error));
 	QTest::qWait(50);
 	// a diagram tab shows the tree and the Repository at once
@@ -883,8 +879,9 @@ void TestRepository::test_docks_right()
 	write(QDir(root).filePath("src/blink.ino"), "void setup() {}\n");
 	QVERIFY(window.openFile(QDir(root).filePath("h.graphml"), &error));
 	window.repositoryDock->raise();
-	RepositoryView* view = window.repositoryView();
 	QTRY_VERIFY_WITH_TIMEOUT(view->model()->indexOf("src/blink.ino").isValid(), 10000);
+	// the work tree line over the tabs
+	QVERIFY(view->branchButton()->mapTo(view, QPoint(0, 0)).y() < view->tabs()->mapTo(view, QPoint(0, 0)).y());
 	view->tree()->expandAll();
 	// the tools fit the first line of the dock as it opens: no overflow (EDIT-GIT-3)
 	QToolButton* more = view->toolBar()->findChild<QToolButton*>("qt_toolbar_ext_button");
@@ -892,10 +889,11 @@ void TestRepository::test_docks_right()
 	QVERIFY(view->branchButton()->isVisible());
 	QVERIFY(window.grab().save(QT_TESTCASE_BUILDDIR "/tests/repository-docks.png"));
 	QVERIFY(window.repositoryDock->grab().save(QT_TESTCASE_BUILDDIR "/tests/repository-dock.png"));
-	window.historyDock->raise();
+	// Git > File History brings the History tab in front
 	window.gitHistory(QString(), true);
+	QVERIFY(view->historyShown());
 	QTRY_VERIFY(!window.historyView()->model()->entries().isEmpty());
-	QVERIFY(window.historyDock->grab().save(QT_TESTCASE_BUILDDIR "/tests/history-dock.png"));
+	QVERIFY(window.repositoryDock->grab().save(QT_TESTCASE_BUILDDIR "/tests/history-dock.png"));
 }
 
 QTEST_MAIN(TestRepository)

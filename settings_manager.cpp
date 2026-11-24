@@ -117,7 +117,8 @@ void SettingsManager::load() {
     gitProgram = s.value("git/program", QString()).toString();
     gitEnabled = s.value("git/enabled", true).toBool();
     showRepository = s.value("display/showRepository", true).toBool();
-    showHistory = s.value("display/showHistory", true).toBool();
+    // the History is a tab of the Repository dock (EDIT-UI-6, 0.81): the old key goes
+    s.remove("display/showHistory");
     repositoryLayout = s.value("git/layout", 0).toInt();
     repositoryChangedOnly = s.value("git/changedOnly", false).toBool();
     // Ignored is off at every start, no longer stored (EDIT-GIT-5, 0.81): the old key goes
@@ -203,7 +204,6 @@ void SettingsManager::loadDefaults()
     setShowChanges(true);
     setShowOutline(true);
     setShowRepository(true);
-    setShowHistory(true);
     setShowServiceObjects(false);
     setShowComponentComments(false);
     setLoggingEnabled(false);
@@ -355,15 +355,6 @@ void SettingsManager::setShowRepository(bool value)
         showRepository = value;
         QSettings().setValue("display/showRepository", value);
         emit repositoryChanged(value);
-    }
-}
-
-void SettingsManager::setShowHistory(bool value)
-{
-    if (showHistory != value) {
-        showHistory = value;
-        QSettings().setValue("display/showHistory", value);
-        emit historyChanged(value);
     }
 }
 

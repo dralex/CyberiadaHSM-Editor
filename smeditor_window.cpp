@@ -873,25 +873,13 @@ void CyberiadaSMEditorWindow::createRepositoryDock()
     // all the docks at the right, as Inkscape stacks its dialogs: the git docks below the
     // others, apart from the structure tree, so a diagram tab shows both (EDIT-UI-6)
     addDockWidget(Qt::RightDockWidgetArea, repositoryDock, Qt::Vertical);
-    // the tabs over the docks, as Inkscape shows them
-    setTabPosition(Qt::RightDockWidgetArea, QTabWidget::North);
     actionRepository = repositoryDock->toggleViewAction();
     actionRepository->setObjectName("actionRepositoryPane");
     actionRepository->setText(tr("Repository"));
-    // the commits of a file or of the work tree, tabbed behind the Repository (EDIT-GIT-15)
-    m_historyView = new HistoryView();
-    m_historyView->setObjectName("historyView");
-    historyDock = new QDockWidget(tr("History"), this);
-    historyDock->setObjectName("historyDock");
-    historyDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-    historyDock->setWidget(m_historyView);
-    addDockWidget(Qt::RightDockWidgetArea, historyDock);
-    tabifyDockWidget(repositoryDock, historyDock);
-    repositoryDock->raise();
-    actionHistory = historyDock->toggleViewAction();
-    actionHistory->setObjectName("actionHistoryPane");
-    actionHistory->setText(tr("History"));
-    connect(historyDock, &QDockWidget::visibilityChanged, this, [this](bool shown) {
+    // the commits of a file or of the work tree: the History tab of the dock, under its title
+    // with the Files tab (EDIT-GIT-15)
+    m_historyView = m_repositoryView->historyView();
+    connect(m_repositoryView, &RepositoryView::historyShownChanged, this, [this](bool shown) {
         if (shown) updateHistory();
     });
     connect(m_historyView, &HistoryView::moreRequested, this, [this]() { updateHistory(true); });
@@ -916,6 +904,7 @@ void CyberiadaSMEditorWindow::createRepositoryDock()
     connect(repositoryDock, &QDockWidget::visibilityChanged, this, [this](bool shown) {
         if (m_repository) m_repository->setWatching(shown && !qApp->property("batchMode").toBool());
         if (shown && m_repositoryStale) scheduleRepositoryRead();
+        if (shown && m_repositoryView->historyShown()) updateHistory();
     });
     m_repositoryTimer = new QTimer(this);
     m_repositoryTimer->setSingleShot(true);
@@ -1691,8 +1680,9 @@ void CyberiadaSMEditorWindow::gitHistory(const QString& path, bool repository)
     m_historyRepository = repository;
     m_historyView->setRepositoryScope(repository);
     if (!qApp->property("batchMode").toBool()) {
-        SettingsManager::instance().setShowHistory(true);
-        historyDock->raise();
+        SettingsManager::instance().setShowRepository(true);
+        repositoryDock->raise();
+        m_repositoryView->showHistory();
     }
     updateHistory();
 }
@@ -1702,7 +1692,7 @@ void CyberiadaSMEditorWindow::updateHistory(bool more)
     if (!m_historyView) return;
     bool batch = qApp->property("batchMode").toBool();
     // only while shown; the batch reads as its verbs ask (EDIT-GIT-6/15)
-    if (!batch && historyDock->isHidden()) return;
+    if (!batch && (repositoryDock->isHidden() || !m_repositoryView->historyShown())) return;
     RepositoryService* service = m_repository.data();
     if (!service) {
         m_historyView->setTitle(noRepositoryReason(active));
@@ -3309,27 +3299,23 @@ void CyberiadaSMEditorWindow::initPaneDocks()
     menuView->insertAction(actionTransitionText, actionChanges);
     menuView->insertAction(actionTransitionText, actionOutline);
     menuView->insertAction(actionTransitionText, actionRepository);
-    menuView->insertAction(actionTransitionText, actionHistory);
     menuView->insertSeparator(actionTransitionText);
     treeDock->installEventFilter(this);
     propertiesDock->installEventFilter(this);
     changesDock->installEventFilter(this);
     outlineDock->installEventFilter(this);
     repositoryDock->installEventFilter(this);
-    historyDock->installEventFilter(this);
     // the choice changes by a View entry or a close button only, never by a tab switch
     connect(actionStructureTree, &QAction::triggered, &sm, &SettingsManager::setShowStructureTree);
     connect(actionProperties, &QAction::triggered, &sm, &SettingsManager::setShowProperties);
     connect(actionChanges, &QAction::triggered, &sm, &SettingsManager::setShowChanges);
     connect(actionOutline, &QAction::triggered, &sm, &SettingsManager::setShowOutline);
     connect(actionRepository, &QAction::triggered, &sm, &SettingsManager::setShowRepository);
-    connect(actionHistory, &QAction::triggered, &sm, &SettingsManager::setShowHistory);
     connect(&sm, &SettingsManager::structureTreeChanged, this, &CyberiadaSMEditorWindow::applyDocks);
     connect(&sm, &SettingsManager::propertiesChanged, this, &CyberiadaSMEditorWindow::applyDocks);
     connect(&sm, &SettingsManager::changesChanged, this, &CyberiadaSMEditorWindow::applyDocks);
     connect(&sm, &SettingsManager::outlineChanged, this, &CyberiadaSMEditorWindow::applyDocks);
     connect(&sm, &SettingsManager::repositoryChanged, this, &CyberiadaSMEditorWindow::applyDocks);
-    connect(&sm, &SettingsManager::historyChanged, this, &CyberiadaSMEditorWindow::applyDocks);
     applyDocks();
 }
 
@@ -3359,9 +3345,6 @@ void CyberiadaSMEditorWindow::applyDocks()
     actionRepository->setEnabled(git);
     actionRepository->setToolTip(git ? QString() : GitProcess::unavailableReason());
     repositoryDock->setVisible(git && sm.getShowRepository());
-    actionHistory->setEnabled(git);
-    actionHistory->setToolTip(actionRepository->toolTip());
-    historyDock->setVisible(git && sm.getShowHistory());
     bindOutline();
 }
 
@@ -3442,7 +3425,6 @@ bool CyberiadaSMEditorWindow::eventFilter(QObject* watched, QEvent* event)
         if (watched == changesDock) SettingsManager::instance().setShowChanges(false);
         if (watched == outlineDock) SettingsManager::instance().setShowOutline(false);
         if (watched == repositoryDock) SettingsManager::instance().setShowRepository(false);
-        if (watched == historyDock) SettingsManager::instance().setShowHistory(false);
     }
     return QMainWindow::eventFilter(watched, event);
 }

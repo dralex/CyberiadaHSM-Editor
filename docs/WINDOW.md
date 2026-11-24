@@ -14,9 +14,9 @@ tools (`docs/MARKDOWN.md`, Tools).
 0.25: Fill Paragraph, Unfill Paragraph and Fill as You Type (`EDIT-MD-18..23`).
 0.26: View > Mode Line (`EDIT-MODE-31`).
 0.27: Insert Formula (`EDIT-MD-24..27`).
-0.28: the Git menu, the Repository and History docks (tabs of each other at the right,
-below the structure tree and the properties, as Inkscape stacks its dialogs), the disk bar
-of a tab
+0.28: the Git menu, the Repository dock (its Files and History tabs under its title, at the
+right below the structure tree and the properties, as Inkscape stacks its dialogs), the disk
+bar of a tab
 (`EDIT-GIT-1..23`, `EDIT-DOC-13..18`, `docs/GIT.md`), specified.
 
 The window holds several documents at once. The menus, the toolbars, the tab line and the
@@ -57,11 +57,12 @@ CyberiadaSMEditorWindow (QMainWindow)                                   GLOBAL
  |                                           | | outlineDock "Outline"      [_][x]|
  |                                           | |   outlineView (a Markdown tab)  |
  |                                           | +---------------------------------+
- |                                           | | [Repository|History]  (tabs)    |
- |                                           | |   repositoryDock, historyDock:  |
- |                                           | |   every tab, git in use         |
+ |                                           | | repositoryDock "Repository"[_][x]|
+ |                                           | |   work tree + branch line,      |
+ |                                           | |   tabs [Files|History]; every   |
+ |                                           | |   tab, git in use               |
  |                                           | +---------------------------------+
- |  View > Structure tree / Properties / Changes / Outline / Repository / History: the docks'
+ |  View > Structure tree / Properties / Changes / Outline / Repository: the docks'
  |  toggle actions, kept in the settings; applyDocks shows the docks of ModeTraits::docks as
  |  chosen, greys the others; the git docks in every tab while git is in use
  +-------------------------------------------+-------------------------------------
@@ -156,8 +157,8 @@ setCurrentDocument(doc)
 | Plugin session | bound to one document | a run (one at a time); locks the document with the view interactive; marks the elements on the document's own scene; its tab "<document> session" in the plugin dock (`EDIT-PLUG-37/40/41/42`) |
 | Plugins > Session, F10, F5, F6, Shift+F5 | document | act on the session of the active document; disabled without one (`EDIT-PLUG-46`) |
 | Plugin dock | global | the findings link to the document of their run; one output tab per plugin, not per document, each run headed by its document; a session tab per session, named by its document (`EDIT-PLUG-15/17/32/35/42`) |
-| Git menu, Repository dock, History dock | global | the repository of the active tab (a diff tab: of its target's file); a tab of another work tree rebuilds the dock, its view state restored; no work tree, a placeholder (`EDIT-GIT-2/3/16`) |
-| RepositoryService | per work tree | one per root while the editor runs; its snapshot, its queue of git commands, its watcher; reads only while a git dock is shown (`EDIT-GIT-6`) |
+| Git menu, Repository dock | global | the repository of the active tab (a diff tab: of its target's file); a tab of another work tree rebuilds the dock, its view state restored; no work tree, a placeholder (`EDIT-GIT-2/3/16`) |
+| RepositoryService | per work tree | one per root while the editor runs; its snapshot, its queue of git commands, its watcher; reads only while the Repository dock is shown (`EDIT-GIT-6`) |
 | Commit dialog, branches | the repository | the index and the branches of the active tab's work tree; a switch saves the unsaved tabs of that work tree first (`EDIT-GIT-14/19`) |
 | Disk state, disk bar | document | each tab with a file remembers its bytes; the watcher, the activation and a git verb check them; a clean tab reloads, an edited one shows its bar (`EDIT-DOC-13..17`) |
 | Command-line files (GUI) | global | each opens a tab, the last one active (`EDIT-DOC-7`); `--inspect` makes them inspection tabs (`EDIT-MODE-6`) |

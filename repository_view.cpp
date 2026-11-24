@@ -29,11 +29,13 @@
 #include <QScrollBar>
 #include <QStackedWidget>
 #include <QStyle>
+#include <QTabWidget>
 #include <QToolBar>
 #include <QToolButton>
 #include <QTreeView>
 #include <QVBoxLayout>
 
+#include "history_view.h"
 #include "repository_view.h"
 
 // the shares of the first line: the branch its text first, then the folder
@@ -70,8 +72,17 @@ RepositoryView::RepositoryView(QWidget* parent):
     m_headingRow->hide();
     layout->addWidget(m_headingRow);
 
-    // the second line: the tools, icons in one row (EDIT-GIT-3)
-    m_toolBar = new QToolBar(this);
+    // the tabs under the first line, which serves both; Files starts with the tools, icons in
+    // one row (EDIT-GIT-3/15)
+    m_tabs = new QTabWidget(this);
+    m_tabs->setObjectName("repositoryTabs");
+    m_tabs->setDocumentMode(true);
+    QWidget* files = new QWidget(m_tabs);
+    files->setObjectName("repositoryFiles");
+    QVBoxLayout* filesLayout = new QVBoxLayout(files);
+    filesLayout->setContentsMargins(0, 0, 0, 0);
+    filesLayout->setSpacing(0);
+    m_toolBar = new QToolBar(files);
     m_toolBar->setObjectName("repositoryToolBar");
     m_toolBar->setMovable(false);
     m_toolBar->setToolButtonStyle(Qt::ToolButtonIconOnly);
@@ -103,9 +114,9 @@ RepositoryView::RepositoryView(QWidget* parent):
     m_refreshAction = m_toolBar->addAction(QIcon(":/Icons/images/refresh.png"), tr("Refresh"));
     m_refreshAction->setObjectName("actionRepositoryRefresh");
     m_refreshAction->setToolTip(tr("Read the status of the work tree again"));
-    layout->addWidget(m_toolBar);
+    filesLayout->addWidget(m_toolBar);
 
-    m_pages = new QStackedWidget(this);
+    m_pages = new QStackedWidget(files);
     m_tree = new QTreeView(m_pages);
     m_tree->setObjectName("repositoryTree");
     m_tree->setModel(m_model);
@@ -123,7 +134,14 @@ RepositoryView::RepositoryView(QWidget* parent):
     m_line->setMargin(m_tree->fontMetrics().averageCharWidth());
     m_pages->addWidget(m_line);
     m_pages->setCurrentWidget(m_line);
-    layout->addWidget(m_pages);
+    filesLayout->addWidget(m_pages);
+    m_tabs->addTab(files, tr("Files"));
+    m_history = new HistoryView(m_tabs);
+    m_history->setObjectName("historyView");
+    m_tabs->addTab(m_history, tr("History"));
+    layout->addWidget(m_tabs);
+    connect(m_tabs, &QTabWidget::currentChanged, this,
+            [this](int index) { emit historyShownChanged(m_tabs->widget(index) == m_history); });
 
     connect(m_tree, &QTreeView::activated, this, &RepositoryView::rowActivated);
     connect(m_treeAction, &QAction::triggered, this, [this]() {
@@ -168,6 +186,16 @@ void RepositoryView::setBranch(const QString& text)
     // the branch takes no more than its text: the rest goes to the folder
     m_branch->setMaximumWidth(text.isEmpty() ? 0 : m_branch->sizeHint().width());
     m_branch->setVisible(!text.isEmpty());
+}
+
+bool RepositoryView::historyShown() const
+{
+    return m_tabs->currentWidget() == m_history;
+}
+
+void RepositoryView::showHistory()
+{
+    m_tabs->setCurrentWidget(m_history);
 }
 
 void RepositoryView::setRepository(const QString& root, const QString& line)

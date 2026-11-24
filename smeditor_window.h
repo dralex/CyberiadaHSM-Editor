@@ -188,8 +188,6 @@ public:
     void                    updateRepositoryDock(bool again = false);
     // the History dock (EDIT-GIT-15): its contents, the dock, its View entry
     HistoryView*            historyView() const { return m_historyView; }
-    QDockWidget*            historyDock = nullptr;
-    QAction*                actionHistory = nullptr;
     // the Git menu (EDIT-GIT-16): the entries act on the file of the active tab
     QMenu*                  gitMenu() const { return m_gitMenu; }
     QAction*                actionGitStage = nullptr;

@@ -1109,16 +1109,15 @@ The interface translations and their workflow are in `docs/TRANSLATION.md`.
   other tabs it is hidden and its View entry greyed, the choice unchanged (0.69). A hidden
   tree or panel keeps following the active document and the canvas selection, so showing it
   again needs no refresh; a tab switch keeps the sizes of the docks, the tree only grows once
-  to fit a wider structure. The Repository and the History docks (`EDIT-GIT-3/15`, 0.80) are
-  at the right too, below the others as Inkscape stacks its dialogs: tabs of each other, apart
-  from the structure tree (0.81), the tabs over the docks, the Repository in front; they are in
-  every tab, so a diagram tab shows the tree, the properties and the Repository at once. Their
-  View entries are *Repository* and *History*,
-  shown by default; without a git program or with *Use git* off (`EDIT-GIT-1`) they are
-  hidden and their entries greyed. *design*
+  to fit a wider structure. The Repository dock (`EDIT-GIT-3/15`, 0.80), its Files and History
+  tabs under its title (0.81), is at the right too, below the others as Inkscape stacks its
+  dialogs, apart from the structure tree (0.81); it is in every tab, so a diagram tab shows the
+  tree, the properties and the Repository at once. Its View entry is *Repository*, shown by
+  default; without a git program or with *Use git* off (`EDIT-GIT-1`) it is hidden and its
+  entry greyed. *design*
 
   ```
-  tab                         Structure tree   Properties   Changes   Outline   Repository|History
+  tab                         Structure tree   Properties   Changes   Outline   Repository
   HSM, inspection, FA               x              x                                 x
   diff, text diff                                               x                    x
   Markdown                                                                x          x
@@ -1837,13 +1836,14 @@ the fill (`EDIT-MD-18..23`, of a Plain text tab too) in 0.77, the formulas (`EDI
 
 ### 4.20 Git — GIT
 
-The git repository of the active tab in the editor itself: the Repository and the History
+The git repository of the active tab in the editor itself: the Repository dock with its Files
+and History
 docks, the Git menu, the commit, the compares with a revision and the local branches. The
 architecture is `docs/GIT.md`. Specified in 0.80; it supersedes the git plugin of
 cybersphere-git-plugin, whose textconv driver is `cybparser listing` of libcyberiadaml. The
 icons of the files with the status markers instead of the Index and Tree columns, the bold
 open files, the icon tools of the dock in one row, the image kind, *Ignored* off at every
-start, the docks apart from the structure tree and the alternating rows of the History in
+start, the dock apart from the structure tree, the History a tab of it and its alternating rows in
 0.81.
 
 ```
@@ -1866,7 +1866,8 @@ start, the docks apart from the structure tree and the alternating rows of the H
 
  +- Repository ------------------------------------------+
  | hsm-arduino-course  [devel ↑1 v]                      |   the first line (EDIT-GIT-3)
- | T G | C I | + - K | R                                 |   the tools
+ | [Files] [History]                                     |   the tabs
+ | T G | C I | + - K | R                                 |   the tools of Files
  | v [folder:go] diagrams                                |
  |     [diagram:o] blink.graphml ●       bold: open      |
  |     [diagram:g] traffic.graphml                       |
@@ -1887,7 +1888,7 @@ start, the docks apart from the structure tree and the alternating rows of the H
   for `PATH`, with Browse...), the line of the program found — `git version 2.43.0
   (/usr/bin/git)` or `git is not found` — and *Use git*, on by default; both are stored per user
   and act at Ok and Apply. Without a program or with *Use git* off the editor starts no git
-  process: the docks are hidden (`EDIT-UI-6`) and the Git menu greyed with the reason.
+  process: the Repository dock is hidden (`EDIT-UI-6`) and the Git menu greyed with the reason.
   *design*
 - `EDIT-GIT-2` MUST [A]: the repository of a tab is the work tree of its file — `git rev-parse
   --show-toplevel` in the folder of the file, so a linked work tree and a submodule are
@@ -1897,17 +1898,18 @@ start, the docks apart from the structure tree and the alternating rows of the H
   *design*
 - `EDIT-GIT-3` MUST [A]: the Repository dock shows the repository of the active tab: its title
   stays `Repository`, its first line is the folder of the work tree and the branch button
-  (`EDIT-GIT-18`), the second the tools (0.81) — the icon buttons *Tree*, *Groups*, *Changed
-  only*, *Ignored*, *Stage*, *Unstage*, *Commit...* and *Refresh*, their names in the tooltips,
-  all in one row in the dock as it opens. A long name never widens the dock: the branch button
-  keeps its text first, the folder is cut with `…` (the full path in its tooltip), and in a
-  narrower dock the tools that do not fit go behind `»`. Without a repository the first line is
-  hidden. A switch
+  (`EDIT-GIT-18`), the tabs *Files* and *History* (`EDIT-GIT-15`) under it (0.81), the
+  first line serving both. *Files* starts with the tools (0.81) — the icon buttons *Tree*,
+  *Groups*, *Changed only*, *Ignored*, *Stage*, *Unstage*, *Commit...* and *Refresh*, their
+  names in the tooltips, all in one row in the dock as it opens. A long name never widens the
+  dock: the branch button keeps its text first, the folder is cut with `…` (the full path in
+  its tooltip), and in a narrower dock the tools that do not fit go behind `»`. Without a
+  repository the first line is hidden. A switch
   to a tab of the same repository keeps the dock as it is, the tab's file made the current row
   and scrolled into view; a switch to another repository shows it with the folders expanded
   and the scroll it had when last shown. Without a repository the dock holds one line:
   `<file> is not in a git repository`, `The document has no file`, `git is not found` or
-  `git is off`. *design*
+  `git is off` in *Files*, the same reason in *History*. *design*
 - `EDIT-GIT-4` MUST [A]: the rows are the files of the work tree: the tracked ones (`git
   ls-files`), the untracked ones (`git status --untracked-files=all`) and, with *Ignored*, the
   ignored ones. A file has two letters of `git status --porcelain=v2`, the index and the work
@@ -1943,7 +1945,7 @@ start, the docks apart from the structure tree and the alternating rows of the H
 - `EDIT-GIT-6` MUST [A]: the status is read again after a save of a tab of the repository,
   after every git command of the editor, when the git folder changes (the index, `HEAD`, the
   refs), on the window activation and on Refresh (the dock toolbar, Git > Refresh): at most
-  once a second, only while the Repository or the History dock is shown, never blocking the
+  once a second, only while the Repository dock is shown, never blocking the
   window — the rows change when the read ends, and a read of a repository no longer shown is
   dropped. The reads pass `--no-optional-locks`, so they never hold the index lock against a
   git the user runs. *design*
@@ -2014,13 +2016,16 @@ start, the docks apart from the structure tree and the alternating rows of the H
   |                      [Commit] [Cancel]   |
   +------------------------------------------+
   ```
-- `EDIT-GIT-15` MUST [A]: the History dock lists the commits — the short hash, the date, the
-  author, the subject — of the file of the current row of the Repository dock, else of the
-  active tab, its renames followed (`git log --follow`), a staged rename by its old path; with
-  *Repository* those of the whole repository; read again after each status read. It lists the last 100, a *More...* row adds 100. A double-click on a commit, or
+- `EDIT-GIT-15` MUST [A]: the History tab of the Repository dock (0.81; a dock of its own in
+  0.80) lists the commits — the short hash, the date, the author, the subject — of the file of
+  the current row of *Files*, else of the active tab, its renames followed (`git log
+  --follow`), a staged rename by its old path; with *Repository* those of the whole
+  repository; read when the tab is shown and again after each status read while it is. It
+  lists the last 100, a *More...* row adds 100. A double-click on a commit, or
   *Compare with This Revision* of its menu, compares the file — in the Repository scope the
   active tab's — with it (`EDIT-GIT-12`); *Copy Hash* copies the full hash. Without commits it
-  holds `no commits`; Git > File History and History of the dock show it on the file. The rows
+  holds `no commits`; Git > File History and History of the context menu of *Files* show the
+  dock with this tab on the file. The rows
   alternate the base color and a light grey (the base 10% darker), and the commit of the
   current version is bold: `HEAD` in the Repository scope, in the File scope the newest commit
   of the file, the one its `HEAD` version comes from (0.81). *design*

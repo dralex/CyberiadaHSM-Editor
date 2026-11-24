@@ -123,8 +123,6 @@ public:
     // Changed only and Ignored
     bool getShowRepository() const { return showRepository; }
     void setShowRepository(bool value);
-    bool getShowHistory() const { return showHistory; }
-    void setShowHistory(bool value);
     int getRepositoryLayout() const { return repositoryLayout; }
     void setRepositoryLayout(int value);
     bool getRepositoryChangedOnly() const { return repositoryChangedOnly; }
@@ -254,7 +252,6 @@ signals:
     void changesChanged(bool);
     void outlineChanged(bool);
     void repositoryChanged(bool);
-    void historyChanged(bool);
     void serviceObjectsChanged(bool);
     void componentCommentsChanged(bool);
     void loggingChanged(bool);
@@ -333,7 +330,6 @@ private:
     QString gitProgram;
     bool gitEnabled = true;
     bool showRepository = true;
-    bool showHistory = true;
     int repositoryLayout = 0;
     bool repositoryChangedOnly = false;
     bool showModeLine = true;

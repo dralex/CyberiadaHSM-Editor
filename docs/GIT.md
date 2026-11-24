@@ -1,7 +1,8 @@
 # Git in the Editor — Architecture
 
 **Document version:** 0.8 (2026-11-24), the status markers on the icons, the icon tools of
-the dock in one row, the alternating History rows, the docks apart from the structure tree; 0.7, the docks at the right — specified (stage 0) and implemented: the disk check
+the dock in one row, the alternating History rows, one dock apart from the structure tree,
+the History its tab; 0.7, the docks at the right — specified (stage 0) and implemented: the disk check
 (stage 2), the git core (stage 3), the Repository dock (stage 4), the verbs, the commit, the
 compares and the history (stage 5), the branches (stage 6); the git plugin retired from the
 packaging (stage 7). The requirements are
@@ -16,7 +17,7 @@ knows: the dock follows the active tab, and a tab of another repository brings i
 
 ```
  CyberiadaSMEditorWindow
- | Git menu       Repository dock, History dock: tabs of each other (right, below the tree)
+ | Git menu       Repository dock: the work tree line, tabs Files | History (right, below the tree)
  | Commit dialog  Revision dialog  Branch dialog            Preferences > Git
  |        | verbs, paths, revisions                 ^ snapshot, log, results, errors
  |        v                                         |
@@ -126,8 +127,16 @@ knows: the dock follows the active tab, and a tab of another repository brings i
           v                                     |
  RepositoryView: QTreeView over the model,   repository_icons.*: MarkedIconEngine
    the folder + branch button line, the        paints the kind's picture (images/),
-   icon tools, the placeholder, the context    greyed when ignored, then the marker
-   menu                   repository_view.*    disk + glyph at any size
+   tabs: Files (the icon tools, the tree or    greyed when ignored, then the marker
+   the placeholder, the context menu) and      disk + glyph at any size
+   History (HistoryView)  repository_view.*
+```
+
+```
+ +- Repository (QDockWidget title) -------+   one dock: the title over the tabs, which
+ | docks-right                    main v  |   QDockWidget tabs could not give (their tab
+ | [Files] [History]   (QTabWidget)       |   bar is drawn over each dock's own title)
+ | Files: tools + tree | History: commits |
 ```
 
 ```
@@ -163,7 +172,7 @@ knows: the dock follows the active tab, and a tab of another repository brings i
 | Delete | `rm -q -- <files>`; an untracked file removed by the editor | read; the tabs closed |
 | Commit | `commit -F -` [`--amend`], the message on stdin | read |
 | Compare | `rev-parse --verify -q <rev>^{commit}`, `cat-file blob <hash>:<path>`; the index: `ls-files --stage -z -- <path>` + `cat-file blob <hash>` | the diff tab |
-| History | `log --follow -z -n 100 --format=%H%x1f%h%x1f%ad%x1f%an%x1f%s --date=short -- <path>` | the History dock |
+| History | `log --follow -z -n 100 --format=%H%x1f%h%x1f%ad%x1f%an%x1f%s --date=short -- <path>` | the History tab |
 | Switch | `switch <branch>` | read; the disk check |
 | New Branch | `switch -c <name> <start>` or `branch <name> <start>` | read; the disk check |
 | Delete Branch | `branch -d <name>` | read |
@@ -223,8 +232,9 @@ fails, its message shown.
 ## The history
 
 `HistoryModel` holds the rows of one query — a file (`--follow`) or the repository — and
-fetches the next 100 on *More...*. The dock follows the current row of the Repository dock,
-else the active tab, and reads its query again after each status read while it is shown; a
+fetches the next 100 on *More...*. The History tab follows the current row of the Files tab,
+else the active tab, and reads its query when it is shown and again after each status read
+while it is; a
 staged rename is read by its old path, as `--follow` follows only the committed ones. A
 double-click compares the file of the query (in the repository scope the active tab's file)
 with the row's hash. The rows alternate (the palette's `AlternateBase` set to the base 10%

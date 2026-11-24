@@ -30,15 +30,18 @@
 
 #include "repository_model.h"
 
+class HistoryView;
 class QAction;
 class QLabel;
 class QStackedWidget;
+class QTabWidget;
 class QToolBar;
 class QToolButton;
 class QTreeView;
 
-// The contents of the Repository dock (EDIT-GIT-3..8, docs/GIT.md): the folder and the
-// branch button, the tools, the files of the work tree, or the line saying why there are none; the window gives it the work tree of the active tab and acts on its requests
+// The contents of the Repository dock (EDIT-GIT-3..8/15, docs/GIT.md): the folder and the
+// branch button, then the tabs Files — the tools and the files of the work tree, or the line
+// saying why there are none — and History; the window gives it the work tree of the active tab and acts on its requests
 class RepositoryView: public QWidget {
 Q_OBJECT
 public:
@@ -52,6 +55,11 @@ public:
     QAction*          changedOnlyAction() const { return m_changedOnlyAction; }
     QAction*          ignoredAction() const { return m_ignoredAction; }
     QAction*          refreshAction() const { return m_refreshAction; }
+    QTabWidget*       tabs() const { return m_tabs; }
+    HistoryView*      historyView() const { return m_history; }
+    // the History tab in front (EDIT-GIT-15)
+    bool              historyShown() const;
+    void              showHistory();
 
     // the work tree shown, its folders and its scroll as they were last shown; an empty
     // root shows the line instead
@@ -85,6 +93,8 @@ signals:
     void              changedOnlyChanged(bool on);
     void              ignoredChanged(bool on);
     void              refreshRequested();
+    // the History tab came in front or went behind
+    void              historyShownChanged(bool shown);
 
 private:
     struct ViewState {
@@ -105,6 +115,8 @@ private:
     QLabel*           m_heading;
     QString           m_headingText;
     QToolButton*      m_branch;
+    QTabWidget*       m_tabs;
+    HistoryView*      m_history;
     QStackedWidget*   m_pages;
     QTreeView*        m_tree;
     QLabel*           m_line;
