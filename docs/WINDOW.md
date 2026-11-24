@@ -1,6 +1,6 @@
 # The Editor Window — Documents and Tabs
 
-**Document version:** 0.28 (2026-11-23) — the modes, the read-only flag and the plugins in
+**Document version:** 0.29 (2026-11-24) — the modes, the read-only flag and the plugins in
 the modes (`modes`, the text tabs, a plugin run as a diff base, the plugin languages) are
 implemented, the git compare with them (stage 6 of `docs/MODES.md`); a switch keeps the dock
 sizes; a Markdown tab exports its rendered PDF; the find bar (`docs/FIND.md`); the shortcuts
@@ -18,13 +18,14 @@ tools (`docs/MARKDOWN.md`, Tools).
 right below the structure tree and the properties, as Inkscape stacks its dialogs), the disk
 bar of a tab
 (`EDIT-GIT-1..23`, `EDIT-DOC-13..18`, `docs/GIT.md`), specified.
+0.29: the Panels toolbar, a button per dock (`EDIT-UI-9`), specified.
 
 The window holds several documents at once. The menus, the toolbars, the tab line and the
-docks (the structure tree, the properties, the changes, the outline, the repository, the
-history, the plugins) are one set; each document brings its
+docks (the structure tree, the properties, the changes, the outline, the repository with its
+files and history, the plugins) are one set; each document brings its
 own page — a diagram its model, scene and canvas view — and its mode (`docs/MODES.md`). The
 requirements are `EDIT-DOC-1..18` in `EDITOR-SPEC.md` §4.11, `EDIT-GIT-1..23` §4.20 for git, `EDIT-MODE-1..17` §4.14 and
-`EDIT-UI-6` for the docks, `EDIT-FIND-1..9` §4.15 for the find bar; the plugin parts follow `docs/PLUGINS.md` (`EDIT-PLUG-n`, §4.12), the
+`EDIT-UI-6` for the docks, `EDIT-UI-9` for their buttons, `EDIT-FIND-1..9` §4.15 for the find bar; the plugin parts follow `docs/PLUGINS.md` (`EDIT-PLUG-n`, §4.12), the
 plugin sessions its chapter Level 2 (`EDIT-PLUG-36..49`).
 
 ## Structure
@@ -32,9 +33,9 @@ plugin sessions its chapter Level 2 (`EDIT-PLUG-36..49`).
 ```
 CyberiadaSMEditorWindow (QMainWindow)                                   GLOBAL
  | menuBar (File, Edit, Document, View, Git, Plugins, Help)   ModeTraits (document_mode.h)
- | mainToolBar, diagramToolBar (top)  elementToolBar | textToolBar (left)
+ | mainToolBar, diagramToolBar, panelsToolBar (top)  elementToolBar | textToolBar (left)
  | zoomOptionsToolBar  zoomCombo
- | Plugins menu + plugin toolbars (PluginsMenu, before zoomOptionsToolBar)
+ | Plugins menu + plugin toolbars (PluginsMenu, before zoomOptionsToolBar, so after Panels)
  | clipboard (a detached element copy)   armed tool (toolGroup)   QUndoGroup
  | documents : QList<EditorDocument*>   current
  |
@@ -142,7 +143,7 @@ setCurrentDocument(doc)
 | Text editor font | global | one font for the source editors and the text diff sides, apart from the diagram font, changed in the Preferences (`EDIT-MODE-27`) |
 | Document > Reconstruct geometry, Update geometry | document | the active diagram; disabled in a tab that is not editable (`EDIT-MODE-4`) |
 | Zoom in/out, Fit, Zoom to SM, zoom combo | document | the active view; disabled in a text tab |
-| Toolbars | global | Main always; Diagram in a diagram or a diff tab, Elements in a diagram tab, Text in a text tab, none of the three in a text diff tab; the entries of a hidden one greyed in the menus; one the user closed stays closed (`EDIT-MD-1`) |
+| Toolbars | global | Main and Panels always, a Panels button only for a dock of the tab (`EDIT-UI-9`); Diagram in a diagram or a diff tab, Elements in a diagram tab, Text in a text tab, none of the three in a text diff tab; the entries of a hidden one greyed in the menus; one the user closed stays closed (`EDIT-MD-1`) |
 | Document > Language, code highlighting | document | the checked entry is the active document's `platformLanguage`; each tab is highlighted by its own (`EDIT-TEXT-9`); the list of unknown values met is global |
 | Document > Markup, comment markup | document | the checked entry is the active document's `markupLanguage` (`EDIT-TEXT-12`); the list of unknown values met is global |
 | Structure tree, properties panel, changes, outline | shared docks | content re-targeted on a switch; shown in the tabs that have them as View chose, the choice kept (`EDIT-UI-6`): a diagram the tree and the properties, a (text) diff the changes, a Markdown tab the outline, another text tab none |

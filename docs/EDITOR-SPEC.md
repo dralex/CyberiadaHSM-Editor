@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.81 (2026-11-24)
+**Document version:** 0.82 (2026-11-24)
 
 **Related authorities:**
 
@@ -833,7 +833,8 @@ runs of the batch script, which the plugin polygon drives (`docs/POLYGON-PLUGINS
   Settings... when the plugin has stored parameters, or a single entry for a plugin with one
   action and none; Output panel and Plugin manager... close the menu. *design*
 - `EDIT-PLUG-6` MUST [A]: the actions marked `toolbar` form one toolbar per plugin to the right
-  of the main toolbar; View > Plugin toolbars shows or hides each, and the choice is kept.
+  of the main toolbar, after the Panels toolbar (`EDIT-UI-9`, 0.82); View > Plugin toolbars
+  shows or hides each, and the choice is kept.
   *design*
 - `EDIT-PLUG-7` MUST [A]: an action opens the generated parameter dialog when it has `run`
   parameters, a `document` parameter not set for the document, or a required `persistent`
@@ -1114,7 +1115,7 @@ The interface translations and their workflow are in `docs/TRANSLATION.md`.
   dialogs, apart from the structure tree (0.81); it is in every tab, so a diagram tab shows the
   tree, the properties and the Repository at once. Its View entry is *Repository*, shown by
   default; without a git program or with *Use git* off (`EDIT-GIT-1`) it is hidden and its
-  entry greyed. *design*
+  entry greyed. Each dock has a button of the Panels toolbar too (`EDIT-UI-9`, 0.82). *design*
 
   ```
   tab                         Structure tree   Properties   Changes   Outline   Repository
@@ -1133,6 +1134,25 @@ The interface translations and their workflow are in `docs/TRANSLATION.md`.
   transient draw item; a handle a rebuild replaces leaves the scene at once, never lingering to be
   painted after it is freed. The editor reports a violation through the `--dump-audit` scene audit
   and the polygon holds it as a standing law. *design*
+- `EDIT-UI-9` SHOULD [A]: the *Panels* toolbar (0.82), at the top after *Diagram* and before the
+  plugin toolbars (`EDIT-PLUG-6`), has a checkable button per dock: the navigator of the tab —
+  *Structure tree*, *Changes* or *Outline* — and *Properties*, a separator, *Repository* and
+  *Output panel*. A button is the dock's View entry (Plugins > Output panel for the plugin
+  dock): it is checked while the dock is shown, a click shows or hides the dock and keeps the
+  choice as the entry does (`EDIT-UI-6`), the close button of the dock unchecks it. The button
+  of a dock the active tab has not is hidden, not greyed: four buttons in a diagram tab, three
+  in a diff, a text diff and a Markdown tab, two in another text tab; the Repository one is
+  hidden without git (`EDIT-GIT-1`); the separator only between two shown groups. The toolbar
+  is in every tab, closable and movable as the others; one the user closed stays closed. No
+  default keys (`docs/SHORTCUTS.md`) and no batch verb: the docks are a choice of the GUI.
+  *design*
+
+  ```
+  diagram tab   [Main ...][Diagram ...][Tree Properties | Repository Output][plugins ...]
+  diff tab      [Main ...][Diagram ...][Changes | Repository Output][plugins ...]
+  Markdown tab  [Main ...][Outline | Repository Output][plugins ...]
+  text tab      [Main ...][Repository Output][plugins ...]
+  ```
 
 ### 4.14 Document modes — MODE
 
@@ -1557,8 +1577,9 @@ Tools, Outline, Fill and Insert Formula. Specified in 0.72, the outline (`EDIT-M
 the fill (`EDIT-MD-18..23`, of a Plain text tab too) in 0.77, the formulas (`EDIT-MD-24..27`) in 0.79.
 
 - `EDIT-MD-1` MUST [A]: the toolbars follow the active tab: *Main* (the file, history and
-  clipboard actions, Read-only) always; *Diagram* (Delete, the geometry, the centring, Grid,
-  Snap, Service objects, Log session) in a diagram or a diff tab; *Elements* in a diagram tab;
+  clipboard actions, Read-only) and *Panels* (`EDIT-UI-9`, 0.82) always; *Diagram* (Delete,
+  the geometry, the centring, Grid, Snap, Service objects, Log session) in a diagram or a diff
+  tab; *Elements* in a diagram tab;
   *Text* in a text tab, in the place of Elements: Go to Line in every text tab, Fill Paragraph
   in a Markdown and a Plain text one (0.77), Insert Image, Insert Diagram, Insert Link, Insert
   Formula (0.79) and Update Diagram Images in a Markdown one; a text diff tab has none of the
@@ -1568,9 +1589,9 @@ the fill (`EDIT-MD-18..23`, of a Plain text tab too) in 0.77, the formulas (`EDI
   *design*
 
   ```
-  diagram tab   [Main ............ Read-only][Diagram: Delete Geometry Centre Grid Snap ...]
+  diagram tab   [Main ............ Read-only][Diagram: Delete Geometry Centre Grid Snap ...][Panels]
                 [Elements (left)]
-  Markdown tab  [Main ............ Read-only]
+  Markdown tab  [Main ............ Read-only][Panels]
                 [Text (left): Go to Line | Fill Paragraph | Image Diagram Link Formula | Update Diagram Images]
   Plain text    [Text (left): Go to Line | Fill Paragraph]
   ```
