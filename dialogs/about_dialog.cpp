@@ -50,7 +50,7 @@ AboutDialog::AboutDialog(QWidget* parent):
     name->setAlignment(Qt::AlignCenter);
     layout->addWidget(name);
 
-    QLabel* subtitle = new QLabel(tr("The Cyberiada state machine editor"), this);
+    QLabel* subtitle = new QLabel(tr("The Cyberiada Project IDE and HSM Editor"), this);
     subtitle->setAlignment(Qt::AlignCenter);
     layout->addWidget(subtitle);
 
