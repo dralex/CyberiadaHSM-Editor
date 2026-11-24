@@ -68,7 +68,7 @@ AboutDialog::AboutDialog(QWidget* parent):
     layout->addWidget(authors);
 
     QLabel* project = new QLabel(
-        tr("<p align=\"center\"><a href=\"https://platform.kruzhok.org/programming\">"
+        tr("<p align=\"center\"><a href=\"https://cyberiada.dev\">"
            "Cyberiada Project</a></p>"), this);
     project->setTextInteractionFlags(Qt::TextBrowserInteraction);
     project->setOpenExternalLinks(true);

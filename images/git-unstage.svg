@@ -1,6 +1,68 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 67.733333 67.733333" version="1.1">
-  <path d="M 50.92,53.76 H 16.81 V 13.97 H 36.14 L 50.92,29.89 Z" style="fill:#ffffff;stroke:#000000;stroke-width:2.4;stroke-linejoin:round"/>
-  <circle cx="51" cy="51" r="11" style="fill:#ef6c00;stroke:#ffffff;stroke-width:2.4"/>
-  <path d="M 45.5,51 H 56.5" style="fill:none;stroke:#ffffff;stroke-width:3.2;stroke-linecap:round"/>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="256"
+   height="256"
+   viewBox="0 0 67.733333 67.733333"
+   version="1.1"
+   id="svg1132"
+   sodipodi:docname="git-unstage.svg"
+   inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)"
+   inkscape:export-filename="/home/dralex/devel/CyberiadaHSME/images/git-unstage.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96">
+  <metadata
+     id="metadata1138">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs1136" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="2452"
+     inkscape:window-height="1486"
+     id="namedview1134"
+     showgrid="false"
+     inkscape:zoom="5.2149125"
+     inkscape:cx="171.03018"
+     inkscape:cy="89.295788"
+     inkscape:window-x="108"
+     inkscape:window-y="40"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg1132" />
+  <path
+     d="M 50.92,53.76 H 16.81 V 13.97 H 36.14 L 50.92,29.89 Z"
+     style="fill:#ffffff;stroke:#000000;stroke-width:2.4;stroke-linejoin:round"
+     id="path1126" />
+  <circle
+     cx="46.687447"
+     cy="46.687447"
+     r="14.888367"
+     style="fill:#ff5555;fill-opacity:1;stroke:#ffffff;stroke-width:3.24837112"
+     id="circle1128" />
+  <path
+     d="M 39.243264,46.687448 H 54.131631"
+     style="fill:none;stroke:#ffffff;stroke-width:4.3311615;stroke-linecap:round"
+     id="path1130"
+     inkscape:connector-curvature="0" />
 </svg>
