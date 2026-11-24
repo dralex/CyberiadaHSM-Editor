@@ -1,6 +1,6 @@
 # The Editor Window — Documents and Tabs
 
-**Document version:** 0.29 (2026-11-24) — the modes, the read-only flag and the plugins in
+**Document version:** 0.30 (2026-11-24) — the modes, the read-only flag and the plugins in
 the modes (`modes`, the text tabs, a plugin run as a diff base, the plugin languages) are
 implemented, the git compare with them (stage 6 of `docs/MODES.md`); a switch keeps the dock
 sizes; a Markdown tab exports its rendered PDF; the find bar (`docs/FIND.md`); the shortcuts
@@ -19,6 +19,7 @@ right below the structure tree and the properties, as Inkscape stacks its dialog
 bar of a tab
 (`EDIT-GIT-1..23`, `EDIT-DOC-13..18`, `docs/GIT.md`), specified.
 0.29: the Panels toolbar, a button per dock (`EDIT-UI-9`), specified.
+0.30: the switch of the plugin manager acting at once (`EDIT-PLUG-30`), specified.
 
 The window holds several documents at once. The menus, the toolbars, the tab line and the
 docks (the structure tree, the properties, the changes, the outline, the repository with its
@@ -153,7 +154,7 @@ setCurrentDocument(doc)
 | Gesture-log session | bound to one document | a switch ends it and starts a new one (`EDIT-DOC-8`) |
 | Batch mode | the tab line | `open`, `new-document [<mode>]`, `switch`, `close`, `mode`, `read-only`, `compare`, `geometry`, `refresh`; dumps of the active tab (`EDIT-DOC-9`, `EDIT-MODE-16`) |
 | Exit | global | asks for every modified document in turn; a cancel keeps the editor open; running plugins are cancelled and the sessions stopped after one question (`EDIT-PLUG-23/45`) |
-| Plugins menu, plugin toolbars | global | an action runs on the active document; its state and tooltip follow it and its mode (`EDIT-PLUG-4..7`, `EDIT-PLUG-56`) |
+| Plugins menu, plugin toolbars | global | an action runs on the active document; its state and tooltip follow it and its mode (`EDIT-PLUG-4..7`, `EDIT-PLUG-56`); a plugin switched off in the manager leaves them at once (`EDIT-PLUG-30`) |
 | Plugin run | bound to one document | one at a time; a replace run locks the document; the result goes to it after any switch (`EDIT-PLUG-21/22`) |
 | Plugin session | bound to one document | a run (one at a time); locks the document with the view interactive; marks the elements on the document's own scene; its tab "<document> session" in the plugin dock (`EDIT-PLUG-37/40/41/42`) |
 | Plugins > Session, F10, F5, F6, Shift+F5 | document | act on the session of the active document; disabled without one (`EDIT-PLUG-46`) |

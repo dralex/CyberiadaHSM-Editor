@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.82 (2026-11-24)
+**Document version:** 0.83 (2026-11-24)
 
 **Related authorities:**
 
@@ -903,8 +903,11 @@ runs of the batch script, which the plugin polygon drives (`docs/POLYGON-PLUGINS
 - `EDIT-PLUG-29` MUST [A]: the session log records a run as the comment `# plugin <id>:<action>`
   and starts a new session after a `replace` or `new-document` result. *design*
 - `EDIT-PLUG-30` MUST [A]: the plugin manager lists every plugin found with its folder and
-  state; the enable switch is kept, and Rescan rebuilds the menu, the toolbars and the
-  languages (`EDIT-PLUG-60`). *design*
+  state; the enable switch is kept and takes effect at once (0.83): a plugin switched off
+  leaves the Plugins menu, its toolbar, View > Plugin toolbars and its languages, and
+  comes back when switched on, its toolbar the last plugin one, after Panels
+  (`EDIT-PLUG-6`); the other toolbars keep their places. Rescan rebuilds the menu, the
+  toolbars and the languages (`EDIT-PLUG-60`). *design*
 - `EDIT-PLUG-31` SHOULD [A]: an interpreter path set in the Preferences takes effect at the
   next scan. *design*
 - `EDIT-PLUG-32` MUST [A]: the plugin dock is hidden until the first run and shows every
@@ -1047,9 +1050,9 @@ runs of the batch script, which the plugin polygon drives (`docs/POLYGON-PLUGINS
   order; a language whose id, name or alias is taken is skipped with a warning, as is a
   missing or malformed file; a `languages` that is not a list of strings rejects the
   descriptor (`EDIT-PLUG-2`). A plugin with `languages` may have no action. The languages are
-  read at start and on Rescan; one gone turns its text tabs into Plain text and its
-  `platformLanguage` values into unknown ones; `--list-plugins` prints a plugin's
-  `languages:`. *design*
+  read at start, on Rescan and after a switch (`EDIT-PLUG-30`, 0.83); one gone turns its
+  text tabs into Plain text and its `platformLanguage` values into unknown ones;
+  `--list-plugins` prints a plugin's `languages:`. *design*
 - `EDIT-PLUG-61` MUST [A]: the batch verb `plugin <id>[:<action>] [<name>=<value> ...]` runs
   the action on the active tab as `--run-plugin` does (`EDIT-PLUG-27`) and waits for its end:
   no dialog, the defaults and the values given in the `--plugin-param` syntax, a value holding

@@ -1,6 +1,6 @@
 # The Plugin Interface
 
-**Document version:** 0.13 (2026-11-14), plugin contract `api` 1, session protocol 1. In
+**Document version:** 0.14 (2026-11-24), plugin contract `api` 1, session protocol 1. In
 Russian: `PLUGIN-API-ru.md`.
 
 This is the brief for a plugin author. A plugin gives CyberiadaPro, the Cyberiada HSM editor, a
@@ -143,10 +143,12 @@ An action:
   for this document, or a required `persistent` parameter without a value, the editor
   opens a dialog generated from them; otherwise the action runs at once with the stored
   values.
-* **A greyed-out action** — the plugin is switched off or unavailable, a run is going on
-  the document, the tab is in a mode the action does not list (see Modes), the tab is not
-  editable for a `replace` action, or a condition of the action fails (see Conditions); the
-  tooltip says why.
+* **A greyed-out action** — the plugin is unavailable, a run is going on the document, the
+  tab is in a mode the action does not list (see Modes), the tab is not editable for a
+  `replace` action, or a condition of the action fails (see Conditions); the tooltip says
+  why.
+* **A plugin switched off** in the plugin manager leaves the menu and the toolbars at once
+  and comes back when switched on (0.14).
 * **The plugin dock** — every plugin has its own output tab, "<name> output", with the
   stdout and stderr of its runs; the user closes it, clears it or saves it to a text
   file. The Diagnostics tab holds the findings; the running plugin has a Cancel button.

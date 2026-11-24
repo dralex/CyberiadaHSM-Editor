@@ -1,6 +1,6 @@
 # The Plugin System — Architecture
 
-**Document version:** 0.11 (2026-11-11)
+**Document version:** 0.12 (2026-11-24)
 
 A plugin adds a feature to the editor without rebuilding it: a diagram checker, a code
 generator, a compiler front end, an LLM diagram maker. A plugin is a directory with a
@@ -80,10 +80,10 @@ The user folder is `QStandardPaths::writableLocation(AppDataLocation)/plugins`; 
 system folder is `share/cyberiada-pro/plugins` one level above the executable (a
 Debian install) or next to it (the Windows zip). The exact paths are in `PLUGIN-API.md`.
 A user plugin overrides a system plugin with the same id; the manager lists the shadowed
-one. The scan runs at start and on Rescan in the plugin manager; it also reads the
-plugin's `i18n/<lang>.json` of the interface language and translates the plugin texts
-(`EDIT-UI-4`). A run gets the language as `${language}`, `CYBERIADA_PRO_LANGUAGE` and
-`language` in `request.json` — `en` in the batch mode (`EDIT-PLUG-33`).
+one. The scan runs at start, on Rescan in the plugin manager and after its switch; it also
+reads the plugin's `i18n/<lang>.json` of the interface language and translates the plugin
+texts (`EDIT-UI-4`). A run gets the language as `${language}`, `CYBERIADA_PRO_LANGUAGE`
+and `language` in `request.json` — `en` in the batch mode (`EDIT-PLUG-33`).
 
 The scan also reads the `languages` of the plugins (`EDIT-PLUG-60`): a new language for
 the highlighting and the text modes needs no rebuild of the editor.
@@ -157,7 +157,8 @@ the highlighting and the text modes needs no rebuild of the editor.
   `<plugin id>-output.txt` in the document folder) and Clear... (after a confirmation) to
   Copy and Select All.
 * **Plugin manager** — the plugins found: folder, version, enabled or the reason why not;
-  enable/disable, Rescan.
+  enable/disable, Rescan. A plugin switched off leaves the menu, the toolbars and the
+  languages at once and comes back when switched on (`EDIT-PLUG-30`).
 * **Disabled actions** — a missing interpreter, a tab whose mode the action does not list
   (`modes`), a tab that is not editable (for `replace`), a run already going on the same
   document, a condition of the plugin or the action (see Conditions); the tooltip gives the
@@ -782,3 +783,13 @@ of hsm-maker and cybersphere-agents.
   file stays a plain line.
 * The test plugins that ran in an inspection tab before the modes declare
   `["hsm", "fa", "inspection"]`: the default leaves the inspection tabs out.
+
+## Decisions of 0.12
+
+* A plugin switched off is gone from the menu and the toolbars, not greyed: the switch is
+  the user's own choice and the manager turns it back on. Greyed stays for a plugin the
+  editor cannot run, with the reason in the tooltip.
+* The switch runs a scan, queued after the click: one path for the menu, the toolbars, the
+  languages and the mode checks, which name the languages of the plugins switched on.
+* The toolbars are kept by the plugin id across a rebuild: a switch or a Rescan leaves the
+  other toolbars where the user put them; one coming back is the last plugin toolbar.
