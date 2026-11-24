@@ -24,6 +24,7 @@
 #include <QActionGroup>
 #include <QApplication>
 #include <QClipboard>
+#include <QFont>
 #include <QHeaderView>
 #include <QLabel>
 #include <QMenu>
@@ -32,6 +33,9 @@
 #include <QVBoxLayout>
 
 #include "history_view.h"
+
+// the alternate rows: the base this many percent darker, a light grey on white (EDIT-GIT-15)
+static const int ALTERNATE_DARKER_PERCENT = 110;
 
 HistoryModel::HistoryModel(QObject* parent):
     QAbstractTableModel(parent)
@@ -52,6 +56,13 @@ void HistoryModel::appendEntries(const QVector<LogEntry>& entries, bool more)
     m_entries += entries;
     m_more = more;
     endResetModel();
+}
+
+void HistoryModel::setCurrentHash(const QString& hash)
+{
+    if (hash == m_current) return;
+    m_current = hash;
+    if (!m_entries.isEmpty()) emit dataChanged(index(0, 0), index(m_entries.size() - 1, columnsCount - 1));
 }
 
 bool HistoryModel::isMoreRow(const QModelIndex& index) const
@@ -89,6 +100,12 @@ QVariant HistoryModel::data(const QModelIndex& index, int role) const
         }
     case Qt::ToolTipRole:
         return e.hash + "\n" + e.subject;
+    case Qt::FontRole: {
+        if (m_current.isEmpty() || e.hash != m_current) return QVariant();
+        QFont bold;
+        bold.setBold(true);
+        return bold;
+    }
     case HashRole:
         return e.hash;
     default:
@@ -142,6 +159,10 @@ HistoryView::HistoryView(QWidget* parent):
     m_list->setRootIsDecorated(false);
     m_list->setUniformRowHeights(true);
     m_list->setSelectionBehavior(QAbstractItemView::SelectRows);
+    m_list->setAlternatingRowColors(true);
+    QPalette rows = m_list->palette();
+    rows.setColor(QPalette::AlternateBase, rows.color(QPalette::Base).darker(ALTERNATE_DARKER_PERCENT));
+    m_list->setPalette(rows);
     m_list->setContextMenuPolicy(Qt::CustomContextMenu);
     m_list->header()->setStretchLastSection(true);
     for (int column = HistoryModel::columnHash; column < HistoryModel::columnSubject; column++) {

@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.80 (2026-11-23)
+**Document version:** 0.81 (2026-11-24)
 
 **Related authorities:**
 
@@ -1839,7 +1839,10 @@ the fill (`EDIT-MD-18..23`, of a Plain text tab too) in 0.77, the formulas (`EDI
 The git repository of the active tab in the editor itself: the Repository and the History
 docks, the Git menu, the commit, the compares with a revision and the local branches. The
 architecture is `docs/GIT.md`. Specified in 0.80; it supersedes the git plugin of
-cybersphere-git-plugin, whose textconv driver is `cybparser listing` of libcyberiadaml.
+cybersphere-git-plugin, whose textconv driver is `cybparser listing` of libcyberiadaml. The
+icons of the files with the status markers instead of the Index and Tree columns, the bold
+open files, the icon tools of the dock in one row and the alternating rows of the History in
+0.81.
 
 ```
  File Edit Document View Git Plugins Help
@@ -1859,18 +1862,22 @@ cybersphere-git-plugin, whose textconv driver is `cybparser listing` of libcyber
                                                            New Branch...
                                                            Delete Branch...
 
- +- Repository -------------------------------------------------------------------+
- | hsm-arduino-course  [devel ↑1 v]                                              |
- | [Tree|Groups] [Changed only] [Ignored]   [Stage] [Unstage] [Commit] [Refresh] |
- | Name                                              Index  Tree                 |
- | v diagrams/                                              *                    |
- |     blink.graphml  ●                                     M                    |
- |     traffic.graphml                               M                           |
- |   v 6/                                                                        |
- |       greenhouse.graphml                          A                           |
- |   notes.md                                               ?                    |
- |   README.md                                                                   |
- +-------------------------------------------------------------------------------+
+ +- Repository ------------------------------------------+
+ | hsm-arduino-course  [devel ↑1 v]                      |   the first line (EDIT-GIT-3)
+ | T G | C I | + - K | R                                 |   the tools
+ | v [folder:go] diagrams                                |
+ |     [diagram:o] blink.graphml ●       bold: open      |
+ |     [diagram:g] traffic.graphml                       |
+ |   v [folder:g] 6                                      |
+ |       [diagram:g+] greenhouse.graphml                 |
+ |   [markdown:o?] notes.md                              |
+ |   [markdown] README.md                                |
+ |   [code] blink.ino                                    |
+ |   [text] LICENSE                                      |
+ +-------------------------------------------------------+
+ tools: T Tree, G Groups | C Changed only, I Ignored | + Stage, - Unstage, K Commit... | R Refresh
+ [kind:marker]: the icon of the kind (EDIT-GIT-4) and its marker — g green, o orange, go both
+ halves, r red, then the glyph
 ```
 
 - `EDIT-GIT-1` MUST [A]: the git program is the one of Preferences > Git, else `git` found in
@@ -1887,8 +1894,13 @@ cybersphere-git-plugin, whose textconv driver is `cybparser listing` of libcyber
   a folder is looked up once and kept; a Save As and the window activation look it up again.
   *design*
 - `EDIT-GIT-3` MUST [A]: the Repository dock shows the repository of the active tab: its title
-  stays `Repository`, its first line is `<the folder of the work tree> (<branch>)` with the
-  branch button (`EDIT-GIT-18`), so a long name never widens the dock. A switch
+  stays `Repository`, its first line is the folder of the work tree and the branch button
+  (`EDIT-GIT-18`), the second the tools (0.81) — the icon buttons *Tree*, *Groups*, *Changed
+  only*, *Ignored*, *Stage*, *Unstage*, *Commit...* and *Refresh*, their names in the tooltips,
+  all in one row in the dock as it opens. A long name never widens the dock: the branch button
+  keeps its text first, the folder is cut with `…` (the full path in its tooltip), and in a
+  narrower dock the tools that do not fit go behind `»`. Without a repository the first line is
+  hidden. A switch
   to a tab of the same repository keeps the dock as it is, the tab's file made the current row
   and scrolled into view; a switch to another repository shows it with the folders expanded
   and the scroll it had when last shown. Without a repository the dock holds one line:
@@ -1897,16 +1909,35 @@ cybersphere-git-plugin, whose textconv driver is `cybparser listing` of libcyber
 - `EDIT-GIT-4` MUST [A]: the rows are the files of the work tree: the tracked ones (`git
   ls-files`), the untracked ones (`git status --untracked-files=all`) and, with *Ignored*, the
   ignored ones. A file has two letters of `git status --porcelain=v2`, the index and the work
-  tree: `M` modified, `T` type changed, `A` added, `D` deleted, `R` renamed (the old path in the
-  tooltip), `U` conflicted (both letters), `?` untracked, `!` ignored, none unchanged. The row
-  of a file whose tab has unsaved edits shows `●` after the name. *design*
-- `EDIT-GIT-5` MUST [A]: the dock toolbar switches the layout. *Tree*: the folders and the
+  tree: `M` modified, `T` type changed, `A` added, `D` deleted, `R` renamed, `C` copied, `U`
+  conflicted (both letters), `?` untracked, `!` ignored, none unchanged. The tree is one column
+  (0.81): the letters are a marker on the icon of the row, the icon tells the kind of the file
+  by its name, the case of a suffix aside — *diagram* `.graphml` (the page of New Diagram),
+  *markdown* `.md`, `.markdown` (the page of New Markdown), *code* (a page with `</>`): `.c .h
+  .cc .cpp .cxx .hh .hpp .hxx .ino .py .pyw .js .mjs .ts .tsx .jsx .cs .java .kt .lua .rs .go
+  .rb .pl .php .swift .sh .bash .bat .cmd .ps1 .cmake .qml .json .xml .yaml .yml .toml .sql`
+  and the names `Makefile`, `makefile`, `GNUmakefile`, `CMakeLists.txt`, `Dockerfile`; *text*
+  (a page with lines) the rest; a folder. The marker is a disk in the lower right corner of the
+  icon: green when the change is staged only (an index
+  letter), orange when it is in the work tree only (a work tree letter, an untracked file),
+  green and orange halves when both, red when conflicted; its glyph is the kind of the change —
+  `+` added, `−` deleted (in the index or the work tree), `→` renamed or copied, `?`
+  untracked, `!` conflicted, none modified or type changed. An unchanged file has no marker,
+  an ignored one a greyed icon. The row of a file open in a tab is bold, with unsaved edits
+  it ends with `●`. The tooltip of a file has its path and the status in words — `Staged:
+  added`, `Not staged: modified`, `Untracked`, `Ignored`, `Conflicted`, `Renamed from <old>`,
+  `Open`, `Open, unsaved edits`. *design*
+- `EDIT-GIT-5` MUST [A]: the tools of the dock switch the layout. *Tree*: the folders and the
   files, the folders first, the changed entries before the unchanged ones, then by name; a
-  folder holding a change has `*` in the Tree column. *Groups*: *Conflicts*, *Staged*,
+  folder holding a change has the marker of the changes under it, without a glyph — green,
+  orange, both halves or red (`EDIT-GIT-4`), its tooltip saying which. *Groups*: *Conflicts*,
+  *Staged*,
   *Changes*, *Untracked* and, with *Ignored*, *Ignored*, the paths flat in each, a file staged
   and changed again in both Staged and Changes, the empty groups and the unchanged files left
-  out. *Changed only* keeps in the tree the changed files and the folders holding them. The
-  layout, *Changed only* and *Ignored* are stored per user. *design*
+  out; the icon of a group is its marker alone — red `!`, green, orange, orange `?`, a grey
+  disk — so the groups are the legend of the markers. *Changed only* keeps in the tree the
+  changed files and the folders holding them. The layout, *Changed only* and *Ignored* are
+  stored per user. *design*
 - `EDIT-GIT-6` MUST [A]: the status is read again after a save of a tab of the repository,
   after every git command of the editor, when the git folder changes (the index, `HEAD`, the
   refs), on the window activation and on Refresh (the dock toolbar, Git > Refresh): at most
@@ -1924,8 +1955,8 @@ cybersphere-git-plugin, whose textconv driver is `cybparser listing` of libcyber
   *Delete...* (Del); *Copy Path*, *Copy Relative Path*. An entry with nothing to act on is
   greyed: Stage without a changed or untracked file, Unstage without a staged one, Discard
   without a change in the work tree, the compares without exactly one file the editor opens,
-  History and Rename without exactly one file. The dock toolbar has Stage, Unstage, Commit...
-  and Refresh. *design*
+  History and Rename without exactly one file. Stage, Unstage, Commit... and Refresh are also
+  tools of the dock (`EDIT-GIT-3`). *design*
 - `EDIT-GIT-9` MUST [A]: Stage runs `git add -- <files>`: the files as saved — the unsaved edits
   of a tab are not staged and its row keeps `●`; Unstage runs `git restore --staged --
   <files>`, before the first commit `git rm --cached -q -- <files>`. Neither changes a file on
@@ -1987,7 +2018,10 @@ cybersphere-git-plugin, whose textconv driver is `cybparser listing` of libcyber
   *Repository* those of the whole repository; read again after each status read. It lists the last 100, a *More...* row adds 100. A double-click on a commit, or
   *Compare with This Revision* of its menu, compares the file — in the Repository scope the
   active tab's — with it (`EDIT-GIT-12`); *Copy Hash* copies the full hash. Without commits it
-  holds `no commits`; Git > File History and History of the dock show it on the file. *design*
+  holds `no commits`; Git > File History and History of the dock show it on the file. The rows
+  alternate the base color and a light grey (the base 10% darker), and the commit of the
+  current version is bold: `HEAD` in the Repository scope, in the File scope the newest commit
+  of the file, the one its `HEAD` version comes from (0.81). *design*
 - `EDIT-GIT-16` MUST [A]: the Git menu (Alt+T: Alt+G is Go to Line), between View and Plugins, acts on the file of the active
   tab, a diff tab on the file of its target: *Stage File* (Ctrl+Alt+A), *Unstage File*,
   *Discard Changes of the File...*; *Compare with HEAD* (Ctrl+D), *Compare with the Index*,

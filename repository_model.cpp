@@ -21,18 +21,21 @@
  *
  * ----------------------------------------------------------------------------- */
 
-#include <QApplication>
+#include <QFont>
 #include <QSet>
-#include <QStyle>
 #include <algorithm>
 
 #include "repository_model.h"
 
 // the mark of a file whose tab has unsaved edits (EDIT-GIT-4)
 static const QChar UNSAVED_MARK(0x25CF);
-// the mark of a folder holding a change (EDIT-GIT-5)
-static const QChar FOLDER_CHANGES('*');
 static const QChar PATH_SEPARATOR('/');
+static const QString LINE_BREAK("\n");
+// the icon cache keys: a group apart from the files and folders
+static const int ICON_KEY_GREYED = 1;
+static const int ICON_KEY_MARKER_SHIFT = 1;
+static const int ICON_KEY_KIND_SHIFT = 10;
+static const int ICON_KEY_GROUP = 1 << 16;
 
 // the groups in their order (EDIT-GIT-5)
 enum GroupId { groupConflicts = 0, groupStaged, groupChanges, groupUntracked, groupIgnored, groupCount };
@@ -66,9 +69,44 @@ static bool isChange(const StatusEntry& e)
     return !e.unchanged() && !e.ignored();
 }
 
-static QString letter(QChar c)
+// the marker of a group, the legend of the markers of its files (EDIT-GIT-5)
+static StatusMarker groupMarker(int group)
 {
-    return c == STATUS_NONE ? QString() : QString(c);
+    StatusMarker m;
+    switch (group) {
+    case groupConflicts:
+        m.places = StatusMarker::placeConflict;
+        m.glyph = StatusMarker::glyphConflict;
+        break;
+    case groupStaged:
+        m.places = StatusMarker::placeIndex;
+        break;
+    case groupChanges:
+        m.places = StatusMarker::placeTree;
+        break;
+    case groupUntracked:
+        m.places = StatusMarker::placeTree;
+        m.glyph = StatusMarker::glyphUntracked;
+        break;
+    default:
+        m.places = StatusMarker::placeIgnored;
+        break;
+    }
+    return m;
+}
+
+// a status letter in words (EDIT-GIT-4)
+static QString changeWord(QChar c)
+{
+    switch (c.unicode()) {
+    case 'M': return RepositoryModel::tr("modified");
+    case 'T': return RepositoryModel::tr("type changed");
+    case 'A': return RepositoryModel::tr("added");
+    case 'D': return RepositoryModel::tr("deleted");
+    case 'R': return RepositoryModel::tr("renamed");
+    case 'C': return RepositoryModel::tr("copied");
+    default:  return QString(c);
+    }
 }
 
 RepositoryModel::RepositoryModel(QObject* parent):
@@ -104,7 +142,7 @@ void RepositoryModel::setOpenFiles(const QHash<QString, bool>& open)
 {
     if (open == m_open) return;
     m_open = open;
-    // the marks are in the names: the rows stay
+    // the marks are the names and their fonts: the rows stay
     if (rowCount() > 0) emit dataChanged(index(0, columnName), index(rowCount() - 1, columnName));
     QModelIndexList stack;
     for (int i = 0; i < rowCount(); i++) stack << index(i, columnName);
@@ -186,7 +224,8 @@ void RepositoryModel::buildTree()
         node->parent = parent;
         parent->children.append(node);
         if (change) {
-            for (Node* p = parent; p && p != m_root; p = p->parent) p->changes = true;
+            int places = StatusMarker::of(e).places;
+            for (Node* p = parent; p && p != m_root; p = p->parent) p->places |= places;
         }
     }
     sortTree(m_root);
@@ -196,7 +235,7 @@ void RepositoryModel::sortTree(Node* node)
 {
     // the folders first, the changed before the unchanged, then by name (EDIT-GIT-5)
     auto changed = [this](const Node* n) {
-        return n->kind == kindFolder ? n->changes : isChange(m_snapshot.entries.at(n->entry));
+        return n->kind == kindFolder ? n->places != 0 : isChange(m_snapshot.entries.at(n->entry));
     };
     std::stable_sort(node->children.begin(), node->children.end(), [&changed](const Node* a, const Node* b) {
         if ((a->kind == kindFolder) != (b->kind == kindFolder)) return a->kind == kindFolder;
@@ -278,40 +317,90 @@ QVariant RepositoryModel::data(const QModelIndex& index, int role) const
     const StatusEntry* e = node->kind == kindFile ? &m_snapshot.entries.at(node->entry) : nullptr;
     switch (role) {
     case Qt::DisplayRole:
-        if (index.column() == columnName) {
-            if (e && m_open.value(e->path, false)) return node->name + ' ' + UNSAVED_MARK;
-            return node->name;
-        }
-        if (!e) return index.column() == columnTree && node->changes ? QString(FOLDER_CHANGES) : QString();
-        return letter(index.column() == columnIndex ? e->index : e->tree);
+        if (e && m_open.value(e->path, false)) return node->name + ' ' + UNSAVED_MARK;
+        return node->name;
+    case Qt::FontRole: {
+        // a file open in a tab (EDIT-GIT-4)
+        if (!e || !m_open.contains(e->path)) return QVariant();
+        QFont bold;
+        bold.setBold(true);
+        return bold;
+    }
     case Qt::ToolTipRole:
-        if (!e) return QVariant();
-        if (!e->oldPath.isEmpty()) return tr("%1, renamed from %2").arg(e->path, e->oldPath);
-        return e->path;
-    case Qt::TextAlignmentRole:
-        return index.column() == columnName ? QVariant() : QVariant(Qt::AlignCenter);
+        return toolTipOf(node);
     case Qt::DecorationRole:
-        if (index.column() != columnName) return QVariant();
-        return QApplication::style()->standardIcon(node->kind == kindFile && !node->path.endsWith(PATH_SEPARATOR) ?
-                                                   QStyle::SP_FileIcon : QStyle::SP_DirIcon);
+        return iconOf(node);
     case PathRole:
         return node->kind == kindGroup ? QString() : node->path;
     case KindRole:
         return int(node->kind);
+    case MarkerRole:
+        return markerOf(node).key();
     default:
         return QVariant();
     }
 }
 
+StatusMarker RepositoryModel::markerOf(const Node* node) const
+{
+    if (node->kind == kindGroup) return groupMarker(node->path.toInt());
+    if (node->kind == kindFile) return StatusMarker::of(m_snapshot.entries.at(node->entry));
+    StatusMarker m;
+    m.places = node->places;
+    return m;
+}
+
+QIcon RepositoryModel::iconOf(const Node* node) const
+{
+    StatusMarker marker = markerOf(node);
+    if (node->kind == kindGroup) {
+        int key = ICON_KEY_GROUP | marker.key();
+        if (!m_icons.contains(key)) m_icons.insert(key, markerIcon(marker));
+        return m_icons.value(key);
+    }
+    FileKind kind = node->kind == kindFolder ? FileKind::folder : fileKind(node->path);
+    bool greyed = node->kind == kindFile && m_snapshot.entries.at(node->entry).ignored();
+    int key = (int(kind) << ICON_KEY_KIND_SHIFT) | (marker.key() << ICON_KEY_MARKER_SHIFT) |
+              (greyed ? ICON_KEY_GREYED : 0);
+    if (!m_icons.contains(key)) m_icons.insert(key, markedIcon(kind, marker, greyed));
+    return m_icons.value(key);
+}
+
+QString RepositoryModel::toolTipOf(const Node* node) const
+{
+    if (node->kind == kindGroup) return QString();
+    QStringList lines;
+    lines << node->path;
+    if (node->kind == kindFolder) {
+        if (node->places & StatusMarker::placeConflict) lines << tr("Conflicts inside");
+        bool staged = node->places & StatusMarker::placeIndex;
+        bool changed = node->places & StatusMarker::placeTree;
+        if (staged && changed) lines << tr("Staged and not staged changes inside");
+        else if (staged) lines << tr("Staged changes inside");
+        else if (changed) lines << tr("Changes not staged inside");
+        return lines.join(LINE_BREAK);
+    }
+    // the status in words (EDIT-GIT-4)
+    const StatusEntry& e = m_snapshot.entries.at(node->entry);
+    if (!e.oldPath.isEmpty()) lines << tr("Renamed from %1").arg(e.oldPath);
+    if (e.conflicted()) {
+        lines << tr("Conflicted");
+    } else if (e.untracked()) {
+        lines << tr("Untracked");
+    } else if (e.ignored()) {
+        lines << tr("Ignored");
+    } else {
+        if (e.index != STATUS_NONE) lines << tr("Staged: %1").arg(changeWord(e.index));
+        if (e.tree != STATUS_NONE) lines << tr("Not staged: %1").arg(changeWord(e.tree));
+    }
+    if (m_open.contains(e.path)) lines << (m_open.value(e.path) ? tr("Open, unsaved edits") : tr("Open"));
+    return lines.join(LINE_BREAK);
+}
+
 QVariant RepositoryModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
     if (orientation != Qt::Horizontal || role != Qt::DisplayRole) return QVariant();
-    switch (section) {
-    case columnName:  return tr("Name");
-    case columnIndex: return tr("Index");
-    case columnTree:  return tr("Tree");
-    default:          return QVariant();
-    }
+    return section == columnName ? QVariant(tr("Name")) : QVariant();
 }
 
 const StatusEntry* RepositoryModel::entry(const QModelIndex& index) const

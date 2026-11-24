@@ -22,8 +22,8 @@
  * ----------------------------------------------------------------------------- */
 
 #include <QActionGroup>
+#include <QEvent>
 #include <QHBoxLayout>
-#include <QHeaderView>
 #include <QItemSelectionModel>
 #include <QLabel>
 #include <QScrollBar>
@@ -36,6 +36,10 @@
 
 #include "repository_view.h"
 
+// the shares of the first line: the branch its text first, then the folder
+static const int HEADING_STRETCH = 1;
+static const int BRANCH_STRETCH = 100;
+
 RepositoryView::RepositoryView(QWidget* parent):
     QWidget(parent), m_model(new RepositoryModel(this))
 {
@@ -43,32 +47,41 @@ RepositoryView::RepositoryView(QWidget* parent):
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
 
-    // the line of the work tree and its branch; it never widens the dock
+    // the first line: the work tree and its branch; it never widens the dock, the branch takes
+    // its text first, the folder the rest (EDIT-GIT-3)
     m_headingRow = new QWidget(this);
     QHBoxLayout* row = new QHBoxLayout(m_headingRow);
     row->setContentsMargins(0, 0, 0, 0);
+    row->setSpacing(0);
     m_heading = new QLabel(m_headingRow);
     m_heading->setObjectName("repositoryHeading");
     m_heading->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
     m_heading->setMargin(m_heading->fontMetrics().averageCharWidth() / 2);
-    m_heading->setTextInteractionFlags(Qt::TextSelectableByMouse);
-    row->addWidget(m_heading, 1);
+    m_heading->installEventFilter(this);
+    row->addWidget(m_heading, HEADING_STRETCH);
     m_branch = new QToolButton(m_headingRow);
     m_branch->setObjectName("repositoryBranch");
     m_branch->setPopupMode(QToolButton::InstantPopup);
     m_branch->setToolButtonStyle(Qt::ToolButtonTextOnly);
+    m_branch->setAutoRaise(true);
     m_branch->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
-    row->addWidget(m_branch, 1);
+    m_branch->hide();
+    row->addWidget(m_branch, BRANCH_STRETCH);
     m_headingRow->hide();
     layout->addWidget(m_headingRow);
 
+    // the second line: the tools, icons in one row (EDIT-GIT-3)
     m_toolBar = new QToolBar(this);
     m_toolBar->setObjectName("repositoryToolBar");
+    m_toolBar->setMovable(false);
+    m_toolBar->setToolButtonStyle(Qt::ToolButtonIconOnly);
+    int icon = style()->pixelMetric(QStyle::PM_SmallIconSize);
+    m_toolBar->setIconSize(QSize(icon, icon));
     QActionGroup* layouts = new QActionGroup(this);
-    m_treeAction = m_toolBar->addAction(tr("Tree"));
+    m_treeAction = m_toolBar->addAction(QIcon(":/Icons/images/repository-tree.png"), tr("Tree"));
     m_treeAction->setObjectName("actionRepositoryTree");
     m_treeAction->setToolTip(tr("The folders and the files of the work tree"));
-    m_groupsAction = m_toolBar->addAction(tr("Groups"));
+    m_groupsAction = m_toolBar->addAction(QIcon(":/Icons/images/repository-groups.png"), tr("Groups"));
     m_groupsAction->setObjectName("actionRepositoryGroups");
     m_groupsAction->setToolTip(tr("The changed files by their status"));
     for (QAction* action : {m_treeAction, m_groupsAction}) {
@@ -77,16 +90,17 @@ RepositoryView::RepositoryView(QWidget* parent):
     }
     m_treeAction->setChecked(true);
     m_toolBar->addSeparator();
-    m_changedOnlyAction = m_toolBar->addAction(tr("Changed only"));
+    m_changedOnlyAction = m_toolBar->addAction(QIcon(":/Icons/images/repository-changed.png"),
+                                               tr("Changed only"));
     m_changedOnlyAction->setObjectName("actionRepositoryChangedOnly");
     m_changedOnlyAction->setCheckable(true);
     m_changedOnlyAction->setToolTip(tr("Only the changed files and the folders holding them"));
-    m_ignoredAction = m_toolBar->addAction(tr("Ignored"));
+    m_ignoredAction = m_toolBar->addAction(QIcon(":/Icons/images/repository-ignored.png"), tr("Ignored"));
     m_ignoredAction->setObjectName("actionRepositoryIgnored");
     m_ignoredAction->setCheckable(true);
     m_ignoredAction->setToolTip(tr("The files git ignores too"));
     m_toolBar->addSeparator();
-    m_refreshAction = m_toolBar->addAction(style()->standardIcon(QStyle::SP_BrowserReload), tr("Refresh"));
+    m_refreshAction = m_toolBar->addAction(QIcon(":/Icons/images/refresh.png"), tr("Refresh"));
     m_refreshAction->setObjectName("actionRepositoryRefresh");
     m_refreshAction->setToolTip(tr("Read the status of the work tree again"));
     layout->addWidget(m_toolBar);
@@ -99,10 +113,8 @@ RepositoryView::RepositoryView(QWidget* parent):
     m_tree->setSelectionMode(QAbstractItemView::ExtendedSelection);
     // a folder opens and closes by the activation, the double click and Return alike
     m_tree->setExpandsOnDoubleClick(false);
-    m_tree->header()->setStretchLastSection(false);
-    m_tree->header()->setSectionResizeMode(RepositoryModel::columnName, QHeaderView::Stretch);
-    m_tree->header()->setSectionResizeMode(RepositoryModel::columnIndex, QHeaderView::ResizeToContents);
-    m_tree->header()->setSectionResizeMode(RepositoryModel::columnTree, QHeaderView::ResizeToContents);
+    // one column: the status is the marker on the icon (EDIT-GIT-4)
+    m_tree->setHeaderHidden(true);
     m_pages->addWidget(m_tree);
     m_line = new QLabel(m_pages);
     m_line->setObjectName("repositoryLine");
@@ -130,15 +142,32 @@ RepositoryView::RepositoryView(QWidget* parent):
     connect(m_refreshAction, &QAction::triggered, this, &RepositoryView::refreshRequested);
 }
 
-void RepositoryView::setHeading(const QString& text)
+void RepositoryView::setHeading(const QString& text, const QString& toolTip)
 {
-    m_heading->setText(text);
+    m_headingText = text;
+    m_heading->setToolTip(toolTip);
     m_headingRow->setVisible(!text.isEmpty());
+    elideHeading();
 }
 
-QString RepositoryView::heading() const
+void RepositoryView::elideHeading()
 {
-    return m_heading->text();
+    int room = m_heading->contentsRect().width() - 2 * m_heading->margin();
+    m_heading->setText(m_heading->fontMetrics().elidedText(m_headingText, Qt::ElideRight, qMax(0, room)));
+}
+
+bool RepositoryView::eventFilter(QObject* watched, QEvent* event)
+{
+    if (watched == m_heading && event->type() == QEvent::Resize) elideHeading();
+    return QWidget::eventFilter(watched, event);
+}
+
+void RepositoryView::setBranch(const QString& text)
+{
+    m_branch->setText(text);
+    // the branch takes no more than its text: the rest goes to the folder
+    m_branch->setMaximumWidth(text.isEmpty() ? 0 : m_branch->sizeHint().width());
+    m_branch->setVisible(!text.isEmpty());
 }
 
 void RepositoryView::setRepository(const QString& root, const QString& line)
@@ -271,7 +300,7 @@ void RepositoryView::restoreViewState()
         // a row shown first: the groups and the folders holding a change open
         bool open = state.seen.contains(path) ? state.expanded.contains(path) :
             (m_model->data(at, RepositoryModel::KindRole).toInt() == RepositoryModel::kindGroup ||
-             !m_model->data(at.sibling(at.row(), RepositoryModel::columnTree)).toString().isEmpty());
+             m_model->data(at, RepositoryModel::MarkerRole).toInt() != 0);
         m_tree->setExpanded(at, open);
         for (int i = 0; i < m_model->rowCount(at); i++) stack << m_model->index(i, RepositoryModel::columnName, at);
     }

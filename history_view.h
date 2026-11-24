@@ -49,6 +49,9 @@ public:
     const QVector<LogEntry>& entries() const { return m_entries; }
     bool              hasMore() const { return m_more; }
     bool              isMoreRow(const QModelIndex& index) const;
+    // the commit of the current version, bold (EDIT-GIT-15)
+    void              setCurrentHash(const QString& hash);
+    QString           currentHash() const { return m_current; }
 
     int               rowCount(const QModelIndex& parent = QModelIndex()) const override;
     int               columnCount(const QModelIndex& parent = QModelIndex()) const override;
@@ -58,6 +61,7 @@ public:
 private:
     QVector<LogEntry> m_entries;
     bool              m_more = false;
+    QString           m_current;
 };
 
 // The contents of the History dock (EDIT-GIT-15, docs/GIT.md, The history): the scope, the

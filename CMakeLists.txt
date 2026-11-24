@@ -177,6 +177,7 @@ add_library(CyberiadaEditorCore STATIC
   git_process.h git_process.cpp
   repository_status.h repository_status.cpp
   repository_service.h repository_service.cpp
+  repository_icons.h repository_icons.cpp
   repository_model.h repository_model.cpp
   repository_view.h repository_view.cpp
   history_view.h history_view.cpp

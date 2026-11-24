@@ -58,6 +58,17 @@
         <file>images/document-new-md.png</file>
         <file>images/document-open.png</file>
         <file>images/terminal.png</file>
+        <file>images/file-code.png</file>
+        <file>images/file-text.png</file>
+        <file>images/folder.png</file>
+        <file>images/repository-tree.png</file>
+        <file>images/repository-groups.png</file>
+        <file>images/repository-changed.png</file>
+        <file>images/repository-ignored.png</file>
+        <file>images/git-stage.png</file>
+        <file>images/git-unstage.png</file>
+        <file>images/git-commit.png</file>
+        <file>images/refresh.png</file>
         <file>images/go-to-line.png</file>
         <file>images/insert-image.png</file>
         <file>images/insert-diagram.png</file>

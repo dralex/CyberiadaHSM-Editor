@@ -1,6 +1,7 @@
 # Git in the Editor — Architecture
 
-**Document version:** 0.7 (2026-11-23), the docks at the right — specified (stage 0) and implemented: the disk check
+**Document version:** 0.8 (2026-11-24), the status markers on the icons, the icon tools of
+the dock in one row, the alternating History rows; 0.7, the docks at the right — specified (stage 0) and implemented: the disk check
 (stage 2), the git core (stage 3), the Repository dock (stage 4), the verbs, the commit, the
 compares and the history (stage 5), the branches (stage 6); the git plugin retired from the
 packaging (stage 7). The requirements are
@@ -115,15 +116,26 @@ knows: the dock follows the active tab, and a tab of another repository brings i
           v
  RepositoryModel::rebuild(layout, changedOnly, ignored)            repository_model.*
    tree:   folder nodes and file nodes; per folder the folders, then the files, the
-           changed before the unchanged, then by name; a folder with a change gets *
+           changed before the unchanged, then by name; a folder gets the marker of the
+           changes under it
    groups: Conflicts | Staged | Changes | Untracked | Ignored, flat paths, a file in
            Staged and Changes when both letters are set; empty groups left out
-   columns: Name (● for an unsaved tab, the old path of a rename in the tooltip),
-            Index, Tree
-          |
-          v
- RepositoryView: QTreeView over the model, the toolbar, the placeholder, the context
-                 menu, the branch button                           repository_view.*
+   one column: the name (bold when open, ● when unsaved), the icon (DecorationRole)
+               and the status in words (ToolTipRole); MarkerRole for the view
+          |                                     ^ fileKind(name), Marker(entry)
+          v                                     |
+ RepositoryView: QTreeView over the model,   repository_icons.*: MarkedIconEngine
+   the folder + branch button line, the        paints the kind's picture (images/),
+   icon tools, the placeholder, the context    greyed when ignored, then the marker
+   menu                   repository_view.*    disk + glyph at any size
+```
+
+```
+ marker = places (index | tree | conflict) + glyph (none + − → ? !)     (EDIT-GIT-4)
+   index letter set          -> green half      conflict -> all red, glyph !
+   tree letter set/untracked -> orange half     both     -> green left, orange right
+   D anywhere -> −   A -> +   R/C -> →   ? -> ?   M/T -> no glyph
+   folder: the places of every change under it, no glyph; group: its marker alone
 ```
 
 * One model with a layout, not two proxies: both layouts are a rebuild of the same snapshot.
@@ -131,6 +143,9 @@ knows: the dock follows the active tab, and a tab of another repository brings i
   groups by their paths, the scroll and the chosen files across it, per root. A folder or a
   group shown first opens when it holds a change.
 * The open and unsaved marks change the names in place (`dataChanged`).
+* The icons are built once per kind and marker and kept by the model; a `QIconEngine` paints
+  them, so the marker stays sharp at any icon size and device pixel ratio.
+* The kind of a file is told by its name only (`fileKind`): nothing is read from the disk.
 * The batch mode starts the dock from the defaults and stores nothing, so a script runs the
   same on every machine; the GUI stores the layout, Changed only and Ignored per user.
 * `RepositoryModel::files(indexes)` turns a selection into files: a folder or a group gives
@@ -211,7 +226,9 @@ fetches the next 100 on *More...*. The dock follows the current row of the Repos
 else the active tab, and reads its query again after each status read while it is shown; a
 staged rename is read by its old path, as `--follow` follows only the committed ones. A
 double-click compares the file of the query (in the repository scope the active tab's file)
-with the row's hash.
+with the row's hash. The rows alternate (the palette's `AlternateBase` set to the base 10%
+darker); the commit of the current version is bold: in the repository scope the `HEAD` of the
+snapshot, in the file scope the first row, as `git log` starts from `HEAD`.
 
 The dock titles stay `Repository` and `History`: the least width of a dock counts its title,
 so a long work tree name would widen it on every tab switch; the name and the branch are the

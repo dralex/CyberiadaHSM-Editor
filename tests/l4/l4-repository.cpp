@@ -36,6 +36,7 @@
 #include "dialogs/preferences_dialog.h"
 #include "code_editor.h"
 #include "git_process.h"
+#include "repository_icons.h"
 #include "repository_model.h"
 #include "repository_service.h"
 #include "repository_view.h"
@@ -60,6 +61,8 @@ class TestRepository: public QObject {
 private slots:
 	void initTestCase();
 	void test_model_tree();
+	void test_file_kinds();
+	void test_marker_icons();
 	void test_model_groups();
 	void test_model_changed_only();
 	void test_model_files();
@@ -83,6 +86,7 @@ private slots:
 private:
 	static RepositorySnapshot sample();
 	static StatusEntry entry(const QString& path, char index, char tree, const QString& old = QString());
+	static int marker(int places, int glyph = 0);
 	static QStringList names(const RepositoryModel& model, const QModelIndex& parent = QModelIndex());
 	QString makeRepository(const QString& name);
 	void git(const QString& folder, const QStringList& args);
@@ -191,24 +195,91 @@ void TestRepository::test_model_tree()
 	                                     << "README.md" << "build/" << "run.log");
 	QModelIndex b = model.index(0, RepositoryModel::columnName);
 	QCOMPARE(names(model, b), QStringList() << "beta.graphml" << "alpha.graphml");
-	// a folder holding a change is marked, one without is not
-	QCOMPARE(model.data(model.index(0, RepositoryModel::columnTree)).toString(), QString("*"));
+	// one column: the letters are markers on the icons (EDIT-GIT-4, 0.81)
+	QCOMPARE(model.columnCount(), 1);
+	// a folder holding a change has the places of its changes, one without has none
+	QCOMPARE(model.data(b, RepositoryModel::MarkerRole).toInt(),
+	         marker(StatusMarker::placeIndex | StatusMarker::placeTree));
+	QVERIFY(model.data(b, Qt::ToolTipRole).toString().contains("Staged and not staged changes inside"));
 	QModelIndex d = model.index(2, RepositoryModel::columnName);
-	QCOMPARE(model.data(d.sibling(d.row(), RepositoryModel::columnTree)).toString(), QString());
-	// the two letters, none for '.'
-	QModelIndex beta = model.index(0, RepositoryModel::columnIndex, b);
-	QCOMPARE(model.data(beta).toString(), QString("M"));
-	QCOMPARE(model.data(beta.sibling(0, RepositoryModel::columnTree)).toString(), QString("M"));
-	QModelIndex light = model.indexOf("light.graphml");
-	QCOMPARE(model.data(light.sibling(light.row(), RepositoryModel::columnIndex)).toString(), QString());
-	QCOMPARE(model.data(light.sibling(light.row(), RepositoryModel::columnTree)).toString(), QString("M"));
+	QCOMPARE(model.data(d, RepositoryModel::MarkerRole).toInt(), 0);
+	QVERIFY(!model.data(d, Qt::DecorationRole).value<QIcon>().isNull());
+	// staged and changed again: both halves, the letters in words
+	QModelIndex beta = model.indexOf("b/beta.graphml");
+	QCOMPARE(model.data(beta, RepositoryModel::MarkerRole).toInt(),
+	         marker(StatusMarker::placeIndex | StatusMarker::placeTree));
+	QCOMPARE(model.data(beta, Qt::ToolTipRole).toString(),
+	         QString("b/beta.graphml\nStaged: modified\nNot staged: modified"));
+	QCOMPARE(model.data(model.indexOf("light.graphml"), RepositoryModel::MarkerRole).toInt(),
+	         marker(StatusMarker::placeTree));
 	// a rename tells its old path
 	QModelIndex z = model.indexOf("c/z.txt");
-	QVERIFY(model.data(z, Qt::ToolTipRole).toString().contains("c/y.txt"));
+	QCOMPARE(model.data(z, Qt::ToolTipRole).toString(), QString("c/z.txt\nRenamed from c/y.txt\nStaged: renamed"));
+	QCOMPARE(model.data(z, RepositoryModel::MarkerRole).toInt(),
+	         marker(StatusMarker::placeIndex, StatusMarker::glyphRenamed));
 	QCOMPARE(model.data(z, RepositoryModel::PathRole).toString(), QString("c/z.txt"));
-	QCOMPARE(model.data(model.indexOf("conflict.txt").sibling(model.indexOf("conflict.txt").row(),
-	                                                          RepositoryModel::columnIndex)).toString(), QString("U"));
+	QCOMPARE(model.data(model.indexOf("conflict.txt"), RepositoryModel::MarkerRole).toInt(),
+	         marker(StatusMarker::placeConflict, StatusMarker::glyphConflict));
+	QCOMPARE(model.data(model.indexOf("new.txt"), RepositoryModel::MarkerRole).toInt(),
+	         marker(StatusMarker::placeTree, StatusMarker::glyphUntracked));
+	QCOMPARE(model.data(model.indexOf("new.txt"), Qt::ToolTipRole).toString(), QString("new.txt\nUntracked"));
+	// unchanged and ignored: no marker
+	QCOMPARE(model.data(model.indexOf("README.md"), RepositoryModel::MarkerRole).toInt(), 0);
+	QCOMPARE(model.data(model.indexOf("run.log"), RepositoryModel::MarkerRole).toInt(), 0);
+	QCOMPARE(model.data(model.indexOf("run.log"), Qt::ToolTipRole).toString(), QString("run.log\nIgnored"));
 	QCOMPARE(model.headerData(RepositoryModel::columnName, Qt::Horizontal).toString(), QString("Name"));
+}
+
+int TestRepository::marker(int places, int glyph)
+{
+	StatusMarker m;
+	m.places = places;
+	m.glyph = StatusMarker::Glyph(glyph);
+	return m.key();
+}
+
+// EDIT-GIT-4: the kind of a file by its name
+void TestRepository::test_file_kinds()
+{
+	QCOMPARE(fileKind("a/b.graphml"), FileKind::diagram);
+	QCOMPARE(fileKind("B.GRAPHML"), FileKind::diagram);
+	QCOMPARE(fileKind("notes.md"), FileKind::markdown);
+	QCOMPARE(fileKind("x/notes.markdown"), FileKind::markdown);
+	for (const char* code : {"blink.ino", "a.c", "a.hpp", "tool.py", "app.js", "Robot.cs", "build.sh",
+	                         "Makefile", "sub/CMakeLists.txt", "Dockerfile", "data.json", "ci.yml"}) {
+		QCOMPARE(fileKind(code), FileKind::code);
+	}
+	for (const char* text : {"notes.txt", "run.log", "LICENSE", ".gitignore", "image.svg", "dir.d/file"}) {
+		QCOMPARE(fileKind(text), FileKind::text);
+	}
+	QCOMPARE(fileKind("build/"), FileKind::folder);
+}
+
+// EDIT-GIT-4: the marker disk: green staged, orange not staged, halves for both, red conflicted
+void TestRepository::test_marker_icons()
+{
+	const int side = 64;
+	auto pixel = [side](const QIcon& icon, qreal x, qreal y) {
+		return QColor(icon.pixmap(side, side).toImage().pixel(int(x * side), int(y * side))).rgb() & 0xffffff;
+	};
+	const QRgb green = 0x2e7d32, orange = 0xef6c00, red = 0xc62828;
+	StatusMarker both;
+	both.places = StatusMarker::placeIndex | StatusMarker::placeTree;
+	// the disk is the lower right 0.6 of the side: its centre at 0.7, the halves left and right
+	QIcon icon = markedIcon(FileKind::diagram, both, false);
+	QCOMPARE(pixel(icon, 0.6, 0.7), green);
+	QCOMPARE(pixel(icon, 0.8, 0.7), orange);
+	StatusMarker conflict;
+	conflict.places = StatusMarker::placeConflict;
+	QCOMPARE(pixel(markedIcon(FileKind::text, conflict, false), 0.6, 0.7), red);
+	// a group: the disk alone in the middle
+	StatusMarker staged;
+	staged.places = StatusMarker::placeIndex;
+	QCOMPARE(pixel(markerIcon(staged), 0.5, 0.5), green);
+	QCOMPARE(icon.pixmap(side, side).toImage().pixel(0, 0) >> 24, 0u);
+	// an ignored file: the picture greyed, no marker
+	QVERIFY(markedIcon(FileKind::code, StatusMarker(), true).pixmap(side, side).toImage() !=
+	        markedIcon(FileKind::code, StatusMarker(), false).pixmap(side, side).toImage());
 }
 
 // EDIT-GIT-5: the groups: the changes only, a staged and changed file in both
@@ -226,6 +297,14 @@ void TestRepository::test_model_groups()
 	         QStringList() << "b/beta.graphml" << "light.graphml");
 	QCOMPARE(model.data(model.index(1, RepositoryModel::columnName), RepositoryModel::KindRole).toInt(),
 	         int(RepositoryModel::kindGroup));
+	// the icon of a group is its marker alone: the legend of the markers (EDIT-GIT-5)
+	QCOMPARE(model.data(model.index(0, 0), RepositoryModel::MarkerRole).toInt(),
+	         marker(StatusMarker::placeConflict, StatusMarker::glyphConflict));
+	QCOMPARE(model.data(model.index(1, 0), RepositoryModel::MarkerRole).toInt(), marker(StatusMarker::placeIndex));
+	QCOMPARE(model.data(model.index(2, 0), RepositoryModel::MarkerRole).toInt(), marker(StatusMarker::placeTree));
+	QCOMPARE(model.data(model.index(3, 0), RepositoryModel::MarkerRole).toInt(),
+	         marker(StatusMarker::placeTree, StatusMarker::glyphUntracked));
+	QCOMPARE(model.data(model.index(4, 0), RepositoryModel::MarkerRole).toInt(), marker(StatusMarker::placeIgnored));
 	// without the ignored files no Ignored group
 	RepositorySnapshot plain = sample();
 	plain.entries.erase(std::remove_if(plain.entries.begin(), plain.entries.end(),
@@ -270,7 +349,7 @@ void TestRepository::test_model_files()
 	QCOMPARE(all.count("b/beta.graphml"), 1);
 }
 
-// EDIT-GIT-4: the file of a tab with unsaved edits is marked
+// EDIT-GIT-4: the files open in tabs are bold, one with unsaved edits is marked
 void TestRepository::test_model_marks()
 {
 	RepositoryModel model;
@@ -282,6 +361,11 @@ void TestRepository::test_model_marks()
 	model.setOpenFiles(open);
 	QCOMPARE(model.data(model.indexOf("light.graphml")).toString(), QString("light.graphml ") + QChar(0x25CF));
 	QCOMPARE(model.data(model.indexOf("README.md")).toString(), QString("README.md"));
+	QVERIFY(model.data(model.indexOf("light.graphml"), Qt::FontRole).value<QFont>().bold());
+	QVERIFY(model.data(model.indexOf("README.md"), Qt::FontRole).value<QFont>().bold());
+	QVERIFY(!model.data(model.indexOf("new.txt"), Qt::FontRole).isValid());
+	QVERIFY(model.data(model.indexOf("light.graphml"), Qt::ToolTipRole).toString().endsWith("\nOpen, unsaved edits"));
+	QVERIFY(model.data(model.indexOf("README.md"), Qt::ToolTipRole).toString().endsWith("\nOpen"));
 }
 
 // EDIT-GIT-2/3: the dock shows the work tree of the active tab, a line without one
@@ -313,6 +397,15 @@ void TestRepository::test_dock_follows_tab()
 	QCOMPARE(view->branchButton()->text(), QString("main"));
 	// the file of the tab is the current row
 	QCOMPARE(view->tree()->currentIndex().data(RepositoryModel::PathRole).toString(), QString("h.graphml"));
+	// the folder and the branch, then the tools in a row of their own, icons only; one column
+	// (EDIT-GIT-3/4)
+	QVERIFY(view->toolBar()->parentWidget() != view->branchButton()->parentWidget());
+	QVERIFY(view->tree()->isHeaderHidden());
+	for (QAction* action : view->toolBar()->actions()) {
+		QVERIFY(action->isSeparator() || !action->icon().isNull());
+	}
+	QCOMPARE(view->toolBar()->toolButtonStyle(), Qt::ToolButtonIconOnly);
+	QCOMPARE(view->findChild<QLabel*>("repositoryHeading")->toolTip(), QDir::toNativeSeparators(first));
 	EditorDocument* inFirst = window.currentTab();
 	QVERIFY(window.openFile(QDir(second).filePath("docs/notes.md"), &error));
 	QCOMPARE(view->root(), second);
@@ -658,9 +751,18 @@ void TestRepository::test_history_dock()
 	view->tree()->setCurrentIndex(view->model()->indexOf("h-log.txt"));
 	QTRY_COMPARE(history->model()->entries().size(), 3);
 	QCOMPARE(history->title(), QString("History of h-log.txt"));
+	// the rows alternate; the commit of the current version is bold (EDIT-GIT-15, 0.81)
+	QVERIFY(history->list()->alternatingRowColors());
+	QVERIFY(history->list()->palette().color(QPalette::AlternateBase) != history->list()->palette().color(QPalette::Base));
+	QCOMPARE(history->model()->currentHash(), history->model()->entries().first().hash);
+	QVERIFY(history->model()->index(0, HistoryModel::columnSubject).data(Qt::FontRole).value<QFont>().bold());
+	QVERIFY(!history->model()->index(1, HistoryModel::columnSubject).data(Qt::FontRole).isValid());
 	history->repositoryAction()->trigger();
 	QCOMPARE(history->model()->entries().size(), 4);
 	QVERIFY(!history->model()->hasMore());
+	// in the repository scope HEAD, the newest commit
+	QCOMPARE(history->model()->currentHash(), window.repositoryOf(window.currentTab())->snapshot().oid);
+	QCOMPARE(history->model()->currentHash(), history->model()->entries().first().hash);
 	// a double click compares the active tab's file with the commit
 	history->fileAction()->trigger();
 	view->tree()->setCurrentIndex(view->model()->indexOf("h.graphml"));
@@ -757,15 +859,36 @@ void TestRepository::test_docks_right()
 	QVERIFY(window.openFile("diagrams/hierarchy.graphml", &error));
 	QTest::qWait(50);
 	QCOMPARE(frontTab(&window, "Structure tree"), QString("Structure tree"));
-	// the Repository in front over a work tree with a change, for the eye
+	// the Repository in front over a work tree with the markers of every kind, for the eye:
+	// changed, staged, staged and changed again, added, deleted, untracked code
 	QString root = makeRepository("docks-right");
-	write(QDir(root).filePath("docs/notes.md"), "# Changed\n");
+	for (const char* name : {"guide", "tasks"}) {
+		write(QDir(root).filePath(QString("docs/%1.md").arg(name)), "# Text\n");
+		git(root, QStringList() << "add" << "-A");
+		git(root, QStringList() << "commit" << "-q" << "-m" << QString("the %1").arg(name));
+	}
+	write(QDir(root).filePath("docs/guide.md"), "# Changed\n");
+	write(QDir(root).filePath("deep/inner/a.txt"), "b\n");
+	write(QDir(root).filePath("docs/plan.md"), "# Plan\n");
+	git(root, QStringList() << "add" << "deep/inner/a.txt" << "docs/plan.md");
+	write(QDir(root).filePath("docs/plan.md"), "# Plan, again\n");
+	git(root, QStringList() << "rm" << "-q" << "docs/notes.md");
+	write(QDir(root).filePath("src/blink.ino"), "void setup() {}\n");
 	QVERIFY(window.openFile(QDir(root).filePath("h.graphml"), &error));
 	window.repositoryDock->raise();
-	QTRY_VERIFY_WITH_TIMEOUT(window.repositoryView()->model()->indexOf("docs/notes.md").isValid() &&
-	                         window.repositoryView()->model()->entry(
-	                             window.repositoryView()->model()->indexOf("docs/notes.md"))->modified(), 10000);
+	RepositoryView* view = window.repositoryView();
+	QTRY_VERIFY_WITH_TIMEOUT(view->model()->indexOf("src/blink.ino").isValid(), 10000);
+	view->tree()->expandAll();
+	// the tools fit the first line of the dock as it opens: no overflow (EDIT-GIT-3)
+	QToolButton* more = view->toolBar()->findChild<QToolButton*>("qt_toolbar_ext_button");
+	QVERIFY(!more || !more->isVisible());
+	QVERIFY(view->branchButton()->isVisible());
 	QVERIFY(window.grab().save(QT_TESTCASE_BUILDDIR "/tests/repository-docks.png"));
+	QVERIFY(window.repositoryDock->grab().save(QT_TESTCASE_BUILDDIR "/tests/repository-dock.png"));
+	window.historyDock->raise();
+	window.gitHistory(QString(), true);
+	QTRY_VERIFY(!window.historyView()->model()->entries().isEmpty());
+	QVERIFY(window.historyDock->grab().save(QT_TESTCASE_BUILDDIR "/tests/history-dock.png"));
 }
 
 QTEST_MAIN(TestRepository)

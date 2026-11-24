@@ -37,9 +37,8 @@ class QToolBar;
 class QToolButton;
 class QTreeView;
 
-// The contents of the Repository dock (EDIT-GIT-3..8, docs/GIT.md): the toolbar, the
-// files of the work tree, or the line saying why there are none; the window gives it the
-// work tree of the active tab and acts on its requests
+// The contents of the Repository dock (EDIT-GIT-3..8, docs/GIT.md): the folder and the
+// branch button, the tools, the files of the work tree, or the line saying why there are none; the window gives it the work tree of the active tab and acts on its requests
 class RepositoryView: public QWidget {
 Q_OBJECT
 public:
@@ -62,17 +61,18 @@ public:
     QString           lineText() const;
     // a new status of the shown work tree: the expanded folders and the current row stay
     void              setSnapshot(const RepositorySnapshot& snapshot);
-    // the first line: the folder of the work tree, empty without one, and the button of its
-    // branch (EDIT-GIT-18)
-    void              setHeading(const QString& text);
-    QString           heading() const;
+    // the first line, hidden without a work tree: its folder, cut to its room, the full path in
+    // its tooltip; the button of its branch, hidden without a text (EDIT-GIT-3/18)
+    void              setHeading(const QString& text, const QString& toolTip = QString());
+    QString           heading() const { return m_headingText; }
+    void              setBranch(const QString& text);
     QToolButton*      branchButton() const { return m_branch; }
     // the row of the file of the active tab made current and shown
     void              setCurrentFile(const QString& path);
     // the files of the selected rows, a folder or a group standing for its files
     QStringList       selectedFiles() const;
 
-    // the state of the toolbar (EDIT-GIT-5); the signals tell the user's changes only
+    // the state of the tools (EDIT-GIT-5); the signals tell the user's changes only
     void              setLayoutMode(RepositoryModel::Layout layout);
     void              setChangedOnly(bool on);
     void              setIgnored(bool on);
@@ -96,11 +96,14 @@ private:
     void              saveViewState();
     void              restoreViewState();
     void              rowActivated(const QModelIndex& index);
+    void              elideHeading();
+    bool              eventFilter(QObject* watched, QEvent* event) override;
 
     RepositoryModel*  m_model;
     QToolBar*         m_toolBar;
     QWidget*          m_headingRow;
     QLabel*           m_heading;
+    QString           m_headingText;
     QToolButton*      m_branch;
     QStackedWidget*   m_pages;
     QTreeView*        m_tree;

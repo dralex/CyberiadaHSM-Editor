@@ -26,21 +26,25 @@
 
 #include <QAbstractItemModel>
 #include <QHash>
+#include <QIcon>
 #include <QStringList>
 
+#include "repository_icons.h"
 #include "repository_status.h"
 
 // The rows of the Repository dock (EDIT-GIT-4/5, docs/GIT.md, The model): the snapshot of a
-// work tree laid out as a tree of folders or as status groups, the open files marked
+// work tree laid out as a tree of folders or as status groups, one column; the status is a
+// marker on the icon, the open files are bold
 class RepositoryModel: public QAbstractItemModel {
 Q_OBJECT
 public:
     enum Layout { layoutTree = 0, layoutGroups };
-    enum Column { columnName = 0, columnIndex, columnTree, columnsCount };
+    enum Column { columnName = 0, columnsCount };
     enum Kind { kindFile = 0, kindFolder, kindGroup };
     enum Role {
         PathRole = Qt::UserRole + 1,   // a file: its path relative to the root
-        KindRole
+        KindRole,
+        MarkerRole                     // StatusMarker::key() of the row, 0 without a marker
     };
 
     explicit RepositoryModel(QObject* parent = nullptr);
@@ -48,7 +52,7 @@ public:
 
     void                  setSnapshot(const RepositorySnapshot& snapshot);
     const RepositorySnapshot& snapshot() const { return m_snapshot; }
-    // the open files of the work tree: the path and whether its tab has unsaved edits
+    // the open files of the work tree, bold: the path and whether its tab has unsaved edits
     void                  setOpenFiles(const QHash<QString, bool>& open);
     void                  setLayout(Layout layout);
     Layout                layout() const { return m_layout; }
@@ -79,7 +83,7 @@ private:
         QString        name;            // shown: a file or folder name, a path in a group
         QString        path;            // a file: its path; a folder: its path with '/'; a group: its id
         int            entry = -1;      // the entry of a file in the snapshot
-        bool           changes = false; // a folder holding a change
+        int            places = 0;      // a folder: the places of the changes under it
         Node*          parent = nullptr;
         QVector<Node*> children;
     };
@@ -93,12 +97,17 @@ private:
     QModelIndex           indexOfNode(Node* node) const;
     Node*                 nodeOf(const QModelIndex& index) const;
     static void           collect(const Node* node, QStringList* files);
+    StatusMarker          markerOf(const Node* node) const;
+    QIcon                 iconOf(const Node* node) const;
+    QString               toolTipOf(const Node* node) const;
 
     RepositorySnapshot    m_snapshot;
     QHash<QString, bool>  m_open;
     Layout                m_layout = layoutTree;
     bool                  m_changedOnly = false;
     Node*                 m_root;
+    // the icons built, by the kind, the marker and the greying
+    mutable QHash<int, QIcon> m_icons;
 };
 
 #endif

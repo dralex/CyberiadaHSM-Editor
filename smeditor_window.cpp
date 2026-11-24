@@ -1019,12 +1019,13 @@ void CyberiadaSMEditorWindow::updateRepositoryTitle()
     if (!m_repositoryView) return;
     if (!m_repository) {
         m_repositoryView->setHeading(QString());
+        m_repositoryView->setBranch(QString());
         return;
     }
-    m_repositoryView->setHeading(QFileInfo(m_repository->root()).fileName());
-    QToolButton* branch = m_repositoryView->branchButton();
-    branch->setText(m_repository->hasSnapshot() ? branchLabel(m_repository->snapshot()) : QString());
-    branch->setToolTip(tr("The branch: switch, new, delete"));
+    m_repositoryView->setHeading(QFileInfo(m_repository->root()).fileName(),
+                                 QDir::toNativeSeparators(m_repository->root()));
+    m_repositoryView->setBranch(m_repository->hasSnapshot() ? branchLabel(m_repository->snapshot()) : QString());
+    m_repositoryView->branchButton()->setToolTip(tr("The branch: switch, new, delete"));
 }
 
 QString CyberiadaSMEditorWindow::branchLabel(const RepositorySnapshot& s)
@@ -1287,10 +1288,17 @@ void CyberiadaSMEditorWindow::initGitMenu()
     // the dock acts on the selected rows: its toolbar, its menu, F2 and Del (EDIT-GIT-8)
     QToolBar* bar = m_repositoryView->toolBar();
     QAction* refresh = m_repositoryView->refreshAction();
-    m_dockStage = new QAction(tr("Stage"), bar);
+    // the icons tell the color the files take (EDIT-GIT-4)
+    QIcon stageIcon(":/Icons/images/git-stage.png");
+    QIcon unstageIcon(":/Icons/images/git-unstage.png");
+    m_dockStage = new QAction(stageIcon, tr("Stage"), bar);
     m_dockStage->setObjectName("actionRepositoryStage");
-    m_dockUnstage = new QAction(tr("Unstage"), bar);
+    m_dockUnstage = new QAction(unstageIcon, tr("Unstage"), bar);
     m_dockUnstage->setObjectName("actionRepositoryUnstage");
+    actionGitStage->setIcon(stageIcon);
+    actionGitUnstage->setIcon(unstageIcon);
+    actionGitCommit->setIcon(QIcon(":/Icons/images/git-commit.png"));
+    actionGitRefresh->setIcon(refresh->icon());
     bar->insertAction(refresh, m_dockStage);
     bar->insertAction(refresh, m_dockUnstage);
     bar->insertAction(refresh, actionGitCommit);
@@ -1701,6 +1709,7 @@ void CyberiadaSMEditorWindow::updateHistory(bool more)
     if (!service) {
         m_historyView->setTitle(noRepositoryReason(active));
         m_historyView->model()->setEntries(QVector<LogEntry>(), false);
+        m_historyView->model()->setCurrentHash(QString());
         return;
     }
     QString path = m_historyRepository ? QString() : m_historyPath;
@@ -1720,8 +1729,16 @@ void CyberiadaSMEditorWindow::updateHistory(bool more)
     QVector<LogEntry> rows = service->log(path, HISTORY_PAGE + 1, skip, &error);
     bool hasMore = rows.size() > HISTORY_PAGE;
     if (hasMore) rows.removeLast();
-    if (more) m_historyView->model()->appendEntries(rows, hasMore);
-    else m_historyView->model()->setEntries(rows, hasMore);
+    if (more) {
+        m_historyView->model()->appendEntries(rows, hasMore);
+    } else {
+        m_historyView->model()->setEntries(rows, hasMore);
+        // the commit of the current version: HEAD, for a file the newest of its log, which
+        // starts from HEAD (EDIT-GIT-15)
+        QString head = m_historyRepository ? service->snapshot().oid : QString();
+        if (head.isEmpty() && !rows.isEmpty()) head = rows.first().hash;
+        m_historyView->model()->setCurrentHash(head);
+    }
     if (!error.isEmpty()) m_historyView->setTitle(tr("History of %1: %2").arg(what, error));
     else if (m_historyView->model()->entries().isEmpty()) m_historyView->setTitle(tr("History of %1: no commits").arg(what));
     else m_historyView->setTitle(tr("History of %1").arg(what));
