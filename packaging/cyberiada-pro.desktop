@@ -8,6 +8,9 @@ Comment=Edit Cyberiada hierarchical state machine diagrams
 Comment[ru]=Редактирование диаграмм иерархических машин состояний Cyberiada
 Exec=CyberiadaPro %f
 Icon=cyberiada-pro
+# the WM_CLASS of the Qt window (the executable, the application name): the dock
+# pins the running editor to this entry by it
+StartupWMClass=CyberiadaPro
 Terminal=false
 Categories=Development;Engineering;
 MimeType=application/x-cyberiada-graphml+xml;

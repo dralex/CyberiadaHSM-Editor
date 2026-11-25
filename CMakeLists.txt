@@ -338,6 +338,16 @@ if(UNIX AND NOT APPLE)
   install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/images/cyberiada.png
     DESTINATION ${CMAKE_INSTALL_DATADIR}/pixmaps
     RENAME ${CYBERIADA_PACKAGE}.png COMPONENT runtime)
+  # the sizes of the icon theme, which the dock and the menus take: the small ones drawn
+  # with widened lines (images/make-icons.py), not the 256 px picture shrunk
+  foreach(_size 16 24 32 48 64 96 128)
+    install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/images/cyberiada-${_size}.png
+      DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/${_size}x${_size}/apps
+      RENAME ${CYBERIADA_PACKAGE}.png COMPONENT runtime)
+  endforeach()
+  install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/images/cyberiada.png
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/256x256/apps
+    RENAME ${CYBERIADA_PACKAGE}.png COMPONENT runtime)
   # user-facing docs travel with the package (the editor has no ChangeLog yet)
   install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/README.md
                 ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE

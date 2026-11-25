@@ -13,6 +13,8 @@
 
 #define CYBERIADA_VENDOR    "@CYBERIADA_VENDOR@"
 #define CYBERIADA_APP_NAME  "@CYBERIADA_APP_NAME@"
+// the package, the name of the desktop entry (<package>.desktop)
+#define CYBERIADA_PACKAGE   "@CYBERIADA_PACKAGE@"
 // the pre-release name whose settings are adopted once (EDIT-UI-5)
 #define CYBERIADA_LEGACY_APP_NAME "@CYBERIADA_LEGACY_APP_NAME@"
 #define CYBERIADA_VERSION   "@PROJECT_VERSION@"

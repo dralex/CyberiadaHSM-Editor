@@ -806,7 +806,9 @@ if phase dev && [ "$install" != failed ]; then
         apt_tools desktop-file-utils
         rcheck desktop cyberiada-pro \
             'desktop-file-validate /usr/share/applications/cyberiada-pro.desktop &&
-             [ -f /usr/share/pixmaps/cyberiada-pro.png ]'
+             grep -qx StartupWMClass=CyberiadaPro /usr/share/applications/cyberiada-pro.desktop &&
+             [ -f /usr/share/pixmaps/cyberiada-pro.png ] &&
+             [ -f /usr/share/icons/hicolor/48x48/apps/cyberiada-pro.png ]'
         mime=$(sed -n 's/^MimeType=//p' /usr/share/applications/cyberiada-pro.desktop | tr ';' ' ')
         for m in $mime; do
             grep -lqs "type=\"$m\"" /usr/share/mime/packages/*.xml ||

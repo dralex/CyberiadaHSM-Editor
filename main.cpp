@@ -41,6 +41,8 @@ int main(int argc, char *argv[])
 	QCoreApplication::setOrganizationName(CYBERIADA_VENDOR);
 	QCoreApplication::setApplicationName(CYBERIADA_APP_NAME);
 	QCoreApplication::setApplicationVersion(CYBERIADA_VERSION);
+	// the desktop entry of the window, its app id on Wayland (X11 matches StartupWMClass)
+	QGuiApplication::setDesktopFileName(CYBERIADA_PACKAGE);
 	// the icon in every size a system asks for (images/make-icons.py): the 256 px
 	// picture shrunk by the system loses the thin lines of the logo
 	static const int iconSizes[] = { 16, 20, 24, 32, 40, 48, 64, 96, 128 };
