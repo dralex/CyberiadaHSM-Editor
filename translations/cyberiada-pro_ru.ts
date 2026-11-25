@@ -15,7 +15,7 @@
     <message>
         <location line="+17"/>
         <source>The Cyberiada Project IDE and HSM Editor</source>
-        <translation type="unfinished">Среда разработки и редактор ПРИМС проекта Cyberiada</translation>
+        <translation>Среда разработки и редактор ПРИМС проекта Cyberiada</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -31,7 +31,7 @@
     <message>
         <location line="+7"/>
         <source>&lt;p align=&quot;center&quot;&gt;&lt;a href=&quot;https://cyberiada.dev&quot;&gt;Cyberiada Project&lt;/a&gt;&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p align=&quot;center&quot;&gt;&lt;a href=&quot;https://cyberiada.dev&quot;&gt;Проект Cyberiada&lt;/a&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p align=&quot;center&quot;&gt;&lt;a href=&quot;https://cyberiada.dev&quot;&gt;Проект Cyberiada&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p align=&quot;center&quot;&gt;&lt;a href=&quot;https://platform.kruzhok.org/programming&quot;&gt;Cyberiada Project&lt;/a&gt;&lt;/p&gt;</source>
@@ -4852,12 +4852,12 @@ Ctrl+клик мыши — открыть</translation>
     <message>
         <location line="+2"/>
         <source>Untracked</source>
-        <translation type="unfinished">Неотслеживаемые</translation>
+        <translation>Неотслеживаемые</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>The files git does not track yet</source>
-        <translation type="unfinished">Файлы, которые git ещё не отслеживает</translation>
+        <translation>Файлы, которые git ещё не отслеживает</translation>
     </message>
     <message>
         <location line="+1"/>
