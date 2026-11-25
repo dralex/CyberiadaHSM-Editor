@@ -178,8 +178,8 @@ The installer:
    built before; the build checks its import table. Python 3.8 is the last one for
    Windows 7. The Pythons are found in the PEP 514 registry; the bundled ones are the
    python.org installers of `windows-installer/python.txt`, installed for all users;
-3. installs the python plugins hsm-to-python, hsm-maker, git and fa-dispatcher (not
-   cybersphere-agents, nor lapki-compiler)
+3. installs the python plugins hsm-to-python, hsm-maker and fa-dispatcher (not
+   cybersphere-agents, nor lapki-compiler; git is the editor's own)
    into that Python from the bundled wheels, offline: the plugin packages, the
    pure-Python `cyberiadaml-py` and the pinned pydantic wheels of that Windows. Then
    it binds the plugins of the editor folder to that Python for every user

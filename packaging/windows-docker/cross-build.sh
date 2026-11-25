@@ -219,9 +219,14 @@ pack_editor() {
         fi
     done
 
+    # the version of the zip names, read as build-windows-installer.sh reads it
+    ver=$(sed -n 's/^project(CyberiadaPro VERSION \([0-9.]*\).*/\1/p' \
+        "$SRC/CyberiadaHSM-Editor/CMakeLists.txt")
+    [ -n "$ver" ] || die "cannot read the editor version from CyberiadaHSM-Editor/CMakeLists.txt"
+
     # a fresh archive: zip -r into an existing one keeps the entries of a former build
-    rm -f "$OUT/cyberiada-pro-1.0.0-win64-mingw.zip"
-    ( cd "$bdir/dist-stage" && zip -qr "$OUT/cyberiada-pro-1.0.0-win64-mingw.zip" CyberiadaPro )
+    rm -f "$OUT/cyberiada-pro-$ver-win64-mingw.zip"
+    ( cd "$bdir/dist-stage" && zip -qr "$OUT/cyberiada-pro-$ver-win64-mingw.zip" CyberiadaPro )
 
     # a second archive to run the editor's L0 batch tests on native Windows without
     # cmake: the same bundle (with the offscreen platform plugin the batch mode uses)
@@ -231,8 +236,8 @@ pack_editor() {
     cp -a "$stage/." "$teststage/"
     cp "$SRC/CyberiadaHSM-Editor/tests/diagrams/"*.graphml "$teststage/diagrams/"
     cp "$SRC/CyberiadaHSM-Editor/tests/windows/run-batch-tests.bat" "$teststage/"
-    rm -f "$OUT/cyberiada-pro-tests-1.0.0-win64-mingw.zip"
-    ( cd "$bdir/dist-stage" && zip -qr "$OUT/cyberiada-pro-tests-1.0.0-win64-mingw.zip" CyberiadaPro-tests )
+    rm -f "$OUT/cyberiada-pro-tests-$ver-win64-mingw.zip"
+    ( cd "$bdir/dist-stage" && zip -qr "$OUT/cyberiada-pro-tests-$ver-win64-mingw.zip" CyberiadaPro-tests )
 
     # optional smoke test: the exe loads under Wine (offscreen, no display)
     if [ "$TEST" = "1" ]; then

@@ -61,12 +61,13 @@ written to the mounted `/out`):
 ## Output (into `dist/`)
 
 - one `.zip` per library (`.dll` + import lib + headers)
-- `cyberiada-pro-1.0.0-win64-mingw.zip` — self-contained: the editor exe with
-  every runtime DLL beside it (Qt5 + `platforms/qwindows.dll` and
-  `platforms/qoffscreen.dll` for the batch mode, the toolchain libraries,
-  libxml2/pcre2 and their deps, and the MinGW runtime), and the plugins of
-  hsm-to-python, hsm-maker and git in `share/cyberiada-pro/plugins`. The Windows
-  installer is built from it: `../build-windows-installer.sh`.
+- `cyberiada-pro-<version>-win64-mingw.zip`, the version of the editor's
+  `CMakeLists.txt` — self-contained: the editor exe with every runtime DLL beside it
+  (Qt5 + `platforms/qwindows.dll` and `platforms/qoffscreen.dll` for the batch mode,
+  the toolchain libraries, libxml2/pcre2 and their deps, and the MinGW runtime), and
+  the plugins of hsm-to-python, hsm-maker and fa-dispatcher in
+  `share/cyberiada-pro/plugins`. The Windows installer is built from it:
+  `../build-windows-installer.sh`.
 
 ## Tests
 
