@@ -54,7 +54,7 @@ The most interesting plugins are:
 
 * ![HSM Diagram Maker](https://github.com/dralex/cybersphere-hsm-maker): generating HSM diagrams using LLM;
 * ![HSM Python](https://github.com/dralex/hsm-to-python): running HSM diagrams with Python code;
-* ![Finite Automata](https://github.com/kruzhok-team/fa-dispatcher-py/): running FA diargams;
+* ![Finite Automata](https://github.com/kruzhok-team/fa-dispatcher-py/): running FA diagrams;
 * ![HSM-ROS2 Node Generator](https://github.com/kruzhok-team/hsm_robot_ros_generator): generating and checking HSM-based ROS2 code; 
 * ![HSM-ROS2 Turtle](https://github.com/dralex/turtle_driver): running ROS2 turtle controlled by a HSM diagram;
 
@@ -70,6 +70,10 @@ driver `cybparser listing` of libcyberiadaml:
 
     echo '*.graphml diff=cyberiada' >> .gitattributes
     git config diff.cyberiada.textconv "cybparser listing"
+
+On Windows `cybparser.exe` is installed beside `CyberiadaPro.exe`; in Git Bash:
+
+    git config diff.cyberiada.textconv '"C:/Program Files/CyberiadaPro/cybparser.exe" listing'
 
 ## Installation
 

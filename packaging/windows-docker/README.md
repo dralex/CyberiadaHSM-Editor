@@ -62,7 +62,8 @@ written to the mounted `/out`):
 
 - one `.zip` per library (`.dll` + import lib + headers)
 - `cyberiada-pro-<version>-win64-mingw.zip`, the version of the editor's
-  `CMakeLists.txt` — self-contained: the editor exe with every runtime DLL beside it
+  `CMakeLists.txt` — self-contained: the editor exe and `cybparser.exe` of
+  libcyberiadaml (the textconv driver of git) with every runtime DLL beside them
   (Qt5 + `platforms/qwindows.dll` and `platforms/qoffscreen.dll` for the batch mode,
   the toolchain libraries, libxml2/pcre2 and their deps, and the MinGW runtime), and
   the plugins of hsm-to-python, hsm-maker and fa-dispatcher in

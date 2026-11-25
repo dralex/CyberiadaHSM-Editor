@@ -348,6 +348,10 @@ outside the editor, the listing of a diagram that makes `git diff` show the elem
  git config diff.cyberiada.textconv "cybparser listing"
 ```
 
+On Windows `cybparser.exe` is in the editor folder (the zips and the installer), named
+by its quoted path: `'"C:/Program Files/CyberiadaPro/cybparser.exe" listing'` in Git Bash;
+its arguments are read as UTF-8, so git's file of a diagram's non-ASCII name opens.
+
 The `cyberiada-pro` package breaks the old plugin package (`Breaks: python3-cybersphere-git`)
 and the Windows installer removes its plugin folder, so the Plugins menu never shows a second
 Git; the build scripts, the package tests (`git-textconv`, `git-diff` by `cybparser listing`,

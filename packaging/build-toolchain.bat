@@ -312,6 +312,9 @@ if exist "%BDIR%\Release\CyberiadaPro.exe" (
 ) else (
   copy /Y "%BDIR%\CyberiadaPro.exe" "%STAGE%\" >nul
 )
+rem cybparser of libcyberiadaml beside it, the textconv driver of git (cybparser listing)
+if not exist "%PREFIX%\bin\cybparser.exe" ( echo error: cybparser.exe not found in %PREFIX%\bin & exit /b 1 )
+copy /Y "%PREFIX%\bin\cybparser.exe" "%STAGE%\" >nul
 
 rem Qt runtime + plugins next to the exe: windeployqt (it asks the qmake on PATH), else
 rem what vcpkg deployed next to the build (the Qt of vcpkg: its DLLs and plugins\,

@@ -84,6 +84,8 @@ python3 -c "import sys, zipfile; zipfile.ZipFile(sys.argv[1]).extractall(sys.arg
 stage="$WORK/stage/CyberiadaPro"
 [ -f "$stage/CyberiadaPro.exe" ] || die "the zip has no CyberiadaPro/CyberiadaPro.exe: $ZIP"
 [ -f "$stage/LICENSE" ] || die "the zip has no CyberiadaPro/LICENSE (the license page): $ZIP"
+[ -f "$stage/cybparser.exe" ] || die "the zip has no CyberiadaPro/cybparser.exe (built before" \
+    "it was bundled; rebuild the zip with build-windows-docker.sh): $ZIP"
 if [ ! -f "$stage/platforms/qoffscreen.dll" ]; then
     echo "note: the zip has no platforms/qoffscreen.dll (built before it was bundled):"
     echo "      the plugin check of the installer shows the editor window briefly"

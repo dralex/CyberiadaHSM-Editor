@@ -21,7 +21,8 @@
 #
 #  -----------------------------------------------------------------------------
 
-"""Check that the editor finds the python plugins and runs them with this Python.
+"""Check that the editor finds the python plugins and runs them with this Python, and
+that cybparser beside the editor (the textconv driver of git) lists a diagram.
 
 Run with the Python the plugins are bound to:
 
@@ -71,6 +72,9 @@ TEXTS = {
                         'the editor then shows the repository of a diagram',
         'git-hint': 'the editor did not stage a file of a new repository ({detail}); check '
                     'the Git for Windows installation',
+        'listing': 'cybparser lists a diagram',
+        'listing-hint': 'cybparser.exe beside the editor did not list a sample diagram '
+                        '({detail}); install CyberiadaPro again (Repair)',
         'runs': 'the plugin {plugin} runs',
         'run-hint': 'the editor could not run the plugin with {python} ({detail}); check that '
                     'this Python is still installed and that an antivirus does not block it',
@@ -99,6 +103,9 @@ TEXTS = {
                         'тогда редактор показывает репозиторий диаграммы',
         'git-hint': 'редактор не добавил файл нового репозитория в индекс ({detail}); '
                     'проверьте установку Git для Windows',
+        'listing': 'cybparser выводит диаграмму',
+        'listing-hint': 'cybparser.exe рядом с редактором не вывел пример диаграммы '
+                        '({detail}); запустите установку CyberiadaPro ещё раз (Восстановить)',
         'runs': 'модуль {plugin} работает',
         'run-hint': 'редактор не смог запустить модуль через {python} ({detail}); проверьте, '
                     'что этот Python по-прежнему установлен и его не блокирует антивирус',
@@ -300,6 +307,20 @@ def check_git(check, editor, env, document, work):
     return check.result(ok, check.say('git'), check.say('git-hint', detail=detail), output)
 
 
+def check_listing(check, editor, env, document, work):
+    """cybparser beside the editor lists a sample diagram of a non-ASCII name: git hands
+    the textconv a file of the diagram's own name."""
+    parser = os.path.join(os.path.dirname(os.path.abspath(editor)),
+                          'cybparser.exe' if os.name == 'nt' else 'cybparser')
+    copy = os.path.join(work, 'диаграмма.graphml')
+    shutil.copyfile(document, copy)
+    code, output = run([parser, 'listing', copy], env)
+    ok = code == 0 and 'state machine Lift' in output and 'not read' not in output
+    detail = 'exit {}'.format(code) if code is not None else output
+    return check.result(ok, check.say('listing'), check.say('listing-hint', detail=detail),
+                        output)
+
+
 def main(argv=None):
     here = os.path.dirname(os.path.abspath(__file__))
     parser = argparse.ArgumentParser(description='Check the python plugins of CyberiadaPro.')
@@ -336,6 +357,10 @@ def main(argv=None):
             with tempfile.TemporaryDirectory() as work:
                 check_git(check, args.editor, env,
                           os.path.join(args.samples, 'code_layout.graphml'), work)
+        # cybparser runs on its own
+        with tempfile.TemporaryDirectory() as work:
+            check_listing(check, args.editor, env, os.path.join(args.samples, 'lift.graphml'),
+                          work)
         summary = check.say('passed') if not check.failures else check.say(
             'failed', count=check.failures)
         print(summary, flush=True)

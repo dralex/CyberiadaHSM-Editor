@@ -79,6 +79,10 @@ libcyberiadaml:
     echo '*.graphml diff=cyberiada' >> .gitattributes
     git config diff.cyberiada.textconv "cybparser listing"
 
+В Windows `cybparser.exe` устанавливается рядом с `CyberiadaPro.exe`; в Git Bash:
+
+    git config diff.cyberiada.textconv '"C:/Program Files/CyberiadaPro/cybparser.exe" listing'
+
 ## Установка
 
 Для установки доступны ![скомпилированные релизы](https://github.com/dralex/CyberiadaHSM-Editor/releases)

@@ -75,7 +75,8 @@ See [`linux-docker/README.md`](linux-docker/README.md) for details.
 ## Windows — `build-toolchain.bat` (MSVC + vcpkg)
 
 Produces one `.zip` per library and one **self-contained** editor `.zip` that
-bundles Qt (via `windeployqt`) and every toolchain DLL next to the executable.
+bundles Qt (via `windeployqt`) and every toolchain DLL next to the executable, and
+`cybparser.exe` of libcyberiadaml (the textconv driver of git) beside it.
 Requires Visual Studio, CMake, Git, vcpkg (`VCPKG_ROOT`), and a Qt 5 install.
 
     set VCPKG_ROOT=C:\vcpkg
@@ -161,13 +162,11 @@ downloads nothing at install time.
 
 The installer:
 
-1. installs the editor into `Program Files\CyberiadaPro` (for all users, with the
-   Start-menu entries and an uninstaller); `.graphml` files can be associated with
-   it (an optional component); it needs Windows 7 SP1 or newer;
+1. installs the editor and `cybparser.exe` into `Program Files\CyberiadaPro` (for all
+   users, with the Start-menu entries and an uninstaller); `.graphml` files can be
+   associated with it (an optional component); it needs Windows 7 SP1 or newer;
 2. picks the path of the python plugins by the Windows version:
 
-   | Windows | Python | the plugins read the diagrams with |
-   |---|---|---|
    | Windows | Python | pydantic |
    |---|---|---|
    | 10, 11 | a 64-bit 3.10-3.14 found, else the bundled 3.13 | 2.13 (`requirements-windows.txt`) |
@@ -184,8 +183,9 @@ The installer:
    pure-Python `cyberiadaml-py` and the pinned pydantic wheels of that Windows. Then
    it binds the plugins of the editor folder to that Python for every user
    (`--install-editor-plugin`);
-4. checks that the editor runs them (`windows-installer/check-plugins.py`) and shows
-   the result: every failure with what to check. The check runs again from the
+4. checks that the editor runs them and that `cybparser.exe` lists a diagram of a
+   non-ASCII name (`windows-installer/check-plugins.py`), and shows the result: every
+   failure with what to check. The check runs again from the
    Start menu (CyberiadaPro, Check plugins). git itself is not bundled: the git of
    the editor (`docs/GIT.md`) works once Git for Windows is on `PATH` (the check
    notes it, not a failure; with git it stages a sample in a new repository). The

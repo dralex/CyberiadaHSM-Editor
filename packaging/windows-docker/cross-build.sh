@@ -133,8 +133,11 @@ pack_editor() {
     mkdir -p "$stage/platforms"
 
     cp "$bdir/CyberiadaPro.exe" "$stage/"
+    # cybparser of libcyberiadaml beside it, the textconv driver of git (cybparser listing)
+    cp "$MXE_PREFIX/bin/cybparser.exe" "$stage/" \
+        || die "cybparser.exe not found in $MXE_PREFIX/bin (installed with libcyberiadaml)"
 
-    # Bundle every DLL the editor needs, resolved recursively from its PE imports
+    # Bundle every DLL the editor and cybparser need, resolved recursively from the PE imports
     # (objdump). This copies our libs (libcyberiadaml/libcyberiadamlpp/libhtgeom —
     # note the MinGW lib* names), Qt, libxml2 and the MinGW runtime, plus their
     # transitive deps, from the MXE prefix. System DLLs (KERNEL32, msvcrt, ...) are
@@ -153,6 +156,7 @@ pack_editor() {
     }
     todo="$stage/.dll-todo"; seen="$stage/.dll-seen"; : > "$todo"; : > "$seen"
     imports "$stage/CyberiadaPro.exe" >> "$todo"
+    imports "$stage/cybparser.exe" >> "$todo"
     while [ -s "$todo" ]; do
         dll=$(sed -n '1p' "$todo"); sed -i '1d' "$todo"
         grep -qxi "$dll" "$seen" && continue
@@ -166,9 +170,9 @@ pack_editor() {
     rm -f "$todo" "$seen"
 
     # check the bundle is complete before zipping: every prefix-resident DLL the
-    # editor (and the bundled DLLs) import must be present, else the zip cannot run
+    # editor, cybparser (and the bundled DLLs) import must be present, else the zip cannot run
     missing=""
-    for f in "$stage/CyberiadaPro.exe" "$stage"/*.dll; do
+    for f in "$stage/CyberiadaPro.exe" "$stage/cybparser.exe" "$stage"/*.dll; do
         [ -f "$f" ] || continue
         for dep in $(imports "$f"); do
             [ -f "$stage/$dep" ] && continue
