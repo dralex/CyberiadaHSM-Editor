@@ -16,6 +16,8 @@ set(CPACK_DEBIAN_RUNTIME_PACKAGE_NAME "@CYBERIADA_PACKAGE@")
 set(CPACK_DEBIAN_PACKAGE_CONFLICTS "cyberiada-editor")
 # git is the editor's own (docs/GIT.md): the git plugin would show a second Git
 set(CPACK_DEBIAN_PACKAGE_BREAKS "python3-cybersphere-git")
+# the git of the Repository dock and the Git menu: 2.23 has git restore and git switch
+set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "git (>= 1:2.23)")
 set(CPACK_DEBIAN_PACKAGE_REPLACES "cyberiada-editor")
 set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "The Qt editor for Cyberiada state machine diagrams")
 # the Cyberiada libraries carry no dpkg shlibs, so name them explicitly; the Qt

@@ -112,7 +112,8 @@ Per release, `package-tests.sh` (inside the container):
    - the libraries: `cybparser`, `ldd`, and the binding import and read;
    - the tools: the dispatcher, `hsm-gencode`/`hsm-check`/`hsm-run`,
      `hsm-maker --notation/--render`, `cybersphere check/platform`, `cybparser
-     listing` and `git diff` through it in a scratch repository and `lapki-build`
+     listing` and `git diff` through it in a scratch repository (git installed
+     first: the editor only recommends it) and `lapki-build`
      (the Lapki conversion, no compiler);
    - the editor: its `--dump`, text, render, export and save goldens (the inputs
      of `tests/`), a GUI start, and the bundled plugins in `--list-plugins` and

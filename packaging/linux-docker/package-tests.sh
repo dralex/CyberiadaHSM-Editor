@@ -446,6 +446,8 @@ export W QT_QPA_PLATFORM=offscreen LC_ALL=C.UTF-8 PYTHONDONTWRITEBYTECODE=1 \
 if phase checks; then
     who=tester; [ -n "$ASUSER" ] || who=$(id -un)
     say "checks (as $who)"
+    # git of the git-diff and editor-git checks: the editor only recommends it
+    apt_tools git
     prepare_workdir
 
     B="CyberiadaPro --batch --no-text"
