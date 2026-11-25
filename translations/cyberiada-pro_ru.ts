@@ -9,9 +9,13 @@
         <translation>О программе %1</translation>
     </message>
     <message>
-        <location line="+17"/>
         <source>The Cyberiada state machine editor</source>
-        <translation>Редактор машин состояний (ПРИМС) проекта Cyberiada</translation>
+        <translation type="vanished">Редактор машин состояний (ПРИМС) проекта Cyberiada</translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>The Cyberiada Project IDE and HSM Editor</source>
+        <translation type="unfinished">Среда разработки и редактор ПРИМС проекта Cyberiada</translation>
     </message>
     <message>
         <location line="+5"/>
