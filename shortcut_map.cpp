@@ -116,6 +116,12 @@ QList<QKeySequence> shortcutKeysOf(const QString& text)
     return keys;
 }
 
+bool shortcutKeysClash(const QKeySequence& a, const QKeySequence& b)
+{
+    return !a.isEmpty() && !b.isEmpty() &&
+           (a.matches(b) != QKeySequence::NoMatch || b.matches(a) != QKeySequence::NoMatch);
+}
+
 QList<QKeySequence> defaultShortcutKeys(const QString& id)
 {
     QList<QKeySequence> keys;
@@ -224,7 +230,10 @@ void ShortcutMap::resetAll()
 QString ShortcutMap::holder(const QKeySequence& key, const QString& except) const
 {
     for (const QString& id : m_order) {
-        if (id != except && m_entries[id].keys.contains(key)) return id;
+        if (id == except) continue;
+        for (const QKeySequence& held : m_entries[id].keys) {
+            if (shortcutKeysClash(held, key)) return id;
+        }
     }
     return QString();
 }

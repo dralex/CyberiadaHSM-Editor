@@ -115,9 +115,10 @@ Preferences removes the group.
 | Event | Effect |
 |---|---|
 | filter | the rows whose action, path or keys hold the text |
-| a row chosen | its keys in the key field; a changed row is bold |
+| a row chosen | its first key in the key field; a changed row is bold |
+| a key pressed in the field | it is the key, shown at once: a press replaces the one before, never chains to it (`KeyField` over Qt's field, which joins the presses of a second into one sequence) |
 | Assign, Add | the key of the field replaces the keys of the row, or joins them |
-| the key is another action's | the action is named; a confirmation takes the key from it |
+| the key is another action's | the action is named; a confirmation takes the key from it; a chain of keys stored by hand clashes with the key it begins with (`shortcutKeysClash()`) |
 | Clear | the row has no key |
 | Reset, Reset all | the default keys of the row, of every row; a key they take back is taken from its new holder |
 | Ok, Apply | `ShortcutMap::setKeys()` for the changed rows, the menus show the new keys at once |

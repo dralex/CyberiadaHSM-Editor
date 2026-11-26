@@ -1471,7 +1471,8 @@ keys first. The architecture and the default keys are in `docs/SHORTCUTS.md`. Sp
   (the plugin actions, Open Recent, the text modes, Language and Markup) have no keys. *design*
 - `EDIT-KEYS-2` MUST [A]: the Shortcuts page of the Preferences lists the actions by their
   menus with their keys, the changed ones in bold; a filter narrows the list by action, menu
-  or key. A key typed into the key field replaces the keys of the chosen action (Assign) or
+  or key. The key field holds the one key pressed last, never a chain of
+  keys. A key typed into it replaces the keys of the chosen action (Assign) or
   joins them (Add); Clear leaves it without a key; Reset gives it its default keys, Reset all
   every action. Ok and Apply put the keys to work at once; Cancel changes nothing. *design*
 - `EDIT-KEYS-3` MUST [A]: no two actions hold one key: the page names the action that holds

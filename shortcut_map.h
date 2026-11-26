@@ -36,6 +36,8 @@ class QAction;
 // the keys as the portable text of the settings, joined by "; "
 QString             shortcutKeysText(const QList<QKeySequence>& keys);
 QList<QKeySequence> shortcutKeysOf(const QString& text);
+// the keys cannot both act: the same one, or a chain of keys that begins with the other
+bool                shortcutKeysClash(const QKeySequence& a, const QKeySequence& b);
 // the default keys of an action by its name (docs/SHORTCUTS.md); a key written in
 // the table is never also a platform key of another action
 QList<QKeySequence> defaultShortcutKeys(const QString& id);

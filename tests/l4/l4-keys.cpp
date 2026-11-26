@@ -72,6 +72,7 @@ private slots:
 	void test_page();
 	void test_page_conflict();
 	void test_page_reset();
+	void test_page_typed_keys();
 
 private:
 	static QKeySequence key(const char* text) { return QKeySequence(QString(text)); }
@@ -651,6 +652,56 @@ void TestKeys::test_page_reset()
 	QVERIFY(dialog.shortcutsPage()->keys("actionAbout").isEmpty());
 	QVERIFY(window.actionAbout->shortcuts().isEmpty());
 	QVERIFY(QSettings().allKeys().filter("shortcuts/").isEmpty());
+}
+
+// EDIT-KEYS-2/3: the key field holds the one key pressed last, never a chain of keys;
+// a second key of an action is added by Add, and a held key typed is named
+void TestKeys::test_page_typed_keys()
+{
+	CyberiadaSMEditorWindow window;
+	ShortcutMap* map = window.shortcuts();
+	PreferencesDialog dialog(&window, map);
+	dialog.show();
+	ShortcutsPage* page = dialog.shortcutsPage();
+	QKeySequenceEdit* field = dialog.findChild<QKeySequenceEdit*>("shortcutKeyEdit");
+	QLabel* holder = dialog.findChild<QLabel*>("shortcutHolder");
+	page->select("actionAbout");
+	field->setFocus();
+	QTest::keyClick(field, Qt::Key_F2);
+	QCOMPARE(field->keySequence(), key("F2"));
+	QVERIFY(holder->text().isEmpty());
+	// a second press replaces the first: it is the key of Open, which is named
+	QTest::keyClick(field, Qt::Key_O, Qt::ControlModifier);
+	QCOMPARE(field->keySequence(), key("Ctrl+O"));
+	QVERIFY(holder->text().contains("File > Open..."));
+	QTest::keyClick(field, Qt::Key_F2);
+	QCOMPARE(field->keySequence(), key("F2"));
+	click(dialog, "shortcutAssign");
+	QTest::keyClick(field, Qt::Key_F9, Qt::ShiftModifier);
+	click(dialog, "shortcutAdd");
+	QCOMPARE(page->keys("actionAbout"), QList<QKeySequence>() << key("F2") << key("Shift+F9"));
+	dialog.findChild<QDialogButtonBox*>()->button(QDialogButtonBox::Apply)->click();
+
+	// both keys act
+	int shown = 0;
+	connect(window.actionAbout, &QAction::triggered, [&shown]() { shown++; });
+	window.actionAbout->disconnect(&window);
+	dialog.hide();
+	activate(window);
+	window.sceneView->setFocus();
+	QTest::keyClick(window.sceneView, Qt::Key_F2);
+	QTest::keyClick(window.sceneView, Qt::Key_F9, Qt::ShiftModifier);
+	QCOMPARE(shown, 2);
+
+	// a chain of keys stored by hand holds each key it begins with
+	map->setKeys("actionAbout", one("F2, Ctrl+O"));
+	QCOMPARE(map->holder(key("F2")), QString("actionAbout"));
+	QVERIFY(map->holder(key("Ctrl+O"), "actionOpen").isEmpty());
+	page->load();
+	page->select("actionCheck");
+	QTest::keyClick(field, Qt::Key_F2);
+	QVERIFY(holder->text().contains("Help > About"));
+	map->resetAll();
 }
 
 QTEST_MAIN(TestKeys)

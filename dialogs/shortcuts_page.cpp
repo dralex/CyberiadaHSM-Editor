@@ -23,11 +23,13 @@
 
 #include <QHBoxLayout>
 #include <QHeaderView>
+#include <QKeyEvent>
 #include <QKeySequenceEdit>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QPushButton>
+#include <QSignalBlocker>
 #include <QTreeWidget>
 #include <QVBoxLayout>
 #include "shortcuts_page.h"
@@ -40,6 +42,33 @@ static QString nativeKeys(const QList<QKeySequence>& keys)
 {
     return QKeySequence::listToString(keys, QKeySequence::NativeText);
 }
+
+namespace {
+
+// Qt's field chains the keys pressed within a second into one sequence, which acts only
+// pressed in that order, and says so a second later: here every press is the key, said
+// at once (EDIT-KEYS-2)
+class KeyField: public QKeySequenceEdit {
+public:
+    explicit KeyField(QWidget* parent): QKeySequenceEdit(parent) {}
+protected:
+    void keyPressEvent(QKeyEvent* event) override {
+        switch (event->key()) {
+        case Qt::Key_Control: case Qt::Key_Shift: case Qt::Key_Alt: case Qt::Key_Meta:
+        case Qt::Key_AltGr: case Qt::Key_unknown:
+            break;
+        default: {
+            QSignalBlocker block(this);
+            clear();
+        }
+        }
+        QKeySequence before = keySequence();
+        QKeySequenceEdit::keyPressEvent(event);
+        if (keySequence() != before) emit keySequenceChanged(keySequence());
+    }
+};
+
+} // namespace
 
 ShortcutsPage::ShortcutsPage(ShortcutMap* map, QWidget* parent):
     QWidget(parent), m_map(map)
@@ -79,7 +108,7 @@ ShortcutsPage::ShortcutsPage(ShortcutMap* map, QWidget* parent):
     m_tree->expandAll();
 
     QHBoxLayout* edit = new QHBoxLayout;
-    m_key = new QKeySequenceEdit(this);
+    m_key = new KeyField(this);
     m_key->setObjectName("shortcutKeyEdit");
     m_assign = new QPushButton(tr("Assign"), this);
     m_assign->setObjectName("shortcutAssign");
@@ -192,6 +221,7 @@ void ShortcutsPage::keyChanged()
 {
     QString id = currentId();
     QKeySequence key = m_key->keySequence();
+
     bool own = m_keys.value(id).contains(key);
     bool typed = !id.isEmpty() && !key.isEmpty();
     m_assign->setEnabled(typed && m_keys.value(id) != (QList<QKeySequence>() << key));
@@ -199,7 +229,10 @@ void ShortcutsPage::keyChanged()
     QString holder;
     if (typed) {
         for (const QString& other : m_map->ids()) {
-            if (other != id && m_keys.value(other).contains(key)) holder = other;
+            if (other == id) continue;
+            for (const QKeySequence& held : m_keys.value(other)) {
+                if (shortcutKeysClash(held, key)) holder = other;
+            }
         }
     }
     m_holder->setText(holder.isEmpty() ? QString()
@@ -210,7 +243,13 @@ void ShortcutsPage::keyChanged()
 void ShortcutsPage::release(const QKeySequence& key, const QString& except)
 {
     for (const QString& other : m_map->ids()) {
-        if (other != except && m_keys[other].removeAll(key)) showRow(other);
+        if (other == except) continue;
+        QList<QKeySequence>& keys = m_keys[other];
+        int before = keys.size();
+        for (int i = keys.size() - 1; i >= 0; i--) {
+            if (shortcutKeysClash(keys[i], key)) keys.removeAt(i);
+        }
+        if (keys.size() != before) showRow(other);
     }
 }
 
