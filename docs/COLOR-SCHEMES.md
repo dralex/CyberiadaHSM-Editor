@@ -110,7 +110,9 @@ diagrams; the dialog is wide enough for both.
    inverts the rect of a space at the cursor after the text (RasterOp_NotDestination, as Qt
    draws a wide cursor), so the character shows; drawn while the editor has the focus and takes
    the keys (writable or selectable by the keyboard), the old and the new rect repainted when the
-   cursor moves, the focus comes or goes (not the overwrite mode: typing stays)
+   cursor moves, the focus comes or goes, the whole view when the text scrolls (the scroll moves
+   the pixels of the old block, QPlainTextEdit scrolls by lines: scrollContentsBy and
+   updateRequest with a dy) (not the overwrite mode: typing stays)
  CodeEditor::applyWrap(): WidgetWidth + WrapAnywhere, the right fringe (WrapFringe) beside the
    viewport, a hook arrow per row that continues (continuationRows: every layout line of a
    block but its last); a DiffTextPane never wraps (setWrapAllowed(false))

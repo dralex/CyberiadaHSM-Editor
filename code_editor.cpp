@@ -148,8 +148,12 @@ CodeEditor::CodeEditor(QWidget* parent):
     m_wrap = SettingsManager::instance().getEditorWrap();
     connect(&SettingsManager::instance(), &SettingsManager::editorWrapChanged, this,
             [this]() { setWrapLines(SettingsManager::instance().getEditorWrap()); });
-    // the steady block follows the cursor (EDIT-MODE-29)
+    // the steady block follows the cursor and the scrolling of the text, the moves of the top
+    // line by the editor itself too (EDIT-MODE-29)
     connect(this, &QPlainTextEdit::cursorPositionChanged, this, &CodeEditor::updateBlockCursor);
+    connect(this, &QPlainTextEdit::updateRequest, this, [this](const QRect&, int dy) {
+        if (dy && m_blockCursor) viewport()->update();
+    });
     // the mode line follows the cursor, the fill and View > Mode Line (EDIT-MODE-31)
     connect(this, &QPlainTextEdit::cursorPositionChanged, modeLine, QOverload<>::of(&QWidget::update));
     connect(this, &QPlainTextEdit::selectionChanged, modeLine, QOverload<>::of(&QWidget::update));
@@ -200,11 +204,12 @@ void CodeEditor::updateBlockCursor()
     viewport()->update(QRect(now.left(), now.top(), qMax(1, fontMetrics().horizontalAdvance(' ')), now.height()));
 }
 
-// the pixels of the block scroll with the text
+// a scroll moves the pixels of the old block with the text, and QPlainTextEdit scrolls by
+// lines, not pixels: the whole view is painted again, no trail left
 void CodeEditor::scrollContentsBy(int dx, int dy)
 {
-    m_blockShown.translate(dx, dy);
     QPlainTextEdit::scrollContentsBy(dx, dy);
+    if (m_blockCursor) viewport()->update();
 }
 
 // the block over the text, inverting what is under it as Qt draws a wide cursor: the character

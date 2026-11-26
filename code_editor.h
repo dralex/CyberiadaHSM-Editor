@@ -197,7 +197,7 @@ private:
     QCursor m_textPointer;
     bool m_imageDrops = false;
     bool m_blockCursor = false;
-    // the block as painted last, in the viewport, moved by the scrolling
+    // the block as painted last, in the viewport; a scroll paints the whole view again
     QRect m_blockShown;
     bool m_wrap = false;
     bool m_wrapAllowed = true;

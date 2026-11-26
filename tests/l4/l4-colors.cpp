@@ -29,6 +29,7 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QScreen>
+#include <QScrollBar>
 #include <QWindow>
 #include <QSettings>
 #include <QSpinBox>
@@ -76,6 +77,7 @@ private slots:
 	void test_page_font();
 	void test_editor_cursor();
 	void test_block_cursor_steady();
+	void test_block_cursor_scroll();
 	void test_editor_wrap();
 	void test_mode_line();
 
@@ -650,6 +652,76 @@ static QRgb shownPixel(CodeEditor& editor, const QPoint& viewportPoint)
 	QCoreApplication::processEvents();
 	QPoint at = editor.viewport()->mapTo(&editor, viewportPoint);
 	return editor.windowHandle()->screen()->grabWindow(editor.winId(), at.x(), at.y(), 1, 1).toImage().pixel(0, 0);
+}
+
+// the viewport as the window shows it, and as a full repaint draws it: equal when no stale
+// pixels are left
+static int staleViewportPixels(CodeEditor& editor)
+{
+	QCoreApplication::processEvents();
+	QWidget* viewport = editor.viewport();
+	QPoint at = viewport->mapTo(&editor, QPoint(0, 0));
+	QImage shown = editor.windowHandle()->screen()->grabWindow(editor.winId(), at.x(), at.y(), viewport->width(),
+	                                                            viewport->height()).toImage().convertToFormat(QImage::Format_RGB32);
+	QImage painted = viewport->grab().toImage().convertToFormat(QImage::Format_RGB32);
+	if (shown.size() != painted.size()) return shown.width() * shown.height();
+	int stale = 0;
+	for (int y = 0; y < shown.height(); y++) {
+		for (int x = 0; x < shown.width(); x++) {
+			if (shown.pixel(x, y) != painted.pixel(x, y)) stale++;
+		}
+	}
+	return stale;
+}
+
+// EDIT-MODE-29: the block leaves no trail when the text scrolls under it - by the arrow keys
+// past the bottom and the top, by the page keys, by the wheel, sideways
+void TestColors::test_block_cursor_scroll()
+{
+	SettingsManager& sm = SettingsManager::instance();
+	sm.setEditorBlockCursor(true);
+	CodeEditor editor;
+	QStringList lines;
+	for (int i = 0; i < 120; i++) lines << QString("line %1 of a text long enough to scroll sideways too").arg(i);
+	editor.setPlainText(lines.join('\n'));
+	editor.resize(300, 200);
+	editor.show();
+	QApplication::setActiveWindow(&editor);
+	QVERIFY(QTest::qWaitForWindowActive(&editor));
+	editor.setFocus();
+	QTRY_VERIFY(editor.hasFocus());
+	QTextCursor cursor = editor.textCursor();
+	cursor.setPosition(3);
+	editor.setTextCursor(cursor);
+	QCOMPARE(staleViewportPixels(editor), 0);
+	// each key painted before the next, as a held key repeats
+	auto press = [&editor](Qt::Key key, int times) {
+		for (int i = 0; i < times; i++) {
+			QTest::keyClick(&editor, key);
+			QTest::qWait(10);
+		}
+	};
+	press(Qt::Key_Down, 30);
+	QVERIFY(editor.verticalScrollBar()->value() > 0);
+	QCOMPARE(staleViewportPixels(editor), 0);
+	press(Qt::Key_Up, 30);
+	QCOMPARE(staleViewportPixels(editor), 0);
+	press(Qt::Key_PageDown, 2);
+	QCOMPARE(staleViewportPixels(editor), 0);
+	editor.verticalScrollBar()->setValue(editor.verticalScrollBar()->value() + 3);
+	QCOMPARE(staleViewportPixels(editor), 0);
+	press(Qt::Key_End, 1);
+	QVERIFY(editor.horizontalScrollBar()->value() > 0);
+	QCOMPARE(staleViewportPixels(editor), 0);
+	press(Qt::Key_Home, 1);
+	QCOMPARE(staleViewportPixels(editor), 0);
+	// the long lines wrapped: the rows scroll the same way
+	editor.setWrapLines(true);
+	press(Qt::Key_Down, 30);
+	QCOMPARE(staleViewportPixels(editor), 0);
+	press(Qt::Key_Up, 30);
+	QCOMPARE(staleViewportPixels(editor), 0);
+	sm.setEditorBlockCursor(false);
 }
 
 // EDIT-MODE-29: the block steady through the blink of the system, one space of the font wide,
