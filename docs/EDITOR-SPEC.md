@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.83 (2026-11-24)
+**Document version:** 0.84 (2026-11-26)
 
 **Related authorities:**
 
@@ -451,7 +451,11 @@ the third is a derived display value the format does not store):
   6.8.1, 6.8.2*
 - `EDIT-TEXT-7` SHOULD [A]: the code parts of a text are highlighted by the language of the
   `platformLanguage` metainformation parameter of its own document, so the tabs are highlighted
-  independently; an empty or unknown language leaves the text plain. The highlighting is a display colour only: the text, the saved document and the bold
+  independently; an empty or unknown language leaves the text plain. The keywords, the types,
+  the strings and the characters, the numbers, the comments, the operators and the brackets are
+  highlighted, and a preprocessor line from its `#` to its end, a `\` at the end continuing it,
+  its strings, numbers and comments in their own colours (0.84); outside a text tab the operators
+  keep the text colour. The highlighting is a display colour only: the text, the saved document and the bold
   prefix (EDIT-TEXT-2) are not changed. A preference turns it off. A text tab draws the colors
   of its color scheme (`EDIT-COLOR-1`). *design*
 
@@ -1547,7 +1551,9 @@ Specified in 0.63.
   scheme as built in, whatever the current one. *design*
 - `EDIT-COLOR-2` MUST [I]: two schemes are built in: *White*, the default — black text on white
   with the highlighting colors of the canvas — and *Dark* — yellow text (`#ffff00`) on blue
-  (`#000099`); a scheme has all the colors of `docs/COLOR-SCHEMES.md`, The colors. *design*
+  (`#000099`), the keywords, the types and the operators white, the strings light cyan, the
+  numbers and the preprocessor lines green (0.84); a scheme has all the colors of
+  `docs/COLOR-SCHEMES.md`, The colors. *design*
 - `EDIT-COLOR-3` MUST [A]: Preferences > Text has the group *Text editors* beside the diagram
   font: the editor font (`EDIT-MODE-27`), the list of the schemes, a swatch per color that opens
   a color dialog, and a preview of a Markdown text with a C++ block in the font and the scheme
@@ -1564,7 +1570,8 @@ Specified in 0.63.
   (`textSchemes/current`, `textSchemes/list`): a built-in scheme by its changed colors only, a
   user scheme by its name and all its colors, the list removed when nothing differs from the
   built-ins. An unknown current scheme is White; a missing or malformed stored color is the
-  built-in one's, White's for a user scheme. *design*
+  built-in one's, White's for a user scheme, but the operator and the preprocessor colors of a
+  user scheme are its text and keyword ones, the colors they had before 0.84. *design*
 - `EDIT-COLOR-7` MUST [A]: the rendered page of a read-only Markdown tab (`EDIT-MODE-14`) draws
   black text on white whatever the scheme and the theme, as its PDF does (`EDIT-MODE-18`).
   *design*

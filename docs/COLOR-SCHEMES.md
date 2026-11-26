@@ -1,6 +1,6 @@
 # Color Schemes — Architecture
 
-**Document version:** 0.6 (2026-11-22), the mode line; 0.5: the text width of the fill; 0.4: the cursor and the long lines of the text editors. The requirements are `EDIT-COLOR-1..8` in
+**Document version:** 0.7 (2026-11-26), the operators and the preprocessor lines, the Dark code colors; 0.6: the mode line; 0.5: the text width of the fill; 0.4: the cursor and the long lines of the text editors. The requirements are `EDIT-COLOR-1..8` in
 `EDITOR-SPEC.md` §4.18; the editor font beside them is `EDIT-MODE-27`.
 
 The source editor of a text tab draws in the colors of a scheme: its background, text,
@@ -42,11 +42,13 @@ colors as built in.
 | `selectionText` | the selected text | `#ffffff` | `#000000` |
 | `lineNumbersBackground` | the line number margin | `#f0f0f0` | `#000066` |
 | `lineNumbers` | the line numbers | `#8c8c8c` | `#8080ff` |
-| `keyword` | a keyword, a preprocessor word | `#0033b3` | `#ffffff` |
-| `type` | a type | `#007f7f` | `#00ffff` |
-| `string` | a string, a character | `#067d17` | `#55ff55` |
-| `number` | a number | `#1750eb` | `#ff99ff` |
+| `keyword` | a keyword | `#0033b3` | `#ffffff` |
+| `type` | a type | `#007f7f` | `#ffffff` |
+| `string` | a string, a character | `#067d17` | `#55ffff` |
+| `number` | a number | `#1750eb` | `#55ff55` |
 | `comment` | a comment, a Markdown comment | `#8c8c8c` | `#b0b0b0` |
+| `operator` | an operator sign, a bracket, a separator | `#000000` | `#ffffff` |
+| `preprocessor` | a preprocessor line but its strings, numbers and comments | `#0033b3` | `#55ff55` |
 | `heading` | a Markdown heading | `#871094` | `#ffffff` |
 | `emphasis` | bold, italic, strike-through | `#9e5a00` | `#ffb000` |
 | `code` | a code span, a block without a language | `#067d17` | `#55ff55` |
@@ -55,7 +57,9 @@ colors as built in.
 | `quote` | the text of a quote | `#5d6d7e` | `#c0c0c0` |
 | `math` | a TeX formula | `#a31b5a` | `#ff99ff` |
 
-The White highlighting colors are the ones the canvas always had. On `#000099` every Dark
+The White highlighting colors are the ones the canvas always had, a preprocessor line now in
+the keyword blue to its end; outside a text editor an operator has no color of its own and keeps
+the text color of the item or the dialog. On `#000099` every Dark
 color has a contrast of 6.6:1 or more, the line numbers 5.4:1. The find marks (`#ffeb3b`,
 `#ff9800`, black glyphs) are the same in every scheme (`EDIT-FIND-4`).
 
@@ -81,7 +85,8 @@ A built-in scheme is a resource file:
 
 A built-in scheme is in the list with its changed colors only, a user scheme with all of them;
 the list is removed when nothing differs from the built-ins. A missing or malformed color is
-the built-in one's, White's for a user scheme.
+the built-in one's, White's for a user scheme, but a user scheme stored before 0.7, without
+`operator` and `preprocessor`, takes its own `text` and `keyword` for them, as it drew them.
 
 ## The page
 
@@ -96,7 +101,7 @@ diagrams; the dialog is wide enough for both.
    Text width [ 90 ] characters [ ] Fill as you type     20..200 (EDIT-MD-22)
    Scheme  [White               v]
    [Copy...] [Rename...] [Delete] [Restore]
-   swatches ...
+   swatches: the editor | the code | the Markdown colors, a column each
    preview: a Markdown text with a C++ block
 
  CodeEditor::applyCursor(): setCursorWidth(block ? the advance of a space : 1)
