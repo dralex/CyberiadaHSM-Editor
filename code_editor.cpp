@@ -28,6 +28,7 @@
 #include <QMimeData>
 #include <QUrl>
 #include <QMouseEvent>
+#include <QPaintEngine>
 #include <QPainter>
 #include <QTextLayout>
 #include <QPainterPath>
@@ -147,6 +148,8 @@ CodeEditor::CodeEditor(QWidget* parent):
     m_wrap = SettingsManager::instance().getEditorWrap();
     connect(&SettingsManager::instance(), &SettingsManager::editorWrapChanged, this,
             [this]() { setWrapLines(SettingsManager::instance().getEditorWrap()); });
+    // the steady block follows the cursor (EDIT-MODE-29)
+    connect(this, &QPlainTextEdit::cursorPositionChanged, this, &CodeEditor::updateBlockCursor);
     // the mode line follows the cursor, the fill and View > Mode Line (EDIT-MODE-31)
     connect(this, &QPlainTextEdit::cursorPositionChanged, modeLine, QOverload<>::of(&QWidget::update));
     connect(this, &QPlainTextEdit::selectionChanged, modeLine, QOverload<>::of(&QWidget::update));
@@ -175,9 +178,62 @@ void CodeEditor::setBlockCursor(bool on)
 
 void CodeEditor::applyCursor()
 {
-    // a cursor wider than one pixel is drawn inverting what is under it: the character shows
-    setCursorWidth(m_blockCursor ? qMax(1, fontMetrics().horizontalAdvance(' ')) : 1);
+    // the line is Qt's, blinking; the block the editor's own, steady: Qt's then hidden
+    setCursorWidth(m_blockCursor ? 0 : 1);
     viewport()->update();
+}
+
+QRect CodeEditor::blockCursorRect() const
+{
+    bool keys = !isReadOnly() || (textInteractionFlags() & Qt::TextSelectableByKeyboard);
+    if (!m_blockCursor || !hasFocus() || !keys) return QRect();
+    QRect at = cursorRect();
+    return QRect(at.left(), at.top(), qMax(1, fontMetrics().horizontalAdvance(' ')), at.height());
+}
+
+void CodeEditor::updateBlockCursor()
+{
+    if (!m_blockCursor) return;
+    // the block as painted last, and the place of the cursor now
+    viewport()->update(m_blockShown);
+    QRect now = cursorRect();
+    viewport()->update(QRect(now.left(), now.top(), qMax(1, fontMetrics().horizontalAdvance(' ')), now.height()));
+}
+
+// the pixels of the block scroll with the text
+void CodeEditor::scrollContentsBy(int dx, int dy)
+{
+    m_blockShown.translate(dx, dy);
+    QPlainTextEdit::scrollContentsBy(dx, dy);
+}
+
+// the block over the text, inverting what is under it as Qt draws a wide cursor: the character
+// shows (EDIT-MODE-29)
+void CodeEditor::paintEvent(QPaintEvent* event)
+{
+    QPlainTextEdit::paintEvent(event);
+    QRect block = blockCursorRect();
+    // a part of the old block outside the region keeps its pixels
+    if (event->rect().contains(m_blockShown)) m_blockShown = QRect();
+    if (block.isEmpty()) return;
+    m_blockShown = block;
+    QPainter painter(viewport());
+    if (painter.paintEngine()->hasFeature(QPaintEngine::RasterOpModes)) {
+        painter.setCompositionMode(QPainter::RasterOp_NotDestination);
+    }
+    painter.fillRect(block, palette().text());
+}
+
+void CodeEditor::focusInEvent(QFocusEvent* event)
+{
+    QPlainTextEdit::focusInEvent(event);
+    updateBlockCursor();
+}
+
+void CodeEditor::focusOutEvent(QFocusEvent* event)
+{
+    QPlainTextEdit::focusOutEvent(event);
+    updateBlockCursor();
 }
 
 void CodeEditor::changeEvent(QEvent* event)

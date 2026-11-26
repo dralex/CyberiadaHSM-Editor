@@ -76,6 +76,9 @@ public:
     // editors follow the setting, the scheme preview the choice shown (EDIT-MODE-29)
     void setBlockCursor(bool on);
     bool blockCursor() const { return m_blockCursor; }
+    // the block as drawn: the editor's own, steady, while the editor has the focus and takes the
+    // keys; empty otherwise (Qt's blinking cursor is the line alone)
+    QRect blockCursorRect() const;
     // a dropped or pasted image is offered instead of its text (EDIT-MD-2): a Markdown text
     void setImageDrops(bool on) { m_imageDrops = on; }
     bool imageDrops() const { return m_imageDrops; }
@@ -133,6 +136,10 @@ protected:
     void mouseReleaseEvent(QMouseEvent* event) override;
     void inputMethodEvent(QInputMethodEvent* event) override;
     void contextMenuEvent(QContextMenuEvent* event) override;
+    void paintEvent(QPaintEvent* event) override;
+    void scrollContentsBy(int dx, int dy) override;
+    void focusInEvent(QFocusEvent* event) override;
+    void focusOutEvent(QFocusEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
     void changeEvent(QEvent* event) override;
 
@@ -145,6 +152,8 @@ private:
     // the tab stop and the margins, measured in the font
     void applyFontMetrics();
     void applyCursor();
+    // the old place of the block and the new one repainted
+    void updateBlockCursor();
     void applyWrap();
     // a Space or a Return typed past the text width breaks the line, an undo step of its own;
     // the key ends at the position
@@ -188,6 +197,8 @@ private:
     QCursor m_textPointer;
     bool m_imageDrops = false;
     bool m_blockCursor = false;
+    // the block as painted last, in the viewport, moved by the scrolling
+    QRect m_blockShown;
     bool m_wrap = false;
     bool m_wrapAllowed = true;
 };
