@@ -28,6 +28,8 @@
 #include <QFontDatabase>
 #include <QLabel>
 #include <QPushButton>
+#include <QScreen>
+#include <QWindow>
 #include <QSettings>
 #include <QSpinBox>
 #include <QTemporaryDir>
@@ -73,6 +75,7 @@ private slots:
 	void test_editor_font();
 	void test_page_font();
 	void test_editor_cursor();
+	void test_block_cursor_steady();
 	void test_editor_wrap();
 	void test_mode_line();
 
@@ -641,6 +644,63 @@ void TestColors::test_page_font()
 	QCOMPARE(dialog.textSchemePanel()->findChild<QSpinBox*>("textEditorFontSize")->value(), FONT_SIZE);
 }
 
+// the colour of a pixel of the editor's window as it was last painted, not drawn again
+static QRgb shownPixel(CodeEditor& editor, const QPoint& viewportPoint)
+{
+	QCoreApplication::processEvents();
+	QPoint at = editor.viewport()->mapTo(&editor, viewportPoint);
+	return editor.windowHandle()->screen()->grabWindow(editor.winId(), at.x(), at.y(), 1, 1).toImage().pixel(0, 0);
+}
+
+// EDIT-MODE-29: the block steady through the blink of the system, one space of the font wide,
+// inverting its character, shown with the focus only; its old place repainted plain
+void TestColors::test_block_cursor_steady()
+{
+	SettingsManager& sm = SettingsManager::instance();
+	sm.setEditorBlockCursor(true);
+	CodeEditor editor;
+	editor.setPlainText("abc def");
+	editor.resize(400, 160);
+	editor.show();
+	QApplication::setActiveWindow(&editor);
+	QVERIFY(QTest::qWaitForWindowActive(&editor));
+	editor.setFocus();
+	QTRY_VERIFY(editor.hasFocus());
+	QCOMPARE(editor.cursorWidth(), 0);
+	QRect block = editor.blockCursorRect();
+	QCOMPARE(block.width(), QFontMetrics(editor.font()).horizontalAdvance(' '));
+	QPoint middle = block.center();
+	QRgb shown = shownPixel(editor, middle);
+	// more than a blink of the system: the block stays
+	int flash = QApplication::cursorFlashTime();
+	QVERIFY(flash > 0);
+	for (int i = 0; i < 4; i++) {
+		QTest::qWait(flash / 3);
+		QCOMPARE(shownPixel(editor, middle), shown);
+	}
+	// without the focus it is gone: the pixel of the character itself
+	editor.clearFocus();
+	QTRY_VERIFY(!editor.hasFocus());
+	QVERIFY(editor.blockCursorRect().isEmpty());
+	QTRY_VERIFY(shownPixel(editor, middle) != shown);
+	QRgb plain = shownPixel(editor, middle);
+	editor.setFocus();
+	QTRY_COMPARE(shownPixel(editor, middle), shown);
+	// moved: the old place plain again, the block at the new one
+	QTextCursor cursor = editor.textCursor();
+	cursor.setPosition(4);
+	editor.setTextCursor(cursor);
+	QTRY_COMPARE(shownPixel(editor, middle), plain);
+	QVERIFY(editor.blockCursorRect().left() > block.left());
+	// a larger font: still one character
+	sm.setEditorFontSize(FONT_SIZE * 2);
+	QCOMPARE(editor.blockCursorRect().width(), QFontMetrics(editor.font()).horizontalAdvance(' '));
+	// the line is Qt's
+	sm.setEditorBlockCursor(false);
+	QCOMPARE(editor.cursorWidth(), 1);
+	QVERIFY(editor.blockCursorRect().isEmpty());
+}
+
 // EDIT-MODE-29: the cursor a line by default, a block one space of the font wide in every
 // source editor at once, one character after a font change too; stored; the page row with its
 // preview before Apply, Apply and Reset
@@ -652,16 +712,11 @@ void TestColors::test_editor_cursor()
 	QVERIFY(!sm.getEditorBlockCursor());
 	QCOMPARE(text.editor()->cursorWidth(), 1);
 	sm.setEditorBlockCursor(true);
-	int space = QFontMetrics(text.editor()->font()).horizontalAdvance(' ');
-	QVERIFY(space > 1);
-	QCOMPARE(text.editor()->cursorWidth(), space);
-	QCOMPARE(code.editor()->cursorWidth(), space);
+	// the block is the editor's own (test_block_cursor_steady), Qt's cursor hidden
+	QVERIFY(text.editor()->blockCursor() && code.editor()->blockCursor());
+	QCOMPARE(text.editor()->cursorWidth(), 0);
+	QCOMPARE(code.editor()->cursorWidth(), 0);
 	QCOMPARE(QSettings().value("display/editorCursor").toString(), QString(EDITOR_CURSOR_BLOCK));
-	// a larger font: still one character
-	sm.setEditorFontSize(FONT_SIZE * 2);
-	int larger = QFontMetrics(text.editor()->font()).horizontalAdvance(' ');
-	QVERIFY(larger > space);
-	QCOMPARE(text.editor()->cursorWidth(), larger);
 	// read back; a new editor starts with it
 	sm.load();
 	QVERIFY(sm.getEditorBlockCursor());
