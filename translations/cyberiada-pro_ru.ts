@@ -97,7 +97,7 @@
 <context>
     <name>CodeEditor</name>
     <message>
-        <location filename="../code_editor.cpp" line="+396"/>
+        <location filename="../code_editor.cpp" line="+473"/>
         <source>Fill %1</source>
         <translation>Перенос %1</translation>
     </message>
@@ -2669,13 +2669,13 @@ Ctrl+клик мыши — открыть</translation>
 <context>
     <name>Indenter</name>
     <message>
-        <location filename="../indenter.cpp" line="+166"/>
+        <location filename="../indenter.cpp" line="+174"/>
         <source>indent region</source>
         <translation>расстановка отступов</translation>
     </message>
     <message>
         <location line="+3"/>
-        <location line="+15"/>
+        <location line="+16"/>
         <location line="+27"/>
         <source>indent</source>
         <translation>отступ</translation>
@@ -5803,7 +5803,7 @@ Ctrl+клик мыши — открыть</translation>
 <context>
     <name>ShortcutsPage</name>
     <message>
-        <location filename="../dialogs/shortcuts_page.cpp" line="+50"/>
+        <location filename="../dialogs/shortcuts_page.cpp" line="+79"/>
         <source>Filter</source>
         <translation>Фильтр</translation>
     </message>
@@ -5843,12 +5843,12 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Сбросить все</translation>
     </message>
     <message>
-        <location line="+114"/>
+        <location line="+118"/>
         <source>%1 is the key of &quot;%2&quot;.</source>
         <translation>%1 — сочетание действия «%2».</translation>
     </message>
     <message>
-        <location line="+18"/>
+        <location line="+24"/>
         <source>%1 is the key of &quot;%2&quot;. Give it to &quot;%3&quot;?</source>
         <translation>%1 — сочетание действия «%2». Передать его действию «%3»?</translation>
     </message>
@@ -5978,7 +5978,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>переформатирование абзаца</translation>
     </message>
     <message>
-        <location line="+82"/>
+        <location line="+93"/>
         <source>convert tabs</source>
         <translation>замена табуляций пробелами</translation>
     </message>
@@ -6028,6 +6028,16 @@ Ctrl+клик мыши — открыть</translation>
         <location line="+1"/>
         <source>Selected text</source>
         <translation>Выделенный текст</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Block cursor</source>
+        <translation type="unfinished">Блочный курсор</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Text under the cursor</source>
+        <translation type="unfinished">Текст под курсором</translation>
     </message>
     <message>
         <location line="+1"/>
