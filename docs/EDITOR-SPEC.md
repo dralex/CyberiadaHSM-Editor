@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.84 (2026-11-26)
+**Document version:** 0.85 (2026-11-26)
 
 **Related authorities:**
 
@@ -2123,6 +2123,121 @@ start, the dock apart from the structure tree, the History a tab of it and its a
   commit. *design*
 - `EDIT-GIT-23` MUST [A]: the plugin token `git` keeps its `.git` lookup (`EDIT-PLUG-55`): the
   plugins do not depend on the git of the editor, nor on *Use git*. *design*
+
+### 4.21 Indentation — INDENT
+
+The source editors indent as Emacs does: Return puts the new line at its place, Tab moves a
+line there, the indent written in spaces, or tabs, of one width. Nothing but spaces and tabs is
+ever inserted: no closing bracket, no comment star, no list marker, no quote mark. The rules and
+the architecture are in `docs/INDENT.md`. Specified in 0.85.
+
+- `EDIT-INDENT-1` MUST [A]: a text tab of a language with indent rules - the `indent` of its
+  language file: `braces` (C, C++, C#), `brackets` (JSON), `offside` (Python) - computes the
+  column of each line (`EDIT-INDENT-5`). With *Indent automatically* (`EDIT-INDENT-7`) Return
+  breaks the line, the spaces and tabs around the cursor go and the new line starts at its
+  column; Tab moves the line of the cursor to its column wherever the cursor is, the cursor
+  kept at its character, from the leading whitespace at the first character of the text; Tab
+  with a selection re-indents each line it touches (`EDIT-INDENT-6`); Shift+Tab moves the
+  line, or each selected line, one indent width left. In a Python tab a Tab repeated on the
+  same line, nothing else typed or moved, cycles its column, each lower block level, 0 and
+  the column again (Emacs `python-indent-line`). A line starting in a block comment, a
+  string, a continued preprocessor line or the header of a code dialog stays as it is; after
+  Return there the new line takes the indent of the line above. *design*
+
+  ```
+  if (ready) {               Tab on each line          if (ready) {
+  foo(a,                     ----------------->            foo(a,
+  b);                                                          b);
+          }                                            }
+  ```
+- `EDIT-INDENT-2` SHOULD [A]: with *Indent automatically* a character that changes the column of
+  its line re-indents it as it is typed, one undo step with it: `}`, `]`, `)` and `{` typed as
+  the first character of a line, `#` too in C and C++; the `:` ending a label (`case 1:`,
+  `default:`, `public:`); in Python the `:` of a line starting with `else`, `elif`, `except` or
+  `finally`. *design*
+- `EDIT-INDENT-3` MUST [A]: a Markdown and a Plain text tab, and a language without indent
+  rules, have no column to compute. Return starts the new line with the whitespace of the
+  continuation prefix its line takes in the fill (`EDIT-MD-18/23`): the indent of the
+  paragraph, the text column of a list item (`- ` 2, `10. ` 4), in a quote the whitespace
+  before its marks - they are not repeated; outside a unit, the indent of the line. A line left
+  blank by it is emptied; the trailing spaces of a hard break stay. Tab works as Emacs
+  `indent-relative`: in the leading whitespace it moves the line to the next indent point of
+  the non-blank line above - its indent and the start of each of its words - past the last
+  one to the next stop of the width; after the text it inserts the whitespace up to the next
+  point or stop at the cursor; Shift+Tab moves the line back to the previous point or stop;
+  with a selection Tab and Shift+Tab move each line it touches one width right or left. *design*
+
+  ```
+  - A list item that goes on|   Return  ->  - A list item that goes on
+                                              |
+  - a                           Tab on b   ->  - a
+  - b                                            - b
+  ```
+- `EDIT-INDENT-4` MUST [A]: an indent is written in the form of *Indent with*: *Spaces*, spaces
+  only, or *Tabs*, a tab for each stop of 4 columns from the start of the line (`EDIT-MODE-27`)
+  and spaces for the rest. A line moved is rewritten in the form, so its tabs become spaces
+  under *Spaces*; a line already at its column in the form is not edited. Return with its
+  indent is one undo step, as is each of `indent`, `unindent`, `indent region` and `convert
+  tabs`; an edit that changes nothing takes none. Nothing is indented in a read-only, a
+  rendered or a locked tab. *design*
+- `EDIT-INDENT-5` MUST [A]: the columns (`docs/INDENT.md`, Rules), the comments and strings
+  aside:
+
+  | Style | Line | Column |
+  |---|---|---|
+  | all | in a bracket with code after the opener on its line | the column of that code; the closing bracket first: the column of the opener |
+  | | in a bracket ending its line | the indent of the opener's line plus the width; the closing bracket first: that indent |
+  | `braces` | a statement of a block | the indent of the line starting the statement holding `{` plus the width; a `namespace` block (`indentFlat`) without the width |
+  | | `}` first | the indent of that line |
+  | | a label (`indentLabels`: `case`, `default`, `public`...) | the width less than the statements |
+  | | a statement continued, or the one after `if (...)`, `for (...)`, `while (...)`, `else`, `do` | its first line plus the width; a `{` first: its first line |
+  | | a preprocessor line | 0 |
+  | `brackets` | outside a bracket | 0 |
+  | `offside` | after a line ending `:` | its indent plus the width |
+  | | after `return`, `pass`, `break`, `continue`, `raise` | the level of the block holding it |
+  | | `else`, `elif`, `except`, `finally` first | the nearest `if`, `elif`, `for`, `while`, `try` or `except` above, at that column or less |
+  | | after a `\` | the indent of the statement plus the width |
+  | | else | the indent of the code line above |
+
+  ```
+  switch (state) {            namespace {           if (a &&
+  case STATE_INIT:            int counter;              b) {
+      set_state(STATE_DAY);   }                         bar(x,
+      break;                                                y);
+  }                                                 }
+  ```
+- `EDIT-INDENT-6` SHOULD [A]: Edit > Indent Region (`Ctrl+Alt+\`, Emacs `C-M-\`) re-indents each
+  line the selection touches, the whole text without one, in a tab of a language with indent
+  rules; Edit > Convert Tabs to Spaces (Emacs `untabify`) turns each tab of the selection, of
+  the whole text without one, into the spaces up to its stop, the columns kept, in any text
+  tab. Each is one undo step, the cursor and the selection kept at their characters; both are
+  greyed in another tab and a read-only, a rendered or a locked one. *design*
+- `EDIT-INDENT-7` MUST [A]: the width, 4 columns by default (1..8), the form, *Spaces* by
+  default, and the switch, on by default, are set on Preferences > Text, *Text editors*,
+  `Indent: [n] columns with [Spaces|Tabs] [x] Indent automatically`, applied by Ok and Apply;
+  Edit > Indent Automatically, checkable and enabled in a text tab, is the same switch. They are
+  stored per user (`editor/indentWidth`, `editor/indentWith`: `spaces` or `tabs`,
+  `editor/autoIndent`); Reset of the Preferences restores them. With the switch off Return
+  only breaks the line, no character re-indents, Tab inserts the whitespace up to the next stop
+  at the cursor and moves the selected lines one width right; Shift+Tab, Indent Region and
+  Convert Tabs to Spaces stay. *design*
+- `EDIT-INDENT-8` SHOULD [A]: the code editors of a diagram indent by the language of the
+  document as a text tab of it does: the New action and New internal transition dialogs and the
+  text dialog of a behaviour and of a formal comment body (`EDIT-TEXT-8/10`). The header of an
+  action, `entry/` or `EVENT [guard] /`, is no code: the code after it starts from column 0.
+  Without a language they indent as a language without rules does; the informal comment bodies,
+  the descriptions and the other dialogs are not indented. *design*
+- `EDIT-INDENT-9` MUST [A]: the batch verbs of a text tab (`EDIT-MD-12`; a script error in
+  another tab and as `EDIT-INDENT-6` greys them) and the setting verbs:
+
+  | Verb | Does |
+  |---|---|
+  | `indent-region [line <n>\|lines <n>-<m>]` | Indent Region of the lines, of the whole text without an argument; a line the text has not is refused |
+  | `untabify [line <n>\|lines <n>-<m>]` | Convert Tabs to Spaces of the lines, of the whole text without an argument |
+  | `indent-width <n>` | the indent width for the run, 1..8 |
+  | `indent-with spaces\|tabs` | the form for the run |
+
+  A batch run indents by 4 columns with spaces unless set. *design*
 
 ## 5. Coverage
 

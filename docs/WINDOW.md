@@ -1,6 +1,6 @@
 # The Editor Window — Documents and Tabs
 
-**Document version:** 0.30 (2026-11-24) — the modes, the read-only flag and the plugins in
+**Document version:** 0.31 (2026-11-26) — the modes, the read-only flag and the plugins in
 the modes (`modes`, the text tabs, a plugin run as a diff base, the plugin languages) are
 implemented, the git compare with them (stage 6 of `docs/MODES.md`); a switch keeps the dock
 sizes; a Markdown tab exports its rendered PDF; the find bar (`docs/FIND.md`); the shortcuts
@@ -20,6 +20,8 @@ bar of a tab
 (`EDIT-GIT-1..23`, `EDIT-DOC-13..18`, `docs/GIT.md`), specified.
 0.29: the Panels toolbar, a button per dock (`EDIT-UI-9`), specified.
 0.30: the switch of the plugin manager acting at once (`EDIT-PLUG-30`), specified.
+0.31: Indent Region, Convert Tabs to Spaces and Indent Automatically (`EDIT-INDENT-1..9`,
+`docs/INDENT.md`).
 
 The window holds several documents at once. The menus, the toolbars, the tab line and the
 docks (the structure tree, the properties, the changes, the outline, the repository with its
@@ -134,6 +136,9 @@ setCurrentDocument(doc)
 | Insert Formula | document | the cursor of the active Markdown tab, one undo step, an untitled tab too; the formula under the cursor edited, as by Ctrl+click on it (`EDIT-MD-24..27`) |
 | Fill Paragraph, Unfill Paragraph | document | the unit of the cursor or the units of the selection in the active Markdown or Plain text tab, one undo step; Fill Paragraph also on the Text toolbar (`EDIT-MD-18..23`) |
 | Edit > Fill as You Type | global | a setting; a Space or a Return typed past the text width breaks the line in every Markdown and Plain text tab (`EDIT-MD-21/22`) |
+| Indent Region | document | the lines of the selection, else the whole text, of the active tab of a language with indent rules re-indented, one undo step (`EDIT-INDENT-6`) |
+| Convert Tabs to Spaces | document | the tabs of the selection, else of the whole text, of the active text tab turned into spaces, one undo step (`EDIT-INDENT-6`) |
+| Edit > Indent Automatically | global | a setting; Return and the electric characters indent and Tab moves a line to its place in every text tab and code dialog (`EDIT-INDENT-1..3/7/8`) |
 | Document > Update Diagram Images | document | the diagram images of the active Markdown tab, written beside their diagrams; the text unchanged (`EDIT-MD-7`) |
 | View > Mode Line | global | a setting; every source editor of a text tab shows its mode line, the position of its cursor among the parts (`EDIT-MODE-31`) |
 | View > Wrap Long Lines | global | a setting; every source editor but a text diff side wraps its long lines at the width (`EDIT-MODE-30`) |
