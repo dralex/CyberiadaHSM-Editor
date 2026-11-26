@@ -114,6 +114,10 @@ void SettingsManager::load() {
     editorWrap = s.value("display/editorWrap", EDITOR_LINES_SCROLL).toString() == EDITOR_LINES_WRAP;
     textWidth = qBound(TEXT_WIDTH_MIN, s.value("editor/textWidth", TEXT_WIDTH_DEFAULT).toInt(), TEXT_WIDTH_MAX);
     fillAsYouType = s.value("editor/fillAsYouType", false).toBool();
+    indentWidth = qBound(INDENT_WIDTH_MIN, s.value("editor/indentWidth", INDENT_WIDTH_DEFAULT).toInt(),
+                         INDENT_WIDTH_MAX);
+    indentTabs = s.value("editor/indentWith", EDITOR_INDENT_SPACES).toString() == EDITOR_INDENT_TABS;
+    autoIndent = s.value("editor/autoIndent", true).toBool();
     gitProgram = s.value("git/program", QString()).toString();
     gitEnabled = s.value("git/enabled", true).toBool();
     showRepository = s.value("display/showRepository", true).toBool();
@@ -225,6 +229,9 @@ void SettingsManager::loadDefaults()
     setEditorWrap(false);
     setTextWidth(TEXT_WIDTH_DEFAULT);
     setFillAsYouType(false);
+    setIndentWidth(INDENT_WIDTH_DEFAULT);
+    setIndentTabs(false);
+    setAutoIndent(true);
     setGitProgram(QString());
     setGitEnabled(true);
     setRepositoryLayout(0);
@@ -331,6 +338,45 @@ void SettingsManager::setFillAsYouType(bool value)
         fillAsYouType = value;
         QSettings().setValue("editor/fillAsYouType", value);
         emit textFillChanged();
+    }
+}
+
+void SettingsManager::setIndentWidth(int value)
+{
+    value = qBound(INDENT_WIDTH_MIN, value, INDENT_WIDTH_MAX);
+    QSettings().setValue("editor/indentWidth", value);
+    overrideIndentWidth(value);
+}
+
+void SettingsManager::overrideIndentWidth(int value)
+{
+    value = qBound(INDENT_WIDTH_MIN, value, INDENT_WIDTH_MAX);
+    if (indentWidth != value) {
+        indentWidth = value;
+        emit indentChanged();
+    }
+}
+
+void SettingsManager::setIndentTabs(bool value)
+{
+    QSettings().setValue("editor/indentWith", value ? EDITOR_INDENT_TABS : EDITOR_INDENT_SPACES);
+    overrideIndentTabs(value);
+}
+
+void SettingsManager::overrideIndentTabs(bool value)
+{
+    if (indentTabs != value) {
+        indentTabs = value;
+        emit indentChanged();
+    }
+}
+
+void SettingsManager::setAutoIndent(bool value)
+{
+    if (autoIndent != value) {
+        autoIndent = value;
+        QSettings().setValue("editor/autoIndent", value);
+        emit indentChanged();
     }
 }
 

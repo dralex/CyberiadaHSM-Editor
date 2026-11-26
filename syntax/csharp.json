@@ -5,6 +5,8 @@
     "lineComment": "//",
     "blockComment": ["/*", "*/"],
     "quotes": "\"'",
+    "indent": "braces",
+    "indentLabels": ["case", "default"],
     "keywords": ["abstract", "as", "base", "break", "case", "catch", "class", "const",
                  "continue", "default", "delegate", "do", "else", "enum", "event", "false",
                  "finally", "for", "foreach", "if", "in", "interface", "internal", "is",

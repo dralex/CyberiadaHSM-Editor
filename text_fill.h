@@ -59,6 +59,9 @@ TextFillEdit textFill(const QString& text, int anchor, int cursor, int width, Te
 // width (EDIT-MD-21); false when the line fits, is never filled or has no break point
 bool         textAutoFillBreak(const QString& text, int cursor, int width, TextFillKind kind,
                                TextFillBreak* result);
+// the prefix the next lines of the unit holding the line take (EDIT-MD-18/23), the one a break
+// gives; null when the line is in no unit (a blank line, a block never filled)
+QString      textFillPrefix(const QString& text, int line, TextFillKind kind);
 // the columns of a line, a tab to the next stop (EDITOR_TAB_SPACES)
 int          textColumns(const QString& line);
 

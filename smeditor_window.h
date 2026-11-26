@@ -328,6 +328,8 @@ private:
     void                    showTextTools(bool fill, bool markdown);
     // Fill Paragraph or Unfill Paragraph of the active text (EDIT-MD-20)
     void                    fillText(bool unfill);
+    // Indent Region, or Convert Tabs to Spaces, of the active text tab (EDIT-INDENT-6)
+    void                    indentText(bool untabify);
     // a text without a file is saved first, its folder holding the inserted files (EDIT-MD-4)
     bool                    ensureTextFile(TextDocument* text, const QString& title);
     // Find, Find Next and Find Previous and the bar follow the active tab (EDIT-FIND-9)

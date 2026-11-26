@@ -30,6 +30,7 @@
 #include <QRectF>
 #include <QVector>
 #include "autoreplace.h"
+#include "indenter.h"
 #include "text_fill.h"
 
 struct TextScheme;
@@ -52,6 +53,9 @@ public:
     // what the text fills as when Fill as you type is on (EDIT-MD-21): none unless set
     void setFillKind(TextFillKind kind) { m_fillKind = kind; }
     TextFillKind fillKind() const { return m_fillKind; }
+    // how Return, Tab and the typed characters indent (EDIT-INDENT-1..3): none unless set
+    void setIndentRules(const TextIndentRules& rules) { m_indenter.setRules(rules); }
+    const TextIndentRules& indentRules() const { return m_indenter.rules(); }
     // the page, the selection and the margin in the colors of the scheme (EDIT-COLOR-1)
     void setScheme(const TextScheme& scheme);
     // an error of the text (EDIT-MODE-26): the number of its line in red, the message in a
@@ -142,8 +146,9 @@ private:
     void applyFontMetrics();
     void applyCursor();
     void applyWrap();
-    // a Space or a Return typed past the text width breaks the line, an undo step of its own
-    void autoFill();
+    // a Space or a Return typed past the text width breaks the line, an undo step of its own;
+    // the key ends at the position
+    void autoFill(int keyEnd);
     void placeLineNumbers();
     void placeFringe();
     void placeModeLine();
@@ -174,6 +179,7 @@ private:
     AutoreplaceKind m_kind = autoreplaceNone;
     TextFillKind m_fillKind = textFillNone;
     Autoreplacer m_replacer;
+    Indenter m_indenter;
     // the target a Ctrl+press started on, opened when released over it
     QString m_pressedLink;
     // the formula position a Ctrl+press started on, -1 without one

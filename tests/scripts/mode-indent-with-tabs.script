@@ -1,0 +1,4 @@
+# the indents in tabs of the width for the run (EDIT-INDENT-4/9): a tab per stop of 4
+indent-with tabs
+indent-width 4
+indent-region

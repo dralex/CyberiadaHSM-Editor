@@ -185,6 +185,10 @@
     <addaction name="actionUnfillParagraph"/>
     <addaction name="actionFillAsYouType"/>
     <addaction name="separator"/>
+    <addaction name="actionIndentRegion"/>
+    <addaction name="actionUntabify"/>
+    <addaction name="actionAutoIndent"/>
+    <addaction name="separator"/>
     <addaction name="actionInsertImage"/>
     <addaction name="actionInsertDiagram"/>
     <addaction name="actionInsertLink"/>
@@ -483,6 +487,33 @@
    </property>
    <property name="toolTip">
     <string>Break a line past the text width when a space or a new line is typed</string>
+   </property>
+  </action>
+  <action name="actionIndentRegion">
+   <property name="text">
+    <string>Indent Region</string>
+   </property>
+   <property name="toolTip">
+    <string>Put each line of the selection, or of the whole text, at its indent</string>
+   </property>
+  </action>
+  <action name="actionUntabify">
+   <property name="text">
+    <string>Convert Tabs to Spaces</string>
+   </property>
+   <property name="toolTip">
+    <string>Turn the tabs of the selection, or of the whole text, into spaces</string>
+   </property>
+  </action>
+  <action name="actionAutoIndent">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Indent Automatically</string>
+   </property>
+   <property name="toolTip">
+    <string>Put a new line at its indent and move a line there by Tab</string>
    </property>
   </action>
   <action name="actionInsertLink">

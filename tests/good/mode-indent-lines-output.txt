@@ -1,0 +1,51 @@
+== tabs
+count: 1
+0 indent-course.cpp* cpp active
+== text
+mode: cpp
+file: indent-course.cpp
+modified: yes
+rendered: no
+lines: 42
+| // the state machine of the clever farm, as chapter 06 of the course indents it: tabs and spaces
+| class StateMachine {
+| public:
+|     StateMachine(const int* t, Window* w, LightSensor* ls):
+|         state(STATE_INIT), time(t), window(w), light_sensor(ls)
+|     {
+| 	}
+|     
+| 	void step_sec()
+| 	{
+|     	    switch (state) {
+|          case STATE_INIT:
+|         	   set_state(STATE_DAY);
+|         	   window->open();
+|         	   break;
+|     	    case STATE_DAY:
+|         	   if (light_sensor->is_night()) {
+|                  window->close();
+|                  set_state(STATE_NIGHT);
+|         	   }
+|              break;
+|     	    case STATE_NIGHT:
+|              if (light_sensor->is_day()) {
+|                  set_state(STATE_DAY);
+|                  window->open();
+|              }
+|              break;
+|     	    default:
+|              throw "Unknown state!";
+|    	    }
+| 	}
+|     
+| private:
+| 
+| 	void set_state(int s) { state = s; }
+| 
+| 	int state;
+| 	const int* time;
+| 	Window* window;
+| 	LightSensor* light_sensor;
+| };
+| 

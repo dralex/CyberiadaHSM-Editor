@@ -1,0 +1,22 @@
+== tabs
+count: 1
+0 indent-messy.json* json active
+== text
+mode: json
+file: indent-messy.json
+modified: yes
+rendered: no
+error: none
+lines: 12
+| {
+|     "a": 1,
+|     "b": [1,
+|           2],
+|     "c": {
+|         "d": null
+|     },
+|     "e": [
+|         3
+|     ]
+| }
+| 

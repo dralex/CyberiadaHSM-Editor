@@ -74,6 +74,10 @@ static bool readLanguage(const QByteArray& json, const QString& id, CodeLanguage
     }
     lang->quotes = o.value("quotes").toString();
     lang->preprocessor = o.value("preprocessor").toBool();
+    // the indent style (EDIT-INDENT-5): an unknown one indents as the line above
+    lang->indent = o.value("indent").toString();
+    lang->indentLabels = jsonStrings(o.value("indentLabels"));
+    lang->indentFlat = jsonStrings(o.value("indentFlat"));
     for (const QString& k : jsonStrings(o.value("keywords"))) lang->keywords.insert(k);
     for (const QString& t : jsonStrings(o.value("types"))) lang->types.insert(t);
     return true;
@@ -278,6 +282,17 @@ static QVector<QPair<int, int>> codeSegments(const QString& text, CodeRole role)
         break;
     }
     return result;
+}
+
+int codeBehaviourStart(const QString& text, CodeRole role)
+{
+    if (role != codeRoleBehaviour && role != codeRoleTransition && role != codeRoleFormalComment) return -1;
+    QVector<QPair<int, int>> segments = codeSegments(text, role);
+    if (segments.isEmpty()) return -1;
+    int start = segments.last().first;
+    // a transition's code follows its slash, a guard before it is no behaviour
+    if (role == codeRoleTransition && (start == 0 || text[start - 1] != '/')) return -1;
+    return start;
 }
 
 static bool isWordChar(QChar c)

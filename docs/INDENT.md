@@ -15,8 +15,8 @@ closing bracket, no comment star, no list marker, no quote mark.
      v
  CodeEditor::keyPressEvent                    a text tab: the rules of its mode
  IndentFilter (an event filter)               the code dialogs: the rules of the document language
-     |  Indenter::key(event): Return, Tab, Backtab -> one edit block, true when done
-     |  Indenter::typed(event): an electric character -> joined to the typing step
+     |  Indenter::key(event): Return, Tab, Backtab, an electric character typed
+     |                        -> one edit block, true when done
      v
  text_indent.*  (no widget)                    TextIndentRules <- CodeLanguage (syntax/*.json)
      |  textIndentColumn(text, line)    the column of a code line
@@ -48,7 +48,8 @@ Indent Region and Convert Tabs to Spaces stay.
 
 A scanner reads the text from its start, line by line, the comments and the strings masked by
 the quotes, the comment marks and the escapes of the language as the highlighter reads them
-(`CodeStyle::spans`), with the triple quotes of Python too. The column of a line comes from the
+(`CodeStyle::spans`), with the strings over the lines too: the triple quotes of Python, the raw
+strings of C++ (`R"x(...)x"`) and the verbatim ones of C# (`@"..."`). The column of a line comes from the
 state at its start; then its characters move the state, with the line as it now stands, so
 Indent Region is one pass. A line starting in a block comment, a string or a preprocessor line
 continued by `\` has no column: it stays (after Return there, the new line takes the indent of
@@ -58,11 +59,15 @@ the line above). The indents of the lines above are read as they are, not as the
 opener, the indent of its line, the column of the code after it on its line (none when the line
 ends). In a frame with code after its opener a line aligns with that code, its closing bracket
 first with the opener; in a frame whose opener ends its line, a line is at the indent of the
-opener's line plus the width, its closing bracket first at that indent.
+opener's line plus the width, its closing bracket first at that indent. A line continuing an
+argument lines up with the start of that argument (Emacs `c-lineup-argcont`), a keyword argument
+`name=value` with its value; Python keeps to the opening delimiter (PEP 8), and a call cascaded
+from the line above, `.arg()` or `->next()`, goes under the first argument. The commas of
+template arguments (`QMap<A, B>`) part no arguments; the `;` of a `for` header does.
 
 ```
-foo(a,            items = [
-    b);               1, 2,
+foo(a,            items = [           f(at, A |             add(x, help='one '
+    b);               1, 2,                 B);                         'two')
                   ]
 ```
 
@@ -76,7 +81,9 @@ header waiting for its `(...)`, a substatement due.
 | `}` first | the base |
 | a label: a word of `indentLabels` first, its `:` (not `::`) on the line | the base: a width less than the statements |
 | after `if (...)`, `for (...)`, `while (...)`, `switch (...)`, `catch (...)`, `else`, `do` | a substatement: the indent of the header's line plus the width, a `{` first at that indent |
-| a statement continued: the line above it ended none of `;`, `{`, `}`, a label's `:` | its first line plus the width; a `{` first at its first line |
+| a statement continued: the line above it ended none of `;`, `{`, `}`, a label's `:` | the first that applies: a `:` under the last `?` (`c-lineup-ternary-bodies`), a `<<` or `>>` under the first one (`c-lineup-streamop`), a `.arg()` cascade the width in; under the code after the first `=` on its line (`c-lineup-assignments`) or after `return`; a declaration of the top level without `=` and `(` (a return type above its function, `template <...>`) at its first line; else its first line plus the width. A `{` first: its first line |
+| a macro alone on its line without `;` (`Q_OBJECT`, `Q_DECLARE_METATYPE(A)`) | a statement of its own |
+| a comment alone on its line, under the comment after the code of the line above | stays there (`c-lineup-comment`) |
 | a preprocessor line (`preprocessor: true`) | 0, the state not moved by it |
 
 A `{` after `=`, `return`, `enum`, or inside a bracket after anything but `)` and `=>`, opens a
@@ -100,13 +107,18 @@ line of the statement above it, comment and blank lines skipped:
 |---|---|
 | after a line ending `:` | its indent plus the width |
 | after `return`, `pass`, `break`, `continue`, `raise` | the indent of the nearest line above with a smaller indent (the block holding it) |
-| `else`, `elif`, `except`, `finally` first | the nearest `if`, `elif`, `for`, `while`, `try` or `except` above at the computed column or less |
-| after a line ending `\` | the indent of the statement plus the width |
+| `else`, `elif`, `except`, `finally` first | the nearest `if`, `elif`, `for`, `while`, `try` or `except` around it: the nearest line at each lower level above, when it is one of them |
+| after a line ending `\` | the indent of the statement plus the width; two widths for the header of a block (`def`, `class`, `if`, `elif`, `while`, `for`, `with`, `except`), apart from its body (PEP 8) |
+| in a bracket ending the header line of a block | two widths in (PEP 8) |
 | else | the indent of the line above |
 
-The Tab cycle (`textIndentLevels`): the column, then each smaller indent of the code lines
-above, nearest first, down to 0. A Tab right after a Tab on the same line, no edit or move
-between, goes to the next level after the current one, from 0 back to the column.
+The levels (`textIndentLevels`): the column, then each smaller indent of the code lines above,
+nearest first, down to 0; the body of a block, after a `:`, has its column alone; a dedenter the
+indents of the openers around it. A Tab right after a Tab on the same line, no edit or move
+between, goes to the next level after the current one, from the last back to the column. As the
+indent of Python tells its blocks, Indent Region keeps a line at one of its levels and moves
+another to the nearest level, the deeper of two (Emacs `python-indent-region` keeps the block
+starts and the dedenters too).
 
 **Relative** (a language without `indent`), **Markdown** and **Plain text** have no column. The
 new line of Return takes the whitespace before the first other character of the fill's
@@ -141,7 +153,8 @@ Python `offside`.
 Each key is one edit block from the editor's cursor, so Undo puts the cursor back: Return with
 its indent is a typing step; Tab, Shift+Tab, Indent Region and Convert Tabs to Spaces name
 their steps (`indent`, `unindent`, `indent region`, `convert tabs`) by `editStepNamed`; an
-electric re-indent joins the step of its character (`joinPreviousEditBlock`). An edit that
+electric character is typed by the indenter itself, with the re-indent of its line in the same
+block (a block joined to the typing of `QPlainTextEdit` stays a step of its own). An edit that
 changes nothing makes no block. Fill as You Type (`EDIT-MD-21`) runs after Return and finds
 the line left by the position of its line feed.
 
@@ -169,10 +182,14 @@ A batch run takes 4 and spaces (`overrideIndentWidth`, `overrideIndentTabs`) unl
 in a C++, a Python, a JSON, a Markdown and a Plain text tab (Return, Tab anywhere, the Python
 cycle, Shift+Tab, a selection, the electric characters, the off switch, read-only, one Undo
 each); the dialogs; the Preferences row, the Edit menu, the storage, Reset. The batch cases
-`mode-indent-*` re-indent the fixtures of `tests/texts/indent-*` and convert their tabs. The
-style is checked on the editor's own sources, the course programs and the language files:
-Indent Region leaves them as they are.
+`mode-indent-*` re-indent the fixtures of `tests/texts/indent-*` (the course code of chapter 06,
+tabs and spaces mixed) and convert their tabs. The style was checked by Indent Region on copies
+of written code (Nov 26 2026): the space-indented sources of the editor, 168 files and 38027
+lines, 122 lines moved; 40 Python modules of the dispatchers and the agents, 9864 lines, 16; the
+course programs and the language files, the tabs and the blank lines only. What moves is code
+aligned by hand otherwise (the authors' habits differ: a continued assignment under its value
+or a width in, a lambda argument a width in) or a misalignment.
 
 ## Stages
 
-1. The indentation (`EDIT-INDENT-1..9`) — in work.
+1. The indentation (`EDIT-INDENT-1..9`) — done.

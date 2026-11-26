@@ -101,12 +101,33 @@ TextSchemePanel::TextSchemePanel(QWidget* parent):
     fillRow->addStretch(1);
     top->addWidget(widthLabel, 3, 0);
     top->addLayout(fillRow, 3, 1, 1, 2);
+    // the indent of the source editors and the code dialogs (EDIT-INDENT-7)
+    QLabel* indentLabel = new QLabel(tr("Indent"), this);
+    m_indentWidth = new QSpinBox(this);
+    m_indentWidth->setObjectName("textEditorIndentWidth");
+    m_indentWidth->setRange(INDENT_WIDTH_MIN, INDENT_WIDTH_MAX);
+    m_indentWidth->setSuffix(tr(" columns"));
+    indentLabel->setBuddy(m_indentWidth);
+    m_indentWith = new QComboBox(this);
+    m_indentWith->setObjectName("textEditorIndentWith");
+    m_indentWith->addItem(tr("Spaces"), false);
+    m_indentWith->addItem(tr("Tabs"), true);
+    m_autoIndent = new QCheckBox(tr("Indent automatically"), this);
+    m_autoIndent->setObjectName("textEditorAutoIndent");
+    QHBoxLayout* indentRow = new QHBoxLayout;
+    indentRow->addWidget(m_indentWidth);
+    indentRow->addWidget(new QLabel(tr("with"), this));
+    indentRow->addWidget(m_indentWith);
+    indentRow->addWidget(m_autoIndent);
+    indentRow->addStretch(1);
+    top->addWidget(indentLabel, 4, 0);
+    top->addLayout(indentRow, 4, 1, 1, 2);
     QLabel* label = new QLabel(tr("Scheme"), this);
     m_list = new QComboBox(this);
     m_list->setObjectName("textSchemeList");
     label->setBuddy(m_list);
-    top->addWidget(label, 4, 0);
-    top->addWidget(m_list, 4, 1, 1, 2);
+    top->addWidget(label, 5, 0);
+    top->addWidget(m_list, 5, 1, 1, 2);
     top->setColumnStretch(1, 1);
     layout->addLayout(top);
 
@@ -195,6 +216,9 @@ void TextSchemePanel::load()
     m_preview->setWrapLines(sm.getEditorWrap());
     m_textWidth->setValue(sm.getTextWidth());
     m_fillAsYouType->setChecked(sm.getFillAsYouType());
+    m_indentWidth->setValue(sm.getIndentWidth());
+    m_indentWith->setCurrentIndex(m_indentWith->findData(sm.getIndentTabs()));
+    m_autoIndent->setChecked(sm.getAutoIndent());
     m_schemes = sm.getTextSchemes();
     fill(sm.currentTextScheme().id);
 }
@@ -210,6 +234,9 @@ void TextSchemePanel::apply()
     sm.setEditorWrap(m_wrap->currentData().toBool());
     sm.setTextWidth(m_textWidth->value());
     sm.setFillAsYouType(m_fillAsYouType->isChecked());
+    sm.setIndentWidth(m_indentWidth->value());
+    sm.setIndentTabs(m_indentWith->currentData().toBool());
+    sm.setAutoIndent(m_autoIndent->isChecked());
     sm.setTextSchemes(m_schemes);
     sm.setTextScheme(shownId());
 }

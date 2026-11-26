@@ -174,6 +174,7 @@ void TextDocument::applyMode()
     // only the text of a Markdown takes the typed replacements (EDIT-AUTO-2/3)
     m_editor->setAutoreplaceKind(m_mode == MODE_MARKDOWN ? autoreplaceMarkdown : autoreplaceNone);
     m_editor->setFillKind(fillKind());
+    m_editor->setIndentRules(indentRules());
     // a dropped or pasted image goes to Insert Image (EDIT-MD-2)
     m_editor->setImageDrops(m_mode == MODE_MARKDOWN);
     // the source of a language as its code, Markdown by its elements (EDIT-TEXT-7/11)
@@ -463,6 +464,88 @@ bool TextDocument::fillRange(int anchor, int position, bool unfill, bool select)
     cursor.endEditBlock();
     m_stepName.clear();
     cursor.setPosition(select ? edit.anchor : edit.cursor);
+    cursor.setPosition(edit.cursor, QTextCursor::KeepAnchor);
+    m_editor->setTextCursor(cursor);
+    m_editor->ensureCursorVisible();
+    return true;
+}
+
+TextIndentRules TextDocument::indentRules() const
+{
+    if (m_mode == MODE_MARKDOWN) return textIndentRules(textFillMarkdown);
+    if (m_mode == MODE_TEXT) return textIndentRules(textFillPlain);
+    return textIndentRules(CodeStyle::instance().findId(m_mode));
+}
+
+bool TextDocument::canIndent() const
+{
+    return textIndentComputes(indentRules()) && canUntabify();
+}
+
+bool TextDocument::canUntabify() const
+{
+    return isEditable() && !showsRendered();
+}
+
+bool TextDocument::indentText(bool untabify)
+{
+    if (untabify ? !canUntabify() : !canIndent()) return false;
+    QTextCursor cursor = m_editor->textCursor();
+    QString all = text();
+    SettingsManager& sm = SettingsManager::instance();
+    TextFillEdit edit;
+    if (untabify) {
+        int from = cursor.hasSelection() ? cursor.selectionStart() : 0;
+        int to = cursor.hasSelection() ? cursor.selectionEnd() : all.length();
+        edit = textUntabify(all, from, to, cursor.anchor(), cursor.position());
+    } else {
+        int first = 0;
+        int last = lineCount() - 1;
+        if (cursor.hasSelection()) {
+            // a selection ending at a line start leaves that line
+            first = m_document->findBlock(cursor.selectionStart()).blockNumber();
+            QTextBlock end = m_document->findBlock(cursor.selectionEnd());
+            last = end.blockNumber();
+            if (cursor.selectionEnd() == end.position() && last > first) last--;
+        }
+        edit = textReindent(all, first, last, indentRules(), sm.getIndentWidth(), sm.getIndentTabs(),
+                            cursor.anchor(), cursor.position());
+    }
+    return applyIndent(edit, untabify);
+}
+
+bool TextDocument::indentLines(int first, int last, bool untabify)
+{
+    if (untabify ? !canUntabify() : !canIndent()) return false;
+    if (first < 1 || last < first || last > lineCount()) return false;
+    QTextCursor cursor = m_editor->textCursor();
+    QString all = text();
+    SettingsManager& sm = SettingsManager::instance();
+    TextFillEdit edit;
+    if (untabify) {
+        QTextBlock end = m_document->findBlockByNumber(last - 1);
+        edit = textUntabify(all, m_document->findBlockByNumber(first - 1).position(),
+                            end.position() + end.length() - 1, cursor.anchor(), cursor.position());
+    } else {
+        edit = textReindent(all, first - 1, last - 1, indentRules(), sm.getIndentWidth(), sm.getIndentTabs(),
+                            cursor.anchor(), cursor.position());
+    }
+    return applyIndent(edit, untabify);
+}
+
+bool TextDocument::applyIndent(const TextFillEdit& edit, bool untabify)
+{
+    if (!edit.changed) return true;
+    // the block begun at the cursor: an undo puts the cursor back there
+    QTextCursor cursor = m_editor->textCursor();
+    m_stepName = untabify ? tr("convert tabs") : tr("indent region");
+    cursor.beginEditBlock();
+    cursor.setPosition(edit.from);
+    cursor.setPosition(edit.to, QTextCursor::KeepAnchor);
+    cursor.insertText(edit.text);
+    cursor.endEditBlock();
+    m_stepName.clear();
+    cursor.setPosition(edit.anchor);
     cursor.setPosition(edit.cursor, QTextCursor::KeepAnchor);
     m_editor->setTextCursor(cursor);
     m_editor->ensureCursorVisible();

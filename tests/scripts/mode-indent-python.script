@@ -1,0 +1,3 @@
+# Indent Region of a Python tab (EDIT-INDENT-5): a line at one of its levels keeps it, another goes
+# to the nearest level; the brackets, the dedenters, the docstring kept
+indent-region

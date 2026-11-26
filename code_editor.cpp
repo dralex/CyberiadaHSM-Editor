@@ -153,6 +153,8 @@ CodeEditor::CodeEditor(QWidget* parent):
     connect(&SettingsManager::instance(), &SettingsManager::textFillChanged, modeLine,
             QOverload<>::of(&QWidget::update));
     connect(&SettingsManager::instance(), &SettingsManager::modeLineChanged, this, &CodeEditor::updateMargin);
+    // the indent edits name their undo steps (EDIT-INDENT-4)
+    m_indenter.nameStep = [this](const QString& name) { emit editStepNamed(name); };
     applyFontMetrics();
     applyWrap();
 }
@@ -646,28 +648,38 @@ void CodeEditor::keyPressEvent(QKeyEvent* event)
         return;
     }
     if (m_replacer.before(event, textCursor())) return;
+    bool returnKey = (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) &&
+                     !(event->modifiers() & ~Qt::KeypadModifier);
+    // Return, Tab, Shift+Tab and a character that moves its line indent (EDIT-INDENT-1..3); the
+    // line Return leaves then fills
+    if (m_indenter.key(event, this)) {
+        if (m_indenter.returnEnd() >= 0) autoFill(m_indenter.returnEnd());
+        return;
+    }
     int revision = document()->revision();
     QPlainTextEdit::keyPressEvent(event);
     bool typed = document()->revision() != revision;
     // only a key that typed is read against the rules (EDIT-AUTO-5)
     if (typingKey(event) && typed) m_replacer.typed(textCursor(), m_kind);
     // then a Space or a Return breaks a line past the width (EDIT-MD-21)
-    bool fillKey = event->text() == " " || ((event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) &&
-                                            !(event->modifiers() & ~Qt::KeypadModifier));
-    if (typed && fillKey) autoFill();
+    bool fillKey = event->text() == " " || returnKey;
+    if (typed && fillKey) autoFill(textCursor().position());
 }
 
-void CodeEditor::autoFill()
+void CodeEditor::autoFill(int keyEnd)
 {
     SettingsManager& sm = SettingsManager::instance();
     if (m_fillKind == textFillNone || isReadOnly() || !sm.getFillAsYouType() || textCursor().hasSelection()) return;
     // the block begun at the cursor: an undo puts the cursor back there
     QTextCursor edit = textCursor();
     bool began = false;
+    // the end of the key, moved by the breaks before it
+    QTextCursor key(document());
+    key.setPosition(keyEnd);
     // a line still past the width breaks again, each break further on
     int done = -1;
     TextFillBreak at;
-    while (textAutoFillBreak(toPlainText(), textCursor().position(), sm.getTextWidth(), m_fillKind, &at) &&
+    while (textAutoFillBreak(toPlainText(), key.position(), sm.getTextWidth(), m_fillKind, &at) &&
            at.from > done) {
         if (!began) {
             emit editStepNamed(tr("fill"));

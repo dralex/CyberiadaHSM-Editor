@@ -185,6 +185,9 @@ int main(int argc, char *argv[])
 		SettingsManager::instance().overrideGridSpacing(spacing);
 		// nor the stored text width of the fill (EDIT-MD-22)
 		SettingsManager::instance().overrideTextWidth(TEXT_WIDTH_DEFAULT);
+		// the indent too: 4 columns of spaces unless indent-width and indent-with set it (EDIT-INDENT-9)
+		SettingsManager::instance().overrideIndentWidth(INDENT_WIDTH_DEFAULT);
+		SettingsManager::instance().overrideIndentTabs(false);
 	}
 
     try {

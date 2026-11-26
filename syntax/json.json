@@ -2,5 +2,6 @@
     "name": "JSON",
     "extensions": [".json"],
     "quotes": "\"",
+    "indent": "brackets",
     "keywords": ["true", "false", "null"]
 }

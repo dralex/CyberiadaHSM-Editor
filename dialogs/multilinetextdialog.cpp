@@ -29,6 +29,7 @@
 
 #include "multilinetextdialog.h"
 #include "fontmanager.h"
+#include "indenter.h"
 
 MultilineTextDialog::MultilineTextDialog(const QString& title, const QString& label,
                                          const QString& text, CodeRole role,
@@ -49,6 +50,10 @@ MultilineTextDialog::MultilineTextDialog(const QString& title, const QString& la
     }
     edit->setPlainText(text);
     if (kind != autoreplaceNone) new AutoreplaceFilter(edit, kind);
+    // the code indented by the document language (EDIT-INDENT-8)
+    if (role == codeRoleBehaviour || role == codeRoleTransition || role == codeRoleFormalComment) {
+        new IndentFilter(edit, textIndentRules(language), role);
+    }
     QTextCursor cursor = edit->textCursor();
     cursor.movePosition(QTextCursor::End);
     edit->setTextCursor(cursor);

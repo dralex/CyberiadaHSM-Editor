@@ -2139,8 +2139,9 @@ the architecture are in `docs/INDENT.md`. Specified in 0.85.
   kept at its character, from the leading whitespace at the first character of the text; Tab
   with a selection re-indents each line it touches (`EDIT-INDENT-6`); Shift+Tab moves the
   line, or each selected line, one indent width left. In a Python tab a Tab repeated on the
-  same line, nothing else typed or moved, cycles its column, each lower block level, 0 and
-  the column again (Emacs `python-indent-line`). A line starting in a block comment, a
+  same line, nothing else typed or moved, cycles its levels: its column, each lower block
+  level, 0 and the column again; the body of a block has its column alone, a dedenter the
+  openers it may follow (Emacs `python-indent-line`). A line starting in a block comment, a
   string, a continued preprocessor line or the header of a code dialog stays as it is; after
   Return there the new line takes the indent of the line above. *design*
 
@@ -2180,24 +2181,31 @@ the architecture are in `docs/INDENT.md`. Specified in 0.85.
   indent is one undo step, as is each of `indent`, `unindent`, `indent region` and `convert
   tabs`; an edit that changes nothing takes none. Nothing is indented in a read-only, a
   rendered or a locked tab. *design*
-- `EDIT-INDENT-5` MUST [A]: the columns (`docs/INDENT.md`, Rules), the comments and strings
-  aside:
+- `EDIT-INDENT-5` MUST [A]: the columns (`docs/INDENT.md`, Rules; the line-up functions of Emacs
+  cc-mode and python-mode), the comments and the strings aside - the raw strings of C++, the
+  verbatim ones of C#, the triple-quoted ones of Python among them:
 
   | Style | Line | Column |
   |---|---|---|
   | all | in a bracket with code after the opener on its line | the column of that code; the closing bracket first: the column of the opener |
   | | in a bracket ending its line | the indent of the opener's line plus the width; the closing bracket first: that indent |
+  | | an argument continued | under the start of the argument (Python: of the first one); a keyword argument under its value; `.arg()`, `->next()` under the first |
   | `braces` | a statement of a block | the indent of the line starting the statement holding `{` plus the width; a `namespace` block (`indentFlat`) without the width |
   | | `}` first | the indent of that line |
   | | a label (`indentLabels`: `case`, `default`, `public`...) | the width less than the statements |
-  | | a statement continued, or the one after `if (...)`, `for (...)`, `while (...)`, `else`, `do` | its first line plus the width; a `{` first: its first line |
+  | | the statement after `if (...)`, `for (...)`, `while (...)`, `else`, `do` | the indent of the header's line plus the width; a `{` first: that indent |
+  | | a statement continued | under the code after its first `=` or after `return`; `:` under the `?`, `<<` under the first `<<`; `.arg()` the width in; a declaration of the top level (a return type above its function) at its first line; else its first line plus the width; a `{` first: its first line |
   | | a preprocessor line | 0 |
   | `brackets` | outside a bracket | 0 |
   | `offside` | after a line ending `:` | its indent plus the width |
   | | after `return`, `pass`, `break`, `continue`, `raise` | the level of the block holding it |
-  | | `else`, `elif`, `except`, `finally` first | the nearest `if`, `elif`, `for`, `while`, `try` or `except` above, at that column or less |
-  | | after a `\` | the indent of the statement plus the width |
+  | | `else`, `elif`, `except`, `finally` first | the nearest `if`, `elif`, `for`, `while`, `try` or `except` around it |
+  | | after a `\` | the indent of the statement plus the width, two widths for the header of a block (PEP 8) |
+  | | in a bracket ending the header line of a block | two widths in (PEP 8) |
   | | else | the indent of the code line above |
+
+  A macro alone on its line without `;`, `Q_OBJECT`, is a statement; a comment under the comment
+  after the code of the line above stays there.
 
   ```
   switch (state) {            namespace {           if (a &&
@@ -2208,7 +2216,9 @@ the architecture are in `docs/INDENT.md`. Specified in 0.85.
   ```
 - `EDIT-INDENT-6` SHOULD [A]: Edit > Indent Region (`Ctrl+Alt+\`, Emacs `C-M-\`) re-indents each
   line the selection touches, the whole text without one, in a tab of a language with indent
-  rules; Edit > Convert Tabs to Spaces (Emacs `untabify`) turns each tab of the selection, of
+  rules, each line after the ones above it as re-indented; in Python, whose indent tells the
+  blocks, a line at one of its levels keeps it and another goes to the nearest level, the
+  deeper of two; Edit > Convert Tabs to Spaces (Emacs `untabify`) turns each tab of the selection, of
   the whole text without one, into the spaces up to its stop, the columns kept, in any text
   tab. Each is one undo step, the cursor and the selection kept at their characters; both are
   greyed in another tab and a read-only, a rendered or a locked one. *design*

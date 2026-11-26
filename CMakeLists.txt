@@ -185,6 +185,8 @@ add_library(CyberiadaEditorCore STATIC
   autoreplace.h autoreplace.cpp
   markdown_lines.h markdown_lines.cpp
   text_fill.h text_fill.cpp
+  text_indent.h text_indent.cpp
+  indenter.h indenter.cpp
   diagram_find.h diagram_find.cpp
   comparison_document.h comparison_document.cpp
   diff_document.h diff_document.cpp

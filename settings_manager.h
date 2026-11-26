@@ -113,6 +113,16 @@ public:
     void overrideTextWidth(int value);
     bool getFillAsYouType() const { return fillAsYouType; }
     void setFillAsYouType(bool value);
+    // the indent of the source editors (EDIT-INDENT-7): the width, the form - tabs, else spaces -
+    // and Indent automatically; the batch indent-width and indent-with override them for the run
+    int  getIndentWidth() const { return indentWidth; }
+    void setIndentWidth(int value);
+    void overrideIndentWidth(int value);
+    bool getIndentTabs() const { return indentTabs; }
+    void setIndentTabs(bool value);
+    void overrideIndentTabs(bool value);
+    bool getAutoIndent() const { return autoIndent; }
+    void setAutoIndent(bool value);
 
     // git (EDIT-GIT-1): the program, empty for the git of PATH, and Use git
     QString getGitProgram() const { return gitProgram; }
@@ -266,6 +276,7 @@ signals:
     void editorCursorChanged();
     void editorWrapChanged();
     void textFillChanged();
+    void indentChanged();
     void modeLineChanged();
     void highlightSettingsChanged();
     void renderMarkdownCommentsChanged(bool);
@@ -329,6 +340,9 @@ private:
     bool editorWrap = false;
     int textWidth = TEXT_WIDTH_DEFAULT;
     bool fillAsYouType = false;
+    int indentWidth = INDENT_WIDTH_DEFAULT;
+    bool indentTabs = false;
+    bool autoIndent = true;
     QString gitProgram;
     bool gitEnabled = true;
     bool showRepository = true;

@@ -409,6 +409,17 @@ int textColumns(const QString& line)
     return columns;
 }
 
+QString textFillPrefix(const QString& text, int line, TextFillKind kind)
+{
+    if (kind == textFillNone) return QString();
+    QStringList lines = text.split('\n');
+    QVector<LineParts> parts;
+    for (const Unit& u : fillUnits(lines, kind, &parts)) {
+        if (u.first <= line && line <= u.last) return u.prefix.isNull() ? QString("") : u.prefix;
+    }
+    return QString();
+}
+
 TextFillEdit textFill(const QString& text, int anchor, int cursor, int width, TextFillKind kind,
                       bool unfill)
 {

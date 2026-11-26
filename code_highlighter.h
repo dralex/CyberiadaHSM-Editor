@@ -40,6 +40,10 @@ enum CodeRole {
     codeRoleMarkup           // an informal comment body by its markup (EDIT-TEXT-11)
 };
 
+// where the behaviour code of a text of the role starts: past an `entry/` or `EVENT [guard] /`
+// header, 0 for a formal comment; -1 without code (EDIT-INDENT-8)
+int codeBehaviourStart(const QString& text, CodeRole role);
+
 // the markup language of an informal comment (PNST 1044 9.3)
 enum CodeMarkup {
     codeMarkupPlain = 0,
@@ -93,6 +97,11 @@ struct CodeLanguage {
     QString blockClose;
     QString quotes;
     bool preprocessor = false;
+    // how its lines indent: braces, brackets, offside or empty (docs/INDENT.md); the words of
+    // a label and of a statement whose block is not indented
+    QString indent;
+    QStringList indentLabels;
+    QStringList indentFlat;
     QSet<QString> keywords;
     QSet<QString> types;
     // the plugin that brings it, empty for a built-in one (EDIT-PLUG-60)

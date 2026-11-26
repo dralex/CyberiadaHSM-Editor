@@ -66,6 +66,9 @@ public:
     // the text width and Fill as you type (EDIT-MD-22)
     QSpinBox*          textWidthBox() const { return m_textWidth; }
     QCheckBox*         fillBox() const { return m_fillAsYouType; }
+    QSpinBox*          indentWidthBox() const { return m_indentWidth; }
+    QComboBox*         indentWithBox() const { return m_indentWith; }
+    QCheckBox*         autoIndentBox() const { return m_autoIndent; }
 
 private slots:
     // the preview in the font chosen
@@ -93,6 +96,9 @@ private:
     QComboBox*         m_wrap;
     QSpinBox*          m_textWidth;
     QCheckBox*         m_fillAsYouType;
+    QSpinBox*          m_indentWidth;
+    QComboBox*         m_indentWith;
+    QCheckBox*         m_autoIndent;
     QComboBox*         m_list;
     QPushButton*       m_copy;
     QPushButton*       m_rename;

@@ -60,6 +60,7 @@ const DefaultKeys DEFAULT_KEYS[] = {
     { "actionGitCommit",        "Ctrl+Shift+K",         QKeySequence::UnknownKey },
     { "actionFillParagraph",    "Alt+Q",                QKeySequence::UnknownKey },
     { "actionUnfillParagraph",  "Alt+Shift+Q",          QKeySequence::UnknownKey },
+    { "actionIndentRegion",     "Ctrl+Alt+\\",          QKeySequence::UnknownKey },
     { "actionSelectTool",       "Esc",                  QKeySequence::UnknownKey },
     { "actionPan",              "H",                    QKeySequence::UnknownKey },
     { "actionZoomTool",         "Z",                    QKeySequence::UnknownKey },

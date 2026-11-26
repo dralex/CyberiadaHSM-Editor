@@ -189,6 +189,13 @@ CyberiadaSMEditorWindow::CyberiadaSMEditorWindow(QWidget* parent):
     connect(actionFillAsYouType, &QAction::triggered, &SettingsManager::instance(), &SettingsManager::setFillAsYouType);
     connect(&SettingsManager::instance(), &SettingsManager::textFillChanged, this,
             [this]() { actionFillAsYouType->setChecked(SettingsManager::instance().getFillAsYouType()); });
+    // Edit > Indent Region, Convert Tabs to Spaces and Indent Automatically, a setting (EDIT-INDENT-6/7)
+    connect(actionIndentRegion, &QAction::triggered, this, [this]() { indentText(false); });
+    connect(actionUntabify, &QAction::triggered, this, [this]() { indentText(true); });
+    actionAutoIndent->setChecked(SettingsManager::instance().getAutoIndent());
+    connect(actionAutoIndent, &QAction::triggered, &SettingsManager::instance(), &SettingsManager::setAutoIndent);
+    connect(&SettingsManager::instance(), &SettingsManager::indentChanged, this,
+            [this]() { actionAutoIndent->setChecked(SettingsManager::instance().getAutoIndent()); });
     // the fill group of the text toolbar, shown in a Markdown or a Plain text tab (EDIT-MD-1)
     QAction* fillSeparator = new QAction(this);
     fillSeparator->setSeparator(true);
@@ -2385,6 +2392,10 @@ void CyberiadaSMEditorWindow::updateMarkdownActions()
     actionFillParagraph->setEnabled(fills && text->canFill());
     actionUnfillParagraph->setEnabled(fills && text->canFill());
     actionFillAsYouType->setEnabled(fills);
+    // the writable source of a language with indent rules, of any text (EDIT-INDENT-6/7)
+    actionIndentRegion->setEnabled(text && text->canIndent());
+    actionUntabify->setEnabled(text && text->canUntabify());
+    actionAutoIndent->setEnabled(text != nullptr);
     showTextTools(fills, markdown);
 }
 
@@ -2402,6 +2413,12 @@ void CyberiadaSMEditorWindow::fillText(bool unfill)
 {
     TextDocument* text = currentText();
     if (text && text->canFill()) text->fill(unfill);
+}
+
+void CyberiadaSMEditorWindow::indentText(bool untabify)
+{
+    TextDocument* text = currentText();
+    if (text && (untabify ? text->canUntabify() : text->canIndent())) text->indentText(untabify);
 }
 
 bool CyberiadaSMEditorWindow::ensureTextFile(TextDocument* text, const QString& title)

@@ -1,0 +1,2 @@
+# Indent Region of some lines (EDIT-INDENT-9): only lines 4 to 6 move
+indent-region lines 4-6

@@ -851,7 +851,8 @@ static bool runGesture(CyberiadaSMEditorScene* scene, const QStringList& tokens,
 // render-markdown on|off, never persisted
 static bool isSettingVerb(const QString& cmd)
 {
-	return cmd == "snap" || cmd == "grid" || cmd == "render-markdown" || cmd == "preview" || cmd == "text-width";
+	return cmd == "snap" || cmd == "grid" || cmd == "render-markdown" || cmd == "preview" || cmd == "text-width" ||
+		cmd == "indent-width" || cmd == "indent-with";
 }
 
 static bool runSettingVerb(const QStringList& tokens, QString* error)
@@ -884,6 +885,26 @@ static bool runSettingVerb(const QStringList& tokens, QString* error)
 			return false;
 		}
 		sm.overrideTextWidth(width);
+		return true;
+	}
+	if (tokens.first() == "indent-width") {
+		// the indent width for the run (EDIT-INDENT-7)
+		bool ok = false;
+		int width = tokens.at(1).toInt(&ok);
+		if (!ok || width < INDENT_WIDTH_MIN || width > INDENT_WIDTH_MAX) {
+			*error = QString("indent-width requires %1..%2").arg(INDENT_WIDTH_MIN).arg(INDENT_WIDTH_MAX);
+			return false;
+		}
+		sm.overrideIndentWidth(width);
+		return true;
+	}
+	if (tokens.first() == "indent-with") {
+		// the form of the indents for the run (EDIT-INDENT-4)
+		if (tokens.at(1) != EDITOR_INDENT_SPACES && tokens.at(1) != EDITOR_INDENT_TABS) {
+			*error = "indent-with requires spaces or tabs";
+			return false;
+		}
+		sm.overrideIndentTabs(tokens.at(1) == EDITOR_INDENT_TABS);
 		return true;
 	}
 	if (tokens.first() == "render-markdown") {
@@ -1178,7 +1199,7 @@ static bool isMarkdownVerb(const QString& cmd)
 {
 	return cmd == "insert-image" || cmd == "insert-diagram" || cmd == "insert-link" ||
 		cmd == "update-diagram-images" || cmd == "check" || cmd == "fill-paragraph" || cmd == "unfill-paragraph" ||
-		cmd == "insert-formula" || cmd == "edit-formula";
+		cmd == "insert-formula" || cmd == "edit-formula" || cmd == "indent-region" || cmd == "untabify";
 }
 
 // the batch draws in the --font family, never in a font of the GUI settings
@@ -1497,9 +1518,47 @@ static bool fillVerb(CyberiadaSMEditorWindow* win, const QStringList& tokens, QS
 	return true;
 }
 
+// indent-region|untabify [line <n>|lines <n>-<m>]: Indent Region or Convert Tabs to Spaces of the
+// active text tab, the whole text without an argument (EDIT-INDENT-6/9)
+static bool indentVerb(CyberiadaSMEditorWindow* win, const QStringList& tokens, QString* error)
+{
+	TextDocument* text = win->currentText();
+	bool untabify = tokens.first() == "untabify";
+	if (!text) {
+		*error = tokens.first() + " needs an active text tab";
+		return false;
+	}
+	if (!text->canUntabify()) { *error = "the tab is read-only"; return false; }
+	if (!untabify && !text->canIndent()) {
+		*error = "indent-region needs a tab of a language with indent rules";
+		return false;
+	}
+	int first = 1;
+	int last = text->lineCount();
+	bool ok = tokens.size() == 1;
+	if (tokens.size() == 3 && tokens[1] == "line") {
+		first = last = tokens[2].toInt(&ok);
+	} else if (tokens.size() == 3 && tokens[1] == "lines") {
+		QStringList range = tokens[2].split('-');
+		bool lastOk = false;
+		if (range.size() == 2) {
+			first = range[0].toInt(&ok);
+			last = range[1].toInt(&lastOk);
+		}
+		ok = ok && lastOk;
+	}
+	if (!ok) { *error = tokens.first() + " takes line <n> or lines <n>-<m>"; return false; }
+	if (!text->indentLines(first, last, untabify)) {
+		*error = QString("the text has no lines %1-%2").arg(first).arg(last);
+		return false;
+	}
+	return true;
+}
+
 static bool runMarkdownVerb(CyberiadaSMEditorWindow* win, const QStringList& tokens, QString* error)
 {
 	if (tokens.first() == "fill-paragraph" || tokens.first() == "unfill-paragraph") return fillVerb(win, tokens, error);
+	if (tokens.first() == "indent-region" || tokens.first() == "untabify") return indentVerb(win, tokens, error);
 	if (tokens.first() == "insert-link") return insertLinkVerb(win, tokens, error);
 	if (tokens.first() == "insert-formula") return insertFormulaVerb(win, tokens, error);
 	if (tokens.first() == "edit-formula") return editFormulaVerb(win, tokens, error);

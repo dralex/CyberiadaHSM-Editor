@@ -147,6 +147,13 @@
 #define TEXT_WIDTH_MAX           200
 // the columns of a tab stop in a source editor and its fill
 #define EDITOR_TAB_SPACES        4
+// the indent of the source editors, columns (EDIT-INDENT-7)
+#define INDENT_WIDTH_DEFAULT     4
+#define INDENT_WIDTH_MIN         1
+#define INDENT_WIDTH_MAX         8
+// the stored form of the indents (EDIT-INDENT-4)
+#define EDITOR_INDENT_SPACES     "spaces"
+#define EDITOR_INDENT_TABS       "tabs"
 // the preview of a Markdown text is rendered again a while after its last edit (EDIT-MD-11)
 #define MARKDOWN_PREVIEW_DELAY_MS 300
 // the outline of a Markdown tab is read from its text at most once a second while it is shown; a

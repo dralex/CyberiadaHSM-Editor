@@ -33,6 +33,7 @@
 #include "stateactiondialog.h"
 #include "fontmanager.h"
 #include "code_highlighter.h"
+#include "indenter.h"
 #include "cyberiadasm_editor_transition_item.h"
 
 StateActionDialog::StateActionDialog(const QString& keyword, const CodeLanguage* language,
@@ -65,6 +66,9 @@ void StateActionDialog::setupUi(const QString& title, const QString& label, cons
                         mode == Mode::Transition ? codeRoleTransition : codeRoleBehaviour,
                         language);
     actionEdit->setPlainText(prefill);
+    // indented by the document language, the header no code (EDIT-INDENT-8)
+    new IndentFilter(actionEdit, textIndentRules(language),
+                     mode == Mode::Transition ? codeRoleTransition : codeRoleBehaviour);
     QTextCursor cursor = actionEdit->textCursor();
     cursor.movePosition(QTextCursor::End);
     actionEdit->setTextCursor(cursor);

@@ -30,6 +30,7 @@
 #include "editor_document.h"
 #include "json_text.h"
 #include "text_fill.h"
+#include "text_indent.h"
 #include "markdown_outline.h"
 
 class QSplitter;
@@ -100,6 +101,18 @@ public:
     // the lines, true for a text that stays the same (EDIT-MD-20)
     bool             fill(bool unfill);
     bool             fillLines(int first, int last, bool unfill);
+    // how the text indents: a language by its rules, Markdown and Plain text by their
+    // paragraphs (EDIT-INDENT-1/3)
+    TextIndentRules  indentRules() const;
+    // the writable source of a language with indent rules: Indent Region acts; of any text:
+    // Convert Tabs to Spaces acts (EDIT-INDENT-6)
+    bool             canIndent() const;
+    bool             canUntabify() const;
+    // Indent Region, or Convert Tabs to Spaces, of the selection or the whole text, one undo
+    // step, the selection kept at its characters; of the lines first..last from 1; false when
+    // the text cannot or has not the lines, true for a text that stays the same (EDIT-INDENT-6)
+    bool             indentText(bool untabify);
+    bool             indentLines(int first, int last, bool untabify);
     // the heading of the anchor shown: its source line, or scrolled to on a rendered page;
     // false when no heading has it (EDIT-MD-10)
     bool             showHeading(const QString& anchor);
@@ -206,6 +219,7 @@ private:
     // the cursor on the source line of the heading an anchor names; false when none
     bool             goToHeading(const QString& anchor);
     bool             fillRange(int anchor, int position, bool unfill, bool select);
+    bool             applyIndent(const TextFillEdit& edit, bool untabify);
     // the state, the name and the mode on the mode line of the source (EDIT-MODE-31)
     void             updateModeLine();
     // the outline made or dropped with the Markdown mode
