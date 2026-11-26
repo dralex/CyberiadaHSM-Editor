@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.85 (2026-11-26)
+**Document version:** 0.86 (2026-11-26)
 
 **Related authorities:**
 
@@ -1377,7 +1377,9 @@ has a read-only flag; the architecture is `docs/MODES.md`. Specified in 0.47, th
   Block`, the preview showing the choice before Apply. A change applies to the open editors at
   once and a font change keeps the block one character wide; the choice is stored per user
   (`display/editorCursor`: `line` or `block`), and Reset of the Preferences restores the line.
-  The line edits, the find bar and the canvas keep their cursors. Specified in 0.73. *design*
+  The block does not blink: it stays shown while the editor has the focus, as the line it is
+  hidden without it; the line blinks as the system sets (0.86). The line edits, the find bar
+  and the canvas keep their cursors. Specified in 0.73. *design*
 - `EDIT-MODE-30` SHOULD [A]: the long lines of a source editor scroll sideways, by default, or
   are wrapped at its width: a row breaks at any character, a line keeps one number at its first
   row, and a narrow right fringe shows a hook arrow, in the color of the line numbers, at the

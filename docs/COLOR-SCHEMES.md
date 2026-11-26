@@ -1,6 +1,6 @@
 # Color Schemes — Architecture
 
-**Document version:** 0.7 (2026-11-26), the operators and the preprocessor lines, the Dark code colors; 0.6: the mode line; 0.5: the text width of the fill; 0.4: the cursor and the long lines of the text editors. The requirements are `EDIT-COLOR-1..8` in
+**Document version:** 0.8 (2026-11-26), the steady block cursor; 0.7: the operators and the preprocessor lines, the Dark code colors; 0.6: the mode line; 0.5: the text width of the fill; 0.4: the cursor and the long lines of the text editors. The requirements are `EDIT-COLOR-1..8` in
 `EDITOR-SPEC.md` §4.18; the editor font beside them is `EDIT-MODE-27`.
 
 The source editor of a text tab draws in the colors of a scheme: its background, text,
@@ -104,9 +104,13 @@ diagrams; the dialog is wide enough for both.
    swatches: the editor | the code | the Markdown colors, a column each
    preview: a Markdown text with a C++ block
 
- CodeEditor::applyCursor(): setCursorWidth(block ? the advance of a space : 1)
-   on editorCursorChanged and on every font change; Qt draws a cursor wider than one pixel
-   inverting what is under it, so the character shows (not the overwrite mode: typing stays)
+ CodeEditor::applyCursor(): setCursorWidth(block ? 0 : 1) on editorCursorChanged and on every
+   font change. The line is Qt's, blinking as the system sets; the block is the editor's own,
+   steady (EDIT-MODE-29): Qt's cursor hidden (width 0, its blink then draws nothing), paintEvent
+   inverts the rect of a space at the cursor after the text (RasterOp_NotDestination, as Qt
+   draws a wide cursor), so the character shows; drawn while the editor has the focus and takes
+   the keys (writable or selectable by the keyboard), the old and the new rect repainted when the
+   cursor moves, the focus comes or goes (not the overwrite mode: typing stays)
  CodeEditor::applyWrap(): WidgetWidth + WrapAnywhere, the right fringe (WrapFringe) beside the
    viewport, a hook arrow per row that continues (continuationRows: every layout line of a
    block but its last); a DiffTextPane never wraps (setWrapAllowed(false))
