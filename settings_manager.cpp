@@ -187,6 +187,8 @@ void SettingsManager::load() {
         }
         for (int role = 0; role < textSchemeRolesCount; role++) {
             QColor c(s.value(textSchemeRoleKey(role)).toString());
+            int follows = textSchemeRoleFollows(role);
+            if (!c.isValid() && !scheme->isBuiltin() && follows >= 0) c = scheme->colors[follows];
             if (c.isValid()) scheme->colors[role] = c;
         }
     }

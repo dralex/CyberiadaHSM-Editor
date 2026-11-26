@@ -239,6 +239,8 @@ QTextCharFormat CodeStyle::format(CodeTokenKind kind) const
 {
     // colour only: a weight or a slant would change the text size and the layout
     QTextCharFormat fmt;
+    // an operator keeps the text colour, which an item or a widget may have its own
+    if (kind == codeTokenOperator) return fmt;
     fmt.setForeground(builtinTextScheme(TEXT_SCHEME_DEFAULT).tokenColor(kind));
     return fmt;
 }
@@ -283,12 +285,50 @@ static bool isWordChar(QChar c)
     return c.isLetterOrNumber() || c == '_';
 }
 
+// the signs, the brackets and the separators
+static bool isOperatorChar(QChar c)
+{
+    static const QString operators = QStringLiteral("!%&()*+,-./:;<=>?@[\\]^{|}~");
+    return operators.contains(c);
+}
+
+// only blanks before i on its line, from the start of the code at most
+static bool startsLine(const QString& text, int i, int from)
+{
+    while (i > from && text[i - 1] != '\n') {
+        if (!text[i - 1].isSpace()) return false;
+        i--;
+    }
+    return true;
+}
+
+// the end of the preprocessor line at from: its line feed, a \ before it continuing the line
+static int directiveEnd(const QString& text, int from, int end)
+{
+    int lf = text.indexOf('\n', from);
+    while (lf >= 0 && lf < end && lf > from && text[lf - 1] == '\\') lf = text.indexOf('\n', lf + 1);
+    return (lf < 0 || lf > end) ? end : lf;
+}
+
 QVector<CodeSpan> CodeStyle::spans(const QString& text, CodeRole role, const CodeLanguage& lang)
 {
     QVector<CodeSpan> result;
+    // the signs side by side and the pieces of a preprocessor line make one span each
+    auto add = [&result](int start, int length, CodeTokenKind kind) {
+        if (!result.isEmpty() && (kind == codeTokenOperator || kind == codeTokenPreprocessor)) {
+            CodeSpan& last = result.last();
+            if (last.kind == kind && last.start + last.length == start) {
+                last.length += length;
+                return;
+            }
+        }
+        result.append(CodeSpan{start, length, kind});
+    };
     for (const QPair<int, int>& seg : codeSegments(text, role)) {
         int i = seg.first;
         int end = seg.second;
+        // the end of the preprocessor line the scan is in
+        int directive = -1;
         while (i < end) {
             QChar c = text[i];
             int j = i + 1;
@@ -312,18 +352,26 @@ QVector<CodeSpan> CodeStyle::spans(const QString& text, CodeRole role, const Cod
             } else if (c.isDigit() && (i == 0 || !isWordChar(text[i - 1]))) {
                 while (j < end && (isWordChar(text[j]) || text[j] == '.')) j++;
                 kind = codeTokenNumber;
-            } else if (c.isLetter() || c == '_' || (lang.preprocessor && c == '#')) {
+            } else if (lang.preprocessor && c == '#' && i >= directive && startsLine(text, i, seg.first)) {
+                directive = directiveEnd(text, i, end);
+                kind = codeTokenPreprocessor;
+            } else if (c.isLetter() || c == '_') {
                 while (j < end && isWordChar(text[j])) j++;
                 QString word = text.mid(i, j - i);
-                if (word.startsWith('#') || lang.keywords.contains(word)) {
+                if (lang.keywords.contains(word)) {
                     kind = codeTokenKeyword;
                 } else if (lang.types.contains(word)) {
                     kind = codeTokenType;
                 }
+            } else if (isOperatorChar(c)) {
+                kind = codeTokenOperator;
             }
-            if (kind != codeTokenKindsCount) {
-                result.append(CodeSpan{i, j - i, kind});
+            // a preprocessor line keeps its strings, numbers and comments, the rest is its own
+            if (i < directive && kind != codeTokenString && kind != codeTokenNumber &&
+                kind != codeTokenComment) {
+                kind = codeTokenPreprocessor;
             }
+            if (kind != codeTokenKindsCount) add(i, j - i, kind);
             i = j;
         }
     }
@@ -724,7 +772,11 @@ void CodeHighlighter::highlightBlock(const QString& text)
     for (const CodeSpan& span : all) {
         int from = qMax(span.start, blockStart);
         int to = qMin(span.start + span.length, blockEnd);
-        if (from < to) setFormat(from - blockStart, to - from, format(span.kind));
+        if (from < to) {
+            QTextCharFormat fmt = format(span.kind);
+            // a kind without a colour keeps the text one
+            if (fmt.hasProperty(QTextFormat::ForegroundBrush)) setFormat(from - blockStart, to - from, fmt);
+        }
         // the spans past this line, relative to its end: the next line is
         // re-highlighted only when they change
         if (span.start + span.length > blockEnd) {

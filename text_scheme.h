@@ -68,6 +68,9 @@ typedef QList<TextScheme> TextSchemes;
 QString textSchemeRoleKey(int role);
 // the color name shown on the page
 QString textSchemeRoleName(int role);
+// the earlier role whose color a stored user scheme without this one takes, as it drew
+// with before the role was added; -1 for the others
+int textSchemeRoleFollows(int role);
 // the schemes of the resources, White first, read once
 const TextSchemes& builtinTextSchemes();
 // the built-in scheme of the id as built in, White for any other id

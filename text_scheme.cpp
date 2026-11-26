@@ -54,6 +54,8 @@ static const struct {
     { "string",                QT_TRANSLATE_NOOP("TextScheme", "String") },
     { "number",                QT_TRANSLATE_NOOP("TextScheme", "Number") },
     { "comment",               QT_TRANSLATE_NOOP("TextScheme", "Comment") },
+    { "operator",              QT_TRANSLATE_NOOP("TextScheme", "Operator") },
+    { "preprocessor",          QT_TRANSLATE_NOOP("TextScheme", "Preprocessor") },
     { "heading",               QT_TRANSLATE_NOOP("TextScheme", "Heading") },
     { "emphasis",              QT_TRANSLATE_NOOP("TextScheme", "Emphasis") },
     { "code",                  QT_TRANSLATE_NOOP("TextScheme", "Code") },
@@ -79,6 +81,15 @@ QString textSchemeRoleName(int role)
 {
     if (role < 0 || role >= textSchemeRolesCount) return QString();
     return QCoreApplication::translate(TEXT_SCHEME_CONTEXT, roles[role].name);
+}
+
+int textSchemeRoleFollows(int role)
+{
+    switch (role) {
+    case textSchemeFirstToken + codeTokenOperator:     return textSchemeText;
+    case textSchemeFirstToken + codeTokenPreprocessor: return textSchemeFirstToken + codeTokenKeyword;
+    default:                                           return -1;
+    }
 }
 
 bool TextScheme::isBuiltin() const

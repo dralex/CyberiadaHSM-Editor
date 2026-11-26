@@ -61,6 +61,7 @@ private slots:
 	void init();
 	void test_builtin_schemes();
 	void test_canvas_keeps_white();
+	void test_dark_code();
 	void test_text_tab_follows();
 	void test_change_keeps_text();
 	void test_storage();
@@ -138,10 +139,11 @@ void TestColors::test_builtin_schemes()
 		QVERIFY(scheme.isBuiltin());
 		for (int role = 0; role < textSchemeRolesCount; role++) QVERIFY2(scheme.colors[role].isValid(), qPrintable(scheme.id));
 	}
-	// the colors the canvas always had
+	// the colors the canvas always had, the operators in the text one, a preprocessor line in
+	// the keyword one
 	const char* const canvas[codeTokenKindsCount] = {
-		"#0033b3", "#007f7f", "#067d17", "#1750eb", "#8c8c8c", "#871094",
-		"#9e5a00", "#067d17", "#1750eb", "#8c8c8c", "#5d6d7e", "#a31b5a"
+		"#0033b3", "#007f7f", "#067d17", "#1750eb", "#8c8c8c", "#000000", "#0033b3",
+		"#871094", "#9e5a00", "#067d17", "#1750eb", "#8c8c8c", "#5d6d7e", "#a31b5a"
 	};
 	for (int kind = 0; kind < codeTokenKindsCount; kind++) {
 		QCOMPARE(builtins[0].tokenColor(CodeTokenKind(kind)), QColor(canvas[kind]));
@@ -150,6 +152,15 @@ void TestColors::test_builtin_schemes()
 	QCOMPARE(builtins[0].color(textSchemeText), QColor(Qt::black));
 	QCOMPARE(builtins[1].color(textSchemeBackground), QColor("#000099"));
 	QCOMPARE(builtins[1].color(textSchemeText), QColor("#ffff00"));
+	// Dark: the words and the signs white, the strings light cyan, the numbers and the
+	// preprocessor green
+	const struct { CodeTokenKind kind; const char* color; } code[] = {
+		{ codeTokenKeyword, "#ffffff" }, { codeTokenType, "#ffffff" }, { codeTokenOperator, "#ffffff" },
+		{ codeTokenString, "#55ffff" }, { codeTokenNumber, "#55ff55" }, { codeTokenPreprocessor, "#55ff55" }
+	};
+	for (size_t i = 0; i < sizeof(code) / sizeof(code[0]); i++) {
+		QCOMPARE(builtins[1].tokenColor(code[i].kind), QColor(code[i].color));
+	}
 	// White is current by default
 	QCOMPARE(SettingsManager::instance().currentTextScheme().id, QString(TEXT_SCHEME_DEFAULT));
 }
@@ -160,8 +171,10 @@ void TestColors::test_canvas_keeps_white()
 	SettingsManager::instance().setTextScheme("dark");
 	const TextScheme& white = builtinTextScheme(TEXT_SCHEME_DEFAULT);
 	for (int kind = 0; kind < codeTokenKindsCount; kind++) {
-		QCOMPARE(CodeStyle::instance().format(CodeTokenKind(kind)).foreground().color(),
-		         white.tokenColor(CodeTokenKind(kind)));
+		QTextCharFormat fmt = CodeStyle::instance().format(CodeTokenKind(kind));
+		// an operator keeps the color of the item or the widget
+		if (kind == codeTokenOperator) QVERIFY(!fmt.hasProperty(QTextFormat::ForegroundBrush));
+		else QCOMPARE(fmt.foreground().color(), white.tokenColor(CodeTokenKind(kind)));
 	}
 	QTextDocument doc;
 	// a document without a layout emits no contentsChange; the items have one
@@ -170,6 +183,36 @@ void TestColors::test_canvas_keeps_white()
 	doc.setPlainText("int main() { return 0; }");
 	QCOMPARE(colorAt(&doc, "int"), white.tokenColor(codeTokenType));
 	QCOMPARE(colorAt(&doc, "return"), white.tokenColor(codeTokenKeyword));
+	QVERIFY(!colorAt(&doc, "{").isValid());
+}
+
+// EDIT-COLOR-2, EDIT-TEXT-7: the code of a text tab in the Dark colors
+void TestColors::test_dark_code()
+{
+	SettingsManager::instance().setTextScheme("dark");
+	TextDocument text("cpp");
+	text.setText("#include <stdio.h>\n"
+	             "#define LED 13 /* pin */\n"
+	             "char c = 'x';\n"
+	             "int main() { return printf(\"%c\", c + 1); }");
+	QTextDocument* doc = text.editor()->document();
+	QCOMPARE(colorAt(doc, "#include"), QColor("#55ff55"));
+	QCOMPARE(colorAt(doc, "<stdio.h>"), QColor("#55ff55"));
+	QCOMPARE(colorAt(doc, "LED"), QColor("#55ff55"));
+	QCOMPARE(colorAt(doc, "13"), QColor("#55ff55"));
+	QCOMPARE(colorAt(doc, "/* pin */"), dark(TextSchemeRole(textSchemeFirstToken + codeTokenComment)));
+	QCOMPARE(colorAt(doc, "'x'"), QColor("#55ffff"));
+	QCOMPARE(colorAt(doc, "\"%c\""), QColor("#55ffff"));
+	QCOMPARE(colorAt(doc, "char"), QColor("#ffffff"));
+	QCOMPARE(colorAt(doc, "return"), QColor("#ffffff"));
+	QCOMPARE(colorAt(doc, "= "), QColor("#ffffff"));
+	QCOMPARE(colorAt(doc, "() {"), QColor("#ffffff"));
+	QCOMPARE(colorAt(doc, "+ 1"), QColor("#ffffff"));
+	QCOMPARE(colorAt(doc, " 1)"), QColor());
+	QCOMPARE(colorAt(doc, "1)"), QColor("#55ff55"));
+	// the names in the text color
+	QVERIFY(!colorAt(doc, "main").isValid());
+	QCOMPARE(text.editor()->palette().color(QPalette::Text), QColor("#ffff00"));
 }
 
 // EDIT-COLOR-1: the source editor, its margin and its highlighting by the current scheme
@@ -191,7 +234,7 @@ void TestColors::test_text_tab_follows()
 	QCOMPARE(editor->palette().color(QPalette::AlternateBase), dark(textSchemeLineNumbersBackground));
 	QCOMPARE(editor->palette().color(QPalette::PlaceholderText), dark(textSchemeLineNumbers));
 	QCOMPARE(colorAt(editor->document(), "return"), QColor("#ffffff"));
-	QCOMPARE(colorAt(editor->document(), "int"), QColor("#00ffff"));
+	QCOMPARE(colorAt(editor->document(), "int"), QColor("#ffffff"));
 
 	// another mode keeps the scheme
 	QVERIFY(text.setMode(MODE_MARKDOWN));
@@ -203,7 +246,7 @@ void TestColors::test_text_tab_follows()
 	TextDocument later("cpp");
 	later.setText("int x;");
 	QCOMPARE(later.editor()->palette().color(QPalette::Base), dark(textSchemeBackground));
-	QCOMPARE(colorAt(later.editor()->document(), "int"), QColor("#00ffff"));
+	QCOMPARE(colorAt(later.editor()->document(), "int"), QColor("#ffffff"));
 
 	sm.setTextScheme(TEXT_SCHEME_DEFAULT);
 	QCOMPARE(editor->palette().color(QPalette::Base), QColor(Qt::white));
@@ -312,11 +355,18 @@ void TestColors::test_fallbacks()
 		s.setArrayIndex(3);
 		s.setValue("id", "other");
 		s.setValue("name", "Other");
+		// stored before the operators and the preprocessor lines had colors
+		s.setArrayIndex(4);
+		s.setValue("id", TEXT_SCHEME_USER_PREFIX "9");
+		s.setValue("name", "Old");
+		s.setValue("text", "#203040");
+		s.setValue("keyword", "#304050");
+		s.setValue("preprocessor", "not a color");
 		s.endArray();
 	}
 	sm.load();
 	QCOMPARE(sm.currentTextScheme().id, QString(TEXT_SCHEME_DEFAULT));
-	QCOMPARE(sm.getTextSchemes().size(), 3);
+	QCOMPARE(sm.getTextSchemes().size(), 4);
 	const TextScheme* changed = findTextScheme(sm.getTextSchemes(), "dark");
 	QVERIFY(changed);
 	QCOMPARE(changed->color(textSchemeText), dark(textSchemeText));
@@ -326,6 +376,14 @@ void TestColors::test_fallbacks()
 	QCOMPARE(half->name, QString("Half"));
 	QCOMPARE(half->color(textSchemeBackground), QColor("#102030"));
 	QCOMPARE(half->color(textSchemeText), builtinTextScheme(TEXT_SCHEME_DEFAULT).color(textSchemeText));
+	// a later role of a user scheme as it drew before, of a built-in one as built in
+	const TextScheme* old = findTextScheme(sm.getTextSchemes(), TEXT_SCHEME_USER_PREFIX "9");
+	QVERIFY(old);
+	QCOMPARE(old->tokenColor(codeTokenOperator), QColor("#203040"));
+	QCOMPARE(old->tokenColor(codeTokenPreprocessor), QColor("#304050"));
+	QCOMPARE(half->tokenColor(codeTokenOperator), half->color(textSchemeText));
+	QCOMPARE(changed->tokenColor(codeTokenOperator), dark(TextSchemeRole(textSchemeFirstToken + codeTokenOperator)));
+	QCOMPARE(changed->tokenColor(codeTokenPreprocessor), QColor("#55ff55"));
 }
 
 // EDIT-COLOR-7: the rendered page black on white under Dark, the source in Dark
@@ -371,7 +429,8 @@ void TestColors::test_page()
 		list->setCurrentIndex(1);
 		QCOMPARE(panel->shownId(), QString("dark"));
 		QCOMPARE(panel->preview()->palette().color(QPalette::Base), dark(textSchemeBackground));
-		QCOMPARE(colorAt(panel->preview()->document(), "int"), QColor("#00ffff"));
+		QCOMPARE(colorAt(panel->preview()->document(), "int"), QColor("#ffffff"));
+		QCOMPARE(colorAt(panel->preview()->document(), "<stdio.h>"), QColor("#55ff55"));
 		panel->setColor(textSchemeFirstToken + codeTokenKeyword, QColor("#ff0000"));
 		QCOMPARE(colorAt(panel->preview()->document(), "return"), QColor("#ff0000"));
 		QCOMPARE(panel->findChild<QToolButton*>("textSchemeSwatch-keyword")->toolTip(), QString("#ff0000"));

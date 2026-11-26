@@ -52,6 +52,10 @@ enum CodeTokenKind {
     codeTokenString,
     codeTokenNumber,
     codeTokenComment,
+    // a sign, a bracket, a separator
+    codeTokenOperator,
+    // a preprocessor line but its strings, numbers and comments
+    codeTokenPreprocessor,
     // the Markdown elements
     codeTokenHeading,
     codeTokenEmphasis,
@@ -144,7 +148,8 @@ public:
     // an export draws plain text unless the preference keeps the colours
     void overrideExportPlain(bool on);
 
-    // the colors of White as built in: the canvas, the dialogs, the exports (EDIT-COLOR-1)
+    // the colors of White as built in: the canvas, the dialogs, the exports (EDIT-COLOR-1);
+    // none for an operator, it keeps the text color of the item or the widget
     QTextCharFormat format(CodeTokenKind kind) const;
 
     // the coloured spans of the whole text

@@ -44,8 +44,8 @@
 #include "fontmanager.h"
 #include "settings_manager.h"
 
-// the editor colors in the first column, the highlighting in the next ones
-static const int SWATCH_ROWS = textSchemeFirstToken;
+// the editor colors in the first column, the code ones in the next, the Markdown ones after
+static const int SWATCH_ROWS = codeTokenHeading;
 static const char* const ROLE_PROPERTY = "schemeRole";
 
 TextSchemePanel::TextSchemePanel(QWidget* parent):
@@ -137,7 +137,9 @@ TextSchemePanel::TextSchemePanel(QWidget* parent):
         swatch->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
         swatch->setIconSize(QSize(side, side));
         swatch->setAutoRaise(true);
-        grid->addWidget(swatch, role % SWATCH_ROWS, role / SWATCH_ROWS, Qt::AlignLeft);
+        int token = role - textSchemeFirstToken;
+        if (token < 0) grid->addWidget(swatch, role, 0, Qt::AlignLeft);
+        else grid->addWidget(swatch, token % SWATCH_ROWS, 1 + token / SWATCH_ROWS, Qt::AlignLeft);
         connect(swatch, &QToolButton::clicked, this, &TextSchemePanel::swatchClicked);
         m_swatches[role] = swatch;
     }
@@ -154,6 +156,7 @@ TextSchemePanel::TextSchemePanel(QWidget* parent):
                                "- `code` <!-- a comment -->\n"
                                "\n"
                                "```cpp\n"
+                               "#include <stdio.h>\n"
                                "// a comment\n"
                                "int main() { return printf(\"%d\", 42); }\n"
                                "```"));

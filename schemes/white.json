@@ -12,6 +12,8 @@
         "string": "#067d17",
         "number": "#1750eb",
         "comment": "#8c8c8c",
+        "operator": "#000000",
+        "preprocessor": "#0033b3",
         "heading": "#871094",
         "emphasis": "#9e5a00",
         "code": "#067d17",

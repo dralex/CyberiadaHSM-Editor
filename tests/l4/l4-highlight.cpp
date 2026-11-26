@@ -83,6 +83,21 @@ static QColor colorAt(QTextDocument* doc, int pos)
 	return QColor();
 }
 
+// the kinds of the spans in order, and the kinds expected
+static QVector<int> kinds(const QVector<CodeSpan>& spans)
+{
+	QVector<int> result;
+	for (const CodeSpan& span : spans) result << span.kind;
+	return result;
+}
+
+static QVector<int> tokens(std::initializer_list<CodeTokenKind> list)
+{
+	QVector<int> result;
+	for (CodeTokenKind kind : list) result << kind;
+	return result;
+}
+
 static QColor kindColor(CodeTokenKind kind)
 {
 	return CodeStyle::instance().format(kind).foreground().color();
@@ -149,7 +164,7 @@ void TestHighlight::test_languages()
 	QCOMPARE(kindAt(spans, text.indexOf("true")), int(codeTokenKeyword));
 	QCOMPARE(kindAt(spans, text.indexOf("null")), int(codeTokenKeyword));
 	QCOMPARE(kindAt(spans, text.indexOf("x\"]")), int(codeTokenString));
-	QCOMPARE(kindAt(spans, text.indexOf("]}")), -1);
+	QCOMPARE(kindAt(spans, text.indexOf("]}")), int(codeTokenOperator));
 	// a json fence of Markdown
 	text = "```json\n{\"on\": false}\n```";
 	spans = style.markdownSpans(text, nullptr);
@@ -169,32 +184,58 @@ void TestHighlight::test_spans()
 	// the keyword prefix is not code
 	QString text = "entry/ int x = 0; // c";
 	QVector<CodeSpan> spans = CodeStyle::spans(text, codeRoleBehaviour, *cpp);
-	QCOMPARE(spans.size(), 3);
+	QCOMPARE(kinds(spans), tokens({codeTokenType, codeTokenOperator, codeTokenNumber, codeTokenOperator,
+	                              codeTokenComment}));
 	QCOMPARE(spans[0].start, text.indexOf("int"));
-	QCOMPARE(spans[0].kind, codeTokenType);
-	QCOMPARE(spans[1].kind, codeTokenNumber);
-	QCOMPARE(spans[2].kind, codeTokenComment);
-	QCOMPARE(spans[2].start + spans[2].length, text.length());
+	QCOMPARE(spans[1].start, text.indexOf("="));
+	QCOMPARE(spans[4].start + spans[4].length, text.length());
 
 	// the event is not code, the guard and the behaviour are
 	text = "int [int > 0] / return \"s\";";
 	spans = CodeStyle::spans(text, codeRoleTransition, *cpp);
-	QCOMPARE(spans.size(), 4);
+	QCOMPARE(kinds(spans), tokens({codeTokenType, codeTokenOperator, codeTokenNumber, codeTokenKeyword,
+	                              codeTokenString, codeTokenOperator}));
 	QCOMPARE(spans[0].start, text.indexOf("int", 1));
-	QCOMPARE(spans[0].kind, codeTokenType);
-	QCOMPARE(spans[1].kind, codeTokenNumber);
-	QCOMPARE(spans[2].kind, codeTokenKeyword);
-	QCOMPARE(spans[3].kind, codeTokenString);
 
 	// a lonely event has no code
 	QVERIFY(CodeStyle::spans("return", codeRoleTransition, *cpp).isEmpty());
-	// the formal comment is code from the start; the preprocessor is a keyword
+	// the formal comment is code from the start; a preprocessor line is one span
 	spans = CodeStyle::spans("#include x", codeRoleFormalComment, *cpp);
 	QCOMPARE(spans.size(), 1);
 	QCOMPARE(spans[0].start, 0);
-	QCOMPARE(spans[0].kind, codeTokenKeyword);
+	QCOMPARE(spans[0].length, 10);
+	QCOMPARE(spans[0].kind, codeTokenPreprocessor);
 	// nothing for the plain role
 	QVERIFY(CodeStyle::spans("int x", codeRoleNone, *cpp).isEmpty());
+
+	// the signs side by side are one span, a comment opening stays a comment
+	text = "f(x); y=/*c*/1;";
+	spans = CodeStyle::spans(text, codeRoleFormalComment, *cpp);
+	QCOMPARE(kinds(spans), tokens({codeTokenOperator, codeTokenOperator, codeTokenOperator, codeTokenComment,
+	                              codeTokenNumber, codeTokenOperator}));
+	QCOMPARE(spans[1].start, text.indexOf(");"));
+	QCOMPARE(spans[1].length, 2);
+	QCOMPARE(spans[2].length, 1);
+
+	// a preprocessor line keeps its strings, numbers and comments; a \ continues it
+	text = "  #include \"a.h\" // c\n#define A(x) \\\n  ((x) + 1)\nint y;";
+	spans = CodeStyle::spans(text, codeRoleFormalComment, *cpp);
+	QCOMPARE(kinds(spans), tokens({codeTokenPreprocessor, codeTokenString, codeTokenPreprocessor, codeTokenComment,
+	                              codeTokenPreprocessor, codeTokenNumber, codeTokenPreprocessor,
+	                              codeTokenType, codeTokenOperator}));
+	QCOMPARE(spans[0].start, text.indexOf("#"));
+	QCOMPARE(spans[4].start, text.indexOf("#define"));
+	QCOMPARE(spans[4].start + spans[4].length, text.indexOf("1)"));
+	QCOMPARE(spans[6].start + spans[6].length, text.indexOf("\nint"));
+	// a # inside a line starts none, the code after the keyword prefix may
+	QCOMPARE(kinds(CodeStyle::spans("a # b", codeRoleFormalComment, *cpp)), QVector<int>());
+	spans = CodeStyle::spans("entry/ #define B", codeRoleBehaviour, *cpp);
+	QCOMPARE(kinds(spans), tokens({codeTokenPreprocessor}));
+	// without the preprocessor a # is a comment or plain
+	QCOMPARE(kinds(CodeStyle::spans("# x", codeRoleFormalComment, *CodeStyle::instance().findId("python"))),
+	         tokens({codeTokenComment}));
+	QCOMPARE(kinds(CodeStyle::spans("{\"a\":[1]}", codeRoleFormalComment, *CodeStyle::instance().findId("json"))),
+	         tokens({codeTokenOperator, codeTokenString, codeTokenOperator, codeTokenNumber, codeTokenOperator}));
 }
 
 void TestHighlight::test_canvas()
