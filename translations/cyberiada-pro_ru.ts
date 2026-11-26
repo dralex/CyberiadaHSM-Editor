@@ -97,7 +97,7 @@
 <context>
     <name>CodeEditor</name>
     <message>
-        <location filename="../code_editor.cpp" line="+394"/>
+        <location filename="../code_editor.cpp" line="+396"/>
         <source>Fill %1</source>
         <translation>Перенос %1</translation>
     </message>
@@ -130,7 +130,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Ctrl+клик мыши — изменить формулу</translation>
     </message>
     <message>
-        <location line="+86"/>
+        <location line="+96"/>
         <source>fill</source>
         <translation>перенос строки</translation>
     </message>
@@ -327,7 +327,7 @@ Ctrl+клик мыши — открыть</translation>
 <context>
     <name>CyberiadaSMEditorWindow</name>
     <message>
-        <location filename="../smeditor_window.cpp" line="+228"/>
+        <location filename="../smeditor_window.cpp" line="+235"/>
         <source>Output panel</source>
         <translation>Панель вывода</translation>
     </message>
@@ -371,7 +371,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Markdown</translation>
     </message>
     <message>
-        <location line="+1193"/>
+        <location line="+1203"/>
         <source>Undo</source>
         <translation>Отменить</translation>
     </message>
@@ -494,8 +494,8 @@ Ctrl+клик мыши — открыть</translation>
         <translation>нет документа</translation>
     </message>
     <message>
-        <location line="-1952"/>
-        <location line="+1962"/>
+        <location line="-1962"/>
+        <location line="+1972"/>
         <source>a plugin is running on the document</source>
         <translation>для документа выполняется плагин</translation>
     </message>
@@ -504,8 +504,8 @@ Ctrl+клик мыши — открыть</translation>
         <translation type="vanished">в режиме инспектора документ доступен только для чтения</translation>
     </message>
     <message>
-        <location line="-1928"/>
-        <location line="+1965"/>
+        <location line="-1938"/>
+        <location line="+1975"/>
         <source>the document cannot be encoded</source>
         <translation>не удалось сериализовать документ</translation>
     </message>
@@ -537,7 +537,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Плагин: %1</translation>
     </message>
     <message>
-        <location line="-2383"/>
+        <location line="-2393"/>
         <source>Mode</source>
         <translation>Режим</translation>
     </message>
@@ -547,18 +547,18 @@ Ctrl+клик мыши — открыть</translation>
         <translation>режим %1 недоступен</translation>
     </message>
     <message>
-        <location line="+1978"/>
+        <location line="+1988"/>
         <source>the inspection tab is read-only</source>
         <translation>вкладка инспекции доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1957"/>
-        <location line="+1958"/>
+        <location line="-1967"/>
+        <location line="+1968"/>
         <source>the tab is read-only</source>
         <translation>вкладка доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-2724"/>
+        <location line="-2734"/>
         <source>History</source>
         <translation>История</translation>
     </message>
@@ -968,7 +968,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Автомат не нарушает ни одного правила EXT-FA.</translation>
     </message>
     <message>
-        <location line="+810"/>
+        <location line="+820"/>
         <source>%1: not an element of a finite automaton</source>
         <translation>%1: не элемент конечного автомата</translation>
     </message>
@@ -997,13 +997,13 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Все файлы (*)</translation>
     </message>
     <message>
-        <location line="-2329"/>
+        <location line="-2339"/>
         <location line="+777"/>
         <source>Refresh</source>
         <translation>Обновить</translation>
     </message>
     <message>
-        <location line="+1220"/>
+        <location line="+1230"/>
         <source>Element</source>
         <translation>Элемент</translation>
     </message>
@@ -1013,7 +1013,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Изменение</translation>
     </message>
     <message>
-        <location line="-1126"/>
+        <location line="-1136"/>
         <source>a diff tab is opened by Document &gt; Compare with...</source>
         <translation>вкладку сравнения открывает «Документ &gt; Сравнить с...»</translation>
     </message>
@@ -1060,12 +1060,12 @@ Ctrl+клик мыши — открыть</translation>
     </message>
     <message>
         <location line="+3"/>
-        <location line="+957"/>
+        <location line="+967"/>
         <source>%1 is not in a git repository</source>
         <translation>%1 не в репозитории git</translation>
     </message>
     <message>
-        <location line="-571"/>
+        <location line="-581"/>
         <source>The text has no broken link.</source>
         <translation>В тексте нет битых ссылок.</translation>
     </message>
@@ -1085,7 +1085,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Номер строки:</translation>
     </message>
     <message>
-        <location line="+49"/>
+        <location line="+59"/>
         <source>The text has no file yet. The inserted files are saved in its folder, so the text is saved first.</source>
         <translation>У текста ещё нет файла. Вставляемые файлы сохраняются в его папке, поэтому сначала текст будет сохранён.</translation>
     </message>
@@ -1371,9 +1371,9 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Сохранить журнал...</translation>
     </message>
     <message>
-        <location line="-3285"/>
+        <location line="-3295"/>
         <location line="+161"/>
-        <location line="+3381"/>
+        <location line="+3391"/>
         <source>Open</source>
         <translation>Открыть</translation>
     </message>
@@ -1383,8 +1383,8 @@ Ctrl+клик мыши — открыть</translation>
         <translation>%1 - Параметры</translation>
     </message>
     <message>
-        <location line="-3913"/>
-        <location line="+3914"/>
+        <location line="-3923"/>
+        <location line="+3924"/>
         <source>Save</source>
         <translation>Сохранить</translation>
     </message>
@@ -2664,6 +2664,26 @@ Ctrl+клик мыши — открыть</translation>
         <location line="+1"/>
         <source>Copy Hash</source>
         <translation>Копировать хеш</translation>
+    </message>
+</context>
+<context>
+    <name>Indenter</name>
+    <message>
+        <location filename="../indenter.cpp" line="+166"/>
+        <source>indent region</source>
+        <translation type="unfinished">расстановка отступов</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <location line="+15"/>
+        <location line="+27"/>
+        <source>indent</source>
+        <translation type="unfinished">отступ</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>unindent</source>
+        <translation type="unfinished">уменьшение отступа</translation>
     </message>
 </context>
 <context>
@@ -4950,7 +4970,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Инструменты</translation>
     </message>
     <message>
-        <location line="+45"/>
+        <location line="+49"/>
         <source>&amp;Document</source>
         <translation>&amp;Документ</translation>
     </message>
@@ -5104,6 +5124,36 @@ Ctrl+клик мыши — открыть</translation>
         <location line="+3"/>
         <source>Break a line past the text width when a space or a new line is typed</source>
         <translation>Переносить строку длиннее ширины текста при вводе пробела или новой строки</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Indent Region</source>
+        <translation type="unfinished">Расставить отступы</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Put each line of the selection, or of the whole text, at its indent</source>
+        <translation type="unfinished">Поставить каждую строку выделения или всего текста на её отступ</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Convert Tabs to Spaces</source>
+        <translation type="unfinished">Заменить табуляции пробелами</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Turn the tabs of the selection, or of the whole text, into spaces</source>
+        <translation type="unfinished">Заменить табуляции выделения или всего текста пробелами</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Indent Automatically</source>
+        <translation type="unfinished">Автоматические отступы</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Put a new line at its indent and move a line there by Tab</source>
+        <translation type="unfinished">Ставить новую строку на её отступ и переносить строку туда клавишей Tab</translation>
     </message>
     <message>
         <location line="+9"/>
@@ -5569,7 +5619,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Новый текст Markdown</translation>
     </message>
     <message>
-        <location line="-982"/>
+        <location line="-1013"/>
         <source>New</source>
         <translation>Создать</translation>
     </message>
@@ -5578,7 +5628,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation type="vanished">Новый файл</translation>
     </message>
     <message>
-        <location line="+994"/>
+        <location line="+1025"/>
         <source>Service objects</source>
         <translation>Служебные объекты</translation>
     </message>
@@ -5824,29 +5874,29 @@ Ctrl+клик мыши — открыть</translation>
 <context>
     <name>StateActionDialog</name>
     <message>
-        <location filename="../dialogs/stateactiondialog.cpp" line="+44"/>
-        <location line="+75"/>
+        <location filename="../dialogs/stateactiondialog.cpp" line="+45"/>
+        <location line="+78"/>
         <source>New action</source>
         <translation>Новое действие</translation>
     </message>
     <message>
-        <location line="-75"/>
+        <location line="-78"/>
         <source>Action:</source>
         <translation>Действие:</translation>
     </message>
     <message>
         <location line="+6"/>
-        <location line="+66"/>
+        <location line="+69"/>
         <source>New internal transition</source>
         <translation>Новый внутренний переход</translation>
     </message>
     <message>
-        <location line="-65"/>
+        <location line="-68"/>
         <source>Internal transition (EVENT [guard] / behaviour):</source>
         <translation>Внутренний переход (СОБЫТИЕ [условие] / поведение):</translation>
     </message>
     <message>
-        <location line="+66"/>
+        <location line="+69"/>
         <source>An internal transition needs an event.</source>
         <translation>Для внутреннего перехода нужно событие.</translation>
     </message>
@@ -5913,7 +5963,7 @@ Ctrl+клик мыши — открыть</translation>
 <context>
     <name>TextDocument</name>
     <message>
-        <location filename="../text_document.cpp" line="+220"/>
+        <location filename="../text_document.cpp" line="+221"/>
         <source>Line %1, column %2: %3</source>
         <translation>Строка %1, столбец %2: %3</translation>
     </message>
@@ -5926,6 +5976,16 @@ Ctrl+клик мыши — открыть</translation>
         <location line="+0"/>
         <source>fill paragraph</source>
         <translation>переформатирование абзаца</translation>
+    </message>
+    <message>
+        <location line="+82"/>
+        <source>convert tabs</source>
+        <translation type="unfinished">замена табуляций пробелами</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>indent region</source>
+        <translation type="unfinished">расстановка отступов</translation>
     </message>
     <message>
         <location line="+130"/>
@@ -6118,7 +6178,37 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Переносить при вводе</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+10"/>
+        <source>Indent</source>
+        <translation type="unfinished">Отступ</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source> columns</source>
+        <translation type="unfinished"> столбцов</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Spaces</source>
+        <translation type="unfinished">пробелов</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Tabs</source>
+        <translation type="unfinished">табуляций</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Indent automatically</source>
+        <translation type="unfinished">Автоматические отступы</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>with</source>
+        <translation type="unfinished">из</translation>
+    </message>
+    <message>
+        <location line="+6"/>
         <source>Scheme</source>
         <translation>Схема</translation>
     </message>
@@ -6187,7 +6277,7 @@ int main() { return printf(&quot;%d&quot;, 42); }
 ```</translation>
     </message>
     <message>
-        <location line="+203"/>
+        <location line="+209"/>
         <source>Name</source>
         <translation>Имя</translation>
     </message>
