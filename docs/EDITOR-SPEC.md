@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.87 (2026-11-26)
+**Document version:** 0.88 (2026-11-26)
 
 **Related authorities:**
 
@@ -1372,9 +1372,11 @@ has a read-only flag; the architecture is `docs/MODES.md`. Specified in 0.47, th
   ```
 - `EDIT-MODE-29` SHOULD [A]: the source editors - the text tabs, the sides of a text diff tab,
   the preview of the schemes - draw the cursor as a line, by default, or as a block over the
-  character at the cursor, one space of the editor font wide, the character shown in inverted
-  colors (a shell, Emacs); it is chosen on Preferences > Text, *Text editors*, `Cursor: Line |
-  Block`, the preview showing the choice before Apply. A change applies to the open editors at
+  character at the cursor, one space of the editor font wide (a shell, Emacs); the line is in
+  the text color, the block in the *Block cursor* color of the scheme with the character in its
+  *Text under the cursor* color and its own font (0.88, inverted colors before), a text diff
+  side, without a scheme, in its text and background colors; it is chosen on Preferences >
+  Text, *Text editors*, `Cursor: Line | Block`, the preview showing the choice before Apply. A change applies to the open editors at
   once and a font change keeps the block one character wide; the choice is stored per user
   (`display/editorCursor`: `line` or `block`), and Reset of the Preferences restores the line.
   The block does not blink: it stays shown while the editor has the focus, as the line it is
@@ -1547,7 +1549,8 @@ the Preferences. The architecture, the colors and the storage are in `docs/COLOR
 Specified in 0.63.
 
 - `EDIT-COLOR-1` MUST [A]: the source editor of a text tab (`EDIT-MODE-13`) draws its
-  background, its text, the selection, the line numbers, the highlighting (`EDIT-TEXT-7/11`)
+  background, its text, the selection, the block cursor (`EDIT-MODE-29`, 0.88), the line
+  numbers, the highlighting (`EDIT-TEXT-7/11`)
   and its mode line (`EDIT-MODE-31`, 0.78) in the colors of the current scheme; the canvas, the
   text dialogs, the
   exported images and the rendered Markdown (`EDIT-COLOR-7`) keep the colors of the White
@@ -1555,7 +1558,8 @@ Specified in 0.63.
 - `EDIT-COLOR-2` MUST [I]: two schemes are built in: *White*, the default — black text on white
   with the highlighting colors of the canvas — and *Dark* — yellow text (`#ffff00`) on blue
   (`#000099`), the keywords, the types and the operators white, the strings light cyan, the
-  numbers and the preprocessor lines green (0.84); a scheme has all the colors of
+  numbers and the preprocessor lines green (0.84); the block cursor of both is in the text
+  color, the character under it in the background color (0.88); a scheme has all the colors of
   `docs/COLOR-SCHEMES.md`, The colors. *design*
 - `EDIT-COLOR-3` MUST [A]: Preferences > Text has the group *Text editors* beside the diagram
   font: the editor font (`EDIT-MODE-27`), the list of the schemes, a swatch per color that opens
@@ -1574,7 +1578,9 @@ Specified in 0.63.
   user scheme by its name and all its colors, the list removed when nothing differs from the
   built-ins. An unknown current scheme is White; a missing or malformed stored color is the
   built-in one's, White's for a user scheme, but the operator and the preprocessor colors of a
-  user scheme are its text and keyword ones, the colors they had before 0.84. *design*
+  user scheme are its text and keyword ones, the colors they had before 0.84, and its block
+  cursor colors its text and background ones, as the inverted block drew a plain text before
+  0.88. *design*
 - `EDIT-COLOR-7` MUST [A]: the rendered page of a read-only Markdown tab (`EDIT-MODE-14`) draws
   black text on white whatever the scheme and the theme, as its PDF does (`EDIT-MODE-18`).
   *design*

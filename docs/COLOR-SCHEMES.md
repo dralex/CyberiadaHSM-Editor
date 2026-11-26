@@ -1,10 +1,10 @@
 # Color Schemes — Architecture
 
-**Document version:** 0.8 (2026-11-26), the steady block cursor; 0.7: the operators and the preprocessor lines, the Dark code colors; 0.6: the mode line; 0.5: the text width of the fill; 0.4: the cursor and the long lines of the text editors. The requirements are `EDIT-COLOR-1..8` in
+**Document version:** 0.9 (2026-11-26), the colors of the block cursor; 0.8: the steady block cursor; 0.7: the operators and the preprocessor lines, the Dark code colors; 0.6: the mode line; 0.5: the text width of the fill; 0.4: the cursor and the long lines of the text editors. The requirements are `EDIT-COLOR-1..8` in
 `EDITOR-SPEC.md` §4.18; the editor font beside them is `EDIT-MODE-27`.
 
 The source editor of a text tab draws in the colors of a scheme: its background, text,
-selection, line numbers and the highlighting. White and Dark are built in; the user edits
+selection, block cursor, line numbers and the highlighting. White and Dark are built in; the user edits
 them and adds own schemes on the Text page of the Preferences. Everything else — the canvas,
 the text dialogs, the exported images, the rendered Markdown and its PDF — keeps the White
 colors as built in.
@@ -37,9 +37,11 @@ colors as built in.
 | Key | Draws | White | Dark |
 |---|---|---|---|
 | `background` | the page | `#ffffff` | `#000099` |
-| `text` | the text, the cursor | `#000000` | `#ffff00` |
+| `text` | the text, the line cursor | `#000000` | `#ffff00` |
 | `selection` | the selected text background | `#308cc6` | `#00aaaa` |
 | `selectionText` | the selected text | `#ffffff` | `#000000` |
+| `blockCursor` | the block cursor (`EDIT-MODE-29`) | `#000000` | `#ffff00` |
+| `blockCursorText` | the character under the block cursor | `#ffffff` | `#000099` |
 | `lineNumbersBackground` | the line number margin | `#f0f0f0` | `#000066` |
 | `lineNumbers` | the line numbers | `#8c8c8c` | `#8080ff` |
 | `keyword` | a keyword | `#0033b3` | `#ffffff` |
@@ -86,7 +88,9 @@ A built-in scheme is a resource file:
 A built-in scheme is in the list with its changed colors only, a user scheme with all of them;
 the list is removed when nothing differs from the built-ins. A missing or malformed color is
 the built-in one's, White's for a user scheme, but a user scheme stored before 0.7, without
-`operator` and `preprocessor`, takes its own `text` and `keyword` for them, as it drew them.
+`operator` and `preprocessor`, takes its own `text` and `keyword` for them, as it drew them, and
+one stored before 0.9, without `blockCursor` and `blockCursorText`, its own `text` and
+`background`, as the inverted block drew a plain text.
 
 ## The page
 
@@ -107,8 +111,11 @@ diagrams; the dialog is wide enough for both.
  CodeEditor::applyCursor(): setCursorWidth(block ? 0 : 1) on editorCursorChanged and on every
    font change. The line is Qt's, blinking as the system sets; the block is the editor's own,
    steady (EDIT-MODE-29): Qt's cursor hidden (width 0, its blink then draws nothing), paintEvent
-   inverts the rect of a space at the cursor after the text (RasterOp_NotDestination, as Qt
-   draws a wide cursor), so the character shows; drawn while the editor has the focus and takes
+   fills the rect of a space at the cursor after the text in blockCursor and draws the layout
+   of the cursor's block again clipped to it, the character at the cursor a FormatRange in
+   blockCursorText on blockCursor, so the character keeps its font (bold, italic); setScheme
+   gives the two colors, an editor without a scheme (a text diff side) takes the palette's Text
+   and Base; drawn while the editor has the focus and takes
    the keys (writable or selectable by the keyboard), the old and the new rect repainted when the
    cursor moves, the focus comes or goes, the whole view when the text scrolls (the scroll moves
    the pixels of the old block, QPlainTextEdit scrolls by lines: scrollContentsBy and
@@ -121,7 +128,7 @@ diagrams; the dialog is wide enough for both.
 | Event | Effect |
 |---|---|
 | the font, its size | the text editor font (`EDIT-MODE-27`), the preview in it |
-| the cursor | Line or Block (`EDIT-MODE-29`), the preview with it (it shows when clicked) |
+| the cursor | Line or Block (`EDIT-MODE-29`), the preview with it (it shows when clicked); the colors of the block are the swatches Block cursor and Text under the cursor of the scheme |
 | the long lines | Scroll or Wrap (`EDIT-MODE-30`), the preview with it |
 | the mode line (`EDIT-MODE-31`) | drawn in AlternateBase (the line-number background) with a rule and the dim parts in PlaceholderText (the line numbers), the text in Text: a scheme colors it as it colors the margin; the preview has none |
 | the text width, Fill as you type | the width of the fill and its switch (`EDIT-MD-20..22`), on Apply; the preview stays |
