@@ -1,6 +1,6 @@
 # The Plugin Interface
 
-**Document version:** 0.15 (2026-11-26), plugin contract `api` 1, session protocol 1. In
+**Document version:** 0.16 (2026-11-26), plugin contract `api` 1, session protocol 1. In
 Russian: `PLUGIN-API-ru.md`.
 
 This is the brief for a plugin author. A plugin gives CyberiadaPro, the Cyberiada HSM editor, a
@@ -538,7 +538,7 @@ their own mode. No rebuild of the editor is needed.
 | `quotes` | no | the string quote characters |
 | `preprocessor` | no | `true`: a line starting with `#` is a preprocessor line |
 | `keywords`, `types` | no | the words drawn as keywords and as types |
-| `indent` | no | how its text tabs indent (`EDIT-INDENT-5`, `docs/INDENT.md`): `braces` as C, `brackets` as JSON, `offside` as Python; without it a new line takes the indent of the line above |
+| `indent` | no | how its text tabs indent (`EDIT-INDENT-5`, `docs/INDENT.md`): `braces` as C, `brackets` as JSON, `offside` as Python; without it a new line takes the indent of the line above; a fenced block of a Markdown tab tagged with the name or an alias of the language indents by it too (`EDIT-INDENT-10`) |
 | `indentLabels` | no | `braces`: the words starting a label, a width left of the statements (`case`, `default`) |
 | `indentFlat` | no | `braces`: the words of a statement whose block is not indented (`namespace`) |
 

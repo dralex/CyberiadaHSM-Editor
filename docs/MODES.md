@@ -1,9 +1,9 @@
 # The Document Modes — Architecture
 
-**Document version:** 0.21 (2026-11-26) — stages 1 to 9 implemented (see Stages); 0.16: the
+**Document version:** 0.22 (2026-11-26) — stages 1 to 9 implemented (see Stages); 0.16: the
 text toolbar and the Markdown tools of a text tab (`EDIT-MD-1..12`, `docs/MARKDOWN.md`, Tools);
 0.17: the outline dock of a Markdown tab (`EDIT-MD-13..17`); 0.18: the fill of a Markdown and a
-Plain text tab (`EDIT-MD-18..23`); 0.19: the mode line of a source editor (`EDIT-MODE-31`); 0.20: Insert Formula (`EDIT-MD-24..27`); 0.21: the indentation (`EDIT-INDENT-1..9`).
+Plain text tab (`EDIT-MD-18..23`); 0.19: the mode line of a source editor (`EDIT-MODE-31`); 0.20: Insert Formula (`EDIT-MD-24..27`); 0.21: the indentation (`EDIT-INDENT-1..9`); 0.22: the code blocks of Markdown indented by their language (`EDIT-INDENT-10`).
 The requirements are `EDIT-MODE-1..28` in `EDITOR-SPEC.md` §4.14, the plugin parts
 `EDIT-PLUG-56..60`.
 
@@ -245,7 +245,8 @@ The git plugin hands the revision of a diagram to a diff tab:
   and a Plain text source fill their paragraphs to the text width, by Edit > Fill Paragraph
   and as they are typed (`EDIT-MD-18..23`, `docs/MARKDOWN.md`, Fill). Every text tab indents:
   Return puts the new line at its place, Tab moves a line there, by the rules of its language
-  or the prefix of a paragraph (`EDIT-INDENT-1..9`, `docs/INDENT.md`). View > Preview puts the rendered page beside the source of a
+  or the prefix of a paragraph, a code block of Markdown by the language of its tag
+  (`EDIT-INDENT-1..10`, `docs/INDENT.md`). View > Preview puts the rendered page beside the source of a
   writable Markdown tab (`EDIT-MD-11`). The tools are `docs/MARKDOWN.md`, Tools.
 * A `CodeEditor` (a text tab, a side of a text diff tab) draws in the text editor font of the
   Preferences, `FontManager::editorFont()`, and follows its change (`EDIT-MODE-27`); the

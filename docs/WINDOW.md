@@ -1,6 +1,6 @@
 # The Editor Window — Documents and Tabs
 
-**Document version:** 0.31 (2026-11-26) — the modes, the read-only flag and the plugins in
+**Document version:** 0.32 (2026-11-26) — the modes, the read-only flag and the plugins in
 the modes (`modes`, the text tabs, a plugin run as a diff base, the plugin languages) are
 implemented, the git compare with them (stage 6 of `docs/MODES.md`); a switch keeps the dock
 sizes; a Markdown tab exports its rendered PDF; the find bar (`docs/FIND.md`); the shortcuts
@@ -136,7 +136,7 @@ setCurrentDocument(doc)
 | Insert Formula | document | the cursor of the active Markdown tab, one undo step, an untitled tab too; the formula under the cursor edited, as by Ctrl+click on it (`EDIT-MD-24..27`) |
 | Fill Paragraph, Unfill Paragraph | document | the unit of the cursor or the units of the selection in the active Markdown or Plain text tab, one undo step; Fill Paragraph also on the Text toolbar (`EDIT-MD-18..23`) |
 | Edit > Fill as You Type | global | a setting; a Space or a Return typed past the text width breaks the line in every Markdown and Plain text tab (`EDIT-MD-21/22`) |
-| Indent Region | document | the lines of the selection, else the whole text, of the active tab of a language with indent rules re-indented, one undo step (`EDIT-INDENT-6`) |
+| Indent Region | document | the lines of the selection, else the whole text, of the active tab of a language with indent rules re-indented, of a Markdown tab the lines of its code blocks of such a language, one undo step (`EDIT-INDENT-6/10`) |
 | Convert Tabs to Spaces | document | the tabs of the selection, else of the whole text, of the active text tab turned into spaces, one undo step (`EDIT-INDENT-6`) |
 | Edit > Indent Automatically | global | a setting; Return and the electric characters indent and Tab moves a line to its place in every text tab and code dialog (`EDIT-INDENT-1..3/7/8`) |
 | Document > Update Diagram Images | document | the diagram images of the active Markdown tab, written beside their diagrams; the text unchanged (`EDIT-MD-7`) |

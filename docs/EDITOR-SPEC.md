@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.86 (2026-11-26)
+**Document version:** 0.87 (2026-11-26)
 
 **Related authorities:**
 
@@ -2132,7 +2132,8 @@ start, the dock apart from the structure tree, the History a tab of it and its a
 The source editors indent as Emacs does: Return puts the new line at its place, Tab moves a
 line there, the indent written in spaces, or tabs, of one width. Nothing but spaces and tabs is
 ever inserted: no closing bracket, no comment star, no list marker, no quote mark. The rules and
-the architecture are in `docs/INDENT.md`. Specified in 0.85.
+the architecture are in `docs/INDENT.md`. Specified in 0.85; the Tab cycle of every language and
+the code blocks of Markdown in 0.87.
 
 - `EDIT-INDENT-1` MUST [A]: a text tab of a language with indent rules - the `indent` of its
   language file: `braces` (C, C++, C#), `brackets` (JSON), `offside` (Python) - computes the
@@ -2141,10 +2142,13 @@ the architecture are in `docs/INDENT.md`. Specified in 0.85.
   column; Tab moves the line of the cursor to its column wherever the cursor is, the cursor
   kept at its character, from the leading whitespace at the first character of the text; Tab
   with a selection re-indents each line it touches (`EDIT-INDENT-6`); Shift+Tab moves the
-  line, or each selected line, one indent width left. In a Python tab a Tab repeated on the
-  same line, nothing else typed or moved, cycles its levels: its column, each lower block
-  level, 0 and the column again; the body of a block has its column alone, a dedenter the
-  openers it may follow (Emacs `python-indent-line`). A line starting in a block comment, a
+  line, or each selected line, one indent width left. Tab on a line already at its column, or
+  repeated on the same line with nothing else typed or moved, moves it to the next level of its
+  cycle (Emacs `python-indent-line`, in every language): the column, then the indents of the code
+  lines above smaller than it, nearest first, each smaller than the one before, the left edge
+  last (0, the fence's indent in a Markdown block, `EDIT-INDENT-10`), then the column again; a
+  Python dedenter cycles the indents of the openers it may follow. A line of one level stays,
+  no undo step. A line starting in a block comment, a
   string, a continued preprocessor line or the header of a code dialog stays as it is; after
   Return there the new line takes the indent of the line above. *design*
 
@@ -2153,6 +2157,10 @@ the architecture are in `docs/INDENT.md`. Specified in 0.85.
   foo(a,                     ----------------->            foo(a,
   b);                                                          b);
           }                                            }
+
+  def f():                   Tab on y, again, again
+      if a:                  y at 8 -> 4 -> 0 -> 8
+          y
   ```
 - `EDIT-INDENT-2` SHOULD [A]: with *Indent automatically* a character that changes the column of
   its line re-indents it as it is typed, one undo step with it: `}`, `]`, `)` and `{` typed as
@@ -2160,7 +2168,8 @@ the architecture are in `docs/INDENT.md`. Specified in 0.85.
   `default:`, `public:`); in Python the `:` of a line starting with `else`, `elif`, `except` or
   `finally`. *design*
 - `EDIT-INDENT-3` MUST [A]: a Markdown and a Plain text tab, and a language without indent
-  rules, have no column to compute. Return starts the new line with the whitespace of the
+  rules, have no column to compute; a code block of a Markdown tab by its language aside
+  (`EDIT-INDENT-10`). Return starts the new line with the whitespace of the
   continuation prefix its line takes in the fill (`EDIT-MD-18/23`): the indent of the
   paragraph, the text column of a list item (`- ` 2, `10. ` 4), in a quote the whitespace
   before its marks - they are not repeated; outside a unit, the indent of the line. A line left
@@ -2219,12 +2228,14 @@ the architecture are in `docs/INDENT.md`. Specified in 0.85.
   ```
 - `EDIT-INDENT-6` SHOULD [A]: Edit > Indent Region (`Ctrl+Alt+\`, Emacs `C-M-\`) re-indents each
   line the selection touches, the whole text without one, in a tab of a language with indent
-  rules, each line after the ones above it as re-indented; in Python, whose indent tells the
+  rules, each line after the ones above it as re-indented, and in a Markdown tab the lines of
+  its code blocks of such a language (`EDIT-INDENT-10`), the other lines kept; in Python, whose indent tells the
   blocks, a line at one of its levels keeps it and another goes to the nearest level, the
   deeper of two; Edit > Convert Tabs to Spaces (Emacs `untabify`) turns each tab of the selection, of
   the whole text without one, into the spaces up to its stop, the columns kept, in any text
   tab. Each is one undo step, the cursor and the selection kept at their characters; both are
-  greyed in another tab and a read-only, a rendered or a locked one. *design*
+  greyed in a read-only, a rendered or a locked tab, Indent Region in a Plain text tab and a
+  language without rules too. *design*
 - `EDIT-INDENT-7` MUST [A]: the width, 4 columns by default (1..8), the form, *Spaces* by
   default, and the switch, on by default, are set on Preferences > Text, *Text editors*,
   `Indent: [n] columns with [Spaces|Tabs] [x] Indent automatically`, applied by Ok and Apply;
@@ -2245,12 +2256,30 @@ the architecture are in `docs/INDENT.md`. Specified in 0.85.
 
   | Verb | Does |
   |---|---|
-  | `indent-region [line <n>\|lines <n>-<m>]` | Indent Region of the lines, of the whole text without an argument; a line the text has not is refused |
+  | `indent-region [line <n>\|lines <n>-<m>]` | Indent Region of the lines, of the whole text without an argument, in a Markdown tab of its code blocks; a line the text has not is refused |
   | `untabify [line <n>\|lines <n>-<m>]` | Convert Tabs to Spaces of the lines, of the whole text without an argument |
   | `indent-width <n>` | the indent width for the run, 1..8 |
   | `indent-with spaces\|tabs` | the form for the run |
 
   A batch run indents by 4 columns with spaces unless set. *design*
+- `EDIT-INDENT-10` SHOULD [A]: in a Markdown tab the code lines of a fenced block - the lines
+  between its fences, ```` ``` ```` or `~~~` up to 3 spaces in, as the highlighter reads them
+  (`EDIT-TEXT-11`) - whose tag names a language with indent rules, by its name or an alias
+  (`cpp`, `arduino`, `c`, `cs`, `json`, `py`, a plugin language), indent by that language:
+  Return, Tab and its cycle, Shift+Tab, the characters of `EDIT-INDENT-2`, Indent Region. The
+  left edge of the code is the indent of the opening fence, so a block in a list item lines
+  up with its item. A selection within the code of one block takes its language, another one
+  is moved one width as Markdown. The fences, a block without a tag or of another language,
+  a fence in a quote and the rest of the text indent as Markdown (`EDIT-INDENT-3`); `#` and `:`
+  typed there move no line. *design*
+
+  ````
+  1. Build it:                 the left edge 3: `def` at 3, `return` at 7
+     ```python
+     def f():
+         return 1
+     ```
+  ````
 
 ## 5. Coverage
 
