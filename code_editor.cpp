@@ -28,7 +28,6 @@
 #include <QMimeData>
 #include <QUrl>
 #include <QMouseEvent>
-#include <QPaintEngine>
 #include <QPainter>
 #include <QTextLayout>
 #include <QPainterPath>
@@ -212,8 +211,8 @@ void CodeEditor::scrollContentsBy(int dx, int dy)
     if (m_blockCursor) viewport()->update();
 }
 
-// the block over the text, inverting what is under it as Qt draws a wide cursor: the character
-// shows (EDIT-MODE-29)
+// the block over the text in its color, the character at the cursor drawn again in its place
+// in the color of the text under the cursor (EDIT-MODE-29)
 void CodeEditor::paintEvent(QPaintEvent* event)
 {
     QPlainTextEdit::paintEvent(event);
@@ -222,11 +221,24 @@ void CodeEditor::paintEvent(QPaintEvent* event)
     if (event->rect().contains(m_blockShown)) m_blockShown = QRect();
     if (block.isEmpty()) return;
     m_blockShown = block;
+    QColor fill = m_blockColor.isValid() ? m_blockColor : palette().color(QPalette::Text);
+    QColor glyph = m_blockTextColor.isValid() ? m_blockTextColor : palette().color(QPalette::Base);
     QPainter painter(viewport());
-    if (painter.paintEngine()->hasFeature(QPaintEngine::RasterOpModes)) {
-        painter.setCompositionMode(QPainter::RasterOp_NotDestination);
-    }
-    painter.fillRect(block, palette().text());
+    painter.setClipRect(block);
+    painter.fillRect(block, fill);
+    QTextCursor cursor = textCursor();
+    QTextBlock line = cursor.block();
+    QTextLayout* layout = line.layout();
+    if (!layout) return;
+    // the character a selection of its own: the layout draws it in its font, the rest clipped
+    QTextLayout::FormatRange under;
+    under.start = cursor.positionInBlock();
+    under.length = layout->nextCursorPosition(under.start) - under.start;
+    under.format.setForeground(glyph);
+    under.format.setBackground(fill);
+    QVector<QTextLayout::FormatRange> selections;
+    if (under.length > 0) selections << under;
+    layout->draw(&painter, blockBoundingGeometry(line).translated(contentOffset()).topLeft(), selections, block);
 }
 
 void CodeEditor::focusInEvent(QFocusEvent* event)
@@ -266,6 +278,10 @@ void CodeEditor::setScheme(const TextScheme& scheme)
         p.setColor(roles[i].palette, scheme.color(roles[i].scheme));
     }
     setPalette(p);
+    // the block is the editor's own, no palette role (EDIT-MODE-29)
+    m_blockColor = scheme.color(textSchemeBlockCursor);
+    m_blockTextColor = scheme.color(textSchemeBlockCursorText);
+    viewport()->update();
 }
 
 int CodeEditor::lineNumberAreaWidth() const

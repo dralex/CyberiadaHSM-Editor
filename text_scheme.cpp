@@ -47,6 +47,8 @@ static const struct {
     { "text",                  QT_TRANSLATE_NOOP("TextScheme", "Text") },
     { "selection",             QT_TRANSLATE_NOOP("TextScheme", "Selection") },
     { "selectionText",         QT_TRANSLATE_NOOP("TextScheme", "Selected text") },
+    { "blockCursor",           QT_TRANSLATE_NOOP("TextScheme", "Block cursor") },
+    { "blockCursorText",       QT_TRANSLATE_NOOP("TextScheme", "Text under the cursor") },
     { "lineNumbersBackground", QT_TRANSLATE_NOOP("TextScheme", "Line numbers background") },
     { "lineNumbers",           QT_TRANSLATE_NOOP("TextScheme", "Line numbers") },
     { "keyword",               QT_TRANSLATE_NOOP("TextScheme", "Keyword") },
@@ -88,6 +90,9 @@ int textSchemeRoleFollows(int role)
     switch (role) {
     case textSchemeFirstToken + codeTokenOperator:     return textSchemeText;
     case textSchemeFirstToken + codeTokenPreprocessor: return textSchemeFirstToken + codeTokenKeyword;
+    // the inverted block over a plain text before its colors
+    case textSchemeBlockCursor:                        return textSchemeText;
+    case textSchemeBlockCursorText:                    return textSchemeBackground;
     default:                                           return -1;
     }
 }
@@ -154,7 +159,7 @@ static TextSchemes loadBuiltins()
         white.name = builtinNames[0];
         for (int role = 0; role < textSchemeRolesCount; role++) white.colors[role] = Qt::black;
         white.colors[textSchemeBackground] = white.colors[textSchemeLineNumbersBackground] = Qt::white;
-        white.colors[textSchemeSelectionText] = Qt::white;
+        white.colors[textSchemeSelectionText] = white.colors[textSchemeBlockCursorText] = Qt::white;
         result.prepend(white);
     }
     return result;

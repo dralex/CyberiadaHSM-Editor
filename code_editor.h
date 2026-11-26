@@ -77,7 +77,8 @@ public:
     void setBlockCursor(bool on);
     bool blockCursor() const { return m_blockCursor; }
     // the block as drawn: the editor's own, steady, while the editor has the focus and takes the
-    // keys; empty otherwise (Qt's blinking cursor is the line alone)
+    // keys, in the block cursor colors of the scheme; empty otherwise (Qt's blinking cursor is
+    // the line alone, in the text color)
     QRect blockCursorRect() const;
     // a dropped or pasted image is offered instead of its text (EDIT-MD-2): a Markdown text
     void setImageDrops(bool on) { m_imageDrops = on; }
@@ -197,6 +198,9 @@ private:
     QCursor m_textPointer;
     bool m_imageDrops = false;
     bool m_blockCursor = false;
+    // the block and the character under it, of the scheme; without one the palette's Text and Base
+    QColor m_blockColor;
+    QColor m_blockTextColor;
     // the block as painted last, in the viewport; a scroll paints the whole view again
     QRect m_blockShown;
     bool m_wrap = false;

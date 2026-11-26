@@ -37,6 +37,9 @@ enum TextSchemeRole {
     textSchemeText,
     textSchemeSelection,
     textSchemeSelectionText,
+    // the block cursor and the character under it (EDIT-MODE-29)
+    textSchemeBlockCursor,
+    textSchemeBlockCursorText,
     textSchemeLineNumbersBackground,
     textSchemeLineNumbers,
     textSchemeFirstToken,

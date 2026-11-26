@@ -5,6 +5,8 @@
         "text": "#ffff00",
         "selection": "#00aaaa",
         "selectionText": "#000000",
+        "blockCursor": "#ffff00",
+        "blockCursorText": "#000099",
         "lineNumbersBackground": "#000066",
         "lineNumbers": "#8080ff",
         "keyword": "#ffffff",

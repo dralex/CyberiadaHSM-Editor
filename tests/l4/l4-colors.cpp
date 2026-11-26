@@ -77,6 +77,7 @@ private slots:
 	void test_page_font();
 	void test_editor_cursor();
 	void test_block_cursor_steady();
+	void test_block_cursor_colors();
 	void test_block_cursor_scroll();
 	void test_editor_wrap();
 	void test_mode_line();
@@ -157,6 +158,11 @@ void TestColors::test_builtin_schemes()
 	QCOMPARE(builtins[0].color(textSchemeText), QColor(Qt::black));
 	QCOMPARE(builtins[1].color(textSchemeBackground), QColor("#000099"));
 	QCOMPARE(builtins[1].color(textSchemeText), QColor("#ffff00"));
+	// the block cursor in the text color over the character in the background one
+	for (const TextScheme& scheme : builtins) {
+		QCOMPARE(scheme.color(textSchemeBlockCursor), scheme.color(textSchemeText));
+		QCOMPARE(scheme.color(textSchemeBlockCursorText), scheme.color(textSchemeBackground));
+	}
 	// Dark: the words and the signs white, the strings light cyan, the numbers and the
 	// preprocessor green
 	const struct { CodeTokenKind kind; const char* color; } code[] = {
@@ -366,6 +372,7 @@ void TestColors::test_fallbacks()
 		s.setValue("name", "Old");
 		s.setValue("text", "#203040");
 		s.setValue("keyword", "#304050");
+		s.setValue("background", "#405060");
 		s.setValue("preprocessor", "not a color");
 		s.endArray();
 	}
@@ -386,6 +393,11 @@ void TestColors::test_fallbacks()
 	QVERIFY(old);
 	QCOMPARE(old->tokenColor(codeTokenOperator), QColor("#203040"));
 	QCOMPARE(old->tokenColor(codeTokenPreprocessor), QColor("#304050"));
+	// stored before the block cursor had colors: the inverted block over a plain text
+	QCOMPARE(old->color(textSchemeBlockCursor), QColor("#203040"));
+	QCOMPARE(old->color(textSchemeBlockCursorText), QColor("#405060"));
+	QCOMPARE(half->color(textSchemeBlockCursorText), QColor("#102030"));
+	QCOMPARE(changed->color(textSchemeBlockCursor), dark(textSchemeBlockCursor));
 	QCOMPARE(half->tokenColor(codeTokenOperator), half->color(textSchemeText));
 	QCOMPARE(changed->tokenColor(codeTokenOperator), dark(TextSchemeRole(textSchemeFirstToken + codeTokenOperator)));
 	QCOMPARE(changed->tokenColor(codeTokenPreprocessor), QColor("#55ff55"));
@@ -725,7 +737,7 @@ void TestColors::test_block_cursor_scroll()
 }
 
 // EDIT-MODE-29: the block steady through the blink of the system, one space of the font wide,
-// inverting its character, shown with the focus only; its old place repainted plain
+// shown with the focus only; its old place repainted plain
 void TestColors::test_block_cursor_steady()
 {
 	SettingsManager& sm = SettingsManager::instance();
@@ -771,6 +783,108 @@ void TestColors::test_block_cursor_steady()
 	sm.setEditorBlockCursor(false);
 	QCOMPARE(editor.cursorWidth(), 1);
 	QVERIFY(editor.blockCursorRect().isEmpty());
+}
+
+// a rect of the viewport as its window shows it
+static QImage shownRect(CodeEditor& editor, const QRect& rect)
+{
+	QCoreApplication::processEvents();
+	QWidget* window = editor.window();
+	QPoint at = editor.viewport()->mapTo(window, rect.topLeft());
+	return window->windowHandle()->screen()->grabWindow(window->winId(), at.x(), at.y(), rect.width(), rect.height())
+	    .toImage().convertToFormat(QImage::Format_RGB32);
+}
+
+// the pixels of the image not in the color: the ink of a glyph on it
+static QSet<int> inkPixels(const QImage& image, const QColor& paper)
+{
+	QSet<int> ink;
+	for (int y = 0; y < image.height(); y++) {
+		for (int x = 0; x < image.width(); x++) {
+			if (QColor(image.pixel(x, y)) != paper) ink.insert(y * image.width() + x);
+		}
+	}
+	return ink;
+}
+
+static void focusShown(CodeEditor& editor)
+{
+	editor.resize(400, 160);
+	editor.show();
+	QApplication::setActiveWindow(&editor);
+	QVERIFY(QTest::qWaitForWindowActive(&editor));
+	editor.setFocus();
+	QTRY_VERIFY(editor.hasFocus());
+}
+
+// EDIT-MODE-29, EDIT-COLOR-1/2/5: the block in the Block cursor color of the scheme, its
+// character in the Text under the cursor color in its place; filled at the end of a line; a
+// changed color, Dark, a text tab by the current scheme; an editor without a scheme (a text diff
+// side) in its palette's text and base
+void TestColors::test_block_cursor_colors()
+{
+	SettingsManager& sm = SettingsManager::instance();
+	sm.setEditorBlockCursor(true);
+	const QColor fill("#ff0000"), glyph("#00ff00"), white(Qt::white);
+	TextScheme scheme = builtinTextScheme(TEXT_SCHEME_DEFAULT);
+	scheme.colors[textSchemeBlockCursor] = fill;
+	scheme.colors[textSchemeBlockCursorText] = glyph;
+	CodeEditor editor;
+	editor.setPlainText("Mab");
+	editor.setScheme(scheme);
+	focusShown(editor);
+	QRect block = editor.blockCursorRect();
+	QVERIFY(!block.isEmpty());
+	QImage on = shownRect(editor, block);
+	QSet<int> ink = inkPixels(on, fill);
+	QVERIFY(!ink.isEmpty());
+	// the glyph a mix of the two colors, none of the text's black
+	for (int at : ink) {
+		QRgb pixel = on.pixel(at % on.width(), at / on.width());
+		QVERIFY2(qBlue(pixel) == 0 && qGreen(pixel) > 0, qPrintable(QColor(pixel).name()));
+	}
+	// the same pixels as the character without the block
+	editor.clearFocus();
+	QTRY_COMPARE(inkPixels(shownRect(editor, block), fill).size(), block.width() * block.height());
+	QCOMPARE(inkPixels(shownRect(editor, block), white), ink);
+	// the end of the line: the block alone
+	editor.setFocus();
+	QTRY_VERIFY(editor.hasFocus());
+	editor.moveCursor(QTextCursor::End);
+	block = editor.blockCursorRect();
+	QTRY_VERIFY(inkPixels(shownRect(editor, block), fill).isEmpty());
+	// a changed color, Dark
+	scheme.colors[textSchemeBlockCursor] = QColor("#0000ff");
+	editor.setScheme(scheme);
+	QTRY_VERIFY(inkPixels(shownRect(editor, block), QColor("#0000ff")).isEmpty());
+	editor.setScheme(builtinTextScheme("dark"));
+	QTRY_VERIFY(inkPixels(shownRect(editor, block), dark(textSchemeBlockCursor)).isEmpty());
+
+	// a text tab by the current scheme
+	sm.setTextScheme("dark");
+	TextDocument text(MODE_TEXT);
+	text.setText("a");
+	CodeEditor* tab = text.editor();
+	text.page()->resize(400, 160);
+	text.page()->show();
+	QApplication::setActiveWindow(text.page());
+	QVERIFY(QTest::qWaitForWindowActive(text.page()));
+	tab->setFocus();
+	QTRY_VERIFY(tab->hasFocus());
+	tab->moveCursor(QTextCursor::End);
+	QTRY_VERIFY(inkPixels(shownRect(*tab, tab->blockCursorRect()), dark(textSchemeBlockCursor)).isEmpty());
+	text.page()->hide();
+
+	// without a scheme: the palette's text and base
+	CodeEditor bare;
+	QPalette p = bare.palette();
+	p.setColor(QPalette::Text, QColor("#123456"));
+	bare.setPalette(p);
+	bare.setPlainText("a");
+	focusShown(bare);
+	bare.moveCursor(QTextCursor::End);
+	QTRY_VERIFY(inkPixels(shownRect(bare, bare.blockCursorRect()), QColor("#123456")).isEmpty());
+	sm.setEditorBlockCursor(false);
 }
 
 // EDIT-MODE-29: the cursor a line by default, a block one space of the font wide in every

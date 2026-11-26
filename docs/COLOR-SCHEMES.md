@@ -113,7 +113,7 @@ diagrams; the dialog is wide enough for both.
    steady (EDIT-MODE-29): Qt's cursor hidden (width 0, its blink then draws nothing), paintEvent
    fills the rect of a space at the cursor after the text in blockCursor and draws the layout
    of the cursor's block again clipped to it, the character at the cursor a FormatRange in
-   blockCursorText on blockCursor, so the character keeps its font (bold, italic); setScheme
+   blockCursorText on blockCursor, so the character keeps its glyph and its place; setScheme
    gives the two colors, an editor without a scheme (a text diff side) takes the palette's Text
    and Base; drawn while the editor has the focus and takes
    the keys (writable or selectable by the keyboard), the old and the new rect repainted when the
