@@ -6006,6 +6006,16 @@ Ctrl+клик мыши — открыть</translation>
     </message>
     <message>
         <location line="+1"/>
+        <source>Operator</source>
+        <translation type="unfinished">Оператор</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Preprocessor</source>
+        <translation type="unfinished">Препроцессор</translation>
+    </message>
+    <message>
+        <location line="+1"/>
         <source>Heading</source>
         <translation>Заголовок</translation>
     </message>
@@ -6138,7 +6148,27 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Цвета встроенной схемы</translation>
     </message>
     <message>
-        <location line="+30"/>
+        <location line="+32"/>
+        <source># Heading *emphasis*
+&gt; A quote, a [link](https://example.org), $x^2$
+- `code` &lt;!-- a comment --&gt;
+
+```cpp
+#include &lt;stdio.h&gt;
+// a comment
+int main() { return printf(&quot;%d&quot;, 42); }
+```</source>
+        <translation type="unfinished"># Заголовок *акцент*
+&gt; Цитата, [ссылка](https://example.org), $x^2$
+- `код` &lt;!-- комментарий --&gt;
+
+```cpp
+#include &lt;stdio.h&gt;
+// комментарий
+int main() { return printf(&quot;%d&quot;, 42); }
+```</translation>
+    </message>
+    <message>
         <source># Heading *emphasis*
 &gt; A quote, a [link](https://example.org), $x^2$
 - `code` &lt;!-- a comment --&gt;
@@ -6147,7 +6177,7 @@ Ctrl+клик мыши — открыть</translation>
 // a comment
 int main() { return printf(&quot;%d&quot;, 42); }
 ```</source>
-        <translation># Заголовок *акцент*
+        <translation type="vanished"># Заголовок *акцент*
 &gt; Цитата, [ссылка](https://example.org), $x^2$
 - `код` &lt;!-- комментарий --&gt;
 
@@ -6157,7 +6187,7 @@ int main() { return printf(&quot;%d&quot;, 42); }
 ```</translation>
     </message>
     <message>
-        <location line="+202"/>
+        <location line="+203"/>
         <source>Name</source>
         <translation>Имя</translation>
     </message>
