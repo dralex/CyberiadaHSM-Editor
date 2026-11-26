@@ -28,6 +28,7 @@
 
 #include "code_highlighter.h"
 #include "cyberiada_constants.h"
+#include "markdown_lines.h"
 #include "text_indent.h"
 
 namespace {
@@ -331,14 +332,14 @@ public:
     int column(const LineInfo& line) const
     {
         if (line.kept) return -1;
-        if (line.directive) return 0;
+        if (line.directive) return m_rules.margin;
         // a comment under the comment after the code above stays with it (c-lineup-comment)
         if (line.first < 0 && line.comment >= 0 && line.comment == m_trailing) return line.comment;
         QChar c = line.first >= 0 ? line.code[line.first] : QChar();
         const Frame& f = m_frames.last();
         if (m_rules.style == textIndentOffside) return offsideColumn(line, c);
         if (!f.open.isNull() && (!f.block || f.align >= 0)) return bracketColumn(f, line, c);
-        if (m_rules.style != textIndentBraces) return 0;
+        if (m_rules.style != textIndentBraces) return m_rules.margin;
         return blockColumn(line, c);
     }
 
@@ -355,20 +356,24 @@ public:
             return closed.isEmpty() ? result : closed;
         }
         if (!m_done.isEmpty() && m_done.last().last == ':') return result;
-        int last = col;
-        for (int k = m_done.size() - 1; k >= 0 && last > 0; k--) {
-            if (m_done[k].indent < last) {
-                last = m_done[k].indent;
-                result.append(last);
-            }
+        return lower(result, m_done.size(), [this](int k) { return m_done[k].indent; });
+    }
+
+    QVector<int> cycle(const LineInfo& line) const
+    {
+        int col = column(line);
+        if (col < 0) return QVector<int>();
+        if (m_rules.style == textIndentOffside && m_frames.size() == 1 && !m_continues) {
+            QVector<int> closed = dedenterLevels(dedenterOpeners(wordAt(line.code, line.first)));
+            if (!closed.isEmpty()) return closed;
         }
-        if (last > 0) result.append(0);
-        return result;
+        return lower(QVector<int>({ col }), m_indents.size(), [this](int k) { return m_indents[k]; });
     }
 
     void advance(const LineInfo& line)
     {
         m_trailing = line.first >= 0 && line.comment > line.columns[line.first] ? line.comment : -1;
+        if (line.first >= 0 && !line.kept && !line.directive) m_indents.append(line.indent);
         if (line.directive) return;
         if (m_rules.style == textIndentOffside) {
             advanceOffside(line);
@@ -420,6 +425,24 @@ public:
     }
 
 private:
+    // the levels after the last of result: each smaller indent of count indents, the last one
+    // nearest, the left edge at the end
+    template <typename Indent>
+    QVector<int> lower(QVector<int> result, int count, Indent indent) const
+    {
+        int edge = m_rules.margin;
+        int last = result.last();
+        for (int k = count - 1; k >= 0 && last > edge; k--) {
+            int at = indent(k);
+            if (at < last && at >= edge) {
+                last = at;
+                result.append(last);
+            }
+        }
+        if (last > edge) result.append(edge);
+        return result;
+    }
+
     int bracketColumn(const Frame& f, const LineInfo& line, QChar c) const
     {
         if (c == closerOf(f.open)) return f.align >= 0 ? f.column : f.lineIndent;
@@ -503,9 +526,9 @@ private:
     {
         const Frame& f = m_frames.last();
         bool root = f.open.isNull();
-        int statements = root ? 0 : (f.flat ? f.base : f.base + m_width);
+        int statements = root ? m_rules.margin : (f.flat ? f.base : f.base + m_width);
         if (!root && c == '}') return f.base;
-        if (!f.inStatement) return labelLine(line) ? (root ? 0 : f.base) : statements;
+        if (!f.inStatement) return labelLine(line) ? (root ? m_rules.margin : f.base) : statements;
         // a substatement or a statement continued; its block brace at its first line
         if (c == '{') return f.statementIndent;
         // a call cascaded, .arg() or ->next(), goes a width in from the statement
@@ -515,8 +538,10 @@ private:
             if (lined >= 0) return lined;
             if (f.assignAt >= 0) return f.assignAt;
             if (f.returnAt >= 0) return f.returnAt;
-            // a declaration of the top level over its lines, a return type above its function
+            // a declaration of the top level over its lines, a return type above its function;
+            // the declaration under a template header, in a class too
             if (root && !f.assign && !f.call) return f.statementIndent;
+            if (f.word == "template" && f.last == '>') return f.statementIndent;
         }
         return f.statementIndent + m_width;
     }
@@ -539,13 +564,13 @@ private:
         if (!f.open.isNull()) return bracketColumn(f, line, c);
         // after a backslash; a block header two widths in, apart from its body (PEP 8)
         if (m_continues) return m_open.indent + (BLOCK_WORDS.contains(m_open.word) ? 2 * m_width : m_width);
-        int col = 0;
+        int col = m_rules.margin;
         if (!m_done.isEmpty()) {
             const Logical& p = m_done.last();
             if (p.last == ':') {
                 col = p.indent + m_width;
             } else if (DEDENT_AFTER.contains(p.word)) {
-                col = 0;
+                col = m_rules.margin;
                 for (int k = m_done.size() - 2; k >= 0; k--) {
                     if (m_done[k].indent < p.indent) {
                         col = m_done[k].indent;
@@ -568,7 +593,7 @@ private:
     {
         QVector<int> levels;
         int last = INT_MAX;
-        for (int k = m_done.size() - 1; k >= 0 && last > 0; k--) {
+        for (int k = m_done.size() - 1; k >= 0 && last > m_rules.margin; k--) {
             if (m_done[k].indent >= last) continue;
             last = m_done[k].indent;
             if (openers.contains(m_done[k].word)) levels.append(last);
@@ -704,6 +729,8 @@ private:
     // the last two code characters read
     QChar                  m_last;
     QChar                  m_before;
+    // the indents of the code lines read (EDIT-INDENT-1, the Tab cycle)
+    QVector<int>           m_indents;
     // offside: the statements read, the one still open over the lines
     QVector<Logical>       m_done;
     Logical                m_open;
@@ -772,6 +799,18 @@ TextFillEdit linesEdit(const Lines& old, const QStringList& now, int anchor, int
     return edit;
 }
 
+// the levels of a line read after the lines above: those Indent Region keeps, or the Tab cycle
+QVector<int> scanLine(const QString& text, int line, const TextIndentRules& rules, int width, bool cycle)
+{
+    Lines lines(text);
+    if (!textIndentComputes(rules) || line < 0 || line >= lines.list.size()) return QVector<int>();
+    LexState st;
+    Scanner scanner(rules, width);
+    for (int i = 0; i < line; i++) scanner.advance(lexLine(lines.list[i], lines.starts[i], rules, st));
+    LineInfo info = lexLine(lines.list[line], lines.starts[line], rules, st);
+    return cycle ? scanner.cycle(info) : scanner.levels(info);
+}
+
 } // namespace
 
 TextIndentRules textIndentRules(const CodeLanguage* language)
@@ -797,6 +836,7 @@ TextIndentRules textIndentRules(TextFillKind kind)
     TextIndentRules rules;
     rules.style = textIndentRelative;
     rules.fill = kind;
+    rules.blocks = kind == textFillMarkdown;
     return rules;
 }
 
@@ -848,12 +888,12 @@ int textIndentColumn(const QString& text, int line, const TextIndentRules& rules
 
 QVector<int> textIndentLevels(const QString& text, int line, const TextIndentRules& rules, int width)
 {
-    Lines lines(text);
-    if (!textIndentComputes(rules) || line < 0 || line >= lines.list.size()) return QVector<int>();
-    LexState st;
-    Scanner scanner(rules, width);
-    for (int i = 0; i < line; i++) scanner.advance(lexLine(lines.list[i], lines.starts[i], rules, st));
-    return scanner.levels(lexLine(lines.list[line], lines.starts[line], rules, st));
+    return scanLine(text, line, rules, width, false);
+}
+
+QVector<int> textIndentCycle(const QString& text, int line, const TextIndentRules& rules, int width)
+{
+    return scanLine(text, line, rules, width, true);
 }
 
 QVector<int> textIndentPoints(const QString& text, int line)
@@ -1031,4 +1071,50 @@ TextFillEdit textUntabify(const QString& text, int from, int to, int anchor, int
     edit.anchor = map(anchor);
     edit.cursor = map(cursor);
     return edit;
+}
+
+QVector<TextIndentPart> textIndentParts(const QString& text, int last)
+{
+    Lines lines(text);
+    QVector<TextIndentPart> parts;
+    for (const MarkdownFencedBlock& block : markdownFencedBlocks(lines.list, last)) {
+        TextIndentPart part;
+        part.first = block.open + 1;
+        part.last = block.close - 1;
+        if (part.first > part.last) continue;
+        part.rules = textIndentRules(CodeStyle::instance().find(block.tag));
+        if (!textIndentComputes(part.rules)) continue;
+        part.rules.codeStart = lines.starts[part.first];
+        part.rules.margin = block.indent;
+        parts.append(part);
+    }
+    return parts;
+}
+
+TextIndentRules textIndentRulesAt(const QString& text, int line, const TextIndentRules& rules)
+{
+    if (!rules.blocks) return rules;
+    for (const TextIndentPart& part : textIndentParts(text, line)) {
+        if (line >= part.first && line <= part.last) return part.rules;
+    }
+    return rules;
+}
+
+TextFillEdit textReindentParts(const QString& text, int first, int last,
+                               const QVector<TextIndentPart>& parts, int width, bool tabs, int anchor,
+                               int cursor)
+{
+    Lines lines(text);
+    QString now = text;
+    for (const TextIndentPart& part : parts) {
+        int from = qMax(first, part.first);
+        int to = qMin(last, part.last);
+        if (from > to) continue;
+        // the code starts where the parts before left it
+        TextIndentRules rules = part.rules;
+        rules.codeStart = Lines(now).starts[part.first];
+        TextFillEdit edit = textReindent(now, from, to, rules, width, tabs, 0, 0);
+        if (edit.changed) now = now.left(edit.from) + edit.text + now.mid(edit.to);
+    }
+    return linesEdit(lines, now.split('\n'), anchor, cursor);
 }

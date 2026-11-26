@@ -86,7 +86,7 @@ header waiting for its `(...)`, a substatement due.
 | `}` first | the base |
 | a label: a word of `indentLabels` first, its `:` (not `::`) on the line | the base: a width less than the statements |
 | after `if (...)`, `for (...)`, `while (...)`, `switch (...)`, `catch (...)`, `else`, `do` | a substatement: the indent of the header's line plus the width, a `{` first at that indent |
-| a statement continued: the line above it ended none of `;`, `{`, `}`, a label's `:` | the first that applies: a `:` under the last `?` (`c-lineup-ternary-bodies`), a `<<` or `>>` under the first one (`c-lineup-streamop`), a `.arg()` cascade the width in; under the code after the first `=` on its line (`c-lineup-assignments`) or after `return`; a declaration of the top level without `=` and `(` (a return type above its function, `template <...>`) at its first line; else its first line plus the width. A `{` first: its first line |
+| a statement continued: the line above it ended none of `;`, `{`, `}`, a label's `:` | the first that applies: a `:` under the last `?` (`c-lineup-ternary-bodies`), a `<<` or `>>` under the first one (`c-lineup-streamop`), a `.arg()` cascade the width in; under the code after the first `=` on its line (`c-lineup-assignments`) or after `return`; a declaration of the top level without `=` and `(` (a return type above its function, `template <...>`), and the one under a `template <...>` header in a class too, at its first line; else its first line plus the width. A `{` first: its first line |
 | a macro alone on its line without `;` (`Q_OBJECT`, `Q_DECLARE_METATYPE(A)`) | a statement of its own |
 | a comment alone on its line, under the comment after the code of the line above | stays there (`c-lineup-comment`) |
 | a preprocessor line (`preprocessor: true`) | 0, the state not moved by it |
@@ -239,9 +239,11 @@ item, the prose untouched, Indent Region); the dialogs; the Preferences row, the
 storage, Reset. The batch cases `mode-indent-*` re-indent the fixtures of `tests/texts/indent-*`
 (the course code of chapter 06, tabs and spaces mixed; a Markdown text with blocks of several
 languages) and convert their tabs. The style was checked by Indent Region on copies
-of written code (Nov 26 2026): the space-indented sources of the editor, 168 files and 38027
-lines, 122 lines moved; 40 Python modules of the dispatchers and the agents, 9864 lines, 16; the
-course programs and the language files, the tabs and the blank lines only. What moves is code
+of written code (Nov 26 2026): the space-indented sources of the editor, 168 files and 38421
+lines, 120 lines moved; 40 Python modules of the dispatchers and the agents, 9864 lines, 16; the
+course programs and the language files, the tabs and the blank lines only; the Markdown chapters
+of the course and `PLUGIN-API.md`, the lines of their `c`, `cpp` and `json` blocks only, their
+whitespace (the JSON examples from 2 columns to the width). What moves is code
 aligned by hand otherwise (the authors' habits differ: a continued assignment under its value
 or a width in, a lambda argument a width in) or a misalignment.
 

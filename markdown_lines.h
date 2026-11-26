@@ -27,9 +27,27 @@
 #include <QString>
 #include <QStringList>
 #include <QVector>
+#include <climits>
 
 // the fence a line opens or closes: its character and length, 0 when it is none
 int  markdownFenceOf(const QString& line, QChar* mark);
+// a fence as the highlighter reads it (EDIT-TEXT-11, EDIT-INDENT-10): up to 3 spaces, ``` or
+// ~~~ and a tag of one word or none; its marker and its tag
+bool markdownFence(const QString& line, QString* marker, QString* tag);
+// the fence of marker and tag closes the block the marker open opened: the same character, as
+// long at least, no tag
+bool markdownFenceCloses(const QString& open, const QString& marker, const QString& tag);
+
+// a fenced code block: the lines of its fences, the indent and the tag of the opening one
+struct MarkdownFencedBlock {
+    int     open = 0;
+    // the line count when it is not closed up to the last line read
+    int     close = 0;
+    int     indent = 0;
+    QString tag;
+};
+// the fenced blocks of the lines up to the line last
+QVector<MarkdownFencedBlock> markdownFencedBlocks(const QStringList& lines, int last = INT_MAX);
 // four spaces or a tab before some text
 bool markdownIndented(const QString& line);
 // a bullet or an ordered list item: its marker and a space

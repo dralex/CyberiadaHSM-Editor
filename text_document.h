@@ -104,8 +104,8 @@ public:
     // how the text indents: a language by its rules, Markdown and Plain text by their
     // paragraphs (EDIT-INDENT-1/3)
     TextIndentRules  indentRules() const;
-    // the writable source of a language with indent rules: Indent Region acts; of any text:
-    // Convert Tabs to Spaces acts (EDIT-INDENT-6)
+    // the writable source of a language with indent rules or of Markdown (its code blocks):
+    // Indent Region acts; of any text: Convert Tabs to Spaces acts (EDIT-INDENT-6/10)
     bool             canIndent() const;
     bool             canUntabify() const;
     // Indent Region, or Convert Tabs to Spaces, of the selection or the whole text, one undo
@@ -220,6 +220,8 @@ private:
     bool             goToHeading(const QString& anchor);
     bool             fillRange(int anchor, int position, bool unfill, bool select);
     bool             applyIndent(const TextFillEdit& edit, bool untabify);
+    // Indent Region of the lines first..last from 0, of the code blocks of a Markdown text
+    TextFillEdit     reindent(const QString& all, int first, int last) const;
     // the state, the name and the mode on the mode line of the source (EDIT-MODE-31)
     void             updateModeLine();
     // the outline made or dropped with the Markdown mode

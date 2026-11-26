@@ -353,14 +353,16 @@ add_text_test(text-compare-whitespace texts/diff-target.py 0)
 add_text_test(text-compare-tab texts/diff-target.py 0)
 add_text_test(text-compare-reject texts/diff-target.py 4)
 
-# the indentation (EDIT-INDENT-4..9): the course code, Python, JSON re-indented and untabified
+# the indentation (EDIT-INDENT-4..10): the course code, Python, JSON, the code blocks of a Markdown
+# text re-indented and untabified
 add_text_test(indent-region texts/indent-course.cpp 0)
 add_text_test(indent-lines texts/indent-course.cpp 0)
 add_text_test(indent-python texts/indent-messy.py 0)
 add_text_test(indent-json texts/indent-messy.json 0)
 add_text_test(indent-with-tabs texts/indent-course.cpp 0)
 add_text_test(untabify texts/indent-course.cpp 0)
-add_text_test(indent-reject texts/notes.md 4)
+add_text_test(indent-markdown texts/indent-blocks.md 0)
+add_text_test(indent-reject texts/plain-fill.txt 4)
 add_text_test(indent-width-reject texts/indent-course.cpp 4)
 
 # the Markdown tools (EDIT-MD-12): a text of texts/ copied into a fresh work dir, so the

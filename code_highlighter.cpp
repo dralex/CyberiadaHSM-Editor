@@ -33,6 +33,7 @@
 
 #include "code_highlighter.h"
 #include "markdown_importer.h"
+#include "markdown_lines.h"
 #include "settings_manager.h"
 #include "text_scheme.h"
 
@@ -547,7 +548,6 @@ QVector<CodeSpan> CodeStyle::markdownSpans(const QString& text, const CodeLangua
 {
     if (targets) targets->clear();
     if (formulas) formulas->clear();
-    static const QRegularExpression fence(R"(^ {0,3}(`{3,}|~{3,})\s*([^\s`]*)\s*$)");
     static const QRegularExpression heading(R"(^ {0,3}#{1,6}(\s|$))");
     static const QRegularExpression rule(R"(^ {0,3}([-*_])( *\1){2,} *$)");
     static const QRegularExpression quote(R"(^ {0,3}(> ?)+)");
@@ -591,20 +591,20 @@ QVector<CodeSpan> CodeStyle::markdownSpans(const QString& text, const CodeLangua
         int eol = text.indexOf('\n', pos);
         if (eol < 0) eol = n;
         QString line = text.mid(pos, eol - pos);
-        QRegularExpressionMatch f = fence.match(line);
+        QString marker;
+        QString tag;
+        bool fence = markdownFence(line, &marker, &tag);
         if (bodyStart >= 0) {
-            // a closing fence: the same character, at least as long, no tag
-            if (f.hasMatch() && f.captured(1).at(0) == fenceMarker.at(0) &&
-                f.captured(1).length() >= fenceMarker.length() && f.captured(2).isEmpty()) {
+            if (fence && markdownFenceCloses(fenceMarker, marker, tag)) {
                 addFenceBody(result, text, bodyStart, pos, fenceLang);
                 result.append(CodeSpan{pos, line.length(), codeTokenMarker});
                 bodyStart = -1;
             }
-        } else if (f.hasMatch()) {
+        } else if (fence) {
             flush();
             inQuote = false;
-            fenceMarker = f.captured(1);
-            const CodeLanguage* tagged = find(f.captured(2));
+            fenceMarker = marker;
+            const CodeLanguage* tagged = find(tag);
             fenceLang = tagged ? tagged : fallback;
             result.append(CodeSpan{pos, line.length(), codeTokenMarker});
             bodyStart = qMin(eol + 1, n);

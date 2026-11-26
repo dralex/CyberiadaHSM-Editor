@@ -479,7 +479,22 @@ TextIndentRules TextDocument::indentRules() const
 
 bool TextDocument::canIndent() const
 {
-    return textIndentComputes(indentRules()) && canUntabify();
+    // a Markdown text: its code blocks by their languages (EDIT-INDENT-10)
+    TextIndentRules rules = indentRules();
+    return (textIndentComputes(rules) || rules.blocks) && canUntabify();
+}
+
+TextFillEdit TextDocument::reindent(const QString& all, int first, int last) const
+{
+    SettingsManager& sm = SettingsManager::instance();
+    QTextCursor cursor = m_editor->textCursor();
+    TextIndentRules rules = indentRules();
+    if (rules.blocks) {
+        return textReindentParts(all, first, last, textIndentParts(all), sm.getIndentWidth(),
+                                 sm.getIndentTabs(), cursor.anchor(), cursor.position());
+    }
+    return textReindent(all, first, last, rules, sm.getIndentWidth(), sm.getIndentTabs(), cursor.anchor(),
+                        cursor.position());
 }
 
 bool TextDocument::canUntabify() const
@@ -492,7 +507,6 @@ bool TextDocument::indentText(bool untabify)
     if (untabify ? !canUntabify() : !canIndent()) return false;
     QTextCursor cursor = m_editor->textCursor();
     QString all = text();
-    SettingsManager& sm = SettingsManager::instance();
     TextFillEdit edit;
     if (untabify) {
         int from = cursor.hasSelection() ? cursor.selectionStart() : 0;
@@ -508,8 +522,7 @@ bool TextDocument::indentText(bool untabify)
             last = end.blockNumber();
             if (cursor.selectionEnd() == end.position() && last > first) last--;
         }
-        edit = textReindent(all, first, last, indentRules(), sm.getIndentWidth(), sm.getIndentTabs(),
-                            cursor.anchor(), cursor.position());
+        edit = reindent(all, first, last);
     }
     return applyIndent(edit, untabify);
 }
@@ -520,15 +533,13 @@ bool TextDocument::indentLines(int first, int last, bool untabify)
     if (first < 1 || last < first || last > lineCount()) return false;
     QTextCursor cursor = m_editor->textCursor();
     QString all = text();
-    SettingsManager& sm = SettingsManager::instance();
     TextFillEdit edit;
     if (untabify) {
         QTextBlock end = m_document->findBlockByNumber(last - 1);
         edit = textUntabify(all, m_document->findBlockByNumber(first - 1).position(),
                             end.position() + end.length() - 1, cursor.anchor(), cursor.position());
     } else {
-        edit = textReindent(all, first - 1, last - 1, indentRules(), sm.getIndentWidth(), sm.getIndentTabs(),
-                            cursor.anchor(), cursor.position());
+        edit = reindent(all, first - 1, last - 1);
     }
     return applyIndent(edit, untabify);
 }

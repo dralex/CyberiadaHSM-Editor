@@ -27,6 +27,7 @@
 #include <QString>
 #include <QStringList>
 #include <QVector>
+#include <climits>
 #include "text_fill.h"
 
 struct CodeLanguage;
@@ -55,8 +56,19 @@ struct TextIndentRules {
     bool            preprocessor = false;
     QStringList     labels;
     QStringList     flat;
-    // the text before it is a header, not code (EDIT-INDENT-8)
+    // the text before it is a header, not code (EDIT-INDENT-8/10)
     int             codeStart = 0;
+    // the left edge of the code: the indent of the fence of a Markdown code block (EDIT-INDENT-10)
+    int             margin = 0;
+    // Markdown: its code blocks indent by the language of their tags (EDIT-INDENT-10)
+    bool            blocks = false;
+};
+
+// a part of a text with rules of its own: the code lines of a Markdown block, from 0
+struct TextIndentPart {
+    int             first = 0;
+    int             last = -1;
+    TextIndentRules rules;
 };
 
 // the rules of a language, of a fill kind (Markdown, Plain text)
@@ -78,9 +90,12 @@ int     textPreviousStop(int column, int width);
 // the column of a line from 0 with the lines above as they stand; -1 when the line stays (it
 // starts in a block comment, a string, a continued preprocessor line or the header)
 int          textIndentColumn(const QString& text, int line, const TextIndentRules& rules, int width);
-// the levels a repeated Tab cycles (offside): the column, then each lower block level; the
+// the levels a Python line keeps in Indent Region: the column, then each lower block level; the
 // column alone for another style
 QVector<int> textIndentLevels(const QString& text, int line, const TextIndentRules& rules, int width);
+// the levels Tab goes through (EDIT-INDENT-1): the column, then each smaller indent of the code
+// lines above, nearest first, the left edge last; a Python dedenter the openers it may follow
+QVector<int> textIndentCycle(const QString& text, int line, const TextIndentRules& rules, int width);
 // the indent points of indent-relative: the indent and the word starts of the nearest
 // non-blank line above, ascending; none without one
 QVector<int> textIndentPoints(const QString& text, int line);
@@ -102,5 +117,17 @@ TextFillEdit textShift(const QString& text, int first, int last, int delta, bool
                        int cursor);
 // each tab of [from, to) turned into the spaces up to its stop (EDIT-INDENT-6)
 TextFillEdit textUntabify(const QString& text, int from, int to, int anchor, int cursor);
+
+// the code blocks of a Markdown text read up to the line last whose tag names a language with a
+// column to compute (EDIT-INDENT-10): its rules, the code from the line after the fence, the
+// left edge at the indent of the fence
+QVector<TextIndentPart> textIndentParts(const QString& text, int last = INT_MAX);
+// the rules of a line: of the code block holding it when the rules take the blocks, else these
+TextIndentRules textIndentRulesAt(const QString& text, int line, const TextIndentRules& rules);
+// Indent Region of the parts: their lines of first..last re-indented each by its rules, the
+// other lines kept; one edit
+TextFillEdit textReindentParts(const QString& text, int first, int last,
+                               const QVector<TextIndentPart>& parts, int width, bool tabs, int anchor,
+                               int cursor);
 
 #endif

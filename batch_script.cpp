@@ -1530,7 +1530,7 @@ static bool indentVerb(CyberiadaSMEditorWindow* win, const QStringList& tokens, 
 	}
 	if (!text->canUntabify()) { *error = "the tab is read-only"; return false; }
 	if (!untabify && !text->canIndent()) {
-		*error = "indent-region needs a tab of a language with indent rules";
+		*error = "indent-region needs a Markdown tab or a tab of a language with indent rules";
 		return false;
 	}
 	int first = 1;

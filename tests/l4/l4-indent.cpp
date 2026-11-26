@@ -2,7 +2,7 @@
  * CyberiadaPro, the Cyberiada State Machine Editor
  * -----------------------------------------------------------------------------
  *
- * The indentation of the source editors (EDIT-INDENT-1..9)
+ * The indentation of the source editors (EDIT-INDENT-1..10)
  *
  * Copyright (C) 2026 Alexey Fedoseev <aleksey@fedoseev.net>
  *
@@ -43,6 +43,7 @@
 #include "dialogs/preferences_dialog.h"
 #include "dialogs/stateactiondialog.h"
 #include "dialogs/text_scheme_panel.h"
+#include "markdown_lines.h"
 
 // the cursor in the texts of the cases; the keys of a case: Return, Tab, Shift+Tab
 static const QChar CURSOR_MARK(0x00a6);
@@ -58,6 +59,8 @@ private slots:
     void test_reindent_data();
     void test_reindent();
     void test_levels();
+    void test_cycle();
+    void test_blocks();
     void test_forms();
     void test_points();
     void test_keys_data();
@@ -67,6 +70,7 @@ private slots:
     void test_read_only();
     void test_switch_off();
     void test_document();
+    void test_markdown_region();
     void test_dialogs();
     void test_actions();
     void test_preferences();
@@ -181,6 +185,8 @@ void TestIndent::test_reindent_data()
     QTest::newRow("cascade in a call") << "cpp" << "return fail(error, tr(\"%1\")\n.arg(x));" << "return fail(error, tr(\"%1\")\n            .arg(x));";
     QTest::newRow("return type above") << "cpp" << "A::Side\n    A::side(int s)\n{\n}\ntemplate <typename T>\n  T f();"
         << "A::Side\nA::side(int s)\n{\n}\ntemplate <typename T>\nT f();";
+    QTest::newRow("member template") << "cpp" << "class A {\ntemplate <typename T>\n        T f(T t,\nint n);\n};"
+        << "class A {\n    template <typename T>\n    T f(T t,\n        int n);\n};";
     QTest::newRow("return") << "cpp" << "return a &&\nb;" << "return a &&\n       b;";
     QTest::newRow("ternary") << "cpp" << "return on ? one\n: two;" << "return on ? one\n          : two;";
     QTest::newRow("ternary chain") << "cpp" << "c = a ? x :\nb ? y\n: z;" << "c = a ? x :\n    b ? y\n      : z;";
@@ -269,6 +275,85 @@ void TestIndent::test_levels()
     QCOMPARE(textIndentColumn("/* a\n  b", 1, rulesOf("cpp"), 4), -1);
 }
 
+// EDIT-INDENT-1: the Tab cycle of each style: the column, the smaller indents above, the edge
+void TestIndent::test_cycle()
+{
+    QCOMPARE(textIndentCycle("void f() {\n    if (a) {\n        x();", 2, rulesOf("cpp"), 4),
+             QVector<int>({ 8, 4, 0 }));
+    QCOMPARE(textIndentCycle("{\n    \"a\": {\n        \"b\": 1", 2, rulesOf("json"), 4),
+             QVector<int>({ 8, 4, 0 }));
+    // the body of a Python block cycles too, unlike its Indent Region levels
+    QString body = "def f():\n    if a:\n        y";
+    QCOMPARE(textIndentCycle(body, 2, rulesOf("python"), 4), QVector<int>({ 8, 4, 0 }));
+    QCOMPARE(textIndentLevels(body, 2, rulesOf("python"), 4), QVector<int>({ 8 }));
+    // in a bracket: the aligned column, then the indents written above
+    QCOMPARE(textIndentCycle("def f():\n    x = call(a,\n             b", 2, rulesOf("python"), 4),
+             QVector<int>({ 13, 4, 0 }));
+    // a dedenter: the openers it may follow
+    QCOMPARE(textIndentCycle("if a:\n    if b:\n        x\n        else:", 3, rulesOf("python"), 4),
+             QVector<int>({ 4, 0 }));
+    // the indents as written, not the multiples of the width
+    QCOMPARE(textIndentCycle("if (a) {\n  if (b) {\n    x();", 2, rulesOf("cpp"), 4),
+             QVector<int>({ 6, 2, 0 }));
+    // the comments, the strings and the preprocessor lines give no level
+    QCOMPARE(textIndentCycle("{\n  // c\n#if X\n    x();", 3, rulesOf("cpp"), 4), QVector<int>({ 4, 0 }));
+    QCOMPARE(textIndentCycle("int x;", 0, rulesOf("cpp"), 4), QVector<int>({ 0 }));
+    QVERIFY(textIndentCycle("/* a\n  b", 1, rulesOf("cpp"), 4).isEmpty());
+    QVERIFY(textIndentCycle("a\nb", 1, rulesOf(MODE_MARKDOWN), 4).isEmpty());
+}
+
+// EDIT-INDENT-10: the fenced blocks of a Markdown text, the parts of a language with rules
+void TestIndent::test_blocks()
+{
+    QStringList lines = QString("a\n```cpp\nx\n```\n   ~~~ py\ny\n").split('\n');
+    QVector<MarkdownFencedBlock> blocks = markdownFencedBlocks(lines);
+    QCOMPARE(blocks.size(), 2);
+    QCOMPARE(blocks[0].open, 1);
+    QCOMPARE(blocks[0].close, 3);
+    QCOMPARE(blocks[0].indent, 0);
+    QCOMPARE(blocks[0].tag, QString("cpp"));
+    // unclosed: to the end; the indent of the fence
+    QCOMPARE(blocks[1].open, 4);
+    QCOMPARE(blocks[1].close, lines.size());
+    QCOMPARE(blocks[1].indent, 3);
+    QCOMPARE(blocks[1].tag, QString("py"));
+    // read up to a line: a block open there runs on
+    QCOMPARE(markdownFencedBlocks(lines, 2).size(), 1);
+    QCOMPARE(markdownFencedBlocks(lines, 2)[0].close, lines.size());
+    // a fence with a tag closes nothing, a shorter one or of another character neither
+    blocks = markdownFencedBlocks(QString("````cpp\n```js\n```\n~~~~\n````").split('\n'));
+    QCOMPARE(blocks.size(), 1);
+    QCOMPARE(blocks[0].close, 4);
+    // four spaces in or in a quote is no fence
+    QVERIFY(markdownFencedBlocks(QString("    ```cpp\n> ```cpp").split('\n')).isEmpty());
+
+    QString text = "```cpp\nx\n```\n```bash\ny\n```\n```\nz\n```\n```cpp\n```\n  ```json\n  [";
+    QVector<TextIndentPart> parts = textIndentParts(text);
+    QCOMPARE(parts.size(), 2);
+    QCOMPARE(parts[0].first, 1);
+    QCOMPARE(parts[0].last, 1);
+    QCOMPARE(parts[0].rules.style, textIndentBraces);
+    QCOMPARE(parts[0].rules.codeStart, 7);
+    QCOMPARE(parts[0].rules.margin, 0);
+    QCOMPARE(parts[1].first, 12);
+    QCOMPARE(parts[1].rules.style, textIndentBrackets);
+    QCOMPARE(parts[1].rules.margin, 2);
+    // a line takes the rules of its block, a fence and the prose those of Markdown
+    TextIndentRules markdown = rulesOf(MODE_MARKDOWN);
+    QVERIFY(markdown.blocks);
+    QCOMPARE(textIndentRulesAt(text, 1, markdown).style, textIndentBraces);
+    QCOMPARE(textIndentRulesAt(text, 0, markdown).style, textIndentRelative);
+    QCOMPARE(textIndentRulesAt(text, 2, markdown).style, textIndentRelative);
+    QCOMPARE(textIndentRulesAt(text, 4, markdown).style, textIndentRelative);
+    QCOMPARE(textIndentRulesAt(text, 1, rulesOf("cpp")).codeStart, 0);
+    // the left edge of a block in a list item
+    QString item = "1. a\n   ```cpp\n   {\n   x();";
+    TextIndentRules at = textIndentRulesAt(item, 3, markdown);
+    QCOMPARE(textIndentColumn(item, 3, at, 4), 7);
+    QCOMPARE(textIndentCycle(item, 3, at, 4), QVector<int>({ 7, 3 }));
+    QCOMPARE(textIndentColumn(item, 2, at, 4), 3);
+}
+
 // EDIT-INDENT-4: spaces, or a tab per stop of 4 and spaces; a line rewritten in the form; one at
 // its column in the form is no edit
 void TestIndent::test_forms()
@@ -336,6 +421,14 @@ void TestIndent::test_keys_data()
     QTest::newRow("tab anywhere") << "cpp" << "{\nfo" + m + "o();\n}" << t << "{\n    fo" + m + "o();\n}";
     QTest::newRow("tab in whitespace") << "cpp" << "{\n " + m + " foo();\n}" << t << "{\n    " + m + "foo();\n}";
     QTest::newRow("tab tabs to spaces") << "cpp" << "{\n\t" + m + "foo();\n}" << t << "{\n    " + m + "foo();\n}";
+    QTest::newRow("tab placed moves") << "cpp" << "{\n    fo" + m + "o();\n}" << t << "{\nfo" + m + "o();\n}";
+    QTest::newRow("tab placed wraps") << "cpp" << "{\n    fo" + m + "o();\n}" << t + t << "{\n    fo" + m + "o();\n}";
+    QTest::newRow("tab cycle") << "cpp" << "void f() {\n    if (a) {\n        " + m + "x();" << t + t
+        << "void f() {\n    if (a) {\n" + m + "x();";
+    QTest::newRow("tab misplaced first") << "cpp" << "void f() {\n    if (a) {\n  " + m + "x();" << t
+        << "void f() {\n    if (a) {\n        " + m + "x();";
+    QTest::newRow("tab top level stays") << "cpp" << "int " + m + "x;" << t << "int " + m + "x;";
+    QTest::newRow("json cycle") << "json" << "{\n    \"a\": 1,\n    " + m + "\"b\"" << t << "{\n    \"a\": 1,\n" + m + "\"b\"";
     QTest::newRow("shift tab") << "cpp" << "{\n    fo" + m + "o();\n}" << b << "{\nfo" + m + "o();\n}";
     QTest::newRow("electric brace") << "cpp" << "{\n    x();\n    " + m << "}" << "{\n    x();\n}" + m;
     QTest::newRow("electric open brace") << "cpp" << "if (a)\n    " + m << "{" << "if (a)\n{" + m;
@@ -349,9 +442,13 @@ void TestIndent::test_keys_data()
     QTest::newRow("python dedenter") << "python" << "if a:\n    x = 1\n    else" + m << ":"
         << "if a:\n    x = 1\nelse:" + m;
     QTest::newRow("python cycle") << "python" << "def f():\n    if a:\n        x = 1\n        " + m + "y"
-        << t + t << "def f():\n    if a:\n        x = 1\n    " + m + "y";
+        << t << "def f():\n    if a:\n        x = 1\n    " + m + "y";
+    QTest::newRow("python cycle twice") << "python" << "def f():\n    if a:\n        x = 1\n        " + m + "y"
+        << t + t << "def f():\n    if a:\n        x = 1\n" + m + "y";
     QTest::newRow("python cycle back") << "python" << "def f():\n    if a:\n        x = 1\n        " + m + "y"
-        << t + t + t + t << "def f():\n    if a:\n        x = 1\n        " + m + "y";
+        << t + t + t << "def f():\n    if a:\n        x = 1\n        " + m + "y";
+    QTest::newRow("python body cycle") << "python" << "if a:\n    " + m + "x" << t << "if a:\n" + m + "x";
+    QTest::newRow("python misplaced first") << "python" << "if a:\n  " + m + "x" << t + t << "if a:\n" + m + "x";
     QTest::newRow("json return") << "json" << "{" + m << r << "{\n    " + m;
     QTest::newRow("json closer") << "json" << "[\n    1,\n    " + m << "]" << "[\n    1,\n]" + m;
     QTest::newRow("markdown item") << MODE_MARKDOWN << "- item" + m << r << "- item\n  " + m;
@@ -361,6 +458,26 @@ void TestIndent::test_keys_data()
     QTest::newRow("markdown blank") << MODE_MARKDOWN << "- a\n  " + m << r << "- a\n\n  " + m;
     QTest::newRow("markdown nest") << MODE_MARKDOWN << "- a\n" + m + "- b" << t << "- a\n  " + m + "- b";
     QTest::newRow("markdown unnest") << MODE_MARKDOWN << "- a\n  " + m + "- b" << b << "- a\n" + m + "- b";
+    QTest::newRow("block return") << MODE_MARKDOWN << "```cpp\nvoid f() {" + m + "\n```" << r
+        << "```cpp\nvoid f() {\n    " + m + "\n```";
+    QTest::newRow("block tab") << MODE_MARKDOWN << "Text\n```c++17\nvoid f() {\n" + m + "x();\n}\n```" << t
+        << "Text\n```c++17\nvoid f() {\n    " + m + "x();\n}\n```";
+    QTest::newRow("block cycle") << MODE_MARKDOWN << "```cpp\nvoid f() {\n    " + m + "x();\n}\n```" << t
+        << "```cpp\nvoid f() {\n" + m + "x();\n}\n```";
+    QTest::newRow("block electric") << MODE_MARKDOWN << "```cpp\n{\n    x();\n    " + m + "\n```" << "}"
+        << "```cpp\n{\n    x();\n}" + m + "\n```";
+    QTest::newRow("block in item") << MODE_MARKDOWN << "1. Build it:\n   ```python\n   def f():" + m + "\n   ```" << r
+        << "1. Build it:\n   ```python\n   def f():\n       " + m + "\n   ```";
+    QTest::newRow("block in item edge") << MODE_MARKDOWN << "1. Build it:\n   ~~~py\n" + m + "def f():\n   ~~~" << t
+        << "1. Build it:\n   ~~~py\n   " + m + "def f():\n   ~~~";
+    QTest::newRow("block unclosed") << MODE_MARKDOWN << "```json\n{" + m << r << "```json\n{\n    " + m;
+    QTest::newRow("block fence return") << MODE_MARKDOWN << "  ```cpp" + m + "\n  ```" << r << "  ```cpp\n  " + m + "\n  ```";
+    QTest::newRow("block after close") << MODE_MARKDOWN << "```cpp\n{\n```\n" + m << r << "```cpp\n{\n```\n\n" + m;
+    QTest::newRow("block untagged") << MODE_MARKDOWN << "```\n{" + m + "\n```" << r << "```\n{\n" + m + "\n```";
+    QTest::newRow("block unknown") << MODE_MARKDOWN << "```bash\nf() {" + m + "\n```" << r << "```bash\nf() {\n" + m + "\n```";
+    QTest::newRow("block quoted") << MODE_MARKDOWN << "> ```cpp\n> {" + m << r << "> ```cpp\n> {\n" + m;
+    QTest::newRow("prose heading") << MODE_MARKDOWN << "```cpp\n{\n```\n    " + m << "#" << "```cpp\n{\n```\n    #" + m;
+    QTest::newRow("prose colon") << MODE_MARKDOWN << "    case 1" + m << ":" << "    case 1:" + m;
     QTest::newRow("plain return") << MODE_TEXT << "  indented" + m << r << "  indented\n  " + m;
     QTest::newRow("plain hanging") << MODE_TEXT << "first" + m + "\n    second" << r << "first\n    " + m + "\n    second";
     QTest::newRow("plain align") << MODE_TEXT << "aaa bbb\nx" + m << t << "aaa bbb\nx   " + m;
@@ -409,12 +526,22 @@ void TestIndent::test_undo()
     QCOMPARE(doc.text(), QString("{\n    foo();\n}"));
     QCOMPARE(doc.undoStack()->count(), steps + 1);
     QCOMPARE(doc.undoStack()->undoText(), QString("indent"));
-    // a line at its column is no step
+    // a line at its column goes on to the next level, a step of its own
     QTest::keyClick(doc.editor(), Qt::Key_Tab);
-    QCOMPARE(doc.undoStack()->count(), steps + 1);
+    QCOMPARE(doc.text(), QString("{\nfoo();\n}"));
+    QCOMPARE(doc.undoStack()->count(), steps + 2);
+    doc.undoStack()->undo();
+    QCOMPARE(doc.text(), QString("{\n    foo();\n}"));
     doc.undoStack()->undo();
     QCOMPARE(doc.text(), QString("{\nfoo();\n}"));
     QCOMPARE(doc.editor()->textCursor().position(), 4);
+    // a line of one level is no step
+    TextDocument top("cpp");
+    top.setText("int x;");
+    int none = top.undoStack()->count();
+    QTest::keyClick(top.editor(), Qt::Key_Tab);
+    QCOMPARE(top.text(), QString("int x;"));
+    QCOMPARE(top.undoStack()->count(), none);
 
     // nothing to move left: no step, the redo stays
     QTest::keyClick(doc.editor(), Qt::Key_Backtab, Qt::ShiftModifier);
@@ -517,8 +644,12 @@ void TestIndent::test_document()
     QTest::keyClick(doc.editor(), Qt::Key_Tab);
     QCOMPARE(doc.text(), QString("{\n    x();\n    y();\n}"));
 
+    TextDocument plain(MODE_TEXT);
+    QVERIFY(!plain.canIndent());
+    QVERIFY(plain.canUntabify());
+    QVERIFY(!plain.indentText(false));
     TextDocument tabs(MODE_MARKDOWN);
-    QVERIFY(!tabs.canIndent());
+    QVERIFY(tabs.canIndent());
     QVERIFY(tabs.canUntabify());
     tabs.setText("a\tb\n\tc");
     QVERIFY(tabs.indentText(true));
@@ -537,6 +668,57 @@ void TestIndent::test_document()
     QCOMPARE(tabs.text(), QString("    a\n    b"));
     QTest::keyClick(tabs.editor(), Qt::Key_Backtab, Qt::ShiftModifier);
     QCOMPARE(tabs.text(), QString("a\nb"));
+}
+
+// EDIT-INDENT-6/10: Indent Region of a Markdown tab: its code blocks by their languages, the
+// rest kept, one step, the cursor at its character
+void TestIndent::test_markdown_region()
+{
+    const QString prose = "Some (text\n\twith {a tab\n";
+    const QString cpp = "```cpp\nvoid f() {\nx();\n}\n```\n";
+    const QString py = "1. Item\n   ```python\n   def f():\n   return 1\n   ```\n";
+    const QString other = "```\n  odd {\n```\n~~~bash\nf() {\nx\n~~~\n";
+    TextDocument doc(MODE_MARKDOWN);
+    doc.setText(prose + cpp + py + other);
+    // the cursor on x of x();
+    placeCursor(doc, prose.length() + QString("```cpp\nvoid f() {\n").length());
+    int steps = doc.undoStack()->count();
+    QVERIFY(doc.indentText(false));
+    const QString cppDone = "```cpp\nvoid f() {\n    x();\n}\n```\n";
+    const QString pyDone = "1. Item\n   ```python\n   def f():\n       return 1\n   ```\n";
+    QCOMPARE(doc.text(), prose + cppDone + pyDone + other);
+    QCOMPARE(doc.undoStack()->count(), steps + 1);
+    QCOMPARE(doc.undoStack()->undoText(), QString("indent region"));
+    QCOMPARE(doc.editor()->textCursor().position(), prose.length() + QString("```cpp\nvoid f() {\n    ").length());
+    // all in place: no step
+    QVERIFY(doc.indentText(false));
+    QCOMPARE(doc.undoStack()->count(), steps + 1);
+    doc.undoStack()->undo();
+    QCOMPARE(doc.text(), prose + cpp + py + other);
+
+    // the lines of the selection only, from 1
+    QVERIFY(doc.indentLines(1, 10, false));
+    QCOMPARE(doc.text(), prose + cppDone + py + other);
+    QVERIFY(!doc.indentLines(1, 99, false));
+    // a text without blocks stays
+    doc.setText(prose);
+    QVERIFY(doc.indentText(false));
+    QCOMPARE(doc.text(), prose);
+
+    // a Tab over a block and the prose moves the lines as Markdown; within the block as C++
+    doc.setText("a\n```cpp\n{\nx;\n```");
+    QTextCursor cursor = doc.editor()->textCursor();
+    cursor.setPosition(0);
+    cursor.setPosition(doc.text().length(), QTextCursor::KeepAnchor);
+    doc.editor()->setTextCursor(cursor);
+    QTest::keyClick(doc.editor(), Qt::Key_Tab);
+    QCOMPARE(doc.text(), QString("    a\n    ```cpp\n    {\n    x;\n    ```"));
+    doc.setText("a\n```cpp\n{\nx;\n```");
+    cursor.setPosition(QString("a\n```cpp\n").length());
+    cursor.setPosition(QString("a\n```cpp\n{\nx;").length(), QTextCursor::KeepAnchor);
+    doc.editor()->setTextCursor(cursor);
+    QTest::keyClick(doc.editor(), Qt::Key_Tab);
+    QCOMPARE(doc.text(), QString("a\n```cpp\n{\n    x;\n```"));
 }
 
 // EDIT-INDENT-8: the code dialogs indent by the document language, the header no code; the
@@ -616,7 +798,14 @@ void TestIndent::test_actions()
     QCOMPARE(text->text(), QString("    x;"));
     Q_UNUSED(before);
 
+    // a Markdown tab re-indents its code blocks; Plain text has no column
     window.setCurrentDocument(window.newTextDocument(MODE_MARKDOWN));
+    QVERIFY(window.actionIndentRegion->isEnabled());
+    QVERIFY(window.actionUntabify->isEnabled());
+    window.currentText()->setText("```cpp\n{\nx;\n}\n```");
+    window.actionIndentRegion->trigger();
+    QCOMPARE(window.currentText()->text(), QString("```cpp\n{\n    x;\n}\n```"));
+    window.setCurrentDocument(window.newTextDocument(MODE_TEXT));
     QVERIFY(!window.actionIndentRegion->isEnabled());
     QVERIFY(window.actionUntabify->isEnabled());
 

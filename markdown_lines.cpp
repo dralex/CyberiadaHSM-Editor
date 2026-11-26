@@ -43,6 +43,50 @@ int markdownFenceOf(const QString& line, QChar* mark)
     return n >= FENCE_LENGTH ? n : 0;
 }
 
+bool markdownFence(const QString& line, QString* marker, QString* tag)
+{
+    static const QRegularExpression FENCE(R"(^ {0,3}(`{3,}|~{3,})\s*([^\s`]*)\s*$)");
+    QRegularExpressionMatch m = FENCE.match(line);
+    if (!m.hasMatch()) return false;
+    *marker = m.captured(1);
+    *tag = m.captured(2);
+    return true;
+}
+
+bool markdownFenceCloses(const QString& open, const QString& marker, const QString& tag)
+{
+    return !open.isEmpty() && marker.at(0) == open.at(0) && marker.length() >= open.length() &&
+           tag.isEmpty();
+}
+
+QVector<MarkdownFencedBlock> markdownFencedBlocks(const QStringList& lines, int last)
+{
+    QVector<MarkdownFencedBlock> blocks;
+    // the marker of the open block, empty outside one
+    QString open;
+    int count = lines.size();
+    for (int i = 0; i < count && i <= last; i++) {
+        QString marker;
+        QString tag;
+        if (!markdownFence(lines[i], &marker, &tag)) continue;
+        if (!open.isEmpty()) {
+            if (markdownFenceCloses(open, marker, tag)) {
+                blocks.last().close = i;
+                open.clear();
+            }
+            continue;
+        }
+        MarkdownFencedBlock block;
+        block.open = i;
+        block.close = count;
+        block.indent = lines[i].indexOf(marker);
+        block.tag = tag;
+        blocks.append(block);
+        open = marker;
+    }
+    return blocks;
+}
+
 bool markdownIndented(const QString& line)
 {
     if (line.startsWith('\t')) return true;

@@ -49,11 +49,17 @@ QString stepName(const char* name)
     return QCoreApplication::translate("Indenter", name);
 }
 
+// two lines indent by the same rules: of one code block, of the text
+bool sameRules(const TextIndentRules& a, const TextIndentRules& b)
+{
+    return a.style == b.style && a.codeStart == b.codeStart && a.margin == b.margin;
+}
+
 } // namespace
 
-TextIndentRules Indenter::rulesFor(const QString& text) const
+TextIndentRules Indenter::rulesFor(const QString& text, int line) const
 {
-    TextIndentRules rules = m_rules;
+    TextIndentRules rules = textIndentRulesAt(text, line, m_rules);
     if (m_role == codeRoleNone) return rules;
     int start = codeBehaviourStart(text, m_role);
     // no code yet, the trigger typed: as a text without rules
@@ -99,9 +105,9 @@ bool Indenter::electricKey(QChar typed, QPlainTextEdit* editor)
     // the text as the character makes it
     int at = cursor.selectionStart() + 1;
     QString after = text.left(cursor.selectionStart()) + typed + text.mid(cursor.selectionEnd());
-    TextIndentRules rules = rulesFor(after);
-    if (!textIndentElectric(after, at, rules)) return false;
     int line = after.left(at).count('\n');
+    TextIndentRules rules = rulesFor(after, line);
+    if (!textIndentElectric(after, at, rules)) return false;
     int column = textIndentColumn(after, line, rules, sm.getIndentWidth());
     if (column < 0) return false;
     TextFillEdit edit = textSetIndent(after, line, column, sm.getIndentTabs(), at, at);
@@ -128,8 +134,8 @@ void Indenter::returnKey(QPlainTextEdit* editor)
     cursor.beginEditBlock();
     if (cursor.hasSelection()) cursor.removeSelectedText();
     QString text = editor->document()->toPlainText();
-    TextFillEdit edit = textReturnEdit(text, cursor.position(), rulesFor(text), sm.getIndentWidth(),
-                                       sm.getIndentTabs());
+    TextFillEdit edit = textReturnEdit(text, cursor.position(), rulesFor(text, cursor.blockNumber()),
+                                       sm.getIndentWidth(), sm.getIndentTabs());
     cursor.setPosition(edit.from);
     cursor.setPosition(edit.to, QTextCursor::KeepAnchor);
     cursor.insertText(edit.text);
@@ -146,7 +152,12 @@ void Indenter::tabKey(QPlainTextEdit* editor)
     bool tabs = sm.getIndentTabs();
     QTextCursor cursor = editor->textCursor();
     QString text = editor->document()->toPlainText();
-    TextIndentRules rules = rulesFor(text);
+    int first = cursor.blockNumber();
+    int last = first;
+    if (cursor.hasSelection()) selectedLines(cursor, &first, &last);
+    TextIndentRules rules = rulesFor(text, first);
+    // a selection over a code block and the text around it moves as the text
+    if (last != first && !sameRules(rules, rulesFor(text, last))) rules = m_rules;
     bool computes = sm.getAutoIndent() && textIndentComputes(rules);
     int anchor = cursor.anchor();
     int position = cursor.position();
@@ -158,9 +169,6 @@ void Indenter::tabKey(QPlainTextEdit* editor)
     while (lead < lineText.length() && (lineText[lead] == ' ' || lineText[lead] == '\t')) lead++;
     TextFillEdit edit;
     if (cursor.hasSelection()) {
-        int first = 0;
-        int last = 0;
-        selectedLines(cursor, &first, &last);
         if (computes) {
             apply(editor, textReindent(text, first, last, rules, width, tabs, anchor, position),
                   stepName(QT_TRANSLATE_NOOP("Indenter", "indent region")));
@@ -171,14 +179,15 @@ void Indenter::tabKey(QPlainTextEdit* editor)
         return;
     }
     if (computes) {
-        QVector<int> levels = textIndentLevels(text, line, rules, width);
-        if (levels.isEmpty()) return;
-        int target = levels.first();
+        QVector<int> cycle = textIndentCycle(text, line, rules, width);
+        if (cycle.isEmpty()) return;
+        int target = cycle.first();
+        // a line at its column in the form, or the Tab after a Tab: the next level (EDIT-INDENT-1)
         bool again = line == m_tabBlock && editor->document()->revision() == m_tabRevision &&
                      position == m_tabPosition;
-        if (again && levels.size() > 1) {
-            int at = levels.indexOf(textLineIndent(lineText));
-            target = levels[at < 0 ? 0 : (at + 1) % levels.size()];
+        if (again || !textSetIndent(text, line, target, tabs, anchor, position).changed) {
+            int at = cycle.indexOf(textLineIndent(lineText));
+            target = cycle[at < 0 ? 0 : (at + 1) % cycle.size()];
         }
         apply(editor, textSetIndent(text, line, target, tabs, anchor, position),
               stepName(QT_TRANSLATE_NOOP("Indenter", "indent")));
@@ -218,10 +227,10 @@ void Indenter::backtabKey(QPlainTextEdit* editor)
     bool tabs = sm.getIndentTabs();
     QTextCursor cursor = editor->textCursor();
     QString text = editor->document()->toPlainText();
-    TextIndentRules rules = rulesFor(text);
     int first = cursor.blockNumber();
     int last = first;
     if (cursor.hasSelection()) selectedLines(cursor, &first, &last);
+    TextIndentRules rules = rulesFor(text, first);
     QString step = stepName(QT_TRANSLATE_NOOP("Indenter", "unindent"));
     if (cursor.hasSelection() || textIndentComputes(rules)) {
         apply(editor, textShift(text, first, last, -width, tabs, cursor.anchor(), cursor.position()), step);

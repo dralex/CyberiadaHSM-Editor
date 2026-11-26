@@ -49,7 +49,8 @@ public:
     std::function<void(const QString&)> nameStep;
 
 private:
-    TextIndentRules rulesFor(const QString& text) const;
+    // the rules of a line: of a Markdown code block holding it, after the header of a dialog
+    TextIndentRules rulesFor(const QString& text, int line) const;
     void returnKey(QPlainTextEdit* editor);
     void tabKey(QPlainTextEdit* editor);
     void backtabKey(QPlainTextEdit* editor);
@@ -60,7 +61,7 @@ private:
     TextIndentRules m_rules;
     CodeRole        m_role = codeRoleNone;
     int             m_returnEnd = -1;
-    // the place after the last Tab: a Tab there again cycles the levels (Python)
+    // the place after the last Tab: a Tab there again goes on through the cycle
     int             m_tabBlock = -1;
     int             m_tabRevision = -1;
     int             m_tabPosition = -1;

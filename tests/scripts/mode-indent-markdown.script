@@ -1,0 +1,4 @@
+# Indent Region of a Markdown tab (EDIT-INDENT-6/9/10): the code blocks of C++, Python and JSON
+# re-indented by their languages, the Python and the JSON at the left edge of their list items;
+# the prose, an untagged block and a bash block kept
+indent-region

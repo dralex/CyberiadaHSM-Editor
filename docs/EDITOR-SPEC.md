@@ -2206,7 +2206,7 @@ the code blocks of Markdown in 0.87.
   | | `}` first | the indent of that line |
   | | a label (`indentLabels`: `case`, `default`, `public`...) | the width less than the statements |
   | | the statement after `if (...)`, `for (...)`, `while (...)`, `else`, `do` | the indent of the header's line plus the width; a `{` first: that indent |
-  | | a statement continued | under the code after its first `=` or after `return`; `:` under the `?`, `<<` under the first `<<`; `.arg()` the width in; a declaration of the top level (a return type above its function) at its first line; else its first line plus the width; a `{` first: its first line |
+  | | a statement continued | under the code after its first `=` or after `return`; `:` under the `?`, `<<` under the first `<<`; `.arg()` the width in; a declaration of the top level (a return type above its function) and one under a `template <...>` header at its first line; else its first line plus the width; a `{` first: its first line |
   | | a preprocessor line | 0 |
   | `brackets` | outside a bracket | 0 |
   | `offside` | after a line ending `:` | its indent plus the width |
