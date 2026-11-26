@@ -2671,19 +2671,19 @@ Ctrl+клик мыши — открыть</translation>
     <message>
         <location filename="../indenter.cpp" line="+166"/>
         <source>indent region</source>
-        <translation type="unfinished">расстановка отступов</translation>
+        <translation>расстановка отступов</translation>
     </message>
     <message>
         <location line="+3"/>
         <location line="+15"/>
         <location line="+27"/>
         <source>indent</source>
-        <translation type="unfinished">отступ</translation>
+        <translation>отступ</translation>
     </message>
     <message>
         <location line="+14"/>
         <source>unindent</source>
-        <translation type="unfinished">уменьшение отступа</translation>
+        <translation>убрать отступ</translation>
     </message>
 </context>
 <context>
@@ -5128,32 +5128,32 @@ Ctrl+клик мыши — открыть</translation>
     <message>
         <location line="+5"/>
         <source>Indent Region</source>
-        <translation type="unfinished">Расставить отступы</translation>
+        <translation>Расставить отступы</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Put each line of the selection, or of the whole text, at its indent</source>
-        <translation type="unfinished">Поставить каждую строку выделения или всего текста на её отступ</translation>
+        <translation>Разместить каждую строку выделения или всего текста с правильным отступом</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>Convert Tabs to Spaces</source>
-        <translation type="unfinished">Заменить табуляции пробелами</translation>
+        <translation>Заменить табуляции пробелами</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Turn the tabs of the selection, or of the whole text, into spaces</source>
-        <translation type="unfinished">Заменить табуляции выделения или всего текста пробелами</translation>
+        <translation>Заменить табуляции выделения или всего текста пробелами</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>Indent Automatically</source>
-        <translation type="unfinished">Автоматические отступы</translation>
+        <translation>Автоматические отступы</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Put a new line at its indent and move a line there by Tab</source>
-        <translation type="unfinished">Ставить новую строку на её отступ и переносить строку туда клавишей Tab</translation>
+        <translation>Ставить новую строку на её отступ и переносить строку туда клавишей Tab</translation>
     </message>
     <message>
         <location line="+9"/>
@@ -5980,12 +5980,12 @@ Ctrl+клик мыши — открыть</translation>
     <message>
         <location line="+82"/>
         <source>convert tabs</source>
-        <translation type="unfinished">замена табуляций пробелами</translation>
+        <translation>замена табуляций пробелами</translation>
     </message>
     <message>
         <location line="+0"/>
         <source>indent region</source>
-        <translation type="unfinished">расстановка отступов</translation>
+        <translation>расстановка отступов</translation>
     </message>
     <message>
         <location line="+130"/>
@@ -6067,12 +6067,12 @@ Ctrl+клик мыши — открыть</translation>
     <message>
         <location line="+1"/>
         <source>Operator</source>
-        <translation type="unfinished">Оператор</translation>
+        <translation>Оператор</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Preprocessor</source>
-        <translation type="unfinished">Препроцессор</translation>
+        <translation>Препроцессор</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -6180,32 +6180,32 @@ Ctrl+клик мыши — открыть</translation>
     <message>
         <location line="+10"/>
         <source>Indent</source>
-        <translation type="unfinished">Отступ</translation>
+        <translation>Отступ</translation>
     </message>
     <message>
         <location line="+4"/>
         <source> columns</source>
-        <translation type="unfinished"> столбцов</translation>
+        <translation> столбцов</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>Spaces</source>
-        <translation type="unfinished">пробелов</translation>
+        <translation>пробелов</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Tabs</source>
-        <translation type="unfinished">табуляций</translation>
+        <translation>табуляций</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Indent automatically</source>
-        <translation type="unfinished">Автоматические отступы</translation>
+        <translation>Автоматические отступы</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>with</source>
-        <translation type="unfinished">из</translation>
+        <translation>из</translation>
     </message>
     <message>
         <location line="+6"/>
@@ -6248,7 +6248,7 @@ Ctrl+клик мыши — открыть</translation>
 // a comment
 int main() { return printf(&quot;%d&quot;, 42); }
 ```</source>
-        <translation type="unfinished"># Заголовок *акцент*
+        <translation># Заголовок *акцент*
 &gt; Цитата, [ссылка](https://example.org), $x^2$
 - `код` &lt;!-- комментарий --&gt;
 
