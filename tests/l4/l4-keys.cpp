@@ -30,6 +30,7 @@
 #include <QPushButton>
 #include <QTreeWidget>
 #include <QLineEdit>
+#include <QPlainTextEdit>
 #include <QSettings>
 #include <QTemporaryDir>
 #include <QUndoStack>
@@ -50,6 +51,8 @@
 #include "cyberiadasm_editor_transition_item.h"
 #include "editable_text_item.h"
 #include "dotsignal.h"
+#include "plugin_dock.h"
+#include "cyberiadasm_view.h"
 
 // the EDIT-KEYS laws (docs/SHORTCUTS.md): the default keys, the stored changes, the
 // keys a text takes, Go to Line; the keys go through the shortcuts of the window
@@ -73,6 +76,8 @@ private slots:
 	void test_page_conflict();
 	void test_page_reset();
 	void test_page_typed_keys();
+	void test_close_panel();
+	void test_close_panel_focus();
 
 private:
 	static QKeySequence key(const char* text) { return QKeySequence(QString(text)); }
@@ -126,7 +131,11 @@ void TestKeys::test_defaults()
 	QVERIFY(window.actionFind->shortcuts().contains(key("Ctrl+F")));
 	QCOMPARE(window.actionFindNext->shortcuts().first(), key("F3"));
 	QCOMPARE(window.actionGoToLine->shortcuts(), QList<QKeySequence>() << key("Alt+G"));
-	QCOMPARE(window.actionSelectTool->shortcuts(), QList<QKeySequence>() << key("Esc"));
+	// Esc is Close Panel's, which returns to the Select tool among its steps (EDIT-KEYS-13)
+	QVERIFY(window.actionSelectTool->shortcuts().isEmpty());
+	QCOMPARE(window.actionClosePanel->shortcuts(), QList<QKeySequence>() << key("Esc"));
+	QCOMPARE(map->path("actionClosePanel"), QString("View"));
+	QVERIFY(window.menuView->actions().contains(window.actionClosePanel));
 	QVERIFY(!window.actionNextDocument->shortcuts().isEmpty());
 	QCOMPARE(map->keys("actionSessionStep"), QList<QKeySequence>() << key("F10"));
 	QCOMPARE(map->path("actionSessionStep"), QString("Plugins > Session"));
@@ -702,6 +711,134 @@ void TestKeys::test_page_typed_keys()
 	QTest::keyClick(field, Qt::Key_F2);
 	QVERIFY(holder->text().contains("Help > About"));
 	map->resetAll();
+}
+
+// EDIT-KEYS-13: Esc on the canvas steps back one level each time, from the armed tool to
+// the find bar and the plugin dock, its Git output among its tabs
+void TestKeys::test_close_panel()
+{
+	CyberiadaSMEditorWindow window;
+	QVERIFY(window.openFile("diagrams/hierarchy.graphml"));
+	activate(window);
+	FindBar* bar = window.findBar();
+	PluginDock* dock = window.pluginDock();
+	window.sceneView->setFocus();
+	QTest::keyClick(window.sceneView, Qt::Key_F, Qt::ControlModifier);
+	QVERIFY(!bar->isHidden());
+	// the git output shows the dock as a plugin run does
+	dock->appendTool("git", "Git", "== git commit - /tmp/work", false);
+	QVERIFY(!dock->isHidden());
+	QVERIFY(dock->output("git"));
+	window.sceneView->setFocus();
+	QTest::keyClick(window.sceneView, Qt::Key_S);
+	QVERIFY(window.actionNewState->isChecked());
+
+	QTest::keyClick(window.sceneView, Qt::Key_Escape);
+	QVERIFY(window.actionSelectTool->isChecked());
+	QVERIFY(!bar->isHidden());
+	QVERIFY(!dock->isHidden());
+	QTest::keyClick(window.sceneView, Qt::Key_Escape);
+	QVERIFY(bar->isHidden());
+	QVERIFY(!dock->isHidden());
+	QTest::keyClick(window.sceneView, Qt::Key_Escape);
+	QVERIFY(dock->isHidden());
+	// nothing left: nothing changes
+	QTest::keyClick(window.sceneView, Qt::Key_Escape);
+	QVERIFY(window.actionSelectTool->isChecked());
+	QVERIFY(dock->isHidden() && bar->isHidden());
+
+	// a canvas edit is abandoned first, the dock stays
+	dock->appendTool("git", "Git", "== git add - /tmp/work", false);
+	StateTitle* title = edit<StateTitle>(window);
+	QVERIFY(title);
+	const QString name = title->toPlainText();
+	QTest::keyClicks(window.sceneView, "x");
+	QTest::keyClick(window.sceneView, Qt::Key_Escape);
+	QVERIFY(!title->isEditing());
+	QCOMPARE(title->toPlainText(), name);
+	QVERIFY(!dock->isHidden());
+	QTest::keyClick(window.sceneView, Qt::Key_Escape);
+	QVERIFY(dock->isHidden());
+
+	// in a text tab: the find bar, then the dock; the text stays as it is
+	QVERIFY(window.openFile("texts/blink.cpp"));
+	CodeEditor* editor = window.currentText()->editor();
+	const QString source = window.currentText()->text();
+	dock->appendTool("git", "Git", "== git diff", true);
+	window.actionFind->trigger();
+	editor->setFocus();
+	QTest::keyClick(editor, Qt::Key_Escape);
+	QVERIFY(bar->isHidden());
+	QVERIFY(!dock->isHidden());
+	QTest::keyClick(editor, Qt::Key_Escape);
+	QVERIFY(dock->isHidden());
+	QCOMPARE(window.currentText()->text(), source);
+
+	// another key: Esc is free, the new key steps back
+	window.shortcuts()->setKeys("actionClosePanel", one("F12"));
+	dock->appendTool("git", "Git", "== git status", false);
+	editor->setFocus();
+	QTest::keyClick(editor, Qt::Key_Escape);
+	QVERIFY(!dock->isHidden());
+	QTest::keyClick(editor, Qt::Key_F12);
+	QVERIFY(dock->isHidden());
+	// the canvas edit steps back by the new key too
+	QVERIFY(window.openFile("diagrams/hierarchy.graphml"));
+	title = edit<StateTitle>(window);
+	QTest::keyClicks(window.sceneView, "y");
+	QTest::keyClick(window.sceneView, Qt::Key_F12);
+	QVERIFY(!title->isEditing());
+	QCOMPARE(title->toPlainText(), name);
+	window.shortcuts()->resetAll();
+}
+
+// EDIT-KEYS-13: the panel with the focus goes first and gives the focus back; the rename
+// editor of the tree keeps its Esc
+void TestKeys::test_close_panel_focus()
+{
+	SettingsManager::instance().setShowStructureTree(true);
+	CyberiadaSMEditorWindow window;
+	QVERIFY(window.openFile("diagrams/comment-transition.graphml"));
+	activate(window);
+	PluginDock* dock = window.pluginDock();
+	dock->appendTool("git", "Git", "== git commit", false);
+	QPlainTextEdit* output = dock->output("git");
+	window.sceneView->setFocus();
+	QTest::keyClick(window.sceneView, Qt::Key_T);
+	QVERIFY(window.actionNewTransition->isChecked());
+	output->setFocus();
+	QVERIFY(output->hasFocus());
+	QTest::keyClick(output, Qt::Key_Escape);
+	QVERIFY(dock->isHidden());
+	// the armed tool is the next level, the focus is back on the canvas
+	QVERIFY(window.actionNewTransition->isChecked());
+	QVERIFY(window.sceneView->hasFocus());
+
+	// the focused find field closes its bar before the tool
+	window.actionFind->trigger();
+	QVERIFY(window.findBar()->field()->hasFocus());
+	QTest::keyClick(window.findBar()->field(), Qt::Key_Escape);
+	QVERIFY(window.findBar()->isHidden());
+	QVERIFY(window.actionNewTransition->isChecked());
+	QTest::keyClick(window.sceneView, Qt::Key_Escape);
+	QVERIFY(window.actionSelectTool->isChecked());
+
+	// Esc ends a rename in the tree, the shown dock stays
+	dock->appendTool("git", "Git", "== git add", false);
+	CyberiadaSMModel* model = window.getModel();
+	QModelIndex index = model->elementToIndex(model->idToElement("n1"));
+	QVERIFY(index.isValid());
+	const QString name = QString::fromStdString(model->idToElement("n1")->get_name());
+	window.SMView->setCurrentIndex(index);
+	window.SMView->edit(index);
+	QLineEdit* line = window.SMView->findChild<QLineEdit*>();
+	QVERIFY(line);
+	line->setFocus();
+	QTest::keyClicks(line, "z");
+	QTest::keyClick(line, Qt::Key_Escape);
+	QTRY_VERIFY(!line->isVisible() || !window.SMView->findChild<QLineEdit*>());
+	QCOMPARE(QString::fromStdString(model->idToElement("n1")->get_name()), name);
+	QVERIFY(!dock->isHidden());
 }
 
 QTEST_MAIN(TestKeys)

@@ -71,9 +71,12 @@ protected:
     bool         event(QEvent* event) override;
     void         keyPressEvent(QKeyEvent* event) override;
 
+public slots:
+    // hidden as by Esc or the close button (EDIT-FIND-1, EDIT-KEYS-13)
+    void         dismiss();
+
 private slots:
     void         emitQuery();
-    void         dismiss();
 
 private:
     QToolButton* addOption(const QString& text, const QString& tip);

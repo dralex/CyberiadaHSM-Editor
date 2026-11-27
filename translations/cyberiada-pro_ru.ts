@@ -207,7 +207,7 @@ Ctrl+клик мыши — открыть</translation>
 <context>
     <name>CyberiadaSMEditorScene</name>
     <message>
-        <location filename="../cyberiadasm_editor_scene.cpp" line="+1260"/>
+        <location filename="../cyberiadasm_editor_scene.cpp" line="+1266"/>
         <location line="+35"/>
         <location line="+152"/>
         <location line="+35"/>
@@ -371,7 +371,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Markdown</translation>
     </message>
     <message>
-        <location line="+1203"/>
+        <location line="+1241"/>
         <source>Undo</source>
         <translation>Отменить</translation>
     </message>
@@ -417,7 +417,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Выполняются плагины. Остановить их и выйти?</translation>
     </message>
     <message>
-        <location line="+268"/>
+        <location line="+270"/>
         <source>Load State Machine</source>
         <translation>Загрузка машины состояний</translation>
     </message>
@@ -494,8 +494,8 @@ Ctrl+клик мыши — открыть</translation>
         <translation>нет документа</translation>
     </message>
     <message>
-        <location line="-1962"/>
-        <location line="+1972"/>
+        <location line="-2002"/>
+        <location line="+2012"/>
         <source>a plugin is running on the document</source>
         <translation>для документа выполняется плагин</translation>
     </message>
@@ -504,8 +504,8 @@ Ctrl+клик мыши — открыть</translation>
         <translation type="vanished">в режиме инспектора документ доступен только для чтения</translation>
     </message>
     <message>
-        <location line="-1938"/>
-        <location line="+1975"/>
+        <location line="-1978"/>
+        <location line="+2015"/>
         <source>the document cannot be encoded</source>
         <translation>не удалось сериализовать документ</translation>
     </message>
@@ -537,7 +537,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Плагин: %1</translation>
     </message>
     <message>
-        <location line="-2393"/>
+        <location line="-2433"/>
         <source>Mode</source>
         <translation>Режим</translation>
     </message>
@@ -547,18 +547,18 @@ Ctrl+клик мыши — открыть</translation>
         <translation>режим %1 недоступен</translation>
     </message>
     <message>
-        <location line="+1988"/>
+        <location line="+2028"/>
         <source>the inspection tab is read-only</source>
         <translation>вкладка инспекции доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-1967"/>
-        <location line="+1968"/>
+        <location line="-2007"/>
+        <location line="+2008"/>
         <source>the tab is read-only</source>
         <translation>вкладка доступна только для чтения</translation>
     </message>
     <message>
-        <location line="-2734"/>
+        <location line="-2774"/>
         <source>History</source>
         <translation>История</translation>
     </message>
@@ -968,12 +968,12 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Автомат не нарушает ни одного правила EXT-FA.</translation>
     </message>
     <message>
-        <location line="+820"/>
+        <location line="+858"/>
         <source>%1: not an element of a finite automaton</source>
         <translation>%1: не элемент конечного автомата</translation>
     </message>
     <message>
-        <location line="+476"/>
+        <location line="+478"/>
         <location line="+27"/>
         <location line="+7"/>
         <source>Save Text</source>
@@ -990,20 +990,20 @@ Ctrl+клик мыши — открыть</translation>
         <translation>%1 (*%2)</translation>
     </message>
     <message>
-        <location line="-640"/>
+        <location line="-642"/>
         <location line="+55"/>
-        <location line="+585"/>
+        <location line="+587"/>
         <source>All files (*)</source>
         <translation>Все файлы (*)</translation>
     </message>
     <message>
-        <location line="-2339"/>
+        <location line="-2379"/>
         <location line="+777"/>
         <source>Refresh</source>
         <translation>Обновить</translation>
     </message>
     <message>
-        <location line="+1230"/>
+        <location line="+1268"/>
         <source>Element</source>
         <translation>Элемент</translation>
     </message>
@@ -1013,7 +1013,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Изменение</translation>
     </message>
     <message>
-        <location line="-1136"/>
+        <location line="-1174"/>
         <source>a diff tab is opened by Document &gt; Compare with...</source>
         <translation>вкладку сравнения открывает «Документ &gt; Сравнить с...»</translation>
     </message>
@@ -1060,12 +1060,12 @@ Ctrl+клик мыши — открыть</translation>
     </message>
     <message>
         <location line="+3"/>
-        <location line="+967"/>
+        <location line="+1005"/>
         <source>%1 is not in a git repository</source>
         <translation>%1 не в репозитории git</translation>
     </message>
     <message>
-        <location line="-581"/>
+        <location line="-619"/>
         <source>The text has no broken link.</source>
         <translation>В тексте нет битых ссылок.</translation>
     </message>
@@ -1075,7 +1075,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Открыть терминал</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+47"/>
         <source>Go to Line</source>
         <translation>Перейти к строке</translation>
     </message>
@@ -1278,7 +1278,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Оглавление</translation>
     </message>
     <message>
-        <location line="+106"/>
+        <location line="+108"/>
         <source>The image &quot;%1&quot; is no longer in the text</source>
         <translation>Изображения «%1» больше нет в тексте</translation>
     </message>
@@ -1371,9 +1371,9 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Сохранить журнал...</translation>
     </message>
     <message>
-        <location line="-3295"/>
+        <location line="-3335"/>
         <location line="+161"/>
-        <location line="+3391"/>
+        <location line="+3431"/>
         <source>Open</source>
         <translation>Открыть</translation>
     </message>
@@ -1383,8 +1383,8 @@ Ctrl+клик мыши — открыть</translation>
         <translation>%1 - Параметры</translation>
     </message>
     <message>
-        <location line="-3923"/>
-        <location line="+3924"/>
+        <location line="-3963"/>
+        <location line="+3964"/>
         <source>Save</source>
         <translation>Сохранить</translation>
     </message>
@@ -5186,6 +5186,11 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Вставить изображение в текст Markdown</translation>
     </message>
     <message>
+        <location line="+5"/>
+        <source>Close Panel</source>
+        <translation>Закрыть панель</translation>
+    </message>
+    <message>
         <location line="+9"/>
         <source>Go to Line...</source>
         <translation>Перейти к строке...</translation>
@@ -5619,7 +5624,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation>Новый текст Markdown</translation>
     </message>
     <message>
-        <location line="-1013"/>
+        <location line="-1018"/>
         <source>New</source>
         <translation>Создать</translation>
     </message>
@@ -5628,7 +5633,7 @@ Ctrl+клик мыши — открыть</translation>
         <translation type="vanished">Новый файл</translation>
     </message>
     <message>
-        <location line="+1025"/>
+        <location line="+1030"/>
         <source>Service objects</source>
         <translation>Служебные объекты</translation>
     </message>

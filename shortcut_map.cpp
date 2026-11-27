@@ -61,7 +61,6 @@ const DefaultKeys DEFAULT_KEYS[] = {
     { "actionFillParagraph",    "Alt+Q",                QKeySequence::UnknownKey },
     { "actionUnfillParagraph",  "Alt+Shift+Q",          QKeySequence::UnknownKey },
     { "actionIndentRegion",     "Ctrl+Alt+\\",          QKeySequence::UnknownKey },
-    { "actionSelectTool",       "Esc",                  QKeySequence::UnknownKey },
     { "actionPan",              "H",                    QKeySequence::UnknownKey },
     { "actionZoomTool",         "Z",                    QKeySequence::UnknownKey },
     { "actionNewState",         "S",                    QKeySequence::UnknownKey },
@@ -79,6 +78,8 @@ const DefaultKeys DEFAULT_KEYS[] = {
     { "actionNextDocument",     "",                     QKeySequence::NextChild },
     { "actionPreviousDocument", "",                     QKeySequence::PreviousChild },
     { "actionPreferences",      "Ctrl+I",               QKeySequence::UnknownKey },
+    // it returns to the Select tool among its steps (EDIT-KEYS-13)
+    { "actionClosePanel",       "Esc",                  QKeySequence::UnknownKey },
     { "actionDocumentProperties", "Alt+Return",         QKeySequence::UnknownKey },
     { "actionCheck",            "F7",                   QKeySequence::UnknownKey },
     { "actionNextChange",       "Alt+Down",             QKeySequence::UnknownKey },

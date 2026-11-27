@@ -2362,6 +2362,44 @@ void CyberiadaSMEditorWindow::slotOpenTerminal()
     }
 }
 
+void CyberiadaSMEditorWindow::focusPage()
+{
+    if (current && sceneView) sceneView->setFocus();
+    else if (TextDocument* text = currentText()) text->focusPage();
+    else if (active && active->page()) active->page()->setFocus();
+}
+
+// the panel with the focus, the canvas edit, the armed tool, the find bar, the plugin dock
+// with its git output: the first of them goes, one for each key (EDIT-KEYS-13)
+void CyberiadaSMEditorWindow::slotClosePanel()
+{
+    QWidget* focus = QApplication::focusWidget();
+    if (focus && m_findBar->isVisible() && m_findBar->isAncestorOf(focus)) {
+        m_findBar->dismiss();
+        return;
+    }
+    if (focus && pluginDockWidget->isVisible() && pluginDockWidget->isAncestorOf(focus)) {
+        pluginDockWidget->hide();
+        focusPage();
+        return;
+    }
+    if (current) {
+        if (scene()->textEdited()) {
+            scene()->cancelTextEdit();
+            return;
+        }
+        if (currentTool != ToolType::Select && actionSelectTool->isEnabled()) {
+            actionSelectTool->trigger();
+            return;
+        }
+    }
+    if (m_findBar->isVisible()) {
+        m_findBar->dismiss();
+        return;
+    }
+    if (pluginDockWidget->isVisible()) pluginDockWidget->hide();
+}
+
 void CyberiadaSMEditorWindow::slotGoToLine()
 {
     TextDocument* text = currentText();
@@ -3319,7 +3357,9 @@ void CyberiadaSMEditorWindow::initPaneDocks()
     menuView->insertAction(actionTransitionText, actionChanges);
     menuView->insertAction(actionTransitionText, actionOutline);
     menuView->insertAction(actionTransitionText, actionRepository);
+    menuView->insertAction(actionTransitionText, actionClosePanel);
     menuView->insertSeparator(actionTransitionText);
+    connect(actionClosePanel, &QAction::triggered, this, &CyberiadaSMEditorWindow::slotClosePanel);
     treeDock->installEventFilter(this);
     propertiesDock->installEventFilter(this);
     changesDock->installEventFilter(this);

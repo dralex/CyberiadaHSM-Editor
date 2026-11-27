@@ -4,7 +4,7 @@
 editor behaviour. This document is used as the root specification for the test systems
 used within the project.
 
-**Document version:** 0.88 (2026-11-26)
+**Document version:** 0.89 (2026-11-27)
 
 **Related authorities:**
 
@@ -1505,6 +1505,14 @@ keys first. The architecture and the default keys are in `docs/SHORTCUTS.md`. Sp
   (`EDIT-FIND-1`), does not reach the action it is a key of. *design*
 - `EDIT-KEYS-12` MUST [A]: in a text tab the keys of Undo and Redo, whichever they are, drive
   the Undo and Redo of the window (`EDIT-HIST-1/2`), `Ctrl+Y` among them. *design*
+- `EDIT-KEYS-13` MUST [A]: View > Close Panel (Esc) steps back one level each time, in this
+  order: the find bar or the plugin dock holding the focus is closed; else, in a diagram tab,
+  a canvas text being edited is abandoned (`EDIT-KEYS-11`), else an armed tool other than Select
+  gives way to Select; else the find bar is closed when shown (`EDIT-FIND-1`), else the plugin
+  dock with all its tabs, the *Git output* among them (`EDIT-PLUG-17`, `EDIT-GIT-17`); with
+  none of them, nothing. A panel closed while it held the focus gives it back to the page. The
+  Select tool has no default key of its own; a key that a focused editor of a tree or a table
+  takes (Esc ending a rename) does not reach the action. Specified in 0.89. *design*
 
 ### 4.17 Autoreplace — AUTO
 

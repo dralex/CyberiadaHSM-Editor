@@ -123,6 +123,8 @@ public:
     CodeEditor*      editor() const { return m_editor; }
     // the rendered view of a read-only Markdown tab is shown
     bool             showsRendered() const;
+    // the keyboard to the shown page, the editor or the rendered view
+    void             focusPage();
     // the source and its rendered page side by side: a writable Markdown tab with View >
     // Preview (EDIT-MD-11)
     bool             showsPreview() const;

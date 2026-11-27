@@ -552,6 +552,11 @@
     <string>Insert an image into the Markdown text</string>
    </property>
   </action>
+  <action name="actionClosePanel">
+   <property name="text">
+    <string>Close Panel</string>
+   </property>
+  </action>
   <action name="actionGoToLine">
    <property name="icon">
     <iconset resource="smeditor.qrc">
