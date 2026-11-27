@@ -676,7 +676,7 @@ Ctrl+клик мыши — открыть</translation>
     <message>
         <location line="+53"/>
         <source>Gi&amp;t</source>
-        <translation>G&amp;it</translation>
+        <translation>&amp;Репозиторий</translation>
     </message>
     <message>
         <location line="+8"/>
@@ -6032,12 +6032,12 @@ Ctrl+клик мыши — открыть</translation>
     <message>
         <location line="+1"/>
         <source>Block cursor</source>
-        <translation type="unfinished">Блочный курсор</translation>
+        <translation>Прямоугольный курсор</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Text under the cursor</source>
-        <translation type="unfinished">Текст под курсором</translation>
+        <translation>Текст под курсором</translation>
     </message>
     <message>
         <location line="+1"/>

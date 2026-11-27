@@ -44,24 +44,20 @@
      id="namedview8"
      showgrid="false"
      inkscape:zoom="1.84375"
-     inkscape:cx="105.11245"
+     inkscape:cx="-23.429923"
      inkscape:cy="180.59761"
      inkscape:window-x="108"
      inkscape:window-y="40"
      inkscape:window-maximized="1"
      inkscape:current-layer="svg6" />
-  <g
-     id="g824"
-     transform="translate(1.1191133,0.542371)">
-    <path
-       inkscape:connector-curvature="0"
-       id="path2"
-       style="fill:none;stroke:#5599ff;stroke-width:8.88342571;stroke-dasharray:20.72799357, 10.36399678"
-       d="M 201.15255,68.271188 V 186.64407" />
-    <path
-       inkscape:connector-curvature="0"
-       id="path4"
-       style="fill:none;stroke:#000000;stroke-width:10;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none"
-       d="M 53.238723,76.95214 H 165.47314 M 53.238723,110.62247 H 165.47314 M 53.238723,144.29279 H 165.47314 M 53.238723,177.96312 h 64.534787" />
-  </g>
+  <path
+     d="M 202.27166,68.813559 V 187.18644"
+     style="fill:none;stroke:#5599ff;stroke-width:11.33858299;stroke-dasharray:22.67716599,11.33858299;stroke-miterlimit:4;stroke-dashoffset:0"
+     id="path2"
+     inkscape:connector-curvature="0" />
+  <path
+     d="M 54.357836,77.494511 H 166.59225 M 54.357836,111.16484 H 166.59225 M 54.357836,144.83516 H 166.59225 M 54.357836,178.50549 h 64.534784"
+     style="fill:none;stroke:#000000;stroke-width:11.33858268;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none"
+     id="path4"
+     inkscape:connector-curvature="0" />
 </svg>
