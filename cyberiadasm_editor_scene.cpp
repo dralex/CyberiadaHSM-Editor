@@ -183,6 +183,12 @@ void CyberiadaSMEditorScene::commitTextEdit()
     if (text && text->isEditing()) text->clearFocus();
 }
 
+void CyberiadaSMEditorScene::cancelTextEdit()
+{
+    EditableTextItem* text = dynamic_cast<EditableTextItem*>(focusItem());
+    if (text && text->isEditing()) text->cancelEditing();
+}
+
 void CyberiadaSMEditorScene::abandonTextEdit()
 {
     EditableTextItem* text = dynamic_cast<EditableTextItem*>(focusItem());

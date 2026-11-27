@@ -116,6 +116,8 @@ public:
     // leaving the document as it is (EDIT-KEYS-11)
     void  commitTextEdit();
     void  abandonTextEdit();
+    // the edit of the focused text abandoned as by its Esc, the text as it was (EDIT-KEYS-11)
+    void  cancelTextEdit();
     // a text of the canvas is being edited: it may hold what the document has not
     bool  textEdited() const;
     void  noteTextEdit() { emit textEditChanged(); }

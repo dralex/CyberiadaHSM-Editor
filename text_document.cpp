@@ -901,7 +901,12 @@ void TextDocument::clearFind(bool keep)
     setFindCurrent(-1);
     m_findMore = false;
     markFind();
-    if (keep) (showsRendered() ? static_cast<QWidget*>(m_rendered) : m_editor)->setFocus();
+    if (keep) focusPage();
+}
+
+void TextDocument::focusPage()
+{
+    (showsRendered() ? static_cast<QWidget*>(m_rendered) : m_editor)->setFocus();
 }
 
 void TextDocument::setFindCurrent(int index)

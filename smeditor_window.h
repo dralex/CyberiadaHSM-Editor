@@ -427,6 +427,8 @@ private slots:
     // Edit > Find, Find Next, Find Previous and the bar (EDIT-FIND-1..3)
     void                    slotFind();
     void                    slotGoToLine();
+    // View > Close Panel: one level back each time (EDIT-KEYS-13, docs/SHORTCUTS.md)
+    void                    slotClosePanel();
     // Edit > Insert Image... (EDIT-MD-2)
     void                    slotInsertImage();
     // Edit > Insert Diagram... (EDIT-MD-5)
@@ -576,6 +578,8 @@ private:
     ShortcutMap*            m_shortcuts = nullptr;
     void                    initShortcuts();
     void                    commitPendingEdit();
+    // the keyboard to the page of the active tab
+    void                    focusPage();
     void                    registerKeys(QAction* action, const QString& path);
     void                    registerMenuKeys(QMenu* menu, const QStringList& titles);
     // the running plugins and the documents they started from
