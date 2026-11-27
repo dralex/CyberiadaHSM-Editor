@@ -1,6 +1,6 @@
 # Find — Architecture
 
-**Document version:** 0.2 (2026-11-14). The requirements are `EDIT-FIND-1..9` in
+**Document version:** 0.3 (2026-11-27), View > Close Panel closes the bar from anywhere; 0.2 (2026-11-14). The requirements are `EDIT-FIND-1..9` in
 `EDITOR-SPEC.md` §4.15.
 
 One find bar under the document area searches the text the active tab shows: the source or
@@ -117,7 +117,7 @@ An export clears the marks for its rendering (`FindMarksGuard`, beside `RunMarks
 | Find | the bar shown, the field filled by `findSeed()` (one selected line), focused and selected |
 | field or option changed | `active->setFindQuery(q, true)`, the counter from `findResultChanged` |
 | Find Next / Previous | the bar shown if hidden; `active->moveFind(+1 / -1)` |
-| Esc, close | `active->clearFind(true)`, the bar hidden, the focus to the page |
+| Esc, close, View > Close Panel (`EDIT-KEYS-13`) | `active->clearFind(true)`, the bar hidden, the focus to the page |
 | tab switch | `old->clearFind(false)`, `new->setFindQuery(q, false)` while the bar is shown |
 | diff tab | `canFind()` false: the actions disabled, the bar greyed |
 

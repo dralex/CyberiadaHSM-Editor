@@ -1,6 +1,6 @@
 # The Editor Window — Documents and Tabs
 
-**Document version:** 0.32 (2026-11-26) — the modes, the read-only flag and the plugins in
+**Document version:** 0.33 (2026-11-27) — the modes, the read-only flag and the plugins in
 the modes (`modes`, the text tabs, a plugin run as a diff base, the plugin languages) are
 implemented, the git compare with them (stage 6 of `docs/MODES.md`); a switch keeps the dock
 sizes; a Markdown tab exports its rendered PDF; the find bar (`docs/FIND.md`); the shortcuts
@@ -131,6 +131,7 @@ setCurrentDocument(doc)
 | Undo, Redo | document | the active stack of the `QUndoGroup`; a text tab's stack proxies its `QTextDocument` |
 | Cut, Copy, Delete | document | the active scene's selection, or the active text editor's |
 | Find bar, Find, Find Next, Find Previous | global | one bar and query; the marks are the active tab's, dropped on a switch and searched again in the new tab; disabled in a diff tab, one side of a text diff tab (`EDIT-FIND-9`, `EDIT-MODE-24`, `docs/FIND.md`) |
+| View > Close Panel (Esc) | global | steps back one level: the focused find bar or plugin dock, the canvas edit, the armed tool, the shown find bar, the shown plugin dock with its Git output (`EDIT-KEYS-13`, `docs/SHORTCUTS.md`) |
 | Go to Line | document | the cursor of the active text tab, also on the Text toolbar; disabled elsewhere (`EDIT-KEYS-7`) |
 | Insert Image, Insert Diagram, Insert Link | document | the cursor of the active Markdown tab, one undo step; an untitled tab saved first (`EDIT-MD-2..5`, `EDIT-MD-9`) |
 | Insert Formula | document | the cursor of the active Markdown tab, one undo step, an untitled tab too; the formula under the cursor edited, as by Ctrl+click on it (`EDIT-MD-24..27`) |
